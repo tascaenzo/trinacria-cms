@@ -1,0 +1,19 @@
+{
+  "name": "@trinacria-cms/playground",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "dev": "trinacria dev",
+    "build": "trinacria build",
+    "start": "trinacria start",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@trinacria-cms/core": "0.1.0",
+    "@trinacria-cms/core-pack": "0.1.0"
+  },
+  "devDependencies": {
+    "@trinacria/cli": "0.1.1-alpha.3"
+  }
+}
