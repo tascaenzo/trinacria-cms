@@ -2,18 +2,15 @@
   "name": "@trinacria-cms/playground",
   "version": "0.1.0",
   "private": true,
-  "type": "commonjs",
+  "type": "module",
   "scripts": {
-    "dev": "trinacria dev",
-    "build": "trinacria build",
-    "start": "trinacria start",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "dev": "tsx watch src/main.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "node dist/main.js"
   },
   "dependencies": {
-    "@trinacria-cms/core": "0.1.0",
-    "@trinacria-cms/core-pack": "0.1.0"
-  },
-  "devDependencies": {
-    "@trinacria/cli": "0.1.1-alpha.3"
+    "@trinacria-cms/core-pack": "0.1.0",
+    "@trinacria-cms/kernel": "0.1.0"
   }
 }
