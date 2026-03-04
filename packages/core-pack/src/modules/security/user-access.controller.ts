@@ -1,0 +1,172 @@
+import {
+  createPluginApiResponder,
+  HttpController,
+  parsePathParam,
+  toOpenApiSchema,
+  type HttpContext,
+} from "@trinacria-cms/kernel";
+import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
+import {
+  AssignUserRoleInputSchema,
+  UserAccessErrorResponseSchema,
+  UserEffectivePermissionsResponseSchema,
+  UserRoleAssignmentResponseSchema,
+  UserRoleAssignmentsResponseSchema,
+} from "./dto/index.js";
+import type { UserAccessService } from "./user-access.service.js";
+
+const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
+
+/**
+ * Public REST API for user-role assignments and effective permissions.
+ */
+export class UserAccessController extends HttpController {
+  constructor(private readonly access: UserAccessService) {
+    super();
+  }
+
+  routes() {
+    return this.router()
+      .get("/v1/users/:id/roles", this.listUserRoles, {
+        docs: {
+          summary: "List role assignments for a user",
+          tags: ["User Access"],
+          operationId: "listUserRoles",
+          responses: {
+            200: {
+              description: "User role assignments",
+              schema: toOpenApiSchema(UserRoleAssignmentsResponseSchema),
+            },
+            404: {
+              description: "User not found",
+              schema: toOpenApiSchema(UserAccessErrorResponseSchema),
+            },
+          },
+        },
+      })
+      .post("/v1/users/:id/roles", this.assignUserRole, {
+        docs: {
+          summary: "Assign a role to a user",
+          tags: ["User Access"],
+          operationId: "assignUserRole",
+          requestBody: {
+            required: true,
+            schema: toOpenApiSchema(AssignUserRoleInputSchema),
+          },
+          responses: {
+            200: {
+              description: "Role assigned",
+              schema: toOpenApiSchema(UserRoleAssignmentResponseSchema),
+            },
+            404: {
+              description: "User or role not found",
+              schema: toOpenApiSchema(UserAccessErrorResponseSchema),
+            },
+          },
+        },
+      })
+      .delete("/v1/users/:id/roles/:roleCode", this.removeUserRole, {
+        docs: {
+          summary: "Remove a role from a user",
+          tags: ["User Access"],
+          operationId: "removeUserRole",
+          responses: {
+            200: {
+              description: "Removed assignment list",
+              schema: toOpenApiSchema(UserRoleAssignmentsResponseSchema),
+            },
+            404: {
+              description: "Assignment not found",
+              schema: toOpenApiSchema(UserAccessErrorResponseSchema),
+            },
+          },
+        },
+      })
+      .get("/v1/users/:id/permissions", this.listUserEffectivePermissions, {
+        docs: {
+          summary: "List effective permissions for a user",
+          tags: ["User Access"],
+          operationId: "listUserEffectivePermissions",
+          responses: {
+            200: {
+              description: "Effective permissions",
+              schema: toOpenApiSchema(UserEffectivePermissionsResponseSchema),
+            },
+            404: {
+              description: "User not found",
+              schema: toOpenApiSchema(UserAccessErrorResponseSchema),
+            },
+          },
+        },
+      })
+      .build();
+  }
+
+  private listUserRoles = async (ctx: HttpContext) => {
+    const userId = parsePathParam(ctx.params, "id");
+    if (!userId) {
+      return responder.invalidRequest("Missing user id");
+    }
+
+    try {
+      const assignments = await this.access.listUserRoles(userId);
+      return responder.list(assignments);
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private assignUserRole = async (ctx: HttpContext) => {
+    const userId = parsePathParam(ctx.params, "id");
+    if (!userId) {
+      return responder.invalidRequest("Missing user id");
+    }
+
+    try {
+      const payload = AssignUserRoleInputSchema.parse(ctx.body);
+      const assignment = await this.access.assignRoleToUser(userId, payload.roleCode);
+      return responder.success(assignment);
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private removeUserRole = async (ctx: HttpContext) => {
+    const userId = parsePathParam(ctx.params, "id");
+    const roleCode = parsePathParam(ctx.params, "roleCode");
+
+    if (!userId) {
+      return responder.invalidRequest("Missing user id");
+    }
+    if (!roleCode) {
+      return responder.invalidRequest("Missing role code");
+    }
+
+    try {
+      const removed = await this.access.removeRoleFromUser(userId, roleCode);
+      if (!removed) {
+        return responder.notFound(
+          `Role assignment "${roleCode}" for user "${userId}" not found`,
+        );
+      }
+      const assignments = await this.access.listUserRoles(userId);
+      return responder.list(assignments);
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private listUserEffectivePermissions = async (ctx: HttpContext) => {
+    const userId = parsePathParam(ctx.params, "id");
+    if (!userId) {
+      return responder.invalidRequest("Missing user id");
+    }
+
+    try {
+      const permissions = await this.access.resolveUserPermissions(userId);
+      return responder.list(permissions);
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+}

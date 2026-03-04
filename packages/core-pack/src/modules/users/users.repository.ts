@@ -38,13 +38,13 @@ export class UsersRepository {
     };
 
     const created = await this.repository().insertOne(record);
-    return UserRecordSchema.parse(created);
+    return this.parseUserRecord(created);
   }
 
   async findById(id: string): Promise<UserRecord | null> {
     const found = await this.repository().findOne({
       filter: { id },
-      parse: (value: unknown) => UserRecordSchema.parse(value),
+      parse: (value: unknown) => this.parseUserRecord(value),
     });
     return found;
   }
@@ -53,7 +53,7 @@ export class UsersRepository {
     const normalizedEmail = email.trim().toLowerCase();
     const found = await this.repository().findOne({
       filter: { email: normalizedEmail },
-      parse: (value: unknown) => UserRecordSchema.parse(value),
+      parse: (value: unknown) => this.parseUserRecord(value),
     });
     return found;
   }
@@ -63,7 +63,7 @@ export class UsersRepository {
       limit: options?.limit,
       offset: options?.offset,
       sort: { createdAt: "desc" },
-      parse: (value: unknown) => UserRecordSchema.parse(value),
+      parse: (value: unknown) => this.parseUserRecord(value),
     });
     return users;
   }
@@ -82,11 +82,25 @@ export class UsersRepository {
     );
 
     if (!updated) return null;
-    return UserRecordSchema.parse(updated);
+    return this.parseUserRecord(updated);
   }
 
   private repository() {
     this.scope = this.scope ?? createPluginDbScope(this.db, CORE_PACK_PLUGIN_ID);
     return this.scope.repository<UserRecord>(USERS_ENTITY_NAME);
+  }
+
+  private parseUserRecord(value: unknown): UserRecord {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      return UserRecordSchema.parse(value);
+    }
+
+    const normalized = { ...(value as Record<string, unknown>) };
+    // Internal embedded assignments must not leak into API UserRecord shape.
+    if ("roleAssignments" in normalized) {
+      delete normalized.roleAssignments;
+    }
+
+    return UserRecordSchema.parse(normalized);
   }
 }

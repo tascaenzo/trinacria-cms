@@ -1,0 +1,333 @@
+import {
+  assertRequesterOwnsSettingKey,
+  getOwnerPluginIdFromSettingKey,
+} from "./settings-key.js";
+import {
+  cloneJsonValue,
+  deserializeJsonValue,
+  parseJsonValue,
+  serializeJsonValue,
+  type JsonValue,
+} from "./settings-json.js";
+import {
+  SettingsDefinitionsRepository,
+  type UpsertSettingDefinitionRecordInput,
+} from "./settings-definitions.repository.js";
+import {
+  SettingsValuesRepository,
+  type UpsertSettingValueRecordInput,
+} from "./settings-values.repository.js";
+import {
+  SettingsSecretsRepository,
+  type UpsertSettingSecretRecordInput,
+} from "./settings-secrets.repository.js";
+import { SettingsSecretsCryptoService } from "./settings-secrets-crypto.service.js";
+
+export interface SettingsDefinition {
+  id: string;
+  key: string;
+  ownerPluginId: string;
+  category?: string;
+  description?: string;
+  schema?: JsonValue;
+  defaultValue?: JsonValue;
+  status: "active" | "disabled";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SettingValue {
+  id: string;
+  key: string;
+  ownerPluginId: string;
+  value: JsonValue;
+  version: number;
+  updatedBy?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SettingSecretMetadata {
+  id: string;
+  key: string;
+  ownerPluginId: string;
+  algorithm: "aes-256-gcm";
+  keyVersion: string;
+  maskedValue: string;
+  updatedBy?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ResolvedSettingValue {
+  key: string;
+  ownerPluginId: string;
+  value: JsonValue;
+  source: "value" | "default";
+  version?: number;
+  updatedAt: string;
+}
+
+export interface ExportedPluginSettings {
+  pluginId: string;
+  definitions: readonly SettingsDefinition[];
+  values: readonly SettingValue[];
+  secrets: readonly SettingSecretMetadata[];
+}
+
+/**
+ * Application service for settings definitions, values and encrypted secrets.
+ */
+export class SettingsService {
+  constructor(
+    private readonly definitions: SettingsDefinitionsRepository,
+    private readonly values: SettingsValuesRepository,
+    private readonly secrets: SettingsSecretsRepository,
+    private readonly crypto: SettingsSecretsCryptoService,
+  ) {}
+
+  async upsertDefinition(input: {
+    requesterPluginId: string;
+    key: string;
+    category?: string;
+    description?: string;
+    schema?: unknown;
+    defaultValue?: unknown;
+    status?: "active" | "disabled";
+  }): Promise<SettingsDefinition> {
+    assertRequesterOwnsSettingKey(input.requesterPluginId, input.key);
+
+    const record = await this.definitions.upsert({
+      key: input.key,
+      ownerPluginId: getOwnerPluginIdFromSettingKey(input.key),
+      category: input.category,
+      description: input.description,
+      ...(input.schema !== undefined
+        ? { schemaJson: serializeJsonValue(parseJsonValue(input.schema)) }
+        : {}),
+      ...(input.defaultValue !== undefined
+        ? { defaultValueJson: serializeJsonValue(parseJsonValue(input.defaultValue)) }
+        : {}),
+      status: input.status,
+    } satisfies UpsertSettingDefinitionRecordInput);
+
+    return this.toDefinition(record);
+  }
+
+  async getDefinitionByKey(key: string): Promise<SettingsDefinition | null> {
+    const record = await this.definitions.findByKey(key);
+    return record ? this.toDefinition(record) : null;
+  }
+
+  async listDefinitions(options?: {
+    ownerPluginId?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<readonly SettingsDefinition[]> {
+    const records = await this.definitions.list(options);
+    return records.map((record) => this.toDefinition(record));
+  }
+
+  async upsertValue(input: {
+    requesterPluginId: string;
+    key: string;
+    value: unknown;
+    updatedBy?: string;
+  }): Promise<SettingValue> {
+    assertRequesterOwnsSettingKey(input.requesterPluginId, input.key);
+    const parsedValue = parseJsonValue(input.value);
+
+    const record = await this.values.upsert({
+      key: input.key,
+      ownerPluginId: getOwnerPluginIdFromSettingKey(input.key),
+      valueJson: serializeJsonValue(parsedValue),
+      updatedBy: input.updatedBy,
+    } satisfies UpsertSettingValueRecordInput);
+
+    return this.toSettingValue(record);
+  }
+
+  async getResolvedValueByKey(key: string): Promise<ResolvedSettingValue | null> {
+    const value = await this.values.findByKey(key);
+    if (value) {
+      const parsed = parseJsonValue(deserializeJsonValue(value.valueJson));
+      return {
+        key: value.key,
+        ownerPluginId: value.ownerPluginId,
+        value: cloneJsonValue(parsed),
+        source: "value",
+        version: value.version,
+        updatedAt: value.updatedAt,
+      };
+    }
+
+    const definition = await this.definitions.findByKey(key);
+    if (!definition || !definition.defaultValueJson) {
+      return null;
+    }
+
+    const parsed = parseJsonValue(deserializeJsonValue(definition.defaultValueJson));
+    return {
+      key: definition.key,
+      ownerPluginId: definition.ownerPluginId,
+      value: cloneJsonValue(parsed),
+      source: "default",
+      updatedAt: definition.updatedAt,
+    };
+  }
+
+  async upsertSecret(input: {
+    requesterPluginId: string;
+    key: string;
+    plaintext: string;
+    updatedBy?: string;
+  }): Promise<SettingSecretMetadata> {
+    assertRequesterOwnsSettingKey(input.requesterPluginId, input.key);
+
+    const encrypted = this.crypto.encrypt(input.plaintext);
+    const record = await this.secrets.upsert({
+      key: input.key,
+      ownerPluginId: getOwnerPluginIdFromSettingKey(input.key),
+      cipherText: encrypted.cipherText,
+      iv: encrypted.iv,
+      authTag: encrypted.authTag,
+      algorithm: encrypted.algorithm,
+      keyVersion: encrypted.keyVersion,
+      updatedBy: input.updatedBy,
+    } satisfies UpsertSettingSecretRecordInput);
+
+    return this.toSecretMetadata(record);
+  }
+
+  async getSecretMetadata(
+    requesterPluginId: string,
+    key: string,
+  ): Promise<SettingSecretMetadata | null> {
+    const record = await this.secrets.findByKey(key);
+    if (!record) return null;
+
+    const normalizedRequester = requesterPluginId.trim().toLowerCase();
+    if (record.ownerPluginId !== normalizedRequester) {
+      throw new Error(`Access denied for secret key "${key}"`);
+    }
+
+    return this.toSecretMetadata(record);
+  }
+
+  async revealSecret(
+    requesterPluginId: string,
+    key: string,
+  ): Promise<{ key: string; value: string } | null> {
+    const record = await this.secrets.findByKey(key);
+    if (!record) return null;
+
+    const normalizedRequester = requesterPluginId.trim().toLowerCase();
+    if (record.ownerPluginId !== normalizedRequester) {
+      throw new Error(`Access denied for secret key "${key}"`);
+    }
+
+    return {
+      key: record.key,
+      value: this.crypto.decrypt(record),
+    };
+  }
+
+  async exportPluginSettings(
+    requesterPluginId: string,
+    pluginId: string,
+  ): Promise<ExportedPluginSettings> {
+    const normalizedRequester = requesterPluginId.trim().toLowerCase();
+    const normalizedPluginId = pluginId.trim().toLowerCase();
+    if (normalizedRequester !== normalizedPluginId) {
+      throw new Error(`Plugin "${normalizedRequester}" cannot export settings of "${normalizedPluginId}"`);
+    }
+
+    const [definitions, values, secrets] = await Promise.all([
+      this.listDefinitions({ ownerPluginId: normalizedPluginId }),
+      this.values.listByOwnerPlugin(normalizedPluginId),
+      this.secrets.listByOwnerPlugin(normalizedPluginId),
+    ]);
+
+    return {
+      pluginId: normalizedPluginId,
+      definitions,
+      values: values.map((item) => this.toSettingValue(item)),
+      secrets: secrets.map((item) => this.toSecretMetadata(item)),
+    };
+  }
+
+  private toDefinition(record: {
+    id: string;
+    key: string;
+    ownerPluginId: string;
+    category?: string;
+    description?: string;
+    schemaJson?: string;
+    defaultValueJson?: string;
+    status: "active" | "disabled";
+    createdAt: string;
+    updatedAt: string;
+  }): SettingsDefinition {
+    return {
+      id: record.id,
+      key: record.key,
+      ownerPluginId: record.ownerPluginId,
+      ...(record.category ? { category: record.category } : {}),
+      ...(record.description ? { description: record.description } : {}),
+      ...(record.schemaJson
+        ? { schema: parseJsonValue(deserializeJsonValue(record.schemaJson)) }
+        : {}),
+      ...(record.defaultValueJson
+        ? { defaultValue: parseJsonValue(deserializeJsonValue(record.defaultValueJson)) }
+        : {}),
+      status: record.status,
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt,
+    };
+  }
+
+  private toSettingValue(record: {
+    id: string;
+    key: string;
+    ownerPluginId: string;
+    valueJson: string;
+    version: number;
+    updatedBy?: string;
+    createdAt: string;
+    updatedAt: string;
+  }): SettingValue {
+    return {
+      id: record.id,
+      key: record.key,
+      ownerPluginId: record.ownerPluginId,
+      value: parseJsonValue(deserializeJsonValue(record.valueJson)),
+      version: record.version,
+      ...(record.updatedBy ? { updatedBy: record.updatedBy } : {}),
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt,
+    };
+  }
+
+  private toSecretMetadata(record: {
+    id: string;
+    key: string;
+    ownerPluginId: string;
+    algorithm: "aes-256-gcm";
+    keyVersion: string;
+    updatedBy?: string;
+    createdAt: string;
+    updatedAt: string;
+  }): SettingSecretMetadata {
+    return {
+      id: record.id,
+      key: record.key,
+      ownerPluginId: record.ownerPluginId,
+      algorithm: record.algorithm,
+      keyVersion: record.keyVersion,
+      maskedValue: "********",
+      ...(record.updatedBy ? { updatedBy: record.updatedBy } : {}),
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt,
+    };
+  }
+}
