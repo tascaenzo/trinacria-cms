@@ -345,12 +345,24 @@ function toMongoIndex(index: EntityIndexDefinition): {
   sparse?: boolean;
   name?: string;
 } {
-  return {
+  const mapped: {
+    key: Record<string, 1 | -1>;
+    unique?: boolean;
+    sparse?: boolean;
+    name?: string;
+  } = {
     key: index.fields,
-    unique: index.unique,
-    sparse: index.sparse,
-    name: index.name,
   };
+  if (index.unique !== undefined) {
+    mapped.unique = index.unique;
+  }
+  if (index.sparse !== undefined) {
+    mapped.sparse = index.sparse;
+  }
+  if (index.name !== undefined) {
+    mapped.name = index.name;
+  }
+  return mapped;
 }
 
 function toMongoUpdateDocument<TData>(

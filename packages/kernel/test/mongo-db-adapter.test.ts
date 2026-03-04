@@ -147,7 +147,6 @@ test("MongoDbAdapter ensureIndexes uses canonical index declarations", async () 
         {
           key: { pluginId: 1, email: 1 },
           unique: true,
-          sparse: undefined,
           name: "users_plugin_email_unique",
         },
       ],
