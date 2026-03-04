@@ -1,15 +1,15 @@
-# Trinacria CMS - Documentation (EN)
+# CMS Documentation (English)
+
+This directory contains the official Trinacria CMS project documentation in English.
 
 ## Index
 
-- [0000 - Vision and boundaries](./0000-vision-and-boundaries.md)
-- [0001 - Core contracts](./0001-core-contracts.md)
-- [0002 - Workspace and settings](./0002-workspace-settings.md)
-- [0003 - Plugin admin integration](./0003-plugin-admin-integration.md)
-- [0004 - Playground](./0004-playground.md)
-- [0005 - DB abstraction and isolation](./0005-db-abstraction-and-isolation.md)
+- [0001 - Kernel: Models and Structures (v0.1)](./0001-kernel-models-structures.md)
 
-## Architecture rule
+## Scope
 
-- `core`: contracts and runtime.
-- `core-pack`: default implementations bound to core contracts.
+`docs/cms/en` covers:
+
+- CMS architecture (kernel, core-pack, domain plugins)
+- platform runtime contracts and data models
+- implementation and development guidelines

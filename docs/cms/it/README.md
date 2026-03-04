@@ -1,15 +1,17 @@
-# Trinacria CMS - Documentazione (IT)
+# Documentazione CMS (Italiano)
+
+Questa directory contiene la documentazione ufficiale del progetto Trinacria CMS in italiano.
 
 ## Indice
 
-- [0000 - Visione e boundary](./0000-visione-e-boundary.md)
-- [0001 - Contratti core](./0001-contratti-core.md)
-- [0002 - Workspace e settings](./0002-workspace-settings.md)
-- [0003 - Plugin admin integration](./0003-plugin-admin-integration.md)
-- [0004 - Playground](./0004-playground.md)
-- [0005 - DB astrazione e isolamento](./0005-db-astrazione-e-isolamento.md)
+- [0001 - Kernel: Modelli e Strutture (v0.1)](./0001-kernel-modelli-strutture.md)
+- [0002 - Gap di @trinacria/schema da colmare in libreria](./0002-gap-schema-trinacria.md)
+- [0003 - Allineamento @trinacria/schema: documentazione vs runtime installato](./0003-allineamento-schema-runtime.md)
 
-## Regola architetturale
+## Ambito
 
-- `core`: contratti e runtime.
-- `core-pack`: implementazioni default collegate ai contratti del core.
+La documentazione `docs/cms/it` copre:
+
+- architettura CMS (kernel, core-pack, plugin dominio)
+- contratti runtime e modelli dati della piattaforma
+- linee guida di implementazione e sviluppo
