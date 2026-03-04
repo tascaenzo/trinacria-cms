@@ -4,12 +4,14 @@ import type {
   PersistedPluginRuntimeRecord,
   PluginRuntimeStore,
 } from "../contracts/plugin-runtime-store.js";
+import type { PluginManifest } from "../contracts/plugin-manifest.js";
 import type { PluginRuntimeRecord } from "../contracts/plugin-runtime.js";
 import { DbAdapterError } from "../errors/db-errors.js";
 import {
   defineEntity,
   type EntityRegistry,
 } from "./entity-registry.js";
+import { validatePluginManifest } from "./plugin-manifest-validation.js";
 
 const PluginRuntimeStateSchema = s.enum([
   "registered",
@@ -43,14 +45,21 @@ const PersistedPluginRuntimeRecordSchema = s.object(
     lastErrorName: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
     lastErrorMessage: s.string({ trim: true, minLength: 1, maxLength: 2000 }).optional(),
     disabledReason: s.string({ trim: true, minLength: 1, maxLength: 1000 }).optional(),
-    manifestJson: s.string({ minLength: 2, maxLength: 500000 }),
+    manifest: s.object(
+      {
+        id: s.string({ trim: true, minLength: 1 }),
+        version: s.string({ trim: true, minLength: 1 }),
+        requiresCore: s.string({ trim: true, minLength: 1 }),
+      },
+      { strict: false },
+    ),
     loadedAt: s.dateTimeString().optional(),
     failedAt: s.dateTimeString().optional(),
     disabledAt: s.dateTimeString().optional(),
     createdAt: s.dateTimeString(),
     updatedAt: s.dateTimeString(),
   },
-  { strict: true },
+  { strict: false },
 );
 
 /**
@@ -164,7 +173,7 @@ export class DbPluginRuntimeStore implements PluginRuntimeStore {
     const repository = this.getRepository();
     const existing = await repository.findOne({
       filter: { pluginId: record.manifest.id },
-      parse: (value) => PersistedPluginRuntimeRecordSchema.parse(value),
+      parse: (value) => parsePersistedRecord(value),
     });
     const nowIso = this.now().toISOString();
     const payload = toPersistedRuntimeRecord(
@@ -196,7 +205,7 @@ export class DbPluginRuntimeStore implements PluginRuntimeStore {
     const repository = this.getRepository();
     return repository.findMany({
       sort: { updatedAt: "desc" },
-      parse: (value) => PersistedPluginRuntimeRecordSchema.parse(value),
+      parse: (value) => parsePersistedRecord(value),
     });
   }
 
@@ -267,7 +276,7 @@ function toPersistedRuntimeRecord(
     state: record.state,
     enabled: record.state !== "disabled",
     failureCount: record.failureCount ?? 0,
-    manifestJson: JSON.stringify(record.manifest),
+    manifest: record.manifest,
     createdAt,
     updatedAt,
   };
@@ -329,7 +338,7 @@ export function assertInstalledPluginRecordShape(
   value: unknown,
 ): PersistedPluginRuntimeRecord {
   try {
-    return PersistedPluginRuntimeRecordSchema.parse(value);
+    return parsePersistedRecord(value);
   } catch (error) {
     throw new DbAdapterError("Invalid installed plugin runtime record shape", {
       cause: error instanceof Error ? error.message : String(error),
@@ -337,3 +346,21 @@ export function assertInstalledPluginRecordShape(
   }
 }
 
+function parsePersistedRecord(value: unknown): PersistedPluginRuntimeRecord {
+  const parsed = PersistedPluginRuntimeRecordSchema.parse(value);
+  const record = parsed as Record<string, unknown>;
+  const manifest = normalizePersistedManifest(record);
+
+  return {
+    ...(parsed as Omit<PersistedPluginRuntimeRecord, "manifest">),
+    manifest,
+  };
+}
+
+function normalizePersistedManifest(record: Record<string, unknown>): PluginManifest {
+  const rawManifest = record.manifest ?? record.manifestJson;
+  if (typeof rawManifest === "string") {
+    return validatePluginManifest(JSON.parse(rawManifest) as PluginManifest);
+  }
+  return validatePluginManifest(rawManifest as PluginManifest);
+}

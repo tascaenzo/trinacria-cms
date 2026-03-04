@@ -3,6 +3,7 @@ import type {
   PluginRuntimeRecord,
   PluginState,
 } from "./plugin-runtime.js";
+import type { PluginManifest } from "./plugin-manifest.js";
 
 /**
  * Persisted snapshot of a plugin runtime record.
@@ -19,7 +20,7 @@ export interface PersistedPluginRuntimeRecord {
   lastErrorName?: string;
   lastErrorMessage?: string;
   disabledReason?: string;
-  manifestJson: string;
+  manifest: PluginManifest;
   loadedAt?: string;
   failedAt?: string;
   disabledAt?: string;
@@ -49,4 +50,3 @@ export interface PluginRuntimeStore {
    */
   list(): Promise<readonly PersistedPluginRuntimeRecord[]>;
 }
-

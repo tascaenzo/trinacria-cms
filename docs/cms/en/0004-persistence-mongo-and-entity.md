@@ -352,7 +352,7 @@ The kernel persists plugin runtime state in a dedicated collection under the `ke
 
 - collection: `plugin_kernel__installed_plugins`
 - logical key: `pluginId` (unique)
-- main fields: `state`, `enabled`, `failureCount`, `disabledReason`, `manifestJson`, `updatedAt`
+- main fields: `state`, `enabled`, `failureCount`, `disabledReason`, `manifest`, `updatedAt`
 - indexes: unique `pluginId`, plus `state`, `enabled`, `updatedAt` desc
 
 Operational value:
@@ -370,7 +370,7 @@ Current note:
 
 | Collection | Owner namespace | Key fields | Main indexes | Purpose |
 | --- | --- | --- | --- | --- |
-| `plugin_kernel__installed_plugins` | `kernel` | `pluginId`, `state`, `enabled`, `failureCount`, `manifestJson`, `updatedAt` | unique `pluginId`, plus `state`, `enabled`, `updatedAt` desc | Persistent runtime state for installed plugins (audit/ops). |
+| `plugin_kernel__installed_plugins` | `kernel` | `pluginId`, `state`, `enabled`, `failureCount`, `manifest`, `updatedAt` | unique `pluginId`, plus `state`, `enabled`, `updatedAt` desc | Persistent runtime state for installed plugins (audit/ops). |
 | `plugin_core_pack__users` | `core-pack` | `id`, `email`, `status`, `roleAssignments[]` | unique `id`, unique `email` | User registry and embedded role assignments. |
 | `plugin_core_pack__roles` | `core-pack` | `id`, `code`, `ownerPluginId`, `permissions[]`, `permissionGrants[]`, `status` | unique `id`, unique `code`, plus `ownerPluginId`, `status` | Role catalog and plugin-owned permission grants. |
 | `plugin_core_pack__permissions` | `core-pack` | `id`, `key`, `sourcePluginId`, `status` | unique `id`, unique `key`, plus `sourcePluginId`, `status` | Canonical namespaced permission catalog. |

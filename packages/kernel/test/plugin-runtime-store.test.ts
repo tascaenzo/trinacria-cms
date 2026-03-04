@@ -53,6 +53,7 @@ test("DbPluginRuntimeStore upserts and removes persisted records", async () => {
   assert.equal(loaded[0]?.pluginId, "core-pack");
   assert.equal(loaded[0]?.state, "registered");
   assert.equal(loaded[0]?.enabled, true);
+  assert.equal(loaded[0]?.manifest.id, "core-pack");
 
   await store.upsert({
     ...record,
