@@ -1,152 +1,208 @@
-# 0001 - Kernel: Modelli e Strutture (v0.1)
+# 0001 - Kernel: architettura, confini e API pubbliche
 
-## Obiettivo
+## 1. Missione del kernel
 
-Descrivere i modelli e le strutture base introdotte nel kernel `@trinacria-cms/kernel` durante la fase iniziale del progetto.
+Il kernel e il "sistema operativo" del CMS.
 
-Questa versione copre solo i **contratti** (interfacce e tipi), non le implementazioni runtime complete.
+Responsabilita principali:
 
-## Decisione architetturale di riferimento
+- definire contratti stabili per plugin e servizi trasversali;
+- orchestrare lifecycle plugin a runtime;
+- garantire isolamento logico tra plugin;
+- fornire primitive standard per API envelope, health, persistence abstraction.
 
-La baseline e definita dall'ADR:
+Il kernel non deve contenere business logic specifica (es. regole utenti, contenuti editoriali).
 
-- [ADR-001: Confini tra kernel e core-pack](../../adr/ADR-001-core-boundaries.md)
+## 2. Struttura fisica del package
 
-Sintesi:
+Percorso: `packages/kernel/src`
 
-- `kernel` contiene runtime e contratti piattaforma.
-- `core-pack` contiene implementazioni default (utenti/ruoli/permessi/settings).
+Directory e ruolo:
 
-## Strutture introdotte nel package kernel
+- `contracts/`: specifiche pubbliche (interfacce e tipi condivisi).
+- `runtime/`: implementazioni concrete di orchestrazione.
+- `errors/`: gerarchia errori tipizzati.
+- `tokens/`: token DI ufficiali del framework.
+- `http/`: strumenti HTTP trasversali (health, swagger, helpers).
+- `types/`: augmentation tipi per plugin esterni (`@trinacria/http`).
+- `index.ts`: entrypoint unico e re-export delle librerie Trinacria.
 
-Percorso sorgente:
+## 3. Entry-point strategy
 
-- `packages/kernel/src/contracts`
+File: `packages/kernel/src/index.ts`
 
-### 1) Namespace context
+Scelta progettuale: re-export centralizzato.
 
-File:
+Cosa permette:
 
-- `packages/kernel/src/contracts/namespace-context.ts`
+- plugin developer importa da `@trinacria-cms/kernel` una sola volta;
+- riduce import frammentati (`@trinacria/core`, `@trinacria/http`, `@trinacria/schema`);
+- facilita migrazioni future con minor impatto sui plugin.
 
-Modelli:
+Tradeoff:
 
-- `NamespaceContext`
-  - `pluginId`: identifica il plugin proprietario delle risorse.
-  - `workspaceId?`: abilita scoping multi-tenant/workspace.
-- `buildNamespaceKey(context)`
-  - genera una chiave namespace canonica per storage/cache/metriche.
+- il kernel diventa "facade" ampia;
+- richiede disciplina per evitare export superflui/non stabili.
 
-Perche serve:
+## 4. Contratti fondanti
 
-- evita collisioni tra plugin;
-- prepara il kernel a isolamento dati per tenant/workspace.
+### 4.1 `PluginManifest`
 
-### 2) Plugin manifest
+File: `contracts/plugin-manifest.ts`
 
-File:
+Campi chiave:
 
-- `packages/kernel/src/contracts/plugin-manifest.ts`
+- `id`: identita stabile plugin.
+- `version`: versione plugin.
+- `requiresCore`: range semver kernel richiesto.
+- `capabilities`: capability esportate.
+- `dependencies`: dipendenze plugin->plugin.
+- `security`: contributi security dichiarativi (`permissions`, `roles`, `grants`).
 
-Modelli:
+Impatto architetturale:
 
-- `PluginManifest`
-  - `id`, `version`, `requiresCore`
-  - `capabilities?`
-  - `dependencies?`
-- `PluginManifestDependency`
-  - `pluginId`, `versionRange`, `optional?`
+- abilita validazione preventiva;
+- abilita governance versioning e compatibilita.
 
-Perche serve:
+### 4.2 `PluginRuntime`
 
-- definisce il contratto minimo di un plugin installabile;
-- consente validazioni di compatibilita e dipendenze.
+File: `contracts/plugin-runtime.ts`
 
-### 3) Plugin runtime contract
+Espone API lifecycle:
 
-File:
+- `register`, `load`, `unload`, `reload`, `loadMany`, `disable`, `unregister`.
 
-- `packages/kernel/src/contracts/plugin-runtime.ts`
+Espone ispezione runtime:
 
-Modelli:
+- `list`, `describeDependencies`.
 
-- `PluginState`
-  - `registered | loaded | failed | disabled | unloaded`
-- `PluginRuntimeRecord`
-  - snapshot runtime di stato plugin (`manifest`, `state`, `loadedAt`, `lastError`)
-- `PluginRuntime`
-  - API minima: `register`, `load`, `unload`, `disable`, `list`
+Impatto:
 
-Perche serve:
+- runtime amministrabile e osservabile senza accedere a dettagli interni.
 
-- formalizza il lifecycle plugin a runtime;
-- stabilisce la superficie pubblica per il registry/orchestratore.
+### 4.3 `DbAdapter`
 
-### 4) DB abstraction
+File: `contracts/db-adapter.ts`
 
-File:
+Scopo:
 
-- `packages/kernel/src/contracts/db-adapter.ts`
+- mantenere plugin storage-agnostici.
 
-Modelli:
+Primitive:
 
-- `DbQuery<TData>`
-- `DbRepository<TData>`
-- `DbTransaction`
-- `DbAdapter`
+- repository CRUD (`DbRepository`)
+- query astratta (`DbQuery`)
+- transaction handle (`DbTransaction`)
 
-Perche serve:
+Impatto:
 
-- separa il kernel dal database concreto;
-- abilita persistenza MongoDB con Mongoose mantenendo i servizi core disaccoppiati.
+- plugin non dipende da Mongoose/SQL client;
+- cambio backend con impatto ridotto su codice dominio.
 
-### 5) Authorization contract
+### 4.4 `NamespaceContext`
 
-File:
+File: `contracts/namespace-context.ts`
 
-- `packages/kernel/src/contracts/authz-service.ts`
+Contiene:
 
-Modelli:
+- `pluginId`
+- `workspaceId` opzionale
 
-- `AuthorizationRequest`
-- `AuthorizationResult`
-- `AuthzService`
+`buildNamespaceKey` produce chiave canonica per isolamento.
 
-Perche serve:
+Impatto:
 
-- fornisce un contratto unico di autorizzazione per kernel e plugin;
-- integra il controllo permessi con contesto namespace/workspace.
+- riduce collisioni cross-plugin;
+- prepara multi-namespace senza cambiare API repository.
 
-### 6) Export pubblico contratti
+### 4.5 `ApiContract`
 
-File:
+File: `contracts/api-contract.ts`
 
-- `packages/kernel/src/contracts/index.ts`
-- `packages/kernel/src/index.ts`
+Definisce envelope standard:
 
-Perche serve:
+- successo: `{ data, meta? }`
+- errore: `{ error, meta? }`
 
-- espone in modo stabile i contratti v0.1 del kernel;
-- evita import diretti da path interni non versionati.
+`meta` include, tra gli altri, `pluginId`.
 
-## Stato implementazione
+Impatto:
 
-Completato:
+- risposte omogenee per tutti i plugin;
+- SDK client semplificato.
 
-- definizione confini architetturali (`kernel` vs `core-pack`);
-- introduzione contratti minimi v0.1 in `packages/kernel/src/contracts`;
-- commenti TSDoc sui modelli principali.
+### 4.6 `CmsStarterOptions`
 
-Non ancora completato:
+File: `contracts/cms-starter.ts`
 
-- implementazione concreta del registry runtime plugin;
-- orchestrazione lifecycle con rollback;
-- implementazioni adapter DB reali;
-- implementazione authz/rbac concreta.
+Definisce bootstrap minimo applicativo:
 
-## Prossimo passo
+- HTTP/OpenAPI
+- Swagger UI
+- plugin da registrare
+- provider globali
+- auto-load lifecycle
+- provisioning security automatico su load/unregister (se disponibile un `PluginSecurityProvisioner`)
 
-Procedere con lo skeleton runtime del `kernel` (step successivo del piano):
+Impatto:
 
-- cartelle `runtime`, `errors`, `tokens`;
-- prime implementazioni placeholder allineate ai contratti definiti qui.
+- standard unico di avvio applicazione.
+
+## 5. Token come ABI interna del framework
+
+File: `tokens/core-tokens.ts`
+
+Token principali:
+
+- `PLUGIN_RUNTIME`
+- `DB_ADAPTER`
+- `ENTITY_REGISTRY`
+- `AUTHZ_SERVICE`
+- `PLUGIN_SECURITY_PROVISIONER`
+- `KERNEL_HEALTH_SERVICE`
+- `LOGGER`
+
+Perche e cruciale:
+
+- in DI, il token e l'interfaccia binaria logica tra moduli;
+- cambia implementazione senza cambiare consumatori.
+
+## 6. Error model e semantica operativa
+
+Directory: `errors/`
+
+Gerarchia:
+
+- `CoreError` base
+- specializzazioni plugin/db
+
+Benefici:
+
+- codici errore stabili (`PLUGIN_LIFECYCLE_ERROR`, ecc.);
+- diagnosi piu rapida in API/log.
+
+## 7. Modulo HTTP trasversale
+
+Directory: `http/`
+
+Componenti principali:
+
+- `KernelHealthHttpController`
+- `CmsSwaggerController`
+- `createPluginApiResponder` (in `api-http-utils.ts`)
+
+Impatto:
+
+- riduce duplicazione controller plugin;
+- garantisce uniformita di presentazione/diagnostica.
+
+## 8. Principi architetturali riassunti
+
+1. Contracts-first.
+2. Runtime con regole esplicite.
+3. Dipendenze tramite token.
+4. Isolamento plugin by design.
+5. API surface coerente.
+6. Error handling tipizzato.
+
+Se uno di questi principi viene violato, il framework perde affidabilita e scalabilita organizzativa.

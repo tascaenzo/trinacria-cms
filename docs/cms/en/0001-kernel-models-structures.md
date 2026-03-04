@@ -1,152 +1,195 @@
-# 0001 - Kernel: Models and Structures (v0.1)
+# 0001 - Kernel: fundamentals, contracts, and public API
 
 ## Goal
 
-Describe the baseline models and structures introduced in the `@trinacria-cms/kernel` kernel during the initial project phase.
+Understand what the kernel exposes, why it exposes it, and how plugin developers should use those public boundaries.
 
-This version covers only **contracts** (interfaces and types), not full runtime implementations.
+## Package map
 
-## Reference architecture decision
+Path: `packages/kernel/src`
 
-The baseline is defined by:
+Main areas:
 
-- [ADR-001: Boundaries between kernel and core-pack](../../adr/ADR-001-core-boundaries.md)
+- `contracts`: public interfaces (`PluginRuntime`, `DbAdapter`, `CmsStarterOptions`, ...)
+- `runtime`: concrete implementations (`InMemoryPluginRuntime`, `MongoDbAdapter`, starter, health)
+- `errors`: typed error model
+- `tokens`: stable DI integration points
+- `http`: cross-cutting HTTP helpers/controllers
+- `index.ts`: public entrypoint and re-exports
 
-Summary:
+## Public entrypoint strategy
 
-- `kernel` contains runtime and platform contracts.
-- `core-pack` contains default implementations (users/roles/permissions/settings).
+`packages/kernel/src/index.ts` exports:
 
-## Structures introduced in the kernel package
+- kernel APIs (`contracts`, `runtime`, `errors`, `tokens`, `http`)
+- re-exports from `@trinacria/core`, `@trinacria/http`, `@trinacria/schema`
 
-Source path:
+Reason:
 
-- `packages/kernel/src/contracts`
+- plugin developers import from one package (`@trinacria-cms/kernel`)
+- lower friction and fewer scattered imports
 
-### 1) Namespace context
+## Core contracts
 
-File:
+### 1. Namespace context
 
-- `packages/kernel/src/contracts/namespace-context.ts`
+File: `contracts/namespace-context.ts`
 
-Models:
+- `NamespaceContext` includes `pluginId` (optional `workspaceId`)
+- `buildNamespaceKey(context)` builds canonical isolation keys
 
-- `NamespaceContext`
-  - `pluginId`: identifies the plugin owning resources.
-  - `workspaceId?`: enables multi-tenant/workspace scoping.
-- `buildNamespaceKey(context)`
-  - builds a canonical namespace key for storage/cache/metrics.
+Why it matters:
 
-Why it exists:
+- prevents cross-plugin collisions
+- provides a foundation for multi-namespace extensions
 
-- prevents cross-plugin collisions;
-- prepares the kernel for tenant/workspace data isolation.
+### 2. Plugin manifest
 
-### 2) Plugin manifest
+File: `contracts/plugin-manifest.ts`
 
-File:
+Main fields:
 
-- `packages/kernel/src/contracts/plugin-manifest.ts`
+- `id`
+- `version`
+- `requiresCore`
+- `capabilities[]`
+- `dependencies[]` (with `optional` + `versionRange`)
+- `security` (declarative `permissions`, `roles`, `grants`)
 
-Models:
+Why it matters:
 
-- `PluginManifest`
-  - `id`, `version`, `requiresCore`
-  - `capabilities?`
-  - `dependencies?`
-- `PluginManifestDependency`
-  - `pluginId`, `versionRange`, `optional?`
+- compatibility becomes machine-verifiable
+- dependency graph and load order become deterministic
 
-Why it exists:
+### 3. Plugin runtime
 
-- defines the minimum contract of an installable plugin;
-- enables compatibility and dependency validation.
+File: `contracts/plugin-runtime.ts`
 
-### 3) Plugin runtime contract
+Main operations:
 
-File:
+- `register`, `load`, `unload`, `reload`, `loadMany`, `disable`, `unregister`, `list`, `describeDependencies`
 
-- `packages/kernel/src/contracts/plugin-runtime.ts`
+States:
 
-Models:
+- `registered`, `loading`, `initializing`, `loaded`, `unloading`, `failed`, `disabled`, `unloaded`
 
-- `PluginState`
-  - `registered | loaded | failed | disabled | unloaded`
-- `PluginRuntimeRecord`
-  - runtime plugin state snapshot (`manifest`, `state`, `loadedAt`, `lastError`)
-- `PluginRuntime`
-  - minimal API: `register`, `load`, `unload`, `disable`, `list`
+Why it matters:
 
-Why it exists:
+- explicit lifecycle contract
+- predictable behavior for operations and troubleshooting
 
-- formalizes runtime plugin lifecycle;
-- defines the public surface for registry/orchestrator implementation.
+### 4. Persistence abstraction
 
-### 4) DB abstraction
+File: `contracts/db-adapter.ts`
 
-File:
+Core abstractions:
 
-- `packages/kernel/src/contracts/db-adapter.ts`
-
-Models:
-
-- `DbQuery<TData>`
-- `DbRepository<TData>`
-- `DbTransaction`
 - `DbAdapter`
+- `DbRepository`
+- `DbQuery`
+- `DbTransaction`
 
-Why it exists:
+Why it matters:
 
-- decouples the kernel from concrete databases;
-- enables MongoDB persistence via Mongoose while keeping core services decoupled.
+- domain modules remain storage-agnostic
+- adapters can evolve without rewriting business logic
 
-### 5) Authorization contract
+### 5. API contract
 
-File:
+File: `contracts/api-contract.ts`
 
-- `packages/kernel/src/contracts/authz-service.ts`
+Envelope shape:
 
-Models:
+- success: `{ data, meta? }`
+- error: `{ error, meta? }`
 
-- `AuthorizationRequest`
-- `AuthorizationResult`
-- `AuthzService`
+Common metadata:
 
-Why it exists:
+- `pluginId`, `count`, `limit`, `offset`, `nextCursor`
 
-- provides a single authorization contract for kernel and plugins;
-- ties permission checks to explicit namespace/workspace context.
+Why it matters:
 
-### 6) Public contract exports
+- client and SDK behavior stays consistent
+- plugin origin is always discoverable in responses
 
-Files:
+### 6. CMS starter contract
 
-- `packages/kernel/src/contracts/index.ts`
-- `packages/kernel/src/index.ts`
+File: `contracts/cms-starter.ts`
 
-Why it exists:
+Defines minimal app bootstrap:
 
-- exposes stable kernel contracts v0.1;
-- avoids direct imports from non-versioned internal paths.
+- HTTP/OpenAPI config
+- Swagger UI config
+- extra modules
+- global providers
+- plugins and autoload
+- automatic security provisioning on load/unregister when a `PluginSecurityProvisioner` is available
 
-## Implementation status
+Why it matters:
 
-Completed:
+- one consistent bootstrap path for all environments
 
-- architecture boundary definition (`kernel` vs `core-pack`);
-- minimum contracts v0.1 in `packages/kernel/src/contracts`;
-- TSDoc comments on key models.
+## Integration tokens
 
-Not completed yet:
+File: `tokens/core-tokens.ts`
 
-- concrete runtime plugin registry implementation;
-- lifecycle orchestration with rollback;
-- concrete DB adapter implementations;
-- concrete authz/rbac implementation.
+Important tokens:
 
-## Next step
+- `CORE_TOKENS.PLUGIN_RUNTIME`
+- `CORE_TOKENS.DB_ADAPTER`
+- `CORE_TOKENS.ENTITY_REGISTRY`
+- `CORE_TOKENS.AUTHZ_SERVICE`
+- `CORE_TOKENS.PLUGIN_SECURITY_PROVISIONER`
+- `CORE_TOKENS.KERNEL_HEALTH_SERVICE`
+- `CORE_TOKENS.LOGGER`
 
-Proceed with the kernel runtime skeleton (next step in the plan):
+Best practice:
 
-- `runtime`, `errors`, `tokens` folders;
-- first placeholder implementations aligned with the contracts defined here.
+- bind to tokens, not concrete classes, to preserve decoupling.
+
+## Typed error model
+
+Kernel uses semantic errors:
+
+- `PluginManifestError`
+- `PluginCompatibilityError`
+- `PluginDependencyError`
+- `PluginLifecycleError`
+- `PluginStateTransitionError`
+- `DbAdapterError`
+
+Benefit:
+
+- clearer failure handling and better operations visibility.
+
+## Entity declaration and registry
+
+`runtime/entity-registry.ts` provides:
+
+- `defineEntity({ entityName, schema, indexes })`
+- `EntityRegistry.register/get`
+
+Benefit:
+
+- canonical schema + index metadata in one declaration
+- avoids schema/entity duplication
+
+## Kernel HTTP helpers
+
+File: `http/api-http-utils.ts`
+
+Key utilities:
+
+- `createPluginApiResponder(pluginId)`
+- `parseQueryNumber(...)`
+- `toApiErrorResponse(...)`
+- `toOpenApiSchema(...)`
+
+Architectural effect:
+
+- thinner controllers
+- consistent API envelopes across plugins
+
+## Conclusion
+
+The kernel enforces platform rules and provides shared infrastructure. Plugins should keep their focus on domain behavior while relying on kernel contracts for runtime, API consistency, and persistence integration.
