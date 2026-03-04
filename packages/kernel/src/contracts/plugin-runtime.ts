@@ -22,6 +22,27 @@ export interface KernelPluginRuntimeContext {
 }
 
 /**
+ * Runtime-level hooks executed by the plugin orchestrator itself.
+ * They are useful for cross-cutting orchestration (for example security provisioning)
+ * without coupling plugin domain code into the runtime implementation.
+ */
+export interface PluginRuntimeLifecycleHooks {
+  /**
+   * Called after plugin modules/hooks completed successfully and before
+   * finalizing the plugin as loaded.
+   */
+  onAfterLoad?(
+    context: KernelPluginRuntimeContext,
+  ): Promise<void> | void;
+  /**
+   * Called before unregistering a plugin definition from the runtime catalog.
+   */
+  onBeforeUnregister?(
+    context: KernelPluginRuntimeContext,
+  ): Promise<void> | void;
+}
+
+/**
  * Optional plugin hooks managed by the CMS kernel runtime.
  * They are distinct from Trinacria plugin hooks and scoped to CMS plugins.
  */
@@ -50,6 +71,7 @@ export interface PluginRuntimeEvent {
   pluginId: string;
   action:
     | "register"
+    | "unregister"
     | "load"
     | "unload"
     | "reload"
@@ -141,6 +163,11 @@ export interface PluginRuntime {
    * Useful for safe runtime module reload.
    */
   reload(pluginId: string): Promise<void>;
+  /**
+   * Removes a plugin definition from the runtime catalog.
+   * Plugin must not be loaded and must have no registered required dependents.
+   */
+  unregister(pluginId: string): Promise<void>;
   /**
    * Loads multiple plugins in topological order based on required dependencies.
    */

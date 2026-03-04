@@ -15,9 +15,51 @@ export function parseQueryNumber(
 }
 
 /**
+ * Reads a path parameter by key with case-insensitive fallback.
+ * Some router adapters normalize parameter keys, so this helper keeps
+ * controllers stable when using camelCase route params.
+ */
+export function parsePathParam(
+  params: Record<string, string | undefined> | undefined,
+  key: string,
+  aliases: readonly string[] = [],
+): string | undefined {
+  if (!params) {
+    return undefined;
+  }
+
+  for (const candidate of [key, ...aliases]) {
+    const direct = params[candidate];
+    if (typeof direct === "string" && direct.length > 0) {
+      return direct;
+    }
+
+    const normalized = candidate.toLowerCase();
+    for (const [paramKey, paramValue] of Object.entries(params)) {
+      if (
+        paramKey.toLowerCase() === normalized &&
+        typeof paramValue === "string" &&
+        paramValue.length > 0
+      ) {
+        return paramValue;
+      }
+    }
+  }
+
+  return undefined;
+}
+
+/**
  * Maps unknown runtime errors to a canonical API error response.
  */
 export function toApiErrorResponse(error: unknown): ApiErrorResponse {
+  if (isCodedError(error)) {
+    return apiError(
+      error.code,
+      error.message ?? "Unexpected error",
+      error.details,
+    );
+  }
   if (error instanceof Error) {
     if (error.message.includes("already exists")) {
       return apiError("conflict", error.message);
@@ -25,6 +67,21 @@ export function toApiErrorResponse(error: unknown): ApiErrorResponse {
     return apiError("validation_error", error.message);
   }
   return apiError("internal_error", "Unexpected error");
+}
+
+function isCodedError(error: unknown): error is {
+  code: string;
+  message?: string;
+  details?: Record<string, unknown>;
+} {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+  const candidate = error as { code?: unknown };
+  return (
+    typeof candidate.code === "string" &&
+    /^[a-z][a-z0-9_]*$/.test(candidate.code.trim())
+  );
 }
 
 export interface PluginApiResponder {

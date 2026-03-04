@@ -6,3 +6,5 @@ export * from "./db-adapter.js";
 export * from "./namespace-context.js";
 export * from "./plugin-manifest.js";
 export * from "./plugin-runtime.js";
+export * from "./plugin-runtime-store.js";
+export * from "./plugin-security-provisioner.js";

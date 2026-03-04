@@ -297,6 +297,68 @@ test("runtime emits lifecycle events and retries failed load when configured", a
   );
 });
 
+test("runtime supports unregister when plugin is not loaded", async () => {
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0" });
+
+  await runtime.register({
+    id: "cms/plugin-temp",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+  });
+
+  await runtime.unregister("cms/plugin-temp");
+  assert.equal(
+    runtime.list().some((item) => item.manifest.id === "cms/plugin-temp"),
+    false,
+  );
+});
+
+test("onBeforeUnregister lifecycle hook is executed", async () => {
+  const app = createFakeApp();
+  const calls: string[] = [];
+  const runtime = new InMemoryPluginRuntime({
+    coreVersion: "0.1.0",
+    app,
+    lifecycleHooks: {
+      onBeforeUnregister(context) {
+        calls.push(context.pluginId);
+      },
+    },
+  });
+
+  await runtime.register({
+    id: "cms/plugin-temp",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+  });
+
+  await runtime.unregister("cms/plugin-temp");
+  assert.deepEqual(calls, ["cms/plugin-temp"]);
+});
+
+test("onAfterLoad lifecycle hook is executed", async () => {
+  const app = createFakeApp();
+  const calls: string[] = [];
+  const runtime = new InMemoryPluginRuntime({
+    coreVersion: "0.1.0",
+    app,
+    lifecycleHooks: {
+      onAfterLoad(context) {
+        calls.push(context.pluginId);
+      },
+    },
+  });
+
+  await runtime.register({
+    id: "cms/plugin-temp",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+  });
+  await runtime.load("cms/plugin-temp");
+
+  assert.deepEqual(calls, ["cms/plugin-temp"]);
+});
+
 function createModule(name: string): ModuleDefinition {
   return { name };
 }

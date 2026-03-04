@@ -43,7 +43,7 @@ interface MongoCollectionLike<TData> {
     filter: Record<string, unknown>,
     patch: Partial<TData> | Record<string, unknown>,
     options?: Record<string, unknown>,
-  ): Promise<{ value: TData | null }>;
+  ): Promise<{ value: TData | null } | TData | null>;
   updateOne(
     filter: Record<string, unknown>,
     patch: Partial<TData> | Record<string, unknown>,
@@ -218,10 +218,11 @@ export class MongoDbAdapter implements DbAdapter {
             ...toWriteOptions(options),
           },
         );
-        if (!result.value) return null;
+        const updatedValue = extractFindOneAndUpdateValue(result);
+        if (!updatedValue) return null;
         return this.applyParser(
           query,
-          this.normalizeReadRecord(result.value, context, entityName),
+          this.normalizeReadRecord(updatedValue, context, entityName),
         );
       },
 
@@ -359,4 +360,20 @@ function toMongoUpdateDocument<TData>(
   if (keys.length === 0) return patch;
   if (keys.some((key) => key.startsWith("$"))) return patch;
   return { $set: patch };
+}
+
+function extractFindOneAndUpdateValue<TData>(
+  value: { value: TData | null } | TData | null,
+): TData | null {
+  if (value === null) return null;
+  if (typeof value !== "object" || Array.isArray(value)) {
+    return value as TData;
+  }
+
+  const maybeRecord = value as Record<string, unknown>;
+  if ("value" in maybeRecord) {
+    return (maybeRecord.value as TData | null) ?? null;
+  }
+
+  return value as TData;
 }

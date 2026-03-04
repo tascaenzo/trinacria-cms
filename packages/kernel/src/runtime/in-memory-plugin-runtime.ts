@@ -2,6 +2,7 @@ import type {
   PluginDependencyGraphSnapshot,
   KernelPluginDefinition,
   KernelPluginRuntimeContext,
+  PluginRuntimeLifecycleHooks,
   PluginRuntimeEvent,
   PluginRuntimeRetryPolicy,
   PluginLifecyclePhase,
@@ -9,6 +10,7 @@ import type {
   PluginRuntimeRecord,
   PluginState,
 } from "../contracts/plugin-runtime.js";
+import type { PluginRuntimeStore } from "../contracts/plugin-runtime-store.js";
 import type { PluginManifestDependency } from "../contracts/plugin-manifest.js";
 import type { ApplicationContext, ModuleDefinition } from "@trinacria/core";
 import {
@@ -28,12 +30,15 @@ import {
   TrinacriaModuleBridge,
   type TrinacriaModuleBridgeApp,
 } from "./trinacria-module-bridge.js";
+import { createInMemoryPluginRuntimeStore } from "./plugin-runtime-store.js";
 
 export interface InMemoryPluginRuntimeOptions {
   coreVersion: string;
   app?: ApplicationContext;
+  lifecycleHooks?: PluginRuntimeLifecycleHooks;
   retryPolicy?: PluginRuntimeRetryPolicy;
   onEvent?: (event: PluginRuntimeEvent) => void;
+  runtimeStore?: PluginRuntimeStore;
 }
 
 const ALLOWED_TRANSITIONS: Readonly<Record<PluginState, readonly PluginState[]>> =
@@ -58,16 +63,21 @@ export class InMemoryPluginRuntime implements PluginRuntime {
   private readonly coreVersion: string;
   private readonly app?: ApplicationContext;
   private readonly moduleBridge?: TrinacriaModuleBridge;
+  private readonly lifecycleHooks?: PluginRuntimeLifecycleHooks;
   private readonly pluginModules = new Map<string, readonly ModuleDefinition[]>();
   private readonly activeLoads = new Set<string>();
   private readonly retryPolicy?: PluginRuntimeRetryPolicy;
   private readonly onEvent?: (event: PluginRuntimeEvent) => void;
+  private readonly runtimeStore: PluginRuntimeStore;
+  private runtimeStoreInitialization?: Promise<void>;
 
   constructor(options: InMemoryPluginRuntimeOptions) {
     this.coreVersion = options.coreVersion;
     this.app = options.app;
+    this.lifecycleHooks = options.lifecycleHooks;
     this.retryPolicy = options.retryPolicy;
     this.onEvent = options.onEvent;
+    this.runtimeStore = options.runtimeStore ?? createInMemoryPluginRuntimeStore();
 
     if (options.app) {
       this.moduleBridge = new TrinacriaModuleBridge(
@@ -79,6 +89,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
   async register(
     plugin: KernelPluginDefinition | PluginRuntimeRecord["manifest"],
   ): Promise<void> {
+    await this.ensureRuntimeStoreInitialized();
     const startedAt = Date.now();
     let definition: KernelPluginDefinition;
     let manifest: PluginRuntimeRecord["manifest"];
@@ -127,6 +138,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
         ...existing,
         manifest,
       });
+      await this.persistRecord(manifest.id);
       this.emitEvent({
         pluginId: manifest.id,
         action: "register",
@@ -152,6 +164,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       disabledAt: undefined,
       disabledReason: undefined,
     });
+    await this.persistRecord(manifest.id);
     this.emitEvent({
       pluginId: manifest.id,
       action: "register",
@@ -163,6 +176,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
   }
 
   async load(pluginId: string): Promise<void> {
+    await this.ensureRuntimeStoreInitialized();
     const record = this.getRecord(pluginId);
     const startedAt = Date.now();
     if (this.activeLoads.has(pluginId)) {
@@ -191,6 +205,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       for (let attempt = 1; attempt <= attempts; attempt += 1) {
         try {
           await this.loadInternal(pluginId, new Set<string>());
+          await this.persistRecord(pluginId);
           this.emitEvent({
             pluginId,
             action: "load",
@@ -202,6 +217,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
           });
           return;
         } catch (error) {
+          await this.persistRecord(pluginId);
           lastError = error;
           const shouldRetry =
             attempt < attempts && this.isRetryableLoadError(error);
@@ -232,6 +248,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
   }
 
   async unload(pluginId: string): Promise<void> {
+    await this.ensureRuntimeStoreInitialized();
     const record = this.getRecord(pluginId);
     if (record.state === "disabled") return;
     if (record.state !== "loaded") {
@@ -277,8 +294,10 @@ export class InMemoryPluginRuntime implements PluginRuntime {
 
       this.pluginModules.set(pluginId, []);
       this.transition(pluginId, "unloaded");
+      await this.persistRecord(pluginId);
     } catch (error) {
       this.markFailed(pluginId, phase, error);
+      await this.persistRecord(pluginId);
       throw this.toLifecycleError(pluginId, phase, error, "unload");
     }
   }
@@ -307,6 +326,51 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     });
   }
 
+  async unregister(pluginId: string): Promise<void> {
+    await this.ensureRuntimeStoreInitialized();
+    const record = this.getRecord(pluginId);
+    const startedAt = Date.now();
+
+    if (record.state === "loaded") {
+      throw new PluginStateTransitionError(
+        `Cannot unregister plugin "${pluginId}" while it is loaded`,
+        { pluginId, from: record.state, action: "unregister" },
+      );
+    }
+
+    this.assertNoRegisteredDependents(pluginId);
+    const definition = this.getDefinition(pluginId);
+
+    try {
+      if (this.lifecycleHooks?.onBeforeUnregister) {
+        const context = this.createContext(definition.manifest);
+        await this.lifecycleHooks.onBeforeUnregister(context);
+      }
+    } catch (error) {
+      throw new PluginRuntimeError(
+        `Plugin "${pluginId}" cannot be unregistered because onBeforeUnregister failed`,
+        {
+          pluginId,
+          cause: this.errorToString(error),
+        },
+      );
+    }
+
+    this.records.delete(pluginId);
+    this.definitions.delete(pluginId);
+    this.pluginModules.delete(pluginId);
+    await this.runtimeStore.remove(pluginId);
+
+    this.emitEvent({
+      pluginId,
+      action: "unregister",
+      success: true,
+      durationMs: Date.now() - startedAt,
+      stateBefore: record.state,
+      stateAfter: undefined,
+    });
+  }
+
   async loadMany(pluginIds?: readonly string[]): Promise<void> {
     const startedAt = Date.now();
     const targets =
@@ -331,6 +395,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
   }
 
   async disable(pluginId: string, reason?: string): Promise<void> {
+    await this.ensureRuntimeStoreInitialized();
     const record = this.getRecord(pluginId);
     const startedAt = Date.now();
     const details = reason ? new Error(reason) : undefined;
@@ -340,6 +405,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
         await this.unload(pluginId);
       } catch (error) {
         this.markDisabled(pluginId, reason, error);
+        await this.persistRecord(pluginId);
         throw new PluginRuntimeError(
           `Plugin "${pluginId}" disabled but unload produced errors`,
           {
@@ -352,6 +418,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     }
 
     this.markDisabled(pluginId, reason, details);
+    await this.persistRecord(pluginId);
     this.emitEvent({
       pluginId,
       action: "disable",
@@ -472,7 +539,8 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     const needsRuntimeContext =
       Boolean(definition.onLoad) ||
       Boolean(definition.onInit) ||
-      Boolean(definition.onUnload);
+      Boolean(definition.onUnload) ||
+      Boolean(this.lifecycleHooks?.onAfterLoad);
     const context = needsRuntimeContext
       ? this.createContext(definition.manifest)
       : undefined;
@@ -497,6 +565,10 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       phase = "init";
       if (definition.onInit && context) {
         await definition.onInit(context);
+      }
+
+      if (this.lifecycleHooks?.onAfterLoad && context) {
+        await this.lifecycleHooks.onAfterLoad(context);
       }
 
       this.records.set(pluginId, {
@@ -725,6 +797,28 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     }
   }
 
+  private assertNoRegisteredDependents(pluginId: string): void {
+    const registeredDependents: string[] = [];
+
+    for (const [candidatePluginId, record] of this.records) {
+      if (candidatePluginId === pluginId) continue;
+      const dependencies = this.extractRequiredDependencies(record.manifest);
+      if (dependencies.some((dependency) => dependency.pluginId === pluginId)) {
+        registeredDependents.push(candidatePluginId);
+      }
+    }
+
+    if (registeredDependents.length > 0) {
+      throw new PluginDependencyError(
+        `Cannot unregister plugin "${pluginId}" while registered dependents exist`,
+        {
+          pluginId,
+          registeredDependents,
+        },
+      );
+    }
+  }
+
   private assertDependencyGraphWithoutCycles(
     registeringPluginId: string,
     registeringDependencies: readonly PluginManifestDependency[],
@@ -822,6 +916,20 @@ export class InMemoryPluginRuntime implements PluginRuntime {
   private async sleep(ms: number): Promise<void> {
     if (ms <= 0) return;
     await new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private async ensureRuntimeStoreInitialized(): Promise<void> {
+    if (!this.runtimeStoreInitialization) {
+      this.runtimeStoreInitialization = this.runtimeStore.initialize();
+    }
+
+    await this.runtimeStoreInitialization;
+  }
+
+  private async persistRecord(pluginId: string): Promise<void> {
+    const record = this.records.get(pluginId);
+    if (!record) return;
+    await this.runtimeStore.upsert(record);
   }
 
   private sortByDependencies(pluginIds: readonly string[]): string[] {

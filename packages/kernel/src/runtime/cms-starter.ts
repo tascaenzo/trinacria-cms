@@ -13,8 +13,15 @@ import type {
   CmsStarterOptions,
 } from "../contracts/cms-starter.js";
 import type { PluginRuntime } from "../contracts/plugin-runtime.js";
+import type { PluginRuntimeStore } from "../contracts/plugin-runtime-store.js";
+import type { PluginSecurityProvisioner } from "../contracts/plugin-security-provisioner.js";
 import { CoreError } from "../errors/core-error.js";
 import { InMemoryPluginRuntime } from "./in-memory-plugin-runtime.js";
+import {
+  createDbPluginRuntimeStore,
+  createDeferredPluginRuntimeStore,
+  createInMemoryPluginRuntimeStore,
+} from "./plugin-runtime-store.js";
 import { CORE_TOKENS } from "../tokens/core-tokens.js";
 import { KernelHealthService } from "./kernel-health-service.js";
 import { KernelHealthHttpController } from "../http/kernel-health.controller.js";
@@ -45,6 +52,8 @@ export async function startCmsApp(
       options.http?.openApi?.title ??
       "Trinacria CMS API Docs",
   };
+  const securityProvisioningEnabled =
+    options.enablePluginSecurityProvisioning !== false;
 
   app.use(
     createHttpPlugin({
@@ -59,13 +68,43 @@ export async function startCmsApp(
     imports: [],
     providers: [
       factoryProvider(
-        CORE_TOKENS.PLUGIN_RUNTIME,
+        CORE_TOKENS.PLUGIN_RUNTIME_STORE,
         () =>
+          options.pluginRuntimeStore ??
+          createDeferredPluginRuntimeStore(() => resolveDefaultRuntimeStore(app)),
+        [],
+      ),
+      factoryProvider(
+        CORE_TOKENS.PLUGIN_RUNTIME,
+        (runtimeStore) =>
           new InMemoryPluginRuntime({
             coreVersion: options.coreVersion,
             app,
+            runtimeStore: runtimeStore as PluginRuntimeStore,
+            lifecycleHooks: {
+              onAfterLoad: async (context) => {
+                if (!securityProvisioningEnabled) return;
+                const provisioner = await resolvePluginSecurityProvisioner(app);
+                if (!provisioner) {
+                  if (hasSecurityDeclarations(context.manifest)) {
+                    throw new CoreError(
+                      "CMS_STARTER_SECURITY_PROVISIONER_MISSING",
+                      `Plugin "${context.pluginId}" declares security metadata but no PluginSecurityProvisioner is available`,
+                    );
+                  }
+                  return;
+                }
+                await provisioner.provision(context.manifest);
+              },
+              onBeforeUnregister: async (context) => {
+                if (!securityProvisioningEnabled) return;
+                const provisioner = await resolvePluginSecurityProvisioner(app);
+                if (!provisioner) return;
+                await provisioner.deprovision(context.manifest);
+              },
+            },
           }),
-        [],
+        [CORE_TOKENS.PLUGIN_RUNTIME_STORE],
       ),
       ...(options.enableHealthModule === false
         ? []
@@ -101,6 +140,7 @@ export async function startCmsApp(
           ]),
     ],
     exports: [
+      CORE_TOKENS.PLUGIN_RUNTIME_STORE,
       CORE_TOKENS.PLUGIN_RUNTIME,
       ...(options.enableHealthModule === false
         ? []
@@ -131,6 +171,45 @@ export async function startCmsApp(
       await app.shutdown();
     },
   };
+}
+
+async function resolveDefaultRuntimeStore(
+  app: TrinacriaApp,
+): Promise<PluginRuntimeStore> {
+  if (!app.hasToken(CORE_TOKENS.DB_ADAPTER)) {
+    return createInMemoryPluginRuntimeStore();
+  }
+
+  const dbAdapter = await app.resolve(CORE_TOKENS.DB_ADAPTER);
+  const entityRegistry = app.hasToken(CORE_TOKENS.ENTITY_REGISTRY)
+    ? await app.resolve(CORE_TOKENS.ENTITY_REGISTRY)
+    : undefined;
+
+  return createDbPluginRuntimeStore({
+    dbAdapter,
+    entityRegistry,
+  });
+}
+
+async function resolvePluginSecurityProvisioner(
+  app: TrinacriaApp,
+): Promise<PluginSecurityProvisioner | null> {
+  if (!app.hasToken(CORE_TOKENS.PLUGIN_SECURITY_PROVISIONER)) {
+    return null;
+  }
+  return app.resolve<PluginSecurityProvisioner>(
+    CORE_TOKENS.PLUGIN_SECURITY_PROVISIONER,
+  );
+}
+
+function hasSecurityDeclarations(
+  manifest: { security?: { permissions?: readonly unknown[]; roles?: readonly unknown[]; grants?: readonly unknown[] } },
+): boolean {
+  return (
+    (manifest.security?.permissions?.length ?? 0) > 0 ||
+    (manifest.security?.roles?.length ?? 0) > 0 ||
+    (manifest.security?.grants?.length ?? 0) > 0
+  );
 }
 
 async function registerAppModules(

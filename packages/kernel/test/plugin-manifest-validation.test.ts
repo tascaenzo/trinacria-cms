@@ -140,3 +140,97 @@ test("assertPluginCompatibility throws on incompatible core version", () => {
     PluginCompatibilityError,
   );
 });
+
+test("validatePluginManifest accepts security declarations", () => {
+  const manifest = validatePluginManifest({
+    id: "blog-pack",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    security: {
+      permissions: [
+        {
+          key: "blog-pack:posts:read",
+          displayName: "Read posts",
+        },
+      ],
+      roles: [
+        {
+          code: "editor",
+          name: "Editor",
+        },
+      ],
+      grants: [
+        {
+          roleCode: "editor",
+          permissionKeys: ["blog-pack:posts:read"],
+        },
+      ],
+    },
+  });
+
+  assert.equal(manifest.security?.permissions?.length, 1);
+  assert.equal(manifest.security?.roles?.length, 1);
+  assert.equal(manifest.security?.grants?.length, 1);
+});
+
+test("validatePluginManifest rejects security permissions owned by another plugin", () => {
+  assert.throws(
+    () =>
+      validatePluginManifest({
+        id: "blog-pack",
+        version: "1.0.0",
+        requiresCore: "^0.1.0",
+        security: {
+          permissions: [
+            {
+              key: "core-pack:users:read",
+              displayName: "Invalid ownership",
+            },
+          ],
+        },
+      }),
+    PluginManifestError,
+  );
+});
+
+test("validatePluginManifest accepts security policy rules", () => {
+  const manifest = validatePluginManifest({
+    id: "blog-pack",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    security: {
+      policyRules: [
+        {
+          roleCode: "editor",
+          effect: "allow",
+          permissionPattern: "blog-pack:posts:*",
+          conditions: ["resource_id_required"],
+        },
+      ],
+    },
+  });
+
+  assert.equal(manifest.security?.policyRules?.length, 1);
+  assert.equal(manifest.security?.policyRules?.[0]?.permissionPattern, "blog-pack:posts:*");
+});
+
+test("validatePluginManifest rejects policy rules for foreign plugin namespace", () => {
+  assert.throws(
+    () =>
+      validatePluginManifest({
+        id: "blog-pack",
+        version: "1.0.0",
+        requiresCore: "^0.1.0",
+        security: {
+          policyRules: [
+            {
+              roleCode: "editor",
+              effect: "deny",
+              permissionPattern: "core-pack:users:*",
+            },
+          ],
+        },
+      }),
+    PluginManifestError,
+  );
+});

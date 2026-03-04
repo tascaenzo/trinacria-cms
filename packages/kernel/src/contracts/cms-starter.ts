@@ -4,6 +4,7 @@ import type {
   KernelPluginDefinition,
   PluginRuntime,
 } from "./plugin-runtime.js";
+import type { PluginRuntimeStore } from "./plugin-runtime-store.js";
 
 /**
  * HTTP bootstrap configuration for the CMS starter.
@@ -39,7 +40,17 @@ export interface CmsStarterOptions {
   globalProviders?: readonly Provider[];
   plugins?: readonly KernelPluginDefinition[];
   enableHealthModule?: boolean;
+  /**
+   * Enables automatic calls to a registered PluginSecurityProvisioner
+   * on plugin load/unregister lifecycle.
+   */
+  enablePluginSecurityProvisioning?: boolean;
   autoLoadPlugins?: boolean;
+  /**
+   * Optional custom persistence backend for plugin runtime state.
+   * If omitted, the starter auto-selects a default store (DbAdapter-backed when available).
+   */
+  pluginRuntimeStore?: PluginRuntimeStore;
 }
 
 /**

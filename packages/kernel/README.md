@@ -5,56 +5,45 @@ Kernel runtime package of Trinacria CMS.
 ## Responsibilities
 
 - plugin contracts
-- runtime lifecycle primitives
+- runtime lifecycle primitives and strict state machine
 - dependency injection contracts
 - kernel provider tokens
-- workspace/settings/auth/rbac contracts
 - DB abstraction contracts and namespace scoping helpers
 - typed runtime/plugin errors
 - manifest validation and compatibility checks
 - MongoDB adapter with Mongoose-compatible bridge
-- plugin runtime observability events, retry policy, and dependency graph snapshot
-
-## Non-goals
-
-`kernel` should not contain HTTP app bootstrapping or domain plugins (for example content/media).
+- runtime observability events, retry policy, dependency graph snapshot
+- runtime state persistence (`PluginRuntimeStore`)
+- starter bootstrap with optional automatic plugin security provisioning
 
 ## Key exports
 
-- contracts: `namespace-context`, `plugin-manifest`, `plugin-runtime`, `db-adapter`, `authz-service`
+- contracts: `plugin-manifest`, `plugin-runtime`, `plugin-runtime-store`, `plugin-security-provisioner`, `db-adapter`, `authz-service`
 - runtime: `validatePluginManifest`, `assertPluginCompatibility`, `InMemoryPluginRuntime`
+- runtime helpers: `isValidPermissionKey`, `parsePermissionKey`
+- pattern helpers: `isValidPermissionPattern`, `matchesPermissionPattern`
 - runtime health: `KernelHealthService`
-- http module: `KernelHealthHttpModule` (`/health`, `/health/dependencies`)
 - persistence: `EntityRegistry`, `MongoDbAdapter`, `createMongoDbAdapter`
-- errors: `CoreError`, `PluginManifestError`, `PluginCompatibilityError`, `PluginRuntimeError`
+- runtime persistence: `DbPluginRuntimeStore`, `InMemoryPluginRuntimeStore`
 - tokens: `CORE_TOKENS`
 
-Runtime highlights:
+## Runtime highlights
 
-- strict plugin state machine
-- lifecycle rollback on load/init/unload failures
-- `loadMany(...)` with dependency-aware ordering
-- `describeDependencies()` snapshot with optional-dependency warnings
-- `KernelHealthService.snapshot()` for runtime + dependency + db aggregated health
-
-Data model policy:
-
-- plugins declare entity schema once via `@trinacria/schema`
-- plugins declare logical indexes in entity definition
-- storage adapter translates index declarations to backend-specific commands
-- plugin repositories stay storage-agnostic
-
-HTTP integration:
-
-- register `KernelHealthHttpModule` in your Trinacria app
-- ensure `createHttpPlugin(...)` is configured in the app
-- expose:
-  - `GET /health`
-  - `GET /health/dependencies`
+- strict plugin transitions
+- dependency graph checks (missing deps, cycles)
+- lifecycle rollback on failure
+- runtime hooks for cross-cutting orchestration:
+  - `onAfterLoad`
+  - `onBeforeUnregister`
+- `unregister(...)` support for plugin uninstall-like flows
+- manifest security validation supports policy rules (`allow`/`deny`, wildcard, conditions)
+- starter auto-selects runtime store:
+  - `DbPluginRuntimeStore` when DB adapter is available
+  - `InMemoryPluginRuntimeStore` fallback otherwise
 
 ## Stability policy
 
-`kernel` contracts are compatibility-critical. Breaking changes should be rare and explicitly versioned.
+Kernel contracts are compatibility-critical. Breaking changes should be explicit and versioned.
 
 ## Scripts
 
@@ -62,4 +51,5 @@ HTTP integration:
 npm run dev -w @trinacria-cms/kernel
 npm run build -w @trinacria-cms/kernel
 npm run typecheck -w @trinacria-cms/kernel
+npm run test -w @trinacria-cms/kernel
 ```

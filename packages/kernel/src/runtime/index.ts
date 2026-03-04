@@ -6,5 +6,7 @@ export * from "./kernel-health-service.js";
 export * from "./mongo-db-adapter.js";
 export * from "./plugin-namespace.js";
 export * from "./plugin-manifest-validation.js";
+export * from "./plugin-runtime-store.js";
+export * from "./permission-key.js";
 export * from "./semver.js";
 export * from "./trinacria-module-bridge.js";

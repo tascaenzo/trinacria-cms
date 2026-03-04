@@ -59,6 +59,14 @@ export interface DbAdapter {
     entityName: string,
     context: NamespaceContext,
   ): DbRepository<TData>;
+  /**
+   * Optional adapter capability to materialize declared entity indexes.
+   * Implementations that do not support it can omit this method.
+   */
+  ensureIndexes?(
+    pluginId: string,
+    entityNames: readonly string[],
+  ): Promise<void>;
   /** Starts a namespaced transaction. */
   beginTransaction(context: NamespaceContext): Promise<DbTransaction>;
   /** Exposes adapter health for health endpoints and readiness checks. */
