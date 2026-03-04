@@ -1,43 +1,93 @@
-# trinacria-cms
+# Trinacria CMS
 
-Monorepo per un CMS headless basato su Trinacria.
+Modular headless CMS built on top of Trinacria.
 
-## Struttura
+## Vision
 
-- `apps/playground`: app di sviluppo/esperimenti (Trinacria + core + core-pack)
-- `apps/admin`: dashboard React
-- `apps/example-frontend`: frontend di esempio per developer
-- `packages/core`: kernel tecnico (plugin contracts, RBAC/settings contracts, registry)
-- `packages/core-pack`: bundle funzionale base (users, roles/permissions, settings, plugin default)
-- `packages/plugin-content`: estensione contenuti
-- `packages/plugin-media`: estensione media
-- `packages/plugin-auth`: estensione auth
-- `packages/sdk`: client SDK TS per consumare le API
+Trinacria CMS targets two usage modes:
 
-## Naming
+- product baseline: install `core` and start quickly
+- developer platform: extend behavior through plugins
 
-- Pacchetti CMS: `@trinacria-cms/*`
-- Dipendenze framework: `@trinacria/*`
+The project keeps a strict separation between kernel contracts and concrete implementations.
 
-## Modello Architetturale
+## Repository layout
 
-- `core` contiene contratti e runtime minimo agnostico.
-- `core-pack` implementa la base pronta all'uso su Trinacria (utenze, ruoli/permessi, impostazioni, plugin first-party).
-- I plugin estendono il CMS senza gonfiare il kernel.
+- `apps/playground`: development and integration playground
+- `apps/api`: headless API runtime with plugin manager and content endpoints
+- `apps/admin`: official admin dashboard (planned)
+- `apps/example-frontend`: frontend integration sample (planned)
+- `packages/kernel`: kernel contracts, runtime primitives, default modules, and DB abstraction
+- `packages/core-pack`: official baseline plugin pack (users/roles/permissions/settings)
+- `docs/cms/en`: official CMS docs in English
+- `docs/cms/it`: Italian CMS docs
+- `docs/trinacria`: local imported Trinacria docs (framework reference)
 
-## Documentazione Trinacria locale
+## Architecture model
 
-Per rendere lo sviluppo con LLM piu autonomo, e presente una copia locale della documentazione Trinacria in:
+### `@trinacria-cms/kernel`
 
-- `docs/trinacria/`
-- indice: `docs/README.md`
+Contains contracts, lifecycle orchestration, DI primitives, plugin/module runtime, storage-agnostic interfaces, typed runtime errors, and plugin security policy support.
 
-Include documentazione tecnica in inglese/italiano, assets e riferimenti root (`README`, `CHANGELOG`, `LICENSE`).
+### `@trinacria-cms/core-pack`
 
-## Quick start
+Official baseline plugin pack loaded by the kernel runtime. It starts as the default CMS feature set and evolves incrementally.
+
+## Development workflow
+
+Branch strategy:
+
+1. `unstable`: daily development
+2. `develop`: integration branch via PR from `unstable`
+3. `main`: stable releases via PR from `develop`
+
+## Local setup
+
+Requirements:
+
+- Node.js 20+
+- npm 11+
+- Docker (for Mongo local runtime)
+
+Install and run playground:
 
 ```bash
 npm install
 docker compose up -d mongo
 npm run dev -w @trinacria-cms/playground
 ```
+
+Run API app:
+
+```bash
+npm run dev -w @trinacria-cms/api
+```
+
+Optional Mongo UI (mongo-express):
+
+```bash
+docker compose --profile tools up -d mongo-express
+```
+
+UI endpoint: `http://localhost:8081`
+
+## Quality checks
+
+```bash
+npm run lint
+npm run format
+npm run build
+npm run test -w @trinacria-cms/kernel
+npm run test:integration
+```
+
+## Documentation
+
+Start here:
+
+- `docs/cms/en/README.md` (official)
+- `docs/cms/it/README.md` (Italian)
+
+Trinacria framework reference:
+
+- `docs/trinacria/README.md`

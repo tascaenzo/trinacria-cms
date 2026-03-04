@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: ["unstable", "develop", "main"]
+  pull_request:
+    branches: ["develop", "main"]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: trinacria
+          MONGO_INITDB_ROOT_PASSWORD: trinacria
+          MONGO_INITDB_DATABASE: trinacria_cms
+        options: >-
+          --health-cmd "mongosh --quiet --eval \"db.adminCommand('ping').ok\""
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      MONGO_URI: mongodb://trinacria:trinacria@127.0.0.1:27017/trinacria_cms?authSource=admin
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
+      - name: Typecheck packages
+        run: |
+          npm run typecheck -w @trinacria-cms/kernel
+          npm run typecheck -w @trinacria-cms/core-pack
+
+      - name: Lint and format check
+        run: |
+          npm run lint
+          npm run format
+
+      - name: Unit tests
+        run: |
+          npm run test -w @trinacria-cms/kernel
+          npm run test -w @trinacria-cms/core-pack
+
+      - name: Integration tests
+        run: npm run test:integration

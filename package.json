@@ -4,12 +4,14 @@
   "version": "0.1.0",
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/kernel",
+    "packages/core-pack"
   ],
   "scripts": {
-    "build": "npm run build -ws --if-present",
-    "dev": "npm run dev -ws --if-present",
-    "test": "npm run test -ws --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "dev": "npm run dev --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:integration": "node --import tsx --test test/**/*.integration.test.ts && npm run test:integration -w @trinacria-cms/kernel",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --check .",
