@@ -13,11 +13,12 @@ This chapter documents `packages/core-pack/src` after the advanced authz extensi
 ## 2. Security module: key files
 
 - `security-provisioning.service.ts`: manifest security sync
-- `user-roles.schemas.ts` / `user-roles.repository.ts` (assignments embedded in `users`)
-- `role-policy-rules.schemas.ts` / `role-policy-rules.repository.ts`
-- `user-access.service.ts`
-- `user-access.controller.ts`
+- `security/user-access/user-roles.schemas.ts` / `security/user-access/user-roles.repository.ts` (assignments embedded in `users`)
+- `security/role-policy-rules/role-policy-rules.schemas.ts` / `security/role-policy-rules/role-policy-rules.repository.ts`
+- `security/user-access/user-access.service.ts`
+- `security/user-access/user-access.controller.ts`
 - `core-pack-authz.service.ts`
+- `openapi-tags.ts`: centralized OpenAPI tags (`Security` tag shared by user-access and role-policy-rules controllers)
 
 ## 3. New responsibilities
 
@@ -40,13 +41,16 @@ Embedded relations:
 
 ## 5. Settings module: key files
 
-- `settings.schemas.ts`: 3 entities (`settings_definitions`, `settings_values`, `settings_secrets`) plus indexes.
+- `settings.schemas.ts`: one unified `settings` entity with discriminator `kind` (`definition`, `value`, `secret`) plus indexes.
 - `settings.service.ts`: application logic (key ownership, default fallback, secret masking).
-- `settings-secrets-crypto.service.ts`: AES-256-GCM encryption/decryption.
-- `settings-plugin-auth.ts`: request canonicalization + HMAC-SHA256 signing.
-- `settings-plugin-auth-key-provider.ts`: `PluginAuthKeyProvider` contract + default env provider.
-- `settings-plugin-auth.service.ts`: timestamp/nonce/signature verification with anti-replay.
-- `settings-plugin-auth.middleware.ts`: stores authenticated plugin caller in `ctx.state`.
+- `settings/definitions/settings-definitions.repository.ts`: definition projection over unified collection.
+- `settings/values/settings-values.repository.ts`: value projection over unified collection.
+- `settings/secrets/settings-secrets.repository.ts`: secret projection over unified collection.
+- `settings/secrets/settings-secrets-crypto.service.ts`: AES-256-GCM encryption/decryption.
+- `settings/auth/settings-plugin-auth.ts`: request canonicalization + HMAC-SHA256 signing.
+- `settings/auth/settings-plugin-auth-key-provider.ts`: `PluginAuthKeyProvider` contract + default env provider.
+- `settings/auth/settings-plugin-auth.service.ts`: timestamp/nonce/signature verification with anti-replay.
+- `settings/auth/settings-plugin-auth.middleware.ts`: stores authenticated plugin caller in `ctx.state`.
 - `settings.controller.ts`: REST API with middleware enforcement on sensitive routes.
 
 ## 6. Plugin caller authentication protocol (settings)

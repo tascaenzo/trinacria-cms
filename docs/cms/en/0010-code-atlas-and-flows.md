@@ -57,8 +57,8 @@ Quick navigation map of the real codebase, updated for plugin-contributed securi
 
 ### Embedded grants
 
-- `modules/roles/role-grants.schemas.ts`
-- `modules/roles/role-grants.repository.ts`
+- `modules/roles/grants/role-grants.schemas.ts`
+- `modules/roles/grants/role-grants.repository.ts`
 
 ## 5. Security provisioning module
 
@@ -99,7 +99,7 @@ Quick navigation map of the real codebase, updated for plugin-contributed securi
 1. `roles.controller.ts#listRoles`
 2. `roles.service.ts#listRoles`
 3. `roles.repository.ts#list`
-4. `role-grants.repository.ts#listByRoleCodes` (reads embedded `roles.permissionGrants[]`)
+4. `roles/grants/role-grants.repository.ts#listByRoleCodes` (reads embedded `roles.permissionGrants[]`)
 5. service merges `permissions[]`
 6. standardized API envelope
 

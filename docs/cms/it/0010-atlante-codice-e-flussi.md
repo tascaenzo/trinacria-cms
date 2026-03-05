@@ -58,8 +58,8 @@ Mappa rapida del codice reale, aggiornata al modello security plugin-contributed
 
 ### Grants embedded
 
-- `modules/roles/role-grants.schemas.ts`
-- `modules/roles/role-grants.repository.ts`
+- `modules/roles/grants/role-grants.schemas.ts`
+- `modules/roles/grants/role-grants.repository.ts`
 
 ## 5. Security provisioning module
 
@@ -100,7 +100,7 @@ Mappa rapida del codice reale, aggiornata al modello security plugin-contributed
 1. `roles.controller.ts#listRoles`
 2. `roles.service.ts#listRoles`
 3. `roles.repository.ts#list`
-4. `role-grants.repository.ts#listByRoleCodes` (sorgente embedded da `roles.permissionGrants[]`)
+4. `roles/grants/role-grants.repository.ts#listByRoleCodes` (sorgente embedded da `roles.permissionGrants[]`)
 5. merge `permissions[]` per ruolo
 6. envelope API con `meta.pluginId`
 

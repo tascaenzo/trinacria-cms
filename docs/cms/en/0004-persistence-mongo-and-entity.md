@@ -64,9 +64,7 @@ Security-relevant entities:
 - `roles` (with `ownerPluginId?`)
 - `role_policy_rules` (with `sourcePluginId`)
 - `users`
-- `settings_definitions`
-- `settings_values`
-- `settings_secrets`
+- `settings` (single collection with `kind`: `definition` | `value` | `secret`)
 
 Relations are no longer stored in join collections:
 
@@ -118,8 +116,7 @@ erDiagram
   "plugin_core_pack__roles" ||--o{ "roles.permissionGrants[]" : "embedded"
   "plugin_core_pack__roles" ||--o{ "plugin_core_pack__role_policy_rules" : "roleCode"
   "plugin_core_pack__permissions" ||--o{ "plugin_core_pack__roles" : "roles.permissions[] (materialized)"
-  "plugin_core_pack__settings_definitions" ||--o{ "plugin_core_pack__settings_values" : "key"
-  "plugin_core_pack__settings_definitions" ||--o{ "plugin_core_pack__settings_secrets" : "key"
+  "plugin_core_pack__settings" ||--o{ "plugin_core_pack__settings" : "same key, different kind"
 
   "plugin_core_pack__users" {
     string id
@@ -152,29 +149,19 @@ erDiagram
     string sourcePluginId
   }
 
-  "plugin_core_pack__settings_definitions" {
+  "plugin_core_pack__settings" {
     string id
     string key
+    string kind
     string ownerPluginId
     string status
-    string defaultValueJson
-  }
-
-  "plugin_core_pack__settings_values" {
-    string id
-    string key
-    string ownerPluginId
-    string valueJson
-    number version
-  }
-
-  "plugin_core_pack__settings_secrets" {
-    string id
-    string key
-    string ownerPluginId
+    object schema
+    object defaultValue
+    object value
     string cipherText
     string algorithm
     string keyVersion
+    number version
   }
 ```
 
@@ -375,6 +362,4 @@ Current note:
 | `plugin_core_pack__roles` | `core-pack` | `id`, `code`, `ownerPluginId`, `permissions[]`, `permissionGrants[]`, `status` | unique `id`, unique `code`, plus `ownerPluginId`, `status` | Role catalog and plugin-owned permission grants. |
 | `plugin_core_pack__permissions` | `core-pack` | `id`, `key`, `sourcePluginId`, `status` | unique `id`, unique `key`, plus `sourcePluginId`, `status` | Canonical namespaced permission catalog. |
 | `plugin_core_pack__role_policy_rules` | `core-pack` | `id`, `roleCode`, `effect`, `permissionPattern`, `conditions[]`, `sourcePluginId` | unique `id`, plus `roleCode`, `sourcePluginId` | Advanced policy rules (`allow/deny`, wildcard, conditions). |
-| `plugin_core_pack__settings_definitions` | `core-pack` | `id`, `key`, `ownerPluginId`, `schemaJson`, `defaultValueJson`, `status` | unique `id`, unique `key`, plus `ownerPluginId`, `status` | Plugin settings contract/definition layer. |
-| `plugin_core_pack__settings_values` | `core-pack` | `id`, `key`, `ownerPluginId`, `valueJson`, `version` | unique `id`, unique `key`, plus `ownerPluginId` | Non-sensitive settings values with versioning. |
-| `plugin_core_pack__settings_secrets` | `core-pack` | `id`, `key`, `ownerPluginId`, `cipherText`, `algorithm`, `keyVersion` | unique `id`, unique `key`, plus `ownerPluginId` | Encrypted secrets at rest (AES-256-GCM), masked metadata in API output. |
+| `plugin_core_pack__settings` | `core-pack` | `id`, `key`, `kind`, `ownerPluginId`, `status`, `schema/defaultValue/value`, `cipherText`, `algorithm`, `keyVersion`, `version` | unique `id`, unique `(kind,key)`, plus `ownerPluginId+kind`, `key` | Unified settings store with logical projections for definitions, values, and encrypted secrets. |
