@@ -54,12 +54,26 @@ export async function startCmsApp(
   };
   const securityProvisioningEnabled =
     options.enablePluginSecurityProvisioning !== false;
+  const openApiConfig = options.http?.openApi;
 
   app.use(
     createHttpPlugin({
       host: options.http?.host ?? "0.0.0.0",
       port: options.http?.port ?? 3000,
-      openApi: options.http?.openApi,
+      openApi: !openApiConfig
+        ? undefined
+        : {
+            ...openApiConfig,
+            transformDocument: (document) => {
+              const withJwtScheme = withJwtBearerSecurityScheme(document);
+              return openApiConfig.transformDocument
+                ? openApiConfig.transformDocument(withJwtScheme)
+                : withJwtScheme;
+            },
+            onDocumentGenerated: (document) => {
+              openApiConfig.onDocumentGenerated?.(document);
+            },
+          },
     }),
   );
 
@@ -225,4 +239,33 @@ async function registerAppModules(
     }
     await app.registerModule(moduleDefinition);
   }
+}
+
+function withJwtBearerSecurityScheme(
+  document: Record<string, unknown>,
+): Record<string, unknown> {
+  const components =
+    document.components && typeof document.components === "object"
+      ? (document.components as Record<string, unknown>)
+      : {};
+  const securitySchemes =
+    components.securitySchemes && typeof components.securitySchemes === "object"
+      ? (components.securitySchemes as Record<string, unknown>)
+      : {};
+
+  return {
+    ...document,
+    components: {
+      ...components,
+      securitySchemes: {
+        ...securitySchemes,
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+          description: "Paste access token as `Bearer <token>`",
+        },
+      },
+    },
+  };
 }

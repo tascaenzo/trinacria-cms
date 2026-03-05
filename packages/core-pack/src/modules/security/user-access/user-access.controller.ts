@@ -45,6 +45,7 @@ export class UserAccessController extends HttpController {
           summary: "List role assignments for a user",
           tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
           operationId: "listUserRoles",
+          security: [{ bearerAuth: [] }],
           responses: {
             200: {
               description: "User role assignments",
@@ -66,6 +67,7 @@ export class UserAccessController extends HttpController {
             summary: "Assign a role to a user",
             tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
             operationId: "assignUserRole",
+            security: [{ bearerAuth: [] }],
             requestBody: {
               required: true,
               schema: toOpenApiSchema(AssignUserRoleInputSchema),
@@ -92,6 +94,7 @@ export class UserAccessController extends HttpController {
             summary: "Remove a role from a user",
             tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
             operationId: "removeUserRole",
+            security: [{ bearerAuth: [] }],
             responses: {
               200: {
                 description: "Removed assignment list",
@@ -114,6 +117,7 @@ export class UserAccessController extends HttpController {
             summary: "List effective permissions for a user",
             tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
             operationId: "listUserEffectivePermissions",
+            security: [{ bearerAuth: [] }],
             responses: {
               200: {
                 description: "Effective permissions",

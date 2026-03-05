@@ -1,11 +1,16 @@
 import {
   apiError,
+  getRequestHeader,
   response,
   type HttpContext,
   type HttpMiddleware,
 } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import { UserRecordSchema, type UserRecord } from "../users/users.schemas.js";
+import {
+  extractAccessTokenFromCookie,
+  readJwtCookieConfigFromEnv,
+} from "./auth-session.js";
 import { JwtAuthError, JwtAuthService } from "./auth.service.js";
 
 export const AUTHENTICATED_USER_STATE_KEY = "corePack.auth.authenticatedUser";
@@ -18,14 +23,16 @@ export function createJwtAuthMiddleware(
   auth: JwtAuthService,
   options?: { requireAdmin?: boolean },
 ): HttpMiddleware {
+  const cookieConfig = readJwtCookieConfigFromEnv();
+
   return async (ctx, next) => {
-    const bearerToken = extractBearerToken(ctx);
-    if (!bearerToken) {
+    const token = extractAuthToken(ctx, cookieConfig);
+    if (!token) {
       return unauthorized("auth_missing_token", "Missing bearer token");
     }
 
     try {
-      const user = await auth.authenticateBearerToken(bearerToken, options);
+      const user = await auth.authenticateBearerToken(token, options);
       ctx.state[AUTHENTICATED_USER_STATE_KEY] = user;
       return next();
     } catch (error) {
@@ -52,47 +59,23 @@ export function getAuthenticatedUser(ctx: HttpContext): UserRecord {
  * Extracts bearer token from Authorization header.
  */
 export function extractBearerToken(ctx: HttpContext): string | null {
-  const header = getHeader(ctx, "authorization");
+  const header = getRequestHeader(ctx, "authorization");
   if (!header) return null;
   const matched = /^Bearer\s+(.+)$/i.exec(header.trim());
   return matched?.[1]?.trim() ?? null;
 }
 
-function getHeader(ctx: HttpContext, name: string): string | undefined {
-  const request = toNodeRequest(ctx.req);
-  const value = request.headers?.[name.toLowerCase()];
-  if (!value) return undefined;
-  return Array.isArray(value) ? value[0] : value;
-}
-
-function toNodeRequest(value: unknown): {
-  headers?: Record<string, string | string[] | undefined>;
-} {
-  if (!value || typeof value !== "object") {
-    return {};
-  }
-
-  const maybeRequest = value as { headers?: unknown };
-  const headersRaw =
-    maybeRequest.headers && typeof maybeRequest.headers === "object"
-      ? (maybeRequest.headers as Record<string, unknown>)
-      : undefined;
-  const headers: Record<string, string | string[] | undefined> = {};
-
-  if (headersRaw) {
-    for (const [key, headerValue] of Object.entries(headersRaw)) {
-      if (typeof headerValue === "string") {
-        headers[key.toLowerCase()] = headerValue;
-      } else if (Array.isArray(headerValue)) {
-        const normalized = headerValue.filter(
-          (item): item is string => typeof item === "string",
-        );
-        headers[key.toLowerCase()] = normalized.length > 0 ? normalized : undefined;
-      }
-    }
-  }
-
-  return { headers };
+/**
+ * Extracts JWT token from Authorization bearer header or access-token cookie.
+ * Header takes precedence over cookie when both are present.
+ */
+export function extractAuthToken(
+  ctx: HttpContext,
+  cookieConfig = readJwtCookieConfigFromEnv(),
+): string | null {
+  const bearerToken = extractBearerToken(ctx);
+  if (bearerToken) return bearerToken;
+  return extractAccessTokenFromCookie(ctx, cookieConfig);
 }
 
 function unauthorized(

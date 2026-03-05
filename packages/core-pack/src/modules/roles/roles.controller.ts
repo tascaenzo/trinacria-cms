@@ -46,6 +46,7 @@ export class RolesController extends HttpController {
           summary: "List roles",
           tags: [CORE_PACK_OPENAPI_TAGS.ROLES],
           operationId: "listRoles",
+          security: [{ bearerAuth: [] }],
           responses: {
             200: {
               description: "Roles list",
@@ -60,6 +61,7 @@ export class RolesController extends HttpController {
           summary: "Get role by id",
           tags: [CORE_PACK_OPENAPI_TAGS.ROLES],
           operationId: "getRoleById",
+          security: [{ bearerAuth: [] }],
           responses: {
             200: {
               description: "Role found",
@@ -78,6 +80,7 @@ export class RolesController extends HttpController {
           summary: "Create role",
           tags: [CORE_PACK_OPENAPI_TAGS.ROLES],
           operationId: "createRole",
+          security: [{ bearerAuth: [] }],
           requestBody: {
             required: true,
             schema: toOpenApiSchema(CreateRoleInputSchema),
@@ -103,6 +106,7 @@ export class RolesController extends HttpController {
             summary: "Update role status",
             tags: [CORE_PACK_OPENAPI_TAGS.ROLES],
             operationId: "updateRoleStatus",
+            security: [{ bearerAuth: [] }],
             requestBody: {
               required: true,
               schema: toOpenApiSchema(UpdateRoleStatusInputSchema),

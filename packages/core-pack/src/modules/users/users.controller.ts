@@ -46,6 +46,7 @@ export class UsersController extends HttpController {
           summary: "List users",
           tags: [CORE_PACK_OPENAPI_TAGS.USERS],
           operationId: "listUsers",
+          security: [{ bearerAuth: [] }],
           responses: {
             200: {
               description: "Users list",
@@ -60,6 +61,7 @@ export class UsersController extends HttpController {
           summary: "Get user by id",
           tags: [CORE_PACK_OPENAPI_TAGS.USERS],
           operationId: "getUserById",
+          security: [{ bearerAuth: [] }],
           responses: {
             200: {
               description: "User found",
@@ -78,6 +80,7 @@ export class UsersController extends HttpController {
           summary: "Create user",
           tags: [CORE_PACK_OPENAPI_TAGS.USERS],
           operationId: "createUser",
+          security: [{ bearerAuth: [] }],
           requestBody: {
             required: true,
             schema: toOpenApiSchema(CreateUserInputSchema)
@@ -103,6 +106,7 @@ export class UsersController extends HttpController {
             summary: "Update user status",
             tags: [CORE_PACK_OPENAPI_TAGS.USERS],
             operationId: "updateUserStatus",
+            security: [{ bearerAuth: [] }],
             requestBody: {
               required: true,
               schema: toOpenApiSchema(UpdateUserStatusInputSchema)

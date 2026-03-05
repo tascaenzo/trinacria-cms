@@ -48,6 +48,7 @@ export class RolePolicyRulesController extends HttpController {
             summary: "List policy rules for a role",
             tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
             operationId: "listRolePolicyRules",
+            security: [{ bearerAuth: [] }],
             responses: {
               200: {
                 description: "Role policy rules list",
@@ -70,6 +71,7 @@ export class RolePolicyRulesController extends HttpController {
             summary: "Create policy rule for a role",
             tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
             operationId: "createRolePolicyRule",
+            security: [{ bearerAuth: [] }],
             requestBody: {
               required: true,
               schema: toOpenApiSchema(CreateRolePolicyRuleInputSchema),
@@ -100,6 +102,7 @@ export class RolePolicyRulesController extends HttpController {
             summary: "Update a role policy rule",
             tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
             operationId: "updateRolePolicyRule",
+            security: [{ bearerAuth: [] }],
             requestBody: {
               required: true,
               schema: toOpenApiSchema(UpdateRolePolicyRuleInputSchema),
@@ -126,6 +129,7 @@ export class RolePolicyRulesController extends HttpController {
             summary: "Delete a role policy rule",
             tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
             operationId: "deleteRolePolicyRule",
+            security: [{ bearerAuth: [] }],
             responses: {
               200: {
                 description: "Role policy rule list after delete",

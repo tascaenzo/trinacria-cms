@@ -10,8 +10,10 @@ import { AuthUsersRepository } from "./auth-users.repository.js";
 
 export interface LoginResult {
   accessToken: string;
+  refreshToken: string;
   tokenType: "Bearer";
   expiresAt: string;
+  refreshExpiresAt: string;
   user: UserRecord;
 }
 
@@ -36,6 +38,7 @@ export class JwtAuthError extends Error {
 export class JwtAuthService {
   private readonly jwtSecret: string;
   private readonly accessTtlSeconds: number;
+  private readonly refreshTtlSeconds: number;
 
   constructor(
     private readonly users: AuthUsersRepository,
@@ -45,6 +48,7 @@ export class JwtAuthService {
   ) {
     this.jwtSecret = readJwtSecretFromEnv();
     this.accessTtlSeconds = readAccessTtlSecondsFromEnv();
+    this.refreshTtlSeconds = readRefreshTtlSecondsFromEnv();
   }
 
   async loginWithPassword(input: {
@@ -73,23 +77,39 @@ export class JwtAuthService {
     }
 
     const nowSeconds = Math.floor(Date.now() / 1000);
-    const exp = nowSeconds + this.accessTtlSeconds;
-    const token = createJwtToken(
+    const accessExp = nowSeconds + this.accessTtlSeconds;
+    const refreshExp = nowSeconds + this.refreshTtlSeconds;
+    const accessToken = createJwtToken(
       {
+        kind: "access",
         sub: user.id,
         pluginId: "core-pack",
         isAdmin: Boolean(installation.adminUserId && installation.adminUserId === user.id),
         iat: nowSeconds,
-        exp,
+        exp: accessExp,
       },
       this.jwtSecret,
     );
-    const expiresAt = new Date(exp * 1000).toISOString();
+    const refreshToken = createJwtToken(
+      {
+        kind: "refresh",
+        sub: user.id,
+        pluginId: "core-pack",
+        isAdmin: Boolean(installation.adminUserId && installation.adminUserId === user.id),
+        iat: nowSeconds,
+        exp: refreshExp,
+      },
+      this.jwtSecret,
+    );
+    const expiresAt = new Date(accessExp * 1000).toISOString();
+    const refreshExpiresAt = new Date(refreshExp * 1000).toISOString();
 
     return {
-      accessToken: token,
+      accessToken,
+      refreshToken,
       tokenType: "Bearer",
       expiresAt,
+      refreshExpiresAt,
       user,
     };
   }
@@ -104,6 +124,9 @@ export class JwtAuthService {
     }
 
     const claims = verifyJwtToken(normalizedToken, this.jwtSecret);
+    if (claims.kind !== "access") {
+      throw new JwtAuthError("auth_invalid_token", "Expected an access token");
+    }
 
     const user = await this.users.findById(claims.sub);
     if (!user || user.status !== "active") {
@@ -131,6 +154,25 @@ export class JwtAuthService {
     return true;
   }
 
+  async authenticateRefreshToken(token: string): Promise<UserRecord> {
+    const normalizedToken = token.trim();
+    if (!normalizedToken) {
+      throw new JwtAuthError("auth_missing_token", "Missing refresh token");
+    }
+
+    const claims = verifyJwtToken(normalizedToken, this.jwtSecret);
+    if (claims.kind !== "refresh") {
+      throw new JwtAuthError("auth_invalid_token", "Expected a refresh token");
+    }
+
+    const user = await this.users.findById(claims.sub);
+    if (!user || user.status !== "active") {
+      throw new JwtAuthError("auth_invalid_user", "JWT user is not active");
+    }
+
+    return user;
+  }
+
   private async assertInstallationCompleted(): Promise<InstallationStateRecord> {
     const state = await this.installationState.ensureCreated();
     if (!state.installed) {
@@ -153,6 +195,16 @@ function readAccessTtlSecondsFromEnv(): number {
   return parsed;
 }
 
+function readRefreshTtlSecondsFromEnv(): number {
+  const raw = process.env.CMS_JWT_REFRESH_TTL_SECONDS?.trim();
+  if (!raw) return 30 * 24 * 60 * 60;
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    throw new Error("CMS_JWT_REFRESH_TTL_SECONDS must be a positive integer");
+  }
+  return parsed;
+}
+
 function readJwtSecretFromEnv(): string {
   const secret = process.env.CMS_JWT_SECRET?.trim();
   if (secret) return secret;
@@ -166,6 +218,7 @@ interface JwtHeader {
 }
 
 interface JwtClaims {
+  kind: "access" | "refresh";
   sub: string;
   pluginId: string;
   isAdmin: boolean;
@@ -216,17 +269,19 @@ function verifyJwtToken(token: string, secret: string): JwtClaims {
 }
 
 function normalizeClaims(payload: Partial<JwtClaims>): JwtClaims {
+  const kind = payload.kind === "refresh" ? "refresh" : payload.kind === "access" ? "access" : "";
   const sub = String(payload.sub ?? "").trim();
   const pluginId = String(payload.pluginId ?? "").trim().toLowerCase();
   const iat = Number(payload.iat);
   const exp = Number(payload.exp);
   const isAdmin = Boolean(payload.isAdmin);
 
-  if (!sub || !pluginId || !Number.isFinite(iat) || !Number.isFinite(exp)) {
+  if (!kind || !sub || !pluginId || !Number.isFinite(iat) || !Number.isFinite(exp)) {
     throw new JwtAuthError("auth_invalid_token", "Invalid JWT claims");
   }
 
   return {
+    kind,
     sub,
     pluginId,
     isAdmin,

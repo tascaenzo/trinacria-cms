@@ -1,5 +1,6 @@
 import { apiError, type ApiErrorResponse } from "../contracts/api-contract.js";
 import { apiSuccess, type ApiResponseMeta } from "../contracts/api-contract.js";
+import type { HttpContext } from "@trinacria/http";
 
 /**
  * Parses a numeric query parameter from Trinacria HttpContext query object.
@@ -47,6 +48,103 @@ export function parsePathParam(
   }
 
   return undefined;
+}
+
+export interface CookieSerializeOptions {
+  path?: string;
+  domain?: string;
+  httpOnly?: boolean;
+  secure?: boolean;
+  sameSite?: "Strict" | "Lax" | "None";
+  maxAgeSeconds?: number;
+  expiresAt?: Date;
+}
+
+/**
+ * Reads a request header value in a runtime-safe way.
+ * Returns the first value when a multi-value header is provided.
+ */
+export function getRequestHeader(
+  ctx: Pick<HttpContext, "req">,
+  name: string,
+): string | undefined {
+  const request = toNodeRequest(ctx.req);
+  const value = request.headers?.[name.toLowerCase()];
+  if (!value) return undefined;
+  return Array.isArray(value) ? value[0] : value;
+}
+
+/**
+ * Parses a Cookie header into a key/value map.
+ */
+export function parseCookieHeader(
+  cookieHeader: string | undefined,
+): Record<string, string> {
+  if (!cookieHeader) return {};
+  const entries = cookieHeader.split(";");
+  const cookies: Record<string, string> = {};
+
+  for (const entry of entries) {
+    const separatorIndex = entry.indexOf("=");
+    if (separatorIndex <= 0) continue;
+    const rawName = entry.slice(0, separatorIndex).trim();
+    const rawValue = entry.slice(separatorIndex + 1).trim();
+    if (!rawName) continue;
+    try {
+      cookies[rawName] = decodeURIComponent(rawValue);
+    } catch {
+      cookies[rawName] = rawValue;
+    }
+  }
+
+  return cookies;
+}
+
+/**
+ * Reads one cookie value from request context.
+ */
+export function getCookieValue(
+  ctx: Pick<HttpContext, "req">,
+  name: string,
+): string | undefined {
+  const cookieHeader = getRequestHeader(ctx, "cookie");
+  const cookies = parseCookieHeader(cookieHeader);
+  return cookies[name];
+}
+
+/**
+ * Serializes a Set-Cookie header value.
+ */
+export function serializeCookie(
+  name: string,
+  value: string,
+  options: CookieSerializeOptions = {},
+): string {
+  const parts: string[] = [`${name}=${encodeURIComponent(value)}`];
+
+  const path = options.path?.trim() || "/";
+  parts.push(`Path=${path}`);
+
+  if (options.domain?.trim()) {
+    parts.push(`Domain=${options.domain.trim()}`);
+  }
+  if (options.httpOnly !== false) {
+    parts.push("HttpOnly");
+  }
+  if (options.secure !== false) {
+    parts.push("Secure");
+  }
+  if (options.sameSite) {
+    parts.push(`SameSite=${options.sameSite}`);
+  }
+  if (options.maxAgeSeconds !== undefined) {
+    parts.push(`Max-Age=${Math.max(0, Math.floor(options.maxAgeSeconds))}`);
+  }
+  if (options.expiresAt) {
+    parts.push(`Expires=${options.expiresAt.toUTCString()}`);
+  }
+
+  return parts.join("; ");
 }
 
 /**
@@ -158,4 +256,35 @@ export function toOpenApiSchema(
     return (schema as { toOpenApi(): Record<string, unknown> }).toOpenApi();
   }
   return schema as Record<string, unknown>;
+}
+
+function toNodeRequest(value: unknown): {
+  headers?: Record<string, string | string[] | undefined>;
+} {
+  if (!value || typeof value !== "object") {
+    return {};
+  }
+
+  const maybeRequest = value as { headers?: unknown };
+  const headersRaw =
+    maybeRequest.headers && typeof maybeRequest.headers === "object"
+      ? (maybeRequest.headers as Record<string, unknown>)
+      : undefined;
+  const headers: Record<string, string | string[] | undefined> = {};
+
+  if (headersRaw) {
+    for (const [key, headerValue] of Object.entries(headersRaw)) {
+      if (typeof headerValue === "string") {
+        headers[key.toLowerCase()] = headerValue;
+      } else if (Array.isArray(headerValue)) {
+        const normalized = headerValue.filter(
+          (item): item is string => typeof item === "string",
+        );
+        headers[key.toLowerCase()] =
+          normalized.length > 0 ? normalized : undefined;
+      }
+    }
+  }
+
+  return { headers };
 }

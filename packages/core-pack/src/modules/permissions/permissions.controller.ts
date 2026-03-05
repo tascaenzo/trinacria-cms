@@ -49,6 +49,7 @@ export class PermissionsController extends HttpController {
             summary: "List permissions",
             tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
             operationId: "listPermissions",
+            security: [{ bearerAuth: [] }],
             responses: {
               200: {
                 description: "Permissions list",
@@ -67,6 +68,7 @@ export class PermissionsController extends HttpController {
             summary: "Get permission by id",
             tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
             operationId: "getPermissionById",
+            security: [{ bearerAuth: [] }],
             responses: {
               200: {
                 description: "Permission found",
@@ -89,6 +91,7 @@ export class PermissionsController extends HttpController {
             summary: "Create permission",
             tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
             operationId: "createPermission",
+            security: [{ bearerAuth: [] }],
             requestBody: {
               required: true,
               schema: toOpenApiSchema(CreatePermissionInputSchema),
@@ -115,6 +118,7 @@ export class PermissionsController extends HttpController {
             summary: "Update permission status",
             tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
             operationId: "updatePermissionStatus",
+            security: [{ bearerAuth: [] }],
             requestBody: {
               required: true,
               schema: toOpenApiSchema(UpdatePermissionStatusInputSchema),

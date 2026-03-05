@@ -1,6 +1,7 @@
 import {
   createPluginApiResponder,
   HttpController,
+  response,
   toOpenApiSchema,
   type HttpContext,
   type HttpMiddleware,
@@ -8,8 +9,13 @@ import {
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import { CORE_PACK_OPENAPI_TAGS } from "../openapi-tags.js";
 import {
+  buildLoginSetCookieHeaders,
+  buildLogoutClearCookieHeaders,
+  readJwtCookieConfigFromEnv,
+} from "./auth-session.js";
+import {
   createJwtAuthMiddleware,
-  extractBearerToken,
+  extractAuthToken,
   getAuthenticatedUser,
 } from "./auth.middleware.js";
 import {
@@ -28,6 +34,7 @@ const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
  */
 export class AuthController extends HttpController {
   private readonly authMiddleware: HttpMiddleware;
+  private readonly cookieConfig = readJwtCookieConfigFromEnv();
 
   constructor(private readonly auth: JwtAuthService) {
     super();
@@ -65,6 +72,7 @@ export class AuthController extends HttpController {
           summary: "Resolve current authenticated user",
           tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
           operationId: "getAuthenticatedUser",
+          security: [{ bearerAuth: [] }],
           responses: {
             200: {
               description: "Authenticated user",
@@ -83,6 +91,7 @@ export class AuthController extends HttpController {
           summary: "Logout current JWT session on client side",
           tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
           operationId: "logoutSession",
+          security: [{ bearerAuth: [] }],
           responses: {
             200: {
               description: "Session revocation result",
@@ -102,7 +111,11 @@ export class AuthController extends HttpController {
     try {
       const payload = LoginWithPasswordInputSchema.parse(ctx.body);
       const session = await this.auth.loginWithPassword(payload);
-      return responder.success(session);
+      return response(responder.success(session), {
+        headers: {
+          "set-cookie": buildLoginSetCookieHeaders(session, this.cookieConfig),
+        },
+      });
     } catch (error) {
       return responder.fromError(error);
     }
@@ -118,12 +131,16 @@ export class AuthController extends HttpController {
 
   private logout = async (ctx: HttpContext) => {
     try {
-      const bearerToken = extractBearerToken(ctx);
-      if (!bearerToken) {
+      const token = extractAuthToken(ctx, this.cookieConfig);
+      if (!token) {
         return responder.invalidRequest("Missing bearer token");
       }
-      const revoked = await this.auth.revokeBearerToken(bearerToken);
-      return responder.success({ revoked });
+      const revoked = await this.auth.revokeBearerToken(token);
+      return response(responder.success({ revoked }), {
+        headers: {
+          "set-cookie": buildLogoutClearCookieHeaders(this.cookieConfig),
+        },
+      });
     } catch (error) {
       return responder.fromError(error);
     }

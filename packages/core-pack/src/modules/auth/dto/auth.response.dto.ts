@@ -26,8 +26,10 @@ export const AuthApiErrorSchema = s.object(
 export const AuthSessionSchema = s.object(
   {
     accessToken: s.string({ trim: true, minLength: 16 }),
+    refreshToken: s.string({ trim: true, minLength: 16 }),
     tokenType: s.literal("Bearer"),
     expiresAt: s.dateTimeString(),
+    refreshExpiresAt: s.dateTimeString(),
     user: UserRecordSchema,
   },
   { strict: true },
@@ -69,4 +71,3 @@ export const AuthErrorResponseSchema = s.object(
   },
   { strict: true },
 );
-

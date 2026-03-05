@@ -18,6 +18,10 @@ export interface CmsHttpConfig {
     title: string;
     version: string;
     description?: string;
+    transformDocument?: (
+      document: Record<string, unknown>,
+    ) => Record<string, unknown>;
+    onDocumentGenerated?: (document: Record<string, unknown>) => void;
   };
 }
 

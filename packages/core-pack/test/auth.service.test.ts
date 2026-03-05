@@ -32,11 +32,39 @@ test("JwtAuthService logs in admin and validates JWT token", async () => {
   });
   assert.equal(session.tokenType, "Bearer");
   assert.equal(session.user.email, "admin@example.com");
+  assert.ok(session.refreshToken.length > 16);
+  assert.ok(session.refreshExpiresAt.length > 10);
 
   const authenticated = await runtime.auth.authenticateBearerToken(
     session.accessToken,
   );
   assert.equal(authenticated.id, session.user.id);
+});
+
+test("JwtAuthService validates refresh token and rejects using it as access token", async () => {
+  const runtime = createRuntime();
+
+  await runtime.installation.bootstrap({
+    email: "admin@example.com",
+    displayName: "Admin",
+    password: "StrongPassword123!",
+  });
+
+  const session = await runtime.auth.loginWithPassword({
+    email: "admin@example.com",
+    password: "StrongPassword123!",
+  });
+
+  const refreshUser = await runtime.auth.authenticateRefreshToken(
+    session.refreshToken,
+  );
+  assert.equal(refreshUser.email, "admin@example.com");
+
+  await assert.rejects(
+    async () => runtime.auth.authenticateBearerToken(session.refreshToken),
+    (error) =>
+      error instanceof JwtAuthError && error.code === "auth_invalid_token",
+  );
 });
 
 test("JwtAuthService rejects login before installation is completed", async () => {
