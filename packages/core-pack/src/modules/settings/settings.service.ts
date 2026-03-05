@@ -12,16 +12,16 @@ import {
 import {
   SettingsDefinitionsRepository,
   type UpsertSettingDefinitionRecordInput,
-} from "./settings-definitions.repository.js";
+} from "./definitions/settings-definitions.repository.js";
 import {
   SettingsValuesRepository,
   type UpsertSettingValueRecordInput,
-} from "./settings-values.repository.js";
+} from "./values/settings-values.repository.js";
 import {
   SettingsSecretsRepository,
   type UpsertSettingSecretRecordInput,
-} from "./settings-secrets.repository.js";
-import { SettingsSecretsCryptoService } from "./settings-secrets-crypto.service.js";
+} from "./secrets/settings-secrets.repository.js";
+import { SettingsSecretsCryptoService } from "./secrets/settings-secrets-crypto.service.js";
 
 export interface SettingsDefinition {
   id: string;

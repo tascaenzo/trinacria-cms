@@ -3,7 +3,8 @@ import {
   HttpController,
   parseQueryNumber,
   toOpenApiSchema,
-  type HttpContext
+  type HttpContext,
+  type HttpMiddleware,
 } from "@trinacria-cms/kernel";
 import {
   CreateUserInputSchema,
@@ -14,6 +15,9 @@ import {
   UsersErrorResponseSchema,
 } from "./dto/index.js";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
+import { CORE_PACK_OPENAPI_TAGS } from "../openapi-tags.js";
+import { createJwtAuthMiddleware } from "../auth/auth.middleware.js";
+import type { JwtAuthService } from "../auth/auth.service.js";
 import type { UsersService } from "./users.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
@@ -22,16 +26,24 @@ const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
  * Public REST API for core-pack users (`/v1/users`).
  */
 export class UsersController extends HttpController {
-  constructor(private readonly users: UsersService) {
+  private readonly adminAuthMiddleware: HttpMiddleware;
+
+  constructor(
+    private readonly users: UsersService,
+    auth: JwtAuthService,
+  ) {
     super();
+    this.adminAuthMiddleware = createJwtAuthMiddleware(auth, {
+      requireAdmin: true,
+    });
   }
 
   routes() {
     return this.router()
-      .get("/v1/users", this.listUsers, {
+      .get("/v1/users", this.listUsers, this.adminAuthMiddleware, {
         docs: {
           summary: "List users",
-          tags: ["Users"],
+          tags: [CORE_PACK_OPENAPI_TAGS.USERS],
           operationId: "listUsers",
           responses: {
             200: {
@@ -41,10 +53,10 @@ export class UsersController extends HttpController {
           }
         }
       })
-      .get("/v1/users/:id", this.getUserById, {
+      .get("/v1/users/:id", this.getUserById, this.adminAuthMiddleware, {
         docs: {
           summary: "Get user by id",
-          tags: ["Users"],
+          tags: [CORE_PACK_OPENAPI_TAGS.USERS],
           operationId: "getUserById",
           responses: {
             200: {
@@ -58,10 +70,10 @@ export class UsersController extends HttpController {
           }
         }
       })
-      .post("/v1/users", this.createUser, {
+      .post("/v1/users", this.createUser, this.adminAuthMiddleware, {
         docs: {
           summary: "Create user",
-          tags: ["Users"],
+          tags: [CORE_PACK_OPENAPI_TAGS.USERS],
           operationId: "createUser",
           requestBody: {
             required: true,
@@ -79,10 +91,14 @@ export class UsersController extends HttpController {
           }
         }
       })
-      .patch("/v1/users/:id/status", this.updateUserStatus, {
+      .patch(
+        "/v1/users/:id/status",
+        this.updateUserStatus,
+        this.adminAuthMiddleware,
+        {
         docs: {
           summary: "Update user status",
-          tags: ["Users"],
+          tags: [CORE_PACK_OPENAPI_TAGS.USERS],
           operationId: "updateUserStatus",
           requestBody: {
             required: true,
@@ -99,7 +115,8 @@ export class UsersController extends HttpController {
             }
           }
         }
-      })
+      },
+      )
       .build();
   }
 

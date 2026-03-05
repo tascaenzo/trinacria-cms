@@ -2,7 +2,7 @@ import { isValidPermissionPattern, s, type Infer } from "@trinacria-cms/kernel";
 import {
   RolePolicyRuleConditionSchema,
   RolePolicyRuleEffectSchema,
-} from "../role-policy-rules.schemas.js";
+} from "../role-policy-rules/role-policy-rules.schemas.js";
 
 /**
  * DTO schema for creating a role policy rule.

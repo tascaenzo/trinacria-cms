@@ -3,13 +3,14 @@ import {
   type DbAdapter,
   type PluginDbScope,
 } from "@trinacria-cms/kernel";
-import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
+import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import {
   SettingDefinitionRecordSchema,
   type SettingDefinitionRecord,
-} from "./settings.schemas.js";
+} from "../settings.schemas.js";
 
-const SETTINGS_DEFINITIONS_ENTITY_NAME = "settings_definitions";
+const SETTINGS_ENTITY_NAME = "settings";
+const DEFINITION_KIND = "definition" as const;
 
 export interface UpsertSettingDefinitionRecordInput {
   key: string;
@@ -37,6 +38,7 @@ export class SettingsDefinitionsRepository {
 
     if (!existing) {
       const created = await this.repository().insertOne({
+        kind: DEFINITION_KIND,
         key: normalizedKey,
         ownerPluginId: normalizedOwner,
         ...(input.category?.trim() ? { category: input.category.trim() } : {}),
@@ -81,7 +83,7 @@ export class SettingsDefinitionsRepository {
 
   async findByKey(key: string): Promise<SettingDefinitionRecord | null> {
     return this.repository().findOne({
-      filter: { key: key.trim().toLowerCase() },
+      filter: { key: key.trim().toLowerCase(), kind: DEFINITION_KIND },
       parse: (value: unknown) => this.parseRecord(value),
     });
   }
@@ -92,9 +94,12 @@ export class SettingsDefinitionsRepository {
     offset?: number;
   }): Promise<readonly SettingDefinitionRecord[]> {
     return this.repository().findMany({
-      ...(options?.ownerPluginId
-        ? { filter: { ownerPluginId: options.ownerPluginId.trim().toLowerCase() } }
-        : {}),
+      filter: {
+        kind: DEFINITION_KIND,
+        ...(options?.ownerPluginId
+          ? { ownerPluginId: options.ownerPluginId.trim().toLowerCase() }
+          : {}),
+      },
       limit: options?.limit,
       offset: options?.offset,
       sort: { createdAt: "desc" },
@@ -104,9 +109,7 @@ export class SettingsDefinitionsRepository {
 
   private repository() {
     this.scope = this.scope ?? createPluginDbScope(this.db, CORE_PACK_PLUGIN_ID);
-    return this.scope.repository<SettingDefinitionRecord>(
-      SETTINGS_DEFINITIONS_ENTITY_NAME,
-    );
+    return this.scope.repository<SettingDefinitionRecord>(SETTINGS_ENTITY_NAME);
   }
 
   private parseRecord(value: unknown): SettingDefinitionRecord {
@@ -119,6 +122,7 @@ export class SettingsDefinitionsRepository {
     if (normalized.description === null) delete normalized.description;
     if (normalized.schemaJson === null) delete normalized.schemaJson;
     if (normalized.defaultValueJson === null) delete normalized.defaultValueJson;
+    if (normalized.status === null) delete normalized.status;
 
     return SettingDefinitionRecordSchema.parse(normalized);
   }

@@ -3,13 +3,14 @@ import {
   type DbAdapter,
   type PluginDbScope,
 } from "@trinacria-cms/kernel";
-import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
+import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import {
   SettingValueRecordSchema,
   type SettingValueRecord,
-} from "./settings.schemas.js";
+} from "../settings.schemas.js";
 
-const SETTINGS_VALUES_ENTITY_NAME = "settings_values";
+const SETTINGS_ENTITY_NAME = "settings";
+const VALUE_KIND = "value" as const;
 
 export interface UpsertSettingValueRecordInput {
   key: string;
@@ -34,6 +35,7 @@ export class SettingsValuesRepository {
 
     if (!existing) {
       const created = await this.repository().insertOne({
+        kind: VALUE_KIND,
         key: normalizedKey,
         ownerPluginId: normalizedOwner,
         valueJson: input.valueJson,
@@ -70,14 +72,17 @@ export class SettingsValuesRepository {
 
   async findByKey(key: string): Promise<SettingValueRecord | null> {
     return this.repository().findOne({
-      filter: { key: key.trim().toLowerCase() },
+      filter: { key: key.trim().toLowerCase(), kind: VALUE_KIND },
       parse: (value: unknown) => this.parseRecord(value),
     });
   }
 
   async listByOwnerPlugin(ownerPluginId: string): Promise<readonly SettingValueRecord[]> {
     return this.repository().findMany({
-      filter: { ownerPluginId: ownerPluginId.trim().toLowerCase() },
+      filter: {
+        ownerPluginId: ownerPluginId.trim().toLowerCase(),
+        kind: VALUE_KIND,
+      },
       sort: { createdAt: "asc" },
       parse: (value: unknown) => this.parseRecord(value),
     });
@@ -85,7 +90,7 @@ export class SettingsValuesRepository {
 
   private repository() {
     this.scope = this.scope ?? createPluginDbScope(this.db, CORE_PACK_PLUGIN_ID);
-    return this.scope.repository<SettingValueRecord>(SETTINGS_VALUES_ENTITY_NAME);
+    return this.scope.repository<SettingValueRecord>(SETTINGS_ENTITY_NAME);
   }
 
   private parseRecord(value: unknown): SettingValueRecord {

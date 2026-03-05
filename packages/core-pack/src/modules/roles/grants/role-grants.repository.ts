@@ -3,7 +3,7 @@ import {
   type DbAdapter,
   type PluginDbScope,
 } from "@trinacria-cms/kernel";
-import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
+import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import {
   EmbeddedRoleGrantSchema,
   RoleGrantRecordSchema,

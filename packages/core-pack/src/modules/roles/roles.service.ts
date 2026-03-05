@@ -3,7 +3,7 @@ import type {
   UpdateRoleStatusInput,
 } from "./dto/roles.input.dto.js";
 import { type RoleRecord } from "./roles.schemas.js";
-import { RoleGrantsRepository } from "./role-grants.repository.js";
+import { RoleGrantsRepository } from "./grants/role-grants.repository.js";
 import { RolesRepository } from "./roles.repository.js";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 

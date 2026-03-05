@@ -4,7 +4,7 @@ import type {
   AuthzService,
 } from "@trinacria-cms/kernel";
 import { CoreError, matchesPermissionPattern } from "@trinacria-cms/kernel";
-import { UserAccessService, type UserAuthorizationRule } from "./user-access.service.js";
+import { UserAccessService, type UserAuthorizationRule } from "./user-access/user-access.service.js";
 
 /**
  * Authz service implementation backed by user-role assignments and role grants.

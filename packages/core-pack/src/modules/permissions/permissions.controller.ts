@@ -4,8 +4,12 @@ import {
   parseQueryNumber,
   toOpenApiSchema,
   type HttpContext,
+  type HttpMiddleware,
 } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
+import { CORE_PACK_OPENAPI_TAGS } from "../openapi-tags.js";
+import { createJwtAuthMiddleware } from "../auth/auth.middleware.js";
+import type { JwtAuthService } from "../auth/auth.service.js";
 import {
   CreatePermissionInputSchema,
   ListPermissionsQuerySchema,
@@ -22,16 +26,28 @@ const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
  * Public REST API for core-pack permissions (`/v1/permissions`).
  */
 export class PermissionsController extends HttpController {
-  constructor(private readonly permissions: PermissionsService) {
+  private readonly adminAuthMiddleware: HttpMiddleware;
+
+  constructor(
+    private readonly permissions: PermissionsService,
+    auth: JwtAuthService,
+  ) {
     super();
+    this.adminAuthMiddleware = createJwtAuthMiddleware(auth, {
+      requireAdmin: true,
+    });
   }
 
   routes() {
     return this.router()
-      .get("/v1/permissions", this.listPermissions, {
+      .get(
+        "/v1/permissions",
+        this.listPermissions,
+        this.adminAuthMiddleware,
+        {
         docs: {
           summary: "List permissions",
-          tags: ["Permissions"],
+          tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
           operationId: "listPermissions",
           responses: {
             200: {
@@ -40,11 +56,16 @@ export class PermissionsController extends HttpController {
             },
           },
         },
-      })
-      .get("/v1/permissions/:id", this.getPermissionById, {
+      },
+      )
+      .get(
+        "/v1/permissions/:id",
+        this.getPermissionById,
+        this.adminAuthMiddleware,
+        {
         docs: {
           summary: "Get permission by id",
-          tags: ["Permissions"],
+          tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
           operationId: "getPermissionById",
           responses: {
             200: {
@@ -57,11 +78,16 @@ export class PermissionsController extends HttpController {
             },
           },
         },
-      })
-      .post("/v1/permissions", this.createPermission, {
+      },
+      )
+      .post(
+        "/v1/permissions",
+        this.createPermission,
+        this.adminAuthMiddleware,
+        {
         docs: {
           summary: "Create permission",
-          tags: ["Permissions"],
+          tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
           operationId: "createPermission",
           requestBody: {
             required: true,
@@ -78,11 +104,16 @@ export class PermissionsController extends HttpController {
             },
           },
         },
-      })
-      .patch("/v1/permissions/:id/status", this.updatePermissionStatus, {
+      },
+      )
+      .patch(
+        "/v1/permissions/:id/status",
+        this.updatePermissionStatus,
+        this.adminAuthMiddleware,
+        {
         docs: {
           summary: "Update permission status",
-          tags: ["Permissions"],
+          tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
           operationId: "updatePermissionStatus",
           requestBody: {
             required: true,
@@ -99,7 +130,8 @@ export class PermissionsController extends HttpController {
             },
           },
         },
-      })
+      },
+      )
       .build();
   }
 

@@ -1,6 +1,6 @@
 import { s } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
-import { RolePolicyRuleRecordSchema } from "../role-policy-rules.schemas.js";
+import { RolePolicyRuleRecordSchema } from "../role-policy-rules/role-policy-rules.schemas.js";
 
 /**
  * Shared API metadata schema for role policy rule endpoints.

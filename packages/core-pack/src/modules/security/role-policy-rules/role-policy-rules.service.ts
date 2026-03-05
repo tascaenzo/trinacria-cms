@@ -1,6 +1,6 @@
 import { isValidPermissionPattern } from "@trinacria-cms/kernel";
-import { CORE_PACK_MANUAL_POLICY_SOURCE } from "../../plugin/core-pack.constants.js";
-import { RolesRepository } from "../roles/roles.repository.js";
+import { CORE_PACK_MANUAL_POLICY_SOURCE } from "../../../plugin/core-pack.constants.js";
+import { RolesRepository } from "../../roles/roles.repository.js";
 import type { UpsertRolePolicyRuleInput } from "./role-policy-rules.repository.js";
 import { RolePolicyRulesRepository } from "./role-policy-rules.repository.js";
 

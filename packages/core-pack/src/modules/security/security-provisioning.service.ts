@@ -8,10 +8,10 @@ import type {
   PluginSecurityProvisioner,
 } from "@trinacria-cms/kernel";
 import { PermissionsRepository } from "../permissions/permissions.repository.js";
-import { RoleGrantsRepository } from "../roles/role-grants.repository.js";
+import { RoleGrantsRepository } from "../roles/grants/role-grants.repository.js";
 import { RolesRepository } from "../roles/roles.repository.js";
-import { RolePolicyRulesRepository } from "./role-policy-rules.repository.js";
-import { UserRolesRepository } from "./user-roles.repository.js";
+import { RolePolicyRulesRepository } from "./role-policy-rules/role-policy-rules.repository.js";
+import { UserRolesRepository } from "./user-access/user-roles.repository.js";
 
 interface NormalizedSecurityManifest {
   permissions: readonly PluginManifestSecurityPermission[];

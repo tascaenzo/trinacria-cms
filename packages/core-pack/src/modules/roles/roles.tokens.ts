@@ -1,6 +1,6 @@
 import { createCapabilityToken, createToken } from "@trinacria-cms/kernel";
 import { RolesController } from "./roles.controller.js";
-import { RoleGrantsRepository } from "./role-grants.repository.js";
+import { RoleGrantsRepository } from "./grants/role-grants.repository.js";
 import { RolesRepository } from "./roles.repository.js";
 import { RolesService } from "./roles.service.js";
 

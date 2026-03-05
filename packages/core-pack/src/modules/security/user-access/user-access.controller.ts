@@ -4,15 +4,19 @@ import {
   parsePathParam,
   toOpenApiSchema,
   type HttpContext,
+  type HttpMiddleware,
 } from "@trinacria-cms/kernel";
-import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
+import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
+import { CORE_PACK_OPENAPI_TAGS } from "../../openapi-tags.js";
+import { createJwtAuthMiddleware } from "../../auth/auth.middleware.js";
+import type { JwtAuthService } from "../../auth/auth.service.js";
 import {
   AssignUserRoleInputSchema,
   UserAccessErrorResponseSchema,
   UserEffectivePermissionsResponseSchema,
   UserRoleAssignmentResponseSchema,
   UserRoleAssignmentsResponseSchema,
-} from "./dto/index.js";
+} from "../dto/index.js";
 import type { UserAccessService } from "./user-access.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
@@ -21,16 +25,24 @@ const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
  * Public REST API for user-role assignments and effective permissions.
  */
 export class UserAccessController extends HttpController {
-  constructor(private readonly access: UserAccessService) {
+  private readonly adminAuthMiddleware: HttpMiddleware;
+
+  constructor(
+    private readonly access: UserAccessService,
+    auth: JwtAuthService,
+  ) {
     super();
+    this.adminAuthMiddleware = createJwtAuthMiddleware(auth, {
+      requireAdmin: true,
+    });
   }
 
   routes() {
     return this.router()
-      .get("/v1/users/:id/roles", this.listUserRoles, {
+      .get("/v1/users/:id/roles", this.listUserRoles, this.adminAuthMiddleware, {
         docs: {
           summary: "List role assignments for a user",
-          tags: ["User Access"],
+          tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
           operationId: "listUserRoles",
           responses: {
             200: {
@@ -44,10 +56,14 @@ export class UserAccessController extends HttpController {
           },
         },
       })
-      .post("/v1/users/:id/roles", this.assignUserRole, {
+      .post(
+        "/v1/users/:id/roles",
+        this.assignUserRole,
+        this.adminAuthMiddleware,
+        {
         docs: {
           summary: "Assign a role to a user",
-          tags: ["User Access"],
+          tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
           operationId: "assignUserRole",
           requestBody: {
             required: true,
@@ -64,11 +80,16 @@ export class UserAccessController extends HttpController {
             },
           },
         },
-      })
-      .delete("/v1/users/:id/roles/:roleCode", this.removeUserRole, {
+      },
+      )
+      .delete(
+        "/v1/users/:id/roles/:roleCode",
+        this.removeUserRole,
+        this.adminAuthMiddleware,
+        {
         docs: {
           summary: "Remove a role from a user",
-          tags: ["User Access"],
+          tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
           operationId: "removeUserRole",
           responses: {
             200: {
@@ -81,11 +102,16 @@ export class UserAccessController extends HttpController {
             },
           },
         },
-      })
-      .get("/v1/users/:id/permissions", this.listUserEffectivePermissions, {
+      },
+      )
+      .get(
+        "/v1/users/:id/permissions",
+        this.listUserEffectivePermissions,
+        this.adminAuthMiddleware,
+        {
         docs: {
           summary: "List effective permissions for a user",
-          tags: ["User Access"],
+          tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
           operationId: "listUserEffectivePermissions",
           responses: {
             200: {
@@ -98,7 +124,8 @@ export class UserAccessController extends HttpController {
             },
           },
         },
-      })
+      },
+      )
       .build();
   }
 

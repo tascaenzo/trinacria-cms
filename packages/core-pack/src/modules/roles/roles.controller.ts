@@ -4,8 +4,12 @@ import {
   parseQueryNumber,
   toOpenApiSchema,
   type HttpContext,
+  type HttpMiddleware,
 } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
+import { CORE_PACK_OPENAPI_TAGS } from "../openapi-tags.js";
+import { createJwtAuthMiddleware } from "../auth/auth.middleware.js";
+import type { JwtAuthService } from "../auth/auth.service.js";
 import {
   CreateRoleInputSchema,
   ListRolesQuerySchema,
@@ -22,16 +26,24 @@ const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
  * Public REST API for core-pack roles (`/v1/roles`).
  */
 export class RolesController extends HttpController {
-  constructor(private readonly roles: RolesService) {
+  private readonly adminAuthMiddleware: HttpMiddleware;
+
+  constructor(
+    private readonly roles: RolesService,
+    auth: JwtAuthService,
+  ) {
     super();
+    this.adminAuthMiddleware = createJwtAuthMiddleware(auth, {
+      requireAdmin: true,
+    });
   }
 
   routes() {
     return this.router()
-      .get("/v1/roles", this.listRoles, {
+      .get("/v1/roles", this.listRoles, this.adminAuthMiddleware, {
         docs: {
           summary: "List roles",
-          tags: ["Roles"],
+          tags: [CORE_PACK_OPENAPI_TAGS.ROLES],
           operationId: "listRoles",
           responses: {
             200: {
@@ -41,10 +53,10 @@ export class RolesController extends HttpController {
           },
         },
       })
-      .get("/v1/roles/:id", this.getRoleById, {
+      .get("/v1/roles/:id", this.getRoleById, this.adminAuthMiddleware, {
         docs: {
           summary: "Get role by id",
-          tags: ["Roles"],
+          tags: [CORE_PACK_OPENAPI_TAGS.ROLES],
           operationId: "getRoleById",
           responses: {
             200: {
@@ -58,10 +70,10 @@ export class RolesController extends HttpController {
           },
         },
       })
-      .post("/v1/roles", this.createRole, {
+      .post("/v1/roles", this.createRole, this.adminAuthMiddleware, {
         docs: {
           summary: "Create role",
-          tags: ["Roles"],
+          tags: [CORE_PACK_OPENAPI_TAGS.ROLES],
           operationId: "createRole",
           requestBody: {
             required: true,
@@ -79,10 +91,14 @@ export class RolesController extends HttpController {
           },
         },
       })
-      .patch("/v1/roles/:id/status", this.updateRoleStatus, {
+      .patch(
+        "/v1/roles/:id/status",
+        this.updateRoleStatus,
+        this.adminAuthMiddleware,
+        {
         docs: {
           summary: "Update role status",
-          tags: ["Roles"],
+          tags: [CORE_PACK_OPENAPI_TAGS.ROLES],
           operationId: "updateRoleStatus",
           requestBody: {
             required: true,
@@ -99,7 +115,8 @@ export class RolesController extends HttpController {
             },
           },
         },
-      })
+      },
+      )
       .build();
   }
 

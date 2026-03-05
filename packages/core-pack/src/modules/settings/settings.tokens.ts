@@ -1,12 +1,12 @@
 import { createCapabilityToken, createToken } from "@trinacria-cms/kernel";
 import { SettingsController } from "./settings.controller.js";
-import { SettingsDefinitionsRepository } from "./settings-definitions.repository.js";
-import type { PluginAuthKeyProvider } from "./settings-plugin-auth-key-provider.js";
-import { SettingsPluginAuthService } from "./settings-plugin-auth.service.js";
-import { SettingsSecretsCryptoService } from "./settings-secrets-crypto.service.js";
-import { SettingsSecretsRepository } from "./settings-secrets.repository.js";
+import { SettingsDefinitionsRepository } from "./definitions/settings-definitions.repository.js";
+import type { PluginAuthKeyProvider } from "./auth/settings-plugin-auth-key-provider.js";
+import { SettingsPluginAuthService } from "./auth/settings-plugin-auth.service.js";
+import { SettingsSecretsCryptoService } from "./secrets/settings-secrets-crypto.service.js";
+import { SettingsSecretsRepository } from "./secrets/settings-secrets.repository.js";
 import { SettingsService } from "./settings.service.js";
-import { SettingsValuesRepository } from "./settings-values.repository.js";
+import { SettingsValuesRepository } from "./values/settings-values.repository.js";
 
 export const SETTINGS_DEFINITIONS_REPOSITORY_TOKEN =
   createToken<SettingsDefinitionsRepository>(

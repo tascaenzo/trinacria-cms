@@ -1,6 +1,6 @@
 import { s } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
-import { UserRoleRecordSchema } from "../user-roles.schemas.js";
+import { UserRoleRecordSchema } from "../user-access/user-roles.schemas.js";
 
 /**
  * Shared API metadata schema for user-access endpoints.

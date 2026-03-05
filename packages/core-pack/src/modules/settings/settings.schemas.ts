@@ -12,14 +12,56 @@ const SettingKeySchema = s
 const PluginIdSchema = s.string({ trim: true, toLowerCase: true, minLength: 1 });
 
 export const SettingDefinitionStatusSchema = s.enum(["active", "disabled"] as const);
+export const SettingRecordKindSchema = s.enum(
+  ["definition", "value", "secret"] as const,
+);
 
 /**
- * Persistent settings definition shape.
- * Dynamic fields are stored as serialized JSON strings.
+ * Unified settings record shape stored in a single collection.
+ * `kind` discriminates definition/value/secret logical views.
+ */
+export const SettingRecordSchema = s.object(
+  {
+    id: s.string({ trim: true, minLength: 1 }),
+    kind: SettingRecordKindSchema,
+    key: SettingKeySchema,
+    ownerPluginId: PluginIdSchema,
+
+    // Definition-specific fields.
+    category: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
+    description: s.string({ trim: true, minLength: 1, maxLength: 500 }).optional(),
+    schemaJson: s.string({ minLength: 2, maxLength: 200000 }).optional(),
+    defaultValueJson: s.string({ minLength: 2, maxLength: 200000 }).optional(),
+
+    // Value-specific fields.
+    valueJson: s.string({ minLength: 2, maxLength: 200000 }).optional(),
+    version: s.number({ int: true, min: 1 }).optional(),
+
+    // Secret-specific fields.
+    cipherText: s.string({ minLength: 8, maxLength: 200000 }).optional(),
+    iv: s.string({ minLength: 8, maxLength: 256 }).optional(),
+    authTag: s.string({ minLength: 8, maxLength: 256 }).optional(),
+    algorithm: s.literal("aes-256-gcm").optional(),
+    keyVersion: s.string({ trim: true, minLength: 1, maxLength: 32 }).optional(),
+
+    // Shared fields.
+    status: SettingDefinitionStatusSchema.optional(),
+    updatedBy: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
+    createdAt: s.dateTimeString(),
+    updatedAt: s.dateTimeString(),
+  },
+  { strict: true },
+);
+
+export type SettingRecord = Infer<typeof SettingRecordSchema>;
+
+/**
+ * Logical projection for definition records in unified settings collection.
  */
 export const SettingDefinitionRecordSchema = s.object(
   {
     id: s.string({ trim: true, minLength: 1 }),
+    kind: s.literal("definition"),
     key: SettingKeySchema,
     ownerPluginId: PluginIdSchema,
     category: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
@@ -35,9 +77,13 @@ export const SettingDefinitionRecordSchema = s.object(
 
 export type SettingDefinitionRecord = Infer<typeof SettingDefinitionRecordSchema>;
 
+/**
+ * Logical projection for explicit value records in unified settings collection.
+ */
 export const SettingValueRecordSchema = s.object(
   {
     id: s.string({ trim: true, minLength: 1 }),
+    kind: s.literal("value"),
     key: SettingKeySchema,
     ownerPluginId: PluginIdSchema,
     valueJson: s.string({ minLength: 2, maxLength: 200000 }),
@@ -52,11 +98,12 @@ export const SettingValueRecordSchema = s.object(
 export type SettingValueRecord = Infer<typeof SettingValueRecordSchema>;
 
 /**
- * Encrypted secrets storage shape.
+ * Logical projection for encrypted secret records in unified settings collection.
  */
 export const SettingSecretRecordSchema = s.object(
   {
     id: s.string({ trim: true, minLength: 1 }),
+    kind: s.literal("secret"),
     key: SettingKeySchema,
     ownerPluginId: PluginIdSchema,
     cipherText: s.string({ minLength: 8, maxLength: 200000 }),
@@ -74,41 +121,20 @@ export const SettingSecretRecordSchema = s.object(
 export type SettingSecretRecord = Infer<typeof SettingSecretRecordSchema>;
 
 /**
- * Settings definitions entity declaration.
+ * Unified settings entity declaration.
+ * All settings records are stored in this single collection.
  */
-export const SETTINGS_DEFINITIONS_ENTITY = defineEntity({
-  entityName: "settings_definitions",
-  schema: SettingDefinitionRecordSchema,
+export const SETTINGS_ENTITY = defineEntity({
+  entityName: "settings",
+  schema: SettingRecordSchema,
   indexes: [
-    { fields: { id: 1 }, unique: true, name: "settings_definitions_id_unique" },
-    { fields: { key: 1 }, unique: true, name: "settings_definitions_key_unique" },
-    { fields: { ownerPluginId: 1 }, name: "settings_definitions_owner_idx" },
-    { fields: { status: 1 }, name: "settings_definitions_status_idx" },
-  ] as const,
-});
-
-/**
- * Settings values entity declaration.
- */
-export const SETTINGS_VALUES_ENTITY = defineEntity({
-  entityName: "settings_values",
-  schema: SettingValueRecordSchema,
-  indexes: [
-    { fields: { id: 1 }, unique: true, name: "settings_values_id_unique" },
-    { fields: { key: 1 }, unique: true, name: "settings_values_key_unique" },
-    { fields: { ownerPluginId: 1 }, name: "settings_values_owner_idx" },
-  ] as const,
-});
-
-/**
- * Settings encrypted secrets entity declaration.
- */
-export const SETTINGS_SECRETS_ENTITY = defineEntity({
-  entityName: "settings_secrets",
-  schema: SettingSecretRecordSchema,
-  indexes: [
-    { fields: { id: 1 }, unique: true, name: "settings_secrets_id_unique" },
-    { fields: { key: 1 }, unique: true, name: "settings_secrets_key_unique" },
-    { fields: { ownerPluginId: 1 }, name: "settings_secrets_owner_idx" },
+    { fields: { id: 1 }, unique: true, name: "settings_id_unique" },
+    {
+      fields: { kind: 1, key: 1 },
+      unique: true,
+      name: "settings_kind_key_unique",
+    },
+    { fields: { ownerPluginId: 1, kind: 1 }, name: "settings_owner_kind_idx" },
+    { fields: { key: 1 }, name: "settings_key_idx" },
   ] as const,
 });

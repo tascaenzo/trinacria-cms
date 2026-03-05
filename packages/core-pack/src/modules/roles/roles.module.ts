@@ -6,8 +6,10 @@ import {
   httpProvider,
   type EntityRegistry,
 } from "@trinacria-cms/kernel";
+import { CorePackAuthModule } from "../auth/auth.module.js";
+import { CORE_PACK_JWT_AUTH_SERVICE_TOKEN } from "../auth/auth.tokens.js";
 import { RolesController } from "./roles.controller.js";
-import { RoleGrantsRepository } from "./role-grants.repository.js";
+import { RoleGrantsRepository } from "./grants/role-grants.repository.js";
 import { ROLES_ENTITY } from "./roles.schemas.js";
 import { RolesRepository } from "./roles.repository.js";
 import { RolesService } from "./roles.service.js";
@@ -24,6 +26,7 @@ import {
  */
 export const CorePackRolesModule = defineModule({
   name: "CorePackRolesModule",
+  imports: [CorePackAuthModule],
   providers: [
     factoryProvider(
       ROLES_ENTITY_REGISTRATION_TOKEN,
@@ -41,7 +44,10 @@ export const CorePackRolesModule = defineModule({
       ROLES_REPOSITORY_TOKEN,
       ROLE_GRANTS_REPOSITORY_TOKEN,
     ]),
-    httpProvider(ROLES_CONTROLLER_TOKEN, RolesController, [ROLES_SERVICE_TOKEN]),
+    httpProvider(ROLES_CONTROLLER_TOKEN, RolesController, [
+      ROLES_SERVICE_TOKEN,
+      CORE_PACK_JWT_AUTH_SERVICE_TOKEN,
+    ]),
   ],
   exports: [
     ROLES_CONTROLLER_TOKEN,

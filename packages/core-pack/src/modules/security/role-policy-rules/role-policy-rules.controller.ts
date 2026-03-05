@@ -4,15 +4,19 @@ import {
   parsePathParam,
   toOpenApiSchema,
   type HttpContext,
+  type HttpMiddleware,
 } from "@trinacria-cms/kernel";
-import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
+import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
+import { CORE_PACK_OPENAPI_TAGS } from "../../openapi-tags.js";
+import { createJwtAuthMiddleware } from "../../auth/auth.middleware.js";
+import type { JwtAuthService } from "../../auth/auth.service.js";
 import {
   CreateRolePolicyRuleInputSchema,
   ListRolePolicyRulesResponseSchema,
   RolePolicyRuleResponseSchema,
   RolePolicyRulesErrorResponseSchema,
   UpdateRolePolicyRuleInputSchema,
-} from "./dto/index.js";
+} from "../dto/index.js";
 import type { RolePolicyRulesService } from "./role-policy-rules.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
@@ -21,16 +25,28 @@ const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
  * Public REST API for role policy rule CRUD operations.
  */
 export class RolePolicyRulesController extends HttpController {
-  constructor(private readonly rules: RolePolicyRulesService) {
+  private readonly adminAuthMiddleware: HttpMiddleware;
+
+  constructor(
+    private readonly rules: RolePolicyRulesService,
+    auth: JwtAuthService,
+  ) {
     super();
+    this.adminAuthMiddleware = createJwtAuthMiddleware(auth, {
+      requireAdmin: true,
+    });
   }
 
   routes() {
     return this.router()
-      .get("/v1/roles/:roleCode/policy-rules", this.listRolePolicyRules, {
+      .get(
+        "/v1/roles/:roleCode/policy-rules",
+        this.listRolePolicyRules,
+        this.adminAuthMiddleware,
+        {
         docs: {
           summary: "List policy rules for a role",
-          tags: ["Role Policy Rules"],
+          tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
           operationId: "listRolePolicyRules",
           responses: {
             200: {
@@ -43,11 +59,16 @@ export class RolePolicyRulesController extends HttpController {
             },
           },
         },
-      })
-      .post("/v1/roles/:roleCode/policy-rules", this.createRolePolicyRule, {
+      },
+      )
+      .post(
+        "/v1/roles/:roleCode/policy-rules",
+        this.createRolePolicyRule,
+        this.adminAuthMiddleware,
+        {
         docs: {
           summary: "Create policy rule for a role",
-          tags: ["Role Policy Rules"],
+          tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
           operationId: "createRolePolicyRule",
           requestBody: {
             required: true,
@@ -68,14 +89,16 @@ export class RolePolicyRulesController extends HttpController {
             },
           },
         },
-      })
+      },
+      )
       .patch(
         "/v1/roles/:roleCode/policy-rules/:ruleId",
         this.updateRolePolicyRule,
+        this.adminAuthMiddleware,
         {
           docs: {
             summary: "Update a role policy rule",
-            tags: ["Role Policy Rules"],
+            tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
             operationId: "updateRolePolicyRule",
             requestBody: {
               required: true,
@@ -97,10 +120,11 @@ export class RolePolicyRulesController extends HttpController {
       .delete(
         "/v1/roles/:roleCode/policy-rules/:ruleId",
         this.deleteRolePolicyRule,
+        this.adminAuthMiddleware,
         {
           docs: {
             summary: "Delete a role policy rule",
-            tags: ["Role Policy Rules"],
+            tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
             operationId: "deleteRolePolicyRule",
             responses: {
               200: {

@@ -7,6 +7,8 @@ import {
   httpProvider,
   type EntityRegistry,
 } from "@trinacria-cms/kernel";
+import { CorePackAuthModule } from "../auth/auth.module.js";
+import { CORE_PACK_JWT_AUTH_SERVICE_TOKEN } from "../auth/auth.tokens.js";
 import { CorePackPermissionsModule } from "../permissions/permissions.module.js";
 import { PERMISSIONS_REPOSITORY_TOKEN } from "../permissions/permissions.tokens.js";
 import { CorePackRolesModule } from "../roles/roles.module.js";
@@ -17,14 +19,14 @@ import {
 import { CorePackUsersModule } from "../users/users.module.js";
 import { USERS_REPOSITORY_TOKEN } from "../users/users.tokens.js";
 import { CorePackAuthzService } from "./core-pack-authz.service.js";
-import { RolePolicyRulesController } from "./role-policy-rules.controller.js";
-import { RolePolicyRulesRepository } from "./role-policy-rules.repository.js";
-import { RolePolicyRulesService } from "./role-policy-rules.service.js";
-import { ROLE_POLICY_RULES_ENTITY } from "./role-policy-rules.schemas.js";
+import { RolePolicyRulesController } from "./role-policy-rules/role-policy-rules.controller.js";
+import { RolePolicyRulesRepository } from "./role-policy-rules/role-policy-rules.repository.js";
+import { RolePolicyRulesService } from "./role-policy-rules/role-policy-rules.service.js";
+import { ROLE_POLICY_RULES_ENTITY } from "./role-policy-rules/role-policy-rules.schemas.js";
 import { CorePackSecurityProvisioningService } from "./security-provisioning.service.js";
-import { UserAccessController } from "./user-access.controller.js";
-import { UserAccessService } from "./user-access.service.js";
-import { UserRolesRepository } from "./user-roles.repository.js";
+import { UserAccessController } from "./user-access/user-access.controller.js";
+import { UserAccessService } from "./user-access/user-access.service.js";
+import { UserRolesRepository } from "./user-access/user-roles.repository.js";
 import {
   CORE_PACK_AUTHZ_SERVICE_TOKEN,
   CORE_PACK_ROLE_POLICY_RULES_REPOSITORY_TOKEN,
@@ -48,7 +50,12 @@ const CORE_PACK_SECURITY_ENTITY_REGISTRATION_TOKEN = createToken<boolean>(
  */
 export const CorePackSecurityModule = defineModule({
   name: "CorePackSecurityModule",
-  imports: [CorePackUsersModule, CorePackRolesModule, CorePackPermissionsModule],
+  imports: [
+    CorePackAuthModule,
+    CorePackUsersModule,
+    CorePackRolesModule,
+    CorePackPermissionsModule,
+  ],
   providers: [
     factoryProvider(
       CORE_PACK_SECURITY_ENTITY_REGISTRATION_TOKEN,
@@ -94,11 +101,15 @@ export const CorePackSecurityModule = defineModule({
     ]),
     httpProvider(CORE_PACK_USER_ACCESS_CONTROLLER_TOKEN, UserAccessController, [
       CORE_PACK_USER_ACCESS_SERVICE_TOKEN,
+      CORE_PACK_JWT_AUTH_SERVICE_TOKEN,
     ]),
     httpProvider(
       CORE_PACK_ROLE_POLICY_RULES_CONTROLLER_TOKEN,
       RolePolicyRulesController,
-      [CORE_PACK_ROLE_POLICY_RULES_SERVICE_TOKEN],
+      [
+        CORE_PACK_ROLE_POLICY_RULES_SERVICE_TOKEN,
+        CORE_PACK_JWT_AUTH_SERVICE_TOKEN,
+      ],
     ),
     factoryProvider(
       CORE_TOKENS.PLUGIN_SECURITY_PROVISIONER,

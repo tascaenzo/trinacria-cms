@@ -8,6 +8,7 @@ import {
   type HttpContext,
 } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
+import { CORE_PACK_OPENAPI_TAGS } from "../openapi-tags.js";
 import {
   ExportPluginSettingsParamSchema,
   ListSettingDefinitionsQuerySchema,
@@ -22,8 +23,8 @@ import { parseJsonValue } from "./settings-json.js";
 import {
   createSettingsPluginAuthMiddleware,
   getAuthenticatedPluginId,
-} from "./settings-plugin-auth.middleware.js";
-import { SettingsPluginAuthService } from "./settings-plugin-auth.service.js";
+} from "./auth/settings-plugin-auth.middleware.js";
+import { SettingsPluginAuthService } from "./auth/settings-plugin-auth.service.js";
 import type { SettingsService } from "./settings.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
@@ -135,7 +136,7 @@ export class SettingsController extends HttpController {
       .get("/v1/settings/definitions", this.listDefinitions, {
         docs: {
           summary: "List setting definitions",
-          tags: ["Settings"],
+          tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
           operationId: "listSettingDefinitions",
           responses: {
             200: {
@@ -154,7 +155,7 @@ export class SettingsController extends HttpController {
       .get("/v1/settings/definitions/:key", this.getDefinitionByKey, {
         docs: {
           summary: "Get setting definition by key",
-          tags: ["Settings"],
+          tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
           operationId: "getSettingDefinitionByKey",
           responses: {
             200: {
@@ -182,7 +183,7 @@ export class SettingsController extends HttpController {
         docs: {
           summary: "Create or update setting definition",
           description: SignedPluginAuthDescription,
-          tags: ["Settings"],
+          tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
           operationId: "upsertSettingDefinition",
           responses: {
             200: {
@@ -210,7 +211,7 @@ export class SettingsController extends HttpController {
       .get("/v1/settings/values/:key", this.getValueByKey, {
         docs: {
           summary: "Resolve setting value by key (explicit or default)",
-          tags: ["Settings"],
+          tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
           operationId: "getSettingValueByKey",
           responses: {
             200: {
@@ -248,7 +249,7 @@ export class SettingsController extends HttpController {
         docs: {
           summary: "Create or update setting value",
           description: SignedPluginAuthDescription,
-          tags: ["Settings"],
+          tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
           operationId: "upsertSettingValue",
           responses: {
             200: {
@@ -281,7 +282,7 @@ export class SettingsController extends HttpController {
         docs: {
           summary: "Read secret metadata (masked)",
           description: SignedPluginAuthDescription,
-          tags: ["Settings"],
+          tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
           operationId: "getSettingSecretMetadata",
           responses: {
             200: {
@@ -314,7 +315,7 @@ export class SettingsController extends HttpController {
         docs: {
           summary: "Create or update encrypted secret",
           description: SignedPluginAuthDescription,
-          tags: ["Settings"],
+          tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
           operationId: "upsertSettingSecret",
           responses: {
             200: {
@@ -347,7 +348,7 @@ export class SettingsController extends HttpController {
         docs: {
           summary: "Reveal secret value (owner only)",
           description: SignedPluginAuthDescription,
-          tags: ["Settings"],
+          tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
           operationId: "revealSettingSecret",
           responses: {
             200: {
@@ -387,7 +388,7 @@ export class SettingsController extends HttpController {
         docs: {
           summary: "Export plugin settings snapshot with masked secrets",
           description: SignedPluginAuthDescription,
-          tags: ["Settings"],
+          tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
           operationId: "exportPluginSettings",
           responses: {
             200: {

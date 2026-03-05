@@ -7,18 +7,16 @@ import {
   type EntityRegistry,
 } from "@trinacria-cms/kernel";
 import { SettingsController } from "./settings.controller.js";
-import { SettingsDefinitionsRepository } from "./settings-definitions.repository.js";
-import { EnvPluginAuthKeyProvider } from "./settings-plugin-auth-key-provider.js";
-import { SettingsPluginAuthService } from "./settings-plugin-auth.service.js";
-import { SettingsSecretsCryptoService } from "./settings-secrets-crypto.service.js";
-import { SettingsSecretsRepository } from "./settings-secrets.repository.js";
+import { SettingsDefinitionsRepository } from "./definitions/settings-definitions.repository.js";
+import { EnvPluginAuthKeyProvider } from "./auth/settings-plugin-auth-key-provider.js";
+import { SettingsPluginAuthService } from "./auth/settings-plugin-auth.service.js";
+import { SettingsSecretsCryptoService } from "./secrets/settings-secrets-crypto.service.js";
+import { SettingsSecretsRepository } from "./secrets/settings-secrets.repository.js";
 import {
-  SETTINGS_DEFINITIONS_ENTITY,
-  SETTINGS_SECRETS_ENTITY,
-  SETTINGS_VALUES_ENTITY,
+  SETTINGS_ENTITY,
 } from "./settings.schemas.js";
 import { SettingsService } from "./settings.service.js";
-import { SettingsValuesRepository } from "./settings-values.repository.js";
+import { SettingsValuesRepository } from "./values/settings-values.repository.js";
 import {
   SETTINGS_CONTROLLER_TOKEN,
   SETTINGS_DEFINITIONS_REPOSITORY_TOKEN,
@@ -32,7 +30,7 @@ import {
 } from "./settings.tokens.js";
 
 /**
- * Settings module wiring for definitions, values and encrypted secrets.
+ * Settings module wiring over a single unified settings collection.
  */
 export const CorePackSettingsModule = defineModule({
   name: "CorePackSettingsModule",
@@ -40,9 +38,7 @@ export const CorePackSettingsModule = defineModule({
     factoryProvider(
       SETTINGS_ENTITY_REGISTRATION_TOKEN,
       (registry) => {
-        (registry as EntityRegistry).register(SETTINGS_DEFINITIONS_ENTITY);
-        (registry as EntityRegistry).register(SETTINGS_VALUES_ENTITY);
-        (registry as EntityRegistry).register(SETTINGS_SECRETS_ENTITY);
+        (registry as EntityRegistry).register(SETTINGS_ENTITY);
         return true;
       },
       [CORE_TOKENS.ENTITY_REGISTRY],

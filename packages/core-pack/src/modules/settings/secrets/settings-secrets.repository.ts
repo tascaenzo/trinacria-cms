@@ -3,13 +3,14 @@ import {
   type DbAdapter,
   type PluginDbScope,
 } from "@trinacria-cms/kernel";
-import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
+import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import {
   SettingSecretRecordSchema,
   type SettingSecretRecord,
-} from "./settings.schemas.js";
+} from "../settings.schemas.js";
 
-const SETTINGS_SECRETS_ENTITY_NAME = "settings_secrets";
+const SETTINGS_ENTITY_NAME = "settings";
+const SECRET_KIND = "secret" as const;
 
 export interface UpsertSettingSecretRecordInput {
   key: string;
@@ -38,6 +39,7 @@ export class SettingsSecretsRepository {
 
     if (!existing) {
       const created = await this.repository().insertOne({
+        kind: SECRET_KIND,
         key: normalizedKey,
         ownerPluginId: normalizedOwner,
         cipherText: input.cipherText,
@@ -80,14 +82,17 @@ export class SettingsSecretsRepository {
 
   async findByKey(key: string): Promise<SettingSecretRecord | null> {
     return this.repository().findOne({
-      filter: { key: key.trim().toLowerCase() },
+      filter: { key: key.trim().toLowerCase(), kind: SECRET_KIND },
       parse: (value: unknown) => this.parseRecord(value),
     });
   }
 
   async listByOwnerPlugin(ownerPluginId: string): Promise<readonly SettingSecretRecord[]> {
     return this.repository().findMany({
-      filter: { ownerPluginId: ownerPluginId.trim().toLowerCase() },
+      filter: {
+        ownerPluginId: ownerPluginId.trim().toLowerCase(),
+        kind: SECRET_KIND,
+      },
       sort: { createdAt: "asc" },
       parse: (value: unknown) => this.parseRecord(value),
     });
@@ -95,7 +100,7 @@ export class SettingsSecretsRepository {
 
   private repository() {
     this.scope = this.scope ?? createPluginDbScope(this.db, CORE_PACK_PLUGIN_ID);
-    return this.scope.repository<SettingSecretRecord>(SETTINGS_SECRETS_ENTITY_NAME);
+    return this.scope.repository<SettingSecretRecord>(SETTINGS_ENTITY_NAME);
   }
 
   private parseRecord(value: unknown): SettingSecretRecord {
