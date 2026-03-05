@@ -7,12 +7,12 @@ import type {
   DbRepository,
 } from "@trinacria-cms/kernel";
 import { PermissionsRepository } from "../src/modules/permissions/permissions.repository.js";
-import { RoleGrantsRepository } from "../src/modules/roles/role-grants.repository.js";
+import { RoleGrantsRepository } from "../src/modules/roles/grants/role-grants.repository.js";
 import { RolesRepository } from "../src/modules/roles/roles.repository.js";
 import { CorePackAuthzService } from "../src/modules/security/core-pack-authz.service.js";
-import { RolePolicyRulesRepository } from "../src/modules/security/role-policy-rules.repository.js";
-import { UserAccessService } from "../src/modules/security/user-access.service.js";
-import { UserRolesRepository } from "../src/modules/security/user-roles.repository.js";
+import { RolePolicyRulesRepository } from "../src/modules/security/role-policy-rules/role-policy-rules.repository.js";
+import { UserAccessService } from "../src/modules/security/user-access/user-access.service.js";
+import { UserRolesRepository } from "../src/modules/security/user-access/user-roles.repository.js";
 import { UsersRepository } from "../src/modules/users/users.repository.js";
 import { UsersService } from "../src/modules/users/users.service.js";
 

@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { DbAdapter, DbQuery, DbRepository } from "@trinacria-cms/kernel";
 import { RolesRepository } from "../src/modules/roles/roles.repository.js";
-import { RolePolicyRulesRepository } from "../src/modules/security/role-policy-rules.repository.js";
-import { RolePolicyRulesService } from "../src/modules/security/role-policy-rules.service.js";
+import { RolePolicyRulesRepository } from "../src/modules/security/role-policy-rules/role-policy-rules.repository.js";
+import { RolePolicyRulesService } from "../src/modules/security/role-policy-rules/role-policy-rules.service.js";
 
 test("RolePolicyRulesService supports CRUD by role code", async () => {
   const db = createFakeDbAdapter();

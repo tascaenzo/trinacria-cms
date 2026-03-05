@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { DbAdapter, DbQuery, DbRepository } from "@trinacria-cms/kernel";
-import { SettingsDefinitionsRepository } from "../src/modules/settings/settings-definitions.repository.js";
-import { SettingsSecretsCryptoService } from "../src/modules/settings/settings-secrets-crypto.service.js";
-import { SettingsSecretsRepository } from "../src/modules/settings/settings-secrets.repository.js";
+import { SettingsDefinitionsRepository } from "../src/modules/settings/definitions/settings-definitions.repository.js";
+import { SettingsSecretsCryptoService } from "../src/modules/settings/secrets/settings-secrets-crypto.service.js";
+import { SettingsSecretsRepository } from "../src/modules/settings/secrets/settings-secrets.repository.js";
 import { SettingsService } from "../src/modules/settings/settings.service.js";
-import { SettingsValuesRepository } from "../src/modules/settings/settings-values.repository.js";
+import { SettingsValuesRepository } from "../src/modules/settings/values/settings-values.repository.js";
 
 test("SettingsService resolves defaults and explicit values", async () => {
   const service = createSettingsService();

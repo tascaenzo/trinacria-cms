@@ -1,162 +1,149 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { DbAdapter, DbQuery, DbRepository, PluginManifest } from "@trinacria-cms/kernel";
+import type { DbAdapter, DbQuery, DbRepository } from "@trinacria-cms/kernel";
+import { AuthUsersRepository } from "../src/modules/auth/auth-users.repository.js";
+import { JwtAuthError, JwtAuthService } from "../src/modules/auth/auth.service.js";
+import { LocalCredentialsRepository } from "../src/modules/installation/local-credentials.repository.js";
+import { InstallationService } from "../src/modules/installation/installation.service.js";
+import { InstallationStateRepository } from "../src/modules/installation/installation-state.repository.js";
+import { PasswordHashingService } from "../src/modules/installation/password-hashing.service.js";
 import { PermissionsRepository } from "../src/modules/permissions/permissions.repository.js";
 import { RoleGrantsRepository } from "../src/modules/roles/grants/role-grants.repository.js";
 import { RolesRepository } from "../src/modules/roles/roles.repository.js";
 import { CorePackSecurityProvisioningService } from "../src/modules/security/security-provisioning.service.js";
 import { RolePolicyRulesRepository } from "../src/modules/security/role-policy-rules/role-policy-rules.repository.js";
+import { UserAccessService } from "../src/modules/security/user-access/user-access.service.js";
 import { UserRolesRepository } from "../src/modules/security/user-access/user-roles.repository.js";
+import { UsersRepository } from "../src/modules/users/users.repository.js";
 
-test("security provisioning syncs plugin-owned permissions, roles and grants", async () => {
+test("JwtAuthService logs in admin and validates JWT token", async () => {
+  const runtime = createRuntime();
+
+  const bootstrap = await runtime.installation.bootstrap({
+    email: "admin@example.com",
+    displayName: "Admin",
+    password: "StrongPassword123!",
+  });
+  assert.equal(bootstrap.status.installed, true);
+
+  const session = await runtime.auth.loginWithPassword({
+    email: "admin@example.com",
+    password: "StrongPassword123!",
+  });
+  assert.equal(session.tokenType, "Bearer");
+  assert.equal(session.user.email, "admin@example.com");
+
+  const authenticated = await runtime.auth.authenticateBearerToken(
+    session.accessToken,
+  );
+  assert.equal(authenticated.id, session.user.id);
+});
+
+test("JwtAuthService rejects login before installation is completed", async () => {
+  const runtime = createRuntime();
+
+  await assert.rejects(
+    async () =>
+      runtime.auth.loginWithPassword({
+        email: "admin@example.com",
+        password: "StrongPassword123!",
+      }),
+    (error) =>
+      error instanceof JwtAuthError && error.code === "installation_not_completed",
+  );
+});
+
+test("JwtAuthService forbids non-admin token on admin-required auth", async () => {
+  const runtime = createRuntime();
+
+  await runtime.installation.bootstrap({
+    email: "admin@example.com",
+    displayName: "Admin",
+    password: "StrongPassword123!",
+  });
+
+  const user = await runtime.users.create({
+    email: "operator@example.com",
+    displayName: "Operator",
+  });
+  const password = await runtime.passwordHashing.hashPassword("AnotherStrongPass123!");
+  await runtime.localCredentials.upsert({
+    userId: user.id,
+    algorithm: password.algorithm,
+    passwordHash: password.passwordHash,
+    passwordSalt: password.passwordSalt,
+  });
+
+  const session = await runtime.auth.loginWithPassword({
+    email: "operator@example.com",
+    password: "AnotherStrongPass123!",
+  });
+
+  await assert.rejects(
+    async () => runtime.auth.authenticateBearerToken(session.accessToken),
+    (error) =>
+      error instanceof JwtAuthError &&
+      error.code === "auth_forbidden_admin_required",
+  );
+});
+
+interface Runtime {
+  auth: JwtAuthService;
+  installation: InstallationService;
+  users: UsersRepository;
+  localCredentials: LocalCredentialsRepository;
+  passwordHashing: PasswordHashingService;
+}
+
+function createRuntime(): Runtime {
   const db = createFakeDbAdapter();
+  const users = new UsersRepository(db);
   const roles = new RolesRepository(db);
-  const grants = new RoleGrantsRepository(db);
+  const roleGrants = new RoleGrantsRepository(db);
   const rolePolicyRules = new RolePolicyRulesRepository(db);
   const permissions = new PermissionsRepository(db);
   const userRoles = new UserRolesRepository(db);
-  const service = new CorePackSecurityProvisioningService(
+  const userAccess = new UserAccessService(
+    users,
     roles,
-    grants,
+    roleGrants,
     rolePolicyRules,
     permissions,
     userRoles,
   );
+  const securityProvisioning = new CorePackSecurityProvisioningService(
+    roles,
+    roleGrants,
+    rolePolicyRules,
+    permissions,
+    userRoles,
+  );
+  const installationState = new InstallationStateRepository(db);
+  const localCredentials = new LocalCredentialsRepository(db);
+  const passwordHashing = new PasswordHashingService();
+  const installation = new InstallationService(
+    installationState,
+    localCredentials,
+    users,
+    userAccess,
+    securityProvisioning,
+    passwordHashing,
+  );
+  const auth = new JwtAuthService(
+    new AuthUsersRepository(db),
+    localCredentials,
+    installationState,
+    passwordHashing,
+  );
 
-  const pluginManifest: PluginManifest = {
-    id: "blog-pack",
-    version: "1.0.0",
-    requiresCore: "^0.1.0",
-    security: {
-      permissions: [
-        { key: "blog-pack:posts:read", displayName: "Read posts" },
-        { key: "blog-pack:posts:write", displayName: "Write posts" },
-      ],
-      roles: [{ code: "editor", name: "Editor" }],
-      grants: [
-        {
-          roleCode: "editor",
-          permissionKeys: ["blog-pack:posts:read", "blog-pack:posts:write"],
-        },
-      ],
-      policyRules: [
-        {
-          roleCode: "editor",
-          effect: "allow",
-          permissionPattern: "blog-pack:posts:*",
-        },
-      ],
-    },
+  return {
+    auth,
+    installation,
+    users,
+    localCredentials,
+    passwordHashing,
   };
-
-  await service.provision(pluginManifest);
-
-  const editor = await roles.findByCode("editor");
-  assert.ok(editor);
-  assert.equal(editor.ownerPluginId, "blog-pack");
-
-  const roleGrants = await grants.listByRoleCode("editor");
-  assert.deepEqual(
-    roleGrants.map((item) => item.permissionKey).sort(),
-    ["blog-pack:posts:read", "blog-pack:posts:write"],
-  );
-
-  const ownedPermissions = await permissions.listBySourcePlugin("blog-pack");
-  assert.equal(ownedPermissions.length, 2);
-  const provisionedPolicyRules =
-    await rolePolicyRules.listBySourcePlugin("blog-pack");
-  assert.equal(provisionedPolicyRules.length, 1);
-  assert.equal(
-    provisionedPolicyRules[0]?.permissionPattern,
-    "blog-pack:posts:*",
-  );
-
-  await service.provision({
-    ...pluginManifest,
-    security: {
-      permissions: [{ key: "blog-pack:posts:read", displayName: "Read posts" }],
-      roles: [{ code: "editor", name: "Editor" }],
-      grants: [
-        {
-          roleCode: "editor",
-          permissionKeys: ["blog-pack:posts:read"],
-        },
-      ],
-      policyRules: [],
-    },
-  });
-
-  const syncedPermissions = await permissions.listBySourcePlugin("blog-pack");
-  assert.deepEqual(syncedPermissions.map((item) => item.key), [
-    "blog-pack:posts:read",
-  ]);
-  const syncedGrants = await grants.listByRoleCode("editor");
-  assert.deepEqual(syncedGrants.map((item) => item.permissionKey), [
-    "blog-pack:posts:read",
-  ]);
-  const syncedPolicyRules = await rolePolicyRules.listBySourcePlugin("blog-pack");
-  assert.equal(syncedPolicyRules.length, 0);
-});
-
-test("deprovision keeps role as disabled when foreign plugin grants still exist", async () => {
-  const db = createFakeDbAdapter();
-  const roles = new RolesRepository(db);
-  const grants = new RoleGrantsRepository(db);
-  const rolePolicyRules = new RolePolicyRulesRepository(db);
-  const permissions = new PermissionsRepository(db);
-  const userRoles = new UserRolesRepository(db);
-  const service = new CorePackSecurityProvisioningService(
-    roles,
-    grants,
-    rolePolicyRules,
-    permissions,
-    userRoles,
-  );
-
-  await service.provision({
-    id: "blog-pack",
-    version: "1.0.0",
-    requiresCore: "^0.1.0",
-    security: {
-      permissions: [{ key: "blog-pack:posts:read", displayName: "Read posts" }],
-      roles: [{ code: "editor", name: "Editor" }],
-      grants: [
-        {
-          roleCode: "editor",
-          permissionKeys: ["blog-pack:posts:read"],
-        },
-      ],
-    },
-  });
-
-  await service.provision({
-    id: "shop-pack",
-    version: "1.0.0",
-    requiresCore: "^0.1.0",
-    security: {
-      permissions: [{ key: "shop-pack:catalog:read", displayName: "Read catalog" }],
-      grants: [
-        {
-          roleCode: "editor",
-          permissionKeys: ["shop-pack:catalog:read"],
-        },
-      ],
-    },
-  });
-
-  await service.deprovision({
-    id: "blog-pack",
-    version: "1.0.0",
-    requiresCore: "^0.1.0",
-  });
-
-  const editor = await roles.findByCode("editor");
-  assert.ok(editor);
-  assert.equal(editor.status, "disabled");
-
-  const blogPermissions = await permissions.listBySourcePlugin("blog-pack");
-  assert.equal(blogPermissions.length, 0);
-});
+}
 
 function createFakeDbAdapter(): DbAdapter {
   const buckets = new Map<string, Array<Record<string, unknown>>>();
