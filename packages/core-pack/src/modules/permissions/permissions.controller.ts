@@ -43,94 +43,94 @@ export class PermissionsController extends HttpController {
       .get(
         "/v1/permissions",
         this.listPermissions,
-        this.adminAuthMiddleware,
         {
-        docs: {
-          summary: "List permissions",
-          tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
-          operationId: "listPermissions",
-          responses: {
-            200: {
-              description: "Permissions list",
-              schema: toOpenApiSchema(ListPermissionsResponseSchema),
+          middlewares: [this.adminAuthMiddleware],
+          docs: {
+            summary: "List permissions",
+            tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
+            operationId: "listPermissions",
+            responses: {
+              200: {
+                description: "Permissions list",
+                schema: toOpenApiSchema(ListPermissionsResponseSchema),
+              },
             },
           },
         },
-      },
       )
       .get(
         "/v1/permissions/:id",
         this.getPermissionById,
-        this.adminAuthMiddleware,
         {
-        docs: {
-          summary: "Get permission by id",
-          tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
-          operationId: "getPermissionById",
-          responses: {
-            200: {
-              description: "Permission found",
-              schema: toOpenApiSchema(PermissionResponseSchema),
-            },
-            404: {
-              description: "Permission not found",
-              schema: toOpenApiSchema(PermissionsErrorResponseSchema),
+          middlewares: [this.adminAuthMiddleware],
+          docs: {
+            summary: "Get permission by id",
+            tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
+            operationId: "getPermissionById",
+            responses: {
+              200: {
+                description: "Permission found",
+                schema: toOpenApiSchema(PermissionResponseSchema),
+              },
+              404: {
+                description: "Permission not found",
+                schema: toOpenApiSchema(PermissionsErrorResponseSchema),
+              },
             },
           },
         },
-      },
       )
       .post(
         "/v1/permissions",
         this.createPermission,
-        this.adminAuthMiddleware,
         {
-        docs: {
-          summary: "Create permission",
-          tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
-          operationId: "createPermission",
-          requestBody: {
-            required: true,
-            schema: toOpenApiSchema(CreatePermissionInputSchema),
-          },
-          responses: {
-            200: {
-              description: "Permission created",
-              schema: toOpenApiSchema(PermissionResponseSchema),
+          middlewares: [this.adminAuthMiddleware],
+          docs: {
+            summary: "Create permission",
+            tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
+            operationId: "createPermission",
+            requestBody: {
+              required: true,
+              schema: toOpenApiSchema(CreatePermissionInputSchema),
             },
-            409: {
-              description: "Conflict",
-              schema: toOpenApiSchema(PermissionsErrorResponseSchema),
+            responses: {
+              200: {
+                description: "Permission created",
+                schema: toOpenApiSchema(PermissionResponseSchema),
+              },
+              409: {
+                description: "Conflict",
+                schema: toOpenApiSchema(PermissionsErrorResponseSchema),
+              },
             },
           },
         },
-      },
       )
       .patch(
         "/v1/permissions/:id/status",
         this.updatePermissionStatus,
-        this.adminAuthMiddleware,
         {
-        docs: {
-          summary: "Update permission status",
-          tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
-          operationId: "updatePermissionStatus",
-          requestBody: {
-            required: true,
-            schema: toOpenApiSchema(UpdatePermissionStatusInputSchema),
-          },
-          responses: {
-            200: {
-              description: "Permission updated",
-              schema: toOpenApiSchema(PermissionResponseSchema),
+          middlewares: [this.adminAuthMiddleware],
+          docs: {
+            summary: "Update permission status",
+            tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
+            operationId: "updatePermissionStatus",
+            requestBody: {
+              required: true,
+              schema: toOpenApiSchema(UpdatePermissionStatusInputSchema),
             },
-            404: {
-              description: "Permission not found",
-              schema: toOpenApiSchema(PermissionsErrorResponseSchema),
+            responses: {
+              200: {
+                description: "Permission updated",
+                schema: toOpenApiSchema(PermissionResponseSchema),
+              },
+              404: {
+                description: "Permission not found",
+                schema: toOpenApiSchema(PermissionsErrorResponseSchema),
+              },
             },
           },
         },
-      },
       )
       .build();
   }

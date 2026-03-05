@@ -40,7 +40,8 @@ export class UsersController extends HttpController {
 
   routes() {
     return this.router()
-      .get("/v1/users", this.listUsers, this.adminAuthMiddleware, {
+      .get("/v1/users", this.listUsers, {
+        middlewares: [this.adminAuthMiddleware],
         docs: {
           summary: "List users",
           tags: [CORE_PACK_OPENAPI_TAGS.USERS],
@@ -53,7 +54,8 @@ export class UsersController extends HttpController {
           }
         }
       })
-      .get("/v1/users/:id", this.getUserById, this.adminAuthMiddleware, {
+      .get("/v1/users/:id", this.getUserById, {
+        middlewares: [this.adminAuthMiddleware],
         docs: {
           summary: "Get user by id",
           tags: [CORE_PACK_OPENAPI_TAGS.USERS],
@@ -70,7 +72,8 @@ export class UsersController extends HttpController {
           }
         }
       })
-      .post("/v1/users", this.createUser, this.adminAuthMiddleware, {
+      .post("/v1/users", this.createUser, {
+        middlewares: [this.adminAuthMiddleware],
         docs: {
           summary: "Create user",
           tags: [CORE_PACK_OPENAPI_TAGS.USERS],
@@ -94,28 +97,28 @@ export class UsersController extends HttpController {
       .patch(
         "/v1/users/:id/status",
         this.updateUserStatus,
-        this.adminAuthMiddleware,
         {
-        docs: {
-          summary: "Update user status",
-          tags: [CORE_PACK_OPENAPI_TAGS.USERS],
-          operationId: "updateUserStatus",
-          requestBody: {
-            required: true,
-            schema: toOpenApiSchema(UpdateUserStatusInputSchema)
-          },
-          responses: {
-            200: {
-              description: "User updated",
-              schema: toOpenApiSchema(UserResponseSchema)
+          middlewares: [this.adminAuthMiddleware],
+          docs: {
+            summary: "Update user status",
+            tags: [CORE_PACK_OPENAPI_TAGS.USERS],
+            operationId: "updateUserStatus",
+            requestBody: {
+              required: true,
+              schema: toOpenApiSchema(UpdateUserStatusInputSchema)
             },
-            404: {
-              description: "User not found",
-              schema: toOpenApiSchema(UsersErrorResponseSchema)
+            responses: {
+              200: {
+                description: "User updated",
+                schema: toOpenApiSchema(UserResponseSchema)
+              },
+              404: {
+                description: "User not found",
+                schema: toOpenApiSchema(UsersErrorResponseSchema)
+              }
             }
           }
-        }
-      },
+        },
       )
       .build();
   }

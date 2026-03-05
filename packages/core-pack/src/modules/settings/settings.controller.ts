@@ -178,35 +178,35 @@ export class SettingsController extends HttpController {
       .post(
         "/v1/settings/definitions",
         this.upsertDefinition,
-        this.pluginAuthMiddleware,
         {
-        docs: {
-          summary: "Create or update setting definition",
-          description: SignedPluginAuthDescription,
-          tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
-          operationId: "upsertSettingDefinition",
-          responses: {
-            200: {
-              description: "Definition upserted",
-              schema: {
-                type: "object",
-                properties: {
-                  data: SettingDefinitionOpenApi,
-                  meta: { type: "object", additionalProperties: true },
+          middlewares: [this.pluginAuthMiddleware],
+          docs: {
+            summary: "Create or update setting definition",
+            description: SignedPluginAuthDescription,
+            tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
+            operationId: "upsertSettingDefinition",
+            responses: {
+              200: {
+                description: "Definition upserted",
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: SettingDefinitionOpenApi,
+                    meta: { type: "object", additionalProperties: true },
+                  },
                 },
               },
-            },
-            409: {
-              description: "Ownership conflict",
-              schema: toOpenApiSchema(SettingsErrorResponseSchema),
-            },
-            401: {
-              description: "Plugin caller authentication failed",
-              schema: toOpenApiSchema(SettingsErrorResponseSchema),
+              409: {
+                description: "Ownership conflict",
+                schema: toOpenApiSchema(SettingsErrorResponseSchema),
+              },
+              401: {
+                description: "Plugin caller authentication failed",
+                schema: toOpenApiSchema(SettingsErrorResponseSchema),
+              },
             },
           },
         },
-      },
       )
       .get("/v1/settings/values/:key", this.getValueByKey, {
         docs: {
@@ -244,173 +244,173 @@ export class SettingsController extends HttpController {
       .put(
         "/v1/settings/values/:key",
         this.upsertValue,
-        this.pluginAuthMiddleware,
         {
-        docs: {
-          summary: "Create or update setting value",
-          description: SignedPluginAuthDescription,
-          tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
-          operationId: "upsertSettingValue",
-          responses: {
-            200: {
-              description: "Value upserted",
-              schema: {
-                type: "object",
-                properties: {
-                  data: SettingValueOpenApi,
-                  meta: { type: "object", additionalProperties: true },
+          middlewares: [this.pluginAuthMiddleware],
+          docs: {
+            summary: "Create or update setting value",
+            description: SignedPluginAuthDescription,
+            tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
+            operationId: "upsertSettingValue",
+            responses: {
+              200: {
+                description: "Value upserted",
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: SettingValueOpenApi,
+                    meta: { type: "object", additionalProperties: true },
+                  },
                 },
               },
-            },
-            409: {
-              description: "Ownership conflict",
-              schema: toOpenApiSchema(SettingsErrorResponseSchema),
-            },
-            401: {
-              description: "Plugin caller authentication failed",
-              schema: toOpenApiSchema(SettingsErrorResponseSchema),
+              409: {
+                description: "Ownership conflict",
+                schema: toOpenApiSchema(SettingsErrorResponseSchema),
+              },
+              401: {
+                description: "Plugin caller authentication failed",
+                schema: toOpenApiSchema(SettingsErrorResponseSchema),
+              },
             },
           },
         },
-      },
       )
       .get(
         "/v1/settings/secrets/:key",
         this.getSecretMetadata,
-        this.pluginAuthMiddleware,
         {
-        docs: {
-          summary: "Read secret metadata (masked)",
-          description: SignedPluginAuthDescription,
-          tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
-          operationId: "getSettingSecretMetadata",
-          responses: {
-            200: {
-              description: "Secret metadata",
-              schema: {
-                type: "object",
-                properties: {
-                  data: SecretMetadataOpenApi,
-                  meta: { type: "object", additionalProperties: true },
+          middlewares: [this.pluginAuthMiddleware],
+          docs: {
+            summary: "Read secret metadata (masked)",
+            description: SignedPluginAuthDescription,
+            tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
+            operationId: "getSettingSecretMetadata",
+            responses: {
+              200: {
+                description: "Secret metadata",
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: SecretMetadataOpenApi,
+                    meta: { type: "object", additionalProperties: true },
+                  },
                 },
               },
-            },
-            404: {
-              description: "Secret not found",
-              schema: toOpenApiSchema(SettingsErrorResponseSchema),
-            },
-            401: {
-              description: "Plugin caller authentication failed",
-              schema: toOpenApiSchema(SettingsErrorResponseSchema),
+              404: {
+                description: "Secret not found",
+                schema: toOpenApiSchema(SettingsErrorResponseSchema),
+              },
+              401: {
+                description: "Plugin caller authentication failed",
+                schema: toOpenApiSchema(SettingsErrorResponseSchema),
+              },
             },
           },
         },
-      },
       )
       .put(
         "/v1/settings/secrets/:key",
         this.upsertSecret,
-        this.pluginAuthMiddleware,
         {
-        docs: {
-          summary: "Create or update encrypted secret",
-          description: SignedPluginAuthDescription,
-          tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
-          operationId: "upsertSettingSecret",
-          responses: {
-            200: {
-              description: "Secret metadata",
-              schema: {
-                type: "object",
-                properties: {
-                  data: SecretMetadataOpenApi,
-                  meta: { type: "object", additionalProperties: true },
+          middlewares: [this.pluginAuthMiddleware],
+          docs: {
+            summary: "Create or update encrypted secret",
+            description: SignedPluginAuthDescription,
+            tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
+            operationId: "upsertSettingSecret",
+            responses: {
+              200: {
+                description: "Secret metadata",
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: SecretMetadataOpenApi,
+                    meta: { type: "object", additionalProperties: true },
+                  },
                 },
               },
-            },
-            409: {
-              description: "Ownership conflict",
-              schema: toOpenApiSchema(SettingsErrorResponseSchema),
-            },
-            401: {
-              description: "Plugin caller authentication failed",
-              schema: toOpenApiSchema(SettingsErrorResponseSchema),
+              409: {
+                description: "Ownership conflict",
+                schema: toOpenApiSchema(SettingsErrorResponseSchema),
+              },
+              401: {
+                description: "Plugin caller authentication failed",
+                schema: toOpenApiSchema(SettingsErrorResponseSchema),
+              },
             },
           },
         },
-      },
       )
       .post(
         "/v1/settings/secrets/:key/reveal",
         this.revealSecret,
-        this.pluginAuthMiddleware,
         {
-        docs: {
-          summary: "Reveal secret value (owner only)",
-          description: SignedPluginAuthDescription,
-          tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
-          operationId: "revealSettingSecret",
-          responses: {
-            200: {
-              description: "Secret value",
-              schema: {
-                type: "object",
-                properties: {
-                  data: {
-                    type: "object",
-                    required: ["key", "value"],
-                    properties: {
-                      key: { type: "string" },
-                      value: { type: "string" },
+          middlewares: [this.pluginAuthMiddleware],
+          docs: {
+            summary: "Reveal secret value (owner only)",
+            description: SignedPluginAuthDescription,
+            tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
+            operationId: "revealSettingSecret",
+            responses: {
+              200: {
+                description: "Secret value",
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: {
+                      type: "object",
+                      required: ["key", "value"],
+                      properties: {
+                        key: { type: "string" },
+                        value: { type: "string" },
+                      },
                     },
+                    meta: { type: "object", additionalProperties: true },
                   },
-                  meta: { type: "object", additionalProperties: true },
                 },
               },
-            },
-            404: {
-              description: "Secret not found",
-              schema: toOpenApiSchema(SettingsErrorResponseSchema),
-            },
-            401: {
-              description: "Plugin caller authentication failed",
-              schema: toOpenApiSchema(SettingsErrorResponseSchema),
+              404: {
+                description: "Secret not found",
+                schema: toOpenApiSchema(SettingsErrorResponseSchema),
+              },
+              401: {
+                description: "Plugin caller authentication failed",
+                schema: toOpenApiSchema(SettingsErrorResponseSchema),
+              },
             },
           },
         },
-      },
       )
       .get(
         "/v1/settings/export/:pluginId",
         this.exportPluginSettings,
-        this.pluginAuthMiddleware,
         {
-        docs: {
-          summary: "Export plugin settings snapshot with masked secrets",
-          description: SignedPluginAuthDescription,
-          tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
-          operationId: "exportPluginSettings",
-          responses: {
-            200: {
-              description: "Exported settings snapshot",
-              schema: {
-                type: "object",
-                properties: {
-                  data: {
-                    type: "object",
-                    additionalProperties: true,
+          middlewares: [this.pluginAuthMiddleware],
+          docs: {
+            summary: "Export plugin settings snapshot with masked secrets",
+            description: SignedPluginAuthDescription,
+            tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
+            operationId: "exportPluginSettings",
+            responses: {
+              200: {
+                description: "Exported settings snapshot",
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: {
+                      type: "object",
+                      additionalProperties: true,
+                    },
+                    meta: { type: "object", additionalProperties: true },
                   },
-                  meta: { type: "object", additionalProperties: true },
                 },
               },
-            },
-            401: {
-              description: "Plugin caller authentication failed",
-              schema: toOpenApiSchema(SettingsErrorResponseSchema),
+              401: {
+                description: "Plugin caller authentication failed",
+                schema: toOpenApiSchema(SettingsErrorResponseSchema),
+              },
             },
           },
         },
-      },
       )
       .build();
   }

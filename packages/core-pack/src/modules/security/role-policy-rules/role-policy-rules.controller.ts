@@ -42,60 +42,60 @@ export class RolePolicyRulesController extends HttpController {
       .get(
         "/v1/roles/:roleCode/policy-rules",
         this.listRolePolicyRules,
-        this.adminAuthMiddleware,
         {
-        docs: {
-          summary: "List policy rules for a role",
-          tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
-          operationId: "listRolePolicyRules",
-          responses: {
-            200: {
-              description: "Role policy rules list",
-              schema: toOpenApiSchema(ListRolePolicyRulesResponseSchema),
-            },
-            404: {
-              description: "Role not found",
-              schema: toOpenApiSchema(RolePolicyRulesErrorResponseSchema),
+          middlewares: [this.adminAuthMiddleware],
+          docs: {
+            summary: "List policy rules for a role",
+            tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
+            operationId: "listRolePolicyRules",
+            responses: {
+              200: {
+                description: "Role policy rules list",
+                schema: toOpenApiSchema(ListRolePolicyRulesResponseSchema),
+              },
+              404: {
+                description: "Role not found",
+                schema: toOpenApiSchema(RolePolicyRulesErrorResponseSchema),
+              },
             },
           },
         },
-      },
       )
       .post(
         "/v1/roles/:roleCode/policy-rules",
         this.createRolePolicyRule,
-        this.adminAuthMiddleware,
         {
-        docs: {
-          summary: "Create policy rule for a role",
-          tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
-          operationId: "createRolePolicyRule",
-          requestBody: {
-            required: true,
-            schema: toOpenApiSchema(CreateRolePolicyRuleInputSchema),
-          },
-          responses: {
-            200: {
-              description: "Role policy rule created",
-              schema: toOpenApiSchema(RolePolicyRuleResponseSchema),
+          middlewares: [this.adminAuthMiddleware],
+          docs: {
+            summary: "Create policy rule for a role",
+            tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
+            operationId: "createRolePolicyRule",
+            requestBody: {
+              required: true,
+              schema: toOpenApiSchema(CreateRolePolicyRuleInputSchema),
             },
-            404: {
-              description: "Role not found",
-              schema: toOpenApiSchema(RolePolicyRulesErrorResponseSchema),
-            },
-            409: {
-              description: "Rule conflict",
-              schema: toOpenApiSchema(RolePolicyRulesErrorResponseSchema),
+            responses: {
+              200: {
+                description: "Role policy rule created",
+                schema: toOpenApiSchema(RolePolicyRuleResponseSchema),
+              },
+              404: {
+                description: "Role not found",
+                schema: toOpenApiSchema(RolePolicyRulesErrorResponseSchema),
+              },
+              409: {
+                description: "Rule conflict",
+                schema: toOpenApiSchema(RolePolicyRulesErrorResponseSchema),
+              },
             },
           },
         },
-      },
       )
       .patch(
         "/v1/roles/:roleCode/policy-rules/:ruleId",
         this.updateRolePolicyRule,
-        this.adminAuthMiddleware,
         {
+          middlewares: [this.adminAuthMiddleware],
           docs: {
             summary: "Update a role policy rule",
             tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
@@ -120,8 +120,8 @@ export class RolePolicyRulesController extends HttpController {
       .delete(
         "/v1/roles/:roleCode/policy-rules/:ruleId",
         this.deleteRolePolicyRule,
-        this.adminAuthMiddleware,
         {
+          middlewares: [this.adminAuthMiddleware],
           docs: {
             summary: "Delete a role policy rule",
             tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],

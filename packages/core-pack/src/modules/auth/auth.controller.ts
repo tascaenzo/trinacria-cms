@@ -59,7 +59,8 @@ export class AuthController extends HttpController {
           },
         },
       })
-      .get("/v1/auth/me", this.me, this.authMiddleware, {
+      .get("/v1/auth/me", this.me, {
+        middlewares: [this.authMiddleware],
         docs: {
           summary: "Resolve current authenticated user",
           tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
@@ -76,7 +77,8 @@ export class AuthController extends HttpController {
           },
         },
       })
-      .post("/v1/auth/logout", this.logout, this.authMiddleware, {
+      .post("/v1/auth/logout", this.logout, {
+        middlewares: [this.authMiddleware],
         docs: {
           summary: "Logout current JWT session on client side",
           tags: [CORE_PACK_OPENAPI_TAGS.AUTH],

@@ -40,7 +40,8 @@ export class RolesController extends HttpController {
 
   routes() {
     return this.router()
-      .get("/v1/roles", this.listRoles, this.adminAuthMiddleware, {
+      .get("/v1/roles", this.listRoles, {
+        middlewares: [this.adminAuthMiddleware],
         docs: {
           summary: "List roles",
           tags: [CORE_PACK_OPENAPI_TAGS.ROLES],
@@ -53,7 +54,8 @@ export class RolesController extends HttpController {
           },
         },
       })
-      .get("/v1/roles/:id", this.getRoleById, this.adminAuthMiddleware, {
+      .get("/v1/roles/:id", this.getRoleById, {
+        middlewares: [this.adminAuthMiddleware],
         docs: {
           summary: "Get role by id",
           tags: [CORE_PACK_OPENAPI_TAGS.ROLES],
@@ -70,7 +72,8 @@ export class RolesController extends HttpController {
           },
         },
       })
-      .post("/v1/roles", this.createRole, this.adminAuthMiddleware, {
+      .post("/v1/roles", this.createRole, {
+        middlewares: [this.adminAuthMiddleware],
         docs: {
           summary: "Create role",
           tags: [CORE_PACK_OPENAPI_TAGS.ROLES],
@@ -94,28 +97,28 @@ export class RolesController extends HttpController {
       .patch(
         "/v1/roles/:id/status",
         this.updateRoleStatus,
-        this.adminAuthMiddleware,
         {
-        docs: {
-          summary: "Update role status",
-          tags: [CORE_PACK_OPENAPI_TAGS.ROLES],
-          operationId: "updateRoleStatus",
-          requestBody: {
-            required: true,
-            schema: toOpenApiSchema(UpdateRoleStatusInputSchema),
-          },
-          responses: {
-            200: {
-              description: "Role updated",
-              schema: toOpenApiSchema(RoleResponseSchema),
+          middlewares: [this.adminAuthMiddleware],
+          docs: {
+            summary: "Update role status",
+            tags: [CORE_PACK_OPENAPI_TAGS.ROLES],
+            operationId: "updateRoleStatus",
+            requestBody: {
+              required: true,
+              schema: toOpenApiSchema(UpdateRoleStatusInputSchema),
             },
-            404: {
-              description: "Role not found",
-              schema: toOpenApiSchema(RolesErrorResponseSchema),
+            responses: {
+              200: {
+                description: "Role updated",
+                schema: toOpenApiSchema(RoleResponseSchema),
+              },
+              404: {
+                description: "Role not found",
+                schema: toOpenApiSchema(RolesErrorResponseSchema),
+              },
             },
           },
         },
-      },
       )
       .build();
   }
