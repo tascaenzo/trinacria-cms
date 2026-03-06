@@ -10,6 +10,7 @@ Main entities:
 - `roles`
 - `permissions`
 - `role_policy_rules`
+- `api_keys`
 
 Embedded relations:
 
@@ -56,12 +57,27 @@ Formula:
   - `resource_id_required`
   - `resource_id_equals_subject`
 
+Beyond user subjects, the system also supports machine subjects:
+
+- format: `api-key:<id>`
+- authz material: `roleCodes[]`, `permissionKeys[]`, `policyRules[]`
+- resolution path: `ApiKeysService` -> `CorePackAuthzService`
+
+This makes the same authorization engine usable for:
+
+- JWT-backed user sessions
+- server-to-server integrations through API keys
+
 ## 5. Active APIs
 
 - `POST /v1/users/:id/roles`
 - `GET /v1/users/:id/roles`
 - `DELETE /v1/users/:id/roles/:roleCode`
 - `GET /v1/users/:id/permissions`
+- `GET /v1/api-keys`
+- `POST /v1/api-keys`
+- `POST /v1/api-keys/:id/rotate`
+- `POST /v1/api-keys/:id/revoke`
 
 ## 6. Extended manifest security
 
@@ -89,3 +105,5 @@ On unregister:
 ## 8. Conclusion
 
 Identity now includes advanced enforcement: classic grants plus wildcard/deny/condition-based policies, while preserving plugin ownership boundaries and deterministic cleanup.
+
+In addition, the model now supports first-class machine identities through API keys without introducing a separate permission engine: the subject changes, while the formal authorization logic stays the same.

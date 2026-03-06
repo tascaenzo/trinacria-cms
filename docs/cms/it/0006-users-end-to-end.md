@@ -10,6 +10,7 @@ Entita principali:
 - `roles`
 - `permissions`
 - `role_policy_rules`
+- `api_keys`
 
 Relazioni embedded:
 
@@ -56,12 +57,27 @@ Formula:
   - `resource_id_required`
   - `resource_id_equals_subject`
 
+Oltre ai subject utente, il sistema gestisce anche subject macchina:
+
+- formato: `api-key:<id>`
+- materiale authz: `roleCodes[]`, `permissionKeys[]`, `policyRules[]`
+- risoluzione: `ApiKeysService` -> `CorePackAuthzService`
+
+Questo consente di usare lo stesso motore authz per:
+
+- sessioni utente JWT
+- integrazioni server-to-server via API key
+
 ## 5. API attive
 
 - `POST /v1/users/:id/roles`
 - `GET /v1/users/:id/roles`
 - `DELETE /v1/users/:id/roles/:roleCode`
 - `GET /v1/users/:id/permissions`
+- `GET /v1/api-keys`
+- `POST /v1/api-keys`
+- `POST /v1/api-keys/:id/rotate`
+- `POST /v1/api-keys/:id/revoke`
 
 ## 6. Manifest security esteso
 
@@ -89,3 +105,5 @@ Su unregister:
 ## 8. Conclusione
 
 Il sistema identity ora include enforcement avanzato: grants classici + policy wildcard/deny/condition-based, mantenendo ownership per plugin e cleanup deterministico.
+
+In piu, il modello supporta identita macchina di primo livello tramite API key, senza introdurre un motore permessi separato: cambia il subject, non cambia la logica formale di autorizzazione.

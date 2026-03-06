@@ -19,11 +19,17 @@ Glossario terminologico unico: [GLOSSARY.md](../GLOSSARY.md)
 9. [0008 - Testing, operazioni e governance tecnica](./0008-testing-operazioni-studio.md)
 10. [0009 - Modelli teorici, strutture dati e logiche formali](./0009-modelli-teorici-strutture-dati.md)
 11. [0010 - Atlante codice: mappe file -> responsabilita -> flussi](./0010-atlante-codice-e-flussi.md)
+12. [0011 - SDK ufficiale, discovery runtime e API key](./0011-sdk-api-keys-discovery.md)
+13. [0012 - Schema Mongo operativo](./0012-schema-db-mongo-operativo.md)
 
 ## Cosa trovi in questo manuale
 
-- Mappa completa della struttura codice reale (`packages/kernel`, `packages/core-pack`, `apps/playground`).
+- Mappa completa della struttura codice reale (`packages/kernel`, `packages/core-pack`, `packages/sdk`, `apps/playground`, `apps/web`).
 - Spiegazione dettagliata delle responsabilita di ogni file chiave.
+- Spiegazione modulo per modulo di service esportati, controller ed endpoint HTTP esposti.
+- Descrizione del formato standard delle response (`data`, `error`, `meta`) e di come viene generato dal kernel.
+- Descrizione del modello SDK ufficiale pubblicabile, dell'overlay generato in monorepo e della discovery runtime (`/v1/system/*`).
+- Documentazione del modello API key come identita macchina di primo livello, integrata con ruoli, permessi e policy rules.
 - Esempi di codice presi dalle implementazioni reali con connessione diretta ai file.
 - Analisi teorica dei modelli che stanno dietro le scelte implementative.
 - Linee guida su tradeoff, anti-pattern, test strategy e operativita.

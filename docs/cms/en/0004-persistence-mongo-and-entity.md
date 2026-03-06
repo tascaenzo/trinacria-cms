@@ -63,6 +63,7 @@ Security-relevant entities:
 - `permissions` (with `sourcePluginId`)
 - `roles` (with `ownerPluginId?`)
 - `role_policy_rules` (with `sourcePluginId`)
+- `api_keys`
 - `users`
 - `settings` (single collection with `kind`: `definition` | `value` | `secret`)
 
@@ -106,17 +107,32 @@ Goal:
 - `_id` must not leak through controllers
 - plugin ownership must be persisted for security entities
 
-## 12. Current Mongo DB diagram (core-pack)
+## 12. Current Mongo DB diagram (kernel + core-pack)
+
+Reserved namespace `kernel` creates collections with prefix `kernel__`.
 
 Plugin namespace `core-pack` creates collections with prefix `plugin_core_pack__`.
 
 ```mermaid
 erDiagram
+  "kernel__installed_plugins" ||--o{ "plugin_core_pack__permissions" : "security source plugin"
+  "kernel__installed_plugins" ||--o{ "plugin_core_pack__roles" : "security owner plugin"
   "plugin_core_pack__users" ||--o{ "users.roleAssignments[]" : "embedded"
   "plugin_core_pack__roles" ||--o{ "roles.permissionGrants[]" : "embedded"
   "plugin_core_pack__roles" ||--o{ "plugin_core_pack__role_policy_rules" : "roleCode"
   "plugin_core_pack__permissions" ||--o{ "plugin_core_pack__roles" : "roles.permissions[] (materialized)"
+  "plugin_core_pack__api_keys" ||--o{ "plugin_core_pack__roles" : "roleCodes[]"
+  "plugin_core_pack__api_keys" ||--o{ "plugin_core_pack__permissions" : "permissionKeys[]"
   "plugin_core_pack__settings" ||--o{ "plugin_core_pack__settings" : "same key, different kind"
+
+  "kernel__installed_plugins" {
+    string id
+    string pluginId
+    string version
+    string state
+    object manifest
+    object meta
+  }
 
   "plugin_core_pack__users" {
     string id
@@ -147,6 +163,20 @@ erDiagram
     string permissionPattern
     array conditions
     string sourcePluginId
+  }
+
+  "plugin_core_pack__api_keys" {
+    string id
+    string lookupId
+    string name
+    string kind
+    string status
+    string hash
+    array roleCodes
+    array permissionKeys
+    array policyRules
+    datetime lastUsedAt
+    datetime expiresAt
   }
 
   "plugin_core_pack__settings" {
@@ -253,6 +283,50 @@ Example `plugin_core_pack__role_policy_rules`:
 }
 ```
 
+Example `plugin_core_pack__api_keys`:
+
+```json
+{
+  "_id": { "$oid": "69b000000000000000000010" },
+  "id": "core-pack:api_keys:69b000000000000000000010",
+  "lookupId": "ak_9p3gk2t7",
+  "name": "Backoffice integration",
+  "kind": "secret",
+  "status": "active",
+  "hash": "<sha256>",
+  "roleCodes": ["admin"],
+  "permissionKeys": [
+    "core-pack:users:read",
+    "core-pack:settings:write"
+  ],
+  "policyRules": [],
+  "lastUsedAt": "2026-03-06T10:00:00.000Z",
+  "createdAt": "2026-03-06T09:00:00.000Z",
+  "updatedAt": "2026-03-06T10:00:00.000Z"
+}
+```
+
+Example `kernel__installed_plugins`:
+
+```json
+{
+  "_id": { "$oid": "69b000000000000000000001" },
+  "id": "kernel:installed_plugins:69b000000000000000000001",
+  "pluginId": "core-pack",
+  "version": "0.1.0",
+  "state": "loaded",
+  "manifest": {
+    "id": "core-pack",
+    "capabilities": ["users.service", "settings.service"]
+  },
+  "meta": {
+    "loadedAt": "2026-03-06T09:00:00.000Z"
+  },
+  "createdAt": "2026-03-06T09:00:00.000Z",
+  "updatedAt": "2026-03-06T09:00:00.000Z"
+}
+```
+
 ## 14. Operational playbook: API -> DB impact
 
 ### 14.1 `POST /v1/users`
@@ -319,6 +393,19 @@ Write path:
 1. insert document into `plugin_core_pack__role_policy_rules`
 2. no update on `roles` or `users`
 
+### 14.5 `POST /v1/api-keys`
+
+Write path:
+
+1. generate `lookupId` and the one-time raw secret
+2. persist only the secret `hash` in `plugin_core_pack__api_keys`
+3. persist `roleCodes[]`, `permissionKeys[]`, and `policyRules[]` as machine-subject authorization material
+
+Note:
+
+- the raw secret is never stored in clear text;
+- the client sees it only in the create or rotate response.
+
 ### 14.5 `GET /v1/users/:id/permissions`
 
 Read path:
@@ -337,7 +424,7 @@ Persistence combines abstraction and operational safety: unified schema declarat
 
 The kernel persists plugin runtime state in a dedicated collection under the `kernel` namespace:
 
-- collection: `plugin_kernel__installed_plugins`
+- collection: `kernel__installed_plugins`
 - logical key: `pluginId` (unique)
 - main fields: `state`, `enabled`, `failureCount`, `disabledReason`, `manifest`, `updatedAt`
 - indexes: unique `pluginId`, plus `state`, `enabled`, `updatedAt` desc
@@ -357,9 +444,15 @@ Current note:
 
 | Collection | Owner namespace | Key fields | Main indexes | Purpose |
 | --- | --- | --- | --- | --- |
-| `plugin_kernel__installed_plugins` | `kernel` | `pluginId`, `state`, `enabled`, `failureCount`, `manifest`, `updatedAt` | unique `pluginId`, plus `state`, `enabled`, `updatedAt` desc | Persistent runtime state for installed plugins (audit/ops). |
+| `kernel__installed_plugins` | `kernel` | `pluginId`, `state`, `enabled`, `failureCount`, `manifest`, `updatedAt` | unique `pluginId`, plus `state`, `enabled`, `updatedAt` desc | Persistent runtime state for installed plugins (audit/ops). |
 | `plugin_core_pack__users` | `core-pack` | `id`, `email`, `status`, `roleAssignments[]` | unique `id`, unique `email` | User registry and embedded role assignments. |
 | `plugin_core_pack__roles` | `core-pack` | `id`, `code`, `ownerPluginId`, `permissions[]`, `permissionGrants[]`, `status` | unique `id`, unique `code`, plus `ownerPluginId`, `status` | Role catalog and plugin-owned permission grants. |
 | `plugin_core_pack__permissions` | `core-pack` | `id`, `key`, `sourcePluginId`, `status` | unique `id`, unique `key`, plus `sourcePluginId`, `status` | Canonical namespaced permission catalog. |
 | `plugin_core_pack__role_policy_rules` | `core-pack` | `id`, `roleCode`, `effect`, `permissionPattern`, `conditions[]`, `sourcePluginId` | unique `id`, plus `roleCode`, `sourcePluginId` | Advanced policy rules (`allow/deny`, wildcard, conditions). |
 | `plugin_core_pack__settings` | `core-pack` | `id`, `key`, `kind`, `ownerPluginId`, `status`, `schema/defaultValue/value`, `cipherText`, `algorithm`, `keyVersion`, `version` | unique `id`, unique `(kind,key)`, plus `ownerPluginId+kind`, `key` | Unified settings store with logical projections for definitions, values, and encrypted secrets. |
+
+Physical naming note:
+
+- regular plugins still map to Mongo collections using `plugin_<normalizedPluginId>__<entity>`;
+- the reserved `kernel` namespace now maps to `kernel__<entity>`;
+- the logical runtime namespace is unchanged: the runtime still reasons in terms of `pluginId = "kernel"`.

@@ -145,6 +145,9 @@ export const CORE_TOKENS = {
   KERNEL_HEALTH_SERVICE: createToken<KernelHealthService>(
     "CMS_KERNEL_HEALTH_SERVICE",
   ),
+  KERNEL_SYSTEM_SERVICE: createToken<KernelSystemService>(
+    "CMS_KERNEL_SYSTEM_SERVICE",
+  ),
 } as const;
 ```
 
@@ -209,6 +212,52 @@ Perche serve:
 
 - uniforma meta/pluginId e mapping errori in tutti i controller plugin.
 
+Formato envelope prodotto dal responder:
+
+```ts
+const responder = createPluginApiResponder("core-pack");
+
+return responder.success({ id: "core-pack:users:123" });
+// {
+//   data: { id: "core-pack:users:123" },
+//   meta: { pluginId: "core-pack" }
+// }
+
+return responder.list([{ id: "1" }, { id: "2" }], {
+  limit: 20,
+  offset: 0,
+});
+// {
+//   data: [{ id: "1" }, { id: "2" }],
+//   meta: { pluginId: "core-pack", count: 2, limit: 20, offset: 0 }
+// }
+
+return responder.notFound('User "x" not found');
+// {
+//   error: { code: "not_found", message: "User \"x\" not found" },
+//   meta: { pluginId: "core-pack" }
+// }
+```
+
+Spiegazione campi:
+
+- `data`: payload di dominio in caso di successo
+- `error.code`: codice stabile, pensato per SDK/UI e non per il solo logging
+- `error.message`: messaggio umano
+- `error.details`: dettagli opzionali strutturati
+- `meta.pluginId`: plugin che ha prodotto la risposta
+- `meta.count`: numero elementi restituiti nelle list response
+- `meta.limit` / `meta.offset`: eco dei parametri di paginazione quando presenti
+- `requestId`: previsto dal contratto, ma oggi non ancora popolato automaticamente dal kernel
+
+Come viene generata una response:
+
+1. il controller valida input e params;
+2. chiama il service di dominio;
+3. usa `createPluginApiResponder(pluginId)`;
+4. il responder compone envelope coerente e applica `meta.pluginId`;
+5. in caso di errore, `fromError(...)` converte eccezioni libere o tipizzate in `ApiErrorResponse`.
+
 ### `http/kernel-health.controller.ts`
 
 Esempio dal codice reale:
@@ -241,6 +290,95 @@ Esempio dal codice reale:
 Perche serve:
 
 - endpoint docs non appare nel contratto business OpenAPI.
+
+### `http/kernel-health.controller.ts` + `runtime/kernel-health-service.ts`
+
+Ruolo:
+
+- esporre stato runtime e stato DB in forma leggibile da monitoring, debug e deployment probes.
+
+Endpoint esposti:
+
+- `GET /health`
+- `GET /health/dependencies`
+
+Service esposto:
+
+- `CORE_TOKENS.KERNEL_HEALTH_SERVICE`
+
+Forma di risposta attuale di `/health`:
+
+```json
+{
+  "timestamp": "2026-03-05T18:00:00.000Z",
+  "status": "ok",
+  "runtime": {
+    "totalPlugins": 1,
+    "byState": {
+      "loaded": 1
+    }
+  },
+  "dependencies": {
+    "nodes": [],
+    "edges": [],
+    "warnings": []
+  },
+  "db": {
+    "ok": true
+  },
+  "issues": []
+}
+```
+
+Nota importante:
+
+- health non usa l'envelope `data/meta/error`;
+- e una response operativa, non business;
+- questo e voluto: deve essere immediata da leggere anche da sistemi esterni.
+
+### `http/kernel-system.controller.ts` + `runtime/kernel-system-service.ts`
+
+Ruolo:
+
+- esporre discovery runtime built-in per SDK, pannelli admin e tooling operativo.
+
+Endpoint esposti:
+
+- `GET /v1/system/plugins`
+- `GET /v1/system/capabilities`
+
+Service esposto:
+
+- `CORE_TOKENS.KERNEL_SYSTEM_SERVICE`
+
+Forma della response:
+
+- usa l'envelope standard `data/meta`
+- `meta.pluginId` vale sempre `"kernel"`
+
+Esempio concettuale:
+
+```json
+{
+  "data": [
+    {
+      "id": "core-pack",
+      "version": "0.1.0",
+      "state": "loaded",
+      "capabilities": ["users.service", "settings.service"]
+    }
+  ],
+  "meta": {
+    "pluginId": "kernel",
+    "count": 1
+  }
+}
+```
+
+Perche serve:
+
+- lo SDK pubblicato include i gruppi ufficiali, ma deve comunque capire quali plugin sono davvero installati in una specifica istanza;
+- le UI amministrative possono costruire menu, feature flag e discovery dinamica leggendo il runtime reale invece di usare configurazioni statiche.
 
 ## 5. Cartella `types/`
 

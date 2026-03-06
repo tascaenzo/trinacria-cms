@@ -1,6 +1,6 @@
 # 0010 - Atlante codice: mappe file -> responsabilita -> flussi
 
-Mappa rapida del codice reale, aggiornata al modello security plugin-contributed.
+Mappa rapida del codice reale, aggiornata al modello security plugin-contributed e al nuovo layer SDK/browser del monorepo.
 
 ## 1. Kernel contracts
 
@@ -25,9 +25,14 @@ Mappa rapida del codice reale, aggiornata al modello security plugin-contributed
 - `runtime/cms-starter.ts`
   - bootstrap app
   - hook runtime -> `PluginSecurityProvisioner`
+  - registra anche gli endpoint built-in `kernelHealth` e `system`
 
 - `runtime/permission-key.ts`
   - parser/validator key canonica `<pluginId>:<resource>:<action>`
+
+- `runtime/kernel-system-service.ts`
+  - discovery runtime per SDK, CLI e pannelli admin
+  - espone lista plugin installati e catalogo capability pubblicate
 
 ## 3. Core-pack plugin
 
@@ -69,6 +74,10 @@ Mappa rapida del codice reale, aggiornata al modello security plugin-contributed
 
 - `modules/security/security.module.ts`
   - espone `CORE_TOKENS.PLUGIN_SECURITY_PROVISIONER`
+  - registra anche il dominio `api_keys` e l'engine authz per subject macchina
+
+- `modules/security/api-keys/*`
+  - issuance, rotate, revoke, hashing e risoluzione regole authz per API key
 
 ## 6. Infrastruttura Mongo
 
@@ -110,3 +119,63 @@ Mappa rapida del codice reale, aggiornata al modello security plugin-contributed
 2. `kernel-health-service.ts#snapshot`
 3. runtime + dependency graph + db health
 4. stato finale (`ok/degraded/down`)
+
+## 11. Flusso: `GET /v1/system/plugins`
+
+1. `kernel-system.controller.ts#listInstalledPlugins`
+2. `kernel-system-service.ts#listInstalledPlugins`
+3. lettura snapshot da `PluginRuntime.list()`
+4. serializzazione risposta standard `data[] + meta.pluginId = "kernel"`
+
+## 12. Flusso: API key -> authz runtime
+
+1. integrazione esterna invia `x-api-key`
+2. layer auth/authz risolve il subject macchina
+3. `api-keys.service.ts#authenticate` valida formato, hash e stato
+4. `core-pack-authz.service.ts` delega ad `ApiKeysService`
+5. vengono composte role assignments, permission keys e policy rules della chiave
+
+## 13. SDK monorepo e SDK pubblicato
+
+- `packages/sdk/src/runtime/*`
+  - client low-level zero-deps
+  - transport astratto (`fetch` nativa o custom transport)
+  - error model comune
+  - supporto `Authorization: Bearer` e `x-api-key`
+
+- `packages/sdk/src/generated/*`
+  - file generati da OpenAPI per tag
+  - gruppi operativi: `auth`, `installation`, `users`, `roles`, `permissions`, `settings`, `security`, `apiKeys`, `kernelHealth`, `system`
+
+- `packages/sdk/src/official/*`
+  - catalogo statico del package pubblicato
+  - descrive quali plugin ufficiali e gruppi API sono sempre presenti senza rigenerazione locale
+
+- `packages/sdk/scripts/snapshot-openapi.mjs`
+  - scarica `/openapi.json`
+  - applica una normalizzazione minima per i query parameters non ancora emessi dal generatore HTTP
+
+- `packages/sdk/scripts/generate-sdk.mjs`
+  - produce tipi request/response
+  - produce file API separati per dominio
+
+Modello operativo:
+
+1. `@trinacria-cms/sdk` e il package base pubblicabile, utilizzabile anche fuori monorepo
+2. nel monorepo si puo rigenerare il layer OpenAPI per plugin custom o moduli applicativi custom
+3. il risultato e un overlay generato sopra il runtime ufficiale, non una sostituzione del package base
+
+## 14. Browser demo app
+
+- `apps/web/src/server.ts`
+  - static server locale
+  - proxy `/cms/*` verso backend
+  - bridge `/sdk/*` verso `packages/sdk/dist`
+
+- `apps/web/public/app.js`
+  - crea `createCmsSdkClient({ baseUrl: "/cms", credentials: "include" })`
+  - esercita login, `me`, list users, health
+
+- `apps/web/public/index.html`
+  - import map ESM
+  - interfaccia minima per validare il client senza framework frontend
