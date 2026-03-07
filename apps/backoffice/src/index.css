@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: "Geist", "SF Pro Text", "Segoe UI", sans-serif;
+  --font-display: "Geist", "SF Pro Display", "Segoe UI", sans-serif;
+  --color-canvas: #fafafa;
+  --color-surface: #ffffff;
+  --color-panel: #ffffff;
+  --color-panel-soft: #f8fafc;
+  --color-panel-strong: #f1f5f9;
+  --color-border: #e5e7eb;
+  --color-border-strong: #dbe1ea;
+  --color-ink: #0f172a;
+  --color-ink-soft: #111827;
+  --color-ink-muted: #475569;
+  --color-ink-subtle: #64748b;
+  --color-ink-inverse: #f8fafc;
+  --color-accent: #111827;
+  --color-focus: #2563eb;
+}
+
+html.auth-page,
+html.auth-page body,
+html.auth-page #root {
+  background: var(--color-panel-soft);
+}
+
+html {
+  background: #fafafa;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background: #fafafa;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}

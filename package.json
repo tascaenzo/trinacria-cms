@@ -5,11 +5,21 @@
   "workspaces": [
     "apps/*",
     "packages/kernel",
-    "packages/core-pack"
+    "packages/core-pack",
+    "packages/sdk",
+    "packages/admin-kernel",
+    "packages/admin-ui"
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
     "dev": "npm run dev --workspaces --if-present",
+    "dev:playground": "npm run dev -w @trinacria-cms/playground",
+    "dev:backoffice": "npm run dev -w @trinacria-cms/backoffice",
+    "sdk:snapshot": "npm run snapshot:openapi -w @trinacria-cms/sdk",
+    "sdk:generate": "npm run generate -w @trinacria-cms/sdk",
+    "sdk:build": "npm run build -w @trinacria-cms/sdk",
+    "sdk:test": "npm run test -w @trinacria-cms/sdk",
+    "sdk:check": "npm run check:generated -w @trinacria-cms/sdk",
     "test": "npm run test --workspaces --if-present",
     "test:integration": "node --import tsx --test test/**/*.integration.test.ts && npm run test:integration -w @trinacria-cms/kernel",
     "lint": "eslint .",
