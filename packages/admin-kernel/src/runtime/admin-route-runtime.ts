@@ -3,9 +3,10 @@ import type {
   AdminPluginContribution,
   AdminRegistrySnapshot,
   AdminRouteDefinition,
-  AdminRuntimePluginInfo,
+  AdminRuntimePluginInfo
 } from "../contracts.js";
 import type { ReactNode } from "react";
+import type { Locale, TranslateFn } from "../lib/i18n.js";
 
 /**
  * Page render context carries the minimum runtime state every screen needs in
@@ -15,6 +16,8 @@ export interface AdminPageRenderContext {
   route: AdminRouteDefinition;
   runtimePlugins: readonly AdminRuntimePluginInfo[];
   capabilityIndex: ReadonlyMap<string, Set<string>>;
+  locale: Locale;
+  t: TranslateFn;
 }
 
 /**
@@ -29,8 +32,7 @@ export interface RenderableAdminRoute extends AdminRouteDefinition {
  * Renderable contributions are what the React backoffice mounts after the base
  * contract has been adapted to a real UI framework.
  */
-export interface RenderableAdminContribution
-  extends Omit<AdminPluginContribution, "routes"> {
+export interface RenderableAdminContribution extends Omit<AdminPluginContribution, "routes"> {
   routes: readonly RenderableAdminRoute[];
 }
 
@@ -41,7 +43,7 @@ export interface RenderableAdminRegistrySnapshot extends AdminRegistrySnapshot {
 function isRouteVisible(
   route: AdminRouteDefinition,
   runtimePlugins: readonly AdminRuntimePluginInfo[],
-  capabilityIndex: ReadonlyMap<string, Set<string>>,
+  capabilityIndex: ReadonlyMap<string, Set<string>>
 ): boolean {
   const plugin = runtimePlugins.find((entry) => entry.pluginId === route.pluginId);
   if (!plugin?.installed || plugin.state === "disabled" || plugin.state === "failed") {
@@ -71,7 +73,7 @@ function isNavigationVisible(
   item: AdminNavigationItem,
   routeIds: ReadonlySet<string>,
   runtimePlugins: readonly AdminRuntimePluginInfo[],
-  capabilityIndex: ReadonlyMap<string, Set<string>>,
+  capabilityIndex: ReadonlyMap<string, Set<string>>
 ): boolean {
   if (!routeIds.has(item.routeId)) {
     return false;
@@ -106,6 +108,7 @@ function isNavigationVisible(
 export function buildAdminRegistry(
   contributions: readonly RenderableAdminContribution[],
   runtimePlugins: readonly AdminRuntimePluginInfo[],
+  t: TranslateFn
 ): RenderableAdminRegistrySnapshot {
   const capabilityIndex = new Map<string, Set<string>>();
   for (const plugin of runtimePlugins) {
@@ -115,6 +118,11 @@ export function buildAdminRegistry(
   const routes = contributions
     .flatMap((contribution) => contribution.routes)
     .filter((route) => isRouteVisible(route, runtimePlugins, capabilityIndex))
+    .map((route) => ({
+      ...route,
+      title: route.titleKey ? t(route.titleKey, route.title) : route.title,
+      summary: route.summaryKey ? t(route.summaryKey, route.summary) : route.summary
+    }))
     .sort((left, right) => (left.order ?? 0) - (right.order ?? 0));
 
   const routeIds = new Set(routes.map((route) => route.id));
@@ -122,6 +130,11 @@ export function buildAdminRegistry(
   const navigation = contributions
     .flatMap((contribution) => contribution.navigation)
     .filter((item) => isNavigationVisible(item, routeIds, runtimePlugins, capabilityIndex))
+    .map((item) => ({
+      ...item,
+      title: item.titleKey ? t(item.titleKey, item.title) : item.title,
+      group: item.groupKey ? t(item.groupKey, item.group) : item.group
+    }))
     .sort((left, right) => (left.order ?? 0) - (right.order ?? 0));
 
   return {
@@ -129,9 +142,19 @@ export function buildAdminRegistry(
     navigation,
     widgets: contributions
       .flatMap((contribution) => contribution.widgets ?? [])
+      .map((widget) => ({
+        ...widget,
+        title: widget.titleKey ? t(widget.titleKey, widget.title) : widget.title,
+        summary: widget.summaryKey ? t(widget.summaryKey, widget.summary) : widget.summary
+      }))
       .sort((left, right) => (left.order ?? 0) - (right.order ?? 0)),
     settings: contributions
       .flatMap((contribution) => contribution.settings ?? [])
-      .sort((left, right) => (left.order ?? 0) - (right.order ?? 0)),
+      .map((section) => ({
+        ...section,
+        title: section.titleKey ? t(section.titleKey, section.title) : section.title,
+        summary: section.summaryKey ? t(section.summaryKey, section.summary) : section.summary
+      }))
+      .sort((left, right) => (left.order ?? 0) - (right.order ?? 0))
   };
 }

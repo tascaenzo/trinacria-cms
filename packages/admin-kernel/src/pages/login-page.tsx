@@ -1,18 +1,6 @@
-import { useEffect } from "react";
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-  Icon,
-  Input
-} from "@trinacria-cms/admin-ui";
+import { useEffect, useState } from "react";
+import { Button, FieldDescription, FieldGroup, Input } from "@trinacria-cms/admin-ui";
+import { useI18n } from "../lib/i18n.js";
 
 export interface LoginPageProps {
   isSubmitting: boolean;
@@ -23,6 +11,10 @@ export interface LoginPageProps {
 }
 
 export function LoginPage({ action, isSubmitting, state }: LoginPageProps) {
+  const { t } = useI18n();
+  const [email, setEmail] = useState("admin@example.com");
+  const [password, setPassword] = useState("admin123");
+
   useEffect(() => {
     document.documentElement.classList.add("auth-page");
     return () => {
@@ -30,76 +22,88 @@ export function LoginPage({ action, isSubmitting, state }: LoginPageProps) {
     };
   }, []);
 
+  const hasError = Boolean(state.error);
+
   return (
-    <div className="flex min-h-svh items-center justify-center bg-[color:var(--color-panel-soft)] px-6 py-10">
-      <div className="mx-auto flex w-full max-w-[420px] flex-col items-center gap-6">
-        <div className="flex w-full flex-col items-center gap-6">
-          <div className="flex items-center justify-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-white shadow-sm">
-              <Icon name="layout-dashboard" className="h-5 w-5" />
-            </span>
-            <span className="text-sm font-semibold text-slate-950">Trinacria CMS</span>
-          </div>
+    <div className="min-h-svh bg-[radial-gradient(circle_at_top,#e2e8f0_0%,transparent_26%),linear-gradient(180deg,#f8fafc_0%,#ffffff_58%,#f8fafc_100%)]">
+      <div className="mx-auto flex min-h-svh w-full max-w-5xl items-center justify-center px-4 py-8 sm:px-6 md:px-8 md:py-12">
+        <section className="w-full max-w-md md:max-w-[430px]">
+          <div className="space-y-6 md:rounded-[28px] md:border md:border-slate-200 md:bg-white md:p-8 md:shadow-[0_32px_96px_rgba(15,23,42,0.18)]">
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <h2 className="text-3xl font-semibold tracking-[-0.03em] text-slate-950">
+                  {t("auth.login.title")}
+                </h2>
 
-          <Card className="w-full border-0 bg-white p-0 shadow-none md:rounded-2xl md:border md:border-slate-200 md:bg-white md:p-0 md:shadow-[0_12px_40px_rgba(15,23,42,0.06)]">
-            <CardHeader>
-              <CardTitle>Login to your account</CardTitle>
-              <CardDescription>Enter your email below to login to your account</CardDescription>
-            </CardHeader>
-            <CardContent>
+                <p className="text-sm leading-6 text-slate-600">{t("auth.login.summary")}</p>
+              </div>
+
               <form action={action}>
-                <FieldGroup>
-                  <Field>
-                    <FieldLabel htmlFor="email">Email</FieldLabel>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      placeholder="m@example.com"
-                      defaultValue="admin@example.com"
-                      autoComplete="email"
-                      required
-                    />
-                  </Field>
+                <FieldGroup className="gap-5">
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    label={t("auth.login.email_label")}
+                    placeholder={t("auth.login.email_placeholder")}
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    autoComplete="email"
+                    aria-describedby={hasError ? "login-form-error" : undefined}
+                    aria-invalid={hasError}
+                    className={
+                      hasError
+                        ? "border-rose-300 focus:border-rose-400 focus:ring-rose-100"
+                        : undefined
+                    }
+                    required
+                  />
 
-                  <Field>
-                    <FieldLabel htmlFor="password">Password</FieldLabel>
-                    <Input
-                      id="password"
-                      name="password"
-                      type="password"
-                      defaultValue="admin123"
-                      autoComplete="current-password"
-                      required
-                    />
-                  </Field>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    label={t("auth.login.password_label")}
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    autoComplete="current-password"
+                    aria-describedby={hasError ? "login-form-error" : undefined}
+                    aria-invalid={hasError}
+                    className={
+                      hasError
+                        ? "border-rose-300 focus:border-rose-400 focus:ring-rose-100"
+                        : undefined
+                    }
+                    required
+                  />
 
-                  <Field>
-                    {state.error ? (
-                      <FieldDescription className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700">
-                        {state.error}
-                      </FieldDescription>
-                    ) : null}
-
-                    <div className="grid gap-3">
-                      <Button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="h-10 w-full rounded-lg"
-                      >
-                        {isSubmitting ? "Logging in..." : "Login"}
-                      </Button>
-                    </div>
-
-                    <FieldDescription className="text-center text-sm">
-                      Use the administrator account configured for this CMS instance.
+                  {hasError ? (
+                    <FieldDescription
+                      id="login-form-error"
+                      role="alert"
+                      aria-live="polite"
+                      className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700"
+                    >
+                      {state.error}
                     </FieldDescription>
-                  </Field>
+                  ) : null}
+
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="h-11 w-full rounded-xl text-sm font-semibold"
+                  >
+                    {isSubmitting ? t("auth.login.submitting") : t("auth.login.submit")}
+                  </Button>
+
+                  <FieldDescription className="text-center text-sm">
+                    {t("auth.login.helper")}
+                  </FieldDescription>
                 </FieldGroup>
               </form>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );

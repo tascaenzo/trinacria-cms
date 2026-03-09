@@ -1,3 +1,4 @@
+import type { I18nBundle } from "./lib/i18n.js";
 import type { RenderableAdminContribution } from "./runtime/admin-route-runtime.js";
 
 /**
@@ -7,6 +8,7 @@ import type { RenderableAdminContribution } from "./runtime/admin-route-runtime.
 export interface BackofficeModule {
   id: string;
   contributions: readonly RenderableAdminContribution[];
+  i18n?: readonly I18nBundle[];
 }
 
 /**

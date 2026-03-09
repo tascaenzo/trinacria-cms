@@ -7,22 +7,41 @@ interface ApiErrorEnvelope {
   };
 }
 
+export interface SdkErrorDetails {
+  status?: number;
+  code: string | null;
+  message: string | null;
+}
+
+export function getSdkErrorDetails(error: unknown): SdkErrorDetails {
+  if (error instanceof CmsSdkHttpError) {
+    const data = error.data as ApiErrorEnvelope | undefined;
+    return {
+      status: error.status,
+      code: data?.error?.code ?? null,
+      message: data?.error?.message ?? `HTTP ${error.status}`
+    };
+  }
+
+  if (error instanceof Error) {
+    return {
+      status: undefined,
+      code: null,
+      message: error.message
+    };
+  }
+
+  return {
+    status: undefined,
+    code: null,
+    message: "Unexpected backoffice error"
+  };
+}
+
 /**
  * Admin pages should show concise, domain-aware error messages instead of raw
  * transport details whenever the backend exposes the standard error envelope.
  */
 export function toDisplayError(error: unknown): string {
-  if (error instanceof CmsSdkHttpError) {
-    const data = error.data as ApiErrorEnvelope | undefined;
-    if (data?.error?.message) {
-      return data.error.message;
-    }
-    return `HTTP ${error.status}`;
-  }
-
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  return "Unexpected backoffice error";
+  return getSdkErrorDetails(error).message ?? "Unexpected backoffice error";
 }

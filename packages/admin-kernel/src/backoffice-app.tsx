@@ -1,24 +1,27 @@
-import { useActionState, useCallback, useEffect, useMemo, useState } from "react";
+import { useActionState, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { AdminShell, Badge, Button, Card } from "@trinacria-cms/admin-ui";
 import type { AdminRuntimePluginInfo } from "./contracts.js";
 import type {
   GetAuthenticatedUserResponse,
   GetInstallationStatusResponse,
-  LoginWithPasswordResponse,
+  LoginWithPasswordResponse
 } from "@trinacria-cms/sdk";
 import { createOfficialAdminContributions } from "./contributions/official-admin-contributions.js";
-import { toDisplayError } from "./lib/sdk-errors.js";
+import {
+  getLocalizedInstallationError,
+  getLocalizedLoginError,
+  normalizeLocale,
+  officialI18nBundle,
+  persistBackofficeLocale,
+  readBackofficeLocale,
+  type SupportedLocale
+} from "./lib/auth-i18n.js";
+import { I18nProvider, createTranslate, type I18nBundle } from "./lib/i18n.js";
+import { getSdkErrorDetails, toDisplayError, type SdkErrorDetails } from "./lib/sdk-errors.js";
 import type { BackofficeModule } from "./module.js";
-import {
-  createIdleAsyncActionState,
-  readRequiredString,
-  type AsyncActionState,
-} from "./runtime/action-state.js";
+import { readRequiredString } from "./runtime/action-state.js";
 import { buildAdminRegistry } from "./runtime/admin-route-runtime.js";
-import {
-  clearBackofficeSession,
-  persistBackofficeSession,
-} from "./runtime/auth-session.js";
+import { clearBackofficeSession, persistBackofficeSession } from "./runtime/auth-session.js";
 import { cms } from "./runtime/cms-sdk.js";
 import { loadRuntimePluginInfo } from "./runtime/runtime-discovery.js";
 import { InstallationBootstrapPage } from "./pages/installation-bootstrap-page.js";
@@ -33,10 +36,23 @@ interface HealthSnapshot {
 
 type AuthenticatedUser = GetAuthenticatedUserResponse["data"];
 type InstallationStatus = GetInstallationStatusResponse["data"];
-type LoginActionState = AsyncActionState<LoginWithPasswordResponse["data"]>;
+type FormActionState<T> = {
+  ok: boolean;
+  error: SdkErrorDetails | null;
+  data: T | null;
+};
+type LoginActionState = FormActionState<LoginWithPasswordResponse["data"]>;
 
 export interface BackofficeAppProps {
   modules?: readonly BackofficeModule[];
+}
+
+function createIdleFormActionState<T>(): FormActionState<T> {
+  return {
+    ok: false,
+    error: null,
+    data: null
+  };
 }
 
 /**
@@ -44,21 +60,38 @@ export interface BackofficeAppProps {
  * composition so host apps only provide initialization options.
  */
 export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
+  const [locale, setLocale] = useState<SupportedLocale>(() => readBackofficeLocale());
   const [activeRouteId, setActiveRouteId] = useState<string>(readHashRoute() ?? "dashboard");
   const [runtimePlugins, setRuntimePlugins] = useState<readonly AdminRuntimePluginInfo[]>([]);
   const [health, setHealth] = useState<HealthSnapshot | null>(null);
   const [authUser, setAuthUser] = useState<AuthenticatedUser | null>(null);
   const [installationStatus, setInstallationStatus] = useState<InstallationStatus | null>(null);
-  const [bootstrapError, setBootstrapError] = useState<string | null>(null);
+  const [bootstrapError, setBootstrapError] = useState<SdkErrorDetails | null>(null);
   const [shellError, setShellError] = useState<string | null>(null);
   const [isBootstrappingApp, setIsBootstrappingApp] = useState(true);
   const [isShellLoading, setIsShellLoading] = useState(false);
+  const translationBundles = useMemo<readonly I18nBundle[]>(
+    () => [officialI18nBundle, ...modules.flatMap((module) => module.i18n ?? [])],
+    [modules]
+  );
+  const t = useMemo(
+    () => createTranslate(locale, translationBundles, "en"),
+    [locale, translationBundles]
+  );
+  const handleLocaleChange = useCallback((nextLocale: string) => {
+    setLocale(normalizeLocale(nextLocale));
+  }, []);
 
   useEffect(() => {
     if (authUser) {
       document.documentElement.classList.remove("auth-page");
     }
   }, [authUser]);
+
+  useEffect(() => {
+    document.documentElement.lang = locale;
+    persistBackofficeLocale(locale);
+  }, [locale]);
 
   useEffect(() => {
     function handleHashChange() {
@@ -74,7 +107,7 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
       accessToken: response.accessToken,
       refreshToken: response.refreshToken,
       expiresAt: response.expiresAt,
-      refreshExpiresAt: response.refreshExpiresAt,
+      refreshExpiresAt: response.refreshExpiresAt
     });
     setAuthUser(response.user);
     navigateTo("dashboard", setActiveRouteId);
@@ -86,65 +119,62 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
         const response = await cms.auth.loginWithPassword({
           body: {
             email: readRequiredString(formData, "email"),
-            password: readRequiredString(formData, "password"),
-          },
+            password: readRequiredString(formData, "password")
+          }
         });
 
         return {
           ok: true,
           error: null,
-          data: response.data,
+          data: response.data
         };
       } catch (currentError) {
         return {
           ok: false,
-          error: toDisplayError(currentError),
-          data: null,
+          error: getSdkErrorDetails(currentError),
+          data: null
         };
       }
     },
-    createIdleAsyncActionState<LoginWithPasswordResponse["data"]>(),
+    createIdleFormActionState<LoginWithPasswordResponse["data"]>()
   );
 
   const [installationActionState, submitInstallation, isInstalling] = useActionState<
     LoginActionState,
     FormData
-  >(
-    async (_previousState, formData) => {
-      try {
-        const email = readRequiredString(formData, "email");
-        const password = readRequiredString(formData, "password");
+  >(async (_previousState, formData) => {
+    try {
+      const email = readRequiredString(formData, "email");
+      const password = readRequiredString(formData, "password");
 
-        await cms.installation.bootstrapInstallation({
-          body: {
-            email,
-            displayName: readRequiredString(formData, "displayName"),
-            password,
-          },
-        });
+      await cms.installation.bootstrapInstallation({
+        body: {
+          email,
+          displayName: readRequiredString(formData, "displayName"),
+          password
+        }
+      });
 
-        const loginResponse = await cms.auth.loginWithPassword({
-          body: {
-            email,
-            password,
-          },
-        });
+      const loginResponse = await cms.auth.loginWithPassword({
+        body: {
+          email,
+          password
+        }
+      });
 
-        return {
-          ok: true,
-          error: null,
-          data: loginResponse.data,
-        };
-      } catch (currentError) {
-        return {
-          ok: false,
-          error: toDisplayError(currentError),
-          data: null,
-        };
-      }
-    },
-    createIdleAsyncActionState<LoginWithPasswordResponse["data"]>(),
-  );
+      return {
+        ok: true,
+        error: null,
+        data: loginResponse.data
+      };
+    } catch (currentError) {
+      return {
+        ok: false,
+        error: getSdkErrorDetails(currentError),
+        data: null
+      };
+    }
+  }, createIdleFormActionState<LoginWithPasswordResponse["data"]>());
 
   useEffect(() => {
     if (!loginState.ok || !loginState.data) {
@@ -195,7 +225,7 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
         }
       } catch (currentError) {
         if (isMounted) {
-          setBootstrapError(toDisplayError(currentError));
+          setBootstrapError(getSdkErrorDetails(currentError));
         }
       } finally {
         if (isMounted) {
@@ -227,7 +257,7 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
       try {
         const [plugins, healthSnapshot] = await Promise.all([
           loadRuntimePluginInfo(),
-          cms.kernelHealth.getKernelHealth() as Promise<HealthSnapshot>,
+          cms.kernelHealth.getKernelHealth() as Promise<HealthSnapshot>
         ]);
         if (!isMounted) {
           return;
@@ -255,7 +285,7 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
 
   const customContributions = useMemo(
     () => modules.flatMap((module) => module.contributions),
-    [modules],
+    [modules]
   );
 
   const registry = useMemo(() => {
@@ -265,15 +295,16 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
           pluginCount: runtimePlugins.length,
           capabilityCount: runtimePlugins.reduce(
             (total, plugin) => total + plugin.capabilities.length,
-            0,
+            0
           ),
-          systemStateLabel: health?.status ?? "unknown",
+          systemStateLabel: health?.status ?? "unknown"
         }),
-        ...customContributions,
+        ...customContributions
       ],
       runtimePlugins,
+      t
     );
-  }, [customContributions, health?.status, runtimePlugins]);
+  }, [customContributions, health?.status, runtimePlugins, t]);
 
   useEffect(() => {
     if (!registry.routes.some((route) => route.id === activeRouteId) && registry.routes[0]) {
@@ -283,11 +314,30 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
 
   const capabilityIndex = useMemo(
     () => new Map(runtimePlugins.map((plugin) => [plugin.pluginId, new Set(plugin.capabilities)])),
-    [runtimePlugins],
+    [runtimePlugins]
   );
 
   const activeRoute =
     registry.routes.find((route) => route.id === activeRouteId) ?? registry.routes[0] ?? null;
+  const loginErrorMessage =
+    getLocalizedLoginError(loginState.error, t) ?? getLocalizedLoginError(bootstrapError, t);
+  const installationErrorMessage =
+    getLocalizedInstallationError(installationActionState.error, t) ??
+    getLocalizedInstallationError(bootstrapError, t);
+
+  function renderWithI18n(node: ReactNode) {
+    return (
+      <I18nProvider
+        value={{
+          locale,
+          setLocale: handleLocaleChange,
+          t
+        }}
+      >
+        {node}
+      </I18nProvider>
+    );
+  }
 
   async function handleLogout() {
     try {
@@ -301,12 +351,15 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
   }
 
   if (isBootstrappingApp) {
-    return (
+    return renderWithI18n(
       <div className="min-h-screen bg-[color:var(--color-canvas)] px-4 py-8">
         <div className="mx-auto max-w-3xl">
-          <Card eyebrow="Bootstrap" title="Preparing backoffice state">
+          <Card
+            eyebrow={t("auth.installation.eyebrow")}
+            title={t("backoffice.shell.preparing_title")}
+          >
             <p className="text-sm leading-7 text-[color:var(--color-ink-muted)]">
-              Checking installation status and restoring the current CMS session.
+              {t("backoffice.shell.preparing_body")}
             </p>
           </Card>
         </div>
@@ -315,25 +368,25 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
   }
 
   if (installationStatus && !installationStatus.installed) {
-    return (
+    return renderWithI18n(
       <InstallationBootstrapPage
         action={submitInstallation}
         isSubmitting={isInstalling}
-        state={installationActionState.error ? installationActionState : {
-          ok: false,
-          error: bootstrapError,
-          data: null,
+        state={{
+          error: installationErrorMessage
         }}
       />
     );
   }
 
   if (!authUser) {
-    return (
+    return renderWithI18n(
       <LoginPage
         action={submitLogin}
         isSubmitting={isLoggingIn}
-        state={loginState.error ? loginState : { ok: false, error: bootstrapError, data: null }}
+        state={{
+          error: loginErrorMessage
+        }}
       />
     );
   }
@@ -343,31 +396,32 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
         route: activeRoute,
         runtimePlugins,
         capabilityIndex,
+        locale,
+        t
       })
     : null;
 
-  return (
+  return renderWithI18n(
     <AdminShell
       activeRouteId={activeRoute?.id ?? ""}
       navigation={registry.navigation}
       onNavigate={(routeId) => navigateTo(routeId, setActiveRouteId)}
-      title={activeRoute?.title ?? "Backoffice"}
-      subtitle={
-        activeRoute?.summary ??
-        "Modular admin shell for plugin-driven operations, designed to grow route by route."
-      }
+      title={activeRoute?.title ?? t("backoffice.shell.title")}
+      subtitle={activeRoute?.summary ?? t("backoffice.shell.subtitle")}
       headerActions={
         <div className="flex flex-wrap items-center justify-end gap-2">
           <div className="hidden rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-panel)] px-4 py-2 text-sm text-[color:var(--color-ink-muted)] md:block">
-            <span className="font-semibold text-[color:var(--color-ink)]">{authUser.displayName}</span>
+            <span className="font-semibold text-[color:var(--color-ink)]">
+              {authUser.displayName}
+            </span>
             <span className="mx-2 text-[color:var(--color-ink-subtle)]">/</span>
             <span>{authUser.email}</span>
           </div>
           <Button variant="secondary" onClick={() => window.location.reload()}>
-            Refresh shell
+            {t("backoffice.shell.refresh")}
           </Button>
           <Button variant="ghost" onClick={handleLogout}>
-            Sign out
+            {t("backoffice.shell.sign_out")}
           </Button>
         </div>
       }
@@ -375,41 +429,47 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
         {
           label: "Runtime",
           value: health?.status ?? (isShellLoading ? "loading" : "unknown"),
-          tone: health?.status === "ok" ? "success" : health ? "warning" : "default",
+          tone: health?.status === "ok" ? "success" : health ? "warning" : "default"
         },
         {
           label: "Plugins",
           value: String(health?.runtime.totalPlugins ?? runtimePlugins.length),
-          tone: "default",
+          tone: "default"
         },
         {
           label: "Visible routes",
           value: String(registry.routes.length),
-          tone: "default",
+          tone: "default"
         },
         {
           label: "Session",
           value: authUser.status,
-          tone: authUser.status === "active" ? "success" : "warning",
-        },
+          tone: authUser.status === "active" ? "success" : "warning"
+        }
       ]}
     >
       {shellError ? (
-        <Card eyebrow="Bootstrap" title="Backoffice could not complete discovery">
+        <Card
+          eyebrow={t("auth.installation.eyebrow")}
+          title={t("backoffice.shell.discovery_error_title")}
+        >
           <p className="text-sm leading-7 text-[color:var(--color-ink-muted)]">{shellError}</p>
         </Card>
       ) : null}
       {isShellLoading && !shellError ? (
-        <Card eyebrow="Bootstrap" title="Loading runtime discovery">
+        <Card
+          eyebrow={t("auth.installation.eyebrow")}
+          title={t("backoffice.shell.loading_discovery_title")}
+        >
           <p className="text-sm leading-7 text-[color:var(--color-ink-muted)]">
-            The backoffice is querying kernel health, installed plugins, and published capabilities.
+            {t("backoffice.shell.loading_discovery_body")}
           </p>
         </Card>
       ) : null}
       {!isShellLoading && !shellError ? content : null}
       {customContributions.length > 0 ? (
         <div className="mt-4">
-          <Badge>custom backoffice modules enabled</Badge>
+          <Badge>{t("backoffice.shell.custom_modules_enabled")}</Badge>
         </div>
       ) : null}
     </AdminShell>

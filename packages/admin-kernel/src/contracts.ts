@@ -17,7 +17,9 @@ export interface AdminRouteDefinition {
   path: string;
   pluginId: string;
   title: string;
+  titleKey?: string;
   summary?: string;
+  summaryKey?: string;
   order?: number;
   guards?: readonly AdminAccessGuard[];
 }
@@ -30,8 +32,10 @@ export interface AdminNavigationItem {
   id: string;
   routeId: string;
   title: string;
+  titleKey?: string;
   icon?: string;
   group?: string;
+  groupKey?: string;
   badge?: string;
   order?: number;
   guards?: readonly AdminAccessGuard[];
@@ -45,7 +49,9 @@ export interface AdminDashboardWidgetDefinition {
   id: string;
   pluginId: string;
   title: string;
+  titleKey?: string;
   summary?: string;
+  summaryKey?: string;
   order?: number;
   guards?: readonly AdminAccessGuard[];
 }
@@ -58,7 +64,9 @@ export interface AdminSettingsSectionDefinition {
   id: string;
   pluginId: string;
   title: string;
+  titleKey?: string;
   summary?: string;
+  summaryKey?: string;
   order?: number;
   guards?: readonly AdminAccessGuard[];
 }
@@ -71,6 +79,7 @@ export interface AdminSettingsSectionDefinition {
 export interface AdminPluginContribution {
   pluginId: string;
   displayName: string;
+  displayNameKey?: string;
   routes: readonly AdminRouteDefinition[];
   navigation: readonly AdminNavigationItem[];
   widgets?: readonly AdminDashboardWidgetDefinition[];
