@@ -1,13 +1,11 @@
 import { apiError, type ApiErrorResponse } from "../contracts/api-contract.js";
 import { apiSuccess, type ApiResponseMeta } from "../contracts/api-contract.js";
-import type { HttpContext } from "@trinacria/http";
+import { response, type HttpContext, type HttpResponse } from "@trinacria/http";
 
 /**
  * Parses a numeric query parameter from Trinacria HttpContext query object.
  */
-export function parseQueryNumber(
-  value: string | string[] | undefined,
-): number | undefined {
+export function parseQueryNumber(value: string | string[] | undefined): number | undefined {
   if (value === undefined) return undefined;
   const first = Array.isArray(value) ? value[0] : value;
   if (first === undefined || first === "") return undefined;
@@ -23,7 +21,7 @@ export function parseQueryNumber(
 export function parsePathParam(
   params: Record<string, string | undefined> | undefined,
   key: string,
-  aliases: readonly string[] = [],
+  aliases: readonly string[] = []
 ): string | undefined {
   if (!params) {
     return undefined;
@@ -64,10 +62,7 @@ export interface CookieSerializeOptions {
  * Reads a request header value in a runtime-safe way.
  * Returns the first value when a multi-value header is provided.
  */
-export function getRequestHeader(
-  ctx: Pick<HttpContext, "req">,
-  name: string,
-): string | undefined {
+export function getRequestHeader(ctx: Pick<HttpContext, "req">, name: string): string | undefined {
   const request = toNodeRequest(ctx.req);
   const value = request.headers?.[name.toLowerCase()];
   if (!value) return undefined;
@@ -77,9 +72,7 @@ export function getRequestHeader(
 /**
  * Parses a Cookie header into a key/value map.
  */
-export function parseCookieHeader(
-  cookieHeader: string | undefined,
-): Record<string, string> {
+export function parseCookieHeader(cookieHeader: string | undefined): Record<string, string> {
   if (!cookieHeader) return {};
   const entries = cookieHeader.split(";");
   const cookies: Record<string, string> = {};
@@ -103,10 +96,7 @@ export function parseCookieHeader(
 /**
  * Reads one cookie value from request context.
  */
-export function getCookieValue(
-  ctx: Pick<HttpContext, "req">,
-  name: string,
-): string | undefined {
+export function getCookieValue(ctx: Pick<HttpContext, "req">, name: string): string | undefined {
   const cookieHeader = getRequestHeader(ctx, "cookie");
   const cookies = parseCookieHeader(cookieHeader);
   return cookies[name];
@@ -118,7 +108,7 @@ export function getCookieValue(
 export function serializeCookie(
   name: string,
   value: string,
-  options: CookieSerializeOptions = {},
+  options: CookieSerializeOptions = {}
 ): string {
   const parts: string[] = [`${name}=${encodeURIComponent(value)}`];
 
@@ -152,11 +142,7 @@ export function serializeCookie(
  */
 export function toApiErrorResponse(error: unknown): ApiErrorResponse {
   if (isCodedError(error)) {
-    return apiError(
-      error.code,
-      error.message ?? "Unexpected error",
-      error.details,
-    );
+    return apiError(error.code, error.message ?? "Unexpected error", error.details);
   }
   if (error instanceof Error) {
     if (error.message.includes("already exists")) {
@@ -176,21 +162,21 @@ function isCodedError(error: unknown): error is {
     return false;
   }
   const candidate = error as { code?: unknown };
-  return (
-    typeof candidate.code === "string" &&
-    /^[a-z][a-z0-9_]*$/.test(candidate.code.trim())
-  );
+  return typeof candidate.code === "string" && /^[a-z][a-z0-9_]*$/.test(candidate.code.trim());
 }
 
 export interface PluginApiResponder {
   success<TData>(data: TData, meta?: ApiResponseMeta): { data: TData; meta?: ApiResponseMeta };
   list<TData>(
     data: readonly TData[],
-    meta?: Omit<ApiResponseMeta, "count" | "pluginId">,
+    meta?: Omit<ApiResponseMeta, "count" | "pluginId">
   ): { data: readonly TData[]; meta?: ApiResponseMeta };
-  invalidRequest(message: string, details?: Record<string, unknown>): ApiErrorResponse;
-  notFound(message: string, details?: Record<string, unknown>): ApiErrorResponse;
-  fromError(error: unknown): ApiErrorResponse;
+  invalidRequest(
+    message: string,
+    details?: Record<string, unknown>
+  ): HttpResponse<ApiErrorResponse>;
+  notFound(message: string, details?: Record<string, unknown>): HttpResponse<ApiErrorResponse>;
+  fromError(error: unknown): HttpResponse<ApiErrorResponse>;
 }
 
 /**
@@ -204,36 +190,65 @@ export function createPluginApiResponder(pluginId: string): PluginApiResponder {
     success<TData>(data: TData, meta?: ApiResponseMeta) {
       return apiSuccess(data, {
         ...pluginMeta,
-        ...(meta ?? {}),
+        ...(meta ?? {})
       });
     },
-    list<TData>(
-      data: readonly TData[],
-      meta?: Omit<ApiResponseMeta, "count" | "pluginId">,
-    ) {
+    list<TData>(data: readonly TData[], meta?: Omit<ApiResponseMeta, "count" | "pluginId">) {
       return apiSuccess(data, {
         ...pluginMeta,
         count: data.length,
-        ...(meta ?? {}),
+        ...(meta ?? {})
       });
     },
     invalidRequest(message: string, details?: Record<string, unknown>) {
-      return apiError("invalid_request", message, details, pluginMeta);
+      return response(apiError("invalid_request", message, details, pluginMeta), {
+        status: 400
+      });
     },
     notFound(message: string, details?: Record<string, unknown>) {
-      return apiError("not_found", message, details, pluginMeta);
+      return response(apiError("not_found", message, details, pluginMeta), {
+        status: 404
+      });
     },
     fromError(error: unknown) {
       const mapped = toApiErrorResponse(error);
-      return {
-        ...mapped,
-        meta: {
-          ...pluginMeta,
-          ...(mapped.meta ?? {}),
+      return response(
+        {
+          ...mapped,
+          meta: {
+            ...pluginMeta,
+            ...(mapped.meta ?? {})
+          }
         },
-      };
-    },
+        {
+          status: getStatusCodeForApiError(mapped.error.code)
+        }
+      );
+    }
   };
+}
+
+export function getStatusCodeForApiError(code: string): number {
+  if (code === "invalid_request" || code === "validation_error") {
+    return 400;
+  }
+  if (code === "not_found") {
+    return 404;
+  }
+  if (code === "conflict" || code.startsWith("installation_")) {
+    return 409;
+  }
+  if (code === "auth_forbidden_admin_required") {
+    return 403;
+  }
+  if (code.startsWith("auth_")) {
+    return 401;
+  }
+  if (code === "internal_error") {
+    return 500;
+  }
+
+  return 400;
 }
 
 /**
@@ -245,7 +260,7 @@ export function toOpenApiSchema(
     | Record<string, unknown>
     | {
         toOpenApi(): Record<string, unknown>;
-      },
+      }
 ): Record<string, unknown> {
   if (
     schema &&
@@ -277,11 +292,8 @@ function toNodeRequest(value: unknown): {
       if (typeof headerValue === "string") {
         headers[key.toLowerCase()] = headerValue;
       } else if (Array.isArray(headerValue)) {
-        const normalized = headerValue.filter(
-          (item): item is string => typeof item === "string",
-        );
-        headers[key.toLowerCase()] =
-          normalized.length > 0 ? normalized : undefined;
+        const normalized = headerValue.filter((item): item is string => typeof item === "string");
+        headers[key.toLowerCase()] = normalized.length > 0 ? normalized : undefined;
       }
     }
   }

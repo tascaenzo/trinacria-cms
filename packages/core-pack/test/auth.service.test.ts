@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { DbAdapter, DbQuery, DbRepository } from "@trinacria-cms/kernel";
+import {
+  type DbAdapter,
+  type DbQuery,
+  type DbRepository,
+  type HttpContext,
+} from "@trinacria-cms/kernel";
+import { AuthController } from "../src/modules/auth/auth.controller.js";
 import { AuthUsersRepository } from "../src/modules/auth/auth-users.repository.js";
 import { JwtAuthError, JwtAuthService } from "../src/modules/auth/auth.service.js";
 import { LocalCredentialsRepository } from "../src/modules/installation/local-credentials.repository.js";
@@ -113,6 +119,44 @@ test("JwtAuthService forbids non-admin token on admin-required auth", async () =
       error instanceof JwtAuthError &&
       error.code === "auth_forbidden_admin_required",
   );
+});
+
+test("AuthController login route returns 401 for invalid credentials", async () => {
+  const runtime = createRuntime();
+
+  await runtime.installation.bootstrap({
+    email: "admin@example.com",
+    displayName: "Admin",
+    password: "StrongPassword123!",
+  });
+
+  const controller = new AuthController(runtime.auth);
+  const route = controller
+    .routes()
+    .find((candidate) => candidate.method === "POST" && candidate.path === "/v1/auth/login");
+
+  assert.ok(route, "Expected auth login route to be registered");
+
+  const result = await route.handler(
+    createHttpContext({
+      email: "admin@example.com",
+      password: "WrongPassword123!",
+    }),
+  );
+
+  assert.ok(result && typeof result === "object");
+  const response = result as { status?: number; body?: unknown };
+
+  assert.equal(response.status, 401);
+  assert.deepEqual(response.body, {
+    error: {
+      code: "auth_invalid_credentials",
+      message: "Invalid credentials",
+    },
+    meta: {
+      pluginId: "core-pack",
+    },
+  });
 });
 
 interface Runtime {
@@ -269,4 +313,21 @@ function applySort<TData extends Record<string, unknown>>(
     }
     return aValue > bValue ? -1 : 1;
   });
+}
+
+function createHttpContext(body: unknown): HttpContext {
+  const abortController = new AbortController();
+
+  return {
+    req: { headers: {} } as HttpContext["req"],
+    res: {} as HttpContext["res"],
+    params: {},
+    query: {},
+    body,
+    signal: abortController.signal,
+    abort(reason?: unknown) {
+      abortController.abort(reason);
+    },
+    state: {},
+  };
 }

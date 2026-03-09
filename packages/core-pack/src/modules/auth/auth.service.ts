@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 import type { UserRecord } from "../users/users.schemas.js";
 import {
   type InstallationStateRecord,
@@ -37,6 +37,7 @@ export class JwtAuthError extends Error {
  */
 export class JwtAuthService {
   private readonly jwtSecret: string;
+  private readonly jwtKey: Uint8Array;
   private readonly accessTtlSeconds: number;
   private readonly refreshTtlSeconds: number;
 
@@ -47,6 +48,7 @@ export class JwtAuthService {
     private readonly passwordHashing: PasswordHashingService,
   ) {
     this.jwtSecret = readJwtSecretFromEnv();
+    this.jwtKey = createJwtKey(this.jwtSecret);
     this.accessTtlSeconds = readAccessTtlSecondsFromEnv();
     this.refreshTtlSeconds = readRefreshTtlSecondsFromEnv();
   }
@@ -79,7 +81,7 @@ export class JwtAuthService {
     const nowSeconds = Math.floor(Date.now() / 1000);
     const accessExp = nowSeconds + this.accessTtlSeconds;
     const refreshExp = nowSeconds + this.refreshTtlSeconds;
-    const accessToken = createJwtToken(
+    const accessToken = await createJwtToken(
       {
         kind: "access",
         sub: user.id,
@@ -88,9 +90,9 @@ export class JwtAuthService {
         iat: nowSeconds,
         exp: accessExp,
       },
-      this.jwtSecret,
+      this.jwtKey,
     );
-    const refreshToken = createJwtToken(
+    const refreshToken = await createJwtToken(
       {
         kind: "refresh",
         sub: user.id,
@@ -99,7 +101,7 @@ export class JwtAuthService {
         iat: nowSeconds,
         exp: refreshExp,
       },
-      this.jwtSecret,
+      this.jwtKey,
     );
     const expiresAt = new Date(accessExp * 1000).toISOString();
     const refreshExpiresAt = new Date(refreshExp * 1000).toISOString();
@@ -123,7 +125,7 @@ export class JwtAuthService {
       throw new JwtAuthError("auth_missing_token", "Missing bearer token");
     }
 
-    const claims = verifyJwtToken(normalizedToken, this.jwtSecret);
+    const claims = await verifyJwtToken(normalizedToken, this.jwtKey);
     if (claims.kind !== "access") {
       throw new JwtAuthError("auth_invalid_token", "Expected an access token");
     }
@@ -160,7 +162,7 @@ export class JwtAuthService {
       throw new JwtAuthError("auth_missing_token", "Missing refresh token");
     }
 
-    const claims = verifyJwtToken(normalizedToken, this.jwtSecret);
+    const claims = await verifyJwtToken(normalizedToken, this.jwtKey);
     if (claims.kind !== "refresh") {
       throw new JwtAuthError("auth_invalid_token", "Expected a refresh token");
     }
@@ -212,12 +214,7 @@ function readJwtSecretFromEnv(): string {
   return "trinacria-cms-dev-secret-change-me";
 }
 
-interface JwtHeader {
-  alg: "HS256";
-  typ: "JWT";
-}
-
-interface JwtClaims {
+interface JwtClaims extends JWTPayload {
   kind: "access" | "refresh";
   sub: string;
   pluginId: string;
@@ -226,46 +223,60 @@ interface JwtClaims {
   exp: number;
 }
 
-function createJwtToken(claims: JwtClaims, secret: string): string {
-  const header: JwtHeader = { alg: "HS256", typ: "JWT" };
-  const encodedHeader = base64UrlEncode(JSON.stringify(header));
-  const encodedPayload = base64UrlEncode(JSON.stringify(claims));
-  const unsignedToken = `${encodedHeader}.${encodedPayload}`;
-  const signature = signHmacSha256(unsignedToken, secret);
-  return `${unsignedToken}.${signature}`;
+function createJwtKey(secret: string): Uint8Array {
+  return new TextEncoder().encode(secret);
 }
 
-function verifyJwtToken(token: string, secret: string): JwtClaims {
-  const parts = token.split(".");
-  if (parts.length !== 3) {
-    throw new JwtAuthError("auth_invalid_token", "Invalid JWT format");
-  }
+async function createJwtToken(
+  claims: JwtClaims,
+  secret: Uint8Array,
+): Promise<string> {
+  return new SignJWT({
+    kind: claims.kind,
+    pluginId: claims.pluginId,
+    isAdmin: claims.isAdmin,
+  })
+    .setProtectedHeader({ alg: "HS256", typ: "JWT" })
+    .setSubject(claims.sub)
+    .setIssuedAt(claims.iat)
+    .setExpirationTime(claims.exp)
+    .sign(secret);
+}
 
-  const [encodedHeader, encodedPayload, receivedSignature] = parts;
-  if (!encodedHeader || !encodedPayload || !receivedSignature) {
-    throw new JwtAuthError("auth_invalid_token", "Invalid JWT segments");
-  }
+async function verifyJwtToken(
+  token: string,
+  secret: Uint8Array,
+): Promise<JwtClaims> {
+  try {
+    const { payload, protectedHeader } = await jwtVerify<JwtClaims>(token, secret, {
+      algorithms: ["HS256"],
+    });
 
-  const header = parseJson<JwtHeader>(base64UrlDecode(encodedHeader));
-  if (header.alg !== "HS256" || header.typ !== "JWT") {
-    throw new JwtAuthError("auth_invalid_token", "Unsupported JWT header");
-  }
+    if (protectedHeader.typ !== "JWT") {
+      throw new JwtAuthError("auth_invalid_token", "Unsupported JWT header");
+    }
 
-  const expectedSignature = signHmacSha256(
-    `${encodedHeader}.${encodedPayload}`,
-    secret,
-  );
-  if (!base64UrlSignaturesEqual(receivedSignature, expectedSignature)) {
-    throw new JwtAuthError("auth_invalid_token", "Invalid JWT signature");
-  }
+    return normalizeClaims(payload);
+  } catch (error) {
+    if (error instanceof JwtAuthError) {
+      throw error;
+    }
 
-  const payload = parseJson<Partial<JwtClaims>>(base64UrlDecode(encodedPayload));
-  const claims = normalizeClaims(payload);
-  const nowSeconds = Math.floor(Date.now() / 1000);
-  if (claims.exp <= nowSeconds) {
-    throw new JwtAuthError("auth_token_expired", "JWT token is expired");
+    const code =
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      typeof (error as { code?: unknown }).code === "string"
+        ? ((error as { code: string }).code)
+        : "";
+    const message = error instanceof Error ? error.message.toLowerCase() : "";
+
+    if (code.includes("EXPIRED") || message.includes("expired")) {
+      throw new JwtAuthError("auth_token_expired", "JWT token is expired");
+    }
+
+    throw new JwtAuthError("auth_invalid_token", "Invalid JWT token");
   }
-  return claims;
 }
 
 function normalizeClaims(payload: Partial<JwtClaims>): JwtClaims {
@@ -288,54 +299,4 @@ function normalizeClaims(payload: Partial<JwtClaims>): JwtClaims {
     iat,
     exp,
   };
-}
-
-function signHmacSha256(value: string, secret: string): string {
-  return base64UrlFromBuffer(
-    createHmac("sha256", secret).update(value, "utf8").digest(),
-  );
-}
-
-function base64UrlEncode(value: string): string {
-  return base64UrlFromBuffer(Buffer.from(value, "utf8"));
-}
-
-function base64UrlDecode(value: string): string {
-  try {
-    const normalized = value.replaceAll("-", "+").replaceAll("_", "/");
-    const pad = normalized.length % 4;
-    const padded = normalized + (pad === 0 ? "" : "=".repeat(4 - pad));
-    return Buffer.from(padded, "base64").toString("utf8");
-  } catch {
-    throw new JwtAuthError("auth_invalid_token", "Invalid JWT encoding");
-  }
-}
-
-function base64UrlFromBuffer(buffer: Buffer): string {
-  return buffer
-    .toString("base64")
-    .replaceAll("=", "")
-    .replaceAll("+", "-")
-    .replaceAll("/", "_");
-}
-
-function base64UrlSignaturesEqual(a: string, b: string): boolean {
-  try {
-    const left = Buffer.from(a.replaceAll("-", "+").replaceAll("_", "/"), "base64");
-    const right = Buffer.from(b.replaceAll("-", "+").replaceAll("_", "/"), "base64");
-    if (left.length === 0 || right.length === 0 || left.length !== right.length) {
-      return false;
-    }
-    return timingSafeEqual(left, right);
-  } catch {
-    return false;
-  }
-}
-
-function parseJson<T>(value: string): T {
-  try {
-    return JSON.parse(value) as T;
-  } catch {
-    throw new JwtAuthError("auth_invalid_token", "Invalid JWT JSON");
-  }
 }
