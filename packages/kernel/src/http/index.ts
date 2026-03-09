@@ -3,3 +3,5 @@ export * from "./cms-swagger.controller.js";
 export * from "./kernel-health.controller.js";
 export * from "./kernel-health.module.js";
 export * from "./kernel-health.tokens.js";
+export * from "./kernel-system.controller.js";
+export * from "./kernel-system.tokens.js";

@@ -22,6 +22,21 @@ import type { RolesService } from "./roles.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
 
+const RolesListQueryParameters = [
+  {
+    name: "limit",
+    in: "query",
+    required: false,
+    schema: { type: "integer", minimum: 1, maximum: 200 },
+  },
+  {
+    name: "offset",
+    in: "query",
+    required: false,
+    schema: { type: "integer", minimum: 0 },
+  },
+] as const;
+
 /**
  * Public REST API for core-pack roles (`/v1/roles`).
  */
@@ -47,6 +62,7 @@ export class RolesController extends HttpController {
           tags: [CORE_PACK_OPENAPI_TAGS.ROLES],
           operationId: "listRoles",
           security: [{ bearerAuth: [] }],
+          parameters: [...RolesListQueryParameters],
           responses: {
             200: {
               description: "Roles list",

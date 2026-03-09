@@ -22,6 +22,21 @@ import type { PermissionsService } from "./permissions.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
 
+const PermissionsListQueryParameters = [
+  {
+    name: "limit",
+    in: "query",
+    required: false,
+    schema: { type: "integer", minimum: 1, maximum: 200 },
+  },
+  {
+    name: "offset",
+    in: "query",
+    required: false,
+    schema: { type: "integer", minimum: 0 },
+  },
+] as const;
+
 /**
  * Public REST API for core-pack permissions (`/v1/permissions`).
  */
@@ -50,6 +65,7 @@ export class PermissionsController extends HttpController {
             tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
             operationId: "listPermissions",
             security: [{ bearerAuth: [] }],
+            parameters: [...PermissionsListQueryParameters],
             responses: {
               200: {
                 description: "Permissions list",

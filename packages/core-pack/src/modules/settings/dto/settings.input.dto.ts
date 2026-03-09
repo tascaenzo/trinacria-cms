@@ -95,3 +95,67 @@ export const ExportPluginSettingsParamSchema = s.object(
 export type ExportPluginSettingsParam = Infer<
   typeof ExportPluginSettingsParamSchema
 >;
+
+/**
+ * Shared OpenAPI schema for free-form JSON values accepted by settings endpoints.
+ */
+export const JsonValueOpenApiSchema: Record<string, unknown> = {
+  oneOf: [
+    { type: "string" },
+    { type: "number" },
+    { type: "boolean" },
+    { type: "null" },
+    {
+      type: "array",
+      items: {},
+    },
+    {
+      type: "object",
+      additionalProperties: true,
+    },
+  ],
+};
+
+/**
+ * Explicit OpenAPI schema for settings definition upsert request.
+ * The runtime validator remains the schema above, while this object gives
+ * the SDK generator a precise body contract.
+ */
+export const UpsertSettingDefinitionBodyOpenApiSchema: Record<string, unknown> = {
+  type: "object",
+  additionalProperties: false,
+  required: ["key"],
+  properties: {
+    key: { type: "string" },
+    category: { type: "string" },
+    description: { type: "string" },
+    schema: JsonValueOpenApiSchema,
+    defaultValue: JsonValueOpenApiSchema,
+  },
+};
+
+/**
+ * Explicit OpenAPI schema for setting value upsert request.
+ */
+export const UpsertSettingValueBodyOpenApiSchema: Record<string, unknown> = {
+  type: "object",
+  additionalProperties: false,
+  required: ["value"],
+  properties: {
+    value: JsonValueOpenApiSchema,
+    updatedBy: { type: "string" },
+  },
+};
+
+/**
+ * Explicit OpenAPI schema for encrypted secret upsert request.
+ */
+export const UpsertSettingSecretBodyOpenApiSchema: Record<string, unknown> = {
+  type: "object",
+  additionalProperties: false,
+  required: ["plaintext"],
+  properties: {
+    plaintext: { type: "string" },
+    updatedBy: { type: "string" },
+  },
+};

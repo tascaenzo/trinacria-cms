@@ -10,12 +10,22 @@ import {
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import { CORE_PACK_OPENAPI_TAGS } from "../openapi-tags.js";
 import {
+  ExportedPluginSettingsResponseOpenApiSchema,
   ExportPluginSettingsParamSchema,
   ListSettingDefinitionsQuerySchema,
+  ListSettingDefinitionsResponseOpenApiSchema,
+  ResolvedSettingValueResponseOpenApiSchema,
+  RevealedSettingSecretResponseOpenApiSchema,
   SettingKeyParamSchema,
+  SettingDefinitionResponseOpenApiSchema,
+  SettingSecretMetadataResponseOpenApiSchema,
+  SettingValueResponseOpenApiSchema,
   SettingsErrorResponseSchema,
+  UpsertSettingDefinitionBodyOpenApiSchema,
   UpsertSettingDefinitionInputSchema,
+  UpsertSettingSecretBodyOpenApiSchema,
   UpsertSettingSecretInputSchema,
+  UpsertSettingValueBodyOpenApiSchema,
   UpsertSettingValueInputSchema,
 } from "./dto/index.js";
 import { readOptionalJsonField } from "./settings-http-mapping.js";
@@ -29,93 +39,38 @@ import type { SettingsService } from "./settings.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
 
-const JsonValueOpenApi: Record<string, unknown> = {
-  oneOf: [
-    { type: "string" },
-    { type: "number" },
-    { type: "boolean" },
-    { type: "null" },
-    {
-      type: "array",
-      items: {},
-    },
-    {
-      type: "object",
-      additionalProperties: true,
-    },
-  ],
-};
-
-const SettingDefinitionOpenApi: Record<string, unknown> = {
-  type: "object",
-  additionalProperties: false,
-  required: ["id", "key", "ownerPluginId", "status", "createdAt", "updatedAt"],
-  properties: {
-    id: { type: "string" },
-    key: { type: "string" },
-    ownerPluginId: { type: "string" },
-    category: { type: "string" },
-    description: { type: "string" },
-    schema: JsonValueOpenApi,
-    defaultValue: JsonValueOpenApi,
-    status: { type: "string", enum: ["active", "disabled"] },
-    createdAt: { type: "string", format: "date-time" },
-    updatedAt: { type: "string", format: "date-time" },
-  },
-};
-
-const SettingValueOpenApi: Record<string, unknown> = {
-  type: "object",
-  additionalProperties: false,
-  required: [
-    "id",
-    "key",
-    "ownerPluginId",
-    "value",
-    "version",
-    "createdAt",
-    "updatedAt",
-  ],
-  properties: {
-    id: { type: "string" },
-    key: { type: "string" },
-    ownerPluginId: { type: "string" },
-    value: JsonValueOpenApi,
-    version: { type: "integer" },
-    updatedBy: { type: "string" },
-    createdAt: { type: "string", format: "date-time" },
-    updatedAt: { type: "string", format: "date-time" },
-  },
-};
-
-const SecretMetadataOpenApi: Record<string, unknown> = {
-  type: "object",
-  additionalProperties: false,
-  required: [
-    "id",
-    "key",
-    "ownerPluginId",
-    "algorithm",
-    "keyVersion",
-    "maskedValue",
-    "createdAt",
-    "updatedAt",
-  ],
-  properties: {
-    id: { type: "string" },
-    key: { type: "string" },
-    ownerPluginId: { type: "string" },
-    algorithm: { type: "string", enum: ["aes-256-gcm"] },
-    keyVersion: { type: "string" },
-    maskedValue: { type: "string" },
-    updatedBy: { type: "string" },
-    createdAt: { type: "string", format: "date-time" },
-    updatedAt: { type: "string", format: "date-time" },
-  },
-};
-
 const SignedPluginAuthDescription =
   "Requires signed plugin caller headers: x-cms-plugin-id, x-cms-plugin-ts, x-cms-plugin-nonce, x-cms-plugin-signature.";
+
+const SettingsListQueryParameters = [
+  {
+    name: "ownerPluginId",
+    in: "query",
+    required: false,
+    schema: { type: "string" },
+  },
+  {
+    name: "limit",
+    in: "query",
+    required: false,
+    schema: { type: "integer", minimum: 1, maximum: 200 },
+  },
+  {
+    name: "offset",
+    in: "query",
+    required: false,
+    schema: { type: "integer", minimum: 0 },
+  },
+] as const;
+
+const ExportPluginSettingsPathParameters = [
+  {
+    name: "pluginId",
+    in: "path",
+    required: true,
+    schema: { type: "string" },
+  },
+] as const;
 
 /**
  * Public REST API for flexible settings + encrypted secrets.
@@ -138,16 +93,11 @@ export class SettingsController extends HttpController {
           summary: "List setting definitions",
           tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
           operationId: "listSettingDefinitions",
+          parameters: [...SettingsListQueryParameters],
           responses: {
             200: {
               description: "Definitions list",
-              schema: {
-                type: "object",
-                properties: {
-                  data: { type: "array", items: SettingDefinitionOpenApi },
-                  meta: { type: "object", additionalProperties: true },
-                },
-              },
+              schema: ListSettingDefinitionsResponseOpenApiSchema,
             },
           },
         },
@@ -160,13 +110,7 @@ export class SettingsController extends HttpController {
           responses: {
             200: {
               description: "Definition",
-              schema: {
-                type: "object",
-                properties: {
-                  data: SettingDefinitionOpenApi,
-                  meta: { type: "object", additionalProperties: true },
-                },
-              },
+              schema: SettingDefinitionResponseOpenApiSchema,
             },
             404: {
               description: "Definition not found",
@@ -185,16 +129,14 @@ export class SettingsController extends HttpController {
             description: SignedPluginAuthDescription,
             tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
             operationId: "upsertSettingDefinition",
+            requestBody: {
+              required: true,
+              schema: UpsertSettingDefinitionBodyOpenApiSchema,
+            },
             responses: {
               200: {
                 description: "Definition upserted",
-                schema: {
-                  type: "object",
-                  properties: {
-                    data: SettingDefinitionOpenApi,
-                    meta: { type: "object", additionalProperties: true },
-                  },
-                },
+                schema: SettingDefinitionResponseOpenApiSchema,
               },
               409: {
                 description: "Ownership conflict",
@@ -216,23 +158,7 @@ export class SettingsController extends HttpController {
           responses: {
             200: {
               description: "Resolved setting value",
-              schema: {
-                type: "object",
-                properties: {
-                  data: {
-                    type: "object",
-                    properties: {
-                      key: { type: "string" },
-                      ownerPluginId: { type: "string" },
-                      value: JsonValueOpenApi,
-                      source: { type: "string", enum: ["value", "default"] },
-                      version: { type: "integer" },
-                      updatedAt: { type: "string", format: "date-time" },
-                    },
-                  },
-                  meta: { type: "object", additionalProperties: true },
-                },
-              },
+              schema: ResolvedSettingValueResponseOpenApiSchema,
             },
             404: {
               description: "Value not found",
@@ -251,16 +177,14 @@ export class SettingsController extends HttpController {
             description: SignedPluginAuthDescription,
             tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
             operationId: "upsertSettingValue",
+            requestBody: {
+              required: true,
+              schema: UpsertSettingValueBodyOpenApiSchema,
+            },
             responses: {
               200: {
                 description: "Value upserted",
-                schema: {
-                  type: "object",
-                  properties: {
-                    data: SettingValueOpenApi,
-                    meta: { type: "object", additionalProperties: true },
-                  },
-                },
+                schema: SettingValueResponseOpenApiSchema,
               },
               409: {
                 description: "Ownership conflict",
@@ -287,13 +211,7 @@ export class SettingsController extends HttpController {
             responses: {
               200: {
                 description: "Secret metadata",
-                schema: {
-                  type: "object",
-                  properties: {
-                    data: SecretMetadataOpenApi,
-                    meta: { type: "object", additionalProperties: true },
-                  },
-                },
+                schema: SettingSecretMetadataResponseOpenApiSchema,
               },
               404: {
                 description: "Secret not found",
@@ -317,16 +235,14 @@ export class SettingsController extends HttpController {
             description: SignedPluginAuthDescription,
             tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
             operationId: "upsertSettingSecret",
+            requestBody: {
+              required: true,
+              schema: UpsertSettingSecretBodyOpenApiSchema,
+            },
             responses: {
               200: {
                 description: "Secret metadata",
-                schema: {
-                  type: "object",
-                  properties: {
-                    data: SecretMetadataOpenApi,
-                    meta: { type: "object", additionalProperties: true },
-                  },
-                },
+                schema: SettingSecretMetadataResponseOpenApiSchema,
               },
               409: {
                 description: "Ownership conflict",
@@ -353,20 +269,7 @@ export class SettingsController extends HttpController {
             responses: {
               200: {
                 description: "Secret value",
-                schema: {
-                  type: "object",
-                  properties: {
-                    data: {
-                      type: "object",
-                      required: ["key", "value"],
-                      properties: {
-                        key: { type: "string" },
-                        value: { type: "string" },
-                      },
-                    },
-                    meta: { type: "object", additionalProperties: true },
-                  },
-                },
+                schema: RevealedSettingSecretResponseOpenApiSchema,
               },
               404: {
                 description: "Secret not found",
@@ -390,19 +293,11 @@ export class SettingsController extends HttpController {
             description: SignedPluginAuthDescription,
             tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
             operationId: "exportPluginSettings",
+            parameters: [...ExportPluginSettingsPathParameters],
             responses: {
               200: {
                 description: "Exported settings snapshot",
-                schema: {
-                  type: "object",
-                  properties: {
-                    data: {
-                      type: "object",
-                      additionalProperties: true,
-                    },
-                    meta: { type: "object", additionalProperties: true },
-                  },
-                },
+                schema: ExportedPluginSettingsResponseOpenApiSchema,
               },
               401: {
                 description: "Plugin caller authentication failed",

@@ -6,7 +6,11 @@ import {
   valueProvider,
   type ModuleDefinition,
 } from "@trinacria/core";
-import { createHttpPlugin, httpProvider } from "@trinacria/http";
+import {
+  createHttpPlugin,
+  httpProvider,
+  type OpenApiDocument,
+} from "@trinacria/http";
 import type {
   CmsSwaggerUiConfig,
   CmsStarterHandle,
@@ -26,7 +30,10 @@ import { CORE_TOKENS } from "../tokens/core-tokens.js";
 import { KernelHealthService } from "./kernel-health-service.js";
 import { KernelHealthHttpController } from "../http/kernel-health.controller.js";
 import { KERNEL_HEALTH_HTTP_CONTROLLER } from "../http/kernel-health.tokens.js";
+import { KernelSystemHttpController } from "../http/kernel-system.controller.js";
+import { KERNEL_SYSTEM_HTTP_CONTROLLER } from "../http/kernel-system.tokens.js";
 import { CmsSwaggerController } from "../http/cms-swagger.controller.js";
+import { KernelSystemService } from "./kernel-system-service.js";
 
 const CMS_STARTER_SWAGGER_CONFIG_TOKEN = createToken<CmsSwaggerUiConfig>(
   "CMS_STARTER_SWAGGER_CONFIG",
@@ -143,6 +150,16 @@ export async function startCmsApp(
               KernelHealthHttpController,
               [CORE_TOKENS.KERNEL_HEALTH_SERVICE],
             ),
+            factoryProvider(
+              CORE_TOKENS.KERNEL_SYSTEM_SERVICE,
+              (runtime) => new KernelSystemService(runtime as PluginRuntime),
+              [CORE_TOKENS.PLUGIN_RUNTIME],
+            ),
+            httpProvider(
+              KERNEL_SYSTEM_HTTP_CONTROLLER,
+              KernelSystemHttpController,
+              [CORE_TOKENS.KERNEL_SYSTEM_SERVICE],
+            ),
           ]),
       ...(swaggerUi.enabled === false
         ? []
@@ -158,7 +175,12 @@ export async function startCmsApp(
       CORE_TOKENS.PLUGIN_RUNTIME,
       ...(options.enableHealthModule === false
         ? []
-        : [CORE_TOKENS.KERNEL_HEALTH_SERVICE, KERNEL_HEALTH_HTTP_CONTROLLER]),
+        : [
+            CORE_TOKENS.KERNEL_HEALTH_SERVICE,
+            KERNEL_HEALTH_HTTP_CONTROLLER,
+            CORE_TOKENS.KERNEL_SYSTEM_SERVICE,
+            KERNEL_SYSTEM_HTTP_CONTROLLER,
+          ]),
       ...(swaggerUi.enabled === false ? [] : [CMS_STARTER_SWAGGER_CONTROLLER]),
     ],
   });
@@ -242,8 +264,8 @@ async function registerAppModules(
 }
 
 function withJwtBearerSecurityScheme(
-  document: Record<string, unknown>,
-): Record<string, unknown> {
+  document: OpenApiDocument,
+): OpenApiDocument {
   const components =
     document.components && typeof document.components === "object"
       ? (document.components as Record<string, unknown>)

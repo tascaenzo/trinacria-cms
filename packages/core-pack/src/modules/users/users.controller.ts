@@ -22,6 +22,21 @@ import type { UsersService } from "./users.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
 
+const UsersListQueryParameters = [
+  {
+    name: "limit",
+    in: "query",
+    required: false,
+    schema: { type: "integer", minimum: 1, maximum: 200 },
+  },
+  {
+    name: "offset",
+    in: "query",
+    required: false,
+    schema: { type: "integer", minimum: 0 },
+  },
+] as const;
+
 /**
  * Public REST API for core-pack users (`/v1/users`).
  */
@@ -47,6 +62,7 @@ export class UsersController extends HttpController {
           tags: [CORE_PACK_OPENAPI_TAGS.USERS],
           operationId: "listUsers",
           security: [{ bearerAuth: [] }],
+          parameters: [...UsersListQueryParameters],
           responses: {
             200: {
               description: "Users list",

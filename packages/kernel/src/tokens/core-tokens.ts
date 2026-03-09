@@ -4,6 +4,7 @@ import type { DbAdapter } from "../contracts/db-adapter.js";
 import type { PluginRuntime } from "../contracts/plugin-runtime.js";
 import type { PluginRuntimeStore } from "../contracts/plugin-runtime-store.js";
 import type { PluginSecurityProvisioner } from "../contracts/plugin-security-provisioner.js";
+import type { KernelSystemService } from "../runtime/kernel-system-service.js";
 import type { KernelHealthService } from "../runtime/kernel-health-service.js";
 import type { EntityRegistry } from "../runtime/entity-registry.js";
 
@@ -23,6 +24,9 @@ export const CORE_TOKENS = {
   ),
   KERNEL_HEALTH_SERVICE: createToken<KernelHealthService>(
     "CMS_KERNEL_HEALTH_SERVICE",
+  ),
+  KERNEL_SYSTEM_SERVICE: createToken<KernelSystemService>(
+    "CMS_KERNEL_SYSTEM_SERVICE",
   ),
   LOGGER: createToken<{
     info(message: string, metadata?: Record<string, unknown>): void;

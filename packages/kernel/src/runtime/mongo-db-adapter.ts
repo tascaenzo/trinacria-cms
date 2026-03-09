@@ -237,9 +237,25 @@ export class MongoDbAdapter implements DbAdapter {
   }
 
   private buildCollectionName(context: NamespaceContext, entityName: string): string {
-    const namespace = sanitizeIdentifier(buildNamespaceKey(context));
+    const namespace = this.buildStorageNamespace(context);
     const entity = sanitizeIdentifier(entityName);
     return `${namespace}__${entity}`;
+  }
+
+  /**
+   * Keeps logical namespace semantics intact while allowing reserved infrastructure
+   * namespaces to use cleaner physical collection names.
+   */
+  private buildStorageNamespace(context: NamespaceContext): string {
+    const pluginId = context.pluginId.trim().toLowerCase();
+    if (pluginId === "kernel") {
+      if (context.workspaceId) {
+        return `kernel_workspace_${sanitizeIdentifier(context.workspaceId)}`;
+      }
+      return "kernel";
+    }
+
+    return sanitizeIdentifier(buildNamespaceKey(context));
   }
 
   private applyParser<TData>(query: DbQuery<TData>, value: unknown): TData {

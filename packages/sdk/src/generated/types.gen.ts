@@ -1,0 +1,1199 @@
+/* eslint-disable */
+// Auto-generated from OpenAPI. Do not edit by hand.
+
+export type AssignUserRoleRequest = {
+  path: {
+  "id": string;
+};
+  body: {
+  "roleCode": string;
+};
+};
+
+export type AssignUserRoleResponse = {
+  "data": {
+  "id": string;
+  "userId": string;
+  "roleCode": string;
+  "sourcePluginId": string;
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type BootstrapInstallationRequest = {
+  body: {
+  "email": string;
+  "displayName": string;
+  "password": string;
+};
+};
+
+export type BootstrapInstallationResponse = {
+  "data": {
+  "status": {
+  "installed": boolean;
+  "installedAt"?: string;
+  "adminUserId"?: string;
+};
+  "adminUser": {
+  "id": string;
+  "email": string;
+  "displayName": string;
+  "status": "active" | "suspended";
+  "createdAt": string;
+  "updatedAt": string;
+};
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+};
+};
+
+export type CreateApiKeyRequest = {
+  body: {
+  "name": string;
+  "description"?: string;
+  "kind"?: "publishable" | "secret" | "service";
+  "roleCodes"?: Array<string>;
+  "permissionKeys"?: Array<string>;
+  "policyRules"?: Array<{
+  "effect": "allow" | "deny";
+  "permissionPattern": string;
+  "conditions": Array<"resource_id_required" | "resource_id_equals_subject">;
+}>;
+  "expiresAt"?: string;
+};
+};
+
+export type CreateApiKeyResponse = {
+  "data": {
+  "record": {
+  "id": string;
+  "keyPrefix": string;
+  "secretPreview": string;
+  "name": string;
+  "description"?: string;
+  "kind": "publishable" | "secret" | "service";
+  "status": "active" | "revoked";
+  "roleCodes": Array<string>;
+  "permissionKeys": Array<string>;
+  "policyRules": Array<{
+  "effect": "allow" | "deny";
+  "permissionPattern": string;
+  "conditions": Array<"resource_id_required" | "resource_id_equals_subject">;
+}>;
+  "createdAt": string;
+  "updatedAt": string;
+  "lastUsedAt"?: string;
+  "expiresAt"?: string;
+  "revokedAt"?: string;
+};
+  "apiKey": string;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type CreatePermissionRequest = {
+  body: {
+  "key": string;
+  "displayName": string;
+  "description"?: string;
+};
+};
+
+export type CreatePermissionResponse = {
+  "data": {
+  "id": string;
+  "key": string;
+  "displayName": string;
+  "description"?: string;
+  "sourcePluginId": string;
+  "status": "active" | "disabled";
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type CreateRoleRequest = {
+  body: {
+  "code": string;
+  "name": string;
+  "description"?: string;
+  "permissions"?: Array<string>;
+};
+};
+
+export type CreateRoleResponse = {
+  "data": {
+  "id": string;
+  "code": string;
+  "name": string;
+  "description"?: string;
+  "ownerPluginId"?: string;
+  "permissions"?: Array<string>;
+  "status": "active" | "disabled";
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type CreateRolePolicyRuleRequest = {
+  path: {
+  "roleCode": string;
+};
+  body: {
+  "effect": "allow" | "deny";
+  "permissionPattern": string;
+  "conditions"?: Array<"resource_id_required" | "resource_id_equals_subject">;
+};
+};
+
+export type CreateRolePolicyRuleResponse = {
+  "data": {
+  "id": string;
+  "roleCode": string;
+  "effect": "allow" | "deny";
+  "permissionPattern": string;
+  "conditions": Array<"resource_id_required" | "resource_id_equals_subject">;
+  "sourcePluginId": string;
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type CreateUserRequest = {
+  body: {
+  "email": string;
+  "displayName": string;
+};
+};
+
+export type CreateUserResponse = {
+  "data": {
+  "id": string;
+  "email": string;
+  "displayName": string;
+  "status": "active" | "suspended";
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type DeleteRolePolicyRuleRequest = {
+  path: {
+  "roleCode": string;
+  "ruleId": string;
+};
+};
+
+export type DeleteRolePolicyRuleResponse = {
+  "data": Array<{
+  "id": string;
+  "roleCode": string;
+  "effect": "allow" | "deny";
+  "permissionPattern": string;
+  "conditions": Array<"resource_id_required" | "resource_id_equals_subject">;
+  "sourcePluginId": string;
+  "createdAt": string;
+  "updatedAt": string;
+}>;
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type ExportPluginSettingsRequest = {
+  path: {
+  "pluginId": string;
+};
+};
+
+export type ExportPluginSettingsResponse = {
+  "data": {
+  "pluginId": string;
+  "definitions": Array<{
+  "id": string;
+  "key": string;
+  "ownerPluginId": string;
+  "category"?: string;
+  "description"?: string;
+  "schema"?: string | number | boolean | null | Array<unknown> | {
+  [key: string]: unknown;
+};
+  "defaultValue"?: string | number | boolean | null | Array<unknown> | {
+  [key: string]: unknown;
+};
+  "status": "active" | "disabled";
+  "createdAt": string;
+  "updatedAt": string;
+}>;
+  "values": Array<{
+  "id": string;
+  "key": string;
+  "ownerPluginId": string;
+  "value": string | number | boolean | null | Array<unknown> | {
+  [key: string]: unknown;
+};
+  "version": number;
+  "updatedBy"?: string;
+  "createdAt": string;
+  "updatedAt": string;
+}>;
+  "secrets": Array<{
+  "id": string;
+  "key": string;
+  "ownerPluginId": string;
+  "algorithm": "aes-256-gcm";
+  "keyVersion": string;
+  "maskedValue": string;
+  "updatedBy"?: string;
+  "createdAt": string;
+  "updatedAt": string;
+}>;
+};
+  "meta"?: {
+  [key: string]: unknown;
+};
+};
+
+export type GetApiKeyByIdRequest = {
+  path: {
+  "id": string;
+};
+};
+
+export type GetApiKeyByIdResponse = {
+  "data": {
+  "id": string;
+  "keyPrefix": string;
+  "secretPreview": string;
+  "name": string;
+  "description"?: string;
+  "kind": "publishable" | "secret" | "service";
+  "status": "active" | "revoked";
+  "roleCodes": Array<string>;
+  "permissionKeys": Array<string>;
+  "policyRules": Array<{
+  "effect": "allow" | "deny";
+  "permissionPattern": string;
+  "conditions": Array<"resource_id_required" | "resource_id_equals_subject">;
+}>;
+  "createdAt": string;
+  "updatedAt": string;
+  "lastUsedAt"?: string;
+  "expiresAt"?: string;
+  "revokedAt"?: string;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type GetAuthenticatedUserRequest = void;
+
+export type GetAuthenticatedUserResponse = {
+  "data": {
+  "id": string;
+  "email": string;
+  "displayName": string;
+  "status": "active" | "suspended";
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+};
+};
+
+export type GetInstallationStatusRequest = void;
+
+export type GetInstallationStatusResponse = {
+  "data": {
+  "installed": boolean;
+  "installedAt"?: string;
+  "adminUserId"?: string;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+};
+};
+
+export type GetKernelDependencyGraphRequest = void;
+
+export type GetKernelDependencyGraphResponse = {
+  "nodes": Array<{
+  "pluginId": string;
+  "state": string;
+  "version": string;
+}>;
+  "edges": Array<{
+  "from": string;
+  "to": string;
+  "status": string;
+  "optional": boolean;
+  "reason"?: string;
+}>;
+  "warnings": Array<string>;
+};
+
+export type GetKernelHealthRequest = void;
+
+export type GetKernelHealthResponse = {
+  "timestamp": string;
+  "status": "ok" | "degraded" | "down";
+  "runtime": {
+  "totalPlugins": number;
+  "byState": {
+  "registered": number;
+  "loading": number;
+  "initializing": number;
+  "loaded": number;
+  "unloading": number;
+  "failed": number;
+  "disabled": number;
+  "unloaded": number;
+};
+};
+  "dependencies": {
+  "nodes": Array<{
+  "pluginId": string;
+  "state": string;
+  "version": string;
+}>;
+  "edges": Array<{
+  "from": string;
+  "to": string;
+  "status": string;
+  "optional": boolean;
+  "reason"?: string;
+}>;
+  "warnings": Array<string>;
+};
+  "db": {
+  "ok": boolean;
+  "reason"?: string;
+};
+  "issues": Array<string>;
+};
+
+export type GetPermissionByIdRequest = {
+  path: {
+  "id": string;
+};
+};
+
+export type GetPermissionByIdResponse = {
+  "data": {
+  "id": string;
+  "key": string;
+  "displayName": string;
+  "description"?: string;
+  "sourcePluginId": string;
+  "status": "active" | "disabled";
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type GetRoleByIdRequest = {
+  path: {
+  "id": string;
+};
+};
+
+export type GetRoleByIdResponse = {
+  "data": {
+  "id": string;
+  "code": string;
+  "name": string;
+  "description"?: string;
+  "ownerPluginId"?: string;
+  "permissions"?: Array<string>;
+  "status": "active" | "disabled";
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type GetSettingDefinitionByKeyRequest = {
+  path: {
+  "key": string;
+};
+};
+
+export type GetSettingDefinitionByKeyResponse = {
+  "data": {
+  "id": string;
+  "key": string;
+  "ownerPluginId": string;
+  "category"?: string;
+  "description"?: string;
+  "schema"?: string | number | boolean | null | Array<unknown> | {
+  [key: string]: unknown;
+};
+  "defaultValue"?: string | number | boolean | null | Array<unknown> | {
+  [key: string]: unknown;
+};
+  "status": "active" | "disabled";
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "meta"?: {
+  [key: string]: unknown;
+};
+};
+
+export type GetSettingSecretMetadataRequest = {
+  path: {
+  "key": string;
+};
+};
+
+export type GetSettingSecretMetadataResponse = {
+  "data": {
+  "id": string;
+  "key": string;
+  "ownerPluginId": string;
+  "algorithm": "aes-256-gcm";
+  "keyVersion": string;
+  "maskedValue": string;
+  "updatedBy"?: string;
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "meta"?: {
+  [key: string]: unknown;
+};
+};
+
+export type GetSettingValueByKeyRequest = {
+  path: {
+  "key": string;
+};
+};
+
+export type GetSettingValueByKeyResponse = {
+  "data": {
+  "key": string;
+  "ownerPluginId": string;
+  "value": string | number | boolean | null | Array<unknown> | {
+  [key: string]: unknown;
+};
+  "source": "value" | "default";
+  "version"?: number;
+  "updatedAt": string;
+};
+  "meta"?: {
+  [key: string]: unknown;
+};
+};
+
+export type GetUserByIdRequest = {
+  path: {
+  "id": string;
+};
+};
+
+export type GetUserByIdResponse = {
+  "data": {
+  "id": string;
+  "email": string;
+  "displayName": string;
+  "status": "active" | "suspended";
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type ListApiKeysRequest = {
+  query: {
+  "kind"?: "publishable" | "secret" | "service";
+  "status"?: "active" | "revoked";
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type ListApiKeysResponse = {
+  "data": Array<{
+  "id": string;
+  "keyPrefix": string;
+  "secretPreview": string;
+  "name": string;
+  "description"?: string;
+  "kind": "publishable" | "secret" | "service";
+  "status": "active" | "revoked";
+  "roleCodes": Array<string>;
+  "permissionKeys": Array<string>;
+  "policyRules": Array<{
+  "effect": "allow" | "deny";
+  "permissionPattern": string;
+  "conditions": Array<"resource_id_required" | "resource_id_equals_subject">;
+}>;
+  "createdAt": string;
+  "updatedAt": string;
+  "lastUsedAt"?: string;
+  "expiresAt"?: string;
+  "revokedAt"?: string;
+}>;
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type ListInstalledCapabilitiesRequest = void;
+
+export type ListInstalledCapabilitiesResponse = {
+  "data": Array<{
+  "pluginId": string;
+  "capability": string;
+  "version": string;
+  "state": "registered" | "loading" | "initializing" | "loaded" | "unloading" | "failed" | "disabled" | "unloaded";
+}>;
+  "meta"?: {
+  "pluginId"?: "kernel";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type ListInstalledPluginsRequest = void;
+
+export type ListInstalledPluginsResponse = {
+  "data": Array<{
+  "id": string;
+  "version": string;
+  "requiresCore": string;
+  "state": "registered" | "loading" | "initializing" | "loaded" | "unloading" | "failed" | "disabled" | "unloaded";
+  "capabilities": Array<string>;
+  "dependencies": Array<{
+  "pluginId": string;
+  "versionRange": string;
+  "optional": boolean;
+}>;
+  "security": {
+  "permissions": number;
+  "roles": number;
+  "grants": number;
+  "policyRules": number;
+};
+  "loadedAt"?: string;
+}>;
+  "meta"?: {
+  "pluginId"?: "kernel";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type ListPermissionsRequest = {
+  query: {
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type ListPermissionsResponse = {
+  "data": Array<{
+  "id": string;
+  "key": string;
+  "displayName": string;
+  "description"?: string;
+  "sourcePluginId": string;
+  "status": "active" | "disabled";
+  "createdAt": string;
+  "updatedAt": string;
+}>;
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type ListRolePolicyRulesRequest = {
+  path: {
+  "roleCode": string;
+};
+};
+
+export type ListRolePolicyRulesResponse = {
+  "data": Array<{
+  "id": string;
+  "roleCode": string;
+  "effect": "allow" | "deny";
+  "permissionPattern": string;
+  "conditions": Array<"resource_id_required" | "resource_id_equals_subject">;
+  "sourcePluginId": string;
+  "createdAt": string;
+  "updatedAt": string;
+}>;
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type ListRolesRequest = {
+  query: {
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type ListRolesResponse = {
+  "data": Array<{
+  "id": string;
+  "code": string;
+  "name": string;
+  "description"?: string;
+  "ownerPluginId"?: string;
+  "permissions"?: Array<string>;
+  "status": "active" | "disabled";
+  "createdAt": string;
+  "updatedAt": string;
+}>;
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type ListSettingDefinitionsRequest = {
+  query: {
+  "ownerPluginId"?: string;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type ListSettingDefinitionsResponse = {
+  "data": Array<{
+  "id": string;
+  "key": string;
+  "ownerPluginId": string;
+  "category"?: string;
+  "description"?: string;
+  "schema"?: string | number | boolean | null | Array<unknown> | {
+  [key: string]: unknown;
+};
+  "defaultValue"?: string | number | boolean | null | Array<unknown> | {
+  [key: string]: unknown;
+};
+  "status": "active" | "disabled";
+  "createdAt": string;
+  "updatedAt": string;
+}>;
+  "meta"?: {
+  [key: string]: unknown;
+};
+};
+
+export type ListUserEffectivePermissionsRequest = {
+  path: {
+  "id": string;
+};
+};
+
+export type ListUserEffectivePermissionsResponse = {
+  "data": Array<string>;
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type ListUserRolesRequest = {
+  path: {
+  "id": string;
+};
+};
+
+export type ListUserRolesResponse = {
+  "data": Array<{
+  "id": string;
+  "userId": string;
+  "roleCode": string;
+  "sourcePluginId": string;
+  "createdAt": string;
+  "updatedAt": string;
+}>;
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type ListUsersRequest = {
+  query: {
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type ListUsersResponse = {
+  "data": Array<{
+  "id": string;
+  "email": string;
+  "displayName": string;
+  "status": "active" | "suspended";
+  "createdAt": string;
+  "updatedAt": string;
+}>;
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type LoginWithPasswordRequest = {
+  body: {
+  "email": string;
+  "password": string;
+};
+};
+
+export type LoginWithPasswordResponse = {
+  "data": {
+  "accessToken": string;
+  "refreshToken": string;
+  "tokenType": "Bearer";
+  "expiresAt": string;
+  "refreshExpiresAt": string;
+  "user": {
+  "id": string;
+  "email": string;
+  "displayName": string;
+  "status": "active" | "suspended";
+  "createdAt": string;
+  "updatedAt": string;
+};
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+};
+};
+
+export type LogoutSessionRequest = void;
+
+export type LogoutSessionResponse = {
+  "data": {
+  "revoked": boolean;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+};
+};
+
+export type RemoveUserRoleRequest = {
+  path: {
+  "id": string;
+  "roleCode": string;
+};
+};
+
+export type RemoveUserRoleResponse = {
+  "data": Array<{
+  "id": string;
+  "userId": string;
+  "roleCode": string;
+  "sourcePluginId": string;
+  "createdAt": string;
+  "updatedAt": string;
+}>;
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type RevealSettingSecretRequest = {
+  path: {
+  "key": string;
+};
+};
+
+export type RevealSettingSecretResponse = {
+  "data": {
+  "key": string;
+  "value": string;
+};
+  "meta"?: {
+  [key: string]: unknown;
+};
+};
+
+export type RevokeApiKeyRequest = {
+  path: {
+  "id": string;
+};
+  body: {
+  "reason"?: string;
+};
+};
+
+export type RevokeApiKeyResponse = {
+  "data": {
+  "id": string;
+  "keyPrefix": string;
+  "secretPreview": string;
+  "name": string;
+  "description"?: string;
+  "kind": "publishable" | "secret" | "service";
+  "status": "active" | "revoked";
+  "roleCodes": Array<string>;
+  "permissionKeys": Array<string>;
+  "policyRules": Array<{
+  "effect": "allow" | "deny";
+  "permissionPattern": string;
+  "conditions": Array<"resource_id_required" | "resource_id_equals_subject">;
+}>;
+  "createdAt": string;
+  "updatedAt": string;
+  "lastUsedAt"?: string;
+  "expiresAt"?: string;
+  "revokedAt"?: string;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type RotateApiKeyRequest = {
+  path: {
+  "id": string;
+};
+  body: {
+  "name"?: string;
+  "description"?: string;
+  "roleCodes"?: Array<string>;
+  "permissionKeys"?: Array<string>;
+  "policyRules"?: Array<{
+  "effect": "allow" | "deny";
+  "permissionPattern": string;
+  "conditions": Array<"resource_id_required" | "resource_id_equals_subject">;
+}>;
+  "expiresAt"?: string;
+};
+};
+
+export type RotateApiKeyResponse = {
+  "data": {
+  "record": {
+  "id": string;
+  "keyPrefix": string;
+  "secretPreview": string;
+  "name": string;
+  "description"?: string;
+  "kind": "publishable" | "secret" | "service";
+  "status": "active" | "revoked";
+  "roleCodes": Array<string>;
+  "permissionKeys": Array<string>;
+  "policyRules": Array<{
+  "effect": "allow" | "deny";
+  "permissionPattern": string;
+  "conditions": Array<"resource_id_required" | "resource_id_equals_subject">;
+}>;
+  "createdAt": string;
+  "updatedAt": string;
+  "lastUsedAt"?: string;
+  "expiresAt"?: string;
+  "revokedAt"?: string;
+};
+  "apiKey": string;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type UpdatePermissionStatusRequest = {
+  path: {
+  "id": string;
+};
+  body: {
+  "status": "active" | "disabled";
+};
+};
+
+export type UpdatePermissionStatusResponse = {
+  "data": {
+  "id": string;
+  "key": string;
+  "displayName": string;
+  "description"?: string;
+  "sourcePluginId": string;
+  "status": "active" | "disabled";
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type UpdateRolePolicyRuleRequest = {
+  path: {
+  "roleCode": string;
+  "ruleId": string;
+};
+  body: {
+  "effect": "allow" | "deny";
+  "permissionPattern": string;
+  "conditions"?: Array<"resource_id_required" | "resource_id_equals_subject">;
+};
+};
+
+export type UpdateRolePolicyRuleResponse = {
+  "data": {
+  "id": string;
+  "roleCode": string;
+  "effect": "allow" | "deny";
+  "permissionPattern": string;
+  "conditions": Array<"resource_id_required" | "resource_id_equals_subject">;
+  "sourcePluginId": string;
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type UpdateRoleStatusRequest = {
+  path: {
+  "id": string;
+};
+  body: {
+  "status": "active" | "disabled";
+};
+};
+
+export type UpdateRoleStatusResponse = {
+  "data": {
+  "id": string;
+  "code": string;
+  "name": string;
+  "description"?: string;
+  "ownerPluginId"?: string;
+  "permissions"?: Array<string>;
+  "status": "active" | "disabled";
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type UpdateUserStatusRequest = {
+  path: {
+  "id": string;
+};
+  body: {
+  "status": "active" | "suspended";
+};
+};
+
+export type UpdateUserStatusResponse = {
+  "data": {
+  "id": string;
+  "email": string;
+  "displayName": string;
+  "status": "active" | "suspended";
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type UpsertSettingDefinitionRequest = {
+  body: {
+  "key": string;
+  "category"?: string;
+  "description"?: string;
+  "schema"?: string | number | boolean | null | Array<unknown> | {
+  [key: string]: unknown;
+};
+  "defaultValue"?: string | number | boolean | null | Array<unknown> | {
+  [key: string]: unknown;
+};
+};
+};
+
+export type UpsertSettingDefinitionResponse = {
+  "data": {
+  "id": string;
+  "key": string;
+  "ownerPluginId": string;
+  "category"?: string;
+  "description"?: string;
+  "schema"?: string | number | boolean | null | Array<unknown> | {
+  [key: string]: unknown;
+};
+  "defaultValue"?: string | number | boolean | null | Array<unknown> | {
+  [key: string]: unknown;
+};
+  "status": "active" | "disabled";
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "meta"?: {
+  [key: string]: unknown;
+};
+};
+
+export type UpsertSettingSecretRequest = {
+  path: {
+  "key": string;
+};
+  body: {
+  "plaintext": string;
+  "updatedBy"?: string;
+};
+};
+
+export type UpsertSettingSecretResponse = {
+  "data": {
+  "id": string;
+  "key": string;
+  "ownerPluginId": string;
+  "algorithm": "aes-256-gcm";
+  "keyVersion": string;
+  "maskedValue": string;
+  "updatedBy"?: string;
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "meta"?: {
+  [key: string]: unknown;
+};
+};
+
+export type UpsertSettingValueRequest = {
+  path: {
+  "key": string;
+};
+  body: {
+  "value": string | number | boolean | null | Array<unknown> | {
+  [key: string]: unknown;
+};
+  "updatedBy"?: string;
+};
+};
+
+export type UpsertSettingValueResponse = {
+  "data": {
+  "id": string;
+  "key": string;
+  "ownerPluginId": string;
+  "value": string | number | boolean | null | Array<unknown> | {
+  [key: string]: unknown;
+};
+  "version": number;
+  "updatedBy"?: string;
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "meta"?: {
+  [key: string]: unknown;
+};
+};

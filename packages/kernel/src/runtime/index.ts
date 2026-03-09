@@ -3,6 +3,7 @@ export * from "./cms-starter.js";
 export * from "./in-memory-plugin-runtime.js";
 export * from "./entity-registry.js";
 export * from "./kernel-health-service.js";
+export * from "./kernel-system-service.js";
 export * from "./mongo-db-adapter.js";
 export * from "./plugin-namespace.js";
 export * from "./plugin-manifest-validation.js";

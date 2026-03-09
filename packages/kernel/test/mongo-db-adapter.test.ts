@@ -154,6 +154,31 @@ test("MongoDbAdapter ensureIndexes uses canonical index declarations", async () 
   ]);
 });
 
+test("MongoDbAdapter maps reserved kernel namespace without plugin prefix", async () => {
+  const connection = createFakeConnection();
+  const registry = new EntityRegistry();
+  registry.register({
+    entityName: "installed_plugins",
+    schema: s.object({ pluginId: s.string() }),
+  });
+
+  const adapter = createMongoDbAdapter({
+    connection,
+    entityRegistry: registry,
+  });
+
+  const repository = adapter.repository<{ pluginId: string }>("installed_plugins", {
+    pluginId: "kernel",
+  });
+
+  await repository.findOne({
+    filter: { pluginId: "core-pack" },
+    parse: (value) => value as { pluginId: string },
+  });
+
+  assert.equal(connection.lastCollectionName, "kernel__installed_plugins");
+});
+
 function createFakeConnection() {
   const queryLog: Array<Record<string, unknown>> = [];
   const sessionLog: string[] = [];

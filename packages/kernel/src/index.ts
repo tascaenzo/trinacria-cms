@@ -1,3 +1,5 @@
+import "./types/trinacria-http.js";
+
 // Public entrypoint of the kernel package.
 export * from "./contracts/index.js";
 export * from "./errors/index.js";
