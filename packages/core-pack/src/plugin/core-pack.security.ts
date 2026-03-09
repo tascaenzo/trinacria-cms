@@ -11,6 +11,8 @@ export const CORE_PACK_CAPABILITIES = {
   ROLES_WRITE: "roles.write",
   PERMISSIONS_READ: "permissions.read",
   PERMISSIONS_WRITE: "permissions.write",
+  API_KEYS_READ: "api_keys.read",
+  API_KEYS_WRITE: "api_keys.write",
   SETTINGS_READ: "settings.read",
   SETTINGS_WRITE: "settings.write",
   SETTINGS_SECRETS_READ: "settings.secrets.read",
@@ -34,6 +36,8 @@ export const CORE_PACK_PERMISSION_KEYS = {
   ROLES_WRITE: `${CORE_PACK_PLUGIN_ID}:roles:write`,
   PERMISSIONS_READ: `${CORE_PACK_PLUGIN_ID}:permissions:read`,
   PERMISSIONS_WRITE: `${CORE_PACK_PLUGIN_ID}:permissions:write`,
+  API_KEYS_READ: `${CORE_PACK_PLUGIN_ID}:api_keys:read`,
+  API_KEYS_WRITE: `${CORE_PACK_PLUGIN_ID}:api_keys:write`,
   SETTINGS_READ: `${CORE_PACK_PLUGIN_ID}:settings:read`,
   SETTINGS_WRITE: `${CORE_PACK_PLUGIN_ID}:settings:write`,
   SETTINGS_SECRETS_READ: `${CORE_PACK_PLUGIN_ID}:settings.secrets:read`,
@@ -78,6 +82,14 @@ export const CORE_PACK_PERMISSION_DEFINITIONS: readonly CorePackPermissionDefini
     {
       key: CORE_PACK_PERMISSION_KEYS.PERMISSIONS_WRITE,
       displayName: "Write permissions",
+    },
+    {
+      key: CORE_PACK_PERMISSION_KEYS.API_KEYS_READ,
+      displayName: "Read API keys",
+    },
+    {
+      key: CORE_PACK_PERMISSION_KEYS.API_KEYS_WRITE,
+      displayName: "Write API keys",
     },
     {
       key: CORE_PACK_PERMISSION_KEYS.SETTINGS_READ,

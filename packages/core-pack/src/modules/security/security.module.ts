@@ -19,6 +19,17 @@ import {
 import { CorePackUsersModule } from "../users/users.module.js";
 import { USERS_REPOSITORY_TOKEN } from "../users/users.tokens.js";
 import { CorePackAuthzService } from "./core-pack-authz.service.js";
+import { ApiKeysController } from "./api-keys/api-keys.controller.js";
+import { ApiKeyHashingService } from "./api-keys/api-key-hashing.service.js";
+import { ApiKeysRepository } from "./api-keys/api-keys.repository.js";
+import { API_KEYS_ENTITY } from "./api-keys/api-keys.schemas.js";
+import { ApiKeysService } from "./api-keys/api-keys.service.js";
+import {
+  API_KEYS_CONTROLLER_TOKEN,
+  API_KEYS_HASHING_SERVICE_TOKEN,
+  API_KEYS_REPOSITORY_TOKEN,
+  API_KEYS_SERVICE_TOKEN,
+} from "./api-keys/api-keys.tokens.js";
 import { RolePolicyRulesController } from "./role-policy-rules/role-policy-rules.controller.js";
 import { RolePolicyRulesRepository } from "./role-policy-rules/role-policy-rules.repository.js";
 import { RolePolicyRulesService } from "./role-policy-rules/role-policy-rules.service.js";
@@ -61,6 +72,7 @@ export const CorePackSecurityModule = defineModule({
       CORE_PACK_SECURITY_ENTITY_REGISTRATION_TOKEN,
       (registry) => {
         (registry as EntityRegistry).register(ROLE_POLICY_RULES_ENTITY);
+        (registry as EntityRegistry).register(API_KEYS_ENTITY);
         return true;
       },
       [CORE_TOKENS.ENTITY_REGISTRY],
@@ -73,6 +85,22 @@ export const CorePackSecurityModule = defineModule({
       RolePolicyRulesRepository,
       [CORE_TOKENS.DB_ADAPTER],
     ),
+    classProvider(API_KEYS_REPOSITORY_TOKEN, ApiKeysRepository, [
+      CORE_TOKENS.DB_ADAPTER,
+    ]),
+    classProvider(
+      API_KEYS_HASHING_SERVICE_TOKEN,
+      ApiKeyHashingService,
+      [],
+    ),
+    classProvider(API_KEYS_SERVICE_TOKEN, ApiKeysService, [
+      API_KEYS_REPOSITORY_TOKEN,
+      API_KEYS_HASHING_SERVICE_TOKEN,
+      ROLES_REPOSITORY_TOKEN,
+      ROLE_GRANTS_REPOSITORY_TOKEN,
+      CORE_PACK_ROLE_POLICY_RULES_REPOSITORY_TOKEN,
+      PERMISSIONS_REPOSITORY_TOKEN,
+    ]),
     classProvider(CORE_PACK_ROLE_POLICY_RULES_SERVICE_TOKEN, RolePolicyRulesService, [
       ROLES_REPOSITORY_TOKEN,
       CORE_PACK_ROLE_POLICY_RULES_REPOSITORY_TOKEN,
@@ -98,6 +126,11 @@ export const CorePackSecurityModule = defineModule({
     ]),
     classProvider(CORE_PACK_AUTHZ_SERVICE_TOKEN, CorePackAuthzService, [
       CORE_PACK_USER_ACCESS_SERVICE_TOKEN,
+      API_KEYS_SERVICE_TOKEN,
+    ]),
+    httpProvider(API_KEYS_CONTROLLER_TOKEN, ApiKeysController, [
+      API_KEYS_SERVICE_TOKEN,
+      CORE_PACK_JWT_AUTH_SERVICE_TOKEN,
     ]),
     httpProvider(CORE_PACK_USER_ACCESS_CONTROLLER_TOKEN, UserAccessController, [
       CORE_PACK_USER_ACCESS_SERVICE_TOKEN,
@@ -128,6 +161,10 @@ export const CorePackSecurityModule = defineModule({
     CORE_PACK_USER_ACCESS_SERVICE_TOKEN,
     CORE_PACK_USER_ACCESS_CONTROLLER_TOKEN,
     CORE_PACK_AUTHZ_SERVICE_TOKEN,
+    API_KEYS_REPOSITORY_TOKEN,
+    API_KEYS_HASHING_SERVICE_TOKEN,
+    API_KEYS_SERVICE_TOKEN,
+    API_KEYS_CONTROLLER_TOKEN,
     CORE_PACK_SECURITY_PROVISIONING_SERVICE_TOKEN,
     CORE_TOKENS.PLUGIN_SECURITY_PROVISIONER,
     CORE_TOKENS.AUTHZ_SERVICE,

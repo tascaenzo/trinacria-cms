@@ -4,17 +4,15 @@ import { RoleGrantsRepository } from "../../roles/grants/role-grants.repository.
 import { RolesRepository } from "../../roles/roles.repository.js";
 import { UsersRepository } from "../../users/users.repository.js";
 import { RolePolicyRulesRepository } from "../role-policy-rules/role-policy-rules.repository.js";
+import {
+  dedupeAuthorizationRules,
+  type AuthorizationRule,
+} from "../authz-rules.js";
 import { UserRolesRepository } from "./user-roles.repository.js";
 
 /**
  * Coordinates user-role assignments and effective permission resolution.
  */
-export interface UserAuthorizationRule {
-  effect: "allow" | "deny";
-  permissionPattern: string;
-  conditions: readonly ("resource_id_required" | "resource_id_equals_subject")[];
-}
-
 export class UserAccessService {
   constructor(
     private readonly users: UsersRepository,
@@ -86,7 +84,7 @@ export class UserAccessService {
 
   async resolveUserAuthorizationRules(
     userId: string,
-  ): Promise<readonly UserAuthorizationRule[]> {
+  ): Promise<readonly AuthorizationRule[]> {
     await this.assertUserExists(userId);
 
     const activeRoleCodes = await this.resolveActiveRoleCodes(userId);
@@ -98,7 +96,7 @@ export class UserAccessService {
           effect: "allow" as const,
           permissionPattern: permissionKey,
           conditions: [],
-        }) satisfies UserAuthorizationRule,
+        }) satisfies AuthorizationRule,
     );
 
     const policyRules = await this.rolePolicyRules.listByRoleCodes(activeRoleCodes);
@@ -108,16 +106,10 @@ export class UserAccessService {
           effect: rule.effect,
           permissionPattern: rule.permissionPattern,
           conditions: rule.conditions,
-        }) satisfies UserAuthorizationRule,
+        }) satisfies AuthorizationRule,
     );
 
-    const unique = new Map<string, UserAuthorizationRule>();
-    for (const rule of [...allowFromGrants, ...mappedPolicies]) {
-      const key = `${rule.effect}|${rule.permissionPattern}|${rule.conditions.join(",")}`;
-      unique.set(key, rule);
-    }
-
-    return [...unique.values()];
+    return dedupeAuthorizationRules([...allowFromGrants, ...mappedPolicies]);
   }
 
   private async resolveActiveRoleCodes(userId: string): Promise<readonly string[]> {
