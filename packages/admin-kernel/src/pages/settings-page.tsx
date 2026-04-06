@@ -1,6 +1,10 @@
 import { useActionState, useCallback, useEffect, useState } from "react";
-import { Badge, Button, Card, Dialog, Input, JsonView } from "@trinacria-cms/admin-ui";
-import type { GetSettingValueByKeyResponse, ListSettingDefinitionsResponse } from "@trinacria-cms/sdk";
+import { Badge, Button, Card, Dialog, Input, JsonView, Textarea } from "@trinacria-cms/admin-ui";
+import type {
+  GetSettingSecretMetadataResponse,
+  GetSettingValueByKeyResponse,
+  ListSettingDefinitionsResponse,
+} from "@trinacria-cms/sdk";
 import { MobileRecordCard, MobileRecordField, MobileRecordList } from "../components/mobile-records.js";
 import { ErrorBanner, EmptyState } from "../components/resource-feedback.js";
 import { formatDateTime } from "../lib/formatting.js";
@@ -10,18 +14,27 @@ import {
   readOptionalString,
 } from "../runtime/action-state.js";
 import { cms } from "../runtime/cms-sdk.js";
-import { toDisplayError } from "../lib/sdk-errors.js";
+import { getSdkErrorDetails, toDisplayError } from "../lib/sdk-errors.js";
 import { useI18n } from "../lib/i18n.js";
 import { translateSettingSource, translateStatusLabel } from "../lib/ui-translations.js";
 
 type SettingDefinitionRecord = ListSettingDefinitionsResponse["data"][number];
 type SettingValueRecord = GetSettingValueByKeyResponse["data"] | null;
+type SettingSecretMetadataRecord = GetSettingSecretMetadataResponse["data"] | null;
 type CmsOverviewField = "siteName" | "siteUrl" | "locale" | "timezone";
 type CmsOverviewItem = {
   field: CmsOverviewField;
   key: string | null;
   value: string | null;
   status: "resolved" | "missing" | "error";
+};
+type PreparedSettingValueRequest = {
+  ownerPluginId: string;
+  path: string;
+  body: {
+    value: unknown;
+    updatedBy: string;
+  };
 };
 
 const CMS_OVERVIEW_CANDIDATES: Record<
@@ -33,6 +46,7 @@ const CMS_OVERVIEW_CANDIDATES: Record<
 > = {
   siteName: {
     exact: [
+      "core-pack:site:name",
       "core-pack:site.name",
       "core-pack:site_name",
       "core-pack:cms.site_name",
@@ -45,6 +59,7 @@ const CMS_OVERVIEW_CANDIDATES: Record<
   },
   siteUrl: {
     exact: [
+      "core-pack:site:url",
       "core-pack:site.url",
       "core-pack:site_url",
       "core-pack:cms.site_url",
@@ -59,6 +74,7 @@ const CMS_OVERVIEW_CANDIDATES: Record<
   },
   locale: {
     exact: [
+      "core-pack:cms:locale",
       "core-pack:locale",
       "core-pack:cms.locale",
       "core-pack:i18n.locale",
@@ -69,6 +85,7 @@ const CMS_OVERVIEW_CANDIDATES: Record<
   },
   timezone: {
     exact: [
+      "core-pack:cms:timezone",
       "core-pack:timezone",
       "core-pack:cms.timezone",
       "cms:timezone",
@@ -100,6 +117,10 @@ function stringifySettingValue(value: unknown): string {
   return "";
 }
 
+function toEditableJson(value: unknown): string {
+  return JSON.stringify(value ?? null, null, 2);
+}
+
 /**
  * SettingsPage keeps reads explicit while moving the filter flow to a React 19
  * action-based form instead of manual submit bookkeeping.
@@ -112,11 +133,17 @@ export function SettingsPage() {
   const [valueRecord, setValueRecord] = useState<SettingValueRecord>(null);
   const [error, setError] = useState<string | null>(null);
   const [valueError, setValueError] = useState<string | null>(null);
+  const [secretMetadata, setSecretMetadata] = useState<SettingSecretMetadataRecord>(null);
+  const [secretError, setSecretError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isValueLoading, setIsValueLoading] = useState(false);
+  const [isSecretLoading, setIsSecretLoading] = useState(false);
   const [isInspectOpen, setIsInspectOpen] = useState(false);
   const [overviewItems, setOverviewItems] = useState<readonly CmsOverviewItem[]>([]);
   const [isOverviewLoading, setIsOverviewLoading] = useState(true);
+  const [draftValueJson, setDraftValueJson] = useState("null");
+  const [draftError, setDraftError] = useState<string | null>(null);
+  const [preparedRequest, setPreparedRequest] = useState<PreparedSettingValueRequest | null>(null);
   const refresh = useCallback(async (nextOwnerPluginId = "") => {
     setIsLoading(true);
     setError(null);
@@ -210,15 +237,82 @@ export function SettingsPage() {
     setSelectedRecord(record);
     setIsInspectOpen(true);
     setIsValueLoading(true);
+    setIsSecretLoading(true);
     setValueError(null);
+    setSecretError(null);
+    setPreparedRequest(null);
+    setDraftError(null);
     try {
-      const response = await cms.settings.getSettingValueByKey({ path: { key: record.key } });
-      setValueRecord(response.data);
+      const [valueResult, secretResult] = await Promise.allSettled([
+        cms.settings.getSettingValueByKey({ path: { key: record.key } }),
+        cms.settings.getSettingSecretMetadata({ path: { key: record.key } }),
+      ]);
+
+      if (valueResult.status === "fulfilled") {
+        setValueRecord(valueResult.value.data);
+        setValueError(null);
+      } else {
+        const details = getSdkErrorDetails(valueResult.reason);
+        if (details.status === 404) {
+          setValueRecord(null);
+          setValueError(null);
+        } else {
+          setValueRecord(null);
+          setValueError(details.message ?? t("settings.inspect.value_unavailable"));
+        }
+      }
+
+      if (secretResult.status === "fulfilled") {
+        setSecretMetadata(secretResult.value.data);
+        setSecretError(null);
+      } else {
+        const details = getSdkErrorDetails(secretResult.reason);
+        if (details.status === 404) {
+          setSecretMetadata(null);
+          setSecretError(null);
+        } else {
+          setSecretMetadata(null);
+          setSecretError(details.message ?? t("settings.inspect.secret_unavailable"));
+        }
+      }
     } catch (currentError) {
       setValueRecord(null);
+      setSecretMetadata(null);
       setValueError(toDisplayError(currentError));
+      setSecretError(null);
     } finally {
       setIsValueLoading(false);
+      setIsSecretLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!selectedRecord) return;
+
+    const baseValue =
+      valueRecord?.value ?? selectedRecord.defaultValue ?? selectedRecord.schema ?? null;
+    setDraftValueJson(toEditableJson(baseValue));
+    setDraftError(null);
+    setPreparedRequest(null);
+  }, [selectedRecord, valueRecord]);
+
+  function prepareValueWriteHandoff() {
+    if (!selectedRecord) return;
+
+    try {
+      const parsed = JSON.parse(draftValueJson);
+      setPreparedRequest({
+        ownerPluginId: selectedRecord.ownerPluginId,
+        path: `/v1/settings/values/${selectedRecord.key}`,
+        body: {
+          value: parsed,
+          updatedBy: "backoffice:prepared-handoff",
+        },
+      });
+      setDraftError(null);
+    } catch {
+      setPreparedRequest(null);
+      setDraftError(t("settings.write_flow.invalid_json"));
     }
   }
 
@@ -463,6 +557,7 @@ export function SettingsPage() {
             <div className="grid gap-4">
               {isValueLoading ? <EmptyState text={t("settings.empty.loading_value")} /> : null}
               {valueError ? <ErrorBanner message={valueError} /> : null}
+              {secretError ? <ErrorBanner message={secretError} /> : null}
               {valueRecord ? (
                 <>
                   <div className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] p-4 text-sm text-[color:var(--color-ink-muted)]">
@@ -488,6 +583,107 @@ export function SettingsPage() {
                   <JsonView title={t("settings.inspect.resolved_value_json")} value={valueRecord.value} />
                 </>
               ) : null}
+              {!isValueLoading && !valueError && !valueRecord ? (
+                <EmptyState text={t("settings.inspect.no_resolved_value")} />
+              ) : null}
+              {isSecretLoading ? <EmptyState text={t("settings.inspect.loading_secret")} /> : null}
+              {secretMetadata ? (
+                <>
+                  <div className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] p-4 text-sm text-[color:var(--color-ink-muted)]">
+                    <p>
+                      <span className="font-medium text-[color:var(--color-ink)]">
+                        {t("settings.inspect.secret_algorithm")}
+                      </span>{" "}
+                      {secretMetadata.algorithm}
+                    </p>
+                    <p className="mt-2">
+                      <span className="font-medium text-[color:var(--color-ink)]">
+                        {t("settings.inspect.secret_key_version")}
+                      </span>{" "}
+                      {secretMetadata.keyVersion}
+                    </p>
+                    <p className="mt-2">
+                      <span className="font-medium text-[color:var(--color-ink)]">
+                        {t("settings.inspect.secret_masked")}
+                      </span>{" "}
+                      {secretMetadata.maskedValue}
+                    </p>
+                  </div>
+                  <JsonView title={t("settings.inspect.secret_metadata_json")} value={secretMetadata} />
+                </>
+              ) : null}
+              {!isSecretLoading && !secretError && !secretMetadata ? (
+                <EmptyState text={t("settings.inspect.no_secret_metadata")} />
+              ) : null}
+              <div className="grid gap-4 rounded-2xl border border-dashed border-[color:var(--color-border-strong)] bg-[color:var(--color-panel-soft)] p-4">
+                <div>
+                  <p className="text-sm font-medium text-[color:var(--color-ink)]">
+                    {t("settings.write_flow.title")}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink-muted)]">
+                    {t("settings.write_flow.summary")}
+                  </p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-xl border border-[color:var(--color-border)] bg-white p-3 text-sm text-[color:var(--color-ink-muted)]">
+                    <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
+                      {t("settings.write_flow.method")}
+                    </p>
+                    <p className="mt-2 font-medium text-[color:var(--color-ink)]">PUT</p>
+                  </div>
+                  <div className="rounded-xl border border-[color:var(--color-border)] bg-white p-3 text-sm text-[color:var(--color-ink-muted)]">
+                    <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
+                      {t("settings.write_flow.owner")}
+                    </p>
+                    <p className="mt-2 font-medium text-[color:var(--color-ink)]">
+                      {selectedRecord.ownerPluginId}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-[color:var(--color-border)] bg-white p-3 text-sm text-[color:var(--color-ink-muted)]">
+                    <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
+                      {t("settings.write_flow.mode")}
+                    </p>
+                    <p className="mt-2 font-medium text-[color:var(--color-ink)]">
+                      {t("settings.write_flow.mode_value")}
+                    </p>
+                  </div>
+                </div>
+                <Textarea
+                  label={t("settings.write_flow.draft_label")}
+                  hint={t("settings.write_flow.draft_hint")}
+                  value={draftValueJson}
+                  onChange={(event) => {
+                    setDraftValueJson(event.target.value);
+                    setDraftError(null);
+                    setPreparedRequest(null);
+                  }}
+                />
+                {draftError ? <ErrorBanner message={draftError} /> : null}
+                <div className="flex flex-wrap gap-3">
+                  <Button type="button" onClick={prepareValueWriteHandoff}>
+                    {t("settings.write_flow.prepare")}
+                  </Button>
+                </div>
+                {preparedRequest ? (
+                  <div className="grid gap-4">
+                    <div className="rounded-xl border border-[color:var(--color-border)] bg-white p-4 text-sm text-[color:var(--color-ink-muted)]">
+                      <p>
+                        <span className="font-medium text-[color:var(--color-ink)]">
+                          {t("settings.write_flow.endpoint")}
+                        </span>{" "}
+                        {preparedRequest.path}
+                      </p>
+                      <p className="mt-2">
+                        <span className="font-medium text-[color:var(--color-ink)]">
+                          {t("settings.write_flow.headers")}
+                        </span>{" "}
+                        {t("settings.write_flow.headers_value")}
+                      </p>
+                    </div>
+                    <JsonView title={t("settings.write_flow.body_title")} value={preparedRequest.body} />
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
         ) : null}
