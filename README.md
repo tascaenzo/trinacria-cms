@@ -14,11 +14,12 @@ The project keeps a strict separation between kernel contracts and concrete impl
 ## Repository layout
 
 - `apps/playground`: development and integration playground
-- `apps/api`: headless API runtime with plugin manager and content endpoints
-- `apps/admin`: official admin dashboard (planned)
-- `apps/example-frontend`: frontend integration sample (planned)
+- `apps/backoffice`: thin Vite host for the shared admin runtime
 - `packages/kernel`: kernel contracts, runtime primitives, default modules, and DB abstraction
-- `packages/core-pack`: official baseline plugin pack (users/roles/permissions/settings)
+- `packages/core-pack`: official baseline plugin pack (auth, users, roles, permissions, api keys, settings, installation)
+- `packages/sdk`: generated SDK and OpenAPI snapshot
+- `packages/admin-kernel`: shared backoffice runtime, pages, route registry, and SDK wiring
+- `packages/admin-ui`: reusable admin UI components and shell
 - `docs/cms/en`: official CMS docs in English
 - `docs/cms/it`: Italian CMS docs
 - `docs/trinacria`: local imported Trinacria docs (framework reference)
@@ -54,13 +55,13 @@ Install and run playground:
 ```bash
 npm install
 docker compose up -d mongo
-npm run dev -w @trinacria-cms/playground
+npm run dev:playground
 ```
 
-Run API app:
+Run backoffice:
 
 ```bash
-npm run dev -w @trinacria-cms/api
+npm run dev:backoffice
 ```
 
 Optional Mongo UI (mongo-express):
@@ -71,15 +72,51 @@ docker compose --profile tools up -d mongo-express
 
 UI endpoint: `http://localhost:8081`
 
+Operational endpoints:
+
+- playground API: `http://127.0.0.1:3000`
+- OpenAPI snapshot source: `http://127.0.0.1:3000/openapi.json`
+- Swagger UI: `http://127.0.0.1:3000/docs`
+- backoffice host: `http://127.0.0.1:4174`
+
 ## Quality checks
 
 ```bash
 npm run lint
 npm run format
 npm run build
+npm run typecheck -w @trinacria-cms/admin-kernel
+npm run typecheck -w @trinacria-cms/backoffice
 npm run test -w @trinacria-cms/kernel
+npm run test -w @trinacria-cms/core-pack
 npm run test:integration
 ```
+
+## Smoke Baseline
+
+Baseline M1 verified on `2026-04-06`:
+
+- `docker compose ps`: Mongo and mongo-express up and healthy
+- `npm run build -w @trinacria-cms/playground`: ok
+- `npm run typecheck -w @trinacria-cms/backoffice`: ok
+- `npm run dev -w @trinacria-cms/playground`: ok outside sandbox, API ready on `:3000`
+- `npm run dev -w @trinacria-cms/backoffice`: ok outside sandbox, Vite ready on `127.0.0.1:4174`
+
+Sandbox note:
+
+- inside the Codex sandbox, `tsx watch` and `vite` can fail with `EPERM` on IPC socket bind or local port bind; this is an environment limitation, not a repository regression
+
+## Workflow operativo
+
+La gestione del lavoro attivo ora vive in [workflow/README.md](/Users/enzo/Desktop/trinacria-cms/workflow/README.md).
+
+Struttura principale:
+
+- `workflow/tasks/todo`
+- `workflow/tasks/in-progress`
+- `workflow/tasks/done`
+- `workflow/changelog`
+- `workflow/milestones`
 
 ## Documentation
 
