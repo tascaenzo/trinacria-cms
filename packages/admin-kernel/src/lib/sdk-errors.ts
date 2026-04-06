@@ -4,6 +4,7 @@ interface ApiErrorEnvelope {
   error?: {
     code?: string;
     message?: string;
+    details?: Record<string, unknown>;
   };
 }
 
@@ -11,6 +12,7 @@ export interface SdkErrorDetails {
   status?: number;
   code: string | null;
   message: string | null;
+  details?: Record<string, unknown>;
 }
 
 export function getSdkErrorDetails(error: unknown): SdkErrorDetails {
@@ -19,7 +21,8 @@ export function getSdkErrorDetails(error: unknown): SdkErrorDetails {
     return {
       status: error.status,
       code: data?.error?.code ?? null,
-      message: data?.error?.message ?? `HTTP ${error.status}`
+      message: data?.error?.message ?? `HTTP ${error.status}`,
+      details: data?.error?.details
     };
   }
 

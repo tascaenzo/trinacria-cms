@@ -13,11 +13,11 @@ Rendere il runtime plugin non solo un'infrastruttura interna, ma una superficie 
 
 ## Task inclusi
 
-- [ ] `2026-04-06-plugin-runtime-contract-review.md`
-- [ ] `2026-04-06-plugin-operations-api-v1.md`
-- [ ] `2026-04-06-plugin-admin-page-v1.md`
-- [ ] `2026-04-06-plugin-runtime-diagnostics-and-errors.md`
-- [ ] `2026-04-06-plugin-operations-documentation.md`
+- [x] `2026-04-06-plugin-runtime-contract-review.md`
+- [x] `2026-04-06-plugin-operations-api-v1.md`
+- [x] `2026-04-06-plugin-admin-page-v1.md`
+- [x] `2026-04-06-plugin-runtime-diagnostics-and-errors.md`
+- [x] `2026-04-06-plugin-operations-documentation.md`
 
 ## Dipendenze
 
@@ -35,3 +35,11 @@ Rendere il runtime plugin non solo un'infrastruttura interna, ma una superficie 
 ## Note
 
 Questa milestone e il ponte tra il kernel come framework e il CMS come prodotto gestibile.
+
+Stato finale `2026-04-06`:
+
+- checklist task completata;
+- runtime, API, backoffice e documentazione condividono la stessa semantica operativa dei plugin;
+- hardening sicurezza completato: API plugin/system operative admin-only e route backoffice `plugins` allineata con guard coerente;
+- check monorepo finali verdi (`npm run build`, `npm test`, `npm run lint`);
+- milestone pronta alla chiusura.

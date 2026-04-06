@@ -16,6 +16,7 @@ import type {
   CmsStarterHandle,
   CmsStarterOptions,
 } from "../contracts/cms-starter.js";
+import type { KernelAdminRouteGuard } from "../contracts/kernel-admin-route-guard.js";
 import type { PluginRuntime } from "../contracts/plugin-runtime.js";
 import type { PluginRuntimeStore } from "../contracts/plugin-runtime-store.js";
 import type { PluginSecurityProvisioner } from "../contracts/plugin-security-provisioner.js";
@@ -41,6 +42,9 @@ const CMS_STARTER_SWAGGER_CONFIG_TOKEN = createToken<CmsSwaggerUiConfig>(
 const CMS_STARTER_SWAGGER_CONTROLLER = createToken<CmsSwaggerController>(
   "CMS_STARTER_SWAGGER_CONTROLLER",
 );
+const CMS_STARTER_KERNEL_ADMIN_ROUTE_GUARD = createToken<
+  KernelAdminRouteGuard | null
+>("CMS_STARTER_KERNEL_ADMIN_ROUTE_GUARD");
 
 /**
  * Starts a minimal CMS app with HTTP plugin, runtime token wiring, optional modules,
@@ -155,10 +159,26 @@ export async function startCmsApp(
               (runtime) => new KernelSystemService(runtime as PluginRuntime),
               [CORE_TOKENS.PLUGIN_RUNTIME],
             ),
+            factoryProvider(
+              CMS_STARTER_KERNEL_ADMIN_ROUTE_GUARD,
+              async () => {
+                if (!app.hasToken(CORE_TOKENS.KERNEL_ADMIN_ROUTE_GUARD)) {
+                  return null;
+                }
+
+                return app.resolve<KernelAdminRouteGuard>(
+                  CORE_TOKENS.KERNEL_ADMIN_ROUTE_GUARD,
+                );
+              },
+              [],
+            ),
             httpProvider(
               KERNEL_SYSTEM_HTTP_CONTROLLER,
               KernelSystemHttpController,
-              [CORE_TOKENS.KERNEL_SYSTEM_SERVICE],
+              [
+                CORE_TOKENS.KERNEL_SYSTEM_SERVICE,
+                CMS_STARTER_KERNEL_ADMIN_ROUTE_GUARD,
+              ],
             ),
           ]),
       ...(swaggerUi.enabled === false

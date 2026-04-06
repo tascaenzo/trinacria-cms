@@ -5,8 +5,9 @@ import type {
   PluginRuntimeStore,
 } from "../contracts/plugin-runtime-store.js";
 import type { PluginManifest } from "../contracts/plugin-manifest.js";
-import type { PluginRuntimeRecord } from "../contracts/plugin-runtime.js";
+import type { PluginRuntimeDiagnostic, PluginRuntimeRecord } from "../contracts/plugin-runtime.js";
 import { DbAdapterError } from "../errors/db-errors.js";
+import { CoreError } from "../errors/core-error.js";
 import {
   defineEntity,
   type EntityRegistry,
@@ -42,8 +43,17 @@ const PersistedPluginRuntimeRecordSchema = s.object(
     enabled: s.boolean(),
     failureCount: s.number({ int: true, min: 0 }),
     lastFailurePhase: PluginLifecyclePhaseSchema.optional(),
+    lastErrorCode: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
     lastErrorName: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
     lastErrorMessage: s.string({ trim: true, minLength: 1, maxLength: 2000 }).optional(),
+    lastErrorDetails: s.object({}, { strict: false }).optional(),
+    statusReason: s.object(
+      {
+        code: s.string({ trim: true, minLength: 1, maxLength: 120 }),
+        message: s.string({ trim: true, minLength: 1, maxLength: 2000 }),
+      },
+      { strict: false },
+    ).optional(),
     disabledReason: s.string({ trim: true, minLength: 1, maxLength: 1000 }).optional(),
     manifest: s.object(
       {
@@ -287,11 +297,21 @@ function toPersistedRuntimeRecord(
   if (record.lastFailurePhase) {
     persisted.lastFailurePhase = record.lastFailurePhase;
   }
-  if (record.lastError?.name) {
-    persisted.lastErrorName = record.lastError.name;
+  const diagnostic = toRuntimeDiagnostic(record.lastError);
+  if (diagnostic?.code) {
+    persisted.lastErrorCode = diagnostic.code;
   }
-  if (record.lastError?.message) {
-    persisted.lastErrorMessage = record.lastError.message;
+  if (diagnostic?.name) {
+    persisted.lastErrorName = diagnostic.name;
+  }
+  if (diagnostic?.message) {
+    persisted.lastErrorMessage = diagnostic.message;
+  }
+  if (diagnostic?.details) {
+    persisted.lastErrorDetails = diagnostic.details;
+  }
+  if (record.statusReason) {
+    persisted.statusReason = record.statusReason;
   }
   if (record.disabledReason) {
     persisted.disabledReason = record.disabledReason;
@@ -363,4 +383,26 @@ function normalizePersistedManifest(record: Record<string, unknown>): PluginMani
     return validatePluginManifest(JSON.parse(rawManifest) as PluginManifest);
   }
   return validatePluginManifest(rawManifest as PluginManifest);
+}
+
+function toRuntimeDiagnostic(
+  error: Error | undefined,
+): PluginRuntimeDiagnostic | undefined {
+  if (!error) {
+    return undefined;
+  }
+
+  if (error instanceof CoreError) {
+    return {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      ...(error.details ? { details: error.details } : {}),
+    };
+  }
+
+  return {
+    name: error.name,
+    message: error.message,
+  };
 }

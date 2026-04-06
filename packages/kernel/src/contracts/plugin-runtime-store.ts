@@ -1,6 +1,7 @@
 import type {
   PluginLifecyclePhase,
   PluginRuntimeRecord,
+  PluginRuntimeStatusReason,
   PluginState,
 } from "./plugin-runtime.js";
 import type { PluginManifest } from "./plugin-manifest.js";
@@ -17,8 +18,11 @@ export interface PersistedPluginRuntimeRecord {
   enabled: boolean;
   failureCount: number;
   lastFailurePhase?: PluginLifecyclePhase;
+  lastErrorCode?: string;
   lastErrorName?: string;
   lastErrorMessage?: string;
+  lastErrorDetails?: Record<string, unknown>;
+  statusReason?: PluginRuntimeStatusReason;
   disabledReason?: string;
   manifest: PluginManifest;
   loadedAt?: string;

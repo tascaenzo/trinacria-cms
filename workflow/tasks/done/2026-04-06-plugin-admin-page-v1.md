@@ -3,7 +3,7 @@
 ## Meta
 
 - ID: `task-plugin-admin-page-v1`
-- Stato: `todo`
+- Stato: `done`
 - Area: `backoffice`
 - Milestone: `M3`
 - Owner: `enzo`
@@ -58,6 +58,19 @@ La pagina deve aiutare a rispondere rapidamente a:
 
 ## Chiusura
 
-- Changelog aggiornato: `no`
-- Documentazione aggiornata: `no`
+- Changelog aggiornato: `si`
+- Documentazione aggiornata: `si`
+- File modificati:
+  - `packages/admin-kernel/src/pages/plugins-page.tsx`
+  - `packages/admin-kernel/src/contributions/official-admin-contributions.tsx`
+  - `packages/admin-kernel/src/i18n/en.json`
+  - `packages/admin-kernel/src/i18n/it.json`
+  - `docs/cms/it/0011-sdk-api-keys-discovery.md`
+  - `docs/cms/en/0011-sdk-api-keys-discovery.md`
+  - `workflow/changelog/CHANGELOG.md`
+  - `workflow/milestones/M3-gestione-plugin-operativa.md`
+- Check eseguiti:
+  - `npm run typecheck -w @trinacria-cms/admin-kernel`
+  - `npm run build -w @trinacria-cms/backoffice`
 - Follow-up aperti:
+  - Eventuali filtri avanzati, bulk operations e sorting plugin possono essere aggiunti solo sopra le API gia esposte, senza introdurre semantiche nuove lato UI.

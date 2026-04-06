@@ -3,7 +3,7 @@
 ## Meta
 
 - ID: `task-plugin-runtime-contract-review`
-- Stato: `todo`
+- Stato: `done`
 - Area: `kernel`
 - Milestone: `M3`
 - Owner: `enzo`
@@ -57,6 +57,22 @@ Verificare se mancano campi come:
 
 ## Chiusura
 
-- Changelog aggiornato: `no`
-- Documentazione aggiornata: `no`
+- Changelog aggiornato: `si`
+- Documentazione aggiornata: `si`
+- File modificati:
+  - `packages/kernel/src/contracts/plugin-runtime.ts`
+  - `packages/kernel/src/runtime/in-memory-plugin-runtime.ts`
+  - `packages/kernel/src/runtime/kernel-system-service.ts`
+  - `packages/kernel/src/http/kernel-system.controller.ts`
+  - `packages/kernel/test/in-memory-plugin-runtime.test.ts`
+  - `packages/kernel/test/kernel-system-service.test.ts`
+  - `docs/cms/it/0011-sdk-api-keys-discovery.md`
+  - `docs/cms/en/0011-sdk-api-keys-discovery.md`
+  - `workflow/changelog/CHANGELOG.md`
+  - `workflow/milestones/M3-gestione-plugin-operativa.md`
+- Check eseguiti:
+  - `npm run build -w @trinacria-cms/kernel`
+  - `npm test -w @trinacria-cms/kernel`
 - Follow-up aperti:
+  - Estendere API e SDK con operazioni amministrative reali riusando la stessa semantica `operations/statusReason`.
+  - Portare la diagnostica persistita oltre `name/message` dell'ultimo errore senza inventare metadati di origine plugin non ancora disponibili.

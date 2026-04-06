@@ -60,12 +60,17 @@ test("DbPluginRuntimeStore upserts and removes persisted records", async () => {
     state: "disabled",
     disabledReason: "maintenance",
     disabledAt: new Date("2026-03-04T10:01:00.000Z"),
+    statusReason: {
+      code: "plugin_disabled",
+      message: "Plugin is disabled and cannot be loaded",
+    },
   });
 
   const disabled = await store.list();
   assert.equal(disabled[0]?.state, "disabled");
   assert.equal(disabled[0]?.enabled, false);
   assert.equal(disabled[0]?.disabledReason, "maintenance");
+  assert.equal(disabled[0]?.statusReason?.code, "plugin_disabled");
 
   await store.remove("core-pack");
   const afterDelete = await store.list();
@@ -128,6 +133,27 @@ test("InMemoryPluginRuntimeStore keeps latest persisted state", async () => {
   assert.equal(records[0]?.state, "loaded");
 });
 
+test("InMemoryPluginRuntimeStore persists diagnostic error metadata", async () => {
+  const store = new InMemoryPluginRuntimeStore(() =>
+    new Date("2026-03-04T10:00:00.000Z"),
+  );
+
+  await store.initialize();
+  await store.upsert({
+    ...createRuntimeRecord("media-pack", "failed"),
+    failedAt: new Date("2026-03-04T10:10:00.000Z"),
+    lastFailurePhase: "init",
+    lastError: Object.assign(new Error("boom"), {
+      name: "PluginLifecycleError",
+    }),
+  });
+
+  const [record] = await store.list();
+  assert.equal(record?.lastErrorName, "PluginLifecycleError");
+  assert.equal(record?.lastErrorMessage, "boom");
+  assert.equal(record?.statusReason?.code, "plugin_failed");
+});
+
 function createRuntimeRecord(
   pluginId: string,
   state: PluginRuntimeRecord["state"],
@@ -140,6 +166,10 @@ function createRuntimeRecord(
     },
     state,
     failureCount: 0,
+    statusReason: {
+      code: `plugin_${state}`,
+      message: `Plugin is in state ${state}`,
+    },
   };
 }
 

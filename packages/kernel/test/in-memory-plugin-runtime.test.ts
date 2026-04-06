@@ -149,6 +149,13 @@ test("failed state is temporary, disabled state is persistent", async () => {
     async () => runtime.load("cms/plugin-content"),
     PluginRuntimeError,
   );
+
+  await runtime.enable("cms/plugin-content");
+  const reenabledRecord = runtime
+    .list()
+    .find((item) => item.manifest.id === "cms/plugin-content");
+  assert.equal(reenabledRecord?.state, "registered");
+  assert.equal(reenabledRecord?.disabledReason, undefined);
 });
 
 test("module bridge rolls back registered modules when init fails", async () => {
@@ -295,6 +302,30 @@ test("runtime emits lifecycle events and retries failed load when configured", a
     events.some((event) => event.action === "load" && event.success === true),
     true,
   );
+});
+
+test("runtime keeps a bounded event log for operational diagnostics", async () => {
+  const runtime = new InMemoryPluginRuntime({
+    coreVersion: "0.1.0",
+    eventBufferSize: 2,
+  });
+
+  await runtime.register({
+    id: "cms/plugin-content",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+  });
+  await runtime.load("cms/plugin-content");
+  await runtime.disable("cms/plugin-content", "operator stop");
+
+  const events = runtime.events();
+  assert.equal(events.length, 2);
+  assert.deepEqual(
+    events.map((event) => event.action),
+    ["load", "disable"],
+  );
+  assert.equal(events[0]?.sequence, 2);
+  assert.equal(events[1]?.sequence, 3);
 });
 
 test("runtime supports unregister when plugin is not loaded", async () => {

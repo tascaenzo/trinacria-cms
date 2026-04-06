@@ -17,6 +17,7 @@ import { PasswordHashingService } from "../installation/password-hashing.service
 import { AuthController } from "./auth.controller.js";
 import { AuthUsersRepository } from "./auth-users.repository.js";
 import { JwtAuthService } from "./auth.service.js";
+import { createJwtAuthMiddleware } from "./auth.middleware.js";
 import {
   CORE_PACK_AUTH_CONTROLLER_TOKEN,
   CORE_PACK_AUTH_ENTITY_REGISTRATION_TOKEN,
@@ -81,6 +82,16 @@ export const CorePackAuthModule = defineModule({
       CORE_PACK_AUTH_INSTALLATION_STATE_REPOSITORY_TOKEN,
       CORE_PACK_AUTH_PASSWORD_HASHING_SERVICE_TOKEN,
     ]),
+    factoryProvider(
+      CORE_TOKENS.KERNEL_ADMIN_ROUTE_GUARD,
+      (auth) => ({
+        middleware: createJwtAuthMiddleware(auth as JwtAuthService, {
+          requireAdmin: true,
+        }),
+        security: [{ bearerAuth: [] }],
+      }),
+      [CORE_PACK_JWT_AUTH_SERVICE_TOKEN],
+    ),
     httpProvider(CORE_PACK_AUTH_CONTROLLER_TOKEN, AuthController, [
       CORE_PACK_JWT_AUTH_SERVICE_TOKEN,
     ]),
@@ -89,6 +100,7 @@ export const CorePackAuthModule = defineModule({
     CORE_PACK_AUTH_ENTITY_REGISTRATION_TOKEN,
     CORE_PACK_AUTH_USERS_REPOSITORY_TOKEN,
     CORE_PACK_JWT_AUTH_SERVICE_TOKEN,
+    CORE_TOKENS.KERNEL_ADMIN_ROUTE_GUARD,
     CORE_PACK_AUTH_CONTROLLER_TOKEN,
   ],
 });

@@ -23,6 +23,7 @@ Glossario terminologico unico: [GLOSSARY.md](../GLOSSARY.md)
 13. [0012 - Schema Mongo operativo](./0012-schema-db-mongo-operativo.md)
 14. [0013 - Settings: sicurezza e ownership operativa](./0013-settings-sicurezza-e-ownership-operativa.md)
 15. [0014 - Settings end-to-end](./0014-settings-end-to-end.md)
+16. [0015 - Operazioni plugin e troubleshooting](./0015-operazioni-plugin-e-troubleshooting.md)
 
 ## Cosa trovi in questo manuale
 

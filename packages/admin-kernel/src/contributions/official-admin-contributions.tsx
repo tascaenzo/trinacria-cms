@@ -1,5 +1,6 @@
 import { createDashboardRender } from "../pages/dashboard-page.js";
 import { ApiKeysPage } from "../pages/api-keys-page.js";
+import { PluginsPage } from "../pages/plugins-page.js";
 import { PermissionsPage } from "../pages/permissions-page.js";
 import { RolesPage } from "../pages/roles-page.js";
 import { SettingsPage } from "../pages/settings-page.js";
@@ -52,6 +53,18 @@ export function createOfficialAdminContributions(input: {
       displayName: "Core Pack",
       displayNameKey: "official.plugin.core_pack.display_name",
       routes: [
+        {
+          id: "plugins",
+          path: "/plugins",
+          pluginId: "kernel",
+          title: "Plugins",
+          titleKey: "official.route.plugins.title",
+          summary: "Installed plugin inventory, runtime operations, and diagnostics.",
+          summaryKey: "official.route.plugins.summary",
+          order: 5,
+          guards: [{ pluginId: "core-pack", capability: "plugins.read" }],
+          render: () => <PluginsPage />
+        },
         {
           id: "users",
           path: "/users",
@@ -114,6 +127,17 @@ export function createOfficialAdminContributions(input: {
         }
       ],
       navigation: [
+        {
+          id: "nav-plugins",
+          routeId: "plugins",
+          title: "Plugins",
+          titleKey: "official.nav.plugins.title",
+          icon: "plug-zap",
+          group: "Core",
+          groupKey: "official.nav.group.core",
+          badge: "OPS",
+          order: 5
+        },
         {
           id: "nav-users",
           routeId: "users",

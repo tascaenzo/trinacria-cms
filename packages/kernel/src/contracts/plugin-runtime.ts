@@ -12,6 +12,32 @@ export type PluginLifecyclePhase =
   | "unload"
   | "rollback";
 
+export type PluginRuntimeOperation =
+  | "load"
+  | "unload"
+  | "reload"
+  | "disable"
+  | "enable";
+
+export interface PluginRuntimeOperationAvailability {
+  operation: PluginRuntimeOperation;
+  available: boolean;
+  reason?: string;
+}
+
+export interface PluginRuntimeDiagnostic {
+  name: string;
+  message: string;
+  code?: string;
+  details?: Record<string, unknown>;
+}
+
+export interface PluginRuntimeStatusReason {
+  code: string;
+  message: string;
+  details?: Record<string, unknown>;
+}
+
 /**
  * Runtime context passed to plugin hooks.
  */
@@ -67,6 +93,7 @@ export interface PluginRuntimeRetryPolicy {
 }
 
 export interface PluginRuntimeEvent {
+  sequence: number;
   timestamp: Date;
   pluginId: string;
   action:
@@ -76,6 +103,7 @@ export interface PluginRuntimeEvent {
     | "unload"
     | "reload"
     | "disable"
+    | "enable"
     | "load-many";
   phase?: PluginLifecyclePhase;
   success: boolean;
@@ -142,6 +170,8 @@ export interface PluginRuntimeRecord {
   disabledAt?: Date;
   /** Persistent disable reason (manual/operator choice). */
   disabledReason?: string;
+  /** Runtime-facing explanation of the current plugin state. */
+  statusReason?: PluginRuntimeStatusReason;
 }
 
 /**
@@ -174,8 +204,15 @@ export interface PluginRuntime {
   loadMany(pluginIds?: readonly string[]): Promise<void>;
   /** Disables a plugin to prevent activation. */
   disable(pluginId: string, reason?: string): Promise<void>;
+  /** Re-enables a disabled plugin without loading it automatically. */
+  enable(pluginId: string): Promise<void>;
   /** Returns a read-only view of all plugin runtime states. */
   list(): readonly PluginRuntimeRecord[];
   /** Returns the current dependency graph and warnings. */
   describeDependencies(): PluginDependencyGraphSnapshot;
+  /** Returns recent lifecycle events for diagnostics and audit. */
+  events(options?: {
+    pluginId?: string;
+    limit?: number;
+  }): readonly PluginRuntimeEvent[];
 }

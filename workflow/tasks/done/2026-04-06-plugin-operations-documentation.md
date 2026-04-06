@@ -3,7 +3,7 @@
 ## Meta
 
 - ID: `task-plugin-operations-docs`
-- Stato: `todo`
+- Stato: `done`
 - Area: `docs`
 - Milestone: `M3`
 - Owner: `enzo`
@@ -46,6 +46,19 @@ Quando il runtime diventa operabile dal backoffice, serve un riferimento chiaro 
 
 ## Chiusura
 
-- Changelog aggiornato: `no`
-- Documentazione aggiornata: `no`
+- Changelog aggiornato: `si`
+- Documentazione aggiornata: `si`
+- File modificati:
+  - `docs/cms/it/0015-operazioni-plugin-e-troubleshooting.md`
+  - `docs/cms/en/0015-plugin-operations-and-troubleshooting.md`
+  - `docs/cms/it/README.md`
+  - `docs/cms/en/README.md`
+  - `workflow/changelog/CHANGELOG.md`
+  - `workflow/milestones/M3-gestione-plugin-operativa.md`
+- Check eseguiti:
+  - review manuale coerenza API/UI/docs
+  - `npm run build`
+  - `npm test`
+  - `npm run lint`
 - Follow-up aperti:
+  - Nessuno dentro `M3`; eventuali estensioni future sono additive (`marketplace`, auth kernel-level condivisa, bulk ops).

@@ -3,6 +3,7 @@ export * from "./api-contract.js";
 export * from "./authz-service.js";
 export * from "./cms-starter.js";
 export * from "./db-adapter.js";
+export * from "./kernel-admin-route-guard.js";
 export * from "./namespace-context.js";
 export * from "./plugin-manifest.js";
 export * from "./plugin-runtime.js";

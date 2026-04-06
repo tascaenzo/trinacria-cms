@@ -5,6 +5,7 @@ import { CORE_PACK_PLUGIN_ID } from "./core-pack.constants.js";
  * Keep this as single source of truth to avoid string drift.
  */
 export const CORE_PACK_CAPABILITIES = {
+  PLUGINS_READ: "plugins.read",
   USERS_READ: "users.read",
   USERS_WRITE: "users.write",
   ROLES_READ: "roles.read",
@@ -30,6 +31,7 @@ export const CORE_PACK_CAPABILITY_LIST: readonly CorePackCapability[] =
  * They are namespaced through `CORE_PACK_PLUGIN_ID`.
  */
 export const CORE_PACK_PERMISSION_KEYS = {
+  PLUGINS_READ: `${CORE_PACK_PLUGIN_ID}:plugins:read`,
   USERS_READ: `${CORE_PACK_PLUGIN_ID}:users:read`,
   USERS_WRITE: `${CORE_PACK_PLUGIN_ID}:users:write`,
   ROLES_READ: `${CORE_PACK_PLUGIN_ID}:roles:read`,
@@ -59,6 +61,10 @@ export interface CorePackPermissionDefinition {
  */
 export const CORE_PACK_PERMISSION_DEFINITIONS: readonly CorePackPermissionDefinition[] =
   Object.freeze([
+    {
+      key: CORE_PACK_PERMISSION_KEYS.PLUGINS_READ,
+      displayName: "Read plugin operations",
+    },
     {
       key: CORE_PACK_PERMISSION_KEYS.USERS_READ,
       displayName: "Read users",

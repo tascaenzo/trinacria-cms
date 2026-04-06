@@ -1,6 +1,7 @@
 import { createToken } from "@trinacria/core";
 import type { AuthzService } from "../contracts/authz-service.js";
 import type { DbAdapter } from "../contracts/db-adapter.js";
+import type { KernelAdminRouteGuard } from "../contracts/kernel-admin-route-guard.js";
 import type { PluginRuntime } from "../contracts/plugin-runtime.js";
 import type { PluginRuntimeStore } from "../contracts/plugin-runtime-store.js";
 import type { PluginSecurityProvisioner } from "../contracts/plugin-security-provisioner.js";
@@ -27,6 +28,9 @@ export const CORE_TOKENS = {
   ),
   KERNEL_SYSTEM_SERVICE: createToken<KernelSystemService>(
     "CMS_KERNEL_SYSTEM_SERVICE",
+  ),
+  KERNEL_ADMIN_ROUTE_GUARD: createToken<KernelAdminRouteGuard>(
+    "CMS_KERNEL_ADMIN_ROUTE_GUARD",
   ),
   LOGGER: createToken<{
     info(message: string, metadata?: Record<string, unknown>): void;

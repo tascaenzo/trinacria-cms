@@ -6795,6 +6795,11 @@
         "tags": [
           "System"
         ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Installed plugin discovery snapshot",
@@ -6815,7 +6820,9 @@
                           "state",
                           "capabilities",
                           "dependencies",
-                          "security"
+                          "security",
+                          "failureCount",
+                          "operations"
                         ],
                         "properties": {
                           "id": {
@@ -6854,7 +6861,8 @@
                               "required": [
                                 "pluginId",
                                 "versionRange",
-                                "optional"
+                                "optional",
+                                "status"
                               ],
                               "properties": {
                                 "pluginId": {
@@ -6865,6 +6873,34 @@
                                 },
                                 "optional": {
                                   "type": "boolean"
+                                },
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "ok",
+                                    "missing",
+                                    "disabled",
+                                    "version-mismatch"
+                                  ]
+                                },
+                                "currentVersion": {
+                                  "type": "string"
+                                },
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "registered",
+                                    "loading",
+                                    "initializing",
+                                    "loaded",
+                                    "unloading",
+                                    "failed",
+                                    "disabled",
+                                    "unloaded"
+                                  ]
+                                },
+                                "reason": {
+                                  "type": "string"
                                 }
                               }
                             }
@@ -6896,6 +6932,438 @@
                           "loadedAt": {
                             "type": "string",
                             "format": "date-time"
+                          },
+                          "failureCount": {
+                            "type": "integer"
+                          },
+                          "failedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "lastFailurePhase": {
+                            "type": "string",
+                            "enum": [
+                              "register",
+                              "dependency-check",
+                              "load",
+                              "init",
+                              "unload",
+                              "rollback"
+                            ]
+                          },
+                          "disabledAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "disabledReason": {
+                            "type": "string"
+                          },
+                          "statusReason": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string"
+                              },
+                              "message": {
+                                "type": "string"
+                              },
+                              "details": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "required": [
+                              "code",
+                              "message"
+                            ],
+                            "additionalProperties": true
+                          },
+                          "lastError": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "message": {
+                                "type": "string"
+                              },
+                              "code": {
+                                "type": "string"
+                              },
+                              "details": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "message"
+                            ],
+                            "additionalProperties": true
+                          },
+                          "operations": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "operation",
+                                "available"
+                              ],
+                              "properties": {
+                                "operation": {
+                                  "type": "string",
+                                  "enum": [
+                                    "load",
+                                    "unload",
+                                    "reload",
+                                    "disable",
+                                    "enable"
+                                  ]
+                                },
+                                "available": {
+                                  "type": "boolean"
+                                },
+                                "reason": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "pluginId": {
+                          "enum": [
+                            "kernel"
+                          ]
+                        },
+                        "count": {
+                          "type": "integer"
+                        },
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/system/plugins/{pluginId}": {
+      "get": {
+        "operationId": "getInstalledPlugin",
+        "summary": "Read one installed plugin snapshot",
+        "tags": [
+          "System"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "pluginId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Installed plugin detail snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/paths/~1v1~1system~1plugins/get/responses/200/content/application~1json/schema/properties/data/items"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "pluginId": {
+                          "enum": [
+                            "kernel"
+                          ]
+                        },
+                        "count": {
+                          "type": "integer"
+                        },
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/system/plugins/{pluginId}/operations": {
+      "post": {
+        "operationId": "executePluginOperation",
+        "summary": "Execute a supported runtime operation on one installed plugin",
+        "tags": [
+          "System"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "pluginId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "operation"
+                ],
+                "properties": {
+                  "operation": {
+                    "type": "string",
+                    "enum": [
+                      "load",
+                      "unload",
+                      "reload",
+                      "disable",
+                      "enable"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Plugin operation result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "plugin",
+                        "operation",
+                        "executedAt"
+                      ],
+                      "properties": {
+                        "plugin": {
+                          "$ref": "#/paths/~1v1~1system~1plugins/get/responses/200/content/application~1json/schema/properties/data/items"
+                        },
+                        "operation": {
+                          "type": "string",
+                          "enum": [
+                            "load",
+                            "unload",
+                            "reload",
+                            "disable",
+                            "enable"
+                          ]
+                        },
+                        "executedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "pluginId": {
+                          "enum": [
+                            "kernel"
+                          ]
+                        },
+                        "count": {
+                          "type": "integer"
+                        },
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/system/plugins/{pluginId}/events": {
+      "get": {
+        "operationId": "listPluginEvents",
+        "summary": "Read recent lifecycle events for one installed plugin",
+        "tags": [
+          "System"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "pluginId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recent plugin lifecycle events",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true,
+                        "required": [
+                          "sequence",
+                          "timestamp",
+                          "pluginId",
+                          "action",
+                          "success"
+                        ],
+                        "properties": {
+                          "sequence": {
+                            "type": "integer"
+                          },
+                          "timestamp": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "pluginId": {
+                            "type": "string"
+                          },
+                          "action": {
+                            "type": "string",
+                            "enum": [
+                              "register",
+                              "unregister",
+                              "load",
+                              "unload",
+                              "reload",
+                              "disable",
+                              "enable",
+                              "load-many"
+                            ]
+                          },
+                          "success": {
+                            "type": "boolean"
+                          },
+                          "phase": {
+                            "type": "string",
+                            "enum": [
+                              "register",
+                              "dependency-check",
+                              "load",
+                              "init",
+                              "unload",
+                              "rollback"
+                            ]
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "durationMs": {
+                            "type": "integer"
+                          },
+                          "stateBefore": {
+                            "type": "string",
+                            "enum": [
+                              "registered",
+                              "loading",
+                              "initializing",
+                              "loaded",
+                              "unloading",
+                              "failed",
+                              "disabled",
+                              "unloaded"
+                            ]
+                          },
+                          "stateAfter": {
+                            "type": "string",
+                            "enum": [
+                              "registered",
+                              "loading",
+                              "initializing",
+                              "loaded",
+                              "unloading",
+                              "failed",
+                              "disabled",
+                              "unloaded"
+                            ]
+                          },
+                          "details": {
+                            "type": "object",
+                            "additionalProperties": true
                           }
                         }
                       }
@@ -6938,6 +7406,11 @@
         "summary": "List published capabilities across installed plugins",
         "tags": [
           "System"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
         ],
         "responses": {
           "200": {

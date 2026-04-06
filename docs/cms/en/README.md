@@ -23,6 +23,7 @@ Unified terminology glossary: [GLOSSARY.md](../GLOSSARY.md)
 13. [0012 - Operational Mongo schema](./0012-operational-mongo-schema.md)
 14. [0013 - Settings security and operational ownership](./0013-settings-security-and-operational-ownership.md)
 15. [0014 - Settings end-to-end](./0014-settings-end-to-end.md)
+16. [0015 - Plugin operations and troubleshooting](./0015-plugin-operations-and-troubleshooting.md)
 
 ## What this manual includes
 

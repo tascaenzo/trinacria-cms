@@ -82,11 +82,20 @@ That is why runtime discovery exists.
 Built-in kernel endpoints:
 
 - `GET /v1/system/plugins`
+- `GET /v1/system/plugins/:pluginId`
+- `GET /v1/system/plugins/:pluginId/events`
+- `POST /v1/system/plugins/:pluginId/operations`
 - `GET /v1/system/capabilities`
 
 Purpose:
 
 - allow SDKs, admin panels, and CLIs to inspect the real profile of the running CMS instance.
+- power the backoffice `Plugins` page as well, reusing the exact same discovery, detail, operation, and event endpoints instead of UI-only semantics.
+
+Protection:
+
+- the `system/plugins*` and `system/capabilities` surface is admin-only;
+- in the official setup the `kernel` receives enforcement through an auth bridge exported by `core-pack`, so the kernel stays decoupled from a specific auth package while still applying the real middleware.
 
 ### 4.1 `GET /v1/system/plugins`
 
@@ -95,13 +104,17 @@ Returns:
 - installed plugins
 - versions
 - lifecycle state
+- readable state reason (`statusReason`)
+- supported runtime operations and whether they are currently allowed
 - declared capabilities
-- dependencies
+- dependencies with operational status (`ok`, `missing`, `disabled`, `version-mismatch`)
 - aggregated security metadata
+- minimal failure/disabled context (`failureCount`, `lastFailurePhase`, `lastError`, `disabledReason`)
 
 Typical use:
 
 - build menus or UI sections only when a plugin is present and `loaded`.
+- drive admin actions from the real runtime contract instead of assuming unsupported operations exist.
 
 ### 4.2 `GET /v1/system/capabilities`
 
@@ -112,6 +125,39 @@ Returns:
 Typical use:
 
 - verify whether a feature is available without knowing the full plugin graph in advance.
+
+### 4.3 `POST /v1/system/plugins/:pluginId/operations`
+
+Supported `v1` operations:
+
+- `load`
+- `unload`
+- `reload`
+- `disable`
+- `enable`
+
+Constraints:
+
+- operations are executable only when the runtime marks them as available in `operations[]`;
+- `disable` optionally accepts `reason`;
+- `unregister` and remote installation are intentionally not exposed yet because the current runtime does not make them safe enough for generic admin use.
+
+### 4.4 `GET /v1/system/plugins/:pluginId/events`
+
+Returns the most recent lifecycle events for the plugin:
+
+- `sequence`
+- `timestamp`
+- `action`
+- `phase`
+- `success`
+- `stateBefore` / `stateAfter`
+- optional `details`
+
+Typical use:
+
+- correlate a `failed` or `disabled` state with the real operation sequence;
+- enrich admin error messages with recent context without requiring direct access to process logs.
 
 ## 5. End-to-end SDK flow
 

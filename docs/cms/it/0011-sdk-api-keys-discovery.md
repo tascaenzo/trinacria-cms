@@ -82,11 +82,20 @@ Per questo serve la discovery runtime.
 Endpoint built-in del kernel:
 
 - `GET /v1/system/plugins`
+- `GET /v1/system/plugins/:pluginId`
+- `GET /v1/system/plugins/:pluginId/events`
+- `POST /v1/system/plugins/:pluginId/operations`
 - `GET /v1/system/capabilities`
 
 Scopo:
 
 - permettere a SDK, pannelli admin e CLI di interrogare il profilo reale dell'istanza in esecuzione.
+- alimentare anche la pagina backoffice `Plugins`, che usa gli stessi endpoint di discovery, detail, operazioni ed eventi senza semantiche dedicate lato UI.
+
+Protezione:
+
+- la superficie `system/plugins*` e `system/capabilities` e admin-only;
+- nel setup ufficiale il `kernel` riceve l'enforcement dal bridge auth esportato dal `core-pack`, cosi evita dipendenze dirette dal package auth ma applica comunque il middleware reale.
 
 ### 4.1 `GET /v1/system/plugins`
 
@@ -95,13 +104,17 @@ Restituisce:
 - plugin installati
 - versione
 - stato lifecycle
+- ragione di stato leggibile (`statusReason`)
+- operazioni runtime supportate e attualmente consentite
 - capability dichiarate
-- dipendenze
+- dipendenze con stato operativo (`ok`, `missing`, `disabled`, `version-mismatch`)
 - metadati security aggregati
+- failure/disabled context minimo (`failureCount`, `lastFailurePhase`, `lastError`, `disabledReason`)
 
 Uso tipico:
 
 - costruire menu o sezioni UI solo se il plugin e presente e `loaded`.
+- mostrare in backoffice quali azioni sono davvero consentite dal runtime corrente senza simulare supporto non implementato.
 
 ### 4.2 `GET /v1/system/capabilities`
 
@@ -112,6 +125,39 @@ Restituisce:
 Uso tipico:
 
 - verificare se una feature e disponibile senza conoscere in anticipo l'intero grafo plugin.
+
+### 4.3 `POST /v1/system/plugins/:pluginId/operations`
+
+Operazioni supportate in `v1`:
+
+- `load`
+- `unload`
+- `reload`
+- `disable`
+- `enable`
+
+Vincoli:
+
+- le operazioni sono abilitate solo quando il runtime le marca come disponibili nel campo `operations[]`;
+- `disable` accetta opzionalmente `reason`;
+- `unregister` e installazione remota non sono ancora esposti, perche il runtime corrente non li rende abbastanza sicuri per uso amministrativo generico.
+
+### 4.4 `GET /v1/system/plugins/:pluginId/events`
+
+Restituisce gli ultimi eventi lifecycle del plugin:
+
+- `sequence`
+- `timestamp`
+- `action`
+- `phase`
+- `success`
+- `stateBefore` / `stateAfter`
+- `details` opzionali
+
+Uso tipico:
+
+- correlare un `failed` o un `disabled` alla sequenza di operazioni reali;
+- arricchire i messaggi errore admin con contesto recente senza richiedere accesso ai log di processo.
 
 ## 5. Flusso completo lato SDK
 

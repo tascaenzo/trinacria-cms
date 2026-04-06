@@ -241,6 +241,30 @@ export type DeleteRolePolicyRuleResponse = {
 };
 };
 
+export type ExecutePluginOperationRequest = {
+  path: {
+  "pluginId": string;
+};
+  body: {
+  "operation": "load" | "unload" | "reload" | "disable" | "enable";
+  "reason"?: string;
+};
+};
+
+export type ExecutePluginOperationResponse = {
+  "data": {
+  "plugin": unknown;
+  "operation": "load" | "unload" | "reload" | "disable" | "enable";
+  "executedAt": string;
+};
+  "meta"?: {
+  "pluginId"?: "kernel";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
 export type ExportPluginSettingsRequest = {
   path: {
   "pluginId": string;
@@ -357,6 +381,22 @@ export type GetInstallationStatusResponse = {
 };
   "meta"?: {
   "pluginId"?: "core-pack";
+};
+};
+
+export type GetInstalledPluginRequest = {
+  path: {
+  "pluginId": string;
+};
+};
+
+export type GetInstalledPluginResponse = {
+  "data": unknown;
+  "meta"?: {
+  "pluginId"?: "kernel";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
 };
 };
 
@@ -634,6 +674,10 @@ export type ListInstalledPluginsResponse = {
   "pluginId": string;
   "versionRange": string;
   "optional": boolean;
+  "status": "ok" | "missing" | "disabled" | "version-mismatch";
+  "currentVersion"?: string;
+  "state"?: "registered" | "loading" | "initializing" | "loaded" | "unloading" | "failed" | "disabled" | "unloaded";
+  "reason"?: string;
 }>;
   "security": {
   "permissions": number;
@@ -642,6 +686,33 @@ export type ListInstalledPluginsResponse = {
   "policyRules": number;
 };
   "loadedAt"?: string;
+  "failureCount": number;
+  "failedAt"?: string;
+  "lastFailurePhase"?: "register" | "dependency-check" | "load" | "init" | "unload" | "rollback";
+  "disabledAt"?: string;
+  "disabledReason"?: string;
+  "statusReason"?: {
+  "code": string;
+  "message": string;
+  "details"?: {
+  [key: string]: unknown;
+};
+  [key: string]: unknown;
+};
+  "lastError"?: {
+  "name": string;
+  "message": string;
+  "code"?: string;
+  "details"?: {
+  [key: string]: unknown;
+};
+  [key: string]: unknown;
+};
+  "operations": Array<{
+  "operation": "load" | "unload" | "reload" | "disable" | "enable";
+  "available": boolean;
+  "reason"?: string;
+}>;
 }>;
   "meta"?: {
   "pluginId"?: "kernel";
@@ -671,6 +742,37 @@ export type ListPermissionsResponse = {
 }>;
   "meta"?: {
   "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type ListPluginEventsRequest = {
+  path: {
+  "pluginId": string;
+};
+};
+
+export type ListPluginEventsResponse = {
+  "data": Array<{
+  "sequence": number;
+  "timestamp": string;
+  "pluginId": string;
+  "action": "register" | "unregister" | "load" | "unload" | "reload" | "disable" | "enable" | "load-many";
+  "success": boolean;
+  "phase"?: "register" | "dependency-check" | "load" | "init" | "unload" | "rollback";
+  "message"?: string;
+  "durationMs"?: number;
+  "stateBefore"?: "registered" | "loading" | "initializing" | "loaded" | "unloading" | "failed" | "disabled" | "unloaded";
+  "stateAfter"?: "registered" | "loading" | "initializing" | "loaded" | "unloading" | "failed" | "disabled" | "unloaded";
+  "details"?: {
+  [key: string]: unknown;
+};
+  [key: string]: unknown;
+}>;
+  "meta"?: {
+  "pluginId"?: "kernel";
   "count"?: number;
   "limit"?: number;
   "offset"?: number;

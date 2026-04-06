@@ -2,6 +2,7 @@ import type {
   PluginDependencyGraphSnapshot,
   KernelPluginDefinition,
   KernelPluginRuntimeContext,
+  PluginRuntimeDiagnostic,
   PluginRuntimeLifecycleHooks,
   PluginRuntimeEvent,
   PluginRuntimeRetryPolicy,
@@ -13,6 +14,7 @@ import type {
 import type { PluginRuntimeStore } from "../contracts/plugin-runtime-store.js";
 import type { PluginManifestDependency } from "../contracts/plugin-manifest.js";
 import type { ApplicationContext, ModuleDefinition } from "@trinacria/core";
+import { CoreError } from "../errors/core-error.js";
 import {
   PluginCompatibilityError,
   PluginDependencyError,
@@ -39,6 +41,7 @@ export interface InMemoryPluginRuntimeOptions {
   retryPolicy?: PluginRuntimeRetryPolicy;
   onEvent?: (event: PluginRuntimeEvent) => void;
   runtimeStore?: PluginRuntimeStore;
+  eventBufferSize?: number;
 }
 
 const ALLOWED_TRANSITIONS: Readonly<Record<PluginState, readonly PluginState[]>> =
@@ -69,7 +72,10 @@ export class InMemoryPluginRuntime implements PluginRuntime {
   private readonly retryPolicy?: PluginRuntimeRetryPolicy;
   private readonly onEvent?: (event: PluginRuntimeEvent) => void;
   private readonly runtimeStore: PluginRuntimeStore;
+  private readonly eventBufferSize: number;
+  private readonly eventLog: PluginRuntimeEvent[] = [];
   private runtimeStoreInitialization?: Promise<void>;
+  private eventSequence = 0;
 
   constructor(options: InMemoryPluginRuntimeOptions) {
     this.coreVersion = options.coreVersion;
@@ -78,6 +84,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     this.retryPolicy = options.retryPolicy;
     this.onEvent = options.onEvent;
     this.runtimeStore = options.runtimeStore ?? createInMemoryPluginRuntimeStore();
+    this.eventBufferSize = Math.max(1, options.eventBufferSize ?? 200);
 
     if (options.app) {
       this.moduleBridge = new TrinacriaModuleBridge(
@@ -163,6 +170,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       failedAt: undefined,
       disabledAt: undefined,
       disabledReason: undefined,
+      statusReason: this.createStatusReason("registered"),
     });
     await this.persistRecord(manifest.id);
     this.emitEvent({
@@ -430,11 +438,57 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     });
   }
 
+  async enable(pluginId: string): Promise<void> {
+    await this.ensureRuntimeStoreInitialized();
+    const record = this.getRecord(pluginId);
+    const startedAt = Date.now();
+
+    if (record.state !== "disabled") {
+      throw new PluginStateTransitionError(
+        `Cannot enable plugin "${pluginId}" from state "${record.state}"`,
+        { pluginId, from: record.state, action: "enable" },
+      );
+    }
+
+    this.records.set(pluginId, {
+      ...record,
+      state: "registered",
+      disabledAt: undefined,
+      disabledReason: undefined,
+      statusReason: this.createStatusReason("registered"),
+    });
+    await this.persistRecord(pluginId);
+    this.emitEvent({
+      pluginId,
+      action: "enable",
+      success: true,
+      durationMs: Date.now() - startedAt,
+      stateBefore: record.state,
+      stateAfter: "registered",
+    });
+  }
+
   list(): readonly PluginRuntimeRecord[] {
     return Array.from(this.records.values()).map((record) => ({
       ...record,
       state: record.state as PluginState,
     }));
+  }
+
+  events(options?: {
+    pluginId?: string;
+    limit?: number;
+  }): readonly PluginRuntimeEvent[] {
+    const normalizedPluginId = options?.pluginId?.trim();
+    const filtered = normalizedPluginId
+      ? this.eventLog.filter((event) => event.pluginId === normalizedPluginId)
+      : this.eventLog;
+    const normalizedLimit =
+      typeof options?.limit === "number" && Number.isFinite(options.limit)
+        ? Math.max(1, Math.floor(options.limit))
+        : filtered.length;
+
+    return filtered.slice(-normalizedLimit);
   }
 
   describeDependencies(): PluginDependencyGraphSnapshot {
@@ -578,6 +632,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
         lastError: undefined,
         lastFailurePhase: undefined,
         failedAt: undefined,
+        statusReason: this.createStatusReason("loaded"),
       });
       this.pluginModules.set(pluginId, registeredModules);
     } catch (error) {
@@ -690,6 +745,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     this.records.set(pluginId, {
       ...current,
       state: nextState,
+      statusReason: this.createStatusReason(nextState),
       ...(nextState !== "loaded" ? { loadedAt: undefined } : {}),
     });
   }
@@ -709,6 +765,10 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       failureCount: (current.failureCount ?? 0) + 1,
       lastError:
         error instanceof Error ? error : new Error(this.errorToString(error)),
+      statusReason: this.createStatusReason("failed", {
+        phase,
+        error: this.toDiagnostic(error),
+      }),
     });
   }
 
@@ -726,7 +786,55 @@ export class InMemoryPluginRuntime implements PluginRuntime {
           : error
             ? new Error(this.errorToString(error))
             : current.lastError,
+      statusReason: this.createStatusReason("disabled", {
+        reason: reason?.trim() || "operator_request",
+      }),
     });
+  }
+
+  private createStatusReason(
+    state: PluginState,
+    details?: Record<string, unknown>,
+  ): PluginRuntimeRecord["statusReason"] {
+    const messages: Record<PluginState, string> = {
+      registered: "Plugin is registered and ready for manual load",
+      loading: "Plugin is registering runtime modules",
+      initializing: "Plugin load completed and lifecycle init is running",
+      loaded: "Plugin is loaded and operational",
+      unloading: "Plugin unload is releasing lifecycle hooks and modules",
+      failed: "Plugin entered failed state during lifecycle execution",
+      disabled: "Plugin is disabled and cannot be loaded",
+      unloaded: "Plugin is unloaded but still registered",
+    };
+
+    return {
+      code: `plugin_${state}`,
+      message: messages[state],
+      ...(details ? { details } : {}),
+    };
+  }
+
+  private toDiagnostic(error: unknown): PluginRuntimeDiagnostic {
+    if (error instanceof CoreError) {
+      return {
+        name: error.name,
+        message: error.message,
+        code: error.code,
+        ...(error.details ? { details: error.details } : {}),
+      };
+    }
+
+    if (error instanceof Error) {
+      return {
+        name: error.name,
+        message: error.message,
+      };
+    }
+
+    return {
+      name: "UnknownError",
+      message: String(error),
+    };
   }
 
   private extractRequiredDependencies(
@@ -893,12 +1001,20 @@ export class InMemoryPluginRuntime implements PluginRuntime {
   }
 
   private emitEvent(
-    event: Omit<PluginRuntimeEvent, "timestamp">,
+    event: Omit<PluginRuntimeEvent, "timestamp" | "sequence">,
   ): void {
-    this.onEvent?.({
+    const payload: PluginRuntimeEvent = {
       ...event,
+      sequence: ++this.eventSequence,
       timestamp: new Date(),
-    });
+    };
+
+    this.eventLog.push(payload);
+    if (this.eventLog.length > this.eventBufferSize) {
+      this.eventLog.splice(0, this.eventLog.length - this.eventBufferSize);
+    }
+
+    this.onEvent?.(payload);
   }
 
   private resolveAttempts(_state: PluginState): number {
