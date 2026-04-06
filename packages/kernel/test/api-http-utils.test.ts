@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { ValidationError } from "@trinacria/schema";
 import {
   createPluginApiResponder,
   getStatusCodeForApiError,
@@ -66,4 +67,23 @@ test("createPluginApiResponder.invalidRequest returns HTTP 400", () => {
   assert.equal(result.status, 400);
   assert.equal(result.body.error.code, "invalid_request");
   assert.equal(result.body.meta?.pluginId, "core-pack");
+});
+
+test("toApiErrorResponse exposes validation issues for schema errors", () => {
+  const response = toApiErrorResponse(
+    new ValidationError([
+      { path: ["firstName"], message: "Expected string", code: "invalid_type" },
+      { path: ["lastName"], message: "Expected string", code: "invalid_type" },
+    ]),
+  );
+
+  assert.equal(response.error.code, "validation_error");
+  assert.match(response.error.message, /firstName: Expected string/);
+  assert.match(response.error.message, /lastName: Expected string/);
+  assert.deepEqual(response.error.details, {
+    issues: [
+      { path: ["firstName"], message: "Expected string", code: "invalid_type" },
+      { path: ["lastName"], message: "Expected string", code: "invalid_type" },
+    ],
+  });
 });

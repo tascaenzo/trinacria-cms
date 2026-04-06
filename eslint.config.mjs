@@ -15,7 +15,8 @@ export default tseslint.config(
       "**/*.spec.*",
       "**/docs.html",
       "**/.tmp/artifacts/**",
-      "**/.changeset/**"
+      "**/.changeset/**",
+      "**/src/generated/**"
     ]
   },
   js.configs.recommended,
@@ -30,7 +31,8 @@ export default tseslint.config(
         fetch: "readonly",
         setTimeout: "readonly",
         clearTimeout: "readonly",
-        require: "readonly"
+        require: "readonly",
+        module: "readonly"
       }
     },
     rules: {

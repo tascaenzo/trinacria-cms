@@ -100,7 +100,26 @@ export class UsersRepository {
     if ("roleAssignments" in normalized) {
       delete normalized.roleAssignments;
     }
+    const displayName =
+      typeof normalized.displayName === "string" ? normalized.displayName.trim() : "";
+    if (!displayName) {
+      normalized.displayName = formatLegacyUserDisplayName(normalized);
+    }
+
+    if ("firstName" in normalized) {
+      delete normalized.firstName;
+    }
+    if ("lastName" in normalized) {
+      delete normalized.lastName;
+    }
 
     return UserRecordSchema.parse(normalized);
   }
+}
+
+function formatLegacyUserDisplayName(record: Record<string, unknown>): string {
+  const firstName = typeof record.firstName === "string" ? record.firstName.trim() : "";
+  const lastName = typeof record.lastName === "string" ? record.lastName.trim() : "";
+  const combined = `${firstName} ${lastName}`.trim();
+  return combined || "Unknown User";
 }

@@ -46,7 +46,22 @@ export class AuthUsersRepository {
     if ("roleAssignments" in normalized) {
       delete normalized.roleAssignments;
     }
+
+    const displayName =
+      typeof normalized.displayName === "string" ? normalized.displayName.trim() : "";
+    if (!displayName) {
+      const firstName = typeof normalized.firstName === "string" ? normalized.firstName.trim() : "";
+      const lastName = typeof normalized.lastName === "string" ? normalized.lastName.trim() : "";
+      normalized.displayName = `${firstName} ${lastName}`.trim() || "Unknown User";
+    }
+
+    if ("firstName" in normalized) {
+      delete normalized.firstName;
+    }
+    if ("lastName" in normalized) {
+      delete normalized.lastName;
+    }
+
     return UserRecordSchema.parse(normalized);
   }
 }
-

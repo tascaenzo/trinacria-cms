@@ -14,4 +14,3 @@ export const InstallBootstrapInputSchema = s.object(
 );
 
 export type InstallBootstrapInput = Infer<typeof InstallBootstrapInputSchema>;
-

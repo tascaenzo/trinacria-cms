@@ -10,10 +10,11 @@ test("UsersService creates and fetches users", async () => {
 
   const created = await service.createUser({
     email: "Alice@example.com",
-    displayName: "Alice",
+    displayName: "Alice Smith",
   });
 
   assert.equal(created.email, "alice@example.com");
+  assert.equal(created.displayName, "Alice Smith");
   assert.equal(created.status, "active");
   assert.equal(typeof created.id, "string");
 
@@ -28,7 +29,7 @@ test("UsersService prevents duplicate email in plugin namespace", async () => {
   await service.createUser(
     {
       email: "alice@example.com",
-      displayName: "Alice",
+      displayName: "Alice Smith",
     },
   );
 
@@ -37,7 +38,7 @@ test("UsersService prevents duplicate email in plugin namespace", async () => {
       service.createUser(
         {
           email: "alice@example.com",
-          displayName: "Alice 2",
+          displayName: "Alice Johnson",
         },
       ),
     /already exists/,
@@ -50,11 +51,11 @@ test("UsersService updates user status and lists users", async () => {
 
   const first = await service.createUser({
     email: "a@example.com",
-    displayName: "A",
+    displayName: "A One",
   });
   await service.createUser({
     email: "b@example.com",
-    displayName: "B",
+    displayName: "B Two",
   });
 
   const suspended = await service.suspendUser(first.id);

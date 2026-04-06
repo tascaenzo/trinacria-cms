@@ -1,6 +1,7 @@
 import { apiError, type ApiErrorResponse } from "../contracts/api-contract.js";
 import { apiSuccess, type ApiResponseMeta } from "../contracts/api-contract.js";
 import { response, type HttpContext, type HttpResponse } from "@trinacria/http";
+import { ValidationError, formatValidationError } from "@trinacria/schema";
 
 /**
  * Parses a numeric query parameter from Trinacria HttpContext query object.
@@ -143,6 +144,17 @@ export function serializeCookie(
 export function toApiErrorResponse(error: unknown): ApiErrorResponse {
   if (isCodedError(error)) {
     return apiError(error.code, error.message ?? "Unexpected error", error.details);
+  }
+  if (error instanceof ValidationError) {
+    return apiError(
+      "validation_error",
+      formatValidationError(error, {
+        prefix: "Validation failed:",
+      }),
+      {
+        issues: error.issues,
+      },
+    );
   }
   if (error instanceof Error) {
     if (error.message.includes("already exists")) {

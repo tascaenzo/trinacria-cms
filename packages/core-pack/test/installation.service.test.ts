@@ -37,6 +37,7 @@ test("InstallationService bootstraps admin user and local credentials", async ()
 
   assert.equal(result.status.installed, true);
   assert.equal(result.adminUser.email, "admin@example.com");
+  assert.equal(result.adminUser.displayName, "CMS Admin");
   assert.equal(result.adminUser.status, "active");
   assert.equal(result.status.adminUserId, result.adminUser.id);
 
@@ -236,4 +237,3 @@ function applySort<TData extends Record<string, unknown>>(
     return aValue > bValue ? -1 : 1;
   });
 }
-

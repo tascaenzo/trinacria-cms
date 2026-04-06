@@ -38,7 +38,7 @@ console.log(`[sdk:snapshot] OpenAPI snapshot updated from ${sourceUrl}`);
 console.log(`[sdk:snapshot] Output: ${outputPath}`);
 
 function normalizeOpenApiDocument(document) {
-  const cloned = structuredClone(document);
+  const cloned = cloneJsonDocument(document);
 
   patchQueryParameters(cloned, "/v1/users", "get", [
     integerQueryParameter("limit", { minimum: 1, maximum: 200 }),
@@ -59,6 +59,14 @@ function normalizeOpenApiDocument(document) {
   ]);
 
   return cloned;
+}
+
+function cloneJsonDocument(document) {
+  if (typeof globalThis.structuredClone === "function") {
+    return globalThis.structuredClone(document);
+  }
+
+  return JSON.parse(JSON.stringify(document));
 }
 
 function patchQueryParameters(document, path, method, parameters) {
