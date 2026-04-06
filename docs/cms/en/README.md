@@ -21,6 +21,8 @@ Unified terminology glossary: [GLOSSARY.md](../GLOSSARY.md)
 11. [0010 - Code atlas: file -> responsibility -> flow maps](./0010-code-atlas-and-flows.md)
 12. [0011 - Official SDK, runtime discovery, and API keys](./0011-sdk-api-keys-discovery.md)
 13. [0012 - Operational Mongo schema](./0012-operational-mongo-schema.md)
+14. [0013 - Settings security and operational ownership](./0013-settings-security-and-operational-ownership.md)
+15. [0014 - Settings end-to-end](./0014-settings-end-to-end.md)
 
 ## What this manual includes
 

@@ -3,7 +3,7 @@
 ## Meta
 
 - ID: `task-settings-backoffice-write-flow`
-- Stato: `todo`
+- Stato: `done`
 - Area: `backoffice`
 - Milestone: `M2`
 - Owner: `enzo`
@@ -51,8 +51,25 @@ La pagina attuale settings e soprattutto un explorer read-only. Per farne una su
 
 Se il backoffice non puo scrivere direttamente, la UX deve renderlo esplicito e offrire almeno strumenti affidabili di inspection, export e debug.
 
+Direzione applicata:
+
+- la pagina `settings` resta senza write diretto dal browser admin;
+- l'ispezione ora carica anche metadata secret mascherati con gestione distinta di `404` e errori reali;
+- il dialog di dettaglio prepara un handoff owner-signed per valori non-secret, mostrando endpoint, owner plugin, header richiesti e body JSON;
+- il copy i18n rende esplicito che il backoffice prepara il payload ma non firma ne esegue la richiesta.
+
 ## Chiusura
 
-- Changelog aggiornato: `no`
-- Documentazione aggiornata: `no`
+- Changelog aggiornato: `si`
+- Documentazione aggiornata: `si`
+- File modificati:
+  - `packages/admin-kernel/src/pages/settings-page.tsx`
+  - `packages/admin-kernel/src/i18n/en.json`
+  - `packages/admin-kernel/src/i18n/it.json`
+  - `docs/cms/it/0013-settings-sicurezza-e-ownership-operativa.md`
+  - `docs/cms/en/0013-settings-security-and-operational-ownership.md`
+- Check eseguiti:
+  - `npm run typecheck -w @trinacria-cms/admin-kernel`
+  - `npm run build -w @trinacria-cms/backoffice`
 - Follow-up aperti:
+  - documentare end-to-end il flusso handoff owner-signed nell'ultimo task M2

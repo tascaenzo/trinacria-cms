@@ -21,6 +21,8 @@ Glossario terminologico unico: [GLOSSARY.md](../GLOSSARY.md)
 11. [0010 - Atlante codice: mappe file -> responsabilita -> flussi](./0010-atlante-codice-e-flussi.md)
 12. [0011 - SDK ufficiale, discovery runtime e API key](./0011-sdk-api-keys-discovery.md)
 13. [0012 - Schema Mongo operativo](./0012-schema-db-mongo-operativo.md)
+14. [0013 - Settings: sicurezza e ownership operativa](./0013-settings-sicurezza-e-ownership-operativa.md)
+15. [0014 - Settings end-to-end](./0014-settings-end-to-end.md)
 
 ## Cosa trovi in questo manuale
 

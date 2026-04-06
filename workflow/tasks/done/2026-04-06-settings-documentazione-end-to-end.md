@@ -3,7 +3,7 @@
 ## Meta
 
 - ID: `task-settings-docs-e2e`
-- Stato: `todo`
+- Stato: `done`
 - Area: `docs`
 - Milestone: `M2`
 - Owner: `enzo`
@@ -56,8 +56,31 @@ La documentazione deve distinguere chiaramente:
 - reveal
 - export
 
+Direzione applicata:
+
+- introdotto un capitolo end-to-end bilingue dedicato al dominio `settings`;
+- la documentazione ora distingue in modo esplicito definitions, values, masked secrets metadata, reveal ed export;
+- sono stati aggiunti esempi HTTP signed, esempi SDK e la descrizione del flusso backoffice owner-signed handoff;
+- i README del manuale CMS puntano ora anche al capitolo `0014`.
+
 ## Chiusura
 
-- Changelog aggiornato: `no`
-- Documentazione aggiornata: `no`
+- Changelog aggiornato: `si`
+- Documentazione aggiornata: `si`
+- File modificati:
+  - `docs/cms/it/0014-settings-end-to-end.md`
+  - `docs/cms/en/0014-settings-end-to-end.md`
+  - `docs/cms/it/README.md`
+  - `docs/cms/en/README.md`
+  - `docs/cms/it/0005-core-pack-architettura-file-per-file.md`
+  - `docs/cms/en/0005-core-pack-file-by-file.md`
+  - `docs/cms/it/0013-settings-sicurezza-e-ownership-operativa.md`
+  - `docs/cms/en/0013-settings-security-and-operational-ownership.md`
+- Check eseguiti:
+  - review manuale dei riferimenti file/path
+  - review manuale di coerenza con OpenAPI e SDK
+  - `npm run build`
+  - `npm test`
+  - `npm run lint`
 - Follow-up aperti:
+  - nessuno

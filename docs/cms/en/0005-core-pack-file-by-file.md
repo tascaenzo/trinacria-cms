@@ -261,15 +261,32 @@ Exposed APIs:
 
 | Method | Endpoint | Purpose | Auth |
 | --- | --- | --- | --- |
-| `GET` | `/v1/settings/definitions` | list definitions | public |
-| `GET` | `/v1/settings/definitions/:key` | get definition detail | public |
+| `GET` | `/v1/settings/definitions` | list definitions | admin bearer or signed plugin auth |
+| `GET` | `/v1/settings/definitions/:key` | get definition detail | admin bearer or signed plugin auth |
 | `POST` | `/v1/settings/definitions` | create/update definition | signed plugin auth |
-| `GET` | `/v1/settings/values/:key` | resolve explicit value or default | public |
+| `GET` | `/v1/settings/values/:key` | resolve explicit value or default | admin bearer or signed plugin auth |
 | `PUT` | `/v1/settings/values/:key` | create/update value | signed plugin auth |
-| `GET` | `/v1/settings/secrets/:key` | read masked secret metadata | signed plugin auth |
+| `GET` | `/v1/settings/secrets/:key` | read masked secret metadata | admin bearer or signed owner plugin |
 | `PUT` | `/v1/settings/secrets/:key` | create/update encrypted secret | signed plugin auth |
 | `POST` | `/v1/settings/secrets/:key/reveal` | owner-only secret reveal | signed plugin auth |
 | `GET` | `/v1/settings/export/:pluginId` | export plugin snapshot with masked secrets | signed plugin auth |
+
+Updated operational policy:
+
+- the backoffice may read definitions, resolved values, and masked secret metadata;
+- reveal, export, and writes remain owner-scoped through `SettingsPluginAuth`;
+- any future write UX must stay plugin-aware and must not turn the backoffice into a bypass over plugin ownership;
+- operational reference: `docs/cms/en/0013-settings-security-and-operational-ownership.md`.
+
+Initial `core-pack` bootstrap catalog:
+
+- `core-pack:site:name`
+- `core-pack:site:url`
+- `core-pack:cms:locale`
+- `core-pack:cms:timezone`
+- `core-pack:branding:tagline`
+- `core-pack:branding:logo_url`
+- `core-pack:features:editorial_workflow`
 
 ## 9. Core-pack HTTP response style
 

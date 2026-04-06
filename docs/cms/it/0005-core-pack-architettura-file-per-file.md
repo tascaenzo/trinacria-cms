@@ -261,15 +261,32 @@ API esposte:
 
 | Metodo | Endpoint | Scopo | Auth |
 | --- | --- | --- | --- |
-| `GET` | `/v1/settings/definitions` | lista definizioni | pubblica |
-| `GET` | `/v1/settings/definitions/:key` | dettaglio definizione | pubblica |
+| `GET` | `/v1/settings/definitions` | lista definizioni | bearer admin oppure signed plugin auth |
+| `GET` | `/v1/settings/definitions/:key` | dettaglio definizione | bearer admin oppure signed plugin auth |
 | `POST` | `/v1/settings/definitions` | crea/aggiorna definizione | signed plugin auth |
-| `GET` | `/v1/settings/values/:key` | risolve valore o default | pubblica |
+| `GET` | `/v1/settings/values/:key` | risolve valore o default | bearer admin oppure signed plugin auth |
 | `PUT` | `/v1/settings/values/:key` | crea/aggiorna valore | signed plugin auth |
-| `GET` | `/v1/settings/secrets/:key` | metadata secret mascherato | signed plugin auth |
+| `GET` | `/v1/settings/secrets/:key` | metadata secret mascherato | bearer admin oppure signed owner plugin |
 | `PUT` | `/v1/settings/secrets/:key` | crea/aggiorna secret cifrato | signed plugin auth |
 | `POST` | `/v1/settings/secrets/:key/reveal` | reveal del secret owner-only | signed plugin auth |
 | `GET` | `/v1/settings/export/:pluginId` | export snapshot con secret mascherati | signed plugin auth |
+
+Policy operativa aggiornata:
+
+- il backoffice puo leggere definizioni, valori risolti e metadata secret mascherati;
+- reveal, export e scritture restano owner-scoped tramite `SettingsPluginAuth`;
+- ogni futura UX di scrittura deve restare plugin-aware e non puo trasformare il backoffice in un bypass dell'ownership plugin;
+- riferimento operativo: `docs/cms/it/0013-settings-sicurezza-e-ownership-operativa.md`.
+
+Bootstrap catalogo iniziale `core-pack`:
+
+- `core-pack:site:name`
+- `core-pack:site:url`
+- `core-pack:cms:locale`
+- `core-pack:cms:timezone`
+- `core-pack:branding:tagline`
+- `core-pack:branding:logo_url`
+- `core-pack:features:editorial_workflow`
 
 ## 9. Stile di risposta HTTP del core-pack
 

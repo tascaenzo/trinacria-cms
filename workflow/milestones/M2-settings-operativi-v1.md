@@ -13,11 +13,11 @@ Trasformare il dominio `settings` da infrastruttura tecnica ben modellata a supe
 
 ## Task inclusi
 
-- [ ] `2026-04-06-settings-decision-record-sicurezza-e-ownership.md`
-- [ ] `2026-04-06-settings-backend-hardening-e-contratti.md`
-- [ ] `2026-04-06-settings-backoffice-write-flow.md`
-- [ ] `2026-04-06-settings-bootstrap-definitions-core-pack.md`
-- [ ] `2026-04-06-settings-documentazione-end-to-end.md`
+- [x] `2026-04-06-settings-decision-record-sicurezza-e-ownership.md`
+- [x] `2026-04-06-settings-backend-hardening-e-contratti.md`
+- [x] `2026-04-06-settings-bootstrap-definitions-core-pack.md`
+- [x] `2026-04-06-settings-backoffice-write-flow.md`
+- [x] `2026-04-06-settings-documentazione-end-to-end.md`
 
 ## Dipendenze
 
