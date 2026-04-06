@@ -63,12 +63,17 @@ export function getOwnerPluginIdFromSettingKey(value: string): string {
 export function assertRequesterOwnsSettingKey(
   requesterPluginId: string,
   settingKey: string,
+  action = "modify",
 ): void {
   const ownerPluginId = getOwnerPluginIdFromSettingKey(settingKey);
   const normalizedRequester = requesterPluginId.trim().toLowerCase();
   if (ownerPluginId !== normalizedRequester) {
-    throw new Error(
-      `Requester plugin "${normalizedRequester}" cannot modify setting key "${settingKey}" owned by "${ownerPluginId}"`,
-    );
+    throw createSettingsOwnerAccessError({
+      action,
+      key: settingKey,
+      requesterPluginId: normalizedRequester,
+      ownerPluginId,
+    });
   }
 }
+import { createSettingsOwnerAccessError } from "./settings.errors.js";

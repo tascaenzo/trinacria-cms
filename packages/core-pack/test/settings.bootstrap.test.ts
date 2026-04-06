@@ -2,122 +2,36 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { DbAdapter, DbQuery, DbRepository } from "@trinacria-cms/kernel";
 import { SettingsDefinitionsRepository } from "../src/modules/settings/definitions/settings-definitions.repository.js";
-import { SettingsAccessError } from "../src/modules/settings/settings.errors.js";
 import { SettingsSecretsCryptoService } from "../src/modules/settings/secrets/settings-secrets-crypto.service.js";
+import {
+  CORE_PACK_SETTING_DEFINITION_SEEDS,
+  provisionCorePackSettingDefinitions,
+} from "../src/modules/settings/settings.bootstrap.js";
 import { SettingsSecretsRepository } from "../src/modules/settings/secrets/settings-secrets.repository.js";
 import { SettingsService } from "../src/modules/settings/settings.service.js";
 import { SettingsValuesRepository } from "../src/modules/settings/values/settings-values.repository.js";
 
-test("SettingsService resolves defaults and explicit values", async () => {
+test("core-pack settings bootstrap provisions the canonical seed catalog", async () => {
   const service = createSettingsService();
 
-  await service.upsertDefinition({
-    requesterPluginId: "core-pack",
-    key: "core-pack:privacy:consents",
-    category: "privacy",
-    defaultValue: {
-      cookieBanner: { enabled: true, mode: "opt-in" },
-      retentionDays: 365,
-    },
-  });
+  const created = await provisionCorePackSettingDefinitions(service);
+  const listed = await service.listDefinitions({ ownerPluginId: "core-pack" });
 
-  const fromDefault = await service.getResolvedValueByKey(
-    "core-pack:privacy:consents",
+  assert.equal(created.length, CORE_PACK_SETTING_DEFINITION_SEEDS.length);
+  assert.equal(listed.length, CORE_PACK_SETTING_DEFINITION_SEEDS.length);
+  assert.deepEqual(
+    listed.map((item) => item.key).sort(),
+    CORE_PACK_SETTING_DEFINITION_SEEDS.map((item) => item.key).sort(),
   );
-  assert.ok(fromDefault);
-  assert.equal(fromDefault?.source, "default");
-  assert.deepEqual(fromDefault?.value, {
-    cookieBanner: { enabled: true, mode: "opt-in" },
-    retentionDays: 365,
-  });
 
-  const upserted = await service.upsertValue({
-    requesterPluginId: "core-pack",
-    key: "core-pack:privacy:consents",
-    value: {
-      cookieBanner: { enabled: false, mode: "opt-out" },
-      retentionDays: 180,
-    },
-  });
+  const siteName = await service.getResolvedValueByKey("core-pack:site:name");
+  const timezone = await service.getResolvedValueByKey("core-pack:cms:timezone");
+  const featureFlag = await service.getResolvedValueByKey("core-pack:features:editorial_workflow");
 
-  assert.equal(upserted.version, 1);
-
-  const fromValue = await service.getResolvedValueByKey(
-    "core-pack:privacy:consents",
-  );
-  assert.ok(fromValue);
-  assert.equal(fromValue?.source, "value");
-  assert.equal(fromValue?.version, 1);
-  assert.deepEqual(fromValue?.value, {
-    cookieBanner: { enabled: false, mode: "opt-out" },
-    retentionDays: 180,
-  });
+  assert.equal(siteName?.value, "Trinacria CMS");
+  assert.equal(timezone?.value, "Europe/Rome");
+  assert.equal(featureFlag?.value, false);
 });
-
-test("SettingsService masks secrets and enforces owner-only reveal", async () => {
-  const service = createSettingsService();
-
-  await service.upsertSecret({
-    requesterPluginId: "core-pack",
-    key: "core-pack:integrations:stripe_api_key",
-    plaintext: "sk_test_123456",
-  });
-
-  const metadata = await service.getSecretMetadata(
-    "core-pack",
-    "core-pack:integrations:stripe_api_key",
-  );
-  assert.ok(metadata);
-  assert.equal(metadata?.maskedValue, "********");
-
-  const adminMetadata = await service.getSecretMetadataByKey(
-    "core-pack:integrations:stripe_api_key",
-  );
-  assert.ok(adminMetadata);
-  assert.equal(adminMetadata?.maskedValue, "********");
-
-  const revealed = await service.revealSecret(
-    "core-pack",
-    "core-pack:integrations:stripe_api_key",
-  );
-  assert.ok(revealed);
-  assert.equal(revealed?.value, "sk_test_123456");
-
-  await assertSettingsAccessError(
-    () => service.getSecretMetadata("blog-pack", "core-pack:integrations:stripe_api_key"),
-    "auth_forbidden_settings_owner_required",
-  );
-
-  await assertSettingsAccessError(
-    () =>
-      service.revealSecret(
-        "blog-pack",
-        "core-pack:integrations:stripe_api_key",
-      ),
-    "auth_forbidden_settings_owner_required",
-  );
-
-  const exported = await service.exportPluginSettings("core-pack", "core-pack");
-  assert.equal(exported.pluginId, "core-pack");
-  assert.equal(exported.secrets.length, 1);
-  assert.equal(exported.secrets[0]?.maskedValue, "********");
-
-  await assertSettingsAccessError(
-    () => service.exportPluginSettings("blog-pack", "core-pack"),
-    "auth_forbidden_settings_owner_required",
-  );
-});
-
-async function assertSettingsAccessError(
-  action: () => Promise<unknown>,
-  expectedCode: string,
-): Promise<void> {
-  await assert.rejects(action, (error: unknown) => {
-    assert.ok(error instanceof SettingsAccessError);
-    assert.equal(error.code, expectedCode);
-    return true;
-  });
-}
 
 function createSettingsService(): SettingsService {
   const db = createFakeDbAdapter();

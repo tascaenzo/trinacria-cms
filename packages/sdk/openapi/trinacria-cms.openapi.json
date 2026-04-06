@@ -4454,6 +4454,7 @@
       "get": {
         "operationId": "listSettingDefinitions",
         "summary": "List setting definitions",
+        "description": "Requires either an admin bearer token or signed plugin caller headers. Masked secret metadata remains owner-scoped for plugin callers.",
         "tags": [
           "Settings"
         ],
@@ -4572,8 +4573,70 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Admin or plugin authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "pluginId": {
+                          "enum": [
+                            "core-pack"
+                          ]
+                        },
+                        "count": {
+                          "type": "integer"
+                        },
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "pluginCallerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "ownerPluginId",
@@ -4777,8 +4840,8 @@
               }
             }
           },
-          "409": {
-            "description": "Ownership conflict",
+          "403": {
+            "description": "Owner plugin required",
             "content": {
               "application/json": {
                 "schema": {
@@ -4833,6 +4896,11 @@
           }
         },
         "description": "Requires signed plugin caller headers: x-cms-plugin-id, x-cms-plugin-ts, x-cms-plugin-nonce, x-cms-plugin-signature.",
+        "security": [
+          {
+            "pluginCallerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -4912,6 +4980,7 @@
       "get": {
         "operationId": "getSettingDefinitionByKey",
         "summary": "Get setting definition by key",
+        "description": "Requires either an admin bearer token or signed plugin caller headers. Masked secret metadata remains owner-scoped for plugin callers.",
         "tags": [
           "Settings"
         ],
@@ -5028,6 +5097,60 @@
               }
             }
           },
+          "401": {
+            "description": "Admin or plugin authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "pluginId": {
+                          "enum": [
+                            "core-pack"
+                          ]
+                        },
+                        "count": {
+                          "type": "integer"
+                        },
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
           "404": {
             "description": "Definition not found",
             "content": {
@@ -5083,6 +5206,14 @@
             }
           }
         },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "pluginCallerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "key",
@@ -5099,6 +5230,7 @@
       "get": {
         "operationId": "getSettingValueByKey",
         "summary": "Resolve setting value by key (explicit or default)",
+        "description": "Requires either an admin bearer token or signed plugin caller headers. Masked secret metadata remains owner-scoped for plugin callers.",
         "tags": [
           "Settings"
         ],
@@ -5180,6 +5312,60 @@
               }
             }
           },
+          "401": {
+            "description": "Admin or plugin authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "pluginId": {
+                          "enum": [
+                            "core-pack"
+                          ]
+                        },
+                        "count": {
+                          "type": "integer"
+                        },
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
           "404": {
             "description": "Value not found",
             "content": {
@@ -5235,6 +5421,14 @@
             }
           }
         },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "pluginCallerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "key",
@@ -5389,8 +5583,8 @@
               }
             }
           },
-          "409": {
-            "description": "Ownership conflict",
+          "403": {
+            "description": "Owner plugin required",
             "content": {
               "application/json": {
                 "schema": {
@@ -5445,6 +5639,11 @@
           }
         },
         "description": "Requires signed plugin caller headers: x-cms-plugin-id, x-cms-plugin-ts, x-cms-plugin-nonce, x-cms-plugin-signature.",
+        "security": [
+          {
+            "pluginCallerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "key",
@@ -5504,6 +5703,7 @@
       "get": {
         "operationId": "getSettingSecretMetadata",
         "summary": "Read secret metadata (masked)",
+        "description": "Requires either an admin bearer token or signed plugin caller headers. Masked secret metadata remains owner-scoped for plugin callers.",
         "tags": [
           "Settings"
         ],
@@ -5577,7 +5777,61 @@
             }
           },
           "401": {
-            "description": "Plugin caller authentication failed",
+            "description": "Admin or plugin authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "pluginId": {
+                          "enum": [
+                            "core-pack"
+                          ]
+                        },
+                        "count": {
+                          "type": "integer"
+                        },
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Owner plugin required for plugin-signed secret metadata reads",
             "content": {
               "application/json": {
                 "schema": {
@@ -5685,7 +5939,14 @@
             }
           }
         },
-        "description": "Requires signed plugin caller headers: x-cms-plugin-id, x-cms-plugin-ts, x-cms-plugin-nonce, x-cms-plugin-signature.",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "pluginCallerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "key",
@@ -5826,8 +6087,8 @@
               }
             }
           },
-          "409": {
-            "description": "Ownership conflict",
+          "403": {
+            "description": "Owner plugin required",
             "content": {
               "application/json": {
                 "schema": {
@@ -5882,6 +6143,11 @@
           }
         },
         "description": "Requires signed plugin caller headers: x-cms-plugin-id, x-cms-plugin-ts, x-cms-plugin-nonce, x-cms-plugin-signature.",
+        "security": [
+          {
+            "pluginCallerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "key",
@@ -6014,6 +6280,60 @@
               }
             }
           },
+          "403": {
+            "description": "Owner plugin required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "pluginId": {
+                          "enum": [
+                            "core-pack"
+                          ]
+                        },
+                        "count": {
+                          "type": "integer"
+                        },
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
           "404": {
             "description": "Secret not found",
             "content": {
@@ -6070,6 +6390,11 @@
           }
         },
         "description": "Requires signed plugin caller headers: x-cms-plugin-id, x-cms-plugin-ts, x-cms-plugin-nonce, x-cms-plugin-signature.",
+        "security": [
+          {
+            "pluginCallerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "key",
@@ -6336,6 +6661,60 @@
               }
             }
           },
+          "403": {
+            "description": "Owner plugin required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "pluginId": {
+                          "enum": [
+                            "core-pack"
+                          ]
+                        },
+                        "count": {
+                          "type": "integer"
+                        },
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
           "401": {
             "description": "Plugin caller authentication failed",
             "content": {
@@ -6392,6 +6771,11 @@
           }
         },
         "description": "Requires signed plugin caller headers: x-cms-plugin-id, x-cms-plugin-ts, x-cms-plugin-nonce, x-cms-plugin-signature.",
+        "security": [
+          {
+            "pluginCallerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "pluginId",
@@ -7951,6 +8335,12 @@
         "scheme": "bearer",
         "bearerFormat": "JWT",
         "description": "Paste access token as `Bearer <token>`"
+      },
+      "pluginCallerAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-cms-plugin-signature",
+        "description": "Signed plugin caller flow. Requests also require x-cms-plugin-id, x-cms-plugin-ts, and x-cms-plugin-nonce headers."
       }
     }
   }

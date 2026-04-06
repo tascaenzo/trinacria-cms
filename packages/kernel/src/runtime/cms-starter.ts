@@ -287,6 +287,13 @@ function withJwtBearerSecurityScheme(
           bearerFormat: "JWT",
           description: "Paste access token as `Bearer <token>`",
         },
+        pluginCallerAuth: {
+          type: "apiKey",
+          in: "header",
+          name: "x-cms-plugin-signature",
+          description:
+            "Signed plugin caller flow. Requests also require x-cms-plugin-id, x-cms-plugin-ts, and x-cms-plugin-nonce headers.",
+        },
       },
     },
   };

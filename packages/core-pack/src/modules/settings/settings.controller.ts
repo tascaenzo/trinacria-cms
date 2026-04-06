@@ -9,6 +9,7 @@ import {
 } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import { CORE_PACK_OPENAPI_TAGS } from "../openapi-tags.js";
+import type { JwtAuthService } from "../auth/auth.service.js";
 import {
   ExportedPluginSettingsResponseOpenApiSchema,
   ExportPluginSettingsParamSchema,
@@ -31,16 +32,21 @@ import {
 import { readOptionalJsonField } from "./settings-http-mapping.js";
 import { parseJsonValue } from "./settings-json.js";
 import {
-  createSettingsPluginAuthMiddleware,
   getAuthenticatedPluginId,
 } from "./auth/settings-plugin-auth.middleware.js";
 import { SettingsPluginAuthService } from "./auth/settings-plugin-auth.service.js";
+import {
+  createSettingsAccessMiddleware,
+  getSettingsAccessMode,
+} from "./settings-access.middleware.js";
 import type { SettingsService } from "./settings.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
 
 const SignedPluginAuthDescription =
   "Requires signed plugin caller headers: x-cms-plugin-id, x-cms-plugin-ts, x-cms-plugin-nonce, x-cms-plugin-signature.";
+const AdminOrSignedPluginReadDescription =
+  "Requires either an admin bearer token or signed plugin caller headers. Masked secret metadata remains owner-scoped for plugin callers.";
 
 const SettingsListQueryParameters = [
   {
@@ -76,41 +82,64 @@ const ExportPluginSettingsPathParameters = [
  * Public REST API for flexible settings + encrypted secrets.
  */
 export class SettingsController extends HttpController {
+  private readonly readAccessMiddleware: HttpMiddleware;
   private readonly pluginAuthMiddleware: HttpMiddleware;
 
   constructor(
     private readonly settings: SettingsService,
+    auth: JwtAuthService,
     pluginAuth: SettingsPluginAuthService,
   ) {
     super();
-    this.pluginAuthMiddleware = createSettingsPluginAuthMiddleware(pluginAuth);
+    this.readAccessMiddleware = createSettingsAccessMiddleware(auth, pluginAuth, {
+      allowAdmin: true,
+      allowPlugin: true,
+    });
+    this.pluginAuthMiddleware = createSettingsAccessMiddleware(auth, pluginAuth, {
+      allowAdmin: false,
+      allowPlugin: true,
+    });
   }
 
   routes() {
     return this.router()
       .get("/v1/settings/definitions", this.listDefinitions, {
+        middlewares: [this.readAccessMiddleware],
         docs: {
           summary: "List setting definitions",
+          description: AdminOrSignedPluginReadDescription,
           tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
           operationId: "listSettingDefinitions",
+          security: [{ bearerAuth: [] }, { pluginCallerAuth: [] }],
           parameters: [...SettingsListQueryParameters],
           responses: {
             200: {
               description: "Definitions list",
               schema: ListSettingDefinitionsResponseOpenApiSchema,
             },
+            401: {
+              description: "Admin or plugin authentication required",
+              schema: toOpenApiSchema(SettingsErrorResponseSchema),
+            },
           },
         },
       })
       .get("/v1/settings/definitions/:key", this.getDefinitionByKey, {
+        middlewares: [this.readAccessMiddleware],
         docs: {
           summary: "Get setting definition by key",
+          description: AdminOrSignedPluginReadDescription,
           tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
           operationId: "getSettingDefinitionByKey",
+          security: [{ bearerAuth: [] }, { pluginCallerAuth: [] }],
           responses: {
             200: {
               description: "Definition",
               schema: SettingDefinitionResponseOpenApiSchema,
+            },
+            401: {
+              description: "Admin or plugin authentication required",
+              schema: toOpenApiSchema(SettingsErrorResponseSchema),
             },
             404: {
               description: "Definition not found",
@@ -129,6 +158,7 @@ export class SettingsController extends HttpController {
             description: SignedPluginAuthDescription,
             tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
             operationId: "upsertSettingDefinition",
+            security: [{ pluginCallerAuth: [] }],
             requestBody: {
               required: true,
               schema: UpsertSettingDefinitionBodyOpenApiSchema,
@@ -138,8 +168,8 @@ export class SettingsController extends HttpController {
                 description: "Definition upserted",
                 schema: SettingDefinitionResponseOpenApiSchema,
               },
-              409: {
-                description: "Ownership conflict",
+              403: {
+                description: "Owner plugin required",
                 schema: toOpenApiSchema(SettingsErrorResponseSchema),
               },
               401: {
@@ -151,14 +181,21 @@ export class SettingsController extends HttpController {
         },
       )
       .get("/v1/settings/values/:key", this.getValueByKey, {
+        middlewares: [this.readAccessMiddleware],
         docs: {
           summary: "Resolve setting value by key (explicit or default)",
+          description: AdminOrSignedPluginReadDescription,
           tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
           operationId: "getSettingValueByKey",
+          security: [{ bearerAuth: [] }, { pluginCallerAuth: [] }],
           responses: {
             200: {
               description: "Resolved setting value",
               schema: ResolvedSettingValueResponseOpenApiSchema,
+            },
+            401: {
+              description: "Admin or plugin authentication required",
+              schema: toOpenApiSchema(SettingsErrorResponseSchema),
             },
             404: {
               description: "Value not found",
@@ -177,6 +214,7 @@ export class SettingsController extends HttpController {
             description: SignedPluginAuthDescription,
             tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
             operationId: "upsertSettingValue",
+            security: [{ pluginCallerAuth: [] }],
             requestBody: {
               required: true,
               schema: UpsertSettingValueBodyOpenApiSchema,
@@ -186,8 +224,8 @@ export class SettingsController extends HttpController {
                 description: "Value upserted",
                 schema: SettingValueResponseOpenApiSchema,
               },
-              409: {
-                description: "Ownership conflict",
+              403: {
+                description: "Owner plugin required",
                 schema: toOpenApiSchema(SettingsErrorResponseSchema),
               },
               401: {
@@ -202,16 +240,21 @@ export class SettingsController extends HttpController {
         "/v1/settings/secrets/:key",
         this.getSecretMetadata,
         {
-          middlewares: [this.pluginAuthMiddleware],
+          middlewares: [this.readAccessMiddleware],
           docs: {
             summary: "Read secret metadata (masked)",
-            description: SignedPluginAuthDescription,
+            description: AdminOrSignedPluginReadDescription,
             tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
             operationId: "getSettingSecretMetadata",
+            security: [{ bearerAuth: [] }, { pluginCallerAuth: [] }],
             responses: {
               200: {
                 description: "Secret metadata",
                 schema: SettingSecretMetadataResponseOpenApiSchema,
+              },
+              403: {
+                description: "Owner plugin required for plugin-signed secret metadata reads",
+                schema: toOpenApiSchema(SettingsErrorResponseSchema),
               },
               404: {
                 description: "Secret not found",
@@ -235,6 +278,7 @@ export class SettingsController extends HttpController {
             description: SignedPluginAuthDescription,
             tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
             operationId: "upsertSettingSecret",
+            security: [{ pluginCallerAuth: [] }],
             requestBody: {
               required: true,
               schema: UpsertSettingSecretBodyOpenApiSchema,
@@ -244,8 +288,8 @@ export class SettingsController extends HttpController {
                 description: "Secret metadata",
                 schema: SettingSecretMetadataResponseOpenApiSchema,
               },
-              409: {
-                description: "Ownership conflict",
+              403: {
+                description: "Owner plugin required",
                 schema: toOpenApiSchema(SettingsErrorResponseSchema),
               },
               401: {
@@ -266,10 +310,15 @@ export class SettingsController extends HttpController {
             description: SignedPluginAuthDescription,
             tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
             operationId: "revealSettingSecret",
+            security: [{ pluginCallerAuth: [] }],
             responses: {
               200: {
                 description: "Secret value",
                 schema: RevealedSettingSecretResponseOpenApiSchema,
+              },
+              403: {
+                description: "Owner plugin required",
+                schema: toOpenApiSchema(SettingsErrorResponseSchema),
               },
               404: {
                 description: "Secret not found",
@@ -293,11 +342,16 @@ export class SettingsController extends HttpController {
             description: SignedPluginAuthDescription,
             tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
             operationId: "exportPluginSettings",
+            security: [{ pluginCallerAuth: [] }],
             parameters: [...ExportPluginSettingsPathParameters],
             responses: {
               200: {
                 description: "Exported settings snapshot",
                 schema: ExportedPluginSettingsResponseOpenApiSchema,
+              },
+              403: {
+                description: "Owner plugin required",
+                schema: toOpenApiSchema(SettingsErrorResponseSchema),
               },
               401: {
                 description: "Plugin caller authentication failed",
@@ -421,12 +475,11 @@ export class SettingsController extends HttpController {
     }
 
     try {
-      const requesterPluginId = getAuthenticatedPluginId(ctx);
       const params = SettingKeyParamSchema.parse({ key });
-      const metadata = await this.settings.getSecretMetadata(
-        requesterPluginId,
-        params.key,
-      );
+      const metadata =
+        getSettingsAccessMode(ctx) === "admin"
+          ? await this.settings.getSecretMetadataByKey(params.key)
+          : await this.settings.getSecretMetadata(getAuthenticatedPluginId(ctx), params.key);
       if (!metadata) {
         return responder.notFound(`Setting secret "${params.key}" not found`);
       }

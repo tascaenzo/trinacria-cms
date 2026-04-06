@@ -22,6 +22,7 @@ import {
   type UpsertSettingSecretRecordInput,
 } from "./secrets/settings-secrets.repository.js";
 import { SettingsSecretsCryptoService } from "./secrets/settings-secrets-crypto.service.js";
+import { createSettingsOwnerAccessError } from "./settings.errors.js";
 
 export interface SettingsDefinition {
   id: string;
@@ -95,7 +96,7 @@ export class SettingsService {
     defaultValue?: unknown;
     status?: "active" | "disabled";
   }): Promise<SettingsDefinition> {
-    assertRequesterOwnsSettingKey(input.requesterPluginId, input.key);
+    assertRequesterOwnsSettingKey(input.requesterPluginId, input.key, "write definition");
 
     const record = await this.definitions.upsert({
       key: input.key,
@@ -134,7 +135,7 @@ export class SettingsService {
     value: unknown;
     updatedBy?: string;
   }): Promise<SettingValue> {
-    assertRequesterOwnsSettingKey(input.requesterPluginId, input.key);
+    assertRequesterOwnsSettingKey(input.requesterPluginId, input.key, "write value");
     const parsedValue = parseJsonValue(input.value);
 
     const record = await this.values.upsert({
@@ -182,7 +183,7 @@ export class SettingsService {
     plaintext: string;
     updatedBy?: string;
   }): Promise<SettingSecretMetadata> {
-    assertRequesterOwnsSettingKey(input.requesterPluginId, input.key);
+    assertRequesterOwnsSettingKey(input.requesterPluginId, input.key, "write secret");
 
     const encrypted = this.crypto.encrypt(input.plaintext);
     const record = await this.secrets.upsert({
@@ -203,13 +204,25 @@ export class SettingsService {
     requesterPluginId: string,
     key: string,
   ): Promise<SettingSecretMetadata | null> {
-    const record = await this.secrets.findByKey(key);
-    if (!record) return null;
+    const metadata = await this.getSecretMetadataByKey(key);
+    if (!metadata) return null;
 
     const normalizedRequester = requesterPluginId.trim().toLowerCase();
-    if (record.ownerPluginId !== normalizedRequester) {
-      throw new Error(`Access denied for secret key "${key}"`);
+    if (metadata.ownerPluginId !== normalizedRequester) {
+      throw createSettingsOwnerAccessError({
+        action: "read secret metadata",
+        key,
+        requesterPluginId: normalizedRequester,
+        ownerPluginId: metadata.ownerPluginId,
+      });
     }
+
+    return metadata;
+  }
+
+  async getSecretMetadataByKey(key: string): Promise<SettingSecretMetadata | null> {
+    const record = await this.secrets.findByKey(key);
+    if (!record) return null;
 
     return this.toSecretMetadata(record);
   }
@@ -223,7 +236,12 @@ export class SettingsService {
 
     const normalizedRequester = requesterPluginId.trim().toLowerCase();
     if (record.ownerPluginId !== normalizedRequester) {
-      throw new Error(`Access denied for secret key "${key}"`);
+      throw createSettingsOwnerAccessError({
+        action: "reveal secret",
+        key,
+        requesterPluginId: normalizedRequester,
+        ownerPluginId: record.ownerPluginId,
+      });
     }
 
     return {
@@ -239,7 +257,12 @@ export class SettingsService {
     const normalizedRequester = requesterPluginId.trim().toLowerCase();
     const normalizedPluginId = pluginId.trim().toLowerCase();
     if (normalizedRequester !== normalizedPluginId) {
-      throw new Error(`Plugin "${normalizedRequester}" cannot export settings of "${normalizedPluginId}"`);
+      throw createSettingsOwnerAccessError({
+        action: "export settings",
+        key: `${normalizedPluginId}:*`,
+        requesterPluginId: normalizedRequester,
+        ownerPluginId: normalizedPluginId,
+      });
     }
 
     const [definitions, values, secrets] = await Promise.all([
