@@ -32,6 +32,7 @@ export interface AdminShellProps extends PropsWithChildren {
   onNavigate: (routeId: string) => void;
   statusBadges?: readonly AdminShellStatusBadge[];
   headerActions?: ReactNode;
+  sidebarFooter?: ReactNode;
 }
 
 function badgeToneClass(tone: AdminShellStatusBadge["tone"]): string {
@@ -66,6 +67,7 @@ export function AdminShell({
   headerActions,
   navigation,
   onNavigate,
+  sidebarFooter,
   statusBadges = [],
   subtitle,
   title,
@@ -121,15 +123,22 @@ export function AdminShell({
 
         <aside
           className={cn(
-            "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-[color:var(--color-border)] bg-[color:var(--color-panel)] transition-all duration-200 lg:sticky lg:top-0 lg:z-30",
+            "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-[color:var(--color-border)] bg-[color:var(--color-panel)] transition-all duration-200",
             isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
             isSidebarCollapsed ? "lg:w-[84px]" : "lg:w-[280px]",
           )}
         >
-          <div className="flex h-16 items-center gap-3 border-b border-[color:var(--color-border)] px-4">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm">
-              <span className="text-sm font-semibold">T</span>
-            </div>
+          <div
+            className={cn(
+              "flex h-16 items-center gap-3 border-b border-[color:var(--color-border)] px-4",
+              isSidebarCollapsed && "justify-center px-0",
+            )}
+          >
+            {!isSidebarCollapsed ? (
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm">
+                <span className="text-sm font-semibold">T</span>
+              </div>
+            ) : null}
             <div className={cn("min-w-0 flex-1", isSidebarCollapsed && "lg:hidden")}>
               <p className="truncate text-sm font-semibold text-[color:var(--color-ink)]">Trinacria CMS</p>
               <p className="truncate text-xs text-[color:var(--color-ink-subtle)]">Admin dashboard</p>
@@ -205,29 +214,17 @@ export function AdminShell({
             </nav>
           </div>
 
-          <div className="border-t border-[color:var(--color-border)] p-3">
-            <div
-              className={cn(
-                "rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] p-3",
-                isSidebarCollapsed && "lg:px-0 lg:text-center",
-              )}
-            >
-              <p className={cn("text-sm font-medium text-[color:var(--color-ink)]", isSidebarCollapsed && "lg:hidden")}>
-                Runtime-driven shell
-              </p>
-              <p className={cn("mt-1 text-xs leading-5 text-[color:var(--color-ink-subtle)]", isSidebarCollapsed && "lg:hidden")}>
-                Navigation stays aligned with installed plugins and published capabilities.
-              </p>
-              <div className={cn("hidden lg:block", !isSidebarCollapsed && "hidden")}>
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white text-xs font-semibold text-slate-700 shadow-sm">
-                  RT
-                </span>
-              </div>
-            </div>
-          </div>
+          {sidebarFooter ? (
+            <div className="border-t border-[color:var(--color-border)] p-3">{sidebarFooter}</div>
+          ) : null}
         </aside>
 
-        <div className="min-w-0 flex-1">
+        <div
+          className={cn(
+            "min-w-0 flex-1",
+            isSidebarCollapsed ? "lg:ml-[84px]" : "lg:ml-[280px]",
+          )}
+        >
           <header className="sticky top-0 z-20 border-b border-[color:var(--color-border)] bg-[rgba(250,250,250,0.92)] backdrop-blur-xl">
             <div className="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
               <button
@@ -247,37 +244,27 @@ export function AdminShell({
                 <h1 className="mt-0.5 truncate text-lg font-semibold tracking-[-0.02em] text-[color:var(--color-ink)]">
                   {title}
                 </h1>
+                {subtitle ? (
+                  <p className="truncate text-sm text-[color:var(--color-ink-subtle)]">{subtitle}</p>
+                ) : null}
               </div>
-              <div className="hidden min-w-[240px] max-w-sm flex-1 items-center justify-center xl:flex">
-                <div className="flex h-10 w-full items-center gap-2 rounded-lg border border-[color:var(--color-border)] bg-white px-3 text-sm text-[color:var(--color-ink-subtle)] shadow-sm">
-                  <Icon name="search" className="text-[color:var(--color-ink-subtle)]" />
-                  <span className="truncate">Search modules, routes, or settings</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">{headerActions}</div>
-            </div>
-            <div className="border-t border-[color:var(--color-border)] px-4 py-3 sm:px-6 lg:px-8">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <div className="min-w-0">
-                  {subtitle ? (
-                    <p className="truncate text-sm text-[color:var(--color-ink-muted)]">{subtitle}</p>
-                  ) : null}
-                </div>
-                <div className="flex flex-wrap gap-2">
+              {statusBadges.length > 0 ? (
+                <div className="hidden items-center gap-2 xl:flex">
                   {statusBadges.map((badge) => (
-                    <span
+                    <div
                       key={`${badge.label}:${badge.value}`}
                       className={cn(
-                        "inline-flex h-8 items-center gap-2 rounded-md border px-3 text-xs font-medium",
+                        "rounded-full border px-3 py-1 text-xs font-medium",
                         badgeToneClass(badge.tone),
                       )}
                     >
-                      <span className="uppercase tracking-[0.12em] opacity-70">{badge.label}</span>
-                      <span>{badge.value}</span>
-                    </span>
+                      <span className="text-[color:var(--color-ink-subtle)]">{badge.label}</span>
+                      <span className="ml-1 text-[color:var(--color-ink)]">{badge.value}</span>
+                    </div>
                   ))}
                 </div>
-              </div>
+              ) : null}
+              <div className="flex items-center gap-2">{headerActions}</div>
             </div>
           </header>
 

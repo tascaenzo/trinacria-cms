@@ -1,5 +1,5 @@
-import type { AdminPageRenderContext } from "../runtime/admin-route-runtime.js";
 import { Card, Button } from "@trinacria-cms/admin-ui";
+import { useI18n } from "../lib/i18n.js";
 
 export interface ResourcePlaceholderPageProps {
   accentLabel: string;
@@ -14,22 +14,24 @@ export function ResourcePlaceholderPage({
   accentLabel,
   summary,
 }: ResourcePlaceholderPageProps) {
+  const { t } = useI18n();
+
   return (
     <div className="grid gap-4 xl:grid-cols-[1.3fr_0.7fr]">
-      <Card eyebrow={accentLabel} title="Module scaffolded">
+      <Card eyebrow={accentLabel} title={t("placeholder.title")}>
         <p className="max-w-3xl text-sm leading-7 text-[color:var(--color-ink-muted)]">
           {summary}
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
-          <Button>Design resource table</Button>
-          <Button variant="secondary">Add filters and forms</Button>
+          <Button>{t("placeholder.actions.design_resource_table")}</Button>
+          <Button variant="secondary">{t("placeholder.actions.add_filters_and_forms")}</Button>
         </div>
       </Card>
-      <Card eyebrow="Next step" title="Implementation checklist">
+      <Card eyebrow={t("placeholder.next_step_eyebrow")} title={t("placeholder.checklist_title")}>
         <ul className="space-y-3 text-sm leading-6 text-[color:var(--color-ink-muted)]">
-          <li>Connect the page to the generated SDK operations for this module.</li>
-          <li>Add capability-aware actions instead of static scaffold buttons.</li>
-          <li>Project plugin-specific widgets into the shell when they exist.</li>
+          <li>{t("placeholder.checklist.connect_sdk")}</li>
+          <li>{t("placeholder.checklist.capability_actions")}</li>
+          <li>{t("placeholder.checklist.project_widgets")}</li>
         </ul>
       </Card>
     </div>
@@ -39,7 +41,7 @@ export function ResourcePlaceholderPage({
 export function createResourcePlaceholderRender(
   props: ResourcePlaceholderPageProps,
 ) {
-  return (_context: AdminPageRenderContext) => (
+  return () => (
     <ResourcePlaceholderPage {...props} />
   );
 }

@@ -69,13 +69,16 @@ export function getLocalizedLoginError(
   if (error.code === "installation_not_completed") {
     return t("auth.login.error.installation_incomplete");
   }
+  if (error.code === "validation_error") {
+    return getSpecificErrorMessage(error) ?? t("auth.login.error.generic");
+  }
   if (error.status && error.status >= 500) {
     return t("auth.login.error.server");
   }
   if (!error.status) {
     return t("auth.login.error.network");
   }
-  return t("auth.login.error.generic");
+  return getSpecificErrorMessage(error) ?? t("auth.login.error.generic");
 }
 
 export function getLocalizedInstallationError(
@@ -89,11 +92,22 @@ export function getLocalizedInstallationError(
   if (error.code === "installation_already_completed" || error.status === 409) {
     return t("auth.installation.error.already_completed");
   }
+  if (error.code === "validation_error") {
+    return getSpecificErrorMessage(error) ?? t("auth.installation.error.generic");
+  }
   if (error.status && error.status >= 500) {
     return t("auth.installation.error.server");
   }
   if (!error.status) {
     return t("auth.installation.error.network");
   }
-  return t("auth.installation.error.generic");
+  return getSpecificErrorMessage(error) ?? t("auth.installation.error.generic");
+}
+
+function getSpecificErrorMessage(error: SdkErrorDetails): string | null {
+  const message = error.message?.trim();
+  if (!message) return null;
+  if (message === "Schema validation failed") return null;
+  if (/^HTTP \d+$/.test(message)) return null;
+  return message;
 }

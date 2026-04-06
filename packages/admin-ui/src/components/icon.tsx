@@ -1,8 +1,10 @@
 import type { SVGProps } from "react";
 import {
   ArrowRight,
+  ChevronDown,
   ChevronRight,
   LockKeyhole,
+  LogOut,
   FolderCog,
   KeyRound,
   LayoutDashboard,
@@ -14,17 +16,20 @@ import {
   Sparkles,
   Shield,
   ShieldCheck,
+  UserRound,
   Users,
 } from "lucide-react";
 import { cn } from "../utils/class-names.js";
 
 const ICONS: Record<string, LucideIcon> = {
   "arrow-right": ArrowRight,
+  "chevron-down": ChevronDown,
   "chevron-right": ChevronRight,
   "folder-cog": FolderCog,
   "key-round": KeyRound,
   "layout-dashboard": LayoutDashboard,
   "lock-keyhole": LockKeyhole,
+  "log-out": LogOut,
   "panel-left": PanelLeft,
   "panel-left-close": PanelLeftClose,
   search: Search,
@@ -32,6 +37,7 @@ const ICONS: Record<string, LucideIcon> = {
   sparkles: Sparkles,
   shield: Shield,
   "shield-check": ShieldCheck,
+  "user-round": UserRound,
   users: Users,
 };
 

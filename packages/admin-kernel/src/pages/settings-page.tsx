@@ -1,6 +1,7 @@
 import { useActionState, useCallback, useEffect, useState } from "react";
 import { Badge, Button, Card, Dialog, Input, JsonView } from "@trinacria-cms/admin-ui";
 import type { GetSettingValueByKeyResponse, ListSettingDefinitionsResponse } from "@trinacria-cms/sdk";
+import { MobileRecordCard, MobileRecordField, MobileRecordList } from "../components/mobile-records.js";
 import { ErrorBanner, EmptyState } from "../components/resource-feedback.js";
 import { formatDateTime } from "../lib/formatting.js";
 import {
@@ -10,15 +11,101 @@ import {
 } from "../runtime/action-state.js";
 import { cms } from "../runtime/cms-sdk.js";
 import { toDisplayError } from "../lib/sdk-errors.js";
+import { useI18n } from "../lib/i18n.js";
+import { translateSettingSource, translateStatusLabel } from "../lib/ui-translations.js";
 
 type SettingDefinitionRecord = ListSettingDefinitionsResponse["data"][number];
 type SettingValueRecord = GetSettingValueByKeyResponse["data"] | null;
+type CmsOverviewField = "siteName" | "siteUrl" | "locale" | "timezone";
+type CmsOverviewItem = {
+  field: CmsOverviewField;
+  key: string | null;
+  value: string | null;
+  status: "resolved" | "missing" | "error";
+};
+
+const CMS_OVERVIEW_CANDIDATES: Record<
+  CmsOverviewField,
+  {
+    exact: readonly string[];
+    match: (normalizedKey: string) => boolean;
+  }
+> = {
+  siteName: {
+    exact: [
+      "core-pack:site.name",
+      "core-pack:site_name",
+      "core-pack:cms.site_name",
+      "core-pack:cms.site.title",
+      "cms:site.name",
+      "cms:site_name",
+      "cms:site.title",
+    ],
+    match: (key) => key.includes("site") && (key.includes("name") || key.includes("title")),
+  },
+  siteUrl: {
+    exact: [
+      "core-pack:site.url",
+      "core-pack:site_url",
+      "core-pack:cms.site_url",
+      "core-pack:cms.public_url",
+      "cms:site.url",
+      "cms:site_url",
+      "cms:public_url",
+    ],
+    match: (key) =>
+      (key.includes("site") || key.includes("public") || key.includes("base")) &&
+      (key.includes("url") || key.includes("origin")),
+  },
+  locale: {
+    exact: [
+      "core-pack:locale",
+      "core-pack:cms.locale",
+      "core-pack:i18n.locale",
+      "cms:locale",
+      "site:locale",
+    ],
+    match: (key) => key.includes("locale") || key.includes("language"),
+  },
+  timezone: {
+    exact: [
+      "core-pack:timezone",
+      "core-pack:cms.timezone",
+      "cms:timezone",
+      "site:timezone",
+    ],
+    match: (key) => key.includes("timezone") || key.includes("time_zone"),
+  },
+};
+
+function findOverviewSettingKey(
+  records: readonly SettingDefinitionRecord[],
+  field: CmsOverviewField,
+): string | null {
+  const definition = CMS_OVERVIEW_CANDIDATES[field];
+  const exactMatch = records.find((record) =>
+    definition.exact.includes(record.key.trim().toLowerCase()),
+  );
+  if (exactMatch) return exactMatch.key;
+
+  const heuristicMatch = records.find((record) => definition.match(record.key.trim().toLowerCase()));
+  return heuristicMatch?.key ?? null;
+}
+
+function stringifySettingValue(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) return value.map((entry) => stringifySettingValue(entry)).join(", ");
+  if (value && typeof value === "object") return JSON.stringify(value);
+  return "";
+}
 
 /**
  * SettingsPage keeps reads explicit while moving the filter flow to a React 19
  * action-based form instead of manual submit bookkeeping.
  */
 export function SettingsPage() {
+  const { t } = useI18n();
   const [records, setRecords] = useState<readonly SettingDefinitionRecord[]>([]);
   const [ownerPluginId, setOwnerPluginId] = useState("");
   const [selectedRecord, setSelectedRecord] = useState<SettingDefinitionRecord | null>(null);
@@ -28,6 +115,8 @@ export function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isValueLoading, setIsValueLoading] = useState(false);
   const [isInspectOpen, setIsInspectOpen] = useState(false);
+  const [overviewItems, setOverviewItems] = useState<readonly CmsOverviewItem[]>([]);
+  const [isOverviewLoading, setIsOverviewLoading] = useState(true);
   const refresh = useCallback(async (nextOwnerPluginId = "") => {
     setIsLoading(true);
     setError(null);
@@ -51,6 +140,45 @@ export function SettingsPage() {
   useEffect(() => {
     void refresh("");
   }, [refresh]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadOverview() {
+      setIsOverviewLoading(true);
+      const fields: readonly CmsOverviewField[] = ["siteName", "siteUrl", "locale", "timezone"];
+      const nextItems = await Promise.all(
+        fields.map(async (field) => {
+          const key = findOverviewSettingKey(records, field);
+          if (!key) {
+            return { field, key: null, value: null, status: "missing" } satisfies CmsOverviewItem;
+          }
+
+          try {
+            const response = await cms.settings.getSettingValueByKey({ path: { key } });
+            const value = stringifySettingValue(response.data?.value);
+            if (!value) {
+              return { field, key, value: null, status: "missing" } satisfies CmsOverviewItem;
+            }
+
+            return { field, key, value, status: "resolved" } satisfies CmsOverviewItem;
+          } catch {
+            return { field, key, value: null, status: "error" } satisfies CmsOverviewItem;
+          }
+        }),
+      );
+
+      if (isCancelled) return;
+      setOverviewItems(nextItems);
+      setIsOverviewLoading(false);
+    }
+
+    void loadOverview();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [records]);
 
   const [filterState, submitFilter, isFilterPending] = useActionState(
     async (_previousState: AsyncActionState<string>, formData: FormData) => {
@@ -94,9 +222,31 @@ export function SettingsPage() {
     }
   }
 
+  const activeDefinitionsCount = records.filter((record) => record.status === "active").length;
+  const ownerPluginsCount = new Set(records.map((record) => record.ownerPluginId)).size;
+
+  function renderOverviewValue(item: CmsOverviewItem): string {
+    if (item.status === "resolved" && item.value) return item.value;
+    if (item.status === "error") return t("settings.overview.unavailable");
+    return t("settings.overview.not_configured");
+  }
+
+  function renderOverviewLabel(field: CmsOverviewField): string {
+    switch (field) {
+      case "siteName":
+        return t("settings.overview.site_name");
+      case "siteUrl":
+        return t("settings.overview.site_url");
+      case "locale":
+        return t("settings.overview.locale");
+      case "timezone":
+        return t("settings.overview.timezone");
+    }
+  }
+
   return (
     <div className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
-      <Card eyebrow="Configuration" title="Settings definitions">
+      <Card eyebrow={t("settings.eyebrow")} title={t("settings.title")}>
         <div className="mb-5 flex flex-col gap-4 border-b border-[color:var(--color-border)] pb-4">
           <form
             key={ownerPluginId}
@@ -104,81 +254,184 @@ export function SettingsPage() {
             action={submitFilter}
           >
             <Input
-              label="Owner plugin filter"
+              label={t("settings.filter.owner_plugin")}
               name="ownerPluginId"
               defaultValue={ownerPluginId}
-              hint="Inspect settings by plugin owner."
+              hint={t("settings.filter.owner_plugin_hint")}
             />
             <div className="self-end">
-              <Button type="submit" variant="secondary" disabled={isFilterPending}>Apply filter</Button>
+              <Button type="submit" variant="secondary" disabled={isFilterPending}>
+                {t("common.actions.apply_filter")}
+              </Button>
             </div>
             <div className="self-end">
-              <Button type="button" onClick={() => void refresh()}>Refresh</Button>
+              <Button type="button" onClick={() => void refresh()}>
+                {t("common.actions.refresh")}
+              </Button>
             </div>
           </form>
           {filterState.error ? <ErrorBanner message={filterState.error} /> : null}
           <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
-            This view is intentionally read-oriented. Definition and resolved-value inspection are safe from the backoffice; writes remain guarded by plugin-signed requests.
+            {t("settings.summary")}
           </p>
         </div>
         {error ? <ErrorBanner message={error} /> : null}
-        {isLoading ? <EmptyState text="Loading setting definitions..." /> : null}
+        {isLoading ? <EmptyState text={t("settings.empty.loading_definitions")} /> : null}
         {!isLoading ? (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b border-[color:var(--color-border)] text-left text-[color:var(--color-ink-subtle)]">
-                  <th className="px-4 py-3 font-medium">Key</th>
-                  <th className="px-4 py-3 font-medium">Owner</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {records.map((record) => (
-                  <tr key={record.id} className="border-b border-[color:var(--color-border)] last:border-b-0">
-                    <td className="px-4 py-4">
-                      <p className="font-medium text-[color:var(--color-ink)]">{record.key}</p>
-                      <p className="mt-1 text-[color:var(--color-ink-muted)]">{record.category ?? "uncategorized"}</p>
-                    </td>
-                    <td className="px-4 py-4 text-[color:var(--color-ink-muted)]">{record.ownerPluginId}</td>
-                    <td className="px-4 py-4">
-                      <Badge tone={record.status === "active" ? "success" : "warning"}>{record.status}</Badge>
-                    </td>
-                    <td className="px-4 py-4">
-                      <Button variant="secondary" onClick={() => inspectRecord(record)}>
-                        Inspect JSON
-                      </Button>
-                    </td>
+          <>
+            <MobileRecordList>
+              {records.map((record) => (
+                <MobileRecordCard
+                  key={record.id}
+                  title={record.key}
+                  subtitle={record.category ?? t("settings.uncategorized")}
+                  badges={
+                    <Badge tone={record.status === "active" ? "success" : "warning"}>
+                      {translateStatusLabel(record.status, t)}
+                    </Badge>
+                  }
+                  actions={
+                    <Button
+                      variant="secondary"
+                      className="w-full"
+                      onClick={() => inspectRecord(record)}
+                    >
+                      {t("common.actions.inspect_json")}
+                    </Button>
+                  }
+                >
+                  <MobileRecordField
+                    label={t("common.table.owner")}
+                    value={record.ownerPluginId}
+                  />
+                </MobileRecordCard>
+              ))}
+            </MobileRecordList>
+
+            <div className="hidden overflow-x-auto md:block">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[color:var(--color-border)] text-left text-[color:var(--color-ink-subtle)]">
+                    <th className="px-4 py-3 font-medium">{t("common.table.key")}</th>
+                    <th className="px-4 py-3 font-medium">{t("common.table.owner")}</th>
+                    <th className="px-4 py-3 font-medium">{t("common.table.status")}</th>
+                    <th className="px-4 py-3 font-medium">{t("common.table.action")}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {records.map((record) => (
+                    <tr key={record.id} className="border-b border-[color:var(--color-border)] last:border-b-0">
+                      <td className="px-4 py-4">
+                        <p className="font-medium text-[color:var(--color-ink)]">{record.key}</p>
+                        <p className="mt-1 text-[color:var(--color-ink-muted)]">
+                          {record.category ?? t("settings.uncategorized")}
+                        </p>
+                      </td>
+                      <td className="px-4 py-4 text-[color:var(--color-ink-muted)]">{record.ownerPluginId}</td>
+                      <td className="px-4 py-4">
+                        <Badge tone={record.status === "active" ? "success" : "warning"}>
+                          {translateStatusLabel(record.status, t)}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-4">
+                        <Button variant="secondary" onClick={() => inspectRecord(record)}>
+                          {t("common.actions.inspect_json")}
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         ) : null}
       </Card>
 
-      <Card eyebrow="Configuration policy" title="Why settings stay guarded">
-        <div className="grid gap-4">
-          <div className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] p-4">
-            <p className="text-sm font-medium text-[color:var(--color-ink)]">Plugin ownership is preserved</p>
-            <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink-muted)]">
-              Settings writes and secret reveals are protected by the plugin-caller signature protocol, so the backoffice does not bypass ownership rules through a generic admin JWT.
+      <div className="grid gap-4">
+        <Card eyebrow={t("settings.overview.eyebrow")} title={t("settings.overview.title")}>
+          <div className="grid gap-4">
+            <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
+              {t("settings.overview.summary")}
             </p>
+            {isOverviewLoading ? <EmptyState text={t("settings.overview.loading")} /> : null}
+            {!isOverviewLoading ? (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {overviewItems.map((item) => (
+                  <div
+                    key={item.field}
+                    className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] p-4"
+                  >
+                    <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
+                      {renderOverviewLabel(item.field)}
+                    </p>
+                    <p className="mt-2 break-words text-base font-semibold text-[color:var(--color-ink)]">
+                      {renderOverviewValue(item)}
+                    </p>
+                    <p className="mt-1 text-xs text-[color:var(--color-ink-muted)]">
+                      {item.key
+                        ? `${t("settings.overview.detected_key")} ${item.key}`
+                        : t("settings.overview.not_configured_hint")}
+                    </p>
+                  </div>
+                ))}
+                <div className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] p-4">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
+                    {t("settings.overview.active_definitions")}
+                  </p>
+                  <p className="mt-2 text-base font-semibold text-[color:var(--color-ink)]">
+                    {activeDefinitionsCount}
+                  </p>
+                  <p className="mt-1 text-xs text-[color:var(--color-ink-muted)]">
+                    {t("settings.overview.active_definitions_hint")}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] p-4">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
+                    {t("settings.overview.owner_plugins")}
+                  </p>
+                  <p className="mt-2 text-base font-semibold text-[color:var(--color-ink)]">
+                    {ownerPluginsCount}
+                  </p>
+                  <p className="mt-1 text-xs text-[color:var(--color-ink-muted)]">
+                    {t("settings.overview.owner_plugins_hint")}
+                  </p>
+                </div>
+              </div>
+            ) : null}
           </div>
-          <div className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] p-4">
-            <p className="text-sm font-medium text-[color:var(--color-ink)]">JSON-first inspection</p>
-            <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink-muted)]">
-              Operators can still inspect definitions and resolved values, which is usually what matters for debugging configuration drift.
-            </p>
+        </Card>
+
+        <Card eyebrow={t("settings.policy.eyebrow")} title={t("settings.policy.title")}>
+          <div className="grid gap-4">
+            <div className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] p-4">
+              <p className="text-sm font-medium text-[color:var(--color-ink)]">
+                {t("settings.policy.ownership.title")}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink-muted)]">
+                {t("settings.policy.ownership.body")}
+              </p>
+            </div>
+            <div className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] p-4">
+              <p className="text-sm font-medium text-[color:var(--color-ink)]">
+                {t("settings.policy.json_first.title")}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink-muted)]">
+                {t("settings.policy.json_first.body")}
+              </p>
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      </div>
 
       <Dialog
         open={isInspectOpen}
-        title={selectedRecord ? `Inspect ${selectedRecord.key}` : "Inspect setting"}
-        description="Raw configuration views help operators understand effective values, defaults, and schema hints without bypassing plugin ownership constraints."
+        title={
+          selectedRecord
+            ? `${t("settings.inspect.title_prefix")} ${selectedRecord.key}`
+            : t("settings.inspect.title")
+        }
+        description={t("settings.inspect.description")}
+        closeLabel={t("common.actions.close")}
         onClose={() => setIsInspectOpen(false)}
         width="xl"
       >
@@ -186,26 +439,53 @@ export function SettingsPage() {
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="grid gap-4">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge tone={selectedRecord.status === "active" ? "success" : "warning"}>{selectedRecord.status}</Badge>
+                <Badge tone={selectedRecord.status === "active" ? "success" : "warning"}>
+                  {translateStatusLabel(selectedRecord.status, t)}
+                </Badge>
                 <Badge>{selectedRecord.ownerPluginId}</Badge>
               </div>
               <div className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] p-4 text-sm text-[color:var(--color-ink-muted)]">
-                <p><span className="font-medium text-[color:var(--color-ink)]">Category:</span> {selectedRecord.category ?? "uncategorized"}</p>
-                <p className="mt-2"><span className="font-medium text-[color:var(--color-ink)]">Updated:</span> {formatDateTime(selectedRecord.updatedAt)}</p>
+                <p>
+                  <span className="font-medium text-[color:var(--color-ink)]">
+                    {t("settings.inspect.category")}
+                  </span>{" "}
+                  {selectedRecord.category ?? t("settings.uncategorized")}
+                </p>
+                <p className="mt-2">
+                  <span className="font-medium text-[color:var(--color-ink)]">
+                    {t("common.table.updated")}
+                  </span>{" "}
+                  {formatDateTime(selectedRecord.updatedAt)}
+                </p>
               </div>
-              <JsonView title="Definition JSON" value={selectedRecord} />
+              <JsonView title={t("settings.inspect.definition_json")} value={selectedRecord} />
             </div>
             <div className="grid gap-4">
-              {isValueLoading ? <EmptyState text="Loading resolved value..." /> : null}
+              {isValueLoading ? <EmptyState text={t("settings.empty.loading_value")} /> : null}
               {valueError ? <ErrorBanner message={valueError} /> : null}
               {valueRecord ? (
                 <>
                   <div className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] p-4 text-sm text-[color:var(--color-ink-muted)]">
-                    <p><span className="font-medium text-[color:var(--color-ink)]">Source:</span> {valueRecord.source}</p>
-                    <p className="mt-2"><span className="font-medium text-[color:var(--color-ink)]">Owner:</span> {valueRecord.ownerPluginId}</p>
-                    <p className="mt-2"><span className="font-medium text-[color:var(--color-ink)]">Updated:</span> {formatDateTime(valueRecord.updatedAt)}</p>
+                    <p>
+                      <span className="font-medium text-[color:var(--color-ink)]">
+                        {t("settings.inspect.source")}
+                      </span>{" "}
+                      {translateSettingSource(valueRecord.source, t)}
+                    </p>
+                    <p className="mt-2">
+                      <span className="font-medium text-[color:var(--color-ink)]">
+                        {t("common.table.owner")}
+                      </span>{" "}
+                      {valueRecord.ownerPluginId}
+                    </p>
+                    <p className="mt-2">
+                      <span className="font-medium text-[color:var(--color-ink)]">
+                        {t("common.table.updated")}
+                      </span>{" "}
+                      {formatDateTime(valueRecord.updatedAt)}
+                    </p>
                   </div>
-                  <JsonView title="Resolved value JSON" value={valueRecord.value} />
+                  <JsonView title={t("settings.inspect.resolved_value_json")} value={valueRecord.value} />
                 </>
               ) : null}
             </div>
