@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html.auth-page,
+html.auth-page body,
+html.auth-page #root {
+  background: var(--color-panel-soft);
+}

@@ -1,0 +1,191 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Foundations/Audit" />
+
+# Trinacria UI Audit
+
+Questo audit confronta i componenti correnti con le Foundations del design system.
+
+L'obiettivo non e elencare ogni differenza possibile, ma identificare le incoerenze che rischiano di far divergere il sistema nelle prossime iterazioni.
+
+## Stato attuale
+
+Il DS e gia coerente su alcuni assi importanti:
+
+- tono generale sobrio e orientato a backoffice
+- densita compatta dei form
+- uso consistente di surface chiare e bordi leggeri
+- tassonomia componenti ordinata
+- Storybook e documentazione co-locata
+
+Restano pero alcune aree da consolidare.
+
+## Findings
+
+### F1. Form controls duplicano troppo styling base
+
+Componenti coinvolti:
+
+- `Input`
+- `Select`
+- `Textarea`
+- `NumberInput`
+- `DatePicker`
+- `TimePicker`
+
+Problema:
+
+- stessi pattern di bordo, focus, disabled ed error sono riscritti in piu file
+- ogni nuova variante rischia di divergere in altezza, ring, padding o messaggi di stato
+
+Direzione:
+
+- introdurre una primitive o utility `form-control` condivisa
+- tenere separati layout, chrome e stato semantico
+
+Priorita: alta
+
+### F2. Alcuni componenti usano ancora colori hardcoded invece di token semantici
+
+Componenti coinvolti:
+
+- `Button`
+- `Switch`
+- `Checkbox`
+- `RadioGroup`
+- `DatePicker`
+- `TimePicker`
+- `AdminShell`
+- `JsonView`
+
+Problema:
+
+- diversi elementi usano ancora `slate-*`, `white` o valori hardcoded
+- il sistema e coerente visivamente oggi, ma meno governabile domani
+
+Direzione:
+
+- spostare progressivamente i casi ricorrenti verso token semantici
+- introdurre token specifici per action primary, interactive hover, overlay e code surface
+
+Priorita: alta
+
+### F3. Manca una primitive overlay/popup riusabile
+
+Componenti coinvolti:
+
+- `Dialog`
+- `DatePicker`
+- `TimePicker`
+
+Problema:
+
+- modal e picker usano layer elevati con logiche e shadow simili ma non condivise
+- il sistema non ha ancora una famiglia esplicita di `popover`, `drawer`, `overlay-surface`
+
+Direzione:
+
+- creare primitive `OverlaySurface` o `Popover`
+- centralizzare radius, border, shadow, offset e dismiss behavior
+
+Priorita: alta
+
+### F4. Le card avevano una gerarchia tipografica troppo editoriale
+
+Stato:
+
+- corretto in questo passaggio
+
+Problema originale:
+
+- `CardTitle` usava `text-2xl`, eccessivo per moduli operativi standard
+
+Esito:
+
+- riallineato a una scala piu vicina alla shell e alle section header
+
+Priorita residua: chiusa
+
+### F5. Alcuni micro-componenti erano troppo “elevati”
+
+Componenti coinvolti:
+
+- `Badge`
+
+Stato:
+
+- corretto in questo passaggio
+
+Problema originale:
+
+- badge con ombra, in contrasto con la regola che riserva l'elevazione a layer e superfici
+
+Esito:
+
+- rimossa l'ombra
+
+Priorita residua: chiusa
+
+### F6. Story e demo interne non sono ancora completamente disciplinate dal DS
+
+Componenti coinvolti:
+
+- alcune story di foundations e field examples
+
+Problema:
+
+- in alcuni casi gli esempi usano markup o classi ad hoc invece di comporre componenti del sistema
+
+Direzione:
+
+- trattare le story come esempi canonici, non come sandbox locali
+- evitare snippet raw dove esiste gia un componente DS
+
+Priorita: media
+
+### F7. Il sistema form non ha ancora regole accessibili complete per tastiera e focus management
+
+Componenti coinvolti:
+
+- `DatePicker`
+- `TimePicker`
+- `DateTimePicker`
+- `Dialog`
+
+Problema:
+
+- i componenti funzionano, ma non sono ancora hardenizzati come controlli complessi enterprise-grade
+
+Direzione:
+
+- roving focus
+- keyboard navigation completa
+- focus trap per overlay quando serve
+- aria roles e annunci piu espliciti
+
+Priorita: media
+
+## Azioni consigliate
+
+### Sprint 1
+
+- creare una primitive `FormControlShell`
+- introdurre token interattivi semantici
+- estrarre una primitive `Popover`
+
+### Sprint 2
+
+- rifattorizzare `Button`, `Switch`, `Checkbox`, `RadioGroup` su token interattivi
+- riallineare `JsonView` e overlay scuri a token dedicati
+- pulire le story che usano markup raw
+
+### Sprint 3
+
+- hardening accessibilita tastiera e focus
+- definire una checklist di review DS obbligatoria per nuovi componenti
+
+## Esito
+
+Il sistema non e disordinato: ha gia una direzione chiara.
+
+Il rischio attuale non e la mancanza di stile, ma la crescita per copie locali dello stesso pattern. La priorita quindi non e aggiungere molti altri componenti subito, ma consolidare primitive condivise per form, overlay e interaction tokens.

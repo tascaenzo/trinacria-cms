@@ -1,0 +1,12 @@
+import { Meta, Canvas } from "@storybook/addon-docs/blocks";
+import * as Stories from "./form-control.stories";
+
+<Meta of={Stories} />
+
+# Form Control
+
+`FormControl` raccoglie il layout condiviso dei campi e il chrome comune dei controlli interattivi.
+
+Serve a evitare divergenze tra input, select, textarea, numeric field e picker custom.
+
+<Canvas of={Stories.Overview} />

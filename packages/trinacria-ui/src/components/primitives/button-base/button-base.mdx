@@ -1,0 +1,11 @@
+import { Meta, Canvas } from "@storybook/addon-docs/blocks";
+import * as Stories from "./button-base.stories";
+
+<Meta of={Stories} />
+
+# ButtonBase
+
+`ButtonBase` e la primitive che definisce dimensioni, varianti, focus ring e stato loading per tutti i controlli azionabili del DS.
+
+<Canvas of={Stories.Variants} />
+<Canvas of={Stories.IconOnly} />

@@ -1,0 +1,10 @@
+import { Meta, Canvas } from "@storybook/addon-docs/blocks";
+import * as Stories from "./mobile-record.stories";
+
+<Meta of={Stories} />
+
+# Mobile Record
+
+Questo pattern formalizza la vista mobile dei record amministrativi senza duplicare card ad hoc nelle pagine.
+
+<Canvas of={Stories.ResourceCards} />

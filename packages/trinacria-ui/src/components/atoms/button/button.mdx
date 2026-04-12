@@ -1,0 +1,12 @@
+import { Meta, Canvas } from "@storybook/addon-docs/blocks";
+import * as Stories from "./button.stories";
+
+<Meta of={Stories} />
+
+# Button
+
+`Button` e il trigger primario del backoffice e copre varianti, dimensioni e stato loading.
+
+<Canvas of={Stories.Variants} />
+<Canvas of={Stories.States} />
+<Canvas of={Stories.WithIcons} />

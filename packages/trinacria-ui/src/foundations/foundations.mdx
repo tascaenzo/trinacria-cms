@@ -1,0 +1,156 @@
+import { Meta, Canvas } from "@storybook/addon-docs/blocks";
+import * as ThemeStories from "./theme/theme.stories";
+
+<Meta title="Foundations/Guidelines" />
+
+# Trinacria UI Foundations
+
+Questo documento definisce il riferimento visivo e operativo del design system `trinacria-ui`.
+
+Non descrive solo i token esistenti: fissa il modo in cui nuovi componenti devono essere progettati, composti e documentati.
+
+## Visual Principles
+
+### 1. Operational clarity first
+
+Il backoffice e una superficie di lavoro, non una landing page.
+
+Le priorita sono:
+
+- leggibilita immediata
+- gerarchia chiara
+- densita controllata
+- stati evidenti
+- azioni distinguibili senza rumore visivo
+
+### 2. Calm, neutral, professional
+
+Il tono visivo deve restare sobrio e affidabile.
+
+Linee guida:
+
+- base cromatica chiara e neutra
+- accento usato con parsimonia
+- contrasto alto sui contenuti
+- ombre morbide, non scenografiche
+- bordi funzionali, non decorativi
+
+### 3. Consistency over novelty
+
+Un nuovo componente non deve inventare il proprio linguaggio.
+
+Prima di introdurre una nuova variante, verificare se il problema puo essere risolto con:
+
+- token esistenti
+- composizione di primitive esistenti
+- una variante minima di un componente gia presente
+
+## Color System
+
+Il sistema colore e semantico, non brand-first.
+
+Categorie principali:
+
+- surface: `--color-canvas`, `--color-surface`, `--color-panel`, `--color-panel-soft`, `--color-panel-strong`
+- ink: `--color-ink`, `--color-ink-soft`, `--color-ink-muted`, `--color-ink-subtle`, `--color-ink-inverse`
+- border: `--color-border`, `--color-border-strong`
+- semantic feedback: `--color-info-*`, `--color-success-*`, `--color-warning-*`, `--color-danger-*`
+- interaction: `--color-focus`, `--color-accent`
+
+Regole:
+
+- il colore non deve essere l'unico vettore informativo per errore, warning o successo
+- gli sfondi semantici servono a supportare il contenuto, non a dominarlo
+- il testo principale usa sempre colori `ink`, mai colori semantici saturi se non nei feedback
+
+<Canvas of={ThemeStories.Overview} />
+
+## Spacing, Radius, Shadow
+
+La scala spaziature e compatta e orientata a dashboard.
+
+Token attivi:
+
+- spacing: `--space-1`, `--space-2`, `--space-3`, `--space-4`, `--space-5`, `--space-6`, `--space-8`
+- radius: `--radius-sm`, `--radius-md`, `--radius-lg`, `--radius-xl`
+- shadow: `--shadow-sm`, `--shadow-md`, `--shadow-lg`
+
+Regole di utilizzo:
+
+- controlli singoli: altezza compatta, padding orizzontale moderato
+- card, panel e drawer: usare radius medio o grande
+- shadow solo per separare layer interattivi o superfici elevate
+- evitare combinazioni pesanti di bordo scuro + ombra forte + sfondo saturo
+
+## Typography Scale
+
+La tipografia e funzionale, non editoriale.
+
+Famiglie:
+
+- `--font-sans` per UI, form, table, helper text
+- `--font-display` per heading principali e shell title
+
+Scala raccomandata:
+
+- `text-xs`: metadata, helper, hint, badge microcopy
+- `text-sm`: label, body standard, contenuto base form
+- `text-lg`: heading di sezione o shell header
+
+Regole:
+
+- usare `font-medium` per label e micro-gerarchie operative
+- usare `font-semibold` solo su heading, trigger principali e highlight contestuali
+- evitare salti tipografici troppo ampi dentro una stessa card o form
+
+## Component Rules
+
+### Form controls
+
+- i campi devono esporre sempre stato default, disabled, error e hint quando rilevanti
+- i controlli avanzati devono restare utilizzabili anche senza testo accessorio
+- prefissi, suffissi, clear action e affordance devono essere visivamente secondari rispetto al valore
+
+### Actions
+
+- `primary` per la singola azione dominante del contesto
+- `secondary` e `outline` per azioni supporto
+- `ghost` solo per azioni leggere o chrome di navigazione
+
+### Surfaces
+
+- usare card e panel per raggruppare contenuto correlato
+- separare le sezioni con spacing prima di introdurre un nuovo bordo
+- dialog, popover e drawer devono apparire come layer della stessa famiglia visiva
+
+### Data display
+
+- tabelle e stack informativi devono privilegiare leggibilita e scanning veloce
+- valori critici o inattesi devono emergere con gerarchia, non con decorazione
+- badge e semantic colors vanno usati per stato, non come etichettatura generica
+
+## Do
+
+- comporre componenti a partire da token e pattern esistenti
+- mantenere alti contrasto e leggibilita
+- documentare gli stati reali del backoffice
+- progettare mobile e desktop come due densita dello stesso sistema
+- mantenere testi di sistema brevi, espliciti e operativi
+
+## Don't
+
+- non introdurre gradienti, glassmorphism o effetti “marketing” nei componenti admin standard
+- non usare il colore accent come decorazione diffusa
+- non creare un componente nuovo quando basta una variante minima
+- non inserire ombre pesanti su elementi di base come input o badge
+- non mescolare stili diversi di radius, spacing e densita nello stesso flusso
+
+## Adoption Rule
+
+Ogni nuovo componente o refactor del DS dovrebbe poter rispondere a queste domande:
+
+1. Quale problema operativo risolve?
+2. Quali token usa?
+3. A quale famiglia visiva appartiene?
+4. Quali stati documenta?
+5. E coerente con queste foundations senza introdurre eccezioni inutili?

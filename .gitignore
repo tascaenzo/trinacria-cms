@@ -43,3 +43,7 @@ apps/playground/prisma/*.db-*
 # Cache
 .cache/
 .eslintcache
+
+# Storybook
+apps/**/.storybook-home/
+apps/**/storybook-static/

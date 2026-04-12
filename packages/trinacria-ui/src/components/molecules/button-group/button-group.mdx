@@ -1,0 +1,12 @@
+import { Meta, Canvas } from "@storybook/addon-docs/blocks";
+import * as Stories from "./button-group.stories";
+
+<Meta of={Stories} />
+
+# ButtonGroup
+
+`ButtonGroup` allinea insiemi di azioni correlate senza riscrivere layout locali nelle page o nelle toolbar.
+
+<Canvas of={Stories.Horizontal} />
+<Canvas of={Stories.Toolbar} />
+<Canvas of={Stories.Vertical} />
