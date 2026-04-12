@@ -1,0 +1,54 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Foundations/Accessibility" />
+
+# Trinacria UI Accessibility
+
+Questa pagina definisce la quality bar minima di accessibilita per i componenti di `trinacria-ui`.
+
+L'obiettivo non e dichiarare conformita formale completa, ma evitare regressioni sistemiche mentre il design system cresce.
+
+## Principi
+
+- usare elementi HTML nativi quando coprono gia il comportamento richiesto
+- introdurre componenti custom solo se la semantica e la tastiera vengono ripristinate esplicitamente
+- non separare mai stato visivo e stato accessibile
+- trattare focus, nome accessibile, hint ed error come parte del contratto pubblico del componente
+
+## Requisiti minimi per nuovi componenti
+
+- nome accessibile presente: testo visibile, `label`, `aria-label` o `aria-labelledby`
+- focus ring visibile e coerente con i token del DS
+- stato `disabled` reale e non solo visivo
+- stato `error` collegato con `aria-invalid` e messaggio associato
+- hint ed error collegati con `aria-describedby` o `aria-errormessage`
+- navigazione tastiera completa per tutte le azioni interattive
+- chiusura via `Escape` per popup, dialog e picker
+- ritorno del focus al trigger quando un overlay si chiude
+
+## Checklist review
+
+- Il componente usa l'elemento nativo corretto?
+- Il controllo ha un nome accessibile leggibile da screen reader?
+- Hint ed error vengono annunciati dal controllo?
+- Il focus entra, resta confinato e torna al punto corretto?
+- Il componente e usabile senza mouse?
+- Gli stati `disabled`, `selected`, `expanded`, `checked` o `invalid` sono esposti semanticamente?
+- Storybook documenta almeno uno stato normale, uno errore e uno edge case?
+
+## Standard correnti del DS
+
+- `FormControlShell` genera id stabili e collega label, hint ed error ai campi
+- `Dialog` espone `role="dialog"`, `aria-modal`, focus trap e restore focus
+- `DatePicker` e `TimePicker` espongono trigger con `aria-expanded`/`aria-controls` e dismiss coerente
+- `DateTimePicker` tratta data e ora come gruppo semantico
+
+## Gap ancora aperti
+
+- il calendario custom non e ancora un'implementazione completa di date grid WCAG avanzata
+- mancano test automatici con `axe` o equivalenti nel flusso locale
+- resta da introdurre una checklist smoke manuale per screen reader reali
+
+## Prossimo passo consigliato
+
+Integrare controlli automatici a11y nelle stories o nei test di package per evitare regressioni invisibili nelle prossime milestone.
