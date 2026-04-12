@@ -1,4 +1,4 @@
-import { Button, Input } from "@trinacria-cms/admin-ui";
+import { Button, Input } from "@trinacria-cms/trinacria-ui";
 import { AuthScreenLayout } from "../components/auth-screen-layout.js";
 import { useI18n } from "../lib/i18n.js";
 

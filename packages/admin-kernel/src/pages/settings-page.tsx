@@ -1,5 +1,5 @@
 import { useActionState, useCallback, useEffect, useState } from "react";
-import { Badge, Button, Card, Dialog, Input, JsonView, Textarea } from "@trinacria-cms/admin-ui";
+import { Badge, Button, Card, Dialog, Input, JsonView, Textarea } from "@trinacria-cms/trinacria-ui";
 import type {
   GetSettingSecretMetadataResponse,
   GetSettingValueByKeyResponse,

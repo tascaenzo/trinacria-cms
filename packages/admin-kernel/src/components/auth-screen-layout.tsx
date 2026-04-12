@@ -1,5 +1,5 @@
 import type { PropsWithChildren, ReactNode } from "react";
-import { Badge, Icon } from "@trinacria-cms/admin-ui";
+import { Badge, Icon } from "@trinacria-cms/trinacria-ui";
 import { useI18n } from "../lib/i18n.js";
 
 export interface AuthScreenLayoutProps extends PropsWithChildren {

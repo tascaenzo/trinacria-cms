@@ -35,7 +35,7 @@ La pagina attuale settings e soprattutto un explorer read-only. Per farne una su
 
 - `packages/admin-kernel/src/pages/settings-page.tsx`
 - `packages/admin-kernel/src/i18n/*.json`
-- eventuali componenti `packages/admin-ui/src/**`
+- eventuali componenti `packages/trinacria-ui/src/**`
 
 ## Dipendenze
 

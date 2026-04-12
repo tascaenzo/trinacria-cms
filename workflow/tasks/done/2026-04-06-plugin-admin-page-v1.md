@@ -35,7 +35,7 @@ Senza una pagina plugin il sistema resta leggibile solo da codice o da chiamate 
 ## File o aree impattate
 
 - `packages/admin-kernel/src/**`
-- eventuali componenti `packages/admin-ui/src/**`
+- eventuali componenti `packages/trinacria-ui/src/**`
 
 ## Dipendenze
 

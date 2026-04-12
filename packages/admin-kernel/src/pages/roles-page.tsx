@@ -1,5 +1,5 @@
 import { useActionState, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Badge, Button, Card, Dialog, Input, Textarea } from "@trinacria-cms/admin-ui";
+import { Badge, Button, Card, Dialog, Input, Textarea } from "@trinacria-cms/trinacria-ui";
 import type { ListPermissionsResponse, ListRolesResponse } from "@trinacria-cms/sdk";
 import { MobileRecordCard, MobileRecordField, MobileRecordList } from "../components/mobile-records.js";
 import { ErrorBanner, EmptyState } from "../components/resource-feedback.js";

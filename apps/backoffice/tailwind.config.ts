@@ -5,7 +5,7 @@ const config: Config = {
     "./index.html",
     "./src/**/*.{ts,tsx}",
     "../../packages/admin-kernel/src/**/*.{ts,tsx}",
-    "../../packages/admin-ui/src/**/*.{ts,tsx}"
+    "../../packages/trinacria-ui/src/**/*.{ts,tsx}"
   ],
   theme: {
     extend: {

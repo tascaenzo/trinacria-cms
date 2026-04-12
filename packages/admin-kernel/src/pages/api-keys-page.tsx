@@ -1,5 +1,5 @@
 import { useActionState, useCallback, useEffect, useRef, useState } from "react";
-import { Badge, Button, Card, Dialog, Input, JsonView, Select, Textarea } from "@trinacria-cms/admin-ui";
+import { Badge, Button, Card, DateTimePicker, Dialog, Input, JsonView, Select, Textarea } from "@trinacria-cms/trinacria-ui";
 import type { CreateApiKeyResponse, ListApiKeysResponse } from "@trinacria-cms/sdk";
 import { MobileRecordCard, MobileRecordField, MobileRecordList } from "../components/mobile-records.js";
 import { ErrorBanner, EmptyState } from "../components/resource-feedback.js";
@@ -27,6 +27,7 @@ export function ApiKeysPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [actionId, setActionId] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [expiresAt, setExpiresAt] = useState("");
   const createFormRef = useRef<HTMLFormElement>(null);
   const [optimisticRecords, applyOptimisticStatus] = useOptimisticStatusRecords(records);
 
@@ -82,6 +83,7 @@ export function ApiKeysPage() {
 
     setLatestIssuedKey(createState.data);
     createFormRef.current?.reset();
+    setExpiresAt("");
     setIsCreateOpen(false);
   }, [createState, isCreatePending]);
 
@@ -288,7 +290,7 @@ export function ApiKeysPage() {
             name="permissionKeys"
             hint={t("api_keys.form.permission_keys_hint")}
           />
-          <Input label={t("api_keys.form.expires_at")} name="expiresAt" type="datetime-local" />
+          <DateTimePicker label={t("api_keys.form.expires_at")} name="expiresAt" value={expiresAt} onValueChange={setExpiresAt} />
           <div className="lg:col-span-2">
             {createState.error ? <ErrorBanner message={createState.error} /> : null}
           </div>

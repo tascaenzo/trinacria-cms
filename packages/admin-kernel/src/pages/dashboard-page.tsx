@@ -1,4 +1,4 @@
-import { Badge, Button, Card, JsonView } from "@trinacria-cms/admin-ui";
+import { Badge, Button, Card, JsonView } from "@trinacria-cms/trinacria-ui";
 import { useI18n } from "../lib/i18n.js";
 import { translateSystemStateLabel, translateToneLabel } from "../lib/ui-translations.js";
 

@@ -33,7 +33,7 @@ Ridurre gli errori lint attuali fino a ottenere una baseline pulita o dichiarata
 - `eslint.config.mjs`
 - `apps/backoffice/postcss.config.cjs`
 - `packages/admin-kernel/src/**`
-- `packages/admin-ui/src/**`
+- `packages/trinacria-ui/src/**`
 - `packages/sdk/scripts/**`
 
 ## Check da eseguire
@@ -53,7 +53,7 @@ Distinguere errori reali da mismatch di configurazione del lint.
   - `apps/backoffice/postcss.config.cjs`
   - `packages/admin-kernel/src/pages/dashboard-page.tsx`
   - `packages/admin-kernel/src/pages/resource-placeholder-page.tsx`
-  - `packages/admin-ui/src/shell/admin-shell.tsx`
+  - `packages/trinacria-ui/src/shell/admin-shell.tsx`
   - `packages/sdk/scripts/generate-sdk.mjs`
   - `packages/sdk/scripts/snapshot-openapi.mjs`
 - Follow-up aperti:

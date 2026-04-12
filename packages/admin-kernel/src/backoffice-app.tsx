@@ -1,5 +1,5 @@
 import { useActionState, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { AdminShell, Badge, Card, Icon } from "@trinacria-cms/admin-ui";
+import { AdminShell, Badge, Card, Icon } from "@trinacria-cms/trinacria-ui";
 import type { AdminRuntimePluginInfo } from "./contracts.js";
 import type {
   GetAuthenticatedUserResponse,

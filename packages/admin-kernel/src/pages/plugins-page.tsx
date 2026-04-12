@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Badge, Button, Card, Input, JsonView } from "@trinacria-cms/admin-ui";
+import { Badge, Button, Card, Input, JsonView } from "@trinacria-cms/trinacria-ui";
 import type {
   ListInstalledPluginsResponse,
   ListPluginEventsResponse,

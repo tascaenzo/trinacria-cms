@@ -19,7 +19,7 @@ The project keeps a strict separation between kernel contracts and concrete impl
 - `packages/core-pack`: official baseline plugin pack (auth, users, roles, permissions, api keys, settings, installation)
 - `packages/sdk`: generated SDK and OpenAPI snapshot
 - `packages/admin-kernel`: shared backoffice runtime, pages, route registry, and SDK wiring
-- `packages/admin-ui`: reusable admin UI components and shell
+- `packages/trinacria-ui`: reusable admin UI components and shell
 - `docs/cms/en`: official CMS docs in English
 - `docs/cms/it`: Italian CMS docs
 - `docs/trinacria`: local imported Trinacria docs (framework reference)
@@ -62,6 +62,12 @@ Run backoffice:
 
 ```bash
 npm run dev:backoffice
+```
+
+Run Storybook for `trinacria-ui`:
+
+```bash
+npm run storybook
 ```
 
 Optional Mongo UI (mongo-express):
@@ -124,6 +130,7 @@ Start here:
 
 - `docs/cms/en/README.md` (official)
 - `docs/cms/it/README.md` (Italian)
+- [docs/trinacria-ui-design-system.md](/Users/enzo/Desktop/trinacria-cms/docs/trinacria-ui-design-system.md)
 
 Trinacria framework reference:
 

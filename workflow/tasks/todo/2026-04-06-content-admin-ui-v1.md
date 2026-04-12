@@ -34,7 +34,7 @@ Il valore del dominio contenuti cresce davvero quando e navigabile dal backoffic
 ## File o aree impattate
 
 - `packages/admin-kernel/src/**`
-- `packages/admin-ui/src/**`
+- `packages/trinacria-ui/src/**`
 
 ## Dipendenze
 

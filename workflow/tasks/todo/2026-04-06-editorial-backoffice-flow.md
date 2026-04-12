@@ -34,7 +34,7 @@ Con API editoriali disponibili serve una UX che renda comprensibili stati, azion
 ## File o aree impattate
 
 - `packages/admin-kernel/src/**`
-- eventuali componenti `packages/admin-ui/src/**`
+- eventuali componenti `packages/trinacria-ui/src/**`
 
 ## Dipendenze
 
