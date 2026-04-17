@@ -1,0 +1,4 @@
+import{j as o}from"./iframe-ce5-efCb.js";import{u as n,M as i,C as s}from"./blocks-BgVWM2bA.js";import{S as a,R as m}from"./mobile-record.stories-DmmUmigG.js";import"./preload-helper-C1FmrZbK.js";import"./index-z7P5nfEw.js";import"./badge-DsIKyoYj.js";import"./class-names-2dOUpm6k.js";import"./button-DTZJ7PNL.js";import"./button-base-BK7tGpG4.js";import"./mobile-record-CiWavGPq.js";import"./eyebrow-UCSOs8qC.js";import"./panel-C5HhQPw_.js";import"./text-8uwx9w-W.js";function e(t){const r={h1:"h1",p:"p",...n(),...t.components};return o.jsxs(o.Fragment,{children:[o.jsx(i,{of:a}),`
+`,o.jsx(r.h1,{id:"mobile-record",children:"Mobile Record"}),`
+`,o.jsx(r.p,{children:"Questo pattern formalizza la vista mobile dei record amministrativi senza duplicare card ad hoc nelle pagine."}),`
+`,o.jsx(s,{of:m})]})}function v(t={}){const{wrapper:r}={...n(),...t.components};return r?o.jsx(r,{...t,children:o.jsx(e,{...t})}):e(t)}export{v as default};

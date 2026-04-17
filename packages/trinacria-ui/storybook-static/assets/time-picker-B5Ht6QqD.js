@@ -1,0 +1,4 @@
+import{j as o}from"./iframe-ce5-efCb.js";import{u as i,M as r,C as s}from"./blocks-BgVWM2bA.js";import{S as c,a as m}from"./time-picker.stories-B3HC6VKl.js";import"./preload-helper-C1FmrZbK.js";import"./index-z7P5nfEw.js";import"./time-picker-DPrihalO.js";import"./class-names-2dOUpm6k.js";import"./button-DTZJ7PNL.js";import"./button-base-BK7tGpG4.js";import"./form-control-BzK8dlK3.js";import"./icon-Dp3itan5.js";function n(t){const e={code:"code",h1:"h1",p:"p",...i(),...t.components};return o.jsxs(o.Fragment,{children:[o.jsx(r,{of:c}),`
+`,o.jsx(e.h1,{id:"time-picker",children:"Time Picker"}),`
+`,o.jsxs(e.p,{children:[o.jsx(e.code,{children:"TimePicker"})," sostituisce il controllo orario nativo con un pannello coerente col design system e con step configurabile."]}),`
+`,o.jsx(s,{of:m})]})}function g(t={}){const{wrapper:e}={...i(),...t.components};return e?o.jsx(e,{...t,children:o.jsx(n,{...t})}):n(t)}export{g as default};

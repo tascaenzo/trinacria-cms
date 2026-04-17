@@ -1,0 +1,4 @@
+import{j as t}from"./iframe-ce5-efCb.js";import{u as s,M as i,C as r}from"./blocks-BgVWM2bA.js";import{S as a,a as c}from"./number-input.stories-BKqq6IJL.js";import"./preload-helper-C1FmrZbK.js";import"./index-z7P5nfEw.js";import"./class-names-2dOUpm6k.js";import"./form-control-BzK8dlK3.js";function o(e){const n={code:"code",h1:"h1",p:"p",...s(),...e.components};return t.jsxs(t.Fragment,{children:[t.jsx(i,{of:a}),`
+`,t.jsx(n.h1,{id:"number-input",children:"Number Input"}),`
+`,t.jsxs(n.p,{children:[t.jsx(n.code,{children:"NumberInput"})," copre interi, decimali e campi quantitativi del backoffice con supporto a prefissi e suffissi."]}),`
+`,t.jsx(r,{of:c})]})}function h(e={}){const{wrapper:n}={...s(),...e.components};return n?t.jsx(n,{...e,children:t.jsx(o,{...e})}):o(e)}export{h as default};

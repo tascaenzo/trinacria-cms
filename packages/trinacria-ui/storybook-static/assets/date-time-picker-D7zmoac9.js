@@ -1,0 +1,4 @@
+import{j as e}from"./iframe-ce5-efCb.js";import{u as i,M as n,C as s}from"./blocks-BgVWM2bA.js";import{S as a,a as m}from"./date-time-picker.stories-yquNiOJr.js";import"./preload-helper-C1FmrZbK.js";import"./index-z7P5nfEw.js";import"./class-names-2dOUpm6k.js";import"./form-control-BzK8dlK3.js";import"./date-picker-CjY4LYX8.js";import"./icon-Dp3itan5.js";import"./time-picker-DPrihalO.js";import"./button-DTZJ7PNL.js";import"./button-base-BK7tGpG4.js";function r(t){const o={code:"code",h1:"h1",p:"p",...i(),...t.components};return e.jsxs(e.Fragment,{children:[e.jsx(n,{of:a}),`
+`,e.jsx(o.h1,{id:"date-time-picker",children:"Date Time Picker"}),`
+`,e.jsxs(o.p,{children:[e.jsx(o.code,{children:"DateTimePicker"})," combina calendario e selettore orario per scheduling, finestre operative e deadline di sistema."]}),`
+`,e.jsx(s,{of:m})]})}function k(t={}){const{wrapper:o}={...i(),...t.components};return o?e.jsx(o,{...t,children:e.jsx(r,{...t})}):r(t)}export{k as default};

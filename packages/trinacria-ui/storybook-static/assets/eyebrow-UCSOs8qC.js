@@ -1,0 +1,1 @@
+import{j as t}from"./iframe-ce5-efCb.js";import{c as s}from"./class-names-2dOUpm6k.js";function i({children:o,className:e,...r}){return t.jsx("p",{className:s("text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--color-ink-subtle)]",e),...r,children:o})}i.__docgenInfo={description:"",methods:[],displayName:"Eyebrow",composes:["PropsWithChildren"]};export{i as E};

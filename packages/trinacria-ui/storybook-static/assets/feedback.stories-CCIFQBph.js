@@ -1,0 +1,7 @@
+import{j as e}from"./iframe-ce5-efCb.js";import{B as i}from"./button-DTZJ7PNL.js";import{F as s,E as o,a as l}from"./feedback-BOf5M1IX.js";const c={title:"Display/Status/Feedback",component:s},t={render:()=>e.jsxs("div",{className:"max-w-2xl space-y-4",children:[e.jsx(s,{tone:"info",title:"Runtime sync",message:"Il runtime sta riallineando il catalogo plugin."}),e.jsx(o,{message:"Operazione non riuscita: il plugin non ha confermato il restart."}),e.jsx(l,{title:"Nessun record disponibile",text:"Il filtro attuale non restituisce risultati.",action:e.jsx(i,{variant:"secondary",children:"Reset filtri"})})]})};var a,n,r;t.parameters={...t.parameters,docs:{...(a=t.parameters)==null?void 0:a.docs,source:{originalSource:`{
+  render: () => <div className="max-w-2xl space-y-4">
+      <FeedbackBanner tone="info" title="Runtime sync" message="Il runtime sta riallineando il catalogo plugin." />
+      <ErrorBanner message="Operazione non riuscita: il plugin non ha confermato il restart." />
+      <EmptyState title="Nessun record disponibile" text="Il filtro attuale non restituisce risultati." action={<Button variant="secondary">Reset filtri</Button>} />
+    </div>
+}`,...(r=(n=t.parameters)==null?void 0:n.docs)==null?void 0:r.source}}};const m=["States"],x=Object.freeze(Object.defineProperty({__proto__:null,States:t,__namedExportsOrder:m,default:c},Symbol.toStringTag,{value:"Module"}));export{x as S,t as a};

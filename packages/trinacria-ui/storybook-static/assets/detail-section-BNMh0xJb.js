@@ -1,0 +1,4 @@
+import{j as t}from"./iframe-ce5-efCb.js";import{u as e,M as r,C as s}from"./blocks-BgVWM2bA.js";import{S as a,D as m}from"./detail-section.stories-OVu7Lj3v.js";import"./preload-helper-C1FmrZbK.js";import"./index-z7P5nfEw.js";import"./button-DTZJ7PNL.js";import"./button-base-BK7tGpG4.js";import"./class-names-2dOUpm6k.js";import"./eyebrow-UCSOs8qC.js";import"./panel-C5HhQPw_.js";import"./text-8uwx9w-W.js";function i(o){const n={h1:"h1",p:"p",...e(),...o.components};return t.jsxs(t.Fragment,{children:[t.jsx(r,{of:a}),`
+`,t.jsx(n.h1,{id:"detail-section",children:"Detail Section"}),`
+`,t.jsx(n.p,{children:"Blocco riusabile per dettagli, pannelli di ispezione e sezioni con azioni locali."}),`
+`,t.jsx(s,{of:m})]})}function C(o={}){const{wrapper:n}={...e(),...o.components};return n?t.jsx(n,{...o,children:t.jsx(i,{...o})}):i(o)}export{C as default};

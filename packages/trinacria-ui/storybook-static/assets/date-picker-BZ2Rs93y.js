@@ -1,0 +1,4 @@
+import{j as t}from"./iframe-ce5-efCb.js";import{u as i,M as r,C as s}from"./blocks-BgVWM2bA.js";import{S as a,a as c}from"./date-picker.stories-CGZ4zIuu.js";import"./preload-helper-C1FmrZbK.js";import"./index-z7P5nfEw.js";import"./date-picker-CjY4LYX8.js";import"./class-names-2dOUpm6k.js";import"./form-control-BzK8dlK3.js";import"./icon-Dp3itan5.js";function o(e){const n={code:"code",h1:"h1",p:"p",...i(),...e.components};return t.jsxs(t.Fragment,{children:[t.jsx(r,{of:a}),`
+`,t.jsx(n.h1,{id:"date-picker",children:"Date Picker"}),`
+`,t.jsxs(n.p,{children:[t.jsx(n.code,{children:"DatePicker"})," e il calendario custom del design system, utile quando il controllo nativo non basta in termini di coerenza visiva e UX."]}),`
+`,t.jsx(s,{of:c})]})}function M(e={}){const{wrapper:n}={...i(),...e.components};return n?t.jsx(n,{...e,children:t.jsx(o,{...e})}):o(e)}export{M as default};

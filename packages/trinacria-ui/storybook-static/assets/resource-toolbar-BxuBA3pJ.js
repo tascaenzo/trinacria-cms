@@ -1,0 +1,4 @@
+import{j as o}from"./iframe-ce5-efCb.js";import{u as n,M as i,C as s}from"./blocks-BgVWM2bA.js";import{S as a,D as m}from"./resource-toolbar.stories-CbzgJiVT.js";import"./preload-helper-C1FmrZbK.js";import"./index-z7P5nfEw.js";import"./button-DTZJ7PNL.js";import"./button-base-BK7tGpG4.js";import"./class-names-2dOUpm6k.js";import"./input-BwIcYy4A.js";import"./form-control-BzK8dlK3.js";import"./resource-toolbar-CKpJibk5.js";import"./panel-C5HhQPw_.js";function e(r){const t={h1:"h1",p:"p",...n(),...r.components};return o.jsxs(o.Fragment,{children:[o.jsx(i,{of:a}),`
+`,o.jsx(t.h1,{id:"resource-toolbar",children:"Resource Toolbar"}),`
+`,o.jsx(t.p,{children:"Toolbar standard per ricerca, filtri e azioni operative su liste e pagine risorsa."}),`
+`,o.jsx(s,{of:m})]})}function b(r={}){const{wrapper:t}={...n(),...r.components};return t?o.jsx(t,{...r,children:o.jsx(e,{...r})}):e(r)}export{b as default};
