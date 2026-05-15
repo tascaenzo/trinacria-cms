@@ -1,15 +1,11 @@
-import {
-  defineEntity,
-  isValidPermissionPattern,
-  s,
-  type Infer,
-} from "@trinacria-cms/kernel";
+import { defineEntity, isValidPermissionPattern, s, type Infer } from "@trinacria-cms/kernel";
 
 export const RolePolicyRuleEffectSchema = s.enum(["allow", "deny"] as const);
 
-export const RolePolicyRuleConditionSchema = s.enum(
-  ["resource_id_required", "resource_id_equals_subject"] as const,
-);
+export const RolePolicyRuleConditionSchema = s.enum([
+  "resource_id_required",
+  "resource_id_equals_subject"
+] as const);
 
 /**
  * Record containing wildcard/conditional allow/deny rules for a role.
@@ -22,7 +18,7 @@ export const RolePolicyRuleRecordSchema = s.object(
       toLowerCase: true,
       minLength: 2,
       maxLength: 64,
-      pattern: /^[a-z0-9][a-z0-9._-]*$/,
+      pattern: /^[a-z0-9][a-z0-9._-]*$/
     }),
     effect: RolePolicyRuleEffectSchema,
     permissionPattern: s
@@ -30,14 +26,14 @@ export const RolePolicyRuleRecordSchema = s.object(
       .refine(
         (value) => isValidPermissionPattern(value),
         "Permission pattern must be '<pluginId>:<resource|*>:<action|*>'",
-        "invalid_permission_pattern",
+        "invalid_permission_pattern"
       ),
     conditions: s.array(RolePolicyRuleConditionSchema, { unique: true }),
     sourcePluginId: s.string({ trim: true, minLength: 1 }),
     createdAt: s.dateTimeString(),
-    updatedAt: s.dateTimeString(),
+    updatedAt: s.dateTimeString()
   },
-  { strict: true },
+  { strict: true }
 );
 
 export type RolePolicyRuleRecord = Infer<typeof RolePolicyRuleRecordSchema>;
@@ -52,25 +48,25 @@ export const ROLE_POLICY_RULES_ENTITY = defineEntity({
     {
       fields: { id: 1 },
       unique: true,
-      name: "role_policy_rules_id_unique",
+      name: "role_policy_rules_id_unique"
     },
     {
       fields: {
         roleCode: 1,
         effect: 1,
         permissionPattern: 1,
-        sourcePluginId: 1,
+        sourcePluginId: 1
       },
       unique: true,
-      name: "role_policy_rules_unique_rule",
+      name: "role_policy_rules_unique_rule"
     },
     {
       fields: { roleCode: 1 },
-      name: "role_policy_rules_role_code_idx",
+      name: "role_policy_rules_role_code_idx"
     },
     {
       fields: { sourcePluginId: 1 },
-      name: "role_policy_rules_source_plugin_idx",
-    },
-  ] as const,
+      name: "role_policy_rules_source_plugin_idx"
+    }
+  ] as const
 });

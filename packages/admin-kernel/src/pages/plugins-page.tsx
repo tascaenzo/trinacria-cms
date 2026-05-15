@@ -1,13 +1,29 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Badge, Button, Card, Input, JsonView } from "@trinacria-cms/trinacria-ui";
-import type {
-  ListInstalledPluginsResponse,
-  ListPluginEventsResponse,
-} from "@trinacria-cms/sdk";
+import {
+  Badge,
+  Button,
+  Card,
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeadCell,
+  DataTableHeaderRow,
+  DataTablePrimaryCell,
+  DataTableRow,
+  DataTableTable,
+  InfoCard,
+  Input,
+  JsonView,
+  PropertyItem,
+  PropertyList,
+  StatCard
+} from "@trinacria-cms/trinacria-ui";
+import type { ListInstalledPluginsResponse, ListPluginEventsResponse } from "@trinacria-cms/sdk";
 import {
   MobileRecordCard,
   MobileRecordField,
-  MobileRecordList,
+  MobileRecordList
 } from "../components/mobile-records.js";
 import { ErrorBanner, EmptyState } from "../components/resource-feedback.js";
 import { formatDateTime } from "../lib/formatting.js";
@@ -18,9 +34,7 @@ import { cms } from "../runtime/cms-sdk.js";
 type PluginRecord = ListInstalledPluginsResponse["data"][number];
 type PluginEventRecord = ListPluginEventsResponse["data"][number];
 
-function getStateTone(
-  state: PluginRecord["state"],
-): "neutral" | "success" | "warning" {
+function getStateTone(state: PluginRecord["state"]): "neutral" | "success" | "warning" {
   if (state === "loaded") return "success";
   if (state === "failed" || state === "disabled") return "warning";
   return "neutral";
@@ -113,8 +127,8 @@ export function PluginsPage() {
     try {
       const response = await cms.system.listPluginEvents({
         path: {
-          pluginId,
-        },
+          pluginId
+        }
       });
       setSelectedEvents(response.data);
     } catch {
@@ -139,7 +153,7 @@ export function PluginsPage() {
 
   const selectedPlugin = useMemo(
     () => plugins.find((plugin) => plugin.id === selectedPluginId) ?? null,
-    [plugins, selectedPluginId],
+    [plugins, selectedPluginId]
   );
 
   const metrics = useMemo(
@@ -147,14 +161,12 @@ export function PluginsPage() {
       loaded: plugins.filter((plugin) => plugin.state === "loaded").length,
       failed: plugins.filter((plugin) => plugin.state === "failed").length,
       disabled: plugins.filter((plugin) => plugin.state === "disabled").length,
-      capabilities: plugins.reduce((total, plugin) => total + plugin.capabilities.length, 0),
+      capabilities: plugins.reduce((total, plugin) => total + plugin.capabilities.length, 0)
     }),
-    [plugins],
+    [plugins]
   );
 
-  async function handleOperation(
-    operation: PluginRecord["operations"][number]["operation"],
-  ) {
+  async function handleOperation(operation: PluginRecord["operations"][number]["operation"]) {
     if (!selectedPlugin) {
       return;
     }
@@ -167,20 +179,20 @@ export function PluginsPage() {
     try {
       const response = await cms.system.executePluginOperation({
         path: {
-          pluginId: selectedPlugin.id,
+          pluginId: selectedPlugin.id
         },
         body: {
           operation,
           ...(operation === "disable" && disableReason.trim()
             ? { reason: disableReason.trim() }
-            : {}),
-        },
+            : {})
+        }
       });
       setOperationFeedback(
         t(
           "plugins.feedback.operation_success",
-          `${getOperationLabel(response.data.operation)} completed`,
-        ),
+          `${getOperationLabel(response.data.operation)} completed`
+        )
       );
       await refresh(selectedPlugin.id);
       await loadEvents(selectedPlugin.id);
@@ -198,9 +210,11 @@ export function PluginsPage() {
       {pageError ? <ErrorBanner message={pageError} /> : null}
       {operationError ? <ErrorBanner message={operationError} /> : null}
       {operationFeedback ? (
-        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          {operationFeedback}
-        </p>
+        <InfoCard
+          title={operationFeedback}
+          tone="default"
+          className="border-emerald-200 bg-emerald-50 text-emerald-700"
+        />
       ) : null}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -238,46 +252,49 @@ export function PluginsPage() {
             <EmptyState text={t("plugins.empty.none")} />
           ) : (
             <>
-              <div className="hidden md:grid">
-                <div className="grid grid-cols-[minmax(0,1.5fr)_120px_120px_120px] gap-3 border-b border-[color:var(--color-border)] pb-2 text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
-                  <span>{t("plugins.table.plugin")}</span>
-                  <span>{t("plugins.table.state")}</span>
-                  <span>{t("plugins.table.capabilities")}</span>
-                  <span>{t("plugins.table.dependencies")}</span>
-                </div>
-                <div className="grid">
-                  {plugins.map((plugin) => (
-                    <button
-                      key={plugin.id}
-                      type="button"
-                      onClick={() => setSelectedPluginId(plugin.id)}
-                      className={`grid grid-cols-[minmax(0,1.5fr)_120px_120px_120px] gap-3 border-b border-[color:var(--color-border)] px-1 py-3 text-left transition hover:bg-slate-50 ${
-                        plugin.id === selectedPluginId ? "bg-slate-50" : ""
-                      }`}
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-[color:var(--color-ink)]">
-                          {plugin.id}
-                        </p>
-                        <p className="text-sm text-[color:var(--color-ink-muted)]">
-                          v{plugin.version}
-                        </p>
-                      </div>
-                      <div>
-                        <Badge tone={getStateTone(plugin.state)}>{getStateLabel(plugin.state)}</Badge>
-                      </div>
-                      <p className="text-sm text-[color:var(--color-ink-muted)]">
-                        {plugin.capabilities.length}
-                      </p>
-                      <p className="text-sm text-[color:var(--color-ink-muted)]">
-                        {dependencyIssueCount(plugin) > 0
-                          ? `${dependencyIssueCount(plugin)} ${t("plugins.table.issue_suffix")}`
-                          : t("plugins.table.dependencies_ok")}
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <DataTable>
+                <DataTableTable>
+                  <DataTableHead>
+                    <DataTableHeaderRow>
+                      <DataTableHeadCell>{t("plugins.table.plugin")}</DataTableHeadCell>
+                      <DataTableHeadCell>{t("plugins.table.state")}</DataTableHeadCell>
+                      <DataTableHeadCell>{t("plugins.table.capabilities")}</DataTableHeadCell>
+                      <DataTableHeadCell>{t("plugins.table.dependencies")}</DataTableHeadCell>
+                    </DataTableHeaderRow>
+                  </DataTableHead>
+                  <DataTableBody>
+                    {plugins.map((plugin) => (
+                      <DataTableRow
+                        key={plugin.id}
+                        className={plugin.id === selectedPluginId ? "bg-slate-50" : undefined}
+                      >
+                        <DataTablePrimaryCell meta={`v${plugin.version}`}>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedPluginId(plugin.id)}
+                            className="w-full text-left"
+                          >
+                            {plugin.id}
+                          </button>
+                        </DataTablePrimaryCell>
+                        <DataTableCell>
+                          <Badge tone={getStateTone(plugin.state)}>
+                            {getStateLabel(plugin.state)}
+                          </Badge>
+                        </DataTableCell>
+                        <DataTableCell className="text-[color:var(--color-ink-muted)]">
+                          {plugin.capabilities.length}
+                        </DataTableCell>
+                        <DataTableCell className="text-[color:var(--color-ink-muted)]">
+                          {dependencyIssueCount(plugin) > 0
+                            ? `${dependencyIssueCount(plugin)} ${t("plugins.table.issue_suffix")}`
+                            : t("plugins.table.dependencies_ok")}
+                        </DataTableCell>
+                      </DataTableRow>
+                    ))}
+                  </DataTableBody>
+                </DataTableTable>
+              </DataTable>
 
               <MobileRecordList>
                 {plugins.map((plugin) => (
@@ -285,7 +302,9 @@ export function PluginsPage() {
                     key={plugin.id}
                     title={plugin.id}
                     subtitle={`v${plugin.version}`}
-                    badges={<Badge tone={getStateTone(plugin.state)}>{getStateLabel(plugin.state)}</Badge>}
+                    badges={
+                      <Badge tone={getStateTone(plugin.state)}>{getStateLabel(plugin.state)}</Badge>
+                    }
                     actions={
                       <Button variant="ghost" onClick={() => setSelectedPluginId(plugin.id)}>
                         {t("plugins.actions.inspect")}
@@ -316,45 +335,42 @@ export function PluginsPage() {
             <EmptyState text={t("plugins.detail.empty")} />
           ) : (
             <div className="grid gap-5">
-              <div className="grid gap-3 rounded-2xl border border-[color:var(--color-border)] bg-slate-50 p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="text-lg font-semibold text-[color:var(--color-ink)]">
-                      {selectedPlugin.id}
-                    </p>
-                    <p className="text-sm text-[color:var(--color-ink-muted)]">
-                      {selectedPlugin.statusReason?.message ?? selectedPlugin.requiresCore}
-                    </p>
-                  </div>
+              <InfoCard
+                title={selectedPlugin.id}
+                description={selectedPlugin.statusReason?.message ?? selectedPlugin.requiresCore}
+                action={
                   <Badge tone={getStateTone(selectedPlugin.state)}>
                     {getStateLabel(selectedPlugin.state)}
                   </Badge>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <DetailField label={t("plugins.detail.version")} value={`v${selectedPlugin.version}`} />
-                  <DetailField
+                }
+              >
+                <PropertyList columns={2}>
+                  <PropertyItem
+                    label={t("plugins.detail.version")}
+                    value={`v${selectedPlugin.version}`}
+                  />
+                  <PropertyItem
                     label={t("plugins.detail.requires_core")}
                     value={selectedPlugin.requiresCore}
                   />
-                  <DetailField
+                  <PropertyItem
                     label={t("plugins.detail.failure_count")}
                     value={String(selectedPlugin.failureCount)}
                   />
-                  <DetailField
+                  <PropertyItem
                     label={t("plugins.detail.loaded_at")}
                     value={formatDateTime(selectedPlugin.loadedAt)}
                   />
-                  <DetailField
+                  <PropertyItem
                     label={t("plugins.detail.failed_at")}
                     value={formatDateTime(selectedPlugin.failedAt)}
                   />
-                  <DetailField
+                  <PropertyItem
                     label={t("plugins.detail.disabled_reason")}
                     value={selectedPlugin.disabledReason ?? "-"}
                   />
-                </div>
-              </div>
+                </PropertyList>
+              </InfoCard>
 
               <div className="grid gap-3">
                 <Input
@@ -398,36 +414,34 @@ export function PluginsPage() {
                 ) : (
                   <div className="grid gap-3">
                     {selectedPlugin.dependencies.map((dependency) => (
-                      <div
+                      <InfoCard
                         key={`${selectedPlugin.id}:${dependency.pluginId}`}
-                        className="rounded-2xl border border-[color:var(--color-border)] p-4"
-                      >
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-semibold text-[color:var(--color-ink)]">
-                              {dependency.pluginId}
-                            </p>
-                            <p className="text-sm text-[color:var(--color-ink-muted)]">
-                              {dependency.versionRange}
-                            </p>
-                          </div>
+                        title={dependency.pluginId}
+                        description={dependency.versionRange}
+                        action={
                           <Badge tone={dependency.status === "ok" ? "success" : "warning"}>
                             {dependency.status}
                           </Badge>
-                        </div>
-                        <div className="mt-3 grid gap-2 text-sm text-[color:var(--color-ink-muted)]">
-                          <p>
-                            {t("plugins.dependencies.optional")}: {dependency.optional ? "yes" : "no"}
-                          </p>
-                          <p>
-                            {t("plugins.dependencies.current_version")}: {dependency.currentVersion ?? "-"}
-                          </p>
-                          <p>
-                            {t("plugins.dependencies.runtime_state")}: {dependency.state ?? "-"}
-                          </p>
-                          {dependency.reason ? <p>{dependency.reason}</p> : null}
-                        </div>
-                      </div>
+                        }
+                      >
+                        <PropertyList columns={1}>
+                          <PropertyItem
+                            label={t("plugins.dependencies.optional")}
+                            value={dependency.optional ? "yes" : "no"}
+                          />
+                          <PropertyItem
+                            label={t("plugins.dependencies.current_version")}
+                            value={dependency.currentVersion ?? "-"}
+                          />
+                          <PropertyItem
+                            label={t("plugins.dependencies.runtime_state")}
+                            value={dependency.state ?? "-"}
+                          />
+                          {dependency.reason ? (
+                            <PropertyItem label="Reason" value={dependency.reason} />
+                          ) : null}
+                        </PropertyList>
+                      </InfoCard>
                     ))}
                   </div>
                 )}
@@ -444,26 +458,27 @@ export function PluginsPage() {
                       .slice()
                       .reverse()
                       .map((event) => (
-                        <div
+                        <InfoCard
                           key={`${event.pluginId}:${event.sequence}`}
-                          className="rounded-2xl border border-[color:var(--color-border)] p-4"
-                        >
-                          <div className="flex flex-wrap items-center justify-between gap-3">
-                            <p className="text-sm font-semibold text-[color:var(--color-ink)]">
-                              #{event.sequence} {event.action}
-                            </p>
+                          title={`#${event.sequence} ${event.action}`}
+                          description={event.message ?? undefined}
+                          action={
                             <Badge tone={event.success ? "success" : "warning"}>
                               {event.success ? "ok" : "failed"}
                             </Badge>
-                          </div>
-                          <div className="mt-2 grid gap-1 text-sm text-[color:var(--color-ink-muted)]">
-                            <p>{formatDateTime(event.timestamp)}</p>
-                            <p>
-                              {event.stateBefore ?? "-"} {"->"} {event.stateAfter ?? "-"}
-                            </p>
-                            {event.message ? <p>{event.message}</p> : null}
-                          </div>
-                        </div>
+                          }
+                        >
+                          <PropertyList columns={1}>
+                            <PropertyItem
+                              label="Timestamp"
+                              value={formatDateTime(event.timestamp)}
+                            />
+                            <PropertyItem
+                              label="Transition"
+                              value={`${event.stateBefore ?? "-"} -> ${event.stateAfter ?? "-"}`}
+                            />
+                          </PropertyList>
+                        </InfoCard>
                       ))}
                   </div>
                 )}
@@ -486,37 +501,16 @@ export function PluginsPage() {
 function MetricCard({
   eyebrow,
   title,
-  description,
+  description
 }: {
   eyebrow: string;
   title: string;
   description: string;
 }) {
-  return (
-    <Card eyebrow={eyebrow} title={title}>
-      <p className="text-sm leading-7 text-[color:var(--color-ink-muted)]">{description}</p>
-    </Card>
-  );
+  return <StatCard label={eyebrow} value={title} description={description} />;
 }
 
-function DetailField({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="grid gap-1">
-      <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
-        {label}
-      </p>
-      <p className="text-sm text-[color:var(--color-ink-muted)]">{value}</p>
-    </div>
-  );
-}
-
-function SectionBlock({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}) {
+function SectionBlock({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="grid gap-3">
       <p className="text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--color-ink-subtle)]">

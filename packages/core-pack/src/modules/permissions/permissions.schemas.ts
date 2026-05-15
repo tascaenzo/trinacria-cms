@@ -1,9 +1,4 @@
-import {
-  defineEntity,
-  isValidPermissionKey,
-  s,
-  type Infer,
-} from "@trinacria-cms/kernel";
+import { defineEntity, isValidPermissionKey, s, type Infer } from "@trinacria-cms/kernel";
 
 export const PermissionStatusSchema = s.enum(["active", "disabled"] as const);
 
@@ -15,21 +10,21 @@ export const PermissionRecordSchema = s.object(
         trim: true,
         toLowerCase: true,
         minLength: 3,
-        maxLength: 220,
+        maxLength: 220
       })
       .refine(
         (value) => isValidPermissionKey(value),
         "Permission key must be '<pluginId>:<resource>:<action>'",
-        "invalid_permission_key",
+        "invalid_permission_key"
       ),
     displayName: s.string({ trim: true, minLength: 1, maxLength: 120 }),
     description: s.string({ trim: true, maxLength: 500 }).optional(),
     sourcePluginId: s.string({ trim: true, minLength: 1 }),
     status: PermissionStatusSchema,
     createdAt: s.dateTimeString(),
-    updatedAt: s.dateTimeString(),
+    updatedAt: s.dateTimeString()
   },
-  { strict: true },
+  { strict: true }
 );
 
 export type PermissionRecord = Infer<typeof PermissionRecordSchema>;
@@ -45,20 +40,20 @@ export const PERMISSIONS_ENTITY = defineEntity({
     {
       fields: { id: 1 },
       unique: true,
-      name: "permissions_id_unique",
+      name: "permissions_id_unique"
     },
     {
       fields: { key: 1 },
       unique: true,
-      name: "permissions_key_unique",
+      name: "permissions_key_unique"
     },
     {
       fields: { sourcePluginId: 1 },
-      name: "permissions_source_plugin_idx",
+      name: "permissions_source_plugin_idx"
     },
     {
       fields: { status: 1 },
-      name: "permissions_status_idx",
-    },
-  ] as const,
+      name: "permissions_status_idx"
+    }
+  ] as const
 });

@@ -1,4 +1,0 @@
-import{j as t}from"./iframe-ce5-efCb.js";import{u as i,M as r,C as s}from"./blocks-BgVWM2bA.js";import{S as a,a as m}from"./feedback.stories-CCIFQBph.js";import"./preload-helper-C1FmrZbK.js";import"./index-z7P5nfEw.js";import"./button-DTZJ7PNL.js";import"./button-base-BK7tGpG4.js";import"./class-names-2dOUpm6k.js";import"./feedback-BOf5M1IX.js";import"./panel-C5HhQPw_.js";import"./text-8uwx9w-W.js";function o(e){const n={h1:"h1",p:"p",...i(),...e.components};return t.jsxs(t.Fragment,{children:[t.jsx(r,{of:a}),`
-`,t.jsx(n.h1,{id:"feedback",children:"Feedback"}),`
-`,t.jsx(n.p,{children:"I blocchi di feedback standardizzano errori, stati vuoti e messaggi semantici nelle schermate amministrative."}),`
-`,t.jsx(s,{of:m})]})}function b(e={}){const{wrapper:n}={...i(),...e.components};return n?t.jsx(n,{...e,children:t.jsx(o,{...e})}):o(e)}export{b as default};

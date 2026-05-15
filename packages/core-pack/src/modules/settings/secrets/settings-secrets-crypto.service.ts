@@ -32,7 +32,7 @@ export class SettingsSecretsCryptoService {
     const cipher = createCipheriv(this.algorithm, this.key, iv);
     const encrypted = Buffer.concat([
       cipher.update(Buffer.from(plaintext, "utf8")),
-      cipher.final(),
+      cipher.final()
     ]);
     const authTag = cipher.getAuthTag();
 
@@ -41,32 +41,25 @@ export class SettingsSecretsCryptoService {
       iv: iv.toString("base64"),
       authTag: authTag.toString("base64"),
       algorithm: this.algorithm,
-      keyVersion: this.keyVersion,
+      keyVersion: this.keyVersion
     };
   }
 
-  decrypt(payload: {
-    cipherText: string;
-    iv: string;
-    authTag: string;
-  }): string {
-    const decipher = createDecipheriv(
-      this.algorithm,
-      this.key,
-      Buffer.from(payload.iv, "base64"),
-    );
+  decrypt(payload: { cipherText: string; iv: string; authTag: string }): string {
+    const decipher = createDecipheriv(this.algorithm, this.key, Buffer.from(payload.iv, "base64"));
     decipher.setAuthTag(Buffer.from(payload.authTag, "base64"));
 
     const decrypted = Buffer.concat([
       decipher.update(Buffer.from(payload.cipherText, "base64")),
-      decipher.final(),
+      decipher.final()
     ]);
 
     return decrypted.toString("utf8");
   }
 
   private resolveKey(configured?: string): Buffer {
-    const source = configured ?? process.env.CMS_SETTINGS_MASTER_KEY ?? "trinacria-cms-dev-master-key";
+    const source =
+      configured ?? process.env.CMS_SETTINGS_MASTER_KEY ?? "trinacria-cms-dev-master-key";
     const normalized = source.trim();
 
     if (normalized.startsWith("base64:")) {

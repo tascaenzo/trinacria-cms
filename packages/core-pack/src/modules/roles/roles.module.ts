@@ -4,7 +4,7 @@ import {
   defineModule,
   factoryProvider,
   httpProvider,
-  type EntityRegistry,
+  type EntityRegistry
 } from "@trinacria-cms/kernel";
 import { CorePackAuthModule } from "../auth/auth.module.js";
 import { CORE_PACK_JWT_AUTH_SERVICE_TOKEN } from "../auth/auth.tokens.js";
@@ -18,7 +18,7 @@ import {
   ROLES_CONTROLLER_TOKEN,
   ROLES_ENTITY_REGISTRATION_TOKEN,
   ROLES_REPOSITORY_TOKEN,
-  ROLES_SERVICE_TOKEN,
+  ROLES_SERVICE_TOKEN
 } from "./roles.tokens.js";
 
 /**
@@ -34,26 +34,24 @@ export const CorePackRolesModule = defineModule({
         (registry as EntityRegistry).register(ROLES_ENTITY);
         return true;
       },
-      [CORE_TOKENS.ENTITY_REGISTRY],
+      [CORE_TOKENS.ENTITY_REGISTRY]
     ),
     classProvider(ROLES_REPOSITORY_TOKEN, RolesRepository, [CORE_TOKENS.DB_ADAPTER]),
-    classProvider(ROLE_GRANTS_REPOSITORY_TOKEN, RoleGrantsRepository, [
-      CORE_TOKENS.DB_ADAPTER,
-    ]),
+    classProvider(ROLE_GRANTS_REPOSITORY_TOKEN, RoleGrantsRepository, [CORE_TOKENS.DB_ADAPTER]),
     classProvider(ROLES_SERVICE_TOKEN, RolesService, [
       ROLES_REPOSITORY_TOKEN,
-      ROLE_GRANTS_REPOSITORY_TOKEN,
+      ROLE_GRANTS_REPOSITORY_TOKEN
     ]),
     httpProvider(ROLES_CONTROLLER_TOKEN, RolesController, [
       ROLES_SERVICE_TOKEN,
-      CORE_PACK_JWT_AUTH_SERVICE_TOKEN,
-    ]),
+      CORE_PACK_JWT_AUTH_SERVICE_TOKEN
+    ])
   ],
   exports: [
     ROLES_CONTROLLER_TOKEN,
     ROLES_ENTITY_REGISTRATION_TOKEN,
     ROLE_GRANTS_REPOSITORY_TOKEN,
     ROLES_REPOSITORY_TOKEN,
-    ROLES_SERVICE_TOKEN,
-  ],
+    ROLES_SERVICE_TOKEN
+  ]
 });

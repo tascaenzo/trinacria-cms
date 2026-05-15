@@ -11,17 +11,17 @@ export const CreatePermissionInputSchema = s.object(
         trim: true,
         toLowerCase: true,
         minLength: 3,
-        maxLength: 220,
+        maxLength: 220
       })
       .refine(
         (value) => isValidPermissionKey(value),
         "Permission key must be '<pluginId>:<resource>:<action>'",
-        "invalid_permission_key",
+        "invalid_permission_key"
       ),
     displayName: s.string({ trim: true, minLength: 1, maxLength: 120 }),
-    description: s.string({ trim: true, maxLength: 500 }).optional(),
+    description: s.string({ trim: true, maxLength: 500 }).optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 export type CreatePermissionInput = Infer<typeof CreatePermissionInputSchema>;
@@ -31,14 +31,12 @@ export type CreatePermissionInput = Infer<typeof CreatePermissionInputSchema>;
  */
 export const UpdatePermissionStatusInputSchema = s.object(
   {
-    status: PermissionStatusSchema,
+    status: PermissionStatusSchema
   },
-  { strict: true },
+  { strict: true }
 );
 
-export type UpdatePermissionStatusInput = Infer<
-  typeof UpdatePermissionStatusInputSchema
->;
+export type UpdatePermissionStatusInput = Infer<typeof UpdatePermissionStatusInputSchema>;
 
 /**
  * DTO schema for list-permissions query parameters.
@@ -46,9 +44,9 @@ export type UpdatePermissionStatusInput = Infer<
 export const ListPermissionsQuerySchema = s.object(
   {
     limit: s.number({ int: true, min: 1, max: 200 }).optional(),
-    offset: s.number({ int: true, min: 0 }).optional(),
+    offset: s.number({ int: true, min: 0 }).optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 export type ListPermissionsQuery = Infer<typeof ListPermissionsQuerySchema>;

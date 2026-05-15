@@ -10,9 +10,9 @@ export const RolePolicyRulesResponseMetaSchema = s.object(
     pluginId: s.literal(CORE_PACK_PLUGIN_ID).optional(),
     count: s.number({ int: true }).optional(),
     limit: s.number({ int: true }).optional(),
-    offset: s.number({ int: true }).optional(),
+    offset: s.number({ int: true }).optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 /**
@@ -21,9 +21,9 @@ export const RolePolicyRulesResponseMetaSchema = s.object(
 export const RolePolicyRulesApiErrorSchema = s.object(
   {
     code: s.string({ trim: true, minLength: 1 }),
-    message: s.string({ trim: true, minLength: 1 }),
+    message: s.string({ trim: true, minLength: 1 })
   },
-  { strict: true },
+  { strict: true }
 );
 
 /**
@@ -32,9 +32,9 @@ export const RolePolicyRulesApiErrorSchema = s.object(
 export const ListRolePolicyRulesResponseSchema = s.object(
   {
     data: s.array(RolePolicyRuleRecordSchema),
-    meta: RolePolicyRulesResponseMetaSchema.optional(),
+    meta: RolePolicyRulesResponseMetaSchema.optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 /**
@@ -43,9 +43,9 @@ export const ListRolePolicyRulesResponseSchema = s.object(
 export const RolePolicyRuleResponseSchema = s.object(
   {
     data: RolePolicyRuleRecordSchema,
-    meta: RolePolicyRulesResponseMetaSchema.optional(),
+    meta: RolePolicyRulesResponseMetaSchema.optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 /**
@@ -54,7 +54,7 @@ export const RolePolicyRuleResponseSchema = s.object(
 export const RolePolicyRulesErrorResponseSchema = s.object(
   {
     error: RolePolicyRulesApiErrorSchema,
-    meta: RolePolicyRulesResponseMetaSchema.optional(),
+    meta: RolePolicyRulesResponseMetaSchema.optional()
   },
-  { strict: true },
+  { strict: true }
 );

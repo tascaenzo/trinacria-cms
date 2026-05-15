@@ -9,7 +9,7 @@ import type {
   PluginLifecyclePhase,
   PluginRuntime,
   PluginRuntimeRecord,
-  PluginState,
+  PluginState
 } from "../contracts/plugin-runtime.js";
 import type { PluginRuntimeStore } from "../contracts/plugin-runtime-store.js";
 import type { PluginManifestDependency } from "../contracts/plugin-manifest.js";
@@ -21,17 +21,11 @@ import {
   PluginLifecycleError,
   PluginManifestError,
   PluginRuntimeError,
-  PluginStateTransitionError,
+  PluginStateTransitionError
 } from "../errors/plugin-errors.js";
-import {
-  assertPluginCompatibility,
-  validatePluginManifest,
-} from "./plugin-manifest-validation.js";
+import { assertPluginCompatibility, validatePluginManifest } from "./plugin-manifest-validation.js";
 import { satisfiesVersion } from "./semver.js";
-import {
-  TrinacriaModuleBridge,
-  type TrinacriaModuleBridgeApp,
-} from "./trinacria-module-bridge.js";
+import { TrinacriaModuleBridge, type TrinacriaModuleBridgeApp } from "./trinacria-module-bridge.js";
 import { createInMemoryPluginRuntimeStore } from "./plugin-runtime-store.js";
 
 export interface InMemoryPluginRuntimeOptions {
@@ -44,17 +38,16 @@ export interface InMemoryPluginRuntimeOptions {
   eventBufferSize?: number;
 }
 
-const ALLOWED_TRANSITIONS: Readonly<Record<PluginState, readonly PluginState[]>> =
-  {
-    registered: ["loading", "disabled"],
-    loading: ["initializing", "failed"],
-    initializing: ["loaded", "failed"],
-    loaded: ["unloading", "disabled", "failed"],
-    unloading: ["unloaded", "failed", "disabled"],
-    failed: ["loading", "disabled", "unloaded"],
-    disabled: ["registered"],
-    unloaded: ["loading", "disabled", "registered"],
-  };
+const ALLOWED_TRANSITIONS: Readonly<Record<PluginState, readonly PluginState[]>> = {
+  registered: ["loading", "disabled"],
+  loading: ["initializing", "failed"],
+  initializing: ["loaded", "failed"],
+  loaded: ["unloading", "disabled", "failed"],
+  unloading: ["unloaded", "failed", "disabled"],
+  failed: ["loading", "disabled", "unloaded"],
+  disabled: ["registered"],
+  unloaded: ["loading", "disabled", "registered"]
+};
 
 /**
  * In-memory plugin runtime with strict lifecycle transitions,
@@ -87,15 +80,11 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     this.eventBufferSize = Math.max(1, options.eventBufferSize ?? 200);
 
     if (options.app) {
-      this.moduleBridge = new TrinacriaModuleBridge(
-        options.app as TrinacriaModuleBridgeApp,
-      );
+      this.moduleBridge = new TrinacriaModuleBridge(options.app as TrinacriaModuleBridgeApp);
     }
   }
 
-  async register(
-    plugin: KernelPluginDefinition | PluginRuntimeRecord["manifest"],
-  ): Promise<void> {
+  async register(plugin: KernelPluginDefinition | PluginRuntimeRecord["manifest"]): Promise<void> {
     await this.ensureRuntimeStoreInitialized();
     const startedAt = Date.now();
     let definition: KernelPluginDefinition;
@@ -107,7 +96,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       assertPluginCompatibility(manifest, this.coreVersion);
       this.assertDependencyGraphWithoutCycles(
         manifest.id,
-        this.extractRequiredDependencies(manifest),
+        this.extractRequiredDependencies(manifest)
       );
     } catch (error) {
       if (
@@ -124,7 +113,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
             : typeof plugin === "object" && plugin !== null && "id" in plugin
               ? plugin.id
               : undefined,
-        cause: this.errorToString(error),
+        cause: this.errorToString(error)
       });
     }
 
@@ -132,18 +121,18 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     if (existing && existing.state === "loaded") {
       throw new PluginStateTransitionError(
         `Cannot register plugin "${manifest.id}" while it is loaded`,
-        { pluginId: manifest.id, from: existing.state, action: "register" },
+        { pluginId: manifest.id, from: existing.state, action: "register" }
       );
     }
 
     if (existing?.state === "disabled") {
       this.definitions.set(manifest.id, {
         ...definition,
-        manifest,
+        manifest
       });
       this.records.set(manifest.id, {
         ...existing,
-        manifest,
+        manifest
       });
       await this.persistRecord(manifest.id);
       this.emitEvent({
@@ -153,14 +142,14 @@ export class InMemoryPluginRuntime implements PluginRuntime {
         durationMs: Date.now() - startedAt,
         stateBefore: existing.state,
         stateAfter: existing.state,
-        message: "Plugin metadata updated while disabled",
+        message: "Plugin metadata updated while disabled"
       });
       return;
     }
 
     this.definitions.set(manifest.id, {
       ...definition,
-      manifest,
+      manifest
     });
     this.records.set(manifest.id, {
       manifest,
@@ -170,7 +159,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       failedAt: undefined,
       disabledAt: undefined,
       disabledReason: undefined,
-      statusReason: this.createStatusReason("registered"),
+      statusReason: this.createStatusReason("registered")
     });
     await this.persistRecord(manifest.id);
     this.emitEvent({
@@ -179,7 +168,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       success: true,
       durationMs: Date.now() - startedAt,
       stateBefore: existing?.state,
-      stateAfter: "registered",
+      stateAfter: "registered"
     });
   }
 
@@ -189,19 +178,19 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     const startedAt = Date.now();
     if (this.activeLoads.has(pluginId)) {
       throw new PluginRuntimeError(`Plugin "${pluginId}" is already loading`, {
-        pluginId,
+        pluginId
       });
     }
     if (record.state === "disabled") {
       throw new PluginRuntimeError(`Plugin "${pluginId}" is disabled`, {
-        pluginId,
+        pluginId
       });
     }
     if (record.state === "loaded") return;
     if (!["registered", "unloaded", "failed"].includes(record.state)) {
       throw new PluginStateTransitionError(
         `Cannot load plugin "${pluginId}" from state "${record.state}"`,
-        { pluginId, from: record.state, action: "load" },
+        { pluginId, from: record.state, action: "load" }
       );
     }
 
@@ -221,14 +210,13 @@ export class InMemoryPluginRuntime implements PluginRuntime {
             durationMs: Date.now() - startedAt,
             stateBefore: record.state,
             stateAfter: this.getRecord(pluginId).state,
-            details: { attempts: attempt },
+            details: { attempts: attempt }
           });
           return;
         } catch (error) {
           await this.persistRecord(pluginId);
           lastError = error;
-          const shouldRetry =
-            attempt < attempts && this.isRetryableLoadError(error);
+          const shouldRetry = attempt < attempts && this.isRetryableLoadError(error);
           this.emitEvent({
             pluginId,
             action: "load",
@@ -241,8 +229,8 @@ export class InMemoryPluginRuntime implements PluginRuntime {
               attempt,
               attempts,
               retrying: shouldRetry,
-              cause: this.errorToString(error),
-            },
+              cause: this.errorToString(error)
+            }
           });
           if (!shouldRetry) throw error;
           await this.sleep(this.retryPolicy?.backoffMs ?? 0);
@@ -262,7 +250,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     if (record.state !== "loaded") {
       throw new PluginStateTransitionError(
         `Cannot unload plugin "${pluginId}" from state "${record.state}"`,
-        { pluginId, from: record.state, action: "unload" },
+        { pluginId, from: record.state, action: "unload" }
       );
     }
 
@@ -271,9 +259,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
 
     const definition = this.getDefinition(pluginId);
     const needsRuntimeContext = Boolean(definition.onUnload);
-    const context = needsRuntimeContext
-      ? this.createContext(definition.manifest)
-      : undefined;
+    const context = needsRuntimeContext ? this.createContext(definition.manifest) : undefined;
     const loadedModules = this.pluginModules.get(pluginId) ?? [];
 
     let phase: PluginLifecyclePhase = "unload";
@@ -284,19 +270,13 @@ export class InMemoryPluginRuntime implements PluginRuntime {
 
       if (this.moduleBridge) {
         phase = "rollback";
-        const errors = await this.moduleBridge.unregisterModules(
-          pluginId,
-          loadedModules,
-        );
+        const errors = await this.moduleBridge.unregisterModules(pluginId, loadedModules);
         if (errors.length > 0) {
-          throw new PluginLifecycleError(
-            `Module unregistration failed for plugin "${pluginId}"`,
-            {
-              pluginId,
-              stage: "unload",
-              errors: errors.map((error) => this.errorToString(error)),
-            },
-          );
+          throw new PluginLifecycleError(`Module unregistration failed for plugin "${pluginId}"`, {
+            pluginId,
+            stage: "unload",
+            errors: errors.map((error) => this.errorToString(error))
+          });
         }
       }
 
@@ -314,10 +294,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     const record = this.getRecord(pluginId);
     const startedAt = Date.now();
     if (record.state === "disabled") {
-      throw new PluginRuntimeError(
-        `Cannot reload disabled plugin "${pluginId}"`,
-        { pluginId },
-      );
+      throw new PluginRuntimeError(`Cannot reload disabled plugin "${pluginId}"`, { pluginId });
     }
 
     if (record.state === "loaded") {
@@ -330,7 +307,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       success: true,
       durationMs: Date.now() - startedAt,
       stateBefore: record.state,
-      stateAfter: this.getRecord(pluginId).state,
+      stateAfter: this.getRecord(pluginId).state
     });
   }
 
@@ -342,7 +319,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     if (record.state === "loaded") {
       throw new PluginStateTransitionError(
         `Cannot unregister plugin "${pluginId}" while it is loaded`,
-        { pluginId, from: record.state, action: "unregister" },
+        { pluginId, from: record.state, action: "unregister" }
       );
     }
 
@@ -359,8 +336,8 @@ export class InMemoryPluginRuntime implements PluginRuntime {
         `Plugin "${pluginId}" cannot be unregistered because onBeforeUnregister failed`,
         {
           pluginId,
-          cause: this.errorToString(error),
-        },
+          cause: this.errorToString(error)
+        }
       );
     }
 
@@ -375,7 +352,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       success: true,
       durationMs: Date.now() - startedAt,
       stateBefore: record.state,
-      stateAfter: undefined,
+      stateAfter: undefined
     });
   }
 
@@ -398,7 +375,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       action: "load-many",
       success: true,
       durationMs: Date.now() - startedAt,
-      details: { targets: ordered },
+      details: { targets: ordered }
     });
   }
 
@@ -414,14 +391,11 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       } catch (error) {
         this.markDisabled(pluginId, reason, error);
         await this.persistRecord(pluginId);
-        throw new PluginRuntimeError(
-          `Plugin "${pluginId}" disabled but unload produced errors`,
-          {
-            pluginId,
-            cause: this.errorToString(error),
-            reason,
-          },
-        );
+        throw new PluginRuntimeError(`Plugin "${pluginId}" disabled but unload produced errors`, {
+          pluginId,
+          cause: this.errorToString(error),
+          reason
+        });
       }
     }
 
@@ -434,7 +408,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       durationMs: Date.now() - startedAt,
       stateBefore: record.state,
       stateAfter: "disabled",
-      details: reason ? { reason } : undefined,
+      details: reason ? { reason } : undefined
     });
   }
 
@@ -446,7 +420,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     if (record.state !== "disabled") {
       throw new PluginStateTransitionError(
         `Cannot enable plugin "${pluginId}" from state "${record.state}"`,
-        { pluginId, from: record.state, action: "enable" },
+        { pluginId, from: record.state, action: "enable" }
       );
     }
 
@@ -455,7 +429,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       state: "registered",
       disabledAt: undefined,
       disabledReason: undefined,
-      statusReason: this.createStatusReason("registered"),
+      statusReason: this.createStatusReason("registered")
     });
     await this.persistRecord(pluginId);
     this.emitEvent({
@@ -464,21 +438,18 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       success: true,
       durationMs: Date.now() - startedAt,
       stateBefore: record.state,
-      stateAfter: "registered",
+      stateAfter: "registered"
     });
   }
 
   list(): readonly PluginRuntimeRecord[] {
     return Array.from(this.records.values()).map((record) => ({
       ...record,
-      state: record.state as PluginState,
+      state: record.state as PluginState
     }));
   }
 
-  events(options?: {
-    pluginId?: string;
-    limit?: number;
-  }): readonly PluginRuntimeEvent[] {
+  events(options?: { pluginId?: string; limit?: number }): readonly PluginRuntimeEvent[] {
     const normalizedPluginId = options?.pluginId?.trim();
     const filtered = normalizedPluginId
       ? this.eventLog.filter((event) => event.pluginId === normalizedPluginId)
@@ -495,7 +466,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     const nodes = this.list().map((item) => ({
       pluginId: item.manifest.id,
       state: item.state,
-      version: item.manifest.version,
+      version: item.manifest.version
     }));
     const edges: PluginDependencyGraphSnapshot["edges"] = [];
     const warnings: string[] = [];
@@ -521,12 +492,12 @@ export class InMemoryPluginRuntime implements PluginRuntime {
           optional: Boolean(dependency.optional),
           requiredRange: dependency.versionRange,
           status,
-          currentVersion: target?.manifest.version,
+          currentVersion: target?.manifest.version
         });
 
         if (dependency.optional && status !== "ok") {
           warnings.push(
-            `Optional dependency "${dependency.pluginId}" for plugin "${record.manifest.id}" is ${status}`,
+            `Optional dependency "${dependency.pluginId}" for plugin "${record.manifest.id}" is ${status}`
           );
         }
       }
@@ -535,7 +506,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     return {
       nodes,
       edges,
-      warnings,
+      warnings
     };
   }
 
@@ -544,7 +515,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     if (record.state === "loaded") return;
     if (record.state === "disabled") {
       throw new PluginRuntimeError(`Plugin "${pluginId}" is disabled`, {
-        pluginId,
+        pluginId
       });
     }
     if (stack.has(pluginId)) {
@@ -552,16 +523,14 @@ export class InMemoryPluginRuntime implements PluginRuntime {
         `Circular dependency detected while loading plugin "${pluginId}"`,
         {
           pluginId,
-          cyclePath: [...stack, pluginId],
-        },
+          cyclePath: [...stack, pluginId]
+        }
       );
     }
     stack.add(pluginId);
 
     const definition = this.getDefinition(pluginId);
-    const requiredDependencies = this.extractRequiredDependencies(
-      definition.manifest,
-    );
+    const requiredDependencies = this.extractRequiredDependencies(definition.manifest);
 
     try {
       this.assertRequiredDependenciesAvailable(pluginId, requiredDependencies);
@@ -583,7 +552,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     if ((definition.modules?.length ?? 0) > 0 && !this.moduleBridge) {
       const error = new PluginRuntimeError(
         `Plugin "${pluginId}" declares runtime modules but no ApplicationContext is configured`,
-        { pluginId },
+        { pluginId }
       );
       this.markFailed(pluginId, "load", error);
       throw error;
@@ -595,9 +564,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       Boolean(definition.onInit) ||
       Boolean(definition.onUnload) ||
       Boolean(this.lifecycleHooks?.onAfterLoad);
-    const context = needsRuntimeContext
-      ? this.createContext(definition.manifest)
-      : undefined;
+    const context = needsRuntimeContext ? this.createContext(definition.manifest) : undefined;
     let phase: PluginLifecyclePhase = "load";
     let onLoadCompleted = false;
     let registeredModules: readonly ModuleDefinition[] = [];
@@ -606,7 +573,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       if (this.moduleBridge) {
         registeredModules = await this.moduleBridge.registerModules(
           pluginId,
-          definition.modules ?? [],
+          definition.modules ?? []
         );
       }
 
@@ -632,7 +599,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
         lastError: undefined,
         lastFailurePhase: undefined,
         failedAt: undefined,
-        statusReason: this.createStatusReason("loaded"),
+        statusReason: this.createStatusReason("loaded")
       });
       this.pluginModules.set(pluginId, registeredModules);
     } catch (error) {
@@ -641,7 +608,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
         definition,
         context,
         registeredModules,
-        onLoadCompleted,
+        onLoadCompleted
       );
       this.markFailed(pluginId, phase, error);
 
@@ -654,7 +621,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     definition: KernelPluginDefinition,
     context: KernelPluginRuntimeContext | undefined,
     registeredModules: readonly ModuleDefinition[],
-    onLoadCompleted: boolean,
+    onLoadCompleted: boolean
   ): Promise<readonly unknown[]> {
     const rollbackErrors: unknown[] = [];
 
@@ -667,10 +634,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     }
 
     if (this.moduleBridge) {
-      const moduleErrors = await this.moduleBridge.unregisterModules(
-        pluginId,
-        registeredModules,
-      );
+      const moduleErrors = await this.moduleBridge.unregisterModules(pluginId, registeredModules);
       rollbackErrors.push(...moduleErrors);
     }
 
@@ -678,18 +642,18 @@ export class InMemoryPluginRuntime implements PluginRuntime {
   }
 
   private normalizeDefinition(
-    plugin: KernelPluginDefinition | PluginRuntimeRecord["manifest"],
+    plugin: KernelPluginDefinition | PluginRuntimeRecord["manifest"]
   ): KernelPluginDefinition {
     if ("manifest" in plugin) {
       return {
         ...plugin,
-        modules: plugin.modules ?? [],
+        modules: plugin.modules ?? []
       };
     }
 
     return {
       manifest: plugin,
-      modules: [],
+      modules: []
     };
   }
 
@@ -697,14 +661,14 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     if (!this.app) {
       throw new PluginRuntimeError(
         `Plugin "${manifest.id}" requires an ApplicationContext to run lifecycle hooks`,
-        { pluginId: manifest.id },
+        { pluginId: manifest.id }
       );
     }
 
     return {
       app: this.app,
       pluginId: manifest.id,
-      manifest,
+      manifest
     };
   }
 
@@ -712,7 +676,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     const definition = this.definitions.get(pluginId);
     if (!definition) {
       throw new PluginRuntimeError(`Plugin "${pluginId}" has no definition`, {
-        pluginId,
+        pluginId
       });
     }
     return definition;
@@ -722,7 +686,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     const record = this.records.get(pluginId);
     if (!record) {
       throw new PluginRuntimeError(`Plugin "${pluginId}" is not registered`, {
-        pluginId,
+        pluginId
       });
     }
     return record;
@@ -737,8 +701,8 @@ export class InMemoryPluginRuntime implements PluginRuntime {
         {
           pluginId,
           from: current.state,
-          to: nextState,
-        },
+          to: nextState
+        }
       );
     }
 
@@ -746,15 +710,11 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       ...current,
       state: nextState,
       statusReason: this.createStatusReason(nextState),
-      ...(nextState !== "loaded" ? { loadedAt: undefined } : {}),
+      ...(nextState !== "loaded" ? { loadedAt: undefined } : {})
     });
   }
 
-  private markFailed(
-    pluginId: string,
-    phase: PluginLifecyclePhase,
-    error: unknown,
-  ): void {
+  private markFailed(pluginId: string, phase: PluginLifecyclePhase, error: unknown): void {
     const current = this.getRecord(pluginId);
     this.records.set(pluginId, {
       ...current,
@@ -763,12 +723,11 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       failedAt: new Date(),
       lastFailurePhase: phase,
       failureCount: (current.failureCount ?? 0) + 1,
-      lastError:
-        error instanceof Error ? error : new Error(this.errorToString(error)),
+      lastError: error instanceof Error ? error : new Error(this.errorToString(error)),
       statusReason: this.createStatusReason("failed", {
         phase,
-        error: this.toDiagnostic(error),
-      }),
+        error: this.toDiagnostic(error)
+      })
     });
   }
 
@@ -787,14 +746,14 @@ export class InMemoryPluginRuntime implements PluginRuntime {
             ? new Error(this.errorToString(error))
             : current.lastError,
       statusReason: this.createStatusReason("disabled", {
-        reason: reason?.trim() || "operator_request",
-      }),
+        reason: reason?.trim() || "operator_request"
+      })
     });
   }
 
   private createStatusReason(
     state: PluginState,
-    details?: Record<string, unknown>,
+    details?: Record<string, unknown>
   ): PluginRuntimeRecord["statusReason"] {
     const messages: Record<PluginState, string> = {
       registered: "Plugin is registered and ready for manual load",
@@ -804,13 +763,13 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       unloading: "Plugin unload is releasing lifecycle hooks and modules",
       failed: "Plugin entered failed state during lifecycle execution",
       disabled: "Plugin is disabled and cannot be loaded",
-      unloaded: "Plugin is unloaded but still registered",
+      unloaded: "Plugin is unloaded but still registered"
     };
 
     return {
       code: `plugin_${state}`,
       message: messages[state],
-      ...(details ? { details } : {}),
+      ...(details ? { details } : {})
     };
   }
 
@@ -820,32 +779,32 @@ export class InMemoryPluginRuntime implements PluginRuntime {
         name: error.name,
         message: error.message,
         code: error.code,
-        ...(error.details ? { details: error.details } : {}),
+        ...(error.details ? { details: error.details } : {})
       };
     }
 
     if (error instanceof Error) {
       return {
         name: error.name,
-        message: error.message,
+        message: error.message
       };
     }
 
     return {
       name: "UnknownError",
-      message: String(error),
+      message: String(error)
     };
   }
 
   private extractRequiredDependencies(
-    manifest: PluginRuntimeRecord["manifest"],
+    manifest: PluginRuntimeRecord["manifest"]
   ): readonly PluginManifestDependency[] {
     return (manifest.dependencies ?? []).filter((dependency) => !dependency.optional);
   }
 
   private assertRequiredDependenciesAvailable(
     pluginId: string,
-    dependencies: readonly PluginManifestDependency[],
+    dependencies: readonly PluginManifestDependency[]
   ): void {
     for (const dependency of dependencies) {
       const dependencyRecord = this.records.get(dependency.pluginId);
@@ -855,8 +814,8 @@ export class InMemoryPluginRuntime implements PluginRuntime {
           {
             pluginId,
             dependencyId: dependency.pluginId,
-            requiredRange: dependency.versionRange,
-          },
+            requiredRange: dependency.versionRange
+          }
         );
       }
       if (!satisfiesVersion(dependencyRecord.manifest.version, dependency.versionRange)) {
@@ -866,8 +825,8 @@ export class InMemoryPluginRuntime implements PluginRuntime {
             pluginId,
             dependencyId: dependency.pluginId,
             requiredRange: dependency.versionRange,
-            currentVersion: dependencyRecord.manifest.version,
-          },
+            currentVersion: dependencyRecord.manifest.version
+          }
         );
       }
       if (dependencyRecord.state === "disabled") {
@@ -875,8 +834,8 @@ export class InMemoryPluginRuntime implements PluginRuntime {
           `Plugin "${pluginId}" depends on disabled plugin "${dependency.pluginId}"`,
           {
             pluginId,
-            dependencyId: dependency.pluginId,
-          },
+            dependencyId: dependency.pluginId
+          }
         );
       }
     }
@@ -899,8 +858,8 @@ export class InMemoryPluginRuntime implements PluginRuntime {
         `Cannot unload plugin "${pluginId}" while loaded dependents exist`,
         {
           pluginId,
-          loadedDependents,
-        },
+          loadedDependents
+        }
       );
     }
   }
@@ -921,28 +880,28 @@ export class InMemoryPluginRuntime implements PluginRuntime {
         `Cannot unregister plugin "${pluginId}" while registered dependents exist`,
         {
           pluginId,
-          registeredDependents,
-        },
+          registeredDependents
+        }
       );
     }
   }
 
   private assertDependencyGraphWithoutCycles(
     registeringPluginId: string,
-    registeringDependencies: readonly PluginManifestDependency[],
+    registeringDependencies: readonly PluginManifestDependency[]
   ): void {
     const graph = new Map<string, readonly string[]>();
 
     for (const [pluginId, record] of this.records) {
       graph.set(
         pluginId,
-        this.extractRequiredDependencies(record.manifest).map((dep) => dep.pluginId),
+        this.extractRequiredDependencies(record.manifest).map((dep) => dep.pluginId)
       );
     }
 
     graph.set(
       registeringPluginId,
-      registeringDependencies.map((dependency) => dependency.pluginId),
+      registeringDependencies.map((dependency) => dependency.pluginId)
     );
 
     const visiting = new Set<string>();
@@ -953,12 +912,9 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       if (visiting.has(node)) {
         const cycleStartIndex = path.indexOf(node);
         const cyclePath = [...path.slice(cycleStartIndex), node];
-        throw new PluginDependencyError(
-          `Circular dependency detected: ${cyclePath.join(" -> ")}`,
-          {
-            cyclePath,
-          },
-        );
+        throw new PluginDependencyError(`Circular dependency detected: ${cyclePath.join(" -> ")}`, {
+          cyclePath
+        });
       }
 
       visiting.add(node);
@@ -981,18 +937,15 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     phase: PluginLifecyclePhase,
     error: unknown,
     action: "load" | "unload",
-    rollbackErrors: readonly unknown[] = [],
+    rollbackErrors: readonly unknown[] = []
   ): PluginLifecycleError {
-    return new PluginLifecycleError(
-      `Plugin "${pluginId}" failed during ${action} (${phase})`,
-      {
-        pluginId,
-        phase,
-        action,
-        cause: this.errorToString(error),
-        rollbackErrors: rollbackErrors.map((item) => this.errorToString(item)),
-      },
-    );
+    return new PluginLifecycleError(`Plugin "${pluginId}" failed during ${action} (${phase})`, {
+      pluginId,
+      phase,
+      action,
+      cause: this.errorToString(error),
+      rollbackErrors: rollbackErrors.map((item) => this.errorToString(item))
+    });
   }
 
   private errorToString(error: unknown): string {
@@ -1000,13 +953,11 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     return String(error);
   }
 
-  private emitEvent(
-    event: Omit<PluginRuntimeEvent, "timestamp" | "sequence">,
-  ): void {
+  private emitEvent(event: Omit<PluginRuntimeEvent, "timestamp" | "sequence">): void {
     const payload: PluginRuntimeEvent = {
       ...event,
       sequence: ++this.eventSequence,
-      timestamp: new Date(),
+      timestamp: new Date()
     };
 
     this.eventLog.push(payload);
@@ -1019,9 +970,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
 
   private resolveAttempts(_state: PluginState): number {
     const retryMax = this.retryPolicy?.maxAttempts ?? 0;
-    const normalizedRetry = Number.isFinite(retryMax)
-      ? Math.max(0, Math.floor(retryMax))
-      : 0;
+    const normalizedRetry = Number.isFinite(retryMax) ? Math.max(0, Math.floor(retryMax)) : 0;
     return 1 + normalizedRetry;
   }
 
@@ -1059,7 +1008,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       if (visiting.has(pluginId)) {
         throw new PluginDependencyError(
           `Circular dependency detected while sorting plugin "${pluginId}"`,
-          { pluginId },
+          { pluginId }
         );
       }
 
@@ -1067,7 +1016,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       if (!record) {
         throw new PluginDependencyError(
           `Plugin "${pluginId}" is not registered and cannot be loaded`,
-          { pluginId },
+          { pluginId }
         );
       }
 
@@ -1076,7 +1025,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
         if (!this.records.has(dep.pluginId)) {
           throw new PluginDependencyError(
             `Plugin "${pluginId}" is missing required dependency "${dep.pluginId}"`,
-            { pluginId, dependencyId: dep.pluginId },
+            { pluginId, dependencyId: dep.pluginId }
           );
         }
         visit(dep.pluginId);

@@ -81,14 +81,14 @@ Riferimento decisionale: `0013 - Settings: sicurezza e ownership operativa`.
 
 Matrice sintetica:
 
-| Operazione | Admin bearer | Plugin signed owner | Plugin signed non-owner |
-| --- | --- | --- | --- |
-| List/get definitions | si | si | si |
-| Get resolved value | si | si | si |
-| Get masked secret metadata | si | si | no |
-| Write definition/value/secret | no diretto | si | no |
-| Reveal secret | no | si | no |
-| Export plugin snapshot | no diretto | si | no |
+| Operazione                    | Admin bearer | Plugin signed owner | Plugin signed non-owner |
+| ----------------------------- | ------------ | ------------------- | ----------------------- |
+| List/get definitions          | si           | si                  | si                      |
+| Get resolved value            | si           | si                  | si                      |
+| Get masked secret metadata    | si           | si                  | no                      |
+| Write definition/value/secret | no diretto   | si                  | no                      |
+| Reveal secret                 | no           | si                  | no                      |
+| Export plugin snapshot        | no diretto   | si                  | no                      |
 
 Conseguenza operativa:
 
@@ -98,17 +98,17 @@ Conseguenza operativa:
 
 ## 4. Endpoint HTTP
 
-| Metodo | Endpoint | Auth | Note |
-| --- | --- | --- | --- |
-| `GET` | `/v1/settings/definitions` | bearer admin oppure plugin signed | catalogo definizioni |
-| `GET` | `/v1/settings/definitions/:key` | bearer admin oppure plugin signed | dettaglio definizione |
-| `POST` | `/v1/settings/definitions` | plugin signed owner | upsert definition |
-| `GET` | `/v1/settings/values/:key` | bearer admin oppure plugin signed | valore risolto |
-| `PUT` | `/v1/settings/values/:key` | plugin signed owner | upsert valore non-secret |
-| `GET` | `/v1/settings/secrets/:key` | bearer admin oppure plugin signed owner | metadata mascherati |
-| `PUT` | `/v1/settings/secrets/:key` | plugin signed owner | upsert secret cifrato |
-| `POST` | `/v1/settings/secrets/:key/reveal` | plugin signed owner | plaintext owner-only |
-| `GET` | `/v1/settings/export/:pluginId` | plugin signed owner | snapshot namespace con secret mascherati |
+| Metodo | Endpoint                           | Auth                                    | Note                                     |
+| ------ | ---------------------------------- | --------------------------------------- | ---------------------------------------- |
+| `GET`  | `/v1/settings/definitions`         | bearer admin oppure plugin signed       | catalogo definizioni                     |
+| `GET`  | `/v1/settings/definitions/:key`    | bearer admin oppure plugin signed       | dettaglio definizione                    |
+| `POST` | `/v1/settings/definitions`         | plugin signed owner                     | upsert definition                        |
+| `GET`  | `/v1/settings/values/:key`         | bearer admin oppure plugin signed       | valore risolto                           |
+| `PUT`  | `/v1/settings/values/:key`         | plugin signed owner                     | upsert valore non-secret                 |
+| `GET`  | `/v1/settings/secrets/:key`        | bearer admin oppure plugin signed owner | metadata mascherati                      |
+| `PUT`  | `/v1/settings/secrets/:key`        | plugin signed owner                     | upsert secret cifrato                    |
+| `POST` | `/v1/settings/secrets/:key/reveal` | plugin signed owner                     | plaintext owner-only                     |
+| `GET`  | `/v1/settings/export/:pluginId`    | plugin signed owner                     | snapshot namespace con secret mascherati |
 
 Errori attesi:
 
@@ -218,7 +218,7 @@ Esempio lettura:
 
 ```ts
 const response = await cms.settings.getSettingValueByKey({
-  path: { key: "core-pack:site:name" },
+  path: { key: "core-pack:site:name" }
 });
 
 console.log(response.data.value);
@@ -232,17 +232,17 @@ await cms.settings.upsertSettingValue(
     path: { key: "core-pack:site:name" },
     body: {
       value: "Trinacria Editorial",
-      updatedBy: "core-pack:init",
-    },
+      updatedBy: "core-pack:init"
+    }
   },
   {
     headers: {
       "x-cms-plugin-id": "core-pack",
       "x-cms-plugin-ts": "<unix-ts>",
       "x-cms-plugin-nonce": "<nonce>",
-      "x-cms-plugin-signature": "<signature>",
-    },
-  },
+      "x-cms-plugin-signature": "<signature>"
+    }
+  }
 );
 ```
 

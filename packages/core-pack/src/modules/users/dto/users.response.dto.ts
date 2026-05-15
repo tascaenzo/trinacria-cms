@@ -10,9 +10,9 @@ export const UsersResponseMetaSchema = s.object(
     pluginId: s.literal(CORE_PACK_PLUGIN_ID).optional(),
     count: s.number({ int: true }).optional(),
     limit: s.number({ int: true }).optional(),
-    offset: s.number({ int: true }).optional(),
+    offset: s.number({ int: true }).optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 /**
@@ -21,9 +21,9 @@ export const UsersResponseMetaSchema = s.object(
 export const UsersApiErrorSchema = s.object(
   {
     code: s.string({ trim: true, minLength: 1 }),
-    message: s.string({ trim: true, minLength: 1 }),
+    message: s.string({ trim: true, minLength: 1 })
   },
-  { strict: true },
+  { strict: true }
 );
 
 /**
@@ -32,9 +32,9 @@ export const UsersApiErrorSchema = s.object(
 export const ListUsersResponseSchema = s.object(
   {
     data: s.array(UserRecordSchema),
-    meta: UsersResponseMetaSchema.optional(),
+    meta: UsersResponseMetaSchema.optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 /**
@@ -43,9 +43,9 @@ export const ListUsersResponseSchema = s.object(
 export const UserResponseSchema = s.object(
   {
     data: UserRecordSchema,
-    meta: UsersResponseMetaSchema.optional(),
+    meta: UsersResponseMetaSchema.optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 /**
@@ -54,7 +54,7 @@ export const UserResponseSchema = s.object(
 export const UsersErrorResponseSchema = s.object(
   {
     error: UsersApiErrorSchema,
-    meta: UsersResponseMetaSchema.optional(),
+    meta: UsersResponseMetaSchema.optional()
   },
-  { strict: true },
+  { strict: true }
 );

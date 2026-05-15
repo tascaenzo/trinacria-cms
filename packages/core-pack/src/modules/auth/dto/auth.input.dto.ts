@@ -6,10 +6,9 @@ import { s, type Infer } from "@trinacria-cms/kernel";
 export const LoginWithPasswordInputSchema = s.object(
   {
     email: s.string({ trim: true, toLowerCase: true, email: true }),
-    password: s.string({ minLength: 1, maxLength: 200 }),
+    password: s.string({ minLength: 1, maxLength: 200 })
   },
-  { strict: true },
+  { strict: true }
 );
 
 export type LoginWithPasswordInput = Infer<typeof LoginWithPasswordInputSchema>;
-

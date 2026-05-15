@@ -1,8 +1,6 @@
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 import type { UserRecord } from "../users/users.schemas.js";
-import {
-  type InstallationStateRecord,
-} from "../installation/installation.schemas.js";
+import { type InstallationStateRecord } from "../installation/installation.schemas.js";
 import { InstallationStateRepository } from "../installation/installation-state.repository.js";
 import { LocalCredentialsRepository } from "../installation/local-credentials.repository.js";
 import { PasswordHashingService } from "../installation/password-hashing.service.js";
@@ -45,7 +43,7 @@ export class JwtAuthService {
     private readonly users: AuthUsersRepository,
     private readonly localCredentials: LocalCredentialsRepository,
     private readonly installationState: InstallationStateRepository,
-    private readonly passwordHashing: PasswordHashingService,
+    private readonly passwordHashing: PasswordHashingService
   ) {
     this.jwtSecret = readJwtSecretFromEnv();
     this.jwtKey = createJwtKey(this.jwtSecret);
@@ -53,10 +51,7 @@ export class JwtAuthService {
     this.refreshTtlSeconds = readRefreshTtlSecondsFromEnv();
   }
 
-  async loginWithPassword(input: {
-    email: string;
-    password: string;
-  }): Promise<LoginResult> {
+  async loginWithPassword(input: { email: string; password: string }): Promise<LoginResult> {
     const installation = await this.assertInstallationCompleted();
 
     const user = await this.users.findByEmail(input.email);
@@ -72,7 +67,7 @@ export class JwtAuthService {
     const matches = await this.passwordHashing.verifyPassword(input.password, {
       algorithm: credentials.algorithm,
       passwordHash: credentials.passwordHash,
-      passwordSalt: credentials.passwordSalt,
+      passwordSalt: credentials.passwordSalt
     });
     if (!matches) {
       throw new JwtAuthError("auth_invalid_credentials", "Invalid credentials");
@@ -88,9 +83,9 @@ export class JwtAuthService {
         pluginId: "core-pack",
         isAdmin: Boolean(installation.adminUserId && installation.adminUserId === user.id),
         iat: nowSeconds,
-        exp: accessExp,
+        exp: accessExp
       },
-      this.jwtKey,
+      this.jwtKey
     );
     const refreshToken = await createJwtToken(
       {
@@ -99,9 +94,9 @@ export class JwtAuthService {
         pluginId: "core-pack",
         isAdmin: Boolean(installation.adminUserId && installation.adminUserId === user.id),
         iat: nowSeconds,
-        exp: refreshExp,
+        exp: refreshExp
       },
-      this.jwtKey,
+      this.jwtKey
     );
     const expiresAt = new Date(accessExp * 1000).toISOString();
     const refreshExpiresAt = new Date(refreshExp * 1000).toISOString();
@@ -112,13 +107,13 @@ export class JwtAuthService {
       tokenType: "Bearer",
       expiresAt,
       refreshExpiresAt,
-      user,
+      user
     };
   }
 
   async authenticateBearerToken(
     token: string,
-    options?: { requireAdmin?: boolean },
+    options?: { requireAdmin?: boolean }
   ): Promise<UserRecord> {
     const normalizedToken = token.trim();
     if (!normalizedToken) {
@@ -140,7 +135,7 @@ export class JwtAuthService {
       if (!state.adminUserId || state.adminUserId !== user.id) {
         throw new JwtAuthError(
           "auth_forbidden_admin_required",
-          "Administrator privileges are required",
+          "Administrator privileges are required"
         );
       }
     }
@@ -180,7 +175,7 @@ export class JwtAuthService {
     if (!state.installed) {
       throw new JwtAuthError(
         "installation_not_completed",
-        "CMS installation has not been completed",
+        "CMS installation has not been completed"
       );
     }
     return state;
@@ -227,14 +222,11 @@ function createJwtKey(secret: string): Uint8Array {
   return new TextEncoder().encode(secret);
 }
 
-async function createJwtToken(
-  claims: JwtClaims,
-  secret: Uint8Array,
-): Promise<string> {
+async function createJwtToken(claims: JwtClaims, secret: Uint8Array): Promise<string> {
   return new SignJWT({
     kind: claims.kind,
     pluginId: claims.pluginId,
-    isAdmin: claims.isAdmin,
+    isAdmin: claims.isAdmin
   })
     .setProtectedHeader({ alg: "HS256", typ: "JWT" })
     .setSubject(claims.sub)
@@ -243,13 +235,10 @@ async function createJwtToken(
     .sign(secret);
 }
 
-async function verifyJwtToken(
-  token: string,
-  secret: Uint8Array,
-): Promise<JwtClaims> {
+async function verifyJwtToken(token: string, secret: Uint8Array): Promise<JwtClaims> {
   try {
     const { payload, protectedHeader } = await jwtVerify<JwtClaims>(token, secret, {
-      algorithms: ["HS256"],
+      algorithms: ["HS256"]
     });
 
     if (protectedHeader.typ !== "JWT") {
@@ -267,7 +256,7 @@ async function verifyJwtToken(
       error !== null &&
       "code" in error &&
       typeof (error as { code?: unknown }).code === "string"
-        ? ((error as { code: string }).code)
+        ? (error as { code: string }).code
         : "";
     const message = error instanceof Error ? error.message.toLowerCase() : "";
 
@@ -282,7 +271,9 @@ async function verifyJwtToken(
 function normalizeClaims(payload: Partial<JwtClaims>): JwtClaims {
   const kind = payload.kind === "refresh" ? "refresh" : payload.kind === "access" ? "access" : "";
   const sub = String(payload.sub ?? "").trim();
-  const pluginId = String(payload.pluginId ?? "").trim().toLowerCase();
+  const pluginId = String(payload.pluginId ?? "")
+    .trim()
+    .toLowerCase();
   const iat = Number(payload.iat);
   const exp = Number(payload.exp);
   const isAdmin = Boolean(payload.isAdmin);
@@ -297,6 +288,6 @@ function normalizeClaims(payload: Partial<JwtClaims>): JwtClaims {
     pluginId,
     isAdmin,
     iat,
-    exp,
+    exp
   };
 }

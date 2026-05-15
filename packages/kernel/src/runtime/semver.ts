@@ -5,8 +5,7 @@ interface ParsedVersion {
   prerelease: readonly string[];
 }
 
-const VERSION_REGEX =
-  /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z-.]+))?(?:\+[0-9A-Za-z-.]+)?$/;
+const VERSION_REGEX = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z-.]+))?(?:\+[0-9A-Za-z-.]+)?$/;
 
 function parseVersion(version: string): ParsedVersion | null {
   const match = VERSION_REGEX.exec(version.trim());
@@ -18,14 +17,11 @@ function parseVersion(version: string): ParsedVersion | null {
     major: Number(match[1]),
     minor: Number(match[2]),
     patch: Number(match[3]),
-    prerelease,
+    prerelease
   };
 }
 
-function comparePrerelease(
-  left: readonly string[],
-  right: readonly string[],
-): number {
+function comparePrerelease(left: readonly string[], right: readonly string[]): number {
   if (left.length === 0 && right.length === 0) return 0;
   if (left.length === 0) return 1;
   if (right.length === 0) return -1;
@@ -130,7 +126,7 @@ export function satisfiesVersion(version: string, range: string): boolean {
     group
       .split(/\s+/)
       .filter(Boolean)
-      .every((comparator) => evaluateComparator(version, comparator)),
+      .every((comparator) => evaluateComparator(version, comparator))
   );
 }
 

@@ -2,19 +2,16 @@ import {
   createPluginDbScope,
   isValidPermissionKey,
   type DbAdapter,
-  type PluginDbScope,
+  type PluginDbScope
 } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import {
   CreatePermissionInputSchema,
   type CreatePermissionInput,
   type UpdatePermissionStatusInput,
-  UpdatePermissionStatusInputSchema,
+  UpdatePermissionStatusInputSchema
 } from "./dto/permissions.input.dto.js";
-import {
-  PermissionRecordSchema,
-  type PermissionRecord,
-} from "./permissions.schemas.js";
+import { PermissionRecordSchema, type PermissionRecord } from "./permissions.schemas.js";
 
 const PERMISSIONS_ENTITY_NAME = "permissions";
 
@@ -33,13 +30,11 @@ export class PermissionsRepository {
     const record = {
       key: parsedInput.key,
       displayName: parsedInput.displayName,
-      ...(parsedInput.description
-        ? { description: parsedInput.description }
-        : {}),
+      ...(parsedInput.description ? { description: parsedInput.description } : {}),
       sourcePluginId: CORE_PACK_PLUGIN_ID,
       status: "active" as const,
       createdAt: now,
-      updatedAt: now,
+      updatedAt: now
     };
 
     const created = await this.repository().insertOne(record);
@@ -49,7 +44,7 @@ export class PermissionsRepository {
   async findById(id: string): Promise<PermissionRecord | null> {
     const found = await this.repository().findOne({
       filter: { id },
-      parse: (value: unknown) => this.parsePermissionRecord(value),
+      parse: (value: unknown) => this.parsePermissionRecord(value)
     });
     return found;
   }
@@ -58,48 +53,43 @@ export class PermissionsRepository {
     const normalizedKey = key.trim().toLowerCase();
     const found = await this.repository().findOne({
       filter: { key: normalizedKey },
-      parse: (value: unknown) => this.parsePermissionRecord(value),
+      parse: (value: unknown) => this.parsePermissionRecord(value)
     });
     return found;
   }
 
-  async list(options?: {
-    limit?: number;
-    offset?: number;
-  }): Promise<readonly PermissionRecord[]> {
+  async list(options?: { limit?: number; offset?: number }): Promise<readonly PermissionRecord[]> {
     const permissions = await this.repository().findMany({
       limit: options?.limit,
       offset: options?.offset,
       sort: { createdAt: "desc" },
-      parse: (value: unknown) => this.parsePermissionRecord(value),
+      parse: (value: unknown) => this.parsePermissionRecord(value)
     });
     return permissions;
   }
 
-  async listBySourcePlugin(
-    sourcePluginId: string,
-  ): Promise<readonly PermissionRecord[]> {
+  async listBySourcePlugin(sourcePluginId: string): Promise<readonly PermissionRecord[]> {
     const permissions = await this.repository().findMany({
       filter: {
-        sourcePluginId: sourcePluginId.trim().toLowerCase(),
+        sourcePluginId: sourcePluginId.trim().toLowerCase()
       },
       sort: { createdAt: "desc" },
-      parse: (value: unknown) => this.parsePermissionRecord(value),
+      parse: (value: unknown) => this.parsePermissionRecord(value)
     });
     return permissions;
   }
 
   async updateStatus(
     id: string,
-    input: UpdatePermissionStatusInput,
+    input: UpdatePermissionStatusInput
   ): Promise<PermissionRecord | null> {
     const parsedInput = UpdatePermissionStatusInputSchema.parse(input);
     const updated = await this.repository().updateOne(
       { filter: { id } },
       {
         status: parsedInput.status,
-        updatedAt: new Date().toISOString(),
-      },
+        updatedAt: new Date().toISOString()
+      }
     );
 
     if (!updated) return null;
@@ -116,13 +106,9 @@ export class PermissionsRepository {
     const normalizedOwner = input.sourcePluginId.trim().toLowerCase();
     const existing = await this.findByKey(normalizedKey);
 
-    if (
-      existing &&
-      existing.sourcePluginId &&
-      existing.sourcePluginId !== normalizedOwner
-    ) {
+    if (existing && existing.sourcePluginId && existing.sourcePluginId !== normalizedOwner) {
       throw new Error(
-        `Permission "${normalizedKey}" is owned by plugin "${existing.sourcePluginId}"`,
+        `Permission "${normalizedKey}" is owned by plugin "${existing.sourcePluginId}"`
       );
     }
 
@@ -131,13 +117,11 @@ export class PermissionsRepository {
       const created = await this.repository().insertOne({
         key: normalizedKey,
         displayName: input.displayName.trim(),
-        ...(input.description?.trim()
-          ? { description: input.description.trim() }
-          : {}),
+        ...(input.description?.trim() ? { description: input.description.trim() } : {}),
         sourcePluginId: normalizedOwner,
         status: "active" as const,
         createdAt: now,
-        updatedAt: now,
+        updatedAt: now
       });
       return this.parsePermissionRecord(created);
     }
@@ -146,12 +130,10 @@ export class PermissionsRepository {
       { filter: { id: existing.id } },
       {
         displayName: input.displayName.trim(),
-        ...(input.description?.trim()
-          ? { description: input.description.trim() }
-          : {}),
+        ...(input.description?.trim() ? { description: input.description.trim() } : {}),
         sourcePluginId: normalizedOwner,
-        updatedAt: new Date().toISOString(),
-      },
+        updatedAt: new Date().toISOString()
+      }
     );
 
     if (!updated) {
@@ -181,10 +163,7 @@ export class PermissionsRepository {
     if (typeof normalized.key === "string") {
       normalized.key = this.normalizePermissionKey(normalized.key);
     }
-    if (
-      normalized.sourcePluginId === undefined ||
-      normalized.sourcePluginId === null
-    ) {
+    if (normalized.sourcePluginId === undefined || normalized.sourcePluginId === null) {
       normalized.sourcePluginId = CORE_PACK_PLUGIN_ID;
     }
 

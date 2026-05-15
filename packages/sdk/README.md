@@ -44,7 +44,7 @@ import { createCmsSdkClient } from "@trinacria-cms/sdk";
 
 const client = createCmsSdkClient({
   baseUrl: "http://localhost:3000",
-  credentials: "include",
+  credentials: "include"
 });
 
 const status = await client.installation.getInstallationStatus();
@@ -59,13 +59,13 @@ import { createCmsSdkClient } from "@trinacria-cms/sdk";
 
 const client = createCmsSdkClient({
   baseUrl: "http://localhost:3000",
-  fetch,
+  fetch
 });
 
 const me = await client.auth.getAuthenticatedUser({
   headers: {
-    authorization: "Bearer <token>",
-  },
+    authorization: "Bearer <token>"
+  }
 });
 
 const capabilities = await client.system.listInstalledCapabilities();
@@ -86,16 +86,16 @@ const client = createCmsSdkClient({
         method: input.method,
         headers: input.headers,
         data: input.body,
-        withCredentials: input.credentials === "include",
+        withCredentials: input.credentials === "include"
       });
 
       return {
         status: response.status,
         headers: response.headers,
-        data: response.data,
+        data: response.data
       };
-    },
-  },
+    }
+  }
 });
 ```
 
@@ -186,7 +186,7 @@ import { createCmsSdkClient } from "@trinacria-cms/sdk";
 
 export const cms = createCmsSdkClient({
   baseUrl: "http://127.0.0.1:3000",
-  credentials: "include",
+  credentials: "include"
 });
 ```
 
@@ -217,25 +217,17 @@ Kernel endpoints:
 Example:
 
 ```ts
-import {
-  createCmsSdkClient,
-  hasCapability,
-  isPluginInstalled,
-} from "@trinacria-cms/sdk";
+import { createCmsSdkClient, hasCapability, isPluginInstalled } from "@trinacria-cms/sdk";
 
 const cms = createCmsSdkClient({
-  baseUrl: "http://127.0.0.1:3000",
+  baseUrl: "http://127.0.0.1:3000"
 });
 
 const plugins = await cms.system.listInstalledPlugins();
 const capabilities = await cms.system.listInstalledCapabilities();
 
 const hasCorePack = isPluginInstalled(plugins.data, "core-pack");
-const canManageSettings = hasCapability(
-  capabilities.data,
-  "core-pack",
-  "settings.service",
-);
+const canManageSettings = hasCapability(capabilities.data, "core-pack", "settings.service");
 ```
 
 ## Authentication modes
@@ -253,7 +245,7 @@ import { createCmsSdkClient } from "@trinacria-cms/sdk";
 
 const cms = createCmsSdkClient({
   baseUrl: "http://127.0.0.1:3000",
-  apiKey: "cms_sk_lookup_secret",
+  apiKey: "cms_sk_lookup_secret"
 });
 
 const health = await cms.kernelHealth.getKernelHealth();

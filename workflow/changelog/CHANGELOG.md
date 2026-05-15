@@ -1,5 +1,16 @@
 # Changelog Operativo
 
+## 2026-05-15
+
+- Chiusa formalmente la milestone `M3.5 - Design System Backoffice` e `M3.6 - Design System Accessibility Hardening`.
+- Spostati 12 task da `in-progress` a `done` (8 M3.5 + 3 M3.6 hardening + 1 M3.6 docs).
+- Aggiunto `**/storybook-static/**` a eslint ignores per evitare che lint analizzi build artifact.
+- Aggiunto `**/storybook-static/` e `packages/sdk/src/generated/` a `.prettierignore`.
+- Corretti 12 errori lint in `trinacria-ui` (import non usati, interfacce vuote).
+- Allineata formattazione su 317 file con `prettier --write`.
+- Verificato che `npm run build`, `npm run lint`, `npm run format`, `npm run typecheck` e `npm run test` passino su tutti i workspace.
+- La milestone `M4 - Content Model V1` e ora il prossimo blocco di lavoro disponibile.
+
 ## 2026-04-11
 
 - Aperta la milestone `M3.6 - Design System Accessibility Hardening` per consolidare accessibilita di form controls, dialog e picker custom di `packages/trinacria-ui` prima delle prossime milestone di prodotto.

@@ -2,16 +2,13 @@ import { s } from "@trinacria/schema";
 import type { DbAdapter } from "../contracts/db-adapter.js";
 import type {
   PersistedPluginRuntimeRecord,
-  PluginRuntimeStore,
+  PluginRuntimeStore
 } from "../contracts/plugin-runtime-store.js";
 import type { PluginManifest } from "../contracts/plugin-manifest.js";
 import type { PluginRuntimeDiagnostic, PluginRuntimeRecord } from "../contracts/plugin-runtime.js";
 import { DbAdapterError } from "../errors/db-errors.js";
 import { CoreError } from "../errors/core-error.js";
-import {
-  defineEntity,
-  type EntityRegistry,
-} from "./entity-registry.js";
+import { defineEntity, type EntityRegistry } from "./entity-registry.js";
 import { validatePluginManifest } from "./plugin-manifest-validation.js";
 
 const PluginRuntimeStateSchema = s.enum([
@@ -22,7 +19,7 @@ const PluginRuntimeStateSchema = s.enum([
   "unloading",
   "failed",
   "disabled",
-  "unloaded",
+  "unloaded"
 ] as const);
 
 const PluginLifecyclePhaseSchema = s.enum([
@@ -31,7 +28,7 @@ const PluginLifecyclePhaseSchema = s.enum([
   "load",
   "init",
   "unload",
-  "rollback",
+  "rollback"
 ] as const);
 
 const PersistedPluginRuntimeRecordSchema = s.object(
@@ -47,29 +44,31 @@ const PersistedPluginRuntimeRecordSchema = s.object(
     lastErrorName: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
     lastErrorMessage: s.string({ trim: true, minLength: 1, maxLength: 2000 }).optional(),
     lastErrorDetails: s.object({}, { strict: false }).optional(),
-    statusReason: s.object(
-      {
-        code: s.string({ trim: true, minLength: 1, maxLength: 120 }),
-        message: s.string({ trim: true, minLength: 1, maxLength: 2000 }),
-      },
-      { strict: false },
-    ).optional(),
+    statusReason: s
+      .object(
+        {
+          code: s.string({ trim: true, minLength: 1, maxLength: 120 }),
+          message: s.string({ trim: true, minLength: 1, maxLength: 2000 })
+        },
+        { strict: false }
+      )
+      .optional(),
     disabledReason: s.string({ trim: true, minLength: 1, maxLength: 1000 }).optional(),
     manifest: s.object(
       {
         id: s.string({ trim: true, minLength: 1 }),
         version: s.string({ trim: true, minLength: 1 }),
-        requiresCore: s.string({ trim: true, minLength: 1 }),
+        requiresCore: s.string({ trim: true, minLength: 1 })
       },
-      { strict: false },
+      { strict: false }
     ),
     loadedAt: s.dateTimeString().optional(),
     failedAt: s.dateTimeString().optional(),
     disabledAt: s.dateTimeString().optional(),
     createdAt: s.dateTimeString(),
-    updatedAt: s.dateTimeString(),
+    updatedAt: s.dateTimeString()
   },
-  { strict: false },
+  { strict: false }
 );
 
 /**
@@ -82,26 +81,26 @@ export const INSTALLED_PLUGINS_ENTITY = defineEntity({
     {
       fields: { id: 1 },
       unique: true,
-      name: "installed_plugins_id_unique",
+      name: "installed_plugins_id_unique"
     },
     {
       fields: { pluginId: 1 },
       unique: true,
-      name: "installed_plugins_plugin_id_unique",
+      name: "installed_plugins_plugin_id_unique"
     },
     {
       fields: { state: 1 },
-      name: "installed_plugins_state_idx",
+      name: "installed_plugins_state_idx"
     },
     {
       fields: { enabled: 1 },
-      name: "installed_plugins_enabled_idx",
+      name: "installed_plugins_enabled_idx"
     },
     {
       fields: { updatedAt: -1 },
-      name: "installed_plugins_updated_at_desc_idx",
-    },
-  ] as const,
+      name: "installed_plugins_updated_at_desc_idx"
+    }
+  ] as const
 });
 
 const DEFAULT_RUNTIME_STORE_NAMESPACE = "kernel";
@@ -132,7 +131,7 @@ export class InMemoryPluginRuntimeStore implements PluginRuntimeStore {
       record,
       current?.createdAt ?? nowIso,
       nowIso,
-      current?.id,
+      current?.id
     );
     this.records.set(record.manifest.id, persisted);
   }
@@ -143,7 +142,7 @@ export class InMemoryPluginRuntimeStore implements PluginRuntimeStore {
 
   async list(): Promise<readonly PersistedPluginRuntimeRecord[]> {
     return Array.from(this.records.values()).sort((left, right) =>
-      right.updatedAt.localeCompare(left.updatedAt),
+      right.updatedAt.localeCompare(left.updatedAt)
     );
   }
 }
@@ -159,8 +158,7 @@ export class DbPluginRuntimeStore implements PluginRuntimeStore {
 
   constructor(private readonly options: DbPluginRuntimeStoreOptions) {
     this.namespacePluginId =
-      options.namespacePluginId?.trim().toLowerCase() ||
-      DEFAULT_RUNTIME_STORE_NAMESPACE;
+      options.namespacePluginId?.trim().toLowerCase() || DEFAULT_RUNTIME_STORE_NAMESPACE;
     this.now = options.now ?? (() => new Date());
   }
 
@@ -171,7 +169,7 @@ export class DbPluginRuntimeStore implements PluginRuntimeStore {
 
     if (supportsIndexSetup(this.options.dbAdapter)) {
       await this.options.dbAdapter.ensureIndexes(this.namespacePluginId, [
-        INSTALLED_PLUGINS_ENTITY.entityName,
+        INSTALLED_PLUGINS_ENTITY.entityName
       ]);
     }
 
@@ -183,21 +181,18 @@ export class DbPluginRuntimeStore implements PluginRuntimeStore {
     const repository = this.getRepository();
     const existing = await repository.findOne({
       filter: { pluginId: record.manifest.id },
-      parse: (value) => parsePersistedRecord(value),
+      parse: (value) => parsePersistedRecord(value)
     });
     const nowIso = this.now().toISOString();
     const payload = toPersistedRuntimeRecord(
       record,
       existing?.createdAt ?? nowIso,
       nowIso,
-      existing?.id,
+      existing?.id
     );
 
     if (existing) {
-      await repository.updateOne(
-        { filter: { pluginId: record.manifest.id } },
-        payload,
-      );
+      await repository.updateOne({ filter: { pluginId: record.manifest.id } }, payload);
       return;
     }
 
@@ -215,14 +210,14 @@ export class DbPluginRuntimeStore implements PluginRuntimeStore {
     const repository = this.getRepository();
     return repository.findMany({
       sort: { updatedAt: "desc" },
-      parse: (value) => parsePersistedRecord(value),
+      parse: (value) => parsePersistedRecord(value)
     });
   }
 
   private getRepository() {
     return this.options.dbAdapter.repository<PersistedPluginRuntimeRecord>(
       INSTALLED_PLUGINS_ENTITY.entityName,
-      { pluginId: this.namespacePluginId },
+      { pluginId: this.namespacePluginId }
     );
   }
 }
@@ -234,9 +229,7 @@ export class DeferredPluginRuntimeStore implements PluginRuntimeStore {
   private resolvedStore?: PluginRuntimeStore;
   private loading?: Promise<PluginRuntimeStore>;
 
-  constructor(
-    private readonly factory: () => Promise<PluginRuntimeStore> | PluginRuntimeStore,
-  ) {}
+  constructor(private readonly factory: () => Promise<PluginRuntimeStore> | PluginRuntimeStore) {}
 
   async initialize(): Promise<void> {
     const store = await this.getStore();
@@ -278,7 +271,7 @@ function toPersistedRuntimeRecord(
   record: PluginRuntimeRecord,
   createdAt: string,
   updatedAt: string,
-  id?: string,
+  id?: string
 ): PersistedPluginRuntimeRecord {
   const persisted: PersistedPluginRuntimeRecord = {
     pluginId: record.manifest.id,
@@ -288,7 +281,7 @@ function toPersistedRuntimeRecord(
     failureCount: record.failureCount ?? 0,
     manifest: record.manifest,
     createdAt,
-    updatedAt,
+    updatedAt
   };
 
   if (id) {
@@ -329,9 +322,7 @@ function toPersistedRuntimeRecord(
   return persisted;
 }
 
-function supportsIndexSetup(
-  adapter: DbAdapter,
-): adapter is DbAdapter & {
+function supportsIndexSetup(adapter: DbAdapter): adapter is DbAdapter & {
   ensureIndexes(pluginId: string, entityNames: readonly string[]): Promise<void>;
 } {
   const maybeAdapter = adapter as { ensureIndexes?: unknown };
@@ -343,25 +334,23 @@ export function createInMemoryPluginRuntimeStore(): PluginRuntimeStore {
 }
 
 export function createDbPluginRuntimeStore(
-  options: DbPluginRuntimeStoreOptions,
+  options: DbPluginRuntimeStoreOptions
 ): PluginRuntimeStore {
   return new DbPluginRuntimeStore(options);
 }
 
 export function createDeferredPluginRuntimeStore(
-  factory: () => Promise<PluginRuntimeStore> | PluginRuntimeStore,
+  factory: () => Promise<PluginRuntimeStore> | PluginRuntimeStore
 ): PluginRuntimeStore {
   return new DeferredPluginRuntimeStore(factory);
 }
 
-export function assertInstalledPluginRecordShape(
-  value: unknown,
-): PersistedPluginRuntimeRecord {
+export function assertInstalledPluginRecordShape(value: unknown): PersistedPluginRuntimeRecord {
   try {
     return parsePersistedRecord(value);
   } catch (error) {
     throw new DbAdapterError("Invalid installed plugin runtime record shape", {
-      cause: error instanceof Error ? error.message : String(error),
+      cause: error instanceof Error ? error.message : String(error)
     });
   }
 }
@@ -373,7 +362,7 @@ function parsePersistedRecord(value: unknown): PersistedPluginRuntimeRecord {
 
   return {
     ...(parsed as Omit<PersistedPluginRuntimeRecord, "manifest">),
-    manifest,
+    manifest
   };
 }
 
@@ -385,9 +374,7 @@ function normalizePersistedManifest(record: Record<string, unknown>): PluginMani
   return validatePluginManifest(rawManifest as PluginManifest);
 }
 
-function toRuntimeDiagnostic(
-  error: Error | undefined,
-): PluginRuntimeDiagnostic | undefined {
+function toRuntimeDiagnostic(error: Error | undefined): PluginRuntimeDiagnostic | undefined {
   if (!error) {
     return undefined;
   }
@@ -397,12 +384,12 @@ function toRuntimeDiagnostic(
       name: error.name,
       message: error.message,
       code: error.code,
-      ...(error.details ? { details: error.details } : {}),
+      ...(error.details ? { details: error.details } : {})
     };
   }
 
   return {
     name: error.name,
-    message: error.message,
+    message: error.message
   };
 }

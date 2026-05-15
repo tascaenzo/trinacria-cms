@@ -1,13 +1,9 @@
-import {
-  createPluginDbScope,
-  type DbAdapter,
-  type PluginDbScope,
-} from "@trinacria-cms/kernel";
+import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import {
   EmbeddedUserRoleSchema,
   UserRoleRecordSchema,
-  type UserRoleRecord,
+  type UserRoleRecord
 } from "./user-roles.schemas.js";
 
 const USERS_ENTITY_NAME = "users";
@@ -45,9 +41,7 @@ export class UserRolesRepository {
       throw new Error(`User "${normalizedUserId}" not found`);
     }
 
-    const existing = this.toRecords(user).find(
-      (record) => record.roleCode === normalizedRoleCode,
-    );
+    const existing = this.toRecords(user).find((record) => record.roleCode === normalizedRoleCode);
     if (existing) {
       return existing;
     }
@@ -57,15 +51,15 @@ export class UserRolesRepository {
       roleCode: normalizedRoleCode,
       sourcePluginId: normalizedSourcePluginId,
       createdAt: now,
-      updatedAt: now,
+      updatedAt: now
     });
     const nextAssignments = [...user.roleAssignments, assignment];
     await this.repository().updateOne(
       { filter: { id: user.id } },
       {
         roleAssignments: nextAssignments,
-        updatedAt: now,
-      },
+        updatedAt: now
+      }
     );
 
     return this.toRecord(user.id, assignment);
@@ -91,7 +85,7 @@ export class UserRolesRepository {
     if (!user) return false;
 
     const nextAssignments = user.roleAssignments.filter(
-      (assignment) => assignment.roleCode !== normalizedRoleCode,
+      (assignment) => assignment.roleCode !== normalizedRoleCode
     );
     if (nextAssignments.length === user.roleAssignments.length) return false;
 
@@ -99,21 +93,19 @@ export class UserRolesRepository {
       { filter: { id: user.id } },
       {
         roleAssignments: nextAssignments,
-        updatedAt: new Date().toISOString(),
-      },
+        updatedAt: new Date().toISOString()
+      }
     );
     return true;
   }
 
-  async listBySourcePlugin(
-    sourcePluginId: string,
-  ): Promise<readonly UserRoleRecord[]> {
+  async listBySourcePlugin(sourcePluginId: string): Promise<readonly UserRoleRecord[]> {
     const normalizedSource = sourcePluginId.trim().toLowerCase();
     const users = await this.listAllUsers();
     return users.flatMap((user) =>
       user.roleAssignments
         .filter((assignment) => assignment.sourcePluginId === normalizedSource)
-        .map((assignment) => this.toRecord(user.id, assignment)),
+        .map((assignment) => this.toRecord(user.id, assignment))
     );
   }
 
@@ -124,7 +116,7 @@ export class UserRolesRepository {
 
     for (const user of users) {
       const filtered = user.roleAssignments.filter(
-        (assignment) => assignment.sourcePluginId !== normalizedSource,
+        (assignment) => assignment.sourcePluginId !== normalizedSource
       );
       if (filtered.length === user.roleAssignments.length) continue;
       removed += user.roleAssignments.length - filtered.length;
@@ -132,8 +124,8 @@ export class UserRolesRepository {
         { filter: { id: user.id } },
         {
           roleAssignments: filtered,
-          updatedAt: new Date().toISOString(),
-        },
+          updatedAt: new Date().toISOString()
+        }
       );
     }
     return removed;
@@ -166,12 +158,8 @@ export class UserRolesRepository {
       throw new Error("Invalid user document: missing id");
     }
 
-    const roleAssignmentsRaw = Array.isArray(record.roleAssignments)
-      ? record.roleAssignments
-      : [];
-    const roleAssignments = roleAssignmentsRaw.map((item) =>
-      EmbeddedUserRoleSchema.parse(item),
-    );
+    const roleAssignmentsRaw = Array.isArray(record.roleAssignments) ? record.roleAssignments : [];
+    const roleAssignments = roleAssignmentsRaw.map((item) => EmbeddedUserRoleSchema.parse(item));
 
     return { id, roleAssignments };
   }
@@ -182,7 +170,7 @@ export class UserRolesRepository {
 
   private toRecord(
     userId: string,
-    assignment: UserDocument["roleAssignments"][number],
+    assignment: UserDocument["roleAssignments"][number]
   ): UserRoleRecord {
     return UserRoleRecordSchema.parse({
       id: this.buildAssignmentId(userId, assignment.roleCode),
@@ -190,7 +178,7 @@ export class UserRolesRepository {
       roleCode: assignment.roleCode,
       sourcePluginId: assignment.sourcePluginId,
       createdAt: assignment.createdAt,
-      updatedAt: assignment.updatedAt,
+      updatedAt: assignment.updatedAt
     });
   }
 

@@ -3,7 +3,10 @@ import { Badge } from "../../atoms/badge/badge.js";
 import { Button } from "../../atoms/button/button.js";
 import { MobileRecordCard, MobileRecordField, MobileRecordList } from "./mobile-record.js";
 
-const meta = { title: "Layout/Responsive/MobileRecord", component: MobileRecordList } satisfies Meta<typeof MobileRecordList>;
+const meta = {
+  title: "Layout/Responsive/MobileRecord",
+  component: MobileRecordList
+} satisfies Meta<typeof MobileRecordList>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 

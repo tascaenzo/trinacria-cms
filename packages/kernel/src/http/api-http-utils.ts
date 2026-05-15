@@ -149,11 +149,11 @@ export function toApiErrorResponse(error: unknown): ApiErrorResponse {
     return apiError(
       "validation_error",
       formatValidationError(error, {
-        prefix: "Validation failed:",
+        prefix: "Validation failed:"
       }),
       {
-        issues: error.issues,
-      },
+        issues: error.issues
+      }
     );
   }
   if (error instanceof Error) {

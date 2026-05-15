@@ -23,7 +23,7 @@ export function createSettingsOwnerAccessError(input: {
       action: input.action,
       key: input.key,
       requesterPluginId: input.requesterPluginId,
-      ownerPluginId: input.ownerPluginId,
-    },
+      ownerPluginId: input.ownerPluginId
+    }
   );
 }

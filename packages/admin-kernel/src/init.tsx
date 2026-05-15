@@ -13,19 +13,16 @@ export interface MountBackofficeOptions {
  * mountBackoffice gives host apps a single entrypoint: configure SDK access,
  * provide modules, and mount the shared admin application.
  */
-export function mountBackoffice(
-  container: Element,
-  options: MountBackofficeOptions = {},
-) {
+export function mountBackoffice(container: Element, options: MountBackofficeOptions = {}) {
   configureBackofficeSdk({
-    baseUrl: options.apiBaseUrl,
+    baseUrl: options.apiBaseUrl
   });
 
   const root = ReactDOM.createRoot(container);
   root.render(
     <React.StrictMode>
       <BackofficeApp modules={options.modules} />
-    </React.StrictMode>,
+    </React.StrictMode>
   );
 
   return root;

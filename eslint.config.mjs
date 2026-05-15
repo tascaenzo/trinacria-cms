@@ -16,7 +16,8 @@ export default tseslint.config(
       "**/docs.html",
       "**/.tmp/artifacts/**",
       "**/.changeset/**",
-      "**/src/generated/**"
+      "**/src/generated/**",
+      "**/storybook-static/**"
     ]
   },
   js.configs.recommended,

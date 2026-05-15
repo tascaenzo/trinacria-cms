@@ -7,13 +7,13 @@ import type {
   PluginRuntimeOperationAvailability,
   PluginRuntime,
   PluginRuntimeRecord,
-  PluginState,
+  PluginState
 } from "../contracts/plugin-runtime.js";
 import { CoreError } from "../errors/core-error.js";
 import {
   PluginDependencyError,
   PluginRuntimeError,
-  PluginStateTransitionError,
+  PluginStateTransitionError
 } from "../errors/plugin-errors.js";
 
 export interface KernelInstalledPluginDependencySnapshot {
@@ -98,15 +98,13 @@ export class KernelSystemService {
       | "disable"
       | "enable"
       | "events"
-    >,
+    >
   ) {}
 
   listInstalledPlugins(): readonly KernelInstalledPluginSnapshot[] {
     const records = this.runtime.list();
     const dependencies = this.runtime.describeDependencies();
-    return records.map((record) =>
-      this.toPluginSnapshot(record, dependencies),
-    );
+    return records.map((record) => this.toPluginSnapshot(record, dependencies));
   }
 
   listCapabilities(): readonly KernelCapabilitySnapshot[] {
@@ -116,25 +114,21 @@ export class KernelSystemService {
   }
 
   getInstalledPlugin(pluginId: string): KernelInstalledPluginSnapshot | null {
-    return (
-      this.listInstalledPlugins().find((record) => record.id === pluginId) ?? null
-    );
+    return this.listInstalledPlugins().find((record) => record.id === pluginId) ?? null;
   }
 
   async executeOperation(
     pluginId: string,
-    input: KernelPluginOperationRequest,
+    input: KernelPluginOperationRequest
   ): Promise<KernelPluginOperationResult> {
     const snapshot = this.getInstalledPlugin(pluginId);
     if (!snapshot) {
       throw new PluginRuntimeError(`Plugin "${pluginId}" is not registered`, {
-        pluginId,
+        pluginId
       });
     }
 
-    const availability = snapshot.operations.find(
-      (item) => item.operation === input.operation,
-    );
+    const availability = snapshot.operations.find((item) => item.operation === input.operation);
     if (!availability?.available) {
       throw new PluginStateTransitionError(
         availability?.reason ??
@@ -142,8 +136,8 @@ export class KernelSystemService {
         {
           pluginId,
           operation: input.operation,
-          state: snapshot.state,
-        },
+          state: snapshot.state
+        }
       );
     }
 
@@ -170,9 +164,9 @@ export class KernelSystemService {
           {
             details: {
               pluginId,
-              operation: input.operation,
-            },
-          },
+              operation: input.operation
+            }
+          }
         );
     }
 
@@ -182,34 +176,31 @@ export class KernelSystemService {
         `Plugin "${pluginId}" became unavailable after "${input.operation}"`,
         {
           pluginId,
-          operation: input.operation,
-        },
+          operation: input.operation
+        }
       );
     }
 
     return {
       plugin: updated,
       operation: input.operation,
-      executedAt: new Date().toISOString(),
+      executedAt: new Date().toISOString()
     };
   }
 
-  listPluginEvents(
-    pluginId: string,
-    limit = 20,
-  ): readonly KernelPluginEventSnapshot[] {
+  listPluginEvents(pluginId: string, limit = 20): readonly KernelPluginEventSnapshot[] {
     return this.runtime.events({ pluginId, limit }).map((event) => ({
       ...event,
-      timestamp: event.timestamp.toISOString(),
+      timestamp: event.timestamp.toISOString()
     }));
   }
 
   private toPluginSnapshot(
     record: PluginRuntimeRecord,
-    dependencyGraph: PluginDependencyGraphSnapshot,
+    dependencyGraph: PluginDependencyGraphSnapshot
   ): KernelInstalledPluginSnapshot {
     const dependencyEdges = dependencyGraph.edges.filter(
-      (edge) => edge.from === record.manifest.id,
+      (edge) => edge.from === record.manifest.id
     );
 
     return {
@@ -220,87 +211,77 @@ export class KernelSystemService {
       capabilities: [...(record.manifest.capabilities ?? [])],
       dependencies: (record.manifest.dependencies ?? []).map((dependency) => {
         const edge = dependencyEdges.find((item) => item.to === dependency.pluginId);
-        const target = dependencyGraph.nodes.find(
-          (item) => item.pluginId === dependency.pluginId,
-        );
+        const target = dependencyGraph.nodes.find((item) => item.pluginId === dependency.pluginId);
 
         return {
           pluginId: dependency.pluginId,
           versionRange: dependency.versionRange,
           optional: dependency.optional ?? false,
           status: edge?.status ?? "missing",
-          ...(edge?.currentVersion
-            ? { currentVersion: edge.currentVersion }
-            : {}),
+          ...(edge?.currentVersion ? { currentVersion: edge.currentVersion } : {}),
           ...(target?.state ? { state: target.state } : {}),
           ...(edge && edge.status !== "ok"
             ? { reason: describeDependencyIssue(record.manifest.id, edge) }
-            : {}),
+            : {})
         };
       }),
       security: {
         permissions: record.manifest.security?.permissions?.length ?? 0,
         roles: record.manifest.security?.roles?.length ?? 0,
         grants: record.manifest.security?.grants?.length ?? 0,
-        policyRules: record.manifest.security?.policyRules?.length ?? 0,
+        policyRules: record.manifest.security?.policyRules?.length ?? 0
       },
       failureCount: record.failureCount ?? 0,
       ...(record.failedAt ? { failedAt: record.failedAt.toISOString() } : {}),
-      ...(record.lastFailurePhase
-        ? { lastFailurePhase: record.lastFailurePhase }
-        : {}),
+      ...(record.lastFailurePhase ? { lastFailurePhase: record.lastFailurePhase } : {}),
       ...(record.disabledAt ? { disabledAt: record.disabledAt.toISOString() } : {}),
       ...(record.disabledReason ? { disabledReason: record.disabledReason } : {}),
       ...(record.loadedAt ? { loadedAt: record.loadedAt.toISOString() } : {}),
       ...(record.statusReason ? { statusReason: record.statusReason } : {}),
       ...(record.lastError ? { lastError: toRuntimeDiagnostic(record.lastError) } : {}),
-      operations: describeAvailableOperations(record),
+      operations: describeAvailableOperations(record)
     };
   }
 
   private toCapabilitySnapshots(
     manifest: PluginManifest,
-    state: PluginState,
+    state: PluginState
   ): readonly KernelCapabilitySnapshot[] {
     return (manifest.capabilities ?? []).map((capability) => ({
       pluginId: manifest.id,
       capability,
       version: manifest.version,
-      state,
+      state
     }));
   }
 }
 
 export function describeAvailableOperations(
-  record: PluginRuntimeRecord,
+  record: PluginRuntimeRecord
 ): readonly PluginRuntimeOperationAvailability[] {
   return [
     availability("load", ["registered", "unloaded", "failed"].includes(record.state), {
       disabledReason: "Disabled plugins must be enabled before load",
       defaultReason: `Plugin cannot be loaded from state "${record.state}"`,
-      record,
+      record
     }),
     availability("unload", record.state === "loaded", {
       defaultReason: `Only loaded plugins can be unloaded; current state is "${record.state}"`,
-      record,
+      record
     }),
-    availability(
-      "reload",
-      ["registered", "unloaded", "failed", "loaded"].includes(record.state),
-      {
-        disabledReason: "Disabled plugins must be enabled before reload",
-        defaultReason: `Plugin cannot be reloaded from state "${record.state}"`,
-        record,
-      },
-    ),
+    availability("reload", ["registered", "unloaded", "failed", "loaded"].includes(record.state), {
+      disabledReason: "Disabled plugins must be enabled before reload",
+      defaultReason: `Plugin cannot be reloaded from state "${record.state}"`,
+      record
+    }),
     availability("disable", record.state !== "disabled", {
       defaultReason: 'Plugin is already in state "disabled"',
-      record,
+      record
     }),
     availability("enable", record.state === "disabled", {
       defaultReason: `Only disabled plugins can be enabled; current state is "${record.state}"`,
-      record,
-    }),
+      record
+    })
   ];
 }
 
@@ -311,28 +292,24 @@ function availability(
     defaultReason: string;
     disabledReason?: string;
     record: PluginRuntimeRecord;
-  },
+  }
 ): PluginRuntimeOperationAvailability {
   if (available) {
     return { operation, available: true };
   }
 
-  if (
-    options.record.state === "disabled" &&
-    operation !== "enable" &&
-    options.disabledReason
-  ) {
+  if (options.record.state === "disabled" && operation !== "enable" && options.disabledReason) {
     return {
       operation,
       available: false,
-      reason: options.disabledReason,
+      reason: options.disabledReason
     };
   }
 
   return {
     operation,
     available: false,
-    reason: options.defaultReason,
+    reason: options.defaultReason
   };
 }
 
@@ -342,19 +319,19 @@ function toRuntimeDiagnostic(error: Error): PluginRuntimeDiagnostic {
       name: error.name,
       message: error.message,
       code: error.code,
-      ...(error.details ? { details: error.details } : {}),
+      ...(error.details ? { details: error.details } : {})
     };
   }
 
   return {
     name: error.name,
-    message: error.message,
+    message: error.message
   };
 }
 
 function describeDependencyIssue(
   pluginId: string,
-  edge: PluginDependencyGraphSnapshot["edges"][number],
+  edge: PluginDependencyGraphSnapshot["edges"][number]
 ): string {
   switch (edge.status) {
     case "missing":

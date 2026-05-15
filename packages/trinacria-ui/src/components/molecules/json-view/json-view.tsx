@@ -12,8 +12,8 @@ export function JsonView({ className, title, value, ...props }: JsonViewProps) {
       {title ? <Eyebrow className="text-xs">{title}</Eyebrow> : null}
       <pre
         className={cn(
-          "overflow-x-auto rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-code-surface)] px-4 py-4 text-xs leading-6 text-[color:var(--color-code-ink)]",
-          className,
+          "overflow-x-auto rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-code-surface)] px-4 py-4 text-xs leading-6 text-[color:var(--color-code-ink)]",
+          className
         )}
         {...props}
       >

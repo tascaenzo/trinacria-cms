@@ -9,7 +9,7 @@ export function createCapabilityToken<T>(capabilityName: string): Token<T> {
   const normalized = capabilityName.trim();
   if (!normalized || !CAPABILITY_REGEX.test(normalized)) {
     throw new Error(
-      `Invalid capability name "${capabilityName}". Expected lowercase dot/underscore/dash segments.`,
+      `Invalid capability name "${capabilityName}". Expected lowercase dot/underscore/dash segments.`
     );
   }
   return createToken<T>(`CMS_CAPABILITY_${normalized}`);

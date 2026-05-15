@@ -4,7 +4,7 @@ import type { DbAdapter, DbQuery, DbRepository } from "@trinacria-cms/kernel";
 import { LocalCredentialsRepository } from "../src/modules/installation/local-credentials.repository.js";
 import {
   InstallationAlreadyCompletedError,
-  InstallationService,
+  InstallationService
 } from "../src/modules/installation/installation.service.js";
 import { InstallationStateRepository } from "../src/modules/installation/installation-state.repository.js";
 import { PasswordHashingService } from "../src/modules/installation/password-hashing.service.js";
@@ -32,7 +32,7 @@ test("InstallationService bootstraps admin user and local credentials", async ()
   const result = await runtime.service.bootstrap({
     email: "admin@example.com",
     displayName: "CMS Admin",
-    password: "StrongerPass123!",
+    password: "StrongerPass123!"
   });
 
   assert.equal(result.status.installed, true);
@@ -45,22 +45,17 @@ test("InstallationService bootstraps admin user and local credentials", async ()
   assert.equal(state?.installed, true);
   assert.equal(state?.adminUserId, result.adminUser.id);
 
-  const credentials = await runtime.localCredentials.findByUserId(
-    result.adminUser.id,
-  );
+  const credentials = await runtime.localCredentials.findByUserId(result.adminUser.id);
   assert.ok(credentials);
   assert.equal(credentials?.algorithm, "scrypt-v1");
   assert.ok(credentials?.passwordHash);
   assert.ok(credentials?.passwordSalt);
 
-  const validPassword = await runtime.passwordHashing.verifyPassword(
-    "StrongerPass123!",
-    {
-      algorithm: credentials?.algorithm ?? "scrypt-v1",
-      passwordHash: credentials?.passwordHash ?? "",
-      passwordSalt: credentials?.passwordSalt ?? "",
-    },
-  );
+  const validPassword = await runtime.passwordHashing.verifyPassword("StrongerPass123!", {
+    algorithm: credentials?.algorithm ?? "scrypt-v1",
+    passwordHash: credentials?.passwordHash ?? "",
+    passwordSalt: credentials?.passwordSalt ?? ""
+  });
   assert.equal(validPassword, true);
 
   const roles = await runtime.userAccess.listUserRoles(result.adminUser.id);
@@ -73,7 +68,7 @@ test("InstallationService blocks bootstrap when installation is already complete
   await runtime.service.bootstrap({
     email: "admin@example.com",
     displayName: "CMS Admin",
-    password: "StrongerPass123!",
+    password: "StrongerPass123!"
   });
 
   await assert.rejects(
@@ -81,11 +76,11 @@ test("InstallationService blocks bootstrap when installation is already complete
       runtime.service.bootstrap({
         email: "another-admin@example.com",
         displayName: "Another Admin",
-        password: "AnotherStrongPass123!",
+        password: "AnotherStrongPass123!"
       }),
     (error) =>
       error instanceof InstallationAlreadyCompletedError &&
-      error.code === "installation_already_completed",
+      error.code === "installation_already_completed"
   );
 });
 
@@ -111,14 +106,14 @@ function createInstallationRuntime(): InstallationRuntime {
     roleGrants,
     rolePolicyRules,
     permissions,
-    userRoles,
+    userRoles
   );
   const securityProvisioning = new CorePackSecurityProvisioningService(
     roles,
     roleGrants,
     rolePolicyRules,
     permissions,
-    userRoles,
+    userRoles
   );
   const installationState = new InstallationStateRepository(db);
   const localCredentials = new LocalCredentialsRepository(db);
@@ -131,12 +126,12 @@ function createInstallationRuntime(): InstallationRuntime {
       users,
       userAccess,
       securityProvisioning,
-      passwordHashing,
+      passwordHashing
     ),
     installationState,
     localCredentials,
     userAccess,
-    passwordHashing,
+    passwordHashing
   };
 }
 
@@ -152,9 +147,7 @@ function createFakeDbAdapter(): DbAdapter {
     return created;
   };
 
-  const repository = <TData extends Record<string, unknown>>(
-    key: string,
-  ): DbRepository<TData> => ({
+  const repository = <TData extends Record<string, unknown>>(key: string): DbRepository<TData> => ({
     async findOne(query: DbQuery<TData>) {
       const bucket = getBucket(key) as TData[];
       const found = bucket.find((item) => matchesFilter(item, query.filter)) ?? null;
@@ -194,7 +187,7 @@ function createFakeDbAdapter(): DbAdapter {
       if (index < 0) return false;
       bucket.splice(index, 1);
       return true;
-    },
+    }
   });
 
   return {
@@ -204,18 +197,18 @@ function createFakeDbAdapter(): DbAdapter {
     async beginTransaction() {
       return {
         async commit() {},
-        async rollback() {},
+        async rollback() {}
       };
     },
     async healthCheck() {
       return { ok: true };
-    },
+    }
   };
 }
 
 function matchesFilter(
   item: Record<string, unknown>,
-  filter: Record<string, unknown> | undefined,
+  filter: Record<string, unknown> | undefined
 ): boolean {
   if (!filter) return true;
   return Object.entries(filter).every(([key, value]) => item[key] === value);
@@ -223,7 +216,7 @@ function matchesFilter(
 
 function applySort<TData extends Record<string, unknown>>(
   values: readonly TData[],
-  sort: Record<string, "asc" | "desc"> | undefined,
+  sort: Record<string, "asc" | "desc"> | undefined
 ): TData[] {
   if (!sort || Object.keys(sort).length === 0) return [...values];
   const [field, direction] = Object.entries(sort)[0];

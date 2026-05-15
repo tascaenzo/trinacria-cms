@@ -1,7 +1,4 @@
-import type {
-  CreateUserInput,
-  UpdateUserStatusInput,
-} from "./dto/users.input.dto.js";
+import type { CreateUserInput, UpdateUserStatusInput } from "./dto/users.input.dto.js";
 import type { UserRecord } from "./users.schemas.js";
 import { UsersRepository } from "./users.repository.js";
 
@@ -26,7 +23,7 @@ export class UsersService {
   async listUsers(options?: { limit?: number; offset?: number }): Promise<readonly UserRecord[]> {
     return this.repository.list({
       limit: options?.limit,
-      offset: options?.offset,
+      offset: options?.offset
     });
   }
 
@@ -38,10 +35,7 @@ export class UsersService {
     return this.setUserStatus(id, { status: "active" });
   }
 
-  private setUserStatus(
-    id: string,
-    input: UpdateUserStatusInput,
-  ): Promise<UserRecord | null> {
+  private setUserStatus(id: string, input: UpdateUserStatusInput): Promise<UserRecord | null> {
     return this.repository.updateStatus(id, input);
   }
 }

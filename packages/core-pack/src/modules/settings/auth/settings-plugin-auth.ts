@@ -27,35 +27,29 @@ export const PLUGIN_AUTH_HEADERS = {
   pluginId: "x-cms-plugin-id",
   timestamp: "x-cms-plugin-ts",
   nonce: "x-cms-plugin-nonce",
-  signature: "x-cms-plugin-signature",
+  signature: "x-cms-plugin-signature"
 } as const;
 
 /**
  * Builds deterministic HMAC signature for plugin-authenticated HTTP requests.
  */
-export function buildPluginRequestSignature(
-  input: BuildPluginSignatureInput,
-): string {
+export function buildPluginRequestSignature(input: BuildPluginSignatureInput): string {
   const canonical = [
     input.method.trim().toUpperCase(),
     normalizePath(input.path),
     String(input.timestamp),
     input.nonce.trim(),
     input.pluginId.trim().toLowerCase(),
-    buildBodyHash(input.body),
+    buildBodyHash(input.body)
   ].join("\n");
 
-  return createHmac("sha256", input.secret)
-    .update(canonical, "utf8")
-    .digest("hex");
+  return createHmac("sha256", input.secret).update(canonical, "utf8").digest("hex");
 }
 
 /**
  * Creates signed headers for plugin caller authentication.
  */
-export function buildPluginAuthHeaders(
-  input: BuildPluginAuthHeadersInput,
-): Record<string, string> {
+export function buildPluginAuthHeaders(input: BuildPluginAuthHeadersInput): Record<string, string> {
   const timestamp = input.timestamp ?? Math.floor(Date.now() / 1000);
   const nonce = input.nonce ?? randomBytes(12).toString("hex");
   const signature = buildPluginRequestSignature({
@@ -65,14 +59,14 @@ export function buildPluginAuthHeaders(
     path: input.path,
     timestamp,
     nonce,
-    body: input.body,
+    body: input.body
   });
 
   return {
     [PLUGIN_AUTH_HEADERS.pluginId]: input.pluginId.trim().toLowerCase(),
     [PLUGIN_AUTH_HEADERS.timestamp]: String(timestamp),
     [PLUGIN_AUTH_HEADERS.nonce]: nonce,
-    [PLUGIN_AUTH_HEADERS.signature]: signature,
+    [PLUGIN_AUTH_HEADERS.signature]: signature
   };
 }
 

@@ -16,9 +16,9 @@ const KernelDependencySnapshotSchema: Record<string, unknown> = {
         properties: {
           pluginId: { type: "string" },
           state: { type: "string" },
-          version: { type: "string" },
-        },
-      },
+          version: { type: "string" }
+        }
+      }
     },
     edges: {
       type: "array",
@@ -31,15 +31,15 @@ const KernelDependencySnapshotSchema: Record<string, unknown> = {
           to: { type: "string" },
           status: { type: "string" },
           optional: { type: "boolean" },
-          reason: { type: "string" },
-        },
-      },
+          reason: { type: "string" }
+        }
+      }
     },
     warnings: {
       type: "array",
-      items: { type: "string" },
-    },
-  },
+      items: { type: "string" }
+    }
+  }
 };
 
 const KernelHealthSnapshotSchema: Record<string, unknown> = {
@@ -66,7 +66,7 @@ const KernelHealthSnapshotSchema: Record<string, unknown> = {
             "unloading",
             "failed",
             "disabled",
-            "unloaded",
+            "unloaded"
           ],
           properties: {
             registered: { type: "integer" },
@@ -76,10 +76,10 @@ const KernelHealthSnapshotSchema: Record<string, unknown> = {
             unloading: { type: "integer" },
             failed: { type: "integer" },
             disabled: { type: "integer" },
-            unloaded: { type: "integer" },
-          },
-        },
-      },
+            unloaded: { type: "integer" }
+          }
+        }
+      }
     },
     dependencies: KernelDependencySnapshotSchema,
     db: {
@@ -88,14 +88,14 @@ const KernelHealthSnapshotSchema: Record<string, unknown> = {
       required: ["ok"],
       properties: {
         ok: { type: "boolean" },
-        reason: { type: "string" },
-      },
+        reason: { type: "string" }
+      }
     },
     issues: {
       type: "array",
-      items: { type: "string" },
-    },
-  },
+      items: { type: "string" }
+    }
+  }
 };
 
 /**
@@ -116,10 +116,10 @@ export class KernelHealthHttpController extends HttpController {
           responses: {
             200: {
               description: "Kernel health snapshot",
-              schema: KernelHealthSnapshotSchema,
-            },
-          },
-        },
+              schema: KernelHealthSnapshotSchema
+            }
+          }
+        }
       })
       .get("/health/dependencies", this.getDependencies, {
         docs: {
@@ -129,10 +129,10 @@ export class KernelHealthHttpController extends HttpController {
           responses: {
             200: {
               description: "Plugin dependency graph",
-              schema: KernelDependencySnapshotSchema,
-            },
-          },
-        },
+              schema: KernelDependencySnapshotSchema
+            }
+          }
+        }
       })
       .build();
   }

@@ -3,10 +3,7 @@ import { parseJsonValue, type JsonValue } from "./settings-json.js";
 /**
  * Reads an optional JSON payload field from raw body and validates it.
  */
-export function readOptionalJsonField(
-  body: unknown,
-  field: string,
-): JsonValue | undefined {
+export function readOptionalJsonField(body: unknown, field: string): JsonValue | undefined {
   if (!body || typeof body !== "object" || Array.isArray(body)) {
     return undefined;
   }

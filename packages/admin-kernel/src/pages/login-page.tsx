@@ -28,7 +28,7 @@ export function LoginPage({ action, isSubmitting, state }: LoginPageProps) {
     <div className="min-h-svh bg-[radial-gradient(circle_at_top,#e2e8f0_0%,transparent_26%),linear-gradient(180deg,#f8fafc_0%,#ffffff_58%,#f8fafc_100%)]">
       <div className="mx-auto flex min-h-svh w-full max-w-5xl items-center justify-center px-4 py-8 sm:px-6 md:px-8 md:py-12">
         <section className="w-full max-w-md md:max-w-[430px]">
-          <div className="space-y-6 md:rounded-[28px] md:border md:border-slate-200 md:bg-white md:p-8 md:shadow-[0_32px_96px_rgba(15,23,42,0.18)]">
+          <div className="space-y-6 md:rounded-[10px] md:border md:border-slate-200 md:bg-white md:p-8 md:shadow-[0_32px_96px_rgba(15,23,42,0.18)]">
             <div className="space-y-6">
               <div className="space-y-2">
                 <h2 className="text-3xl font-semibold tracking-[-0.03em] text-slate-950">
@@ -82,7 +82,7 @@ export function LoginPage({ action, isSubmitting, state }: LoginPageProps) {
                       id="login-form-error"
                       role="alert"
                       aria-live="polite"
-                      className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700"
+                      className="rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700"
                     >
                       {state.error}
                     </FieldDescription>
@@ -91,7 +91,7 @@ export function LoginPage({ action, isSubmitting, state }: LoginPageProps) {
                   <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="h-11 w-full rounded-xl text-sm font-semibold"
+                    className="h-11 w-full rounded-sm text-sm font-semibold"
                   >
                     {isSubmitting ? t("auth.login.submitting") : t("auth.login.submit")}
                   </Button>

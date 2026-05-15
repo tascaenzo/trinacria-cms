@@ -4,7 +4,7 @@ import {
   parseQueryNumber,
   toOpenApiSchema,
   type HttpContext,
-  type HttpMiddleware,
+  type HttpMiddleware
 } from "@trinacria-cms/kernel";
 import {
   CreateUserInputSchema,
@@ -12,7 +12,7 @@ import {
   ListUsersResponseSchema,
   UpdateUserStatusInputSchema,
   UserResponseSchema,
-  UsersErrorResponseSchema,
+  UsersErrorResponseSchema
 } from "./dto/index.js";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import { CORE_PACK_OPENAPI_TAGS } from "../openapi-tags.js";
@@ -27,14 +27,14 @@ const UsersListQueryParameters = [
     name: "limit",
     in: "query",
     required: false,
-    schema: { type: "integer", minimum: 1, maximum: 200 },
+    schema: { type: "integer", minimum: 1, maximum: 200 }
   },
   {
     name: "offset",
     in: "query",
     required: false,
-    schema: { type: "integer", minimum: 0 },
-  },
+    schema: { type: "integer", minimum: 0 }
+  }
 ] as const;
 
 /**
@@ -45,11 +45,11 @@ export class UsersController extends HttpController {
 
   constructor(
     private readonly users: UsersService,
-    auth: JwtAuthService,
+    auth: JwtAuthService
   ) {
     super();
     this.adminAuthMiddleware = createJwtAuthMiddleware(auth, {
-      requireAdmin: true,
+      requireAdmin: true
     });
   }
 
@@ -113,33 +113,29 @@ export class UsersController extends HttpController {
           }
         }
       })
-      .patch(
-        "/v1/users/:id/status",
-        this.updateUserStatus,
-        {
-          middlewares: [this.adminAuthMiddleware],
-          docs: {
-            summary: "Update user status",
-            tags: [CORE_PACK_OPENAPI_TAGS.USERS],
-            operationId: "updateUserStatus",
-            security: [{ bearerAuth: [] }],
-            requestBody: {
-              required: true,
-              schema: toOpenApiSchema(UpdateUserStatusInputSchema)
+      .patch("/v1/users/:id/status", this.updateUserStatus, {
+        middlewares: [this.adminAuthMiddleware],
+        docs: {
+          summary: "Update user status",
+          tags: [CORE_PACK_OPENAPI_TAGS.USERS],
+          operationId: "updateUserStatus",
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            schema: toOpenApiSchema(UpdateUserStatusInputSchema)
+          },
+          responses: {
+            200: {
+              description: "User updated",
+              schema: toOpenApiSchema(UserResponseSchema)
             },
-            responses: {
-              200: {
-                description: "User updated",
-                schema: toOpenApiSchema(UserResponseSchema)
-              },
-              404: {
-                description: "User not found",
-                schema: toOpenApiSchema(UsersErrorResponseSchema)
-              }
+            404: {
+              description: "User not found",
+              schema: toOpenApiSchema(UsersErrorResponseSchema)
             }
           }
-        },
-      )
+        }
+      })
       .build();
   }
 

@@ -9,13 +9,7 @@ import type { CardProps } from "./card.types.js";
  * Card mirrors the dashboard surfaces: light border, moderate radius, and a
  * quiet shadow so data modules stay separated without feeling heavy.
  */
-export function Card({
-  children,
-  className,
-  title,
-  eyebrow,
-  ...props
-}: CardProps) {
+export function Card({ children, className, title, eyebrow, ...props }: CardProps) {
   return (
     <Panel
       className={cn("bg-[color:var(--color-panel)] p-5", className)}
@@ -54,7 +48,13 @@ export function CardTitle({
   ...props
 }: PropsWithChildren<HTMLAttributes<HTMLHeadingElement>>) {
   return (
-    <h3 className={cn("text-lg font-semibold tracking-[-0.02em] text-[color:var(--color-ink)]", className)} {...props}>
+    <h3
+      className={cn(
+        "text-lg font-semibold tracking-[-0.02em] text-[color:var(--color-ink)]",
+        className
+      )}
+      {...props}
+    >
       {children}
     </h3>
   );

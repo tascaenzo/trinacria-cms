@@ -27,11 +27,7 @@ export function ResourceTable({
   );
 }
 
-export function ResourceTableElement({
-  children,
-  className,
-  ...props
-}: ResourceTableElementProps) {
+export function ResourceTableElement({ children, className, ...props }: ResourceTableElementProps) {
   return (
     <table className={cn("min-w-full text-sm", className)} {...props}>
       {children}
@@ -84,11 +80,7 @@ export function ResourceTableRow({
   );
 }
 
-export function ResourceTableCell({
-  children,
-  className,
-  ...props
-}: ResourceTableCellProps) {
+export function ResourceTableCell({ children, className, ...props }: ResourceTableCellProps) {
   return (
     <td className={cn("px-4 py-4", className)} {...props}>
       {children}

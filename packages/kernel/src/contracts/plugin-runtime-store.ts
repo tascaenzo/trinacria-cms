@@ -2,7 +2,7 @@ import type {
   PluginLifecyclePhase,
   PluginRuntimeRecord,
   PluginRuntimeStatusReason,
-  PluginState,
+  PluginState
 } from "./plugin-runtime.js";
 import type { PluginManifest } from "./plugin-manifest.js";
 

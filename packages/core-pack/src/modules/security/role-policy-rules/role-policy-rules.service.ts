@@ -10,7 +10,7 @@ import { RolePolicyRulesRepository } from "./role-policy-rules.repository.js";
 export class RolePolicyRulesService {
   constructor(
     private readonly roles: RolesRepository,
-    private readonly rules: RolePolicyRulesRepository,
+    private readonly rules: RolePolicyRulesRepository
   ) {}
 
   async listByRoleCode(roleCode: string) {
@@ -25,7 +25,7 @@ export class RolePolicyRulesService {
       effect: "allow" | "deny";
       permissionPattern: string;
       conditions?: readonly ("resource_id_required" | "resource_id_equals_subject")[];
-    },
+    }
   ) {
     const role = await this.roles.findByCode(roleCode);
     if (!role) return null;
@@ -33,7 +33,7 @@ export class RolePolicyRulesService {
     const normalizedPattern = input.permissionPattern.trim().toLowerCase();
     if (!isValidPermissionPattern(normalizedPattern)) {
       throw new Error(
-        `Invalid permission pattern "${input.permissionPattern}". Expected '<pluginId>:<resource|*>:<action|*>'`,
+        `Invalid permission pattern "${input.permissionPattern}". Expected '<pluginId>:<resource|*>:<action|*>'`
       );
     }
 
@@ -42,7 +42,7 @@ export class RolePolicyRulesService {
       effect: input.effect,
       permissionPattern: normalizedPattern,
       conditions: input.conditions ?? [],
-      sourcePluginId: CORE_PACK_MANUAL_POLICY_SOURCE,
+      sourcePluginId: CORE_PACK_MANUAL_POLICY_SOURCE
     };
     const existing = await this.rules.findOne(candidate);
     if (existing) {
@@ -59,7 +59,7 @@ export class RolePolicyRulesService {
       effect: "allow" | "deny";
       permissionPattern: string;
       conditions?: readonly ("resource_id_required" | "resource_id_equals_subject")[];
-    },
+    }
   ) {
     const role = await this.roles.findByCode(roleCode);
     if (!role) return null;
@@ -72,7 +72,7 @@ export class RolePolicyRulesService {
     const normalizedPattern = input.permissionPattern.trim().toLowerCase();
     if (!isValidPermissionPattern(normalizedPattern)) {
       throw new Error(
-        `Invalid permission pattern "${input.permissionPattern}". Expected '<pluginId>:<resource|*>:<action|*>'`,
+        `Invalid permission pattern "${input.permissionPattern}". Expected '<pluginId>:<resource|*>:<action|*>'`
       );
     }
 
@@ -80,7 +80,7 @@ export class RolePolicyRulesService {
       effect: input.effect,
       permissionPattern: normalizedPattern,
       conditions: input.conditions ?? [],
-      updatedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     });
   }
 

@@ -2,7 +2,9 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { EmptyState, ErrorBanner } from "../../molecules/feedback/feedback.js";
 import { StateStack } from "./state-stack.js";
 
-const meta = { title: "Display/Status/StateStack", component: StateStack } satisfies Meta<typeof StateStack>;
+const meta = { title: "Display/Status/StateStack", component: StateStack } satisfies Meta<
+  typeof StateStack
+>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 

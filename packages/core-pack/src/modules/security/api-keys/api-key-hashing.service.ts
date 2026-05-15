@@ -23,7 +23,7 @@ export class ApiKeyHashingService {
       keyPrefix: `cms_sk_${lookupId}`,
       rawKey,
       secretHash: this.hash(rawKey),
-      secretPreview: secret.slice(-6),
+      secretPreview: secret.slice(-6)
     };
   }
 

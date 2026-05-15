@@ -33,10 +33,7 @@ export interface DbRepository<TData = unknown> {
    * Adapters can enrich partial payloads with generated fields (id, timestamps, etc.).
    */
   insertOne(data: Partial<TData>): Promise<TData>;
-  updateOne(
-    query: DbQuery<TData>,
-    patch: Partial<TData>,
-  ): Promise<TData | null>;
+  updateOne(query: DbQuery<TData>, patch: Partial<TData>): Promise<TData | null>;
   deleteOne(query: DbQuery<TData>): Promise<boolean>;
 }
 
@@ -55,18 +52,12 @@ export interface DbTransaction {
  */
 export interface DbAdapter {
   /** Returns entity-scoped repositories for plugin/workspace namespaces. */
-  repository<TData = unknown>(
-    entityName: string,
-    context: NamespaceContext,
-  ): DbRepository<TData>;
+  repository<TData = unknown>(entityName: string, context: NamespaceContext): DbRepository<TData>;
   /**
    * Optional adapter capability to materialize declared entity indexes.
    * Implementations that do not support it can omit this method.
    */
-  ensureIndexes?(
-    pluginId: string,
-    entityNames: readonly string[],
-  ): Promise<void>;
+  ensureIndexes?(pluginId: string, entityNames: readonly string[]): Promise<void>;
   /** Starts a namespaced transaction. */
   beginTransaction(context: NamespaceContext): Promise<DbTransaction>;
   /** Exposes adapter health for health endpoints and readiness checks. */

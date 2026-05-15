@@ -1,4 +1,10 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PropsWithChildren, type ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent
+} from "react";
 import { Button } from "../../atoms/button/button.js";
 import { Eyebrow } from "../../primitives/eyebrow/eyebrow.js";
 import { BodyText } from "../../primitives/text/text.js";
@@ -31,7 +37,7 @@ export function Dialog({
   open,
   title,
   variant = "modal",
-  width = "lg",
+  width = "lg"
 }: DialogProps) {
   const [shouldRender, setShouldRender] = useState(open);
   const [isActive, setIsActive] = useState(false);
@@ -58,7 +64,8 @@ export function Dialog({
 
   useEffect(() => {
     if (open) {
-      previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      previousFocusRef.current =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null;
       setShouldRender(true);
       const previousOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
@@ -119,7 +126,9 @@ export function Dialog({
         "fixed inset-0 z-50 transition-all duration-200 ease-out",
         variant === "modal" && "flex items-center justify-center px-4 py-6",
         variant === "drawer" && "flex items-stretch justify-end",
-        isActive ? "bg-[color:var(--color-overlay)] backdrop-blur-[2px]" : "bg-transparent backdrop-blur-none"
+        isActive
+          ? "bg-[color:var(--color-overlay)] backdrop-blur-[2px]"
+          : "bg-transparent backdrop-blur-none"
       )}
     >
       <div className="absolute inset-0" onClick={onClose} />
@@ -132,7 +141,7 @@ export function Dialog({
         onKeyDown={handleKeyDown}
         className={cn(
           "relative z-10 w-full overflow-hidden border border-[color:var(--color-border)] bg-[color:var(--color-surface)] shadow-[0_32px_96px_rgba(15,23,42,0.18)] transition-all duration-200 ease-out",
-          variant === "modal" && "rounded-2xl",
+          variant === "modal" && "rounded-lg",
           variant === "modal" && width === "md" && "max-w-2xl",
           variant === "modal" && width === "lg" && "max-w-4xl",
           variant === "modal" && width === "xl" && "max-w-6xl",
@@ -143,7 +152,7 @@ export function Dialog({
               ? "translate-y-0 scale-100 opacity-100"
               : "translate-y-4 scale-[0.985] opacity-0"),
           variant === "drawer" &&
-            (isActive ? "translate-x-0 opacity-100" : "translate-x-10 opacity-0"),
+            (isActive ? "translate-x-0 opacity-100" : "translate-x-10 opacity-0")
         )}
       >
         <header className="flex items-start justify-between gap-4 border-b border-[color:var(--color-border)] px-6 py-5">
@@ -164,12 +173,7 @@ export function Dialog({
               </BodyText>
             ) : null}
           </div>
-          <Button
-            ref={closeButtonRef}
-            variant="secondary"
-            className="shrink-0"
-            onClick={onClose}
-          >
+          <Button ref={closeButtonRef} variant="secondary" className="shrink-0" onClick={onClose}>
             {closeLabel}
           </Button>
         </header>

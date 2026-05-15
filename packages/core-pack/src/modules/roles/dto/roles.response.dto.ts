@@ -10,9 +10,9 @@ export const RolesResponseMetaSchema = s.object(
     pluginId: s.literal(CORE_PACK_PLUGIN_ID).optional(),
     count: s.number({ int: true }).optional(),
     limit: s.number({ int: true }).optional(),
-    offset: s.number({ int: true }).optional(),
+    offset: s.number({ int: true }).optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 /**
@@ -21,9 +21,9 @@ export const RolesResponseMetaSchema = s.object(
 export const RolesApiErrorSchema = s.object(
   {
     code: s.string({ trim: true, minLength: 1 }),
-    message: s.string({ trim: true, minLength: 1 }),
+    message: s.string({ trim: true, minLength: 1 })
   },
-  { strict: true },
+  { strict: true }
 );
 
 /**
@@ -32,9 +32,9 @@ export const RolesApiErrorSchema = s.object(
 export const ListRolesResponseSchema = s.object(
   {
     data: s.array(RoleRecordSchema),
-    meta: RolesResponseMetaSchema.optional(),
+    meta: RolesResponseMetaSchema.optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 /**
@@ -43,9 +43,9 @@ export const ListRolesResponseSchema = s.object(
 export const RoleResponseSchema = s.object(
   {
     data: RoleRecordSchema,
-    meta: RolesResponseMetaSchema.optional(),
+    meta: RolesResponseMetaSchema.optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 /**
@@ -54,7 +54,7 @@ export const RoleResponseSchema = s.object(
 export const RolesErrorResponseSchema = s.object(
   {
     error: RolesApiErrorSchema,
-    meta: RolesResponseMetaSchema.optional(),
+    meta: RolesResponseMetaSchema.optional()
   },
-  { strict: true },
+  { strict: true }
 );

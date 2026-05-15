@@ -1,4 +1,0 @@
-import{j as o}from"./iframe-ce5-efCb.js";import{u as e,M as i,C as m}from"./blocks-BgVWM2bA.js";import{S as s,D as a}from"./form-section.stories-BaZyGa0q.js";import"./preload-helper-C1FmrZbK.js";import"./index-z7P5nfEw.js";import"./button-DTZJ7PNL.js";import"./button-base-BK7tGpG4.js";import"./class-names-2dOUpm6k.js";import"./input-BwIcYy4A.js";import"./form-control-BzK8dlK3.js";import"./feedback-BOf5M1IX.js";import"./panel-C5HhQPw_.js";import"./text-8uwx9w-W.js";function n(t){const r={h1:"h1",p:"p",...e(),...t.components};return o.jsxs(o.Fragment,{children:[o.jsx(i,{of:s}),`
-`,o.jsx(r.h1,{id:"form-section",children:"Form Section"}),`
-`,o.jsx(r.p,{children:"Sezione standard per blocchi form con summary error e footer azioni."}),`
-`,o.jsx(m,{of:a})]})}function X(t={}){const{wrapper:r}={...e(),...t.components};return r?o.jsx(r,{...t,children:o.jsx(n,{...t})}):n(t)}export{X as default};

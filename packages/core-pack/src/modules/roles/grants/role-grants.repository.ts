@@ -1,13 +1,9 @@
-import {
-  createPluginDbScope,
-  type DbAdapter,
-  type PluginDbScope,
-} from "@trinacria-cms/kernel";
+import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import {
   EmbeddedRoleGrantSchema,
   RoleGrantRecordSchema,
-  type RoleGrantRecord,
+  type RoleGrantRecord
 } from "./role-grants.schemas.js";
 
 const ROLES_ENTITY_NAME = "roles";
@@ -51,7 +47,7 @@ export class RoleGrantsRepository {
     const existing = role.permissionGrants.find(
       (grant) =>
         grant.permissionKey === normalizedPermissionKey &&
-        grant.sourcePluginId === normalizedSourcePluginId,
+        grant.sourcePluginId === normalizedSourcePluginId
     );
     if (existing) return this.toRecord(role.code, existing);
 
@@ -60,7 +56,7 @@ export class RoleGrantsRepository {
       permissionKey: normalizedPermissionKey,
       sourcePluginId: normalizedSourcePluginId,
       createdAt: now,
-      updatedAt: now,
+      updatedAt: now
     });
     const nextGrants = [...role.permissionGrants, createdGrant];
 
@@ -69,16 +65,14 @@ export class RoleGrantsRepository {
       {
         permissionGrants: nextGrants,
         permissions: this.toPermissionKeys(nextGrants),
-        updatedAt: now,
-      },
+        updatedAt: now
+      }
     );
 
     return this.toRecord(role.code, createdGrant);
   }
 
-  async findOne(
-    input: UpsertRoleGrantInput,
-  ): Promise<RoleGrantRecord | null> {
+  async findOne(input: UpsertRoleGrantInput): Promise<RoleGrantRecord | null> {
     const normalizedRoleCode = input.roleCode.trim().toLowerCase();
     const normalizedPermissionKey = input.permissionKey.trim().toLowerCase();
     const normalizedSourcePluginId = input.sourcePluginId.trim().toLowerCase();
@@ -87,7 +81,7 @@ export class RoleGrantsRepository {
       records.find(
         (record) =>
           record.permissionKey === normalizedPermissionKey &&
-          record.sourcePluginId === normalizedSourcePluginId,
+          record.sourcePluginId === normalizedSourcePluginId
       ) ?? null
     );
   }
@@ -98,43 +92,35 @@ export class RoleGrantsRepository {
     return role.permissionGrants.map((grant) => this.toRecord(role.code, grant));
   }
 
-  async listByRoleCodes(
-    roleCodes: readonly string[],
-  ): Promise<readonly RoleGrantRecord[]> {
-    const targetCodes = new Set(
-      roleCodes.map((roleCode) => roleCode.trim().toLowerCase()),
-    );
+  async listByRoleCodes(roleCodes: readonly string[]): Promise<readonly RoleGrantRecord[]> {
+    const targetCodes = new Set(roleCodes.map((roleCode) => roleCode.trim().toLowerCase()));
     if (targetCodes.size === 0) return [];
 
     const roles = await this.listAllRoles();
     return roles
       .filter((role) => targetCodes.has(role.code))
-      .flatMap((role) =>
-        role.permissionGrants.map((grant) => this.toRecord(role.code, grant)),
-      );
+      .flatMap((role) => role.permissionGrants.map((grant) => this.toRecord(role.code, grant)));
   }
 
-  async listBySourcePlugin(
-    sourcePluginId: string,
-  ): Promise<readonly RoleGrantRecord[]> {
+  async listBySourcePlugin(sourcePluginId: string): Promise<readonly RoleGrantRecord[]> {
     const normalizedSource = sourcePluginId.trim().toLowerCase();
     const roles = await this.listAllRoles();
     return roles.flatMap((role) =>
       role.permissionGrants
         .filter((grant) => grant.sourcePluginId === normalizedSource)
-        .map((grant) => this.toRecord(role.code, grant)),
+        .map((grant) => this.toRecord(role.code, grant))
     );
   }
 
   async deleteById(id: string): Promise<boolean> {
     const roles = await this.listAllRoles();
     const target = roles.find((role) =>
-      role.permissionGrants.some((grant) => this.buildGrantId(role.code, grant) === id),
+      role.permissionGrants.some((grant) => this.buildGrantId(role.code, grant) === id)
     );
     if (!target) return false;
 
     const nextGrants = target.permissionGrants.filter(
-      (grant) => this.buildGrantId(target.code, grant) !== id,
+      (grant) => this.buildGrantId(target.code, grant) !== id
     );
     if (nextGrants.length === target.permissionGrants.length) return false;
 
@@ -144,8 +130,8 @@ export class RoleGrantsRepository {
       {
         permissionGrants: nextGrants,
         permissions: this.toPermissionKeys(nextGrants),
-        updatedAt: now,
-      },
+        updatedAt: now
+      }
     );
     return true;
   }
@@ -169,15 +155,12 @@ export class RoleGrantsRepository {
     const now = new Date().toISOString();
     await this.repository().updateOne(
       { filter: { id: role.id } },
-      { permissionGrants: [], permissions: [], updatedAt: now },
+      { permissionGrants: [], permissions: [], updatedAt: now }
     );
     return deleted;
   }
 
-  async hasGrantFromOtherPlugins(
-    roleCode: string,
-    excludedPluginId: string,
-  ): Promise<boolean> {
+  async hasGrantFromOtherPlugins(roleCode: string, excludedPluginId: string): Promise<boolean> {
     const records = await this.listByRoleCode(roleCode);
     const normalizedExcluded = excludedPluginId.trim().toLowerCase();
     return records.some((record) => record.sourcePluginId !== normalizedExcluded);
@@ -190,7 +173,7 @@ export class RoleGrantsRepository {
 
   private async findRoleByCode(code: string): Promise<RoleDocument | null> {
     const raw = await this.repository().findOne({
-      filter: { code: code.trim().toLowerCase() },
+      filter: { code: code.trim().toLowerCase() }
     });
     if (!raw) return null;
     return this.parseRoleDocument(raw);
@@ -208,7 +191,9 @@ export class RoleGrantsRepository {
 
     const record = value as Record<string, unknown>;
     const id = String(record.id ?? "");
-    const code = String(record.code ?? "").trim().toLowerCase();
+    const code = String(record.code ?? "")
+      .trim()
+      .toLowerCase();
     if (!id || !code) {
       throw new Error("Invalid role document: missing id/code");
     }
@@ -216,16 +201,14 @@ export class RoleGrantsRepository {
     const permissionGrantsRaw = Array.isArray(record.permissionGrants)
       ? record.permissionGrants
       : [];
-    const permissionGrants = permissionGrantsRaw.map((item) =>
-      EmbeddedRoleGrantSchema.parse(item),
-    );
+    const permissionGrants = permissionGrantsRaw.map((item) => EmbeddedRoleGrantSchema.parse(item));
 
     return { id, code, permissionGrants };
   }
 
   private toRecord(
     roleCode: string,
-    grant: RoleDocument["permissionGrants"][number],
+    grant: RoleDocument["permissionGrants"][number]
   ): RoleGrantRecord {
     return RoleGrantRecordSchema.parse({
       id: this.buildGrantId(roleCode, grant),
@@ -233,21 +216,18 @@ export class RoleGrantsRepository {
       permissionKey: grant.permissionKey,
       sourcePluginId: grant.sourcePluginId,
       createdAt: grant.createdAt,
-      updatedAt: grant.updatedAt,
+      updatedAt: grant.updatedAt
     });
   }
 
-  private buildGrantId(
-    roleCode: string,
-    grant: RoleDocument["permissionGrants"][number],
-  ): string {
+  private buildGrantId(roleCode: string, grant: RoleDocument["permissionGrants"][number]): string {
     return `${encodeURIComponent(roleCode)}::${encodeURIComponent(
-      grant.permissionKey,
+      grant.permissionKey
     )}::${encodeURIComponent(grant.sourcePluginId)}`;
   }
 
   private toPermissionKeys(
-    grants: readonly RoleDocument["permissionGrants"][number][],
+    grants: readonly RoleDocument["permissionGrants"][number][]
   ): readonly string[] {
     return [...new Set(grants.map((grant) => grant.permissionKey))];
   }

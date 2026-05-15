@@ -1,26 +1,12 @@
-import type {
-  PluginManifest,
-} from "../contracts/plugin-manifest.js";
-import {
-  ValidationError,
-  formatValidationError,
-  s,
-  type Infer,
-} from "@trinacria/schema";
-import {
-  PluginCompatibilityError,
-  PluginManifestError,
-} from "../errors/plugin-errors.js";
-import {
-  isValidVersion,
-  isValidVersionRange,
-  satisfiesVersion,
-} from "./semver.js";
+import type { PluginManifest } from "../contracts/plugin-manifest.js";
+import { ValidationError, formatValidationError, s, type Infer } from "@trinacria/schema";
+import { PluginCompatibilityError, PluginManifestError } from "../errors/plugin-errors.js";
+import { isValidVersion, isValidVersionRange, satisfiesVersion } from "./semver.js";
 import {
   isPermissionOwnedByPlugin,
   isPermissionPatternOwnedByPlugin,
   isValidPermissionKey,
-  isValidPermissionPattern,
+  isValidPermissionPattern
 } from "./permission-key.js";
 
 const PLUGIN_ID_REGEX = /^[a-z0-9][a-z0-9-._/]*$/;
@@ -32,18 +18,18 @@ const pluginDependencySchema = s.object(
       .refine(
         (value) => !value.includes("//"),
         "Dependency pluginId cannot contain empty path segments",
-        "invalid_plugin_id_segment",
+        "invalid_plugin_id_segment"
       ),
     versionRange: s
       .string({ trim: true, minLength: 1 })
       .refine(
         (value) => isValidVersionRange(value),
         "Dependency versionRange is not a supported semver range",
-        "invalid_version_range",
+        "invalid_version_range"
       ),
-    optional: s.boolean().optional().default(false),
+    optional: s.boolean().optional().default(false)
   },
-  { strict: true },
+  { strict: true }
 );
 
 const securityPermissionSchema = s.object(
@@ -53,12 +39,12 @@ const securityPermissionSchema = s.object(
       .refine(
         (value) => isValidPermissionKey(value),
         "Permission key must be '<pluginId>:<resource>:<action>'",
-        "invalid_permission_key",
+        "invalid_permission_key"
       ),
     displayName: s.string({ trim: true, minLength: 1, maxLength: 120 }),
-    description: s.string({ trim: true, maxLength: 500 }).optional(),
+    description: s.string({ trim: true, maxLength: 500 }).optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 const securityRoleSchema = s.object(
@@ -68,12 +54,12 @@ const securityRoleSchema = s.object(
       toLowerCase: true,
       minLength: 2,
       maxLength: 64,
-      pattern: /^[a-z0-9][a-z0-9._-]*$/,
+      pattern: /^[a-z0-9][a-z0-9._-]*$/
     }),
     name: s.string({ trim: true, minLength: 1, maxLength: 120 }),
-    description: s.string({ trim: true, maxLength: 500 }).optional(),
+    description: s.string({ trim: true, maxLength: 500 }).optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 const securityGrantSchema = s.object(
@@ -83,7 +69,7 @@ const securityGrantSchema = s.object(
       toLowerCase: true,
       minLength: 2,
       maxLength: 64,
-      pattern: /^[a-z0-9][a-z0-9._-]*$/,
+      pattern: /^[a-z0-9][a-z0-9._-]*$/
     }),
     permissionKeys: s
       .array(
@@ -92,22 +78,23 @@ const securityGrantSchema = s.object(
           .refine(
             (value) => isValidPermissionKey(value),
             "Permission key must be '<pluginId>:<resource>:<action>'",
-            "invalid_permission_key",
+            "invalid_permission_key"
           ),
-        { unique: true },
+        { unique: true }
       )
       .refine(
         (value) => value.length > 0,
         "Grant permissionKeys cannot be empty",
-        "empty_grant_permissions",
-      ),
+        "empty_grant_permissions"
+      )
   },
-  { strict: true },
+  { strict: true }
 );
 
-const securityPolicyConditionSchema = s.enum(
-  ["resource_id_required", "resource_id_equals_subject"] as const,
-);
+const securityPolicyConditionSchema = s.enum([
+  "resource_id_required",
+  "resource_id_equals_subject"
+] as const);
 
 const securityPolicyRuleSchema = s.object(
   {
@@ -116,7 +103,7 @@ const securityPolicyRuleSchema = s.object(
       toLowerCase: true,
       minLength: 2,
       maxLength: 64,
-      pattern: /^[a-z0-9][a-z0-9._-]*$/,
+      pattern: /^[a-z0-9][a-z0-9._-]*$/
     }),
     effect: s.enum(["allow", "deny"] as const),
     permissionPattern: s
@@ -124,14 +111,11 @@ const securityPolicyRuleSchema = s.object(
       .refine(
         (value) => isValidPermissionPattern(value),
         "Permission pattern must be '<pluginId>:<resource|*>:<action|*>'",
-        "invalid_permission_pattern",
+        "invalid_permission_pattern"
       ),
-    conditions: s
-      .array(securityPolicyConditionSchema, { unique: true })
-      .optional()
-      .default([]),
+    conditions: s.array(securityPolicyConditionSchema, { unique: true }).optional().default([])
   },
-  { strict: true },
+  { strict: true }
 );
 
 const pluginManifestSchema = s
@@ -142,32 +126,31 @@ const pluginManifestSchema = s
         .refine(
           (value) => !value.includes("//"),
           "Plugin id cannot contain empty path segments",
-          "invalid_plugin_id_segment",
+          "invalid_plugin_id_segment"
         ),
       version: s
         .string({ trim: true, minLength: 1 })
         .refine(
           (value) => isValidVersion(value),
           "Plugin version must be a valid semver",
-          "invalid_semver_version",
+          "invalid_semver_version"
         ),
       requiresCore: s
         .string({ trim: true, minLength: 1 })
         .refine(
           (value) => isValidVersionRange(value),
           "requiresCore must be a supported semver range",
-          "invalid_core_range",
+          "invalid_core_range"
         ),
       capabilities: s
-        .array(
-          s.string({ trim: true, minLength: 1, pattern: /^[a-z0-9][a-z0-9._-]*$/ }),
-          { unique: true },
-        )
+        .array(s.string({ trim: true, minLength: 1, pattern: /^[a-z0-9][a-z0-9._-]*$/ }), {
+          unique: true
+        })
         .optional()
         .default([]),
       dependencies: s
         .array(pluginDependencySchema, {
-          unique: (dependency) => dependency.pluginId,
+          unique: (dependency) => dependency.pluginId
         })
         .optional()
         .default([]),
@@ -176,19 +159,19 @@ const pluginManifestSchema = s
           {
             permissions: s
               .array(securityPermissionSchema, {
-                unique: (permission) => permission.key,
+                unique: (permission) => permission.key
               })
               .optional()
               .default([]),
             roles: s
               .array(securityRoleSchema, {
-                unique: (role) => role.code,
+                unique: (role) => role.code
               })
               .optional()
               .default([]),
             grants: s
               .array(securityGrantSchema, {
-                unique: (grant) => grant.roleCode,
+                unique: (grant) => grant.roleCode
               })
               .optional()
               .default([]),
@@ -197,50 +180,48 @@ const pluginManifestSchema = s
                 unique: (rule) =>
                   `${rule.roleCode}|${rule.effect}|${rule.permissionPattern}|${(
                     rule.conditions ?? []
-                  ).join(",")}`,
+                  ).join(",")}`
               })
               .optional()
-              .default([]),
+              .default([])
           },
-          { strict: true },
+          { strict: true }
         )
-        .optional(),
+        .optional()
     },
-    { strict: true },
+    { strict: true }
   )
   .refine(
     (manifest) =>
-      (manifest.dependencies ?? []).every(
-        (dependency) => dependency.pluginId !== manifest.id,
-      ),
+      (manifest.dependencies ?? []).every((dependency) => dependency.pluginId !== manifest.id),
     "Plugin cannot depend on itself",
-    "self_dependency",
+    "self_dependency"
   )
   .refine(
     (manifest) =>
       (manifest.security?.permissions ?? []).every((permission) =>
-        isPermissionOwnedByPlugin(manifest.id, permission.key),
+        isPermissionOwnedByPlugin(manifest.id, permission.key)
       ),
     "Each security permission key must belong to the manifest plugin id",
-    "security_permission_ownership_violation",
+    "security_permission_ownership_violation"
   )
   .refine(
     (manifest) =>
       (manifest.security?.grants ?? []).every((grant) =>
         grant.permissionKeys.every((permissionKey) =>
-          isPermissionOwnedByPlugin(manifest.id, permissionKey),
-        ),
+          isPermissionOwnedByPlugin(manifest.id, permissionKey)
+        )
       ),
     "Each security grant permission key must belong to the manifest plugin id",
-    "security_grant_ownership_violation",
+    "security_grant_ownership_violation"
   )
   .refine(
     (manifest) =>
       (manifest.security?.policyRules ?? []).every((rule) =>
-        isPermissionPatternOwnedByPlugin(manifest.id, rule.permissionPattern),
+        isPermissionPatternOwnedByPlugin(manifest.id, rule.permissionPattern)
       ),
     "Each security policy rule pattern must belong to the manifest plugin id",
-    "security_policy_rule_ownership_violation",
+    "security_policy_rule_ownership_violation"
   );
 
 type ParsedPluginManifest = Infer<typeof pluginManifestSchema>;
@@ -254,7 +235,7 @@ export function validatePluginManifest(input: unknown): PluginManifest {
     const dependencies = (parsed.dependencies ?? []).map((dependency) => ({
       pluginId: dependency.pluginId,
       versionRange: dependency.versionRange,
-      optional: dependency.optional,
+      optional: dependency.optional
     }));
 
     return {
@@ -269,25 +250,25 @@ export function validatePluginManifest(input: unknown): PluginManifest {
               permissions: [...(parsed.security.permissions ?? [])],
               roles: [...(parsed.security.roles ?? [])],
               grants: [...(parsed.security.grants ?? [])],
-              policyRules: [...(parsed.security.policyRules ?? [])],
-            },
+              policyRules: [...(parsed.security.policyRules ?? [])]
+            }
           }
-        : {}),
+        : {})
     };
   } catch (error) {
     if (error instanceof ValidationError) {
       throw new PluginManifestError(
         formatValidationError(error, {
           prefix: "Invalid plugin manifest:",
-          rootLabel: "manifest",
+          rootLabel: "manifest"
         }),
         {
-          issues: error.issues,
-        },
+          issues: error.issues
+        }
       );
     }
     throw new PluginManifestError("Unexpected plugin manifest validation error", {
-      cause: String(error),
+      cause: String(error)
     });
   }
 }
@@ -295,14 +276,11 @@ export function validatePluginManifest(input: unknown): PluginManifest {
 /**
  * Ensures a validated manifest is compatible with the current core version.
  */
-export function assertPluginCompatibility(
-  manifest: PluginManifest,
-  coreVersion: string,
-): void {
+export function assertPluginCompatibility(manifest: PluginManifest, coreVersion: string): void {
   if (!isValidVersion(coreVersion)) {
     throw new PluginCompatibilityError("Current core version is not valid semver", {
       coreVersion,
-      pluginId: manifest.id,
+      pluginId: manifest.id
     });
   }
 
@@ -312,8 +290,8 @@ export function assertPluginCompatibility(
       {
         pluginId: manifest.id,
         required: manifest.requiresCore,
-        current: coreVersion,
-      },
+        current: coreVersion
+      }
     );
   }
 }

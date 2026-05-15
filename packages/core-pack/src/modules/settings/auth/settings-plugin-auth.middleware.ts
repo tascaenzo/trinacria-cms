@@ -1,14 +1,13 @@
 import type { HttpContext, HttpMiddleware } from "@trinacria-cms/kernel";
 import { SettingsPluginAuthService } from "./settings-plugin-auth.service.js";
 
-export const SETTINGS_AUTH_PLUGIN_ID_STATE_KEY =
-  "corePack.settings.authenticatedPluginId";
+export const SETTINGS_AUTH_PLUGIN_ID_STATE_KEY = "corePack.settings.authenticatedPluginId";
 
 /**
  * Route middleware enforcing signed plugin-caller authentication.
  */
 export function createSettingsPluginAuthMiddleware(
-  auth: SettingsPluginAuthService,
+  auth: SettingsPluginAuthService
 ): HttpMiddleware {
   return async (ctx, next) => {
     const pluginId = await auth.authenticateRequest(ctx);

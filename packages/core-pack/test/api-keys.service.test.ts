@@ -24,34 +24,34 @@ test("ApiKeysService issues keys, authenticates them and resolves embedded autho
     roles,
     roleGrants,
     rolePolicyRules,
-    permissions,
+    permissions
   );
 
   await permissions.upsertOwnedPermission({
     key: "core-pack:users:read",
     displayName: "Read users",
-    sourcePluginId: CORE_PACK_PLUGIN_ID,
+    sourcePluginId: CORE_PACK_PLUGIN_ID
   });
   await permissions.upsertOwnedPermission({
     key: "core-pack:roles:read",
     displayName: "Read roles",
-    sourcePluginId: CORE_PACK_PLUGIN_ID,
+    sourcePluginId: CORE_PACK_PLUGIN_ID
   });
   await roles.upsertOwnedRole({
     code: "integrator",
     name: "Integrator",
-    ownerPluginId: CORE_PACK_PLUGIN_ID,
+    ownerPluginId: CORE_PACK_PLUGIN_ID
   });
   await roleGrants.upsert({
     roleCode: "integrator",
     permissionKey: "core-pack:users:read",
-    sourcePluginId: CORE_PACK_PLUGIN_ID,
+    sourcePluginId: CORE_PACK_PLUGIN_ID
   });
   await rolePolicyRules.upsert({
     roleCode: "integrator",
     effect: "allow",
     permissionPattern: "core-pack:users:*",
-    sourcePluginId: CORE_PACK_PLUGIN_ID,
+    sourcePluginId: CORE_PACK_PLUGIN_ID
   });
 
   const created = await service.create({
@@ -63,9 +63,9 @@ test("ApiKeysService issues keys, authenticates them and resolves embedded autho
       {
         effect: "deny",
         permissionPattern: "core-pack:users:delete",
-        conditions: [],
-      },
-    ],
+        conditions: []
+      }
+    ]
   });
 
   assert.match(created.apiKey, /^cms_sk_[a-z0-9]+_[A-Za-z0-9_-]+$/);
@@ -82,31 +82,21 @@ test("ApiKeysService issues keys, authenticates them and resolves embedded autho
   const rules = await service.resolveAuthorizationRules(created.record.id);
   assert.ok(
     rules.some(
-      (rule) =>
-        rule.effect === "allow" &&
-        rule.permissionPattern === "core-pack:roles:read",
-    ),
+      (rule) => rule.effect === "allow" && rule.permissionPattern === "core-pack:roles:read"
+    )
   );
   assert.ok(
     rules.some(
-      (rule) =>
-        rule.effect === "allow" &&
-        rule.permissionPattern === "core-pack:users:read",
-    ),
+      (rule) => rule.effect === "allow" && rule.permissionPattern === "core-pack:users:read"
+    )
+  );
+  assert.ok(
+    rules.some((rule) => rule.effect === "allow" && rule.permissionPattern === "core-pack:users:*")
   );
   assert.ok(
     rules.some(
-      (rule) =>
-        rule.effect === "allow" &&
-        rule.permissionPattern === "core-pack:users:*",
-    ),
-  );
-  assert.ok(
-    rules.some(
-      (rule) =>
-        rule.effect === "deny" &&
-        rule.permissionPattern === "core-pack:users:delete",
-    ),
+      (rule) => rule.effect === "deny" && rule.permissionPattern === "core-pack:users:delete"
+    )
   );
 });
 
@@ -122,9 +112,7 @@ function createFakeDbAdapter(): DbAdapter {
     return created;
   };
 
-  const repository = <TData extends Record<string, unknown>>(
-    key: string,
-  ): DbRepository<TData> => ({
+  const repository = <TData extends Record<string, unknown>>(key: string): DbRepository<TData> => ({
     async findOne(query: DbQuery<TData>) {
       const bucket = getBucket(key) as TData[];
       const found = bucket.find((item) => matchesFilter(item, query.filter)) ?? null;
@@ -164,7 +152,7 @@ function createFakeDbAdapter(): DbAdapter {
       if (index < 0) return false;
       bucket.splice(index, 1);
       return true;
-    },
+    }
   });
 
   return {
@@ -174,18 +162,18 @@ function createFakeDbAdapter(): DbAdapter {
     async beginTransaction() {
       return {
         async commit() {},
-        async rollback() {},
+        async rollback() {}
       };
     },
     async healthCheck() {
       return { ok: true };
-    },
+    }
   };
 }
 
 function matchesFilter(
   item: Record<string, unknown>,
-  filter: Record<string, unknown> | undefined,
+  filter: Record<string, unknown> | undefined
 ): boolean {
   if (!filter) return true;
   return Object.entries(filter).every(([key, value]) => item[key] === value);
@@ -193,7 +181,7 @@ function matchesFilter(
 
 function applySort<TData extends Record<string, unknown>>(
   values: readonly TData[],
-  sort: Record<string, "asc" | "desc"> | undefined,
+  sort: Record<string, "asc" | "desc"> | undefined
 ): TData[] {
   if (!sort || Object.keys(sort).length === 0) return [...values];
   const [field, direction] = Object.entries(sort)[0];

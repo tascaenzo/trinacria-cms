@@ -13,7 +13,7 @@ const DOMAIN_SEGMENT = "[a-z0-9][a-z0-9._-]*";
 const NAME_SEGMENT = "[a-z0-9][a-z0-9._-]*";
 
 const SETTING_KEY_REGEX = new RegExp(
-  `^(?<pluginId>${PLUGIN_SEGMENT}):(?<domain>${DOMAIN_SEGMENT}):(?<name>${NAME_SEGMENT})$`,
+  `^(?<pluginId>${PLUGIN_SEGMENT}):(?<domain>${DOMAIN_SEGMENT}):(?<name>${NAME_SEGMENT})$`
 );
 
 /**
@@ -33,7 +33,7 @@ export function parseSettingKey(value: string): ParsedSettingKey | null {
   return {
     pluginId,
     domain,
-    name,
+    name
   };
 }
 
@@ -50,9 +50,7 @@ export function isValidSettingKey(value: string): boolean {
 export function getOwnerPluginIdFromSettingKey(value: string): string {
   const parsed = parseSettingKey(value);
   if (!parsed) {
-    throw new Error(
-      `Invalid setting key "${value}". Expected '<pluginId>:<domain>:<name>'`,
-    );
+    throw new Error(`Invalid setting key "${value}". Expected '<pluginId>:<domain>:<name>'`);
   }
   return parsed.pluginId;
 }
@@ -63,7 +61,7 @@ export function getOwnerPluginIdFromSettingKey(value: string): string {
 export function assertRequesterOwnsSettingKey(
   requesterPluginId: string,
   settingKey: string,
-  action = "modify",
+  action = "modify"
 ): void {
   const ownerPluginId = getOwnerPluginIdFromSettingKey(settingKey);
   const normalizedRequester = requesterPluginId.trim().toLowerCase();
@@ -72,7 +70,7 @@ export function assertRequesterOwnsSettingKey(
       action,
       key: settingKey,
       requesterPluginId: normalizedRequester,
-      ownerPluginId,
+      ownerPluginId
     });
   }
 }

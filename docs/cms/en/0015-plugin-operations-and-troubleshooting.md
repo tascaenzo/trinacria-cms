@@ -118,31 +118,31 @@ GET /v1/system/plugins/core-pack/events
 
 ```ts
 const plugin = await cms.system.getInstalledPlugin({
-  path: { pluginId: "core-pack" },
+  path: { pluginId: "core-pack" }
 });
 
 if (plugin.data.operations.some((item) => item.operation === "reload" && item.available)) {
   await cms.system.executePluginOperation({
     path: { pluginId: "core-pack" },
-    body: { operation: "reload" },
+    body: { operation: "reload" }
   });
 }
 
 const events = await cms.system.listPluginEvents({
-  path: { pluginId: "core-pack" },
+  path: { pluginId: "core-pack" }
 });
 ```
 
 ## 7. Quick troubleshooting
 
-| Symptom | Where to look | Recommended action |
-| --- | --- | --- |
-| Plugin in `failed` | `lastFailurePhase`, `lastError`, `events` | inspect phase and cause, then use `load`/`reload` only if `operations[]` allows it |
-| Plugin in `disabled` | `disabledReason`, `events` | run `enable`, then retry `load` if available |
-| Dependency `missing` | `dependencies[]` | register/load the dependency plugin first |
-| Dependency `disabled` | `dependencies[]`, dependency snapshot | re-enable the dependency before the caller plugin |
-| `version-mismatch` | `dependencies[]` | align required and installed versions |
-| Operation rejected | `error.details.plugin.operations`, `error.details.recentEvents` | the runtime is protecting an invalid state or a dependency constraint |
+| Symptom               | Where to look                                                   | Recommended action                                                                 |
+| --------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Plugin in `failed`    | `lastFailurePhase`, `lastError`, `events`                       | inspect phase and cause, then use `load`/`reload` only if `operations[]` allows it |
+| Plugin in `disabled`  | `disabledReason`, `events`                                      | run `enable`, then retry `load` if available                                       |
+| Dependency `missing`  | `dependencies[]`                                                | register/load the dependency plugin first                                          |
+| Dependency `disabled` | `dependencies[]`, dependency snapshot                           | re-enable the dependency before the caller plugin                                  |
+| `version-mismatch`    | `dependencies[]`                                                | align required and installed versions                                              |
+| Operation rejected    | `error.details.plugin.operations`, `error.details.recentEvents` | the runtime is protecting an invalid state or a dependency constraint              |
 
 ## 8. Declared `M3` limits
 

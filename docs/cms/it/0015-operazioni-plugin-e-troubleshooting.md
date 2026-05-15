@@ -118,31 +118,31 @@ GET /v1/system/plugins/core-pack/events
 
 ```ts
 const plugin = await cms.system.getInstalledPlugin({
-  path: { pluginId: "core-pack" },
+  path: { pluginId: "core-pack" }
 });
 
 if (plugin.data.operations.some((item) => item.operation === "reload" && item.available)) {
   await cms.system.executePluginOperation({
     path: { pluginId: "core-pack" },
-    body: { operation: "reload" },
+    body: { operation: "reload" }
   });
 }
 
 const events = await cms.system.listPluginEvents({
-  path: { pluginId: "core-pack" },
+  path: { pluginId: "core-pack" }
 });
 ```
 
 ## 7. Troubleshooting rapido
 
-| Sintomo | Dove guardare | Azione consigliata |
-| --- | --- | --- |
-| Plugin in `failed` | `lastFailurePhase`, `lastError`, `events` | verifica fase e causa, poi usa `load`/`reload` solo se `operations[]` lo consente |
-| Plugin in `disabled` | `disabledReason`, `events` | usa `enable`, poi riesegui `load` se disponibile |
-| Dipendenza `missing` | `dependencies[]` | registra/carica prima il plugin dipendenza |
-| Dipendenza `disabled` | `dependencies[]`, snapshot dipendenza | riabilita la dipendenza prima del plugin chiamante |
-| `version-mismatch` | `dependencies[]` | riallinea la versione richiesta o la versione installata |
-| Operazione rifiutata | `error.details.plugin.operations`, `error.details.recentEvents` | il runtime sta proteggendo uno stato non valido o un vincolo di dipendenza |
+| Sintomo               | Dove guardare                                                   | Azione consigliata                                                                |
+| --------------------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Plugin in `failed`    | `lastFailurePhase`, `lastError`, `events`                       | verifica fase e causa, poi usa `load`/`reload` solo se `operations[]` lo consente |
+| Plugin in `disabled`  | `disabledReason`, `events`                                      | usa `enable`, poi riesegui `load` se disponibile                                  |
+| Dipendenza `missing`  | `dependencies[]`                                                | registra/carica prima il plugin dipendenza                                        |
+| Dipendenza `disabled` | `dependencies[]`, snapshot dipendenza                           | riabilita la dipendenza prima del plugin chiamante                                |
+| `version-mismatch`    | `dependencies[]`                                                | riallinea la versione richiesta o la versione installata                          |
+| Operazione rifiutata  | `error.details.plugin.operations`, `error.details.recentEvents` | il runtime sta proteggendo uno stato non valido o un vincolo di dipendenza        |
 
 ## 8. Limiti dichiarati di `M3`
 

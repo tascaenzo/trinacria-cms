@@ -11,13 +11,13 @@ export const EmbeddedUserRoleSchema = s.object(
       toLowerCase: true,
       minLength: 2,
       maxLength: 64,
-      pattern: /^[a-z0-9][a-z0-9._-]*$/,
+      pattern: /^[a-z0-9][a-z0-9._-]*$/
     }),
     sourcePluginId: s.string({ trim: true, minLength: 1 }),
     createdAt: s.dateTimeString(),
-    updatedAt: s.dateTimeString(),
+    updatedAt: s.dateTimeString()
   },
-  { strict: true },
+  { strict: true }
 );
 
 export type EmbeddedUserRole = Infer<typeof EmbeddedUserRoleSchema>;
@@ -35,13 +35,13 @@ export const UserRoleRecordSchema = s.object(
       toLowerCase: true,
       minLength: 2,
       maxLength: 64,
-      pattern: /^[a-z0-9][a-z0-9._-]*$/,
+      pattern: /^[a-z0-9][a-z0-9._-]*$/
     }),
     sourcePluginId: s.string({ trim: true, minLength: 1 }),
     createdAt: s.dateTimeString(),
-    updatedAt: s.dateTimeString(),
+    updatedAt: s.dateTimeString()
   },
-  { strict: true },
+  { strict: true }
 );
 
 export type UserRoleRecord = Infer<typeof UserRoleRecordSchema>;

@@ -13,7 +13,7 @@ export function formatDateTime(value: string | undefined): string {
 
   return new Intl.DateTimeFormat("en-GB", {
     dateStyle: "medium",
-    timeStyle: "short",
+    timeStyle: "short"
   }).format(date);
 }
 

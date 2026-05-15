@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { KeyValueItem, KeyValuePanel } from "./key-value-panel.js";
 
-const meta = { title: "Display/Data/KeyValuePanel", component: KeyValuePanel } satisfies Meta<typeof KeyValuePanel>;
+const meta = { title: "Display/Data/KeyValuePanel", component: KeyValuePanel } satisfies Meta<
+  typeof KeyValuePanel
+>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 

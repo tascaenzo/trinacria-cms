@@ -13,24 +13,15 @@ export interface OfficialSdkPluginCatalogEntry {
  * Additional official plugins can extend this list without changing the
  * generation model for custom monorepo overlays.
  */
-export const OFFICIAL_SDK_PLUGIN_CATALOG: readonly OfficialSdkPluginCatalogEntry[] =
-  Object.freeze([
-    {
-      pluginId: "kernel",
-      apiGroups: ["kernelHealth", "system"],
-      description: "Built-in kernel diagnostics and runtime discovery APIs",
-    },
-    {
-      pluginId: "core-pack",
-      apiGroups: [
-        "auth",
-        "installation",
-        "users",
-        "roles",
-        "permissions",
-        "security",
-        "settings",
-      ],
-      description: "Official identity, installation, security, and settings APIs",
-    },
-  ]);
+export const OFFICIAL_SDK_PLUGIN_CATALOG: readonly OfficialSdkPluginCatalogEntry[] = Object.freeze([
+  {
+    pluginId: "kernel",
+    apiGroups: ["kernelHealth", "system"],
+    description: "Built-in kernel diagnostics and runtime discovery APIs"
+  },
+  {
+    pluginId: "core-pack",
+    apiGroups: ["auth", "installation", "users", "roles", "permissions", "security", "settings"],
+    description: "Official identity, installation, security, and settings APIs"
+  }
+]);

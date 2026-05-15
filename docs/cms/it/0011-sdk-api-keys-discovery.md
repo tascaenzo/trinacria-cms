@@ -164,26 +164,18 @@ Uso tipico:
 Esempio concettuale:
 
 ```ts
-import {
-  createCmsSdkClient,
-  hasCapability,
-  isPluginInstalled,
-} from "@trinacria-cms/sdk";
+import { createCmsSdkClient, hasCapability, isPluginInstalled } from "@trinacria-cms/sdk";
 
 const cms = createCmsSdkClient({
   baseUrl: "http://127.0.0.1:3000",
-  credentials: "include",
+  credentials: "include"
 });
 
 const plugins = await cms.system.listInstalledPlugins();
 const capabilities = await cms.system.listInstalledCapabilities();
 
 const hasCorePack = isPluginInstalled(plugins.data, "core-pack");
-const canUseSettings = hasCapability(
-  capabilities.data,
-  "core-pack",
-  "settings.service",
-);
+const canUseSettings = hasCapability(capabilities.data, "core-pack", "settings.service");
 ```
 
 Logica:
@@ -277,7 +269,7 @@ import { createCmsSdkClient } from "@trinacria-cms/sdk";
 
 const cms = createCmsSdkClient({
   baseUrl: "http://127.0.0.1:3000",
-  apiKey: "cms_sk_lookup_secret",
+  apiKey: "cms_sk_lookup_secret"
 });
 
 const health = await cms.kernelHealth.getKernelHealth();

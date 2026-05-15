@@ -1,4 +1,0 @@
-import{j as e}from"./iframe-ce5-efCb.js";import{u as r,M as s,C as i}from"./blocks-BgVWM2bA.js";import{S as a,D as m}from"./admin-shell.stories-CIEjONyv.js";import"./preload-helper-C1FmrZbK.js";import"./index-z7P5nfEw.js";import"./button-DTZJ7PNL.js";import"./button-base-BK7tGpG4.js";import"./class-names-2dOUpm6k.js";import"./icon-Dp3itan5.js";function o(t){const n={code:"code",h1:"h1",p:"p",...r(),...t.components};return e.jsxs(e.Fragment,{children:[e.jsx(s,{of:a}),`
-`,e.jsx(n.h1,{id:"adminshell",children:"AdminShell"}),`
-`,e.jsxs(n.p,{children:[e.jsx(n.code,{children:"AdminShell"})," e il frame strutturale del backoffice: sidebar, header, breadcrumb operativo e area contenuti."]}),`
-`,e.jsx(i,{of:m})]})}function M(t={}){const{wrapper:n}={...r(),...t.components};return n?e.jsx(n,{...t,children:e.jsx(o,{...t})}):o(t)}export{M as default};

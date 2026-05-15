@@ -4,7 +4,7 @@ import {
   parseQueryNumber,
   toOpenApiSchema,
   type HttpContext,
-  type HttpMiddleware,
+  type HttpMiddleware
 } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import { CORE_PACK_OPENAPI_TAGS } from "../openapi-tags.js";
@@ -16,7 +16,7 @@ import {
   ListPermissionsResponseSchema,
   PermissionResponseSchema,
   PermissionsErrorResponseSchema,
-  UpdatePermissionStatusInputSchema,
+  UpdatePermissionStatusInputSchema
 } from "./dto/index.js";
 import type { PermissionsService } from "./permissions.service.js";
 
@@ -27,14 +27,14 @@ const PermissionsListQueryParameters = [
     name: "limit",
     in: "query",
     required: false,
-    schema: { type: "integer", minimum: 1, maximum: 200 },
+    schema: { type: "integer", minimum: 1, maximum: 200 }
   },
   {
     name: "offset",
     in: "query",
     required: false,
-    schema: { type: "integer", minimum: 0 },
-  },
+    schema: { type: "integer", minimum: 0 }
+  }
 ] as const;
 
 /**
@@ -45,113 +45,97 @@ export class PermissionsController extends HttpController {
 
   constructor(
     private readonly permissions: PermissionsService,
-    auth: JwtAuthService,
+    auth: JwtAuthService
   ) {
     super();
     this.adminAuthMiddleware = createJwtAuthMiddleware(auth, {
-      requireAdmin: true,
+      requireAdmin: true
     });
   }
 
   routes() {
     return this.router()
-      .get(
-        "/v1/permissions",
-        this.listPermissions,
-        {
-          middlewares: [this.adminAuthMiddleware],
-          docs: {
-            summary: "List permissions",
-            tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
-            operationId: "listPermissions",
-            security: [{ bearerAuth: [] }],
-            parameters: [...PermissionsListQueryParameters],
-            responses: {
-              200: {
-                description: "Permissions list",
-                schema: toOpenApiSchema(ListPermissionsResponseSchema),
-              },
+      .get("/v1/permissions", this.listPermissions, {
+        middlewares: [this.adminAuthMiddleware],
+        docs: {
+          summary: "List permissions",
+          tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
+          operationId: "listPermissions",
+          security: [{ bearerAuth: [] }],
+          parameters: [...PermissionsListQueryParameters],
+          responses: {
+            200: {
+              description: "Permissions list",
+              schema: toOpenApiSchema(ListPermissionsResponseSchema)
+            }
+          }
+        }
+      })
+      .get("/v1/permissions/:id", this.getPermissionById, {
+        middlewares: [this.adminAuthMiddleware],
+        docs: {
+          summary: "Get permission by id",
+          tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
+          operationId: "getPermissionById",
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: {
+              description: "Permission found",
+              schema: toOpenApiSchema(PermissionResponseSchema)
             },
+            404: {
+              description: "Permission not found",
+              schema: toOpenApiSchema(PermissionsErrorResponseSchema)
+            }
+          }
+        }
+      })
+      .post("/v1/permissions", this.createPermission, {
+        middlewares: [this.adminAuthMiddleware],
+        docs: {
+          summary: "Create permission",
+          tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
+          operationId: "createPermission",
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            schema: toOpenApiSchema(CreatePermissionInputSchema)
           },
-        },
-      )
-      .get(
-        "/v1/permissions/:id",
-        this.getPermissionById,
-        {
-          middlewares: [this.adminAuthMiddleware],
-          docs: {
-            summary: "Get permission by id",
-            tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
-            operationId: "getPermissionById",
-            security: [{ bearerAuth: [] }],
-            responses: {
-              200: {
-                description: "Permission found",
-                schema: toOpenApiSchema(PermissionResponseSchema),
-              },
-              404: {
-                description: "Permission not found",
-                schema: toOpenApiSchema(PermissionsErrorResponseSchema),
-              },
+          responses: {
+            200: {
+              description: "Permission created",
+              schema: toOpenApiSchema(PermissionResponseSchema)
             },
+            409: {
+              description: "Conflict",
+              schema: toOpenApiSchema(PermissionsErrorResponseSchema)
+            }
+          }
+        }
+      })
+      .patch("/v1/permissions/:id/status", this.updatePermissionStatus, {
+        middlewares: [this.adminAuthMiddleware],
+        docs: {
+          summary: "Update permission status",
+          tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
+          operationId: "updatePermissionStatus",
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            schema: toOpenApiSchema(UpdatePermissionStatusInputSchema)
           },
-        },
-      )
-      .post(
-        "/v1/permissions",
-        this.createPermission,
-        {
-          middlewares: [this.adminAuthMiddleware],
-          docs: {
-            summary: "Create permission",
-            tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
-            operationId: "createPermission",
-            security: [{ bearerAuth: [] }],
-            requestBody: {
-              required: true,
-              schema: toOpenApiSchema(CreatePermissionInputSchema),
+          responses: {
+            200: {
+              description: "Permission updated",
+              schema: toOpenApiSchema(PermissionResponseSchema)
             },
-            responses: {
-              200: {
-                description: "Permission created",
-                schema: toOpenApiSchema(PermissionResponseSchema),
-              },
-              409: {
-                description: "Conflict",
-                schema: toOpenApiSchema(PermissionsErrorResponseSchema),
-              },
-            },
-          },
-        },
-      )
-      .patch(
-        "/v1/permissions/:id/status",
-        this.updatePermissionStatus,
-        {
-          middlewares: [this.adminAuthMiddleware],
-          docs: {
-            summary: "Update permission status",
-            tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
-            operationId: "updatePermissionStatus",
-            security: [{ bearerAuth: [] }],
-            requestBody: {
-              required: true,
-              schema: toOpenApiSchema(UpdatePermissionStatusInputSchema),
-            },
-            responses: {
-              200: {
-                description: "Permission updated",
-                schema: toOpenApiSchema(PermissionResponseSchema),
-              },
-              404: {
-                description: "Permission not found",
-                schema: toOpenApiSchema(PermissionsErrorResponseSchema),
-              },
-            },
-          },
-        },
-      )
+            404: {
+              description: "Permission not found",
+              schema: toOpenApiSchema(PermissionsErrorResponseSchema)
+            }
+          }
+        }
+      })
       .build();
   }
 
@@ -159,12 +143,12 @@ export class PermissionsController extends HttpController {
     try {
       const query = ListPermissionsQuerySchema.parse({
         limit: parseQueryNumber(ctx.query.limit),
-        offset: parseQueryNumber(ctx.query.offset),
+        offset: parseQueryNumber(ctx.query.offset)
       });
       const permissions = await this.permissions.listPermissions(query);
       return responder.list(permissions, {
         limit: query.limit,
-        offset: query.offset,
+        offset: query.offset
       });
     } catch (error) {
       return responder.fromError(error);

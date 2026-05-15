@@ -1,8 +1,4 @@
-import {
-  getCookieValue,
-  serializeCookie,
-  type HttpContext,
-} from "@trinacria-cms/kernel";
+import { getCookieValue, serializeCookie, type HttpContext } from "@trinacria-cms/kernel";
 import type { LoginResult } from "./auth.service.js";
 
 export interface JwtCookieConfig {
@@ -21,20 +17,15 @@ export interface JwtCookieConfig {
 export function readJwtCookieConfigFromEnv(): JwtCookieConfig {
   const sameSiteRaw = process.env.CMS_JWT_COOKIE_SAME_SITE?.trim().toLowerCase();
   const sameSite: JwtCookieConfig["sameSite"] =
-    sameSiteRaw === "strict"
-      ? "Strict"
-      : sameSiteRaw === "none"
-        ? "None"
-        : "Lax";
+    sameSiteRaw === "strict" ? "Strict" : sameSiteRaw === "none" ? "None" : "Lax";
 
   return {
     accessCookieName: process.env.CMS_JWT_ACCESS_COOKIE_NAME?.trim() || "cms_access_token",
-    refreshCookieName:
-      process.env.CMS_JWT_REFRESH_COOKIE_NAME?.trim() || "cms_refresh_token",
+    refreshCookieName: process.env.CMS_JWT_REFRESH_COOKIE_NAME?.trim() || "cms_refresh_token",
     path: process.env.CMS_JWT_COOKIE_PATH?.trim() || "/",
     domain: process.env.CMS_JWT_COOKIE_DOMAIN?.trim() || undefined,
     sameSite,
-    secure: readBooleanEnv("CMS_JWT_COOKIE_SECURE", true),
+    secure: readBooleanEnv("CMS_JWT_COOKIE_SECURE", true)
   };
 }
 
@@ -43,7 +34,7 @@ export function readJwtCookieConfigFromEnv(): JwtCookieConfig {
  */
 export function buildLoginSetCookieHeaders(
   session: LoginResult,
-  config: JwtCookieConfig,
+  config: JwtCookieConfig
 ): readonly string[] {
   const accessMaxAge = secondsUntil(session.expiresAt);
   const refreshMaxAge = secondsUntil(session.refreshExpiresAt);
@@ -52,39 +43,37 @@ export function buildLoginSetCookieHeaders(
     domain: config.domain,
     sameSite: config.sameSite,
     secure: config.secure,
-    httpOnly: true,
+    httpOnly: true
   } as const;
 
   return [
     serializeCookie(config.accessCookieName, session.accessToken, {
       ...cookieOptions,
-      maxAgeSeconds: accessMaxAge,
+      maxAgeSeconds: accessMaxAge
     }),
     serializeCookie(config.refreshCookieName, session.refreshToken, {
       ...cookieOptions,
-      maxAgeSeconds: refreshMaxAge,
-    }),
+      maxAgeSeconds: refreshMaxAge
+    })
   ];
 }
 
 /**
  * Builds Set-Cookie headers that clear auth cookies.
  */
-export function buildLogoutClearCookieHeaders(
-  config: JwtCookieConfig,
-): readonly string[] {
+export function buildLogoutClearCookieHeaders(config: JwtCookieConfig): readonly string[] {
   const cookieOptions = {
     path: config.path,
     domain: config.domain,
     sameSite: config.sameSite,
     secure: config.secure,
     httpOnly: true,
-    maxAgeSeconds: 0,
+    maxAgeSeconds: 0
   } as const;
 
   return [
     serializeCookie(config.accessCookieName, "", cookieOptions),
-    serializeCookie(config.refreshCookieName, "", cookieOptions),
+    serializeCookie(config.refreshCookieName, "", cookieOptions)
   ];
 }
 
@@ -93,7 +82,7 @@ export function buildLogoutClearCookieHeaders(
  */
 export function extractAccessTokenFromCookie(
   ctx: Pick<HttpContext, "req">,
-  config: JwtCookieConfig,
+  config: JwtCookieConfig
 ): string | null {
   const value = getCookieValue(ctx, config.accessCookieName);
   return value?.trim() || null;
@@ -115,4 +104,3 @@ function readBooleanEnv(name: string, defaultValue: boolean): boolean {
   if (value === "false" || value === "0" || value === "no") return false;
   return defaultValue;
 }
-

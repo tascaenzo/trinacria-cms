@@ -1,17 +1,42 @@
 import { useActionState, useCallback, useEffect, useState } from "react";
-import { Badge, Button, Card, Dialog, Input, JsonView, Textarea } from "@trinacria-cms/trinacria-ui";
+import {
+  Badge,
+  Button,
+  Card,
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeadCell,
+  DataTableHeaderRow,
+  DataTablePrimaryCell,
+  DataTableRow,
+  DataTableTable,
+  Dialog,
+  FilterBar,
+  InfoCard,
+  Input,
+  JsonView,
+  PropertyItem,
+  PropertyList,
+  Textarea
+} from "@trinacria-cms/trinacria-ui";
 import type {
   GetSettingSecretMetadataResponse,
   GetSettingValueByKeyResponse,
-  ListSettingDefinitionsResponse,
+  ListSettingDefinitionsResponse
 } from "@trinacria-cms/sdk";
-import { MobileRecordCard, MobileRecordField, MobileRecordList } from "../components/mobile-records.js";
+import {
+  MobileRecordCard,
+  MobileRecordField,
+  MobileRecordList
+} from "../components/mobile-records.js";
 import { ErrorBanner, EmptyState } from "../components/resource-feedback.js";
 import { formatDateTime } from "../lib/formatting.js";
 import {
   type AsyncActionState,
   createIdleAsyncActionState,
-  readOptionalString,
+  readOptionalString
 } from "../runtime/action-state.js";
 import { cms } from "../runtime/cms-sdk.js";
 import { getSdkErrorDetails, toDisplayError } from "../lib/sdk-errors.js";
@@ -53,9 +78,9 @@ const CMS_OVERVIEW_CANDIDATES: Record<
       "core-pack:cms.site.title",
       "cms:site.name",
       "cms:site_name",
-      "cms:site.title",
+      "cms:site.title"
     ],
-    match: (key) => key.includes("site") && (key.includes("name") || key.includes("title")),
+    match: (key) => key.includes("site") && (key.includes("name") || key.includes("title"))
   },
   siteUrl: {
     exact: [
@@ -66,11 +91,11 @@ const CMS_OVERVIEW_CANDIDATES: Record<
       "core-pack:cms.public_url",
       "cms:site.url",
       "cms:site_url",
-      "cms:public_url",
+      "cms:public_url"
     ],
     match: (key) =>
       (key.includes("site") || key.includes("public") || key.includes("base")) &&
-      (key.includes("url") || key.includes("origin")),
+      (key.includes("url") || key.includes("origin"))
   },
   locale: {
     exact: [
@@ -79,9 +104,9 @@ const CMS_OVERVIEW_CANDIDATES: Record<
       "core-pack:cms.locale",
       "core-pack:i18n.locale",
       "cms:locale",
-      "site:locale",
+      "site:locale"
     ],
-    match: (key) => key.includes("locale") || key.includes("language"),
+    match: (key) => key.includes("locale") || key.includes("language")
   },
   timezone: {
     exact: [
@@ -89,23 +114,25 @@ const CMS_OVERVIEW_CANDIDATES: Record<
       "core-pack:timezone",
       "core-pack:cms.timezone",
       "cms:timezone",
-      "site:timezone",
+      "site:timezone"
     ],
-    match: (key) => key.includes("timezone") || key.includes("time_zone"),
-  },
+    match: (key) => key.includes("timezone") || key.includes("time_zone")
+  }
 };
 
 function findOverviewSettingKey(
   records: readonly SettingDefinitionRecord[],
-  field: CmsOverviewField,
+  field: CmsOverviewField
 ): string | null {
   const definition = CMS_OVERVIEW_CANDIDATES[field];
   const exactMatch = records.find((record) =>
-    definition.exact.includes(record.key.trim().toLowerCase()),
+    definition.exact.includes(record.key.trim().toLowerCase())
   );
   if (exactMatch) return exactMatch.key;
 
-  const heuristicMatch = records.find((record) => definition.match(record.key.trim().toLowerCase()));
+  const heuristicMatch = records.find((record) =>
+    definition.match(record.key.trim().toLowerCase())
+  );
   return heuristicMatch?.key ?? null;
 }
 
@@ -152,8 +179,8 @@ export function SettingsPage() {
         query: {
           ownerPluginId: nextOwnerPluginId || undefined,
           limit: 100,
-          offset: 0,
-        },
+          offset: 0
+        }
       });
       setOwnerPluginId(nextOwnerPluginId);
       setRecords(response.data);
@@ -192,7 +219,7 @@ export function SettingsPage() {
           } catch {
             return { field, key, value: null, status: "error" } satisfies CmsOverviewItem;
           }
-        }),
+        })
       );
 
       if (isCancelled) return;
@@ -215,8 +242,8 @@ export function SettingsPage() {
           query: {
             ownerPluginId: nextOwnerPluginId || undefined,
             limit: 100,
-            offset: 0,
-          },
+            offset: 0
+          }
         });
         setOwnerPluginId(nextOwnerPluginId);
         setRecords(response.data);
@@ -226,11 +253,11 @@ export function SettingsPage() {
         return {
           ok: false,
           error: toDisplayError(currentError),
-          data: null,
+          data: null
         };
       }
     },
-    createIdleAsyncActionState<string>(),
+    createIdleAsyncActionState<string>()
   );
 
   async function inspectRecord(record: SettingDefinitionRecord) {
@@ -245,7 +272,7 @@ export function SettingsPage() {
     try {
       const [valueResult, secretResult] = await Promise.allSettled([
         cms.settings.getSettingValueByKey({ path: { key: record.key } }),
-        cms.settings.getSettingSecretMetadata({ path: { key: record.key } }),
+        cms.settings.getSettingSecretMetadata({ path: { key: record.key } })
       ]);
 
       if (valueResult.status === "fulfilled") {
@@ -306,8 +333,8 @@ export function SettingsPage() {
         path: `/v1/settings/values/${selectedRecord.key}`,
         body: {
           value: parsed,
-          updatedBy: "backoffice:prepared-handoff",
-        },
+          updatedBy: "backoffice:prepared-handoff"
+        }
       });
       setDraftError(null);
     } catch {
@@ -341,11 +368,25 @@ export function SettingsPage() {
   return (
     <div className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
       <Card eyebrow={t("settings.eyebrow")} title={t("settings.title")}>
-        <div className="mb-5 flex flex-col gap-4 border-b border-[color:var(--color-border)] pb-4">
-          <form
+        <div className="mb-5 border-b border-[color:var(--color-border)] pb-4">
+          <FilterBar
             key={ownerPluginId}
-            className="grid gap-4 md:grid-cols-[1fr_auto_auto]"
             action={submitFilter}
+            summary={t("settings.summary")}
+            actions={
+              <>
+                <div className="self-end">
+                  <Button type="submit" variant="secondary" disabled={isFilterPending}>
+                    {t("common.actions.apply_filter")}
+                  </Button>
+                </div>
+                <div className="self-end">
+                  <Button type="button" onClick={() => void refresh()}>
+                    {t("common.actions.refresh")}
+                  </Button>
+                </div>
+              </>
+            }
           >
             <Input
               label={t("settings.filter.owner_plugin")}
@@ -353,21 +394,8 @@ export function SettingsPage() {
               defaultValue={ownerPluginId}
               hint={t("settings.filter.owner_plugin_hint")}
             />
-            <div className="self-end">
-              <Button type="submit" variant="secondary" disabled={isFilterPending}>
-                {t("common.actions.apply_filter")}
-              </Button>
-            </div>
-            <div className="self-end">
-              <Button type="button" onClick={() => void refresh()}>
-                {t("common.actions.refresh")}
-              </Button>
-            </div>
-          </form>
+          </FilterBar>
           {filterState.error ? <ErrorBanner message={filterState.error} /> : null}
-          <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
-            {t("settings.summary")}
-          </p>
         </div>
         {error ? <ErrorBanner message={error} /> : null}
         {isLoading ? <EmptyState text={t("settings.empty.loading_definitions")} /> : null}
@@ -394,49 +422,45 @@ export function SettingsPage() {
                     </Button>
                   }
                 >
-                  <MobileRecordField
-                    label={t("common.table.owner")}
-                    value={record.ownerPluginId}
-                  />
+                  <MobileRecordField label={t("common.table.owner")} value={record.ownerPluginId} />
                 </MobileRecordCard>
               ))}
             </MobileRecordList>
 
-            <div className="hidden overflow-x-auto md:block">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[color:var(--color-border)] text-left text-[color:var(--color-ink-subtle)]">
-                    <th className="px-4 py-3 font-medium">{t("common.table.key")}</th>
-                    <th className="px-4 py-3 font-medium">{t("common.table.owner")}</th>
-                    <th className="px-4 py-3 font-medium">{t("common.table.status")}</th>
-                    <th className="px-4 py-3 font-medium">{t("common.table.action")}</th>
-                  </tr>
-                </thead>
-                <tbody>
+            <DataTable>
+              <DataTableTable>
+                <DataTableHead>
+                  <DataTableHeaderRow>
+                    <DataTableHeadCell>{t("common.table.key")}</DataTableHeadCell>
+                    <DataTableHeadCell>{t("common.table.owner")}</DataTableHeadCell>
+                    <DataTableHeadCell>{t("common.table.status")}</DataTableHeadCell>
+                    <DataTableHeadCell>{t("common.table.action")}</DataTableHeadCell>
+                  </DataTableHeaderRow>
+                </DataTableHead>
+                <DataTableBody>
                   {records.map((record) => (
-                    <tr key={record.id} className="border-b border-[color:var(--color-border)] last:border-b-0">
-                      <td className="px-4 py-4">
-                        <p className="font-medium text-[color:var(--color-ink)]">{record.key}</p>
-                        <p className="mt-1 text-[color:var(--color-ink-muted)]">
-                          {record.category ?? t("settings.uncategorized")}
-                        </p>
-                      </td>
-                      <td className="px-4 py-4 text-[color:var(--color-ink-muted)]">{record.ownerPluginId}</td>
-                      <td className="px-4 py-4">
+                    <DataTableRow key={record.id}>
+                      <DataTablePrimaryCell meta={record.category ?? t("settings.uncategorized")}>
+                        {record.key}
+                      </DataTablePrimaryCell>
+                      <DataTableCell className="text-[color:var(--color-ink-muted)]">
+                        {record.ownerPluginId}
+                      </DataTableCell>
+                      <DataTableCell>
                         <Badge tone={record.status === "active" ? "success" : "warning"}>
                           {translateStatusLabel(record.status, t)}
                         </Badge>
-                      </td>
-                      <td className="px-4 py-4">
+                      </DataTableCell>
+                      <DataTableCell>
                         <Button variant="secondary" onClick={() => inspectRecord(record)}>
                           {t("common.actions.inspect_json")}
                         </Button>
-                      </td>
-                    </tr>
+                      </DataTableCell>
+                    </DataTableRow>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </DataTableBody>
+              </DataTableTable>
+            </DataTable>
           </>
         ) : null}
       </Card>
@@ -449,70 +473,44 @@ export function SettingsPage() {
             </p>
             {isOverviewLoading ? <EmptyState text={t("settings.overview.loading")} /> : null}
             {!isOverviewLoading ? (
-              <div className="grid gap-3 sm:grid-cols-2">
+              <PropertyList columns={2}>
                 {overviewItems.map((item) => (
-                  <div
+                  <PropertyItem
                     key={item.field}
-                    className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] p-4"
-                  >
-                    <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
-                      {renderOverviewLabel(item.field)}
-                    </p>
-                    <p className="mt-2 break-words text-base font-semibold text-[color:var(--color-ink)]">
-                      {renderOverviewValue(item)}
-                    </p>
-                    <p className="mt-1 text-xs text-[color:var(--color-ink-muted)]">
-                      {item.key
+                    label={renderOverviewLabel(item.field)}
+                    value={renderOverviewValue(item)}
+                    hint={
+                      item.key
                         ? `${t("settings.overview.detected_key")} ${item.key}`
-                        : t("settings.overview.not_configured_hint")}
-                    </p>
-                  </div>
+                        : t("settings.overview.not_configured_hint")
+                    }
+                  />
                 ))}
-                <div className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] p-4">
-                  <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
-                    {t("settings.overview.active_definitions")}
-                  </p>
-                  <p className="mt-2 text-base font-semibold text-[color:var(--color-ink)]">
-                    {activeDefinitionsCount}
-                  </p>
-                  <p className="mt-1 text-xs text-[color:var(--color-ink-muted)]">
-                    {t("settings.overview.active_definitions_hint")}
-                  </p>
-                </div>
-                <div className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] p-4">
-                  <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
-                    {t("settings.overview.owner_plugins")}
-                  </p>
-                  <p className="mt-2 text-base font-semibold text-[color:var(--color-ink)]">
-                    {ownerPluginsCount}
-                  </p>
-                  <p className="mt-1 text-xs text-[color:var(--color-ink-muted)]">
-                    {t("settings.overview.owner_plugins_hint")}
-                  </p>
-                </div>
-              </div>
+                <PropertyItem
+                  label={t("settings.overview.active_definitions")}
+                  value={activeDefinitionsCount}
+                  hint={t("settings.overview.active_definitions_hint")}
+                />
+                <PropertyItem
+                  label={t("settings.overview.owner_plugins")}
+                  value={ownerPluginsCount}
+                  hint={t("settings.overview.owner_plugins_hint")}
+                />
+              </PropertyList>
             ) : null}
           </div>
         </Card>
 
         <Card eyebrow={t("settings.policy.eyebrow")} title={t("settings.policy.title")}>
           <div className="grid gap-4">
-            <div className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] p-4">
-              <p className="text-sm font-medium text-[color:var(--color-ink)]">
-                {t("settings.policy.ownership.title")}
-              </p>
-              <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink-muted)]">
-                {t("settings.policy.ownership.body")}
-              </p>
-            </div>
-            <div className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] p-4">
-              <p className="text-sm font-medium text-[color:var(--color-ink)]">
-                {t("settings.policy.json_first.title")}
-              </p>
-              <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink-muted)]">
-                {t("settings.policy.json_first.body")}
-              </p>
-            </div>
+            <InfoCard
+              title={t("settings.policy.ownership.title")}
+              description={t("settings.policy.ownership.body")}
+            />
+            <InfoCard
+              title={t("settings.policy.json_first.title")}
+              description={t("settings.policy.json_first.body")}
+            />
           </div>
         </Card>
       </div>
@@ -538,20 +536,18 @@ export function SettingsPage() {
                 </Badge>
                 <Badge>{selectedRecord.ownerPluginId}</Badge>
               </div>
-              <div className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] p-4 text-sm text-[color:var(--color-ink-muted)]">
-                <p>
-                  <span className="font-medium text-[color:var(--color-ink)]">
-                    {t("settings.inspect.category")}
-                  </span>{" "}
-                  {selectedRecord.category ?? t("settings.uncategorized")}
-                </p>
-                <p className="mt-2">
-                  <span className="font-medium text-[color:var(--color-ink)]">
-                    {t("common.table.updated")}
-                  </span>{" "}
-                  {formatDateTime(selectedRecord.updatedAt)}
-                </p>
-              </div>
+              <InfoCard>
+                <PropertyList columns={2}>
+                  <PropertyItem
+                    label={t("settings.inspect.category")}
+                    value={selectedRecord.category ?? t("settings.uncategorized")}
+                  />
+                  <PropertyItem
+                    label={t("common.table.updated")}
+                    value={formatDateTime(selectedRecord.updatedAt)}
+                  />
+                </PropertyList>
+              </InfoCard>
               <JsonView title={t("settings.inspect.definition_json")} value={selectedRecord} />
             </div>
             <div className="grid gap-4">
@@ -560,27 +556,26 @@ export function SettingsPage() {
               {secretError ? <ErrorBanner message={secretError} /> : null}
               {valueRecord ? (
                 <>
-                  <div className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] p-4 text-sm text-[color:var(--color-ink-muted)]">
-                    <p>
-                      <span className="font-medium text-[color:var(--color-ink)]">
-                        {t("settings.inspect.source")}
-                      </span>{" "}
-                      {translateSettingSource(valueRecord.source, t)}
-                    </p>
-                    <p className="mt-2">
-                      <span className="font-medium text-[color:var(--color-ink)]">
-                        {t("common.table.owner")}
-                      </span>{" "}
-                      {valueRecord.ownerPluginId}
-                    </p>
-                    <p className="mt-2">
-                      <span className="font-medium text-[color:var(--color-ink)]">
-                        {t("common.table.updated")}
-                      </span>{" "}
-                      {formatDateTime(valueRecord.updatedAt)}
-                    </p>
-                  </div>
-                  <JsonView title={t("settings.inspect.resolved_value_json")} value={valueRecord.value} />
+                  <InfoCard>
+                    <PropertyList columns={1}>
+                      <PropertyItem
+                        label={t("settings.inspect.source")}
+                        value={translateSettingSource(valueRecord.source, t)}
+                      />
+                      <PropertyItem
+                        label={t("common.table.owner")}
+                        value={valueRecord.ownerPluginId}
+                      />
+                      <PropertyItem
+                        label={t("common.table.updated")}
+                        value={formatDateTime(valueRecord.updatedAt)}
+                      />
+                    </PropertyList>
+                  </InfoCard>
+                  <JsonView
+                    title={t("settings.inspect.resolved_value_json")}
+                    value={valueRecord.value}
+                  />
                 </>
               ) : null}
               {!isValueLoading && !valueError && !valueRecord ? (
@@ -589,33 +584,32 @@ export function SettingsPage() {
               {isSecretLoading ? <EmptyState text={t("settings.inspect.loading_secret")} /> : null}
               {secretMetadata ? (
                 <>
-                  <div className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] p-4 text-sm text-[color:var(--color-ink-muted)]">
-                    <p>
-                      <span className="font-medium text-[color:var(--color-ink)]">
-                        {t("settings.inspect.secret_algorithm")}
-                      </span>{" "}
-                      {secretMetadata.algorithm}
-                    </p>
-                    <p className="mt-2">
-                      <span className="font-medium text-[color:var(--color-ink)]">
-                        {t("settings.inspect.secret_key_version")}
-                      </span>{" "}
-                      {secretMetadata.keyVersion}
-                    </p>
-                    <p className="mt-2">
-                      <span className="font-medium text-[color:var(--color-ink)]">
-                        {t("settings.inspect.secret_masked")}
-                      </span>{" "}
-                      {secretMetadata.maskedValue}
-                    </p>
-                  </div>
-                  <JsonView title={t("settings.inspect.secret_metadata_json")} value={secretMetadata} />
+                  <InfoCard>
+                    <PropertyList columns={1}>
+                      <PropertyItem
+                        label={t("settings.inspect.secret_algorithm")}
+                        value={secretMetadata.algorithm}
+                      />
+                      <PropertyItem
+                        label={t("settings.inspect.secret_key_version")}
+                        value={secretMetadata.keyVersion}
+                      />
+                      <PropertyItem
+                        label={t("settings.inspect.secret_masked")}
+                        value={secretMetadata.maskedValue}
+                      />
+                    </PropertyList>
+                  </InfoCard>
+                  <JsonView
+                    title={t("settings.inspect.secret_metadata_json")}
+                    value={secretMetadata}
+                  />
                 </>
               ) : null}
               {!isSecretLoading && !secretError && !secretMetadata ? (
                 <EmptyState text={t("settings.inspect.no_secret_metadata")} />
               ) : null}
-              <div className="grid gap-4 rounded-2xl border border-dashed border-[color:var(--color-border-strong)] bg-[color:var(--color-panel-soft)] p-4">
+              <div className="grid gap-4 rounded-md border border-dashed border-[color:var(--color-border-strong)] bg-[color:var(--color-panel-soft)] p-4">
                 <div>
                   <p className="text-sm font-medium text-[color:var(--color-ink)]">
                     {t("settings.write_flow.title")}
@@ -624,30 +618,23 @@ export function SettingsPage() {
                     {t("settings.write_flow.summary")}
                   </p>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-xl border border-[color:var(--color-border)] bg-white p-3 text-sm text-[color:var(--color-ink-muted)]">
-                    <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
-                      {t("settings.write_flow.method")}
-                    </p>
-                    <p className="mt-2 font-medium text-[color:var(--color-ink)]">PUT</p>
-                  </div>
-                  <div className="rounded-xl border border-[color:var(--color-border)] bg-white p-3 text-sm text-[color:var(--color-ink-muted)]">
-                    <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
-                      {t("settings.write_flow.owner")}
-                    </p>
-                    <p className="mt-2 font-medium text-[color:var(--color-ink)]">
-                      {selectedRecord.ownerPluginId}
-                    </p>
-                  </div>
-                  <div className="rounded-xl border border-[color:var(--color-border)] bg-white p-3 text-sm text-[color:var(--color-ink-muted)]">
-                    <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
-                      {t("settings.write_flow.mode")}
-                    </p>
-                    <p className="mt-2 font-medium text-[color:var(--color-ink)]">
-                      {t("settings.write_flow.mode_value")}
-                    </p>
-                  </div>
-                </div>
+                <PropertyList columns={3}>
+                  <PropertyItem
+                    label={t("settings.write_flow.method")}
+                    value="PUT"
+                    className="bg-white"
+                  />
+                  <PropertyItem
+                    label={t("settings.write_flow.owner")}
+                    value={selectedRecord.ownerPluginId}
+                    className="bg-white"
+                  />
+                  <PropertyItem
+                    label={t("settings.write_flow.mode")}
+                    value={t("settings.write_flow.mode_value")}
+                    className="bg-white"
+                  />
+                </PropertyList>
                 <Textarea
                   label={t("settings.write_flow.draft_label")}
                   hint={t("settings.write_flow.draft_hint")}
@@ -666,21 +653,24 @@ export function SettingsPage() {
                 </div>
                 {preparedRequest ? (
                   <div className="grid gap-4">
-                    <div className="rounded-xl border border-[color:var(--color-border)] bg-white p-4 text-sm text-[color:var(--color-ink-muted)]">
-                      <p>
-                        <span className="font-medium text-[color:var(--color-ink)]">
-                          {t("settings.write_flow.endpoint")}
-                        </span>{" "}
-                        {preparedRequest.path}
-                      </p>
-                      <p className="mt-2">
-                        <span className="font-medium text-[color:var(--color-ink)]">
-                          {t("settings.write_flow.headers")}
-                        </span>{" "}
-                        {t("settings.write_flow.headers_value")}
-                      </p>
-                    </div>
-                    <JsonView title={t("settings.write_flow.body_title")} value={preparedRequest.body} />
+                    <InfoCard className="bg-white" tone="default">
+                      <PropertyList columns={1}>
+                        <PropertyItem
+                          label={t("settings.write_flow.endpoint")}
+                          value={preparedRequest.path}
+                          className="bg-white"
+                        />
+                        <PropertyItem
+                          label={t("settings.write_flow.headers")}
+                          value={t("settings.write_flow.headers_value")}
+                          className="bg-white"
+                        />
+                      </PropertyList>
+                    </InfoCard>
+                    <JsonView
+                      title={t("settings.write_flow.body_title")}
+                      value={preparedRequest.body}
+                    />
                   </div>
                 ) : null}
               </div>

@@ -1,7 +1,7 @@
 import { isValidPermissionPattern, s, type Infer } from "@trinacria-cms/kernel";
 import {
   RolePolicyRuleConditionSchema,
-  RolePolicyRuleEffectSchema,
+  RolePolicyRuleEffectSchema
 } from "../role-policy-rules/role-policy-rules.schemas.js";
 
 /**
@@ -15,14 +15,11 @@ export const CreateRolePolicyRuleInputSchema = s.object(
       .refine(
         (value) => isValidPermissionPattern(value),
         "Permission pattern must be '<pluginId>:<resource|*>:<action|*>'",
-        "invalid_permission_pattern",
+        "invalid_permission_pattern"
       ),
-    conditions: s
-      .array(RolePolicyRuleConditionSchema, { unique: true })
-      .optional()
-      .default([]),
+    conditions: s.array(RolePolicyRuleConditionSchema, { unique: true }).optional().default([])
   },
-  { strict: true },
+  { strict: true }
 );
 
 export type CreateRolePolicyRuleInput = Infer<typeof CreateRolePolicyRuleInputSchema>;

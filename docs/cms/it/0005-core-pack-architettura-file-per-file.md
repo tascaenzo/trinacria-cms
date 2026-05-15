@@ -105,11 +105,11 @@ Service esposti:
 
 API esposte:
 
-| Metodo | Endpoint | Scopo | Auth |
-| --- | --- | --- | --- |
-| `POST` | `/v1/auth/login` | login email/password, emette access token + refresh token + cookie | pubblica |
-| `GET` | `/v1/auth/me` | risolve utente autenticato | bearer JWT |
-| `POST` | `/v1/auth/logout` | invalida lato client la sessione corrente e pulisce i cookie | bearer JWT |
+| Metodo | Endpoint          | Scopo                                                              | Auth       |
+| ------ | ----------------- | ------------------------------------------------------------------ | ---------- |
+| `POST` | `/v1/auth/login`  | login email/password, emette access token + refresh token + cookie | pubblica   |
+| `GET`  | `/v1/auth/me`     | risolve utente autenticato                                         | bearer JWT |
+| `POST` | `/v1/auth/logout` | invalida lato client la sessione corrente e pulisce i cookie       | bearer JWT |
 
 ### 8.2 Installation
 
@@ -127,9 +127,9 @@ Service esposti:
 
 API esposte:
 
-| Metodo | Endpoint | Scopo | Auth |
-| --- | --- | --- | --- |
-| `GET` | `/v1/install/status` | stato installazione CMS | pubblica |
+| Metodo | Endpoint                | Scopo                                     | Auth               |
+| ------ | ----------------------- | ----------------------------------------- | ------------------ |
+| `GET`  | `/v1/install/status`    | stato installazione CMS                   | pubblica           |
 | `POST` | `/v1/install/bootstrap` | crea primo admin e completa installazione | pubblica, one-shot |
 
 Nota strutturale:
@@ -150,11 +150,11 @@ Service esposti:
 
 API esposte:
 
-| Metodo | Endpoint | Scopo | Auth |
-| --- | --- | --- | --- |
-| `GET` | `/v1/users` | lista utenti | admin JWT |
-| `GET` | `/v1/users/:id` | dettaglio utente | admin JWT |
-| `POST` | `/v1/users` | crea utente | admin JWT |
+| Metodo  | Endpoint               | Scopo                    | Auth      |
+| ------- | ---------------------- | ------------------------ | --------- |
+| `GET`   | `/v1/users`            | lista utenti             | admin JWT |
+| `GET`   | `/v1/users/:id`        | dettaglio utente         | admin JWT |
+| `POST`  | `/v1/users`            | crea utente              | admin JWT |
 | `PATCH` | `/v1/users/:id/status` | attiva o sospende utente | admin JWT |
 
 ### 8.4 Permissions
@@ -170,11 +170,11 @@ Service esposti:
 
 API esposte:
 
-| Metodo | Endpoint | Scopo | Auth |
-| --- | --- | --- | --- |
-| `GET` | `/v1/permissions` | lista permessi | admin JWT |
-| `GET` | `/v1/permissions/:id` | dettaglio permesso | admin JWT |
-| `POST` | `/v1/permissions` | crea permesso | admin JWT |
+| Metodo  | Endpoint                     | Scopo                        | Auth      |
+| ------- | ---------------------------- | ---------------------------- | --------- |
+| `GET`   | `/v1/permissions`            | lista permessi               | admin JWT |
+| `GET`   | `/v1/permissions/:id`        | dettaglio permesso           | admin JWT |
+| `POST`  | `/v1/permissions`            | crea permesso                | admin JWT |
 | `PATCH` | `/v1/permissions/:id/status` | attiva o disabilita permesso | admin JWT |
 
 ### 8.5 Roles
@@ -191,11 +191,11 @@ Service esposti:
 
 API esposte:
 
-| Metodo | Endpoint | Scopo | Auth |
-| --- | --- | --- | --- |
-| `GET` | `/v1/roles` | lista ruoli | admin JWT |
-| `GET` | `/v1/roles/:id` | dettaglio ruolo | admin JWT |
-| `POST` | `/v1/roles` | crea ruolo | admin JWT |
+| Metodo  | Endpoint               | Scopo                     | Auth      |
+| ------- | ---------------------- | ------------------------- | --------- |
+| `GET`   | `/v1/roles`            | lista ruoli               | admin JWT |
+| `GET`   | `/v1/roles/:id`        | dettaglio ruolo           | admin JWT |
+| `POST`  | `/v1/roles`            | crea ruolo                | admin JWT |
 | `PATCH` | `/v1/roles/:id/status` | attiva o disabilita ruolo | admin JWT |
 
 ### 8.6 Security
@@ -219,21 +219,21 @@ Service esposti:
 
 API esposte:
 
-| Metodo | Endpoint | Scopo | Auth |
-| --- | --- | --- | --- |
-| `GET` | `/v1/users/:id/roles` | lista assegnazioni ruolo utente | admin JWT |
-| `POST` | `/v1/users/:id/roles` | assegna ruolo a utente | admin JWT |
-| `DELETE` | `/v1/users/:id/roles/:roleCode` | rimuove ruolo da utente | admin JWT |
-| `GET` | `/v1/users/:id/permissions` | effective permissions utente | admin JWT |
-| `GET` | `/v1/roles/:roleCode/policy-rules` | lista policy rules di un ruolo | admin JWT |
-| `POST` | `/v1/roles/:roleCode/policy-rules` | crea policy rule | admin JWT |
-| `PATCH` | `/v1/roles/:roleCode/policy-rules/:ruleId` | aggiorna policy rule | admin JWT |
-| `DELETE` | `/v1/roles/:roleCode/policy-rules/:ruleId` | elimina policy rule | admin JWT |
-| `GET` | `/v1/api-keys` | lista API key emesse | admin JWT |
-| `GET` | `/v1/api-keys/:id` | dettaglio metadata API key | admin JWT |
-| `POST` | `/v1/api-keys` | crea una nuova API key | admin JWT |
-| `POST` | `/v1/api-keys/:id/rotate` | ruota una API key esistente | admin JWT |
-| `POST` | `/v1/api-keys/:id/revoke` | revoca una API key | admin JWT |
+| Metodo   | Endpoint                                   | Scopo                           | Auth      |
+| -------- | ------------------------------------------ | ------------------------------- | --------- |
+| `GET`    | `/v1/users/:id/roles`                      | lista assegnazioni ruolo utente | admin JWT |
+| `POST`   | `/v1/users/:id/roles`                      | assegna ruolo a utente          | admin JWT |
+| `DELETE` | `/v1/users/:id/roles/:roleCode`            | rimuove ruolo da utente         | admin JWT |
+| `GET`    | `/v1/users/:id/permissions`                | effective permissions utente    | admin JWT |
+| `GET`    | `/v1/roles/:roleCode/policy-rules`         | lista policy rules di un ruolo  | admin JWT |
+| `POST`   | `/v1/roles/:roleCode/policy-rules`         | crea policy rule                | admin JWT |
+| `PATCH`  | `/v1/roles/:roleCode/policy-rules/:ruleId` | aggiorna policy rule            | admin JWT |
+| `DELETE` | `/v1/roles/:roleCode/policy-rules/:ruleId` | elimina policy rule             | admin JWT |
+| `GET`    | `/v1/api-keys`                             | lista API key emesse            | admin JWT |
+| `GET`    | `/v1/api-keys/:id`                         | dettaglio metadata API key      | admin JWT |
+| `POST`   | `/v1/api-keys`                             | crea una nuova API key          | admin JWT |
+| `POST`   | `/v1/api-keys/:id/rotate`                  | ruota una API key esistente     | admin JWT |
+| `POST`   | `/v1/api-keys/:id/revoke`                  | revoca una API key              | admin JWT |
 
 Nota strutturale:
 
@@ -259,17 +259,17 @@ Service esposti:
 
 API esposte:
 
-| Metodo | Endpoint | Scopo | Auth |
-| --- | --- | --- | --- |
-| `GET` | `/v1/settings/definitions` | lista definizioni | bearer admin oppure signed plugin auth |
-| `GET` | `/v1/settings/definitions/:key` | dettaglio definizione | bearer admin oppure signed plugin auth |
-| `POST` | `/v1/settings/definitions` | crea/aggiorna definizione | signed plugin auth |
-| `GET` | `/v1/settings/values/:key` | risolve valore o default | bearer admin oppure signed plugin auth |
-| `PUT` | `/v1/settings/values/:key` | crea/aggiorna valore | signed plugin auth |
-| `GET` | `/v1/settings/secrets/:key` | metadata secret mascherato | bearer admin oppure signed owner plugin |
-| `PUT` | `/v1/settings/secrets/:key` | crea/aggiorna secret cifrato | signed plugin auth |
-| `POST` | `/v1/settings/secrets/:key/reveal` | reveal del secret owner-only | signed plugin auth |
-| `GET` | `/v1/settings/export/:pluginId` | export snapshot con secret mascherati | signed plugin auth |
+| Metodo | Endpoint                           | Scopo                                 | Auth                                    |
+| ------ | ---------------------------------- | ------------------------------------- | --------------------------------------- |
+| `GET`  | `/v1/settings/definitions`         | lista definizioni                     | bearer admin oppure signed plugin auth  |
+| `GET`  | `/v1/settings/definitions/:key`    | dettaglio definizione                 | bearer admin oppure signed plugin auth  |
+| `POST` | `/v1/settings/definitions`         | crea/aggiorna definizione             | signed plugin auth                      |
+| `GET`  | `/v1/settings/values/:key`         | risolve valore o default              | bearer admin oppure signed plugin auth  |
+| `PUT`  | `/v1/settings/values/:key`         | crea/aggiorna valore                  | signed plugin auth                      |
+| `GET`  | `/v1/settings/secrets/:key`        | metadata secret mascherato            | bearer admin oppure signed owner plugin |
+| `PUT`  | `/v1/settings/secrets/:key`        | crea/aggiorna secret cifrato          | signed plugin auth                      |
+| `POST` | `/v1/settings/secrets/:key/reveal` | reveal del secret owner-only          | signed plugin auth                      |
+| `GET`  | `/v1/settings/export/:pluginId`    | export snapshot con secret mascherati | signed plugin auth                      |
 
 Policy operativa aggiornata:
 
@@ -311,10 +311,7 @@ Questo produce envelope uniforme:
 
 ```json
 {
-  "data": [
-    { "id": "1" },
-    { "id": "2" }
-  ],
+  "data": [{ "id": "1" }, { "id": "2" }],
   "meta": {
     "pluginId": "core-pack",
     "count": 2,

@@ -3,7 +3,10 @@ import { Button } from "../../atoms/button/button.js";
 import { Input } from "../../atoms/input/input.js";
 import { ResourceToolbar } from "./resource-toolbar.js";
 
-const meta = { title: "Layout/Toolbars/ResourceToolbar", component: ResourceToolbar } satisfies Meta<typeof ResourceToolbar>;
+const meta = {
+  title: "Layout/Toolbars/ResourceToolbar",
+  component: ResourceToolbar
+} satisfies Meta<typeof ResourceToolbar>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 

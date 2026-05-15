@@ -1,4 +1,0 @@
-import{j as o}from"./iframe-ce5-efCb.js";import{u as n,M as s,C as i}from"./blocks-BgVWM2bA.js";import{S as m,U as a}from"./resource-table.stories-DwKadMhP.js";import"./preload-helper-C1FmrZbK.js";import"./index-z7P5nfEw.js";import"./badge-DsIKyoYj.js";import"./class-names-2dOUpm6k.js";import"./button-DTZJ7PNL.js";import"./button-base-BK7tGpG4.js";import"./mobile-record-CiWavGPq.js";import"./eyebrow-UCSOs8qC.js";import"./panel-C5HhQPw_.js";import"./text-8uwx9w-W.js";function r(t){const e={h1:"h1",p:"p",...n(),...t.components};return o.jsxs(o.Fragment,{children:[o.jsx(s,{of:m}),`
-`,o.jsx(e.h1,{id:"resource-table",children:"Resource Table"}),`
-`,o.jsx(e.p,{children:"Organismo per tabelle admin con handoff responsive verso viste mobile dedicate."}),`
-`,o.jsx(i,{of:a})]})}function D(t={}){const{wrapper:e}={...n(),...t.components};return e?o.jsx(e,{...t,children:o.jsx(r,{...t})}):r(t)}export{D as default};

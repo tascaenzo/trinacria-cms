@@ -6,13 +6,13 @@ export function getButtonBaseClassName({
   className,
   iconOnly = false,
   size = "md",
-  variant = "primary",
+  variant = "primary"
 }: Pick<ButtonBaseProps, "className" | "iconOnly" | "size" | "variant">) {
   return cn(
-    "inline-flex items-center justify-center gap-2 rounded-md border font-medium shadow-sm transition focus:outline-none focus:ring-2 focus:ring-[color:var(--color-focus)] focus:ring-offset-2 focus:ring-offset-[color:var(--color-surface)] disabled:cursor-not-allowed disabled:opacity-55",
+    "inline-flex items-center justify-center gap-2 rounded-[var(--radius-control)] border font-medium shadow-[var(--shadow-surface)] transition focus:outline-none focus:ring-2 focus:ring-[color:var(--color-focus)] focus:ring-offset-2 focus:ring-offset-[color:var(--color-surface)] disabled:cursor-not-allowed disabled:opacity-55",
     getButtonSizeClassName(size, iconOnly),
     getButtonVariantClassName(variant),
-    className,
+    className
   );
 }
 
@@ -59,7 +59,7 @@ export const ButtonBase = forwardRef<HTMLButtonElement, ButtonBaseProps>(functio
     variant = "primary",
     ...props
   },
-  ref,
+  ref
 ) {
   return (
     <button

@@ -1,14 +1,10 @@
-import {
-  createPluginDbScope,
-  type DbAdapter,
-  type PluginDbScope,
-} from "@trinacria-cms/kernel";
+import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import {
   RolePolicyRuleConditionSchema,
   RolePolicyRuleEffectSchema,
   RolePolicyRuleRecordSchema,
-  type RolePolicyRuleRecord,
+  type RolePolicyRuleRecord
 } from "./role-policy-rules.schemas.js";
 
 const ROLE_POLICY_RULES_ENTITY_NAME = "role_policy_rules";
@@ -52,7 +48,7 @@ export class RolePolicyRulesRepository {
       conditions: normalized.conditions,
       sourcePluginId: normalized.sourcePluginId,
       createdAt: now,
-      updatedAt: now,
+      updatedAt: now
     });
     return RolePolicyRuleRecordSchema.parse(created);
   }
@@ -64,22 +60,20 @@ export class RolePolicyRulesRepository {
         roleCode: normalized.roleCode,
         effect: normalized.effect,
         permissionPattern: normalized.permissionPattern,
-        sourcePluginId: normalized.sourcePluginId,
+        sourcePluginId: normalized.sourcePluginId
       },
-      parse: (value: unknown) => RolePolicyRuleRecordSchema.parse(value),
+      parse: (value: unknown) => RolePolicyRuleRecordSchema.parse(value)
     });
 
     const targetKey = normalized.conditions.join(",");
     return records.find((record) => record.conditions.join(",") === targetKey) ?? null;
   }
 
-  async listByRoleCodes(
-    roleCodes: readonly string[],
-  ): Promise<readonly RolePolicyRuleRecord[]> {
+  async listByRoleCodes(roleCodes: readonly string[]): Promise<readonly RolePolicyRuleRecord[]> {
     const targets = new Set(roleCodes.map((roleCode) => roleCode.trim().toLowerCase()));
     if (targets.size === 0) return [];
     const all = await this.repository().findMany({
-      parse: (value: unknown) => RolePolicyRuleRecordSchema.parse(value),
+      parse: (value: unknown) => RolePolicyRuleRecordSchema.parse(value)
     });
     return all.filter((item) => targets.has(item.roleCode));
   }
@@ -88,23 +82,21 @@ export class RolePolicyRulesRepository {
     return this.repository().findMany({
       filter: { roleCode: roleCode.trim().toLowerCase() },
       parse: (value: unknown) => RolePolicyRuleRecordSchema.parse(value),
-      sort: { createdAt: "asc" },
+      sort: { createdAt: "asc" }
     });
   }
 
   async findById(id: string): Promise<RolePolicyRuleRecord | null> {
     return this.repository().findOne({
       filter: { id },
-      parse: (value: unknown) => RolePolicyRuleRecordSchema.parse(value),
+      parse: (value: unknown) => RolePolicyRuleRecordSchema.parse(value)
     });
   }
 
-  async listBySourcePlugin(
-    sourcePluginId: string,
-  ): Promise<readonly RolePolicyRuleRecord[]> {
+  async listBySourcePlugin(sourcePluginId: string): Promise<readonly RolePolicyRuleRecord[]> {
     return this.repository().findMany({
       filter: { sourcePluginId: sourcePluginId.trim().toLowerCase() },
-      parse: (value: unknown) => RolePolicyRuleRecordSchema.parse(value),
+      parse: (value: unknown) => RolePolicyRuleRecordSchema.parse(value)
     });
   }
 
@@ -129,7 +121,7 @@ export class RolePolicyRulesRepository {
       permissionPattern: string;
       conditions: readonly ("resource_id_required" | "resource_id_equals_subject")[];
       updatedAt: string;
-    },
+    }
   ): Promise<RolePolicyRuleRecord | null> {
     const updated = await this.repository().updateOne(
       { filter: { id } },
@@ -137,22 +129,18 @@ export class RolePolicyRulesRepository {
         effect: patch.effect,
         permissionPattern: patch.permissionPattern.trim().toLowerCase(),
         conditions: [...patch.conditions],
-        updatedAt: patch.updatedAt,
-      },
+        updatedAt: patch.updatedAt
+      }
     );
     if (!updated) return null;
     return RolePolicyRuleRecordSchema.parse(updated);
   }
 
-  private normalizeInput(
-    input: UpsertRolePolicyRuleInput,
-  ): NormalizedRolePolicyRuleInput {
+  private normalizeInput(input: UpsertRolePolicyRuleInput): NormalizedRolePolicyRuleInput {
     const conditions = Array.from(
       new Set(
-        (input.conditions ?? [])
-          .map((item) => RolePolicyRuleConditionSchema.parse(item))
-          .sort(),
-      ),
+        (input.conditions ?? []).map((item) => RolePolicyRuleConditionSchema.parse(item)).sort()
+      )
     );
 
     return {
@@ -160,7 +148,7 @@ export class RolePolicyRulesRepository {
       effect: RolePolicyRuleEffectSchema.parse(input.effect),
       permissionPattern: input.permissionPattern.trim().toLowerCase(),
       conditions,
-      sourcePluginId: input.sourcePluginId.trim().toLowerCase(),
+      sourcePluginId: input.sourcePluginId.trim().toLowerCase()
     };
   }
 

@@ -16,10 +16,7 @@ Example from code:
 
 ```ts
 export interface DbAdapter {
-  repository<TData = unknown>(
-    entityName: string,
-    context: NamespaceContext,
-  ): DbRepository<TData>;
+  repository<TData = unknown>(entityName: string, context: NamespaceContext): DbRepository<TData>;
   beginTransaction(context: NamespaceContext): Promise<DbTransaction>;
   healthCheck(): Promise<{ ok: true } | { ok: false; reason: string }>;
 }
@@ -48,12 +45,8 @@ export const CORE_TOKENS = {
   DB_ADAPTER: createToken<DbAdapter>("CMS_CORE_DB_ADAPTER"),
   ENTITY_REGISTRY: createToken<EntityRegistry>("CMS_CORE_ENTITY_REGISTRY"),
   AUTHZ_SERVICE: createToken<AuthzService>("CMS_CORE_AUTHZ_SERVICE"),
-  KERNEL_HEALTH_SERVICE: createToken<KernelHealthService>(
-    "CMS_KERNEL_HEALTH_SERVICE",
-  ),
-  KERNEL_SYSTEM_SERVICE: createToken<KernelSystemService>(
-    "CMS_KERNEL_SYSTEM_SERVICE",
-  ),
+  KERNEL_HEALTH_SERVICE: createToken<KernelHealthService>("CMS_KERNEL_HEALTH_SERVICE"),
+  KERNEL_SYSTEM_SERVICE: createToken<KernelSystemService>("CMS_KERNEL_SYSTEM_SERVICE")
 } as const;
 ```
 
@@ -77,7 +70,7 @@ return responder.success({ id: "core-pack:users:123" });
 
 return responder.list([{ id: "1" }, { id: "2" }], {
   limit: 20,
-  offset: 0,
+  offset: 0
 });
 // {
 //   data: [{ id: "1" }, { id: "2" }],

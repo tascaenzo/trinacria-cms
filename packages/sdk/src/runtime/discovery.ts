@@ -17,7 +17,7 @@ export interface CapabilityLike {
  * Indexes capability names by plugin id for quick lookups in UI or backend code.
  */
 export function indexCapabilitiesByPlugin(
-  capabilities: readonly CapabilityLike[],
+  capabilities: readonly CapabilityLike[]
 ): ReadonlyMap<string, readonly string[]> {
   const byPlugin = new Map<string, string[]>();
 
@@ -28,10 +28,7 @@ export function indexCapabilitiesByPlugin(
   }
 
   return new Map(
-    [...byPlugin.entries()].map(([pluginId, values]) => [
-      pluginId,
-      [...new Set(values)].sort(),
-    ]),
+    [...byPlugin.entries()].map(([pluginId, values]) => [pluginId, [...new Set(values)].sort()])
   );
 }
 
@@ -40,7 +37,7 @@ export function indexCapabilitiesByPlugin(
  */
 export function isPluginInstalled(
   plugins: readonly InstalledPluginLike[],
-  pluginId: string,
+  pluginId: string
 ): boolean {
   const normalized = pluginId.trim().toLowerCase();
   return plugins.some((plugin) => plugin.id.trim().toLowerCase() === normalized);
@@ -52,7 +49,7 @@ export function isPluginInstalled(
 export function hasCapability(
   capabilities: readonly CapabilityLike[],
   capabilityName: string,
-  pluginId?: string,
+  pluginId?: string
 ): boolean {
   const normalizedCapability = capabilityName.trim().toLowerCase();
   const normalizedPluginId = pluginId?.trim().toLowerCase();

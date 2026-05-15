@@ -16,7 +16,11 @@ export function NumberInput({
 
   return (
     <FormControlShell label={label} hint={hint} error={error}>
-      <FormControlSurface error={error} disabled={props.disabled} className="flex items-center overflow-hidden">
+      <FormControlSurface
+        error={error}
+        disabled={props.disabled}
+        className="flex items-center overflow-hidden"
+      >
         {prefix ? (
           <span className="border-r border-[color:var(--color-border)] px-3 text-[color:var(--color-ink-subtle)]">
             {prefix}
@@ -29,7 +33,7 @@ export function NumberInput({
           className={cn(
             "h-full w-full bg-transparent px-3 text-[color:var(--color-ink)] outline-none placeholder:text-[color:var(--color-ink-subtle)] disabled:cursor-not-allowed disabled:bg-[color:var(--color-panel-soft)] disabled:text-[color:var(--color-ink-subtle)]",
             "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
-            className,
+            className
           )}
           {...props}
         />

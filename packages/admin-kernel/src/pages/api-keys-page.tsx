@@ -1,7 +1,30 @@
 import { useActionState, useCallback, useEffect, useRef, useState } from "react";
-import { Badge, Button, Card, DateTimePicker, Dialog, Input, JsonView, Select, Textarea } from "@trinacria-cms/trinacria-ui";
+import {
+  Badge,
+  Button,
+  Card,
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeadCell,
+  DataTableHeaderRow,
+  DataTablePrimaryCell,
+  DataTableRow,
+  DataTableTable,
+  DateTimePicker,
+  Dialog,
+  Input,
+  JsonView,
+  Select,
+  Textarea
+} from "@trinacria-cms/trinacria-ui";
 import type { CreateApiKeyResponse, ListApiKeysResponse } from "@trinacria-cms/sdk";
-import { MobileRecordCard, MobileRecordField, MobileRecordList } from "../components/mobile-records.js";
+import {
+  MobileRecordCard,
+  MobileRecordField,
+  MobileRecordList
+} from "../components/mobile-records.js";
 import { ErrorBanner, EmptyState } from "../components/resource-feedback.js";
 import { useOptimisticStatusRecords } from "../hooks/use-optimistic-status-records.js";
 import { formatDateTime, parseCommaSeparatedList } from "../lib/formatting.js";
@@ -9,7 +32,7 @@ import {
   type AsyncActionState,
   createIdleAsyncActionState,
   readOptionalString,
-  readRequiredString,
+  readRequiredString
 } from "../runtime/action-state.js";
 import { cms } from "../runtime/cms-sdk.js";
 import { toDisplayError } from "../lib/sdk-errors.js";
@@ -59,9 +82,11 @@ export function ApiKeysPage() {
             description: readOptionalString(formData, "description"),
             kind,
             roleCodes: parseCommaSeparatedList(readOptionalString(formData, "roleCodes") ?? ""),
-            permissionKeys: parseCommaSeparatedList(readOptionalString(formData, "permissionKeys") ?? ""),
-            expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
-          },
+            permissionKeys: parseCommaSeparatedList(
+              readOptionalString(formData, "permissionKeys") ?? ""
+            ),
+            expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined
+          }
         });
         await refresh();
         return { ok: true, error: null, data: response.data };
@@ -69,11 +94,11 @@ export function ApiKeysPage() {
         return {
           ok: false,
           error: toDisplayError(currentError),
-          data: null,
+          data: null
         };
       }
     },
-    createIdleAsyncActionState<IssuedApiKey>(),
+    createIdleAsyncActionState<IssuedApiKey>()
   );
 
   useEffect(() => {
@@ -120,9 +145,7 @@ export function ApiKeysPage() {
     <div className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
       <Card eyebrow={t("api_keys.eyebrow")} title={t("api_keys.title")}>
         <div className="mb-5 flex flex-col gap-4 border-b border-[color:var(--color-border)] pb-4 md:flex-row md:items-center md:justify-between">
-          <p className="text-sm text-[color:var(--color-ink-muted)]">
-            {t("api_keys.summary")}
-          </p>
+          <p className="text-sm text-[color:var(--color-ink-muted)]">{t("api_keys.summary")}</p>
           <div className="flex gap-2">
             <Button variant="secondary" onClick={() => void refresh()}>
               {t("common.actions.refresh")}
@@ -153,7 +176,9 @@ export function ApiKeysPage() {
                         disabled={actionId === record.id || record.status === "revoked"}
                         onClick={() => rotate(record)}
                       >
-                        {actionId === record.id ? t("common.actions.working") : t("common.actions.rotate")}
+                        {actionId === record.id
+                          ? t("common.actions.working")
+                          : t("common.actions.rotate")}
                       </Button>
                       <Button
                         variant="ghost"
@@ -178,43 +203,44 @@ export function ApiKeysPage() {
               ))}
             </MobileRecordList>
 
-            <div className="hidden overflow-x-auto md:block">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[color:var(--color-border)] text-left text-[color:var(--color-ink-subtle)]">
-                    <th className="px-4 py-3 font-medium">{t("common.table.key")}</th>
-                    <th className="px-4 py-3 font-medium">{t("api_keys.table.kind")}</th>
-                    <th className="px-4 py-3 font-medium">{t("common.table.status")}</th>
-                    <th className="px-4 py-3 font-medium">{t("api_keys.table.last_used")}</th>
-                    <th className="px-4 py-3 font-medium">{t("api_keys.table.actions")}</th>
-                  </tr>
-                </thead>
-                <tbody>
+            <DataTable>
+              <DataTableTable>
+                <DataTableHead>
+                  <DataTableHeaderRow>
+                    <DataTableHeadCell>{t("common.table.key")}</DataTableHeadCell>
+                    <DataTableHeadCell>{t("api_keys.table.kind")}</DataTableHeadCell>
+                    <DataTableHeadCell>{t("common.table.status")}</DataTableHeadCell>
+                    <DataTableHeadCell>{t("api_keys.table.last_used")}</DataTableHeadCell>
+                    <DataTableHeadCell>{t("api_keys.table.actions")}</DataTableHeadCell>
+                  </DataTableHeaderRow>
+                </DataTableHead>
+                <DataTableBody>
                   {optimisticRecords.map((record) => (
-                    <tr key={record.id} className="border-b border-[color:var(--color-border)] last:border-b-0">
-                      <td className="px-4 py-4">
-                        <p className="font-medium text-[color:var(--color-ink)]">{record.name}</p>
-                        <p className="mt-1 text-[color:var(--color-ink-muted)]">{record.keyPrefix}</p>
-                      </td>
-                      <td className="px-4 py-4">
+                    <DataTableRow key={record.id}>
+                      <DataTablePrimaryCell meta={record.keyPrefix}>
+                        {record.name}
+                      </DataTablePrimaryCell>
+                      <DataTableCell>
                         <Badge>{translateApiKeyKind(record.kind, t)}</Badge>
-                      </td>
-                      <td className="px-4 py-4">
+                      </DataTableCell>
+                      <DataTableCell>
                         <Badge tone={record.status === "active" ? "success" : "warning"}>
                           {translateStatusLabel(record.status, t)}
                         </Badge>
-                      </td>
-                      <td className="px-4 py-4 text-[color:var(--color-ink-muted)]">
+                      </DataTableCell>
+                      <DataTableCell className="text-[color:var(--color-ink-muted)]">
                         {formatDateTime(record.lastUsedAt ?? record.updatedAt)}
-                      </td>
-                      <td className="px-4 py-4">
+                      </DataTableCell>
+                      <DataTableCell>
                         <div className="flex flex-wrap gap-2">
                           <Button
                             variant="secondary"
                             disabled={actionId === record.id || record.status === "revoked"}
                             onClick={() => rotate(record)}
                           >
-                            {actionId === record.id ? t("common.actions.working") : t("common.actions.rotate")}
+                            {actionId === record.id
+                              ? t("common.actions.working")
+                              : t("common.actions.rotate")}
                           </Button>
                           <Button
                             variant="ghost"
@@ -224,12 +250,12 @@ export function ApiKeysPage() {
                             {t("common.actions.revoke")}
                           </Button>
                         </div>
-                      </td>
-                    </tr>
+                      </DataTableCell>
+                    </DataTableRow>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </DataTableBody>
+              </DataTableTable>
+            </DataTable>
           </>
         ) : null}
       </Card>
@@ -240,7 +266,7 @@ export function ApiKeysPage() {
         </p>
         {latestIssuedKey ? (
           <div className="grid gap-4">
-            <div className="rounded-xl border border-[color:var(--color-border)] bg-slate-950 px-4 py-4 font-mono text-xs leading-6 text-slate-100">
+            <div className="rounded-md border border-[color:var(--color-border)] bg-slate-950 px-4 py-4 font-mono text-xs leading-6 text-slate-100">
               {latestIssuedKey.apiKey}
             </div>
             <JsonView title={t("api_keys.secret.issued_metadata")} value={latestIssuedKey.record} />
@@ -270,7 +296,12 @@ export function ApiKeysPage() {
           </>
         }
       >
-        <form ref={createFormRef} id="create-api-key-form" className="grid gap-4 lg:grid-cols-2" action={submitCreate}>
+        <form
+          ref={createFormRef}
+          id="create-api-key-form"
+          className="grid gap-4 lg:grid-cols-2"
+          action={submitCreate}
+        >
           <Input label={t("common.form.name")} name="name" required />
           <Select label={t("api_keys.form.kind")} name="kind" defaultValue="secret">
             <option value="publishable">{t("common.api_key_kind.publishable")}</option>
@@ -290,7 +321,12 @@ export function ApiKeysPage() {
             name="permissionKeys"
             hint={t("api_keys.form.permission_keys_hint")}
           />
-          <DateTimePicker label={t("api_keys.form.expires_at")} name="expiresAt" value={expiresAt} onValueChange={setExpiresAt} />
+          <DateTimePicker
+            label={t("api_keys.form.expires_at")}
+            name="expiresAt"
+            value={expiresAt}
+            onValueChange={setExpiresAt}
+          />
           <div className="lg:col-span-2">
             {createState.error ? <ErrorBanner message={createState.error} /> : null}
           </div>

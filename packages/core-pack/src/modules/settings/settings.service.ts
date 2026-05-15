@@ -1,25 +1,22 @@
-import {
-  assertRequesterOwnsSettingKey,
-  getOwnerPluginIdFromSettingKey,
-} from "./settings-key.js";
+import { assertRequesterOwnsSettingKey, getOwnerPluginIdFromSettingKey } from "./settings-key.js";
 import {
   cloneJsonValue,
   deserializeJsonValue,
   parseJsonValue,
   serializeJsonValue,
-  type JsonValue,
+  type JsonValue
 } from "./settings-json.js";
 import {
   SettingsDefinitionsRepository,
-  type UpsertSettingDefinitionRecordInput,
+  type UpsertSettingDefinitionRecordInput
 } from "./definitions/settings-definitions.repository.js";
 import {
   SettingsValuesRepository,
-  type UpsertSettingValueRecordInput,
+  type UpsertSettingValueRecordInput
 } from "./values/settings-values.repository.js";
 import {
   SettingsSecretsRepository,
-  type UpsertSettingSecretRecordInput,
+  type UpsertSettingSecretRecordInput
 } from "./secrets/settings-secrets.repository.js";
 import { SettingsSecretsCryptoService } from "./secrets/settings-secrets-crypto.service.js";
 import { createSettingsOwnerAccessError } from "./settings.errors.js";
@@ -84,7 +81,7 @@ export class SettingsService {
     private readonly definitions: SettingsDefinitionsRepository,
     private readonly values: SettingsValuesRepository,
     private readonly secrets: SettingsSecretsRepository,
-    private readonly crypto: SettingsSecretsCryptoService,
+    private readonly crypto: SettingsSecretsCryptoService
   ) {}
 
   async upsertDefinition(input: {
@@ -109,7 +106,7 @@ export class SettingsService {
       ...(input.defaultValue !== undefined
         ? { defaultValueJson: serializeJsonValue(parseJsonValue(input.defaultValue)) }
         : {}),
-      status: input.status,
+      status: input.status
     } satisfies UpsertSettingDefinitionRecordInput);
 
     return this.toDefinition(record);
@@ -142,7 +139,7 @@ export class SettingsService {
       key: input.key,
       ownerPluginId: getOwnerPluginIdFromSettingKey(input.key),
       valueJson: serializeJsonValue(parsedValue),
-      updatedBy: input.updatedBy,
+      updatedBy: input.updatedBy
     } satisfies UpsertSettingValueRecordInput);
 
     return this.toSettingValue(record);
@@ -158,7 +155,7 @@ export class SettingsService {
         value: cloneJsonValue(parsed),
         source: "value",
         version: value.version,
-        updatedAt: value.updatedAt,
+        updatedAt: value.updatedAt
       };
     }
 
@@ -173,7 +170,7 @@ export class SettingsService {
       ownerPluginId: definition.ownerPluginId,
       value: cloneJsonValue(parsed),
       source: "default",
-      updatedAt: definition.updatedAt,
+      updatedAt: definition.updatedAt
     };
   }
 
@@ -194,7 +191,7 @@ export class SettingsService {
       authTag: encrypted.authTag,
       algorithm: encrypted.algorithm,
       keyVersion: encrypted.keyVersion,
-      updatedBy: input.updatedBy,
+      updatedBy: input.updatedBy
     } satisfies UpsertSettingSecretRecordInput);
 
     return this.toSecretMetadata(record);
@@ -202,7 +199,7 @@ export class SettingsService {
 
   async getSecretMetadata(
     requesterPluginId: string,
-    key: string,
+    key: string
   ): Promise<SettingSecretMetadata | null> {
     const metadata = await this.getSecretMetadataByKey(key);
     if (!metadata) return null;
@@ -213,7 +210,7 @@ export class SettingsService {
         action: "read secret metadata",
         key,
         requesterPluginId: normalizedRequester,
-        ownerPluginId: metadata.ownerPluginId,
+        ownerPluginId: metadata.ownerPluginId
       });
     }
 
@@ -229,7 +226,7 @@ export class SettingsService {
 
   async revealSecret(
     requesterPluginId: string,
-    key: string,
+    key: string
   ): Promise<{ key: string; value: string } | null> {
     const record = await this.secrets.findByKey(key);
     if (!record) return null;
@@ -240,19 +237,19 @@ export class SettingsService {
         action: "reveal secret",
         key,
         requesterPluginId: normalizedRequester,
-        ownerPluginId: record.ownerPluginId,
+        ownerPluginId: record.ownerPluginId
       });
     }
 
     return {
       key: record.key,
-      value: this.crypto.decrypt(record),
+      value: this.crypto.decrypt(record)
     };
   }
 
   async exportPluginSettings(
     requesterPluginId: string,
-    pluginId: string,
+    pluginId: string
   ): Promise<ExportedPluginSettings> {
     const normalizedRequester = requesterPluginId.trim().toLowerCase();
     const normalizedPluginId = pluginId.trim().toLowerCase();
@@ -261,21 +258,21 @@ export class SettingsService {
         action: "export settings",
         key: `${normalizedPluginId}:*`,
         requesterPluginId: normalizedRequester,
-        ownerPluginId: normalizedPluginId,
+        ownerPluginId: normalizedPluginId
       });
     }
 
     const [definitions, values, secrets] = await Promise.all([
       this.listDefinitions({ ownerPluginId: normalizedPluginId }),
       this.values.listByOwnerPlugin(normalizedPluginId),
-      this.secrets.listByOwnerPlugin(normalizedPluginId),
+      this.secrets.listByOwnerPlugin(normalizedPluginId)
     ]);
 
     return {
       pluginId: normalizedPluginId,
       definitions,
       values: values.map((item) => this.toSettingValue(item)),
-      secrets: secrets.map((item) => this.toSecretMetadata(item)),
+      secrets: secrets.map((item) => this.toSecretMetadata(item))
     };
   }
 
@@ -305,7 +302,7 @@ export class SettingsService {
         : {}),
       status: record.status,
       createdAt: record.createdAt,
-      updatedAt: record.updatedAt,
+      updatedAt: record.updatedAt
     };
   }
 
@@ -327,7 +324,7 @@ export class SettingsService {
       version: record.version,
       ...(record.updatedBy ? { updatedBy: record.updatedBy } : {}),
       createdAt: record.createdAt,
-      updatedAt: record.updatedAt,
+      updatedAt: record.updatedAt
     };
   }
 
@@ -350,7 +347,7 @@ export class SettingsService {
       maskedValue: "********",
       ...(record.updatedBy ? { updatedBy: record.updatedBy } : {}),
       createdAt: record.createdAt,
-      updatedAt: record.updatedAt,
+      updatedAt: record.updatedAt
     };
   }
 }

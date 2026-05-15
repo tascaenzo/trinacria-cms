@@ -1,18 +1,11 @@
-import {
-  createPluginDbScope,
-  type DbAdapter,
-  type PluginDbScope,
-} from "@trinacria-cms/kernel";
-import {
-  UserRecordSchema,
-  type UserRecord,
-} from "./users.schemas.js";
+import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
+import { UserRecordSchema, type UserRecord } from "./users.schemas.js";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import {
   CreateUserInputSchema,
   type CreateUserInput,
   type UpdateUserStatusInput,
-  UpdateUserStatusInputSchema,
+  UpdateUserStatusInputSchema
 } from "./dto/users.input.dto.js";
 
 const USERS_ENTITY_NAME = "users";
@@ -34,7 +27,7 @@ export class UsersRepository {
       displayName: parsedInput.displayName,
       status: "active" as const,
       createdAt: now,
-      updatedAt: now,
+      updatedAt: now
     };
 
     const created = await this.repository().insertOne(record);
@@ -44,7 +37,7 @@ export class UsersRepository {
   async findById(id: string): Promise<UserRecord | null> {
     const found = await this.repository().findOne({
       filter: { id },
-      parse: (value: unknown) => this.parseUserRecord(value),
+      parse: (value: unknown) => this.parseUserRecord(value)
     });
     return found;
   }
@@ -53,7 +46,7 @@ export class UsersRepository {
     const normalizedEmail = email.trim().toLowerCase();
     const found = await this.repository().findOne({
       filter: { email: normalizedEmail },
-      parse: (value: unknown) => this.parseUserRecord(value),
+      parse: (value: unknown) => this.parseUserRecord(value)
     });
     return found;
   }
@@ -63,22 +56,19 @@ export class UsersRepository {
       limit: options?.limit,
       offset: options?.offset,
       sort: { createdAt: "desc" },
-      parse: (value: unknown) => this.parseUserRecord(value),
+      parse: (value: unknown) => this.parseUserRecord(value)
     });
     return users;
   }
 
-  async updateStatus(
-    id: string,
-    input: UpdateUserStatusInput,
-  ): Promise<UserRecord | null> {
+  async updateStatus(id: string, input: UpdateUserStatusInput): Promise<UserRecord | null> {
     const parsedInput = UpdateUserStatusInputSchema.parse(input);
     const updated = await this.repository().updateOne(
       { filter: { id } },
       {
         status: parsedInput.status,
-        updatedAt: new Date().toISOString(),
-      },
+        updatedAt: new Date().toISOString()
+      }
     );
 
     if (!updated) return null;

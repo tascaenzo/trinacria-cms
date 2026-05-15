@@ -1,9 +1,6 @@
 export type SdkPrimitive = string | number | boolean | null;
 
-export type SdkQueryValue =
-  | SdkPrimitive
-  | readonly SdkPrimitive[]
-  | undefined;
+export type SdkQueryValue = SdkPrimitive | readonly SdkPrimitive[] | undefined;
 
 export interface SdkRequestOverrides {
   headers?: Record<string, string>;
@@ -38,9 +35,7 @@ export interface SdkTransportResponse<TData = unknown> {
 }
 
 export interface SdkTransport {
-  request<TData = unknown>(
-    request: SdkTransportRequest,
-  ): Promise<SdkTransportResponse<TData>>;
+  request<TData = unknown>(request: SdkTransportRequest): Promise<SdkTransportResponse<TData>>;
 }
 
 export interface CmsSdkClientOptions {
@@ -51,15 +46,15 @@ export interface CmsSdkClientOptions {
   apiKeyHeaderName?: string;
   getAccessToken?: () => string | undefined | Promise<string | undefined>;
   getApiKey?: () => string | undefined | Promise<string | undefined>;
-  getDefaultHeaders?:
-    | (() => Record<string, string> | undefined | Promise<Record<string, string> | undefined>);
+  getDefaultHeaders?: () =>
+    | Record<string, string>
+    | undefined
+    | Promise<Record<string, string> | undefined>;
   credentials?: "include" | "omit" | "same-origin";
 }
 
 export interface FetchHeadersLike {
-  forEach(
-    callback: (value: string, key: string) => void,
-  ): void;
+  forEach(callback: (value: string, key: string) => void): void;
 }
 
 export interface FetchResponseLike {
@@ -76,11 +71,9 @@ export type FetchLike = (
     body?: string;
     credentials?: "include" | "omit" | "same-origin";
     signal?: unknown;
-  },
+  }
 ) => Promise<FetchResponseLike>;
 
 export interface CmsSdkClientCore {
-  request<TData = unknown>(
-    request: SdkOperationRequest,
-  ): Promise<TData>;
+  request<TData = unknown>(request: SdkOperationRequest): Promise<TData>;
 }

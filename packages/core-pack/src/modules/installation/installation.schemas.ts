@@ -16,9 +16,9 @@ export const InstallationStateRecordSchema = s.object(
     installedAt: s.dateTimeString().optional(),
     adminUserId: s.string({ trim: true, minLength: 1 }).optional(),
     createdAt: s.dateTimeString(),
-    updatedAt: s.dateTimeString(),
+    updatedAt: s.dateTimeString()
   },
-  { strict: true },
+  { strict: true }
 );
 
 export type InstallationStateRecord = Infer<typeof InstallationStateRecordSchema>;
@@ -35,9 +35,9 @@ export const LocalCredentialRecordSchema = s.object(
     passwordSalt: s.string({ minLength: 8, maxLength: 200 }),
     passwordUpdatedAt: s.dateTimeString(),
     createdAt: s.dateTimeString(),
-    updatedAt: s.dateTimeString(),
+    updatedAt: s.dateTimeString()
   },
-  { strict: true },
+  { strict: true }
 );
 
 export type LocalCredentialRecord = Infer<typeof LocalCredentialRecordSchema>;
@@ -48,8 +48,8 @@ export const INSTALLATION_STATE_ENTITY = defineEntity({
   indexes: [
     { fields: { id: 1 }, unique: true, name: "installation_state_id_unique" },
     { fields: { key: 1 }, unique: true, name: "installation_state_key_unique" },
-    { fields: { installed: 1 }, name: "installation_state_installed_idx" },
-  ] as const,
+    { fields: { installed: 1 }, name: "installation_state_installed_idx" }
+  ] as const
 });
 
 export const LOCAL_CREDENTIALS_ENTITY = defineEntity({
@@ -58,6 +58,6 @@ export const LOCAL_CREDENTIALS_ENTITY = defineEntity({
   indexes: [
     { fields: { id: 1 }, unique: true, name: "local_credentials_id_unique" },
     { fields: { userId: 1 }, unique: true, name: "local_credentials_user_id_unique" },
-    { fields: { updatedAt: -1 }, name: "local_credentials_updated_at_desc_idx" },
-  ] as const,
+    { fields: { updatedAt: -1 }, name: "local_credentials_updated_at_desc_idx" }
+  ] as const
 });

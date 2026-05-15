@@ -2,7 +2,7 @@ import {
   createPluginApiResponder,
   HttpController,
   toOpenApiSchema,
-  type HttpContext,
+  type HttpContext
 } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import { CORE_PACK_OPENAPI_TAGS } from "../openapi-tags.js";
@@ -10,7 +10,7 @@ import {
   InstallBootstrapInputSchema,
   InstallationBootstrapResponseSchema,
   InstallationErrorResponseSchema,
-  InstallationStatusResponseSchema,
+  InstallationStatusResponseSchema
 } from "./dto/index.js";
 import type { InstallationService } from "./installation.service.js";
 
@@ -34,10 +34,10 @@ export class InstallationController extends HttpController {
           responses: {
             200: {
               description: "Current installation status",
-              schema: toOpenApiSchema(InstallationStatusResponseSchema),
-            },
-          },
-        },
+              schema: toOpenApiSchema(InstallationStatusResponseSchema)
+            }
+          }
+        }
       })
       .post("/v1/install/bootstrap", this.bootstrap, {
         docs: {
@@ -46,19 +46,19 @@ export class InstallationController extends HttpController {
           operationId: "bootstrapInstallation",
           requestBody: {
             required: true,
-            schema: toOpenApiSchema(InstallBootstrapInputSchema),
+            schema: toOpenApiSchema(InstallBootstrapInputSchema)
           },
           responses: {
             200: {
               description: "Installation bootstrap completed",
-              schema: toOpenApiSchema(InstallationBootstrapResponseSchema),
+              schema: toOpenApiSchema(InstallationBootstrapResponseSchema)
             },
             409: {
               description: "Installation already completed",
-              schema: toOpenApiSchema(InstallationErrorResponseSchema),
-            },
-          },
-        },
+              schema: toOpenApiSchema(InstallationErrorResponseSchema)
+            }
+          }
+        }
       })
       .build();
   }
@@ -82,4 +82,3 @@ export class InstallationController extends HttpController {
     }
   };
 }
-

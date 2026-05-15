@@ -6,7 +6,7 @@ const SettingKeySchema = s
   .refine(
     (value) => isValidSettingKey(value),
     "Setting key must be '<pluginId>:<domain>:<name>'",
-    "invalid_setting_key",
+    "invalid_setting_key"
   );
 
 /**
@@ -17,26 +17,24 @@ export const UpsertSettingDefinitionInputSchema = s.object(
   {
     key: SettingKeySchema,
     category: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
-    description: s.string({ trim: true, minLength: 1, maxLength: 500 }).optional(),
+    description: s.string({ trim: true, minLength: 1, maxLength: 500 }).optional()
   },
   // Keep non-strict to allow free-form payload fields (e.g. defaultValue, schema)
   // validated later in service layer as JSON-compatible values.
-  { strict: false },
+  { strict: false }
 );
 
-export type UpsertSettingDefinitionInput = Infer<
-  typeof UpsertSettingDefinitionInputSchema
->;
+export type UpsertSettingDefinitionInput = Infer<typeof UpsertSettingDefinitionInputSchema>;
 
 /**
  * DTO schema for upserting non-sensitive setting values.
  */
 export const UpsertSettingValueInputSchema = s.object(
   {
-    updatedBy: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
+    updatedBy: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional()
   },
   // Keep non-strict to allow free-form `value` field validated in service layer.
-  { strict: false },
+  { strict: false }
 );
 
 export type UpsertSettingValueInput = Infer<typeof UpsertSettingValueInputSchema>;
@@ -47,9 +45,9 @@ export type UpsertSettingValueInput = Infer<typeof UpsertSettingValueInputSchema
 export const UpsertSettingSecretInputSchema = s.object(
   {
     plaintext: s.string({ minLength: 1, maxLength: 100000 }),
-    updatedBy: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
+    updatedBy: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 export type UpsertSettingSecretInput = Infer<typeof UpsertSettingSecretInputSchema>;
@@ -61,23 +59,21 @@ export const ListSettingDefinitionsQuerySchema = s.object(
   {
     ownerPluginId: s.string({ trim: true, toLowerCase: true, minLength: 1 }).optional(),
     limit: s.number({ int: true, min: 1, max: 200 }).optional(),
-    offset: s.number({ int: true, min: 0 }).optional(),
+    offset: s.number({ int: true, min: 0 }).optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
-export type ListSettingDefinitionsQuery = Infer<
-  typeof ListSettingDefinitionsQuerySchema
->;
+export type ListSettingDefinitionsQuery = Infer<typeof ListSettingDefinitionsQuerySchema>;
 
 /**
  * DTO schema for reading setting key from route params.
  */
 export const SettingKeyParamSchema = s.object(
   {
-    key: SettingKeySchema,
+    key: SettingKeySchema
   },
-  { strict: true },
+  { strict: true }
 );
 
 export type SettingKeyParam = Infer<typeof SettingKeyParamSchema>;
@@ -87,14 +83,12 @@ export type SettingKeyParam = Infer<typeof SettingKeyParamSchema>;
  */
 export const ExportPluginSettingsParamSchema = s.object(
   {
-    pluginId: s.string({ trim: true, toLowerCase: true, minLength: 1 }),
+    pluginId: s.string({ trim: true, toLowerCase: true, minLength: 1 })
   },
-  { strict: true },
+  { strict: true }
 );
 
-export type ExportPluginSettingsParam = Infer<
-  typeof ExportPluginSettingsParamSchema
->;
+export type ExportPluginSettingsParam = Infer<typeof ExportPluginSettingsParamSchema>;
 
 /**
  * Shared OpenAPI schema for free-form JSON values accepted by settings endpoints.
@@ -107,13 +101,13 @@ export const JsonValueOpenApiSchema: Record<string, unknown> = {
     { type: "null" },
     {
       type: "array",
-      items: {},
+      items: {}
     },
     {
       type: "object",
-      additionalProperties: true,
-    },
-  ],
+      additionalProperties: true
+    }
+  ]
 };
 
 /**
@@ -130,8 +124,8 @@ export const UpsertSettingDefinitionBodyOpenApiSchema: Record<string, unknown> =
     category: { type: "string" },
     description: { type: "string" },
     schema: JsonValueOpenApiSchema,
-    defaultValue: JsonValueOpenApiSchema,
-  },
+    defaultValue: JsonValueOpenApiSchema
+  }
 };
 
 /**
@@ -143,8 +137,8 @@ export const UpsertSettingValueBodyOpenApiSchema: Record<string, unknown> = {
   required: ["value"],
   properties: {
     value: JsonValueOpenApiSchema,
-    updatedBy: { type: "string" },
-  },
+    updatedBy: { type: "string" }
+  }
 };
 
 /**
@@ -156,6 +150,6 @@ export const UpsertSettingSecretBodyOpenApiSchema: Record<string, unknown> = {
   required: ["plaintext"],
   properties: {
     plaintext: { type: "string" },
-    updatedBy: { type: "string" },
-  },
+    updatedBy: { type: "string" }
+  }
 };

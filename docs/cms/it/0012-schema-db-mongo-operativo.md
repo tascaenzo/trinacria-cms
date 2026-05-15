@@ -23,15 +23,15 @@ Esempio:
 
 ## 2. Mappa collection attuale
 
-| Collection | Namespace logico | Entita logica | Scopo |
-| --- | --- | --- | --- |
-| `kernel__installed_plugins` | `kernel` | `installed_plugins` | stato runtime persistente dei plugin installati |
-| `plugin_core_pack__users` | `core-pack` | `users` | utenti e assegnazioni ruolo embedded |
-| `plugin_core_pack__roles` | `core-pack` | `roles` | ruoli e grant embedded |
-| `plugin_core_pack__permissions` | `core-pack` | `permissions` | catalogo permessi canonici |
-| `plugin_core_pack__role_policy_rules` | `core-pack` | `role_policy_rules` | policy rules avanzate |
-| `plugin_core_pack__api_keys` | `core-pack` | `api_keys` | credenziali macchina e materiale authz associato |
-| `plugin_core_pack__settings` | `core-pack` | `settings` | definizioni, valori e segreti cifrati |
+| Collection                            | Namespace logico | Entita logica       | Scopo                                            |
+| ------------------------------------- | ---------------- | ------------------- | ------------------------------------------------ |
+| `kernel__installed_plugins`           | `kernel`         | `installed_plugins` | stato runtime persistente dei plugin installati  |
+| `plugin_core_pack__users`             | `core-pack`      | `users`             | utenti e assegnazioni ruolo embedded             |
+| `plugin_core_pack__roles`             | `core-pack`      | `roles`             | ruoli e grant embedded                           |
+| `plugin_core_pack__permissions`       | `core-pack`      | `permissions`       | catalogo permessi canonici                       |
+| `plugin_core_pack__role_policy_rules` | `core-pack`      | `role_policy_rules` | policy rules avanzate                            |
+| `plugin_core_pack__api_keys`          | `core-pack`      | `api_keys`          | credenziali macchina e materiale authz associato |
+| `plugin_core_pack__settings`          | `core-pack`      | `settings`          | definizioni, valori e segreti cifrati            |
 
 ## 3. Diagramma compatto
 

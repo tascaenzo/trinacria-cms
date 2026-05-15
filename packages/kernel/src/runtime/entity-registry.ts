@@ -25,13 +25,11 @@ export interface EntityDefinition {
  * Helper to declare a canonical entity in a single place (schema + metadata).
  * Keeps plugin code concise and avoids separate schema/entity duplication.
  */
-export function defineEntity<TSchema extends Schema<unknown>>(
-  definition: {
-    entityName: string;
-    schema: TSchema;
-    indexes?: readonly EntityIndexDefinition[];
-  },
-): {
+export function defineEntity<TSchema extends Schema<unknown>>(definition: {
+  entityName: string;
+  schema: TSchema;
+  indexes?: readonly EntityIndexDefinition[];
+}): {
   entityName: string;
   schema: TSchema;
   indexes?: readonly EntityIndexDefinition[];
@@ -57,7 +55,7 @@ export class EntityRegistry {
     this.entities.set(entityName, {
       ...definition,
       entityName,
-      indexes: definition.indexes ?? [],
+      indexes: definition.indexes ?? []
     });
   }
 
@@ -65,7 +63,7 @@ export class EntityRegistry {
     const definition = this.entities.get(entityName);
     if (!definition) {
       throw new DbAdapterError(`No entity definition found for "${entityName}"`, {
-        entityName,
+        entityName
       });
     }
     return definition;

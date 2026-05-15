@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type PropsWithChildren, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Icon } from "../../components/atoms/icon/icon.js";
 import { cn } from "../../utils/class-names.js";
 import type {
@@ -48,7 +48,7 @@ export function AdminShell({
   sidebarFooter,
   statusBadges = [],
   subtitle,
-  title,
+  title
 }: AdminShellProps) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => readSidebarState());
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -76,7 +76,7 @@ export function AdminShell({
 
     return Array.from(map.entries()).map(([group, items]) => [
       group,
-      [...items].sort((left, right) => (left.order ?? 0) - (right.order ?? 0)),
+      [...items].sort((left, right) => (left.order ?? 0) - (right.order ?? 0))
     ]) as Array<[string, AdminShellNavigationItem[]]>;
   }, [navigation]);
 
@@ -93,7 +93,7 @@ export function AdminShell({
         <div
           className={cn(
             "fixed inset-0 z-40 bg-[color:var(--color-overlay)] backdrop-blur-sm transition lg:hidden",
-            isMobileSidebarOpen ? "opacity-100" : "pointer-events-none opacity-0",
+            isMobileSidebarOpen ? "opacity-100" : "pointer-events-none opacity-0"
           )}
           aria-hidden={!isMobileSidebarOpen}
           onClick={() => setIsMobileSidebarOpen(false)}
@@ -103,23 +103,27 @@ export function AdminShell({
           className={cn(
             "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-[color:var(--color-border)] bg-[color:var(--color-panel)] transition-all duration-200",
             isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
-            isSidebarCollapsed ? "lg:w-[84px]" : "lg:w-[280px]",
+            isSidebarCollapsed ? "lg:w-[84px]" : "lg:w-[280px]"
           )}
         >
           <div
             className={cn(
               "flex h-16 items-center gap-3 border-b border-[color:var(--color-border)] px-4",
-              isSidebarCollapsed && "justify-center px-0",
+              isSidebarCollapsed && "justify-center px-0"
             )}
           >
             {!isSidebarCollapsed ? (
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[color:var(--color-action-primary-bg)] text-[color:var(--color-action-primary-ink)] shadow-sm">
+              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[color:var(--color-action-primary-bg)] text-[color:var(--color-action-primary-ink)] shadow-sm">
                 <span className="text-sm font-semibold">T</span>
               </div>
             ) : null}
             <div className={cn("min-w-0 flex-1", isSidebarCollapsed && "lg:hidden")}>
-              <p className="truncate text-sm font-semibold text-[color:var(--color-ink)]">Trinacria CMS</p>
-              <p className="truncate text-xs text-[color:var(--color-ink-subtle)]">Admin dashboard</p>
+              <p className="truncate text-sm font-semibold text-[color:var(--color-ink)]">
+                Trinacria CMS
+              </p>
+              <p className="truncate text-xs text-[color:var(--color-ink-subtle)]">
+                Admin dashboard
+              </p>
             </div>
             <button
               type="button"
@@ -138,7 +142,7 @@ export function AdminShell({
                   <div
                     className={cn(
                       "px-3 text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]",
-                      isSidebarCollapsed && "lg:hidden",
+                      isSidebarCollapsed && "lg:hidden"
                     )}
                   >
                     {group}
@@ -154,21 +158,32 @@ export function AdminShell({
                           title={item.title}
                           onClick={() => handleNavigate(item.routeId)}
                           className={cn(
-                            "flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm transition",
+                            "flex h-10 w-full items-center gap-3 rounded-sm px-3 text-sm transition",
                             isSidebarCollapsed ? "lg:justify-center lg:px-0" : "justify-between",
                             isActive
                               ? "bg-[color:var(--color-interactive-selected)] text-[color:var(--color-interactive-selected-ink)] shadow-sm"
-                              : "text-[color:var(--color-ink-muted)] hover:bg-[color:var(--color-interactive-hover)] hover:text-[color:var(--color-ink)]",
+                              : "text-[color:var(--color-ink-muted)] hover:bg-[color:var(--color-interactive-hover)] hover:text-[color:var(--color-ink)]"
                           )}
                         >
                           <span className="flex items-center gap-3 overflow-hidden">
                             {item.icon ? (
                               <Icon
                                 name={item.icon}
-                                className={cn(isActive ? "text-[color:var(--color-interactive-selected-ink)]" : "text-[color:var(--color-ink-subtle)]")}
+                                className={cn(
+                                  isActive
+                                    ? "text-[color:var(--color-interactive-selected-ink)]"
+                                    : "text-[color:var(--color-ink-subtle)]"
+                                )}
                               />
                             ) : null}
-                            <span className={cn("truncate font-medium", isSidebarCollapsed && "lg:hidden")}>{item.title}</span>
+                            <span
+                              className={cn(
+                                "truncate font-medium",
+                                isSidebarCollapsed && "lg:hidden"
+                              )}
+                            >
+                              {item.title}
+                            </span>
                           </span>
                           {item.badge ? (
                             <span
@@ -177,7 +192,7 @@ export function AdminShell({
                                 isActive
                                   ? "border-[color:var(--color-overlay-soft)] bg-[color:var(--color-overlay-soft)] text-[color:var(--color-interactive-selected-ink)]"
                                   : "border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] text-[color:var(--color-ink-subtle)]",
-                                isSidebarCollapsed && "lg:hidden",
+                                isSidebarCollapsed && "lg:hidden"
                               )}
                             >
                               {item.badge}
@@ -198,10 +213,7 @@ export function AdminShell({
         </aside>
 
         <div
-          className={cn(
-            "min-w-0 flex-1",
-            isSidebarCollapsed ? "lg:ml-[84px]" : "lg:ml-[280px]",
-          )}
+          className={cn("min-w-0 flex-1", isSidebarCollapsed ? "lg:ml-[84px]" : "lg:ml-[280px]")}
         >
           <header className="sticky top-0 z-20 border-b border-[color:var(--color-border)] bg-[color:var(--color-canvas)]/90 backdrop-blur-xl">
             <div className="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
@@ -217,13 +229,17 @@ export function AdminShell({
                 <div className="flex items-center gap-2 text-xs text-[color:var(--color-ink-subtle)]">
                   <span>Dashboard</span>
                   <Icon name="chevron-right" className="h-3.5 w-3.5" />
-                  <span className="truncate text-[color:var(--color-ink-muted)]">{activeNavigation?.title ?? title}</span>
+                  <span className="truncate text-[color:var(--color-ink-muted)]">
+                    {activeNavigation?.title ?? title}
+                  </span>
                 </div>
                 <h1 className="mt-0.5 truncate text-lg font-semibold tracking-[-0.02em] text-[color:var(--color-ink)]">
                   {title}
                 </h1>
                 {subtitle ? (
-                  <p className="truncate text-sm text-[color:var(--color-ink-subtle)]">{subtitle}</p>
+                  <p className="truncate text-sm text-[color:var(--color-ink-subtle)]">
+                    {subtitle}
+                  </p>
                 ) : null}
               </div>
               {statusBadges.length > 0 ? (
@@ -233,7 +249,7 @@ export function AdminShell({
                       key={`${badge.label}:${badge.value}`}
                       className={cn(
                         "rounded-full border px-3 py-1 text-xs font-medium",
-                        badgeToneClass(badge.tone),
+                        badgeToneClass(badge.tone)
                       )}
                     >
                       <span className="text-[color:var(--color-ink-subtle)]">{badge.label}</span>

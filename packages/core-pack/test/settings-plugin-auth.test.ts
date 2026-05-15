@@ -6,7 +6,7 @@ import {
   createSettingsPluginAuthMiddleware,
   getAuthenticatedPluginId,
   SettingsPluginAuthError,
-  SettingsPluginAuthService,
+  SettingsPluginAuthService
 } from "../src/modules/settings/index.js";
 
 const PLUGIN_ID = "core-pack";
@@ -16,7 +16,7 @@ test("SettingsPluginAuthService authenticates a valid signed request", async () 
   const service = createAuthService();
   const body = {
     plaintext: "sk_live_value",
-    updatedBy: "core-pack-tests",
+    updatedBy: "core-pack-tests"
   };
   const path = "/v1/settings/secrets/core-pack:integrations:stripe_api_key";
   const headers = buildPluginAuthHeaders({
@@ -24,14 +24,14 @@ test("SettingsPluginAuthService authenticates a valid signed request", async () 
     secret: PLUGIN_SECRET,
     method: "PUT",
     path,
-    body,
+    body
   });
 
   const ctx = createContext({
     method: "PUT",
     url: path,
     headers,
-    body,
+    body
   });
 
   const authenticatedPluginId = await service.authenticateRequest(ctx);
@@ -44,13 +44,10 @@ test("SettingsPluginAuthService rejects missing headers", async () => {
     method: "PUT",
     url: "/v1/settings/secrets/core-pack:integrations:stripe_api_key",
     headers: {},
-    body: { plaintext: "x" },
+    body: { plaintext: "x" }
   });
 
-  await assertAuthError(
-    () => service.authenticateRequest(ctx),
-    "plugin_auth_missing_headers",
-  );
+  await assertAuthError(() => service.authenticateRequest(ctx), "plugin_auth_missing_headers");
 });
 
 test("SettingsPluginAuthService rejects replayed nonce", async () => {
@@ -64,17 +61,14 @@ test("SettingsPluginAuthService rejects replayed nonce", async () => {
     path,
     body,
     nonce: "fixed-replay-nonce",
-    timestamp: Math.floor(Date.now() / 1000),
+    timestamp: Math.floor(Date.now() / 1000)
   });
 
   const first = createContext({ method: "PUT", url: path, headers, body });
   const second = createContext({ method: "PUT", url: path, headers, body });
 
   assert.equal(await service.authenticateRequest(first), PLUGIN_ID);
-  await assertAuthError(
-    () => service.authenticateRequest(second),
-    "plugin_auth_nonce_replay",
-  );
+  await assertAuthError(() => service.authenticateRequest(second), "plugin_auth_nonce_replay");
 });
 
 test("SettingsPluginAuthService rejects expired timestamp", async () => {
@@ -88,14 +82,11 @@ test("SettingsPluginAuthService rejects expired timestamp", async () => {
     path,
     body,
     timestamp: Math.floor(Date.now() / 1000) - 60,
-    nonce: "expired-nonce",
+    nonce: "expired-nonce"
   });
 
   const ctx = createContext({ method: "PUT", url: path, headers, body });
-  await assertAuthError(
-    () => service.authenticateRequest(ctx),
-    "plugin_auth_timestamp_expired",
-  );
+  await assertAuthError(() => service.authenticateRequest(ctx), "plugin_auth_timestamp_expired");
 });
 
 test("SettingsPluginAuth middleware stores authenticated plugin id in context state", async () => {
@@ -107,7 +98,7 @@ test("SettingsPluginAuth middleware stores authenticated plugin id in context st
     secret: PLUGIN_SECRET,
     method: "PUT",
     path,
-    body,
+    body
   });
 
   const ctx = createContext({ method: "PUT", url: path, headers, body });
@@ -123,11 +114,14 @@ test("SettingsPluginAuth middleware stores authenticated plugin id in context st
 });
 
 function createAuthService(options?: { maxSkewSeconds?: number }) {
-  return new SettingsPluginAuthService({
-    async getSecret(pluginId: string) {
-      return pluginId === PLUGIN_ID ? PLUGIN_SECRET : null;
+  return new SettingsPluginAuthService(
+    {
+      async getSecret(pluginId: string) {
+        return pluginId === PLUGIN_ID ? PLUGIN_SECRET : null;
+      }
     },
-  }, { maxSkewSeconds: options?.maxSkewSeconds ?? 300 });
+    { maxSkewSeconds: options?.maxSkewSeconds ?? 300 }
+  );
 }
 
 function createContext(input: {
@@ -140,19 +134,19 @@ function createContext(input: {
     req: {
       method: input.method,
       url: input.url,
-      headers: input.headers,
+      headers: input.headers
     },
     res: {},
     params: {},
     query: {},
     body: input.body,
-    state: {},
+    state: {}
   } as HttpContext;
 }
 
 async function assertAuthError(
   action: () => Promise<unknown>,
-  expectedCode: string,
+  expectedCode: string
 ): Promise<void> {
   await assert.rejects(action, (error: unknown) => {
     assert.ok(error instanceof SettingsPluginAuthError);

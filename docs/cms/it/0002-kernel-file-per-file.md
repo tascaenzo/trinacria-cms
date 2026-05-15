@@ -13,10 +13,7 @@ Ruolo:
 Esempio dal codice reale:
 
 ```ts
-export function apiSuccess<TData>(
-  data: TData,
-  meta?: ApiResponseMeta,
-): ApiSuccessResponse<TData> {
+export function apiSuccess<TData>(data: TData, meta?: ApiResponseMeta): ApiSuccessResponse<TData> {
   return meta ? { data, meta } : { data };
 }
 
@@ -24,15 +21,15 @@ export function apiError(
   code: string,
   message: string,
   details?: Record<string, unknown>,
-  meta?: ApiResponseMeta,
+  meta?: ApiResponseMeta
 ): ApiErrorResponse {
   return {
     error: {
       code,
       message,
-      ...(details ? { details } : {}),
+      ...(details ? { details } : {})
     },
-    ...(meta ? { meta } : {}),
+    ...(meta ? { meta } : {})
   };
 }
 ```
@@ -51,10 +48,7 @@ Esempio dal codice reale:
 
 ```ts
 export interface DbAdapter {
-  repository<TData = unknown>(
-    entityName: string,
-    context: NamespaceContext,
-  ): DbRepository<TData>;
+  repository<TData = unknown>(entityName: string, context: NamespaceContext): DbRepository<TData>;
   beginTransaction(context: NamespaceContext): Promise<DbTransaction>;
   healthCheck(): Promise<{ ok: true } | { ok: false; reason: string }>;
 }
@@ -106,7 +100,7 @@ export class CoreError extends Error {
     options?: {
       cause?: unknown;
       details?: Record<string, unknown>;
-    },
+    }
   ) {
     super(message, options?.cause ? { cause: options.cause } : undefined);
     this.name = new.target.name;
@@ -142,12 +136,8 @@ export const CORE_TOKENS = {
   DB_ADAPTER: createToken<DbAdapter>("CMS_CORE_DB_ADAPTER"),
   ENTITY_REGISTRY: createToken<EntityRegistry>("CMS_CORE_ENTITY_REGISTRY"),
   AUTHZ_SERVICE: createToken<AuthzService>("CMS_CORE_AUTHZ_SERVICE"),
-  KERNEL_HEALTH_SERVICE: createToken<KernelHealthService>(
-    "CMS_KERNEL_HEALTH_SERVICE",
-  ),
-  KERNEL_SYSTEM_SERVICE: createToken<KernelSystemService>(
-    "CMS_KERNEL_SYSTEM_SERVICE",
-  ),
+  KERNEL_HEALTH_SERVICE: createToken<KernelHealthService>("CMS_KERNEL_HEALTH_SERVICE"),
+  KERNEL_SYSTEM_SERVICE: createToken<KernelSystemService>("CMS_KERNEL_SYSTEM_SERVICE")
 } as const;
 ```
 
@@ -166,7 +156,7 @@ export function createCapabilityToken<T>(capabilityName: string): Token<T> {
   const normalized = capabilityName.trim();
   if (!normalized || !CAPABILITY_REGEX.test(normalized)) {
     throw new Error(
-      `Invalid capability name "${capabilityName}". Expected lowercase dot/underscore/dash segments.`,
+      `Invalid capability name "${capabilityName}". Expected lowercase dot/underscore/dash segments.`
     );
   }
   return createToken<T>(`CMS_CAPABILITY_${normalized}`);
@@ -191,7 +181,7 @@ export function createPluginApiResponder(pluginId: string): PluginApiResponder {
     success<TData>(data: TData, meta?: ApiResponseMeta) {
       return apiSuccess(data, {
         ...pluginMeta,
-        ...(meta ?? {}),
+        ...(meta ?? {})
       });
     },
     fromError(error: unknown) {
@@ -200,10 +190,10 @@ export function createPluginApiResponder(pluginId: string): PluginApiResponder {
         ...mapped,
         meta: {
           ...pluginMeta,
-          ...(mapped.meta ?? {}),
-        },
+          ...(mapped.meta ?? {})
+        }
       };
-    },
+    }
   };
 }
 ```
@@ -225,7 +215,7 @@ return responder.success({ id: "core-pack:users:123" });
 
 return responder.list([{ id: "1" }, { id: "2" }], {
   limit: 20,
-  offset: 0,
+  offset: 0
 });
 // {
 //   data: [{ id: "1" }, { id: "2" }],

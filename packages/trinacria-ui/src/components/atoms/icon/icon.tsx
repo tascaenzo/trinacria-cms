@@ -1,4 +1,3 @@
-import type { SVGProps } from "react";
 import {
   ArrowRight,
   Bell,
@@ -55,7 +54,7 @@ import {
   UserRound,
   Users,
   X,
-  XCircle,
+  XCircle
 } from "lucide-react";
 import { cn } from "../../../utils/class-names.js";
 import type { IconProps } from "./icon.types.js";
@@ -115,7 +114,7 @@ const ICONS: Record<string, LucideIcon> = {
   "user-round": UserRound,
   users: Users,
   x: X,
-  "x-circle": XCircle,
+  "x-circle": XCircle
 };
 
 export type IconName = keyof typeof ICONS;

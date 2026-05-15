@@ -33,7 +33,7 @@ const ALLOWED_TRANSITIONS: Readonly<Record<PluginState, readonly PluginState[]>>
   unloading: ["unloaded", "failed", "disabled"],
   failed: ["loading", "disabled", "unloaded"],
   disabled: ["registered"],
-  unloaded: ["loading", "disabled", "registered"],
+  unloaded: ["loading", "disabled", "registered"]
 };
 ```
 
@@ -55,10 +55,7 @@ Esempio dal codice reale (estratto):
 ```ts
 manifest = validatePluginManifest(definition.manifest);
 assertPluginCompatibility(manifest, this.coreVersion);
-this.assertDependencyGraphWithoutCycles(
-  manifest.id,
-  this.extractRequiredDependencies(manifest),
-);
+this.assertDependencyGraphWithoutCycles(manifest.id, this.extractRequiredDependencies(manifest));
 ```
 
 Logica teorica:
@@ -74,10 +71,7 @@ Esempio dal codice reale (estratto):
 this.transition(pluginId, "loading");
 
 if (this.moduleBridge) {
-  registeredModules = await this.moduleBridge.registerModules(
-    pluginId,
-    definition.modules ?? [],
-  );
+  registeredModules = await this.moduleBridge.registerModules(pluginId, definition.modules ?? []);
 }
 
 if (definition.onLoad && context) {
@@ -191,9 +185,7 @@ Esempio dal codice reale (estratto):
 
 ```ts
 const hasRuntimeDegradation = records.some((record) =>
-  ["failed", "disabled", "loading", "initializing", "unloading"].includes(
-    record.state,
-  ),
+  ["failed", "disabled", "loading", "initializing", "unloading"].includes(record.state)
 );
 
 if (!db.ok && db.reason !== "not_configured") return "down";

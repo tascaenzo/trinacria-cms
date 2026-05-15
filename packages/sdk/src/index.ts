@@ -14,6 +14,6 @@ export * from "./runtime/index.js";
 export function createCmsSdkClient(options: CmsSdkClientOptions) {
   const core = createCmsSdkClientCore(options);
   return Object.assign(core, createGeneratedCmsSdk(core), {
-    official,
+    official
   });
 }

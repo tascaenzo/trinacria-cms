@@ -1,11 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type {
-  AuthorizationRequest,
-  DbAdapter,
-  DbQuery,
-  DbRepository,
-} from "@trinacria-cms/kernel";
+import type { AuthorizationRequest, DbAdapter, DbQuery, DbRepository } from "@trinacria-cms/kernel";
 import { PermissionsRepository } from "../src/modules/permissions/permissions.repository.js";
 import { RoleGrantsRepository } from "../src/modules/roles/grants/role-grants.repository.js";
 import { RolesRepository } from "../src/modules/roles/roles.repository.js";
@@ -31,28 +26,28 @@ test("UserAccessService resolves effective permissions from user role assignment
     grants,
     rolePolicyRules,
     permissions,
-    userRoles,
+    userRoles
   );
 
   const user = await usersService.createUser({
     email: "access@example.com",
-    displayName: "Access User",
+    displayName: "Access User"
   });
 
   await permissions.upsertOwnedPermission({
     key: "core-pack:users:read",
     displayName: "Read users",
-    sourcePluginId: "core-pack",
+    sourcePluginId: "core-pack"
   });
   await roles.upsertOwnedRole({
     code: "editor",
     name: "Editor",
-    ownerPluginId: "core-pack",
+    ownerPluginId: "core-pack"
   });
   await grants.upsert({
     roleCode: "editor",
     permissionKey: "core-pack:users:read",
-    sourcePluginId: "core-pack",
+    sourcePluginId: "core-pack"
   });
 
   const assignment = await access.assignRoleToUser(user.id, "editor");
@@ -78,29 +73,29 @@ test("CorePackAuthzService evaluates and asserts permissions", async () => {
     grants,
     rolePolicyRules,
     permissions,
-    userRoles,
+    userRoles
   );
   const authz = new CorePackAuthzService(access);
 
   const user = await usersService.createUser({
     email: "authz@example.com",
-    displayName: "Authz User",
+    displayName: "Authz User"
   });
 
   await permissions.upsertOwnedPermission({
     key: "core-pack:users:write",
     displayName: "Write users",
-    sourcePluginId: "core-pack",
+    sourcePluginId: "core-pack"
   });
   await roles.upsertOwnedRole({
     code: "admin",
     name: "Admin",
-    ownerPluginId: "core-pack",
+    ownerPluginId: "core-pack"
   });
   await grants.upsert({
     roleCode: "admin",
     permissionKey: "core-pack:users:write",
-    sourcePluginId: "core-pack",
+    sourcePluginId: "core-pack"
   });
   await access.assignRoleToUser(user.id, "admin");
 
@@ -108,13 +103,13 @@ test("CorePackAuthzService evaluates and asserts permissions", async () => {
     subjectId: user.id,
     action: "write",
     resource: "users",
-    context: { pluginId: "core-pack" },
+    context: { pluginId: "core-pack" }
   };
   const deniedRequest: AuthorizationRequest = {
     subjectId: user.id,
     action: "delete",
     resource: "users",
-    context: { pluginId: "core-pack" },
+    context: { pluginId: "core-pack" }
   };
 
   const allowed = await authz.can(allowedRequest);
@@ -140,31 +135,31 @@ test("CorePackAuthzService supports wildcard allow and deny precedence", async (
     grants,
     rolePolicyRules,
     permissions,
-    userRoles,
+    userRoles
   );
   const authz = new CorePackAuthzService(access);
 
   const user = await usersService.createUser({
     email: "wildcard@example.com",
-    displayName: "Wildcard User",
+    displayName: "Wildcard User"
   });
 
   await roles.upsertOwnedRole({
     code: "auditor",
     name: "Auditor",
-    ownerPluginId: "core-pack",
+    ownerPluginId: "core-pack"
   });
   await rolePolicyRules.upsert({
     roleCode: "auditor",
     effect: "allow",
     permissionPattern: "core-pack:users:*",
-    sourcePluginId: "core-pack",
+    sourcePluginId: "core-pack"
   });
   await rolePolicyRules.upsert({
     roleCode: "auditor",
     effect: "deny",
     permissionPattern: "core-pack:users:delete",
-    sourcePluginId: "core-pack",
+    sourcePluginId: "core-pack"
   });
   await access.assignRoleToUser(user.id, "auditor");
 
@@ -172,7 +167,7 @@ test("CorePackAuthzService supports wildcard allow and deny precedence", async (
     subjectId: user.id,
     action: "read",
     resource: "users",
-    context: { pluginId: "core-pack" },
+    context: { pluginId: "core-pack" }
   });
   assert.equal(allowRead.allowed, true);
 
@@ -180,7 +175,7 @@ test("CorePackAuthzService supports wildcard allow and deny precedence", async (
     subjectId: user.id,
     action: "delete",
     resource: "users",
-    context: { pluginId: "core-pack" },
+    context: { pluginId: "core-pack" }
   });
   assert.equal(denyDelete.allowed, false);
 });
@@ -200,26 +195,26 @@ test("CorePackAuthzService evaluates conditional policy rules", async () => {
     grants,
     rolePolicyRules,
     permissions,
-    userRoles,
+    userRoles
   );
   const authz = new CorePackAuthzService(access);
 
   const user = await usersService.createUser({
     email: "conditions@example.com",
-    displayName: "Condition User",
+    displayName: "Condition User"
   });
 
   await roles.upsertOwnedRole({
     code: "self-reader",
     name: "Self Reader",
-    ownerPluginId: "core-pack",
+    ownerPluginId: "core-pack"
   });
   await rolePolicyRules.upsert({
     roleCode: "self-reader",
     effect: "allow",
     permissionPattern: "core-pack:profiles:read",
     conditions: ["resource_id_equals_subject"],
-    sourcePluginId: "core-pack",
+    sourcePluginId: "core-pack"
   });
   await access.assignRoleToUser(user.id, "self-reader");
 
@@ -228,7 +223,7 @@ test("CorePackAuthzService evaluates conditional policy rules", async () => {
     action: "read",
     resource: "profiles",
     resourceId: user.id,
-    context: { pluginId: "core-pack" },
+    context: { pluginId: "core-pack" }
   });
   assert.equal(allowSelf.allowed, true);
 
@@ -237,7 +232,7 @@ test("CorePackAuthzService evaluates conditional policy rules", async () => {
     action: "read",
     resource: "profiles",
     resourceId: "other-subject",
-    context: { pluginId: "core-pack" },
+    context: { pluginId: "core-pack" }
   });
   assert.equal(denyOther.allowed, false);
 });
@@ -254,13 +249,10 @@ function createFakeDbAdapter(): DbAdapter {
     return created;
   };
 
-  const repository = <TData extends Record<string, unknown>>(
-    key: string,
-  ): DbRepository<TData> => ({
+  const repository = <TData extends Record<string, unknown>>(key: string): DbRepository<TData> => ({
     async findOne(query: DbQuery<TData>) {
       const bucket = getBucket(key) as TData[];
-      const found =
-        bucket.find((item) => matchesFilter(item, query.filter)) ?? null;
+      const found = bucket.find((item) => matchesFilter(item, query.filter)) ?? null;
       if (!found) return null;
       return query.parse ? query.parse(found) : found;
     },
@@ -289,7 +281,7 @@ function createFakeDbAdapter(): DbAdapter {
       if (index < 0) return null;
       const updated = {
         ...bucket[index],
-        ...patch,
+        ...patch
       } as TData;
       bucket[index] = updated;
       return updated;
@@ -300,7 +292,7 @@ function createFakeDbAdapter(): DbAdapter {
       if (index < 0) return false;
       bucket.splice(index, 1);
       return true;
-    },
+    }
   });
 
   return {
@@ -310,18 +302,18 @@ function createFakeDbAdapter(): DbAdapter {
     async beginTransaction() {
       return {
         async commit() {},
-        async rollback() {},
+        async rollback() {}
       };
     },
     async healthCheck() {
       return { ok: true };
-    },
+    }
   };
 }
 
 function matchesFilter(
   item: Record<string, unknown>,
-  filter: Record<string, unknown> | undefined,
+  filter: Record<string, unknown> | undefined
 ): boolean {
   if (!filter) return true;
   return Object.entries(filter).every(([key, value]) => item[key] === value);
@@ -329,7 +321,7 @@ function matchesFilter(
 
 function applySort<TData extends Record<string, unknown>>(
   values: readonly TData[],
-  sort: Record<string, "asc" | "desc"> | undefined,
+  sort: Record<string, "asc" | "desc"> | undefined
 ): TData[] {
   if (!sort || Object.keys(sort).length === 0) return [...values];
   const [field, direction] = Object.entries(sort)[0];

@@ -229,10 +229,7 @@ Esempio `plugin_core_pack__roles`:
   "name": "Administrator",
   "ownerPluginId": "core-pack",
   "status": "active",
-  "permissions": [
-    "core-pack:users:read",
-    "core-pack:users:write"
-  ],
+  "permissions": ["core-pack:users:read", "core-pack:users:write"],
   "permissionGrants": [
     {
       "permissionKey": "core-pack:users:read",
@@ -295,10 +292,7 @@ Esempio `plugin_core_pack__api_keys`:
   "status": "active",
   "hash": "<sha256>",
   "roleCodes": ["admin"],
-  "permissionKeys": [
-    "core-pack:users:read",
-    "core-pack:settings:write"
-  ],
+  "permissionKeys": ["core-pack:users:read", "core-pack:settings:write"],
   "policyRules": [],
   "lastUsedAt": "2026-03-06T10:00:00.000Z",
   "createdAt": "2026-03-06T09:00:00.000Z",
@@ -442,14 +436,14 @@ Nota attuale:
 
 ## 17. Appendice tabellare: collection, ownership, indici, scopo
 
-| Collection | Owner namespace | Campi chiave | Indici principali | Scopo |
-| --- | --- | --- | --- | --- |
-| `kernel__installed_plugins` | `kernel` | `pluginId`, `state`, `enabled`, `failureCount`, `manifest`, `updatedAt` | `pluginId` unique, `state`, `enabled`, `updatedAt` desc | Persistenza stato runtime plugin installati (audit/ops). |
-| `plugin_core_pack__users` | `core-pack` | `id`, `email`, `status`, `roleAssignments[]` | `id` unique, `email` unique | Anagrafica utenti e assegnazioni ruolo embedded. |
-| `plugin_core_pack__roles` | `core-pack` | `id`, `code`, `ownerPluginId`, `permissions[]`, `permissionGrants[]`, `status` | `id` unique, `code` unique, `ownerPluginId`, `status` | Catalogo ruoli e contributi permessi plugin-owned. |
-| `plugin_core_pack__permissions` | `core-pack` | `id`, `key`, `sourcePluginId`, `status` | `id` unique, `key` unique, `sourcePluginId`, `status` | Catalogo permessi canonici namespaced. |
-| `plugin_core_pack__role_policy_rules` | `core-pack` | `id`, `roleCode`, `effect`, `permissionPattern`, `conditions[]`, `sourcePluginId` | `id` unique, `roleCode`, `sourcePluginId` | Regole policy avanzate (`allow/deny`, wildcard, condizioni). |
-| `plugin_core_pack__settings` | `core-pack` | `id`, `key`, `kind`, `ownerPluginId`, `status`, `schema/defaultValue/value`, `cipherText`, `algorithm`, `keyVersion`, `version` | `id` unique, `(kind,key)` unique, `ownerPluginId+kind`, `key` | Store settings unificato con proiezioni logiche per definizioni, valori e segreti cifrati. |
+| Collection                            | Owner namespace | Campi chiave                                                                                                                    | Indici principali                                             | Scopo                                                                                      |
+| ------------------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `kernel__installed_plugins`           | `kernel`        | `pluginId`, `state`, `enabled`, `failureCount`, `manifest`, `updatedAt`                                                         | `pluginId` unique, `state`, `enabled`, `updatedAt` desc       | Persistenza stato runtime plugin installati (audit/ops).                                   |
+| `plugin_core_pack__users`             | `core-pack`     | `id`, `email`, `status`, `roleAssignments[]`                                                                                    | `id` unique, `email` unique                                   | Anagrafica utenti e assegnazioni ruolo embedded.                                           |
+| `plugin_core_pack__roles`             | `core-pack`     | `id`, `code`, `ownerPluginId`, `permissions[]`, `permissionGrants[]`, `status`                                                  | `id` unique, `code` unique, `ownerPluginId`, `status`         | Catalogo ruoli e contributi permessi plugin-owned.                                         |
+| `plugin_core_pack__permissions`       | `core-pack`     | `id`, `key`, `sourcePluginId`, `status`                                                                                         | `id` unique, `key` unique, `sourcePluginId`, `status`         | Catalogo permessi canonici namespaced.                                                     |
+| `plugin_core_pack__role_policy_rules` | `core-pack`     | `id`, `roleCode`, `effect`, `permissionPattern`, `conditions[]`, `sourcePluginId`                                               | `id` unique, `roleCode`, `sourcePluginId`                     | Regole policy avanzate (`allow/deny`, wildcard, condizioni).                               |
+| `plugin_core_pack__settings`          | `core-pack`     | `id`, `key`, `kind`, `ownerPluginId`, `status`, `schema/defaultValue/value`, `cipherText`, `algorithm`, `keyVersion`, `version` | `id` unique, `(kind,key)` unique, `ownerPluginId+kind`, `key` | Store settings unificato con proiezioni logiche per definizioni, valori e segreti cifrati. |
 
 Nota sul naming fisico:
 

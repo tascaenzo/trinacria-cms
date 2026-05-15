@@ -1,4 +1,0 @@
-import{j as o}from"./iframe-ce5-efCb.js";import{u as n,M as r,C as s}from"./blocks-BgVWM2bA.js";import{S as a,C as c}from"./card.stories-DWEfeWwL.js";import"./preload-helper-C1FmrZbK.js";import"./index-z7P5nfEw.js";import"./button-DTZJ7PNL.js";import"./button-base-BK7tGpG4.js";import"./class-names-2dOUpm6k.js";import"./eyebrow-UCSOs8qC.js";import"./panel-C5HhQPw_.js";import"./text-8uwx9w-W.js";function i(t){const e={code:"code",h1:"h1",p:"p",...n(),...t.components};return o.jsxs(o.Fragment,{children:[o.jsx(r,{of:a}),`
-`,o.jsx(e.h1,{id:"card",children:"Card"}),`
-`,o.jsxs(e.p,{children:[o.jsx(e.code,{children:"Card"})," definisce la superficie standard per moduli, pannelli di dettaglio e blocchi riepilogativi del backoffice."]}),`
-`,o.jsx(s,{of:c})]})}function g(t={}){const{wrapper:e}={...n(),...t.components};return e?o.jsx(e,{...t,children:o.jsx(i,{...t})}):i(t)}export{g as default};

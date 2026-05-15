@@ -1,6 +1,9 @@
 import type { HTMLAttributes, ReactNode } from "react";
 
-export interface DateTimePickerProps extends Omit<HTMLAttributes<HTMLDivElement>, "defaultValue" | "onChange"> {
+export interface DateTimePickerProps extends Omit<
+  HTMLAttributes<HTMLDivElement>,
+  "defaultValue" | "onChange"
+> {
   label?: ReactNode;
   hint?: ReactNode;
   error?: ReactNode;

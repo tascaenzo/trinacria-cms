@@ -13,10 +13,10 @@ function assertSegment(value: string, field: string): string {
     throw new DbAdapterError(`${field} is required`);
   }
   if (normalized.includes(NAMESPACE_ID_SEPARATOR)) {
-    throw new DbAdapterError(
-      `${field} cannot contain "${NAMESPACE_ID_SEPARATOR}"`,
-      { field, value: normalized },
-    );
+    throw new DbAdapterError(`${field} cannot contain "${NAMESPACE_ID_SEPARATOR}"`, {
+      field,
+      value: normalized
+    });
   }
   return normalized;
 }
@@ -25,11 +25,7 @@ function assertSegment(value: string, field: string): string {
  * Builds a canonical namespace ID.
  * Format: `${pluginId}:${entityName}:${resourceId}`
  */
-export function buildNamespaceId(
-  pluginId: string,
-  entityName: string,
-  resourceId: string,
-): string {
+export function buildNamespaceId(pluginId: string, entityName: string, resourceId: string): string {
   const p = assertSegment(pluginId, "pluginId");
   const e = assertSegment(entityName, "entityName");
   const r = assertSegment(resourceId, "resourceId");
@@ -50,15 +46,13 @@ export function parseNamespaceId(namespaceId: string): ParsedNamespaceId {
   const segments = normalized.split(NAMESPACE_ID_SEPARATOR);
   if (segments.length !== 3) {
     throw new DbAdapterError(
-      `Invalid namespaceId "${namespaceId}". Expected format "pluginId:entityName:resourceId"`,
+      `Invalid namespaceId "${namespaceId}". Expected format "pluginId:entityName:resourceId"`
     );
   }
 
   const [pluginId, entityName, resourceId] = segments;
   if (!pluginId || !entityName || !resourceId) {
-    throw new DbAdapterError(
-      `Invalid namespaceId "${namespaceId}". Empty segment is not allowed`,
-    );
+    throw new DbAdapterError(`Invalid namespaceId "${namespaceId}". Empty segment is not allowed`);
   }
 
   return { pluginId, entityName, resourceId };
@@ -67,18 +61,15 @@ export function parseNamespaceId(namespaceId: string): ParsedNamespaceId {
 /**
  * Ensures a namespace ID belongs to the expected plugin.
  */
-export function assertPluginOwnsNamespaceId(
-  pluginId: string,
-  namespaceId: string,
-): void {
+export function assertPluginOwnsNamespaceId(pluginId: string, namespaceId: string): void {
   const parsed = parseNamespaceId(namespaceId);
   if (parsed.pluginId !== pluginId) {
     throw new DbAdapterError(
       `Namespace ownership violation: "${namespaceId}" does not belong to plugin "${pluginId}"`,
       {
         expectedPluginId: pluginId,
-        actualPluginId: parsed.pluginId,
-      },
+        actualPluginId: parsed.pluginId
+      }
     );
   }
 }
@@ -86,17 +77,14 @@ export function assertPluginOwnsNamespaceId(
 /**
  * Creates a plugin-scoped DB facade that always injects the same pluginId.
  */
-export function createPluginDbScope(
-  db: DbAdapter,
-  pluginId: string,
-): PluginDbScope {
+export function createPluginDbScope(db: DbAdapter, pluginId: string): PluginDbScope {
   const normalizedPluginId = assertSegment(pluginId, "pluginId");
 
   return {
     repository<TData = unknown>(entityName: string): DbRepository<TData> {
       return db.repository<TData>(entityName, {
-        pluginId: normalizedPluginId,
+        pluginId: normalizedPluginId
       });
-    },
+    }
   };
 }

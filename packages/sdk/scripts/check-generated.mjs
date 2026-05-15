@@ -11,31 +11,22 @@ execFileSync(
   [
     resolve(packageDir, "scripts", "generate-sdk.mjs"),
     resolve(packageDir, "openapi", "trinacria-cms.openapi.json"),
-    resolve(packageDir, "src", "generated"),
+    resolve(packageDir, "src", "generated")
   ],
   {
     cwd: repoRoot,
-    stdio: "inherit",
-  },
+    stdio: "inherit"
+  }
 );
 
 try {
-  execFileSync(
-    "git",
-    [
-      "diff",
-      "--exit-code",
-      "--",
-      "packages/sdk/src/generated",
-    ],
-    {
-      cwd: repoRoot,
-      stdio: "inherit",
-    },
-  );
+  execFileSync("git", ["diff", "--exit-code", "--", "packages/sdk/src/generated"], {
+    cwd: repoRoot,
+    stdio: "inherit"
+  });
 } catch {
   process.exitCode = 1;
   console.error(
-    "[sdk:check] Generated SDK is out of date. Run `npm run sdk:generate` and commit the result.",
+    "[sdk:check] Generated SDK is out of date. Run `npm run sdk:generate` and commit the result."
   );
 }

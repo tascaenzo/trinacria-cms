@@ -30,7 +30,7 @@ export function isJsonValue(value: unknown): value is JsonValue {
 
   return Object.entries(value as Record<string, unknown>).every(
     ([key, item]) =>
-      key !== "__proto__" && key !== "prototype" && key !== "constructor" && isJsonValue(item),
+      key !== "__proto__" && key !== "prototype" && key !== "constructor" && isJsonValue(item)
   );
 }
 

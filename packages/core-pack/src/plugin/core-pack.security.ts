@@ -17,14 +17,15 @@ export const CORE_PACK_CAPABILITIES = {
   SETTINGS_READ: "settings.read",
   SETTINGS_WRITE: "settings.write",
   SETTINGS_SECRETS_READ: "settings.secrets.read",
-  SETTINGS_SECRETS_WRITE: "settings.secrets.write",
+  SETTINGS_SECRETS_WRITE: "settings.secrets.write"
 } as const;
 
 export type CorePackCapability =
   (typeof CORE_PACK_CAPABILITIES)[keyof typeof CORE_PACK_CAPABILITIES];
 
-export const CORE_PACK_CAPABILITY_LIST: readonly CorePackCapability[] =
-  Object.freeze(Object.values(CORE_PACK_CAPABILITIES));
+export const CORE_PACK_CAPABILITY_LIST: readonly CorePackCapability[] = Object.freeze(
+  Object.values(CORE_PACK_CAPABILITIES)
+);
 
 /**
  * Canonical permission keys exposed by core-pack.
@@ -43,7 +44,7 @@ export const CORE_PACK_PERMISSION_KEYS = {
   SETTINGS_READ: `${CORE_PACK_PLUGIN_ID}:settings:read`,
   SETTINGS_WRITE: `${CORE_PACK_PLUGIN_ID}:settings:write`,
   SETTINGS_SECRETS_READ: `${CORE_PACK_PLUGIN_ID}:settings.secrets:read`,
-  SETTINGS_SECRETS_WRITE: `${CORE_PACK_PLUGIN_ID}:settings.secrets:write`,
+  SETTINGS_SECRETS_WRITE: `${CORE_PACK_PLUGIN_ID}:settings.secrets:write`
 } as const;
 
 export type CorePackPermissionKey =
@@ -63,62 +64,61 @@ export const CORE_PACK_PERMISSION_DEFINITIONS: readonly CorePackPermissionDefini
   Object.freeze([
     {
       key: CORE_PACK_PERMISSION_KEYS.PLUGINS_READ,
-      displayName: "Read plugin operations",
+      displayName: "Read plugin operations"
     },
     {
       key: CORE_PACK_PERMISSION_KEYS.USERS_READ,
-      displayName: "Read users",
+      displayName: "Read users"
     },
     {
       key: CORE_PACK_PERMISSION_KEYS.USERS_WRITE,
-      displayName: "Write users",
+      displayName: "Write users"
     },
     {
       key: CORE_PACK_PERMISSION_KEYS.ROLES_READ,
-      displayName: "Read roles",
+      displayName: "Read roles"
     },
     {
       key: CORE_PACK_PERMISSION_KEYS.ROLES_WRITE,
-      displayName: "Write roles",
+      displayName: "Write roles"
     },
     {
       key: CORE_PACK_PERMISSION_KEYS.PERMISSIONS_READ,
-      displayName: "Read permissions",
+      displayName: "Read permissions"
     },
     {
       key: CORE_PACK_PERMISSION_KEYS.PERMISSIONS_WRITE,
-      displayName: "Write permissions",
+      displayName: "Write permissions"
     },
     {
       key: CORE_PACK_PERMISSION_KEYS.API_KEYS_READ,
-      displayName: "Read API keys",
+      displayName: "Read API keys"
     },
     {
       key: CORE_PACK_PERMISSION_KEYS.API_KEYS_WRITE,
-      displayName: "Write API keys",
+      displayName: "Write API keys"
     },
     {
       key: CORE_PACK_PERMISSION_KEYS.SETTINGS_READ,
-      displayName: "Read settings",
+      displayName: "Read settings"
     },
     {
       key: CORE_PACK_PERMISSION_KEYS.SETTINGS_WRITE,
-      displayName: "Write settings",
+      displayName: "Write settings"
     },
     {
       key: CORE_PACK_PERMISSION_KEYS.SETTINGS_SECRETS_READ,
-      displayName: "Read settings secrets",
+      displayName: "Read settings secrets"
     },
     {
       key: CORE_PACK_PERMISSION_KEYS.SETTINGS_SECRETS_WRITE,
-      displayName: "Write settings secrets",
-    },
+      displayName: "Write settings secrets"
+    }
   ]);
 
-export const CORE_PACK_PERMISSION_KEY_LIST: readonly CorePackPermissionKey[] =
-  Object.freeze(
-    CORE_PACK_PERMISSION_DEFINITIONS.map((permission) => permission.key),
-  );
+export const CORE_PACK_PERMISSION_KEY_LIST: readonly CorePackPermissionKey[] = Object.freeze(
+  CORE_PACK_PERMISSION_DEFINITIONS.map((permission) => permission.key)
+);
 
 /**
  * Default admin role metadata exported for consistency across integrations.
@@ -126,5 +126,5 @@ export const CORE_PACK_PERMISSION_KEY_LIST: readonly CorePackPermissionKey[] =
 export const CORE_PACK_ADMIN_ROLE = Object.freeze({
   code: "admin",
   name: "Administrator",
-  description: "Default full-access role provided by core-pack",
+  description: "Default full-access role provided by core-pack"
 });

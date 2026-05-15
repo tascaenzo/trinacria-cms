@@ -19,6 +19,7 @@ Thin host application for the shared Trinacria CMS admin runtime.
 ## Shared runtime
 
 The real application logic now lives in `@trinacria-cms/admin-kernel`, which owns:
+
 - official admin routes and pages
 - session bootstrap
 - runtime discovery

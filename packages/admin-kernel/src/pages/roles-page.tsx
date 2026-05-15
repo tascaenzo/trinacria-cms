@@ -1,7 +1,29 @@
 import { useActionState, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Badge, Button, Card, Dialog, Input, Textarea } from "@trinacria-cms/trinacria-ui";
+import {
+  Badge,
+  Button,
+  Card,
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeadCell,
+  DataTableHeaderRow,
+  DataTablePrimaryCell,
+  DataTableRow,
+  DataTableTable,
+  Dialog,
+  FilterBar,
+  InfoCard,
+  Input,
+  Textarea
+} from "@trinacria-cms/trinacria-ui";
 import type { ListPermissionsResponse, ListRolesResponse } from "@trinacria-cms/sdk";
-import { MobileRecordCard, MobileRecordField, MobileRecordList } from "../components/mobile-records.js";
+import {
+  MobileRecordCard,
+  MobileRecordField,
+  MobileRecordList
+} from "../components/mobile-records.js";
 import { ErrorBanner, EmptyState } from "../components/resource-feedback.js";
 import { useOptimisticStatusRecords } from "../hooks/use-optimistic-status-records.js";
 import { formatDateTime } from "../lib/formatting.js";
@@ -10,7 +32,7 @@ import {
   createIdleAsyncActionState,
   readOptionalString,
   readRequiredString,
-  readStringArray,
+  readStringArray
 } from "../runtime/action-state.js";
 import { cms } from "../runtime/cms-sdk.js";
 import { toDisplayError } from "../lib/sdk-errors.js";
@@ -33,7 +55,7 @@ export function RolesPage() {
 
   const activePermissions = useMemo(
     () => permissions.filter((permission) => permission.status === "active"),
-    [permissions],
+    [permissions]
   );
 
   const refresh = useCallback(async () => {
@@ -42,7 +64,7 @@ export function RolesPage() {
     try {
       const [rolesResponse, permissionsResponse] = await Promise.all([
         cms.roles.listRoles({ query: { limit: 50, offset: 0 } }),
-        cms.permissions.listPermissions({ query: { limit: 100, offset: 0 } }),
+        cms.permissions.listPermissions({ query: { limit: 100, offset: 0 } })
       ]);
       setRecords(rolesResponse.data);
       setPermissions(permissionsResponse.data);
@@ -65,8 +87,8 @@ export function RolesPage() {
             code: readRequiredString(formData, "code"),
             name: readRequiredString(formData, "name"),
             description: readOptionalString(formData, "description"),
-            permissions: readStringArray(formData, "permissionKeys"),
-          },
+            permissions: readStringArray(formData, "permissionKeys")
+          }
         });
         await refresh();
         return { ok: true, error: null, data: null };
@@ -74,11 +96,11 @@ export function RolesPage() {
         return {
           ok: false,
           error: toDisplayError(currentError),
-          data: null,
+          data: null
         };
       }
     },
-    createIdleAsyncActionState(),
+    createIdleAsyncActionState()
   );
 
   useEffect(() => {
@@ -98,7 +120,7 @@ export function RolesPage() {
     try {
       await cms.roles.updateRoleStatus({
         path: { id: record.id },
-        body: { status: nextStatus },
+        body: { status: nextStatus }
       });
       await refresh();
     } catch (currentError) {
@@ -112,16 +134,26 @@ export function RolesPage() {
   return (
     <div className="grid gap-4">
       <Card eyebrow={t("roles.eyebrow")} title={t("roles.title")}>
-        <div className="mb-5 flex flex-col gap-4 border-b border-[color:var(--color-border)] pb-4 md:flex-row md:items-center md:justify-between">
-          <p className="text-sm text-[color:var(--color-ink-muted)]">
-            {t("roles.summary")}
-          </p>
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => void refresh()}>
-              {t("common.actions.refresh")}
-            </Button>
-            <Button onClick={() => setIsCreateOpen(true)}>{t("roles.actions.create")}</Button>
-          </div>
+        <div className="mb-5 border-b border-[color:var(--color-border)] pb-4">
+          <FilterBar
+            summary={t("roles.summary")}
+            actions={
+              <>
+                <div className="self-end">
+                  <Button variant="secondary" onClick={() => void refresh()}>
+                    {t("common.actions.refresh")}
+                  </Button>
+                </div>
+                <div className="self-end">
+                  <Button type="button" onClick={() => setIsCreateOpen(true)}>
+                    {t("roles.actions.create")}
+                  </Button>
+                </div>
+              </>
+            }
+          >
+            <div />
+          </FilterBar>
         </div>
         {error ? <ErrorBanner message={error} /> : null}
         {isLoading ? <EmptyState text={t("roles.empty.loading")} /> : null}
@@ -169,38 +201,35 @@ export function RolesPage() {
               ))}
             </MobileRecordList>
 
-            <div className="hidden overflow-x-auto md:block">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[color:var(--color-border)] text-left text-[color:var(--color-ink-subtle)]">
-                    <th className="px-4 py-3 font-medium">{t("roles.table.role")}</th>
-                    <th className="px-4 py-3 font-medium">{t("roles.table.permissions")}</th>
-                    <th className="px-4 py-3 font-medium">{t("common.table.status")}</th>
-                    <th className="px-4 py-3 font-medium">{t("common.table.updated")}</th>
-                    <th className="px-4 py-3 font-medium">{t("common.table.action")}</th>
-                  </tr>
-                </thead>
-                <tbody>
+            <DataTable>
+              <DataTableTable>
+                <DataTableHead>
+                  <DataTableHeaderRow>
+                    <DataTableHeadCell>{t("roles.table.role")}</DataTableHeadCell>
+                    <DataTableHeadCell>{t("roles.table.permissions")}</DataTableHeadCell>
+                    <DataTableHeadCell>{t("common.table.status")}</DataTableHeadCell>
+                    <DataTableHeadCell>{t("common.table.updated")}</DataTableHeadCell>
+                    <DataTableHeadCell>{t("common.table.action")}</DataTableHeadCell>
+                  </DataTableHeaderRow>
+                </DataTableHead>
+                <DataTableBody>
                   {optimisticRecords.map((record) => (
-                    <tr key={record.id} className="border-b border-[color:var(--color-border)] last:border-b-0">
-                      <td className="px-4 py-4">
-                        <p className="font-medium text-[color:var(--color-ink)]">{record.name}</p>
-                        <p className="mt-1 text-[color:var(--color-ink-muted)]">{record.code}</p>
-                      </td>
-                      <td className="px-4 py-4 text-[color:var(--color-ink-muted)]">
+                    <DataTableRow key={record.id}>
+                      <DataTablePrimaryCell meta={record.code}>{record.name}</DataTablePrimaryCell>
+                      <DataTableCell className="text-[color:var(--color-ink-muted)]">
                         {(record.permissions ?? []).length > 0
                           ? (record.permissions ?? []).join(", ")
                           : t("roles.table.no_embedded_grants")}
-                      </td>
-                      <td className="px-4 py-4">
+                      </DataTableCell>
+                      <DataTableCell>
                         <Badge tone={record.status === "active" ? "success" : "warning"}>
                           {translateStatusLabel(record.status, t)}
                         </Badge>
-                      </td>
-                      <td className="px-4 py-4 text-[color:var(--color-ink-muted)]">
+                      </DataTableCell>
+                      <DataTableCell className="text-[color:var(--color-ink-muted)]">
                         {formatDateTime(record.updatedAt)}
-                      </td>
-                      <td className="px-4 py-4">
+                      </DataTableCell>
+                      <DataTableCell>
                         <Button
                           variant="secondary"
                           disabled={actionId === record.id}
@@ -212,12 +241,12 @@ export function RolesPage() {
                               ? t("common.actions.disable")
                               : t("common.actions.activate")}
                         </Button>
-                      </td>
-                    </tr>
+                      </DataTableCell>
+                    </DataTableRow>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </DataTableBody>
+              </DataTableTable>
+            </DataTable>
           </>
         ) : null}
       </Card>
@@ -255,23 +284,29 @@ export function RolesPage() {
             {createState.error ? <ErrorBanner message={createState.error} /> : null}
           </div>
           <div className="grid gap-3">
-            <p className="text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--color-ink-subtle)]">
-              {t("roles.form.embedded_permission_grants")}
-            </p>
-            <div className="grid max-h-[420px] gap-2 overflow-auto rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] p-3 sm:grid-cols-2">
-              {activePermissions.map((permission) => (
-                <label
-                  key={permission.id}
-                  className="flex items-start gap-3 rounded-xl border border-[color:var(--color-border)] bg-white px-3 py-3 text-sm"
-                >
-                  <input type="checkbox" name="permissionKeys" value={permission.key} className="mt-1" />
-                  <span>
-                    <span className="block font-medium text-[color:var(--color-ink)]">{permission.displayName}</span>
-                    <span className="text-[color:var(--color-ink-muted)]">{permission.key}</span>
-                  </span>
-                </label>
-              ))}
-            </div>
+            <InfoCard eyebrow={t("roles.form.embedded_permission_grants")}>
+              <div className="grid max-h-[420px] gap-2 overflow-auto sm:grid-cols-2">
+                {activePermissions.map((permission) => (
+                  <label
+                    key={permission.id}
+                    className="flex items-start gap-3 rounded-md border border-[color:var(--color-border)] bg-white px-3 py-3 text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      name="permissionKeys"
+                      value={permission.key}
+                      className="mt-1"
+                    />
+                    <span>
+                      <span className="block font-medium text-[color:var(--color-ink)]">
+                        {permission.displayName}
+                      </span>
+                      <span className="text-[color:var(--color-ink-muted)]">{permission.key}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </InfoCard>
           </div>
         </form>
       </Dialog>

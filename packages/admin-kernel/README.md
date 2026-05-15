@@ -3,6 +3,7 @@
 Shared backoffice kernel for Trinacria CMS.
 
 This package owns:
+
 - admin contracts
 - shell bootstrap
 - SDK initialization
@@ -10,6 +11,7 @@ This package owns:
 - session bootstrap and runtime discovery
 
 Host applications should stay thin and only provide:
+
 - CSS/theme
 - local module registration
 - mount-time API base configuration

@@ -1,8 +1,5 @@
 import { startCmsApp } from "@trinacria-cms/kernel";
-import {
-  createCorePackMongoGlobalProviders,
-  createCorePackPlugin,
-} from "@trinacria-cms/core-pack";
+import { createCorePackMongoGlobalProviders, createCorePackPlugin } from "@trinacria-cms/core-pack";
 
 async function bootstrap(): Promise<void> {
   const mongoUri = resolveMongoUri();
@@ -21,7 +18,7 @@ async function bootstrap(): Promise<void> {
       }
     },
     globalProviders: createCorePackMongoGlobalProviders({
-      uri: mongoUri,
+      uri: mongoUri
     }),
     plugins: [createCorePackPlugin()],
     autoLoadPlugins: true

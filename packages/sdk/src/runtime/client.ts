@@ -4,17 +4,14 @@ import type {
   CmsSdkClientCore,
   CmsSdkClientOptions,
   SdkOperationRequest,
-  SdkTransport,
+  SdkTransport
 } from "./types.js";
 
 /**
  * Low-level SDK client used by generated operation groups.
  */
-export function createCmsSdkClientCore(
-  options: CmsSdkClientOptions,
-): CmsSdkClientCore {
-  const transport: SdkTransport =
-    options.transport ?? createFetchTransport(options.fetch);
+export function createCmsSdkClientCore(options: CmsSdkClientOptions): CmsSdkClientCore {
+  const transport: SdkTransport = options.transport ?? createFetchTransport(options.fetch);
   const baseUrl = normalizeBaseUrl(options.baseUrl);
   const apiKeyHeaderName = (options.apiKeyHeaderName ?? "x-api-key").trim().toLowerCase();
 
@@ -27,7 +24,7 @@ export function createCmsSdkClientCore(
       const headers: Record<string, string> = {
         accept: "application/json",
         ...defaultHeaders,
-        ...(request.headers ?? {}),
+        ...(request.headers ?? {})
       };
 
       if (accessToken && !headers.authorization) {
@@ -51,7 +48,7 @@ export function createCmsSdkClientCore(
         headers,
         body,
         credentials: request.credentials ?? options.credentials,
-        signal: request.signal,
+        signal: request.signal
       });
 
       if (response.status < 200 || response.status >= 300) {
@@ -60,12 +57,12 @@ export function createCmsSdkClientCore(
           data: response.data,
           headers: response.headers,
           method: request.method,
-          url,
+          url
         });
       }
 
       return response.data;
-    },
+    }
   };
 }
 
@@ -77,7 +74,7 @@ function buildUrl(
   baseUrl: string,
   path: string,
   pathParams?: Record<string, unknown>,
-  query?: Record<string, unknown>,
+  query?: Record<string, unknown>
 ): string {
   const interpolatedPath = path.replace(/:([a-zA-Z0-9_]+)/g, (_, key: string) => {
     const value = pathParams?.[key];
@@ -108,7 +105,7 @@ function createUrl(value: string): URL {
   }
 
   throw new CmsSdkConfigurationError(
-    `Relative SDK baseUrl "${value}" requires a browser environment. Use an absolute baseUrl in non-browser runtimes.`,
+    `Relative SDK baseUrl "${value}" requires a browser environment. Use an absolute baseUrl in non-browser runtimes.`
   );
 }
 

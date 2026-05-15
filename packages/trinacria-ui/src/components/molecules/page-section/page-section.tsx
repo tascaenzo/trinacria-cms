@@ -1,4 +1,4 @@
-import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
+import type { HTMLAttributes, PropsWithChildren } from "react";
 import { Eyebrow } from "../../primitives/eyebrow/eyebrow.js";
 import { Panel } from "../../primitives/panel/panel.js";
 import { BodyText } from "../../primitives/text/text.js";
@@ -40,7 +40,10 @@ export function ActionBar({
 }: PropsWithChildren<HTMLAttributes<HTMLDivElement>>) {
   return (
     <Panel
-      className={cn("flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between", className)}
+      className={cn(
+        "flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between",
+        className
+      )}
       tone="soft"
       {...props}
     >

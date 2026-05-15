@@ -9,22 +9,24 @@ import { UserAccessService } from "./user-access/user-access.service.js";
 import { UserRolesRepository } from "./user-access/user-roles.repository.js";
 
 export const CORE_PACK_SECURITY_PROVISIONING_SERVICE_TOKEN =
-  createToken<CorePackSecurityProvisioningService>(
-    "CORE_PACK_SECURITY_PROVISIONING_SERVICE",
-  );
-export const CORE_PACK_USER_ROLES_REPOSITORY_TOKEN =
-  createToken<UserRolesRepository>("CORE_PACK_USER_ROLES_REPOSITORY");
-export const CORE_PACK_USER_ACCESS_SERVICE_TOKEN =
-  createToken<UserAccessService>("CORE_PACK_USER_ACCESS_SERVICE");
-export const CORE_PACK_USER_ACCESS_CONTROLLER_TOKEN =
-  createToken<UserAccessController>("CORE_PACK_USER_ACCESS_CONTROLLER");
+  createToken<CorePackSecurityProvisioningService>("CORE_PACK_SECURITY_PROVISIONING_SERVICE");
+export const CORE_PACK_USER_ROLES_REPOSITORY_TOKEN = createToken<UserRolesRepository>(
+  "CORE_PACK_USER_ROLES_REPOSITORY"
+);
+export const CORE_PACK_USER_ACCESS_SERVICE_TOKEN = createToken<UserAccessService>(
+  "CORE_PACK_USER_ACCESS_SERVICE"
+);
+export const CORE_PACK_USER_ACCESS_CONTROLLER_TOKEN = createToken<UserAccessController>(
+  "CORE_PACK_USER_ACCESS_CONTROLLER"
+);
 export const CORE_PACK_AUTHZ_SERVICE_TOKEN =
   createToken<CorePackAuthzService>("CORE_PACK_AUTHZ_SERVICE");
-export const CORE_PACK_ROLE_POLICY_RULES_REPOSITORY_TOKEN =
-  createToken<RolePolicyRulesRepository>("CORE_PACK_ROLE_POLICY_RULES_REPOSITORY");
-export const CORE_PACK_ROLE_POLICY_RULES_SERVICE_TOKEN =
-  createToken<RolePolicyRulesService>("CORE_PACK_ROLE_POLICY_RULES_SERVICE");
-export const CORE_PACK_ROLE_POLICY_RULES_CONTROLLER_TOKEN =
-  createToken<RolePolicyRulesController>(
-    "CORE_PACK_ROLE_POLICY_RULES_CONTROLLER",
-  );
+export const CORE_PACK_ROLE_POLICY_RULES_REPOSITORY_TOKEN = createToken<RolePolicyRulesRepository>(
+  "CORE_PACK_ROLE_POLICY_RULES_REPOSITORY"
+);
+export const CORE_PACK_ROLE_POLICY_RULES_SERVICE_TOKEN = createToken<RolePolicyRulesService>(
+  "CORE_PACK_ROLE_POLICY_RULES_SERVICE"
+);
+export const CORE_PACK_ROLE_POLICY_RULES_CONTROLLER_TOKEN = createToken<RolePolicyRulesController>(
+  "CORE_PACK_ROLE_POLICY_RULES_CONTROLLER"
+);

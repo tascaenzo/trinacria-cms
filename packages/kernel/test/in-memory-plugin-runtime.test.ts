@@ -6,7 +6,7 @@ import {
   PluginDependencyError,
   PluginLifecycleError,
   PluginRuntimeError,
-  PluginStateTransitionError,
+  PluginStateTransitionError
 } from "../src/errors/index.js";
 import { InMemoryPluginRuntime } from "../src/runtime/index.js";
 
@@ -16,7 +16,7 @@ test("register and load plugin in runtime registry", async () => {
   await runtime.register({
     id: "cms/plugin-content",
     version: "1.0.0",
-    requiresCore: "^0.1.0",
+    requiresCore: "^0.1.0"
   });
 
   await runtime.load("cms/plugin-content");
@@ -35,9 +35,9 @@ test("register throws when plugin is not compatible with core version", async ()
       runtime.register({
         id: "cms/plugin-content",
         version: "1.0.0",
-        requiresCore: "^1.0.0",
+        requiresCore: "^1.0.0"
       }),
-    PluginCompatibilityError,
+    PluginCompatibilityError
   );
 });
 
@@ -47,13 +47,10 @@ test("unload from non-loaded state fails with transition error", async () => {
   await runtime.register({
     id: "cms/plugin-users",
     version: "1.0.0",
-    requiresCore: "^0.1.0",
+    requiresCore: "^0.1.0"
   });
 
-  await assert.rejects(
-    async () => runtime.unload("cms/plugin-users"),
-    PluginStateTransitionError,
-  );
+  await assert.rejects(async () => runtime.unload("cms/plugin-users"), PluginStateTransitionError);
 });
 
 test("load fails when required dependency is missing and marks plugin as failed", async () => {
@@ -63,13 +60,10 @@ test("load fails when required dependency is missing and marks plugin as failed"
     id: "cms/plugin-content",
     version: "1.0.0",
     requiresCore: "^0.1.0",
-    dependencies: [{ pluginId: "cms/plugin-users", versionRange: "^1.0.0" }],
+    dependencies: [{ pluginId: "cms/plugin-users", versionRange: "^1.0.0" }]
   });
 
-  await assert.rejects(
-    async () => runtime.load("cms/plugin-content"),
-    PluginDependencyError,
-  );
+  await assert.rejects(async () => runtime.load("cms/plugin-content"), PluginDependencyError);
 
   const [record] = runtime.list();
   assert.equal(record?.state, "failed");
@@ -83,7 +77,7 @@ test("register fails on circular dependency graph", async () => {
     id: "cms/plugin-a",
     version: "1.0.0",
     requiresCore: "^0.1.0",
-    dependencies: [{ pluginId: "cms/plugin-b", versionRange: "^1.0.0" }],
+    dependencies: [{ pluginId: "cms/plugin-b", versionRange: "^1.0.0" }]
   });
 
   await assert.rejects(
@@ -92,9 +86,9 @@ test("register fails on circular dependency graph", async () => {
         id: "cms/plugin-b",
         version: "1.0.0",
         requiresCore: "^0.1.0",
-        dependencies: [{ pluginId: "cms/plugin-a", versionRange: "^1.0.0" }],
+        dependencies: [{ pluginId: "cms/plugin-a", versionRange: "^1.0.0" }]
       }),
-    PluginDependencyError,
+    PluginDependencyError
   );
 });
 
@@ -107,53 +101,41 @@ test("failed state is temporary, disabled state is persistent", async () => {
     manifest: {
       id: "cms/plugin-content",
       version: "1.0.0",
-      requiresCore: "^0.1.0",
+      requiresCore: "^0.1.0"
     },
     modules: [module],
     async onInit() {
       throw new Error("init exploded");
-    },
+    }
   });
 
-  await assert.rejects(
-    async () => runtime.load("cms/plugin-content"),
-    PluginLifecycleError,
-  );
+  await assert.rejects(async () => runtime.load("cms/plugin-content"), PluginLifecycleError);
 
-  const failedRecord = runtime
-    .list()
-    .find((item) => item.manifest.id === "cms/plugin-content");
+  const failedRecord = runtime.list().find((item) => item.manifest.id === "cms/plugin-content");
   assert.equal(failedRecord?.state, "failed");
 
   await runtime.register({
     manifest: {
       id: "cms/plugin-content",
       version: "1.0.1",
-      requiresCore: "^0.1.0",
+      requiresCore: "^0.1.0"
     },
     modules: [module],
     async onInit() {
       // now ok
-    },
+    }
   });
   await runtime.load("cms/plugin-content");
 
   await runtime.disable("cms/plugin-content", "manual stop");
-  const disabledRecord = runtime
-    .list()
-    .find((item) => item.manifest.id === "cms/plugin-content");
+  const disabledRecord = runtime.list().find((item) => item.manifest.id === "cms/plugin-content");
   assert.equal(disabledRecord?.state, "disabled");
   assert.equal(disabledRecord?.disabledReason, "manual stop");
 
-  await assert.rejects(
-    async () => runtime.load("cms/plugin-content"),
-    PluginRuntimeError,
-  );
+  await assert.rejects(async () => runtime.load("cms/plugin-content"), PluginRuntimeError);
 
   await runtime.enable("cms/plugin-content");
-  const reenabledRecord = runtime
-    .list()
-    .find((item) => item.manifest.id === "cms/plugin-content");
+  const reenabledRecord = runtime.list().find((item) => item.manifest.id === "cms/plugin-content");
   assert.equal(reenabledRecord?.state, "registered");
   assert.equal(reenabledRecord?.disabledReason, undefined);
 });
@@ -166,18 +148,15 @@ test("module bridge rolls back registered modules when init fails", async () => 
     manifest: {
       id: "cms/plugin-content",
       version: "1.0.0",
-      requiresCore: "^0.1.0",
+      requiresCore: "^0.1.0"
     },
     modules: [createModule("M1"), createModule("M2")],
     async onInit() {
       throw new Error("boom");
-    },
+    }
   });
 
-  await assert.rejects(
-    async () => runtime.load("cms/plugin-content"),
-    PluginLifecycleError,
-  );
+  await assert.rejects(async () => runtime.load("cms/plugin-content"), PluginLifecycleError);
 
   assert.deepEqual(app.listModules(), []);
   assert.deepEqual(app.registeredCalls, ["M1", "M2"]);
@@ -190,22 +169,19 @@ test("cannot unload a plugin with loaded required dependents", async () => {
   await runtime.register({
     id: "cms/plugin-users",
     version: "1.0.0",
-    requiresCore: "^0.1.0",
+    requiresCore: "^0.1.0"
   });
   await runtime.register({
     id: "cms/plugin-content",
     version: "1.0.0",
     requiresCore: "^0.1.0",
-    dependencies: [{ pluginId: "cms/plugin-users", versionRange: "^1.0.0" }],
+    dependencies: [{ pluginId: "cms/plugin-users", versionRange: "^1.0.0" }]
   });
 
   await runtime.load("cms/plugin-users");
   await runtime.load("cms/plugin-content");
 
-  await assert.rejects(
-    async () => runtime.unload("cms/plugin-users"),
-    PluginDependencyError,
-  );
+  await assert.rejects(async () => runtime.unload("cms/plugin-users"), PluginDependencyError);
 });
 
 test("loadMany loads plugins in dependency order", async () => {
@@ -214,21 +190,19 @@ test("loadMany loads plugins in dependency order", async () => {
   await runtime.register({
     id: "cms/plugin-users",
     version: "1.0.0",
-    requiresCore: "^0.1.0",
+    requiresCore: "^0.1.0"
   });
   await runtime.register({
     id: "cms/plugin-content",
     version: "1.0.0",
     requiresCore: "^0.1.0",
-    dependencies: [{ pluginId: "cms/plugin-users", versionRange: "^1.0.0" }],
+    dependencies: [{ pluginId: "cms/plugin-users", versionRange: "^1.0.0" }]
   });
 
   await runtime.loadMany(["cms/plugin-content", "cms/plugin-users"]);
 
   const users = runtime.list().find((item) => item.manifest.id === "cms/plugin-users");
-  const content = runtime
-    .list()
-    .find((item) => item.manifest.id === "cms/plugin-content");
+  const content = runtime.list().find((item) => item.manifest.id === "cms/plugin-content");
   assert.equal(users?.state, "loaded");
   assert.equal(content?.state, "loaded");
   assert.ok(users?.loadedAt);
@@ -247,9 +221,9 @@ test("describeDependencies reports optional missing dependency as warning", asyn
       {
         pluginId: "cms/plugin-preview",
         versionRange: "^1.0.0",
-        optional: true,
-      },
-    ],
+        optional: true
+      }
+    ]
   });
 
   const snapshot = runtime.describeDependencies();
@@ -270,50 +244,48 @@ test("runtime emits lifecycle events and retries failed load when configured", a
     retryPolicy: { maxAttempts: 1, backoffMs: 0 },
     onEvent(event) {
       events.push({ action: event.action, success: event.success });
-    },
+    }
   });
 
   await runtime.register({
     manifest: {
       id: "cms/plugin-content",
       version: "1.0.0",
-      requiresCore: "^0.1.0",
+      requiresCore: "^0.1.0"
     },
     async onInit() {
       initAttempt += 1;
       if (initAttempt === 1) {
         throw new Error("transient init error");
       }
-    },
+    }
   });
 
   await runtime.load("cms/plugin-content");
-  const record = runtime
-    .list()
-    .find((item) => item.manifest.id === "cms/plugin-content");
+  const record = runtime.list().find((item) => item.manifest.id === "cms/plugin-content");
 
   assert.equal(initAttempt, 2);
   assert.equal(record?.state, "loaded");
   assert.equal(
     events.some((event) => event.action === "load" && event.success === false),
-    true,
+    true
   );
   assert.equal(
     events.some((event) => event.action === "load" && event.success === true),
-    true,
+    true
   );
 });
 
 test("runtime keeps a bounded event log for operational diagnostics", async () => {
   const runtime = new InMemoryPluginRuntime({
     coreVersion: "0.1.0",
-    eventBufferSize: 2,
+    eventBufferSize: 2
   });
 
   await runtime.register({
     id: "cms/plugin-content",
     version: "1.0.0",
-    requiresCore: "^0.1.0",
+    requiresCore: "^0.1.0"
   });
   await runtime.load("cms/plugin-content");
   await runtime.disable("cms/plugin-content", "operator stop");
@@ -322,7 +294,7 @@ test("runtime keeps a bounded event log for operational diagnostics", async () =
   assert.equal(events.length, 2);
   assert.deepEqual(
     events.map((event) => event.action),
-    ["load", "disable"],
+    ["load", "disable"]
   );
   assert.equal(events[0]?.sequence, 2);
   assert.equal(events[1]?.sequence, 3);
@@ -334,13 +306,13 @@ test("runtime supports unregister when plugin is not loaded", async () => {
   await runtime.register({
     id: "cms/plugin-temp",
     version: "1.0.0",
-    requiresCore: "^0.1.0",
+    requiresCore: "^0.1.0"
   });
 
   await runtime.unregister("cms/plugin-temp");
   assert.equal(
     runtime.list().some((item) => item.manifest.id === "cms/plugin-temp"),
-    false,
+    false
   );
 });
 
@@ -353,14 +325,14 @@ test("onBeforeUnregister lifecycle hook is executed", async () => {
     lifecycleHooks: {
       onBeforeUnregister(context) {
         calls.push(context.pluginId);
-      },
-    },
+      }
+    }
   });
 
   await runtime.register({
     id: "cms/plugin-temp",
     version: "1.0.0",
-    requiresCore: "^0.1.0",
+    requiresCore: "^0.1.0"
   });
 
   await runtime.unregister("cms/plugin-temp");
@@ -376,14 +348,14 @@ test("onAfterLoad lifecycle hook is executed", async () => {
     lifecycleHooks: {
       onAfterLoad(context) {
         calls.push(context.pluginId);
-      },
-    },
+      }
+    }
   });
 
   await runtime.register({
     id: "cms/plugin-temp",
     version: "1.0.0",
-    requiresCore: "^0.1.0",
+    requiresCore: "^0.1.0"
   });
   await runtime.load("cms/plugin-temp");
 
@@ -434,11 +406,11 @@ function createFakeApp(): ApplicationContext & {
     describeGraph() {
       return {
         modules: [],
-        providerKinds: {},
+        providerKinds: {}
       };
     },
     async shutdown() {
       // no-op for tests
-    },
+    }
   };
 }

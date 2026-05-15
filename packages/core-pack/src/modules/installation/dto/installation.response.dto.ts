@@ -7,9 +7,9 @@ import { UserRecordSchema } from "../../users/users.schemas.js";
  */
 export const InstallationResponseMetaSchema = s.object(
   {
-    pluginId: s.literal(CORE_PACK_PLUGIN_ID).optional(),
+    pluginId: s.literal(CORE_PACK_PLUGIN_ID).optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 /**
@@ -18,9 +18,9 @@ export const InstallationResponseMetaSchema = s.object(
 export const InstallationApiErrorSchema = s.object(
   {
     code: s.string({ trim: true, minLength: 1 }),
-    message: s.string({ trim: true, minLength: 1 }),
+    message: s.string({ trim: true, minLength: 1 })
   },
-  { strict: true },
+  { strict: true }
 );
 
 /**
@@ -30,9 +30,9 @@ export const InstallationStatusSchema = s.object(
   {
     installed: s.boolean(),
     installedAt: s.dateTimeString().optional(),
-    adminUserId: s.string({ trim: true, minLength: 1 }).optional(),
+    adminUserId: s.string({ trim: true, minLength: 1 }).optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 /**
@@ -41,9 +41,9 @@ export const InstallationStatusSchema = s.object(
 export const InstallationStatusResponseSchema = s.object(
   {
     data: InstallationStatusSchema,
-    meta: InstallationResponseMetaSchema.optional(),
+    meta: InstallationResponseMetaSchema.optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 /**
@@ -54,13 +54,13 @@ export const InstallationBootstrapResponseSchema = s.object(
     data: s.object(
       {
         status: InstallationStatusSchema,
-        adminUser: UserRecordSchema,
+        adminUser: UserRecordSchema
       },
-      { strict: true },
+      { strict: true }
     ),
-    meta: InstallationResponseMetaSchema.optional(),
+    meta: InstallationResponseMetaSchema.optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 /**
@@ -69,8 +69,7 @@ export const InstallationBootstrapResponseSchema = s.object(
 export const InstallationErrorResponseSchema = s.object(
   {
     error: InstallationApiErrorSchema,
-    meta: InstallationResponseMetaSchema.optional(),
+    meta: InstallationResponseMetaSchema.optional()
   },
-  { strict: true },
+  { strict: true }
 );
-

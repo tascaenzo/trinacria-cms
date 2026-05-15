@@ -1,11 +1,9 @@
-import {
-  CmsSdkConfigurationError,
-} from "./errors.js";
+import { CmsSdkConfigurationError } from "./errors.js";
 import type {
   FetchLike,
   SdkTransport,
   SdkTransportRequest,
-  SdkTransportResponse,
+  SdkTransportResponse
 } from "./types.js";
 
 /**
@@ -17,14 +15,14 @@ export function createFetchTransport(fetchImpl?: FetchLike): SdkTransport {
 
   return {
     async request<TData = unknown>(
-      request: SdkTransportRequest,
+      request: SdkTransportRequest
     ): Promise<SdkTransportResponse<TData>> {
       const response = await resolvedFetch(request.url, {
         method: request.method,
         headers: request.headers,
         body: request.body,
         credentials: request.credentials,
-        signal: request.signal,
+        signal: request.signal
       });
 
       const headers = readHeaders(response.headers);
@@ -34,9 +32,9 @@ export function createFetchTransport(fetchImpl?: FetchLike): SdkTransport {
       return {
         status: response.status,
         headers,
-        data,
+        data
       };
-    },
+    }
   };
 }
 
@@ -47,7 +45,7 @@ function resolveGlobalFetch(): FetchLike {
 
   if (typeof candidate.fetch !== "function") {
     throw new CmsSdkConfigurationError(
-      "No fetch implementation available. Pass `fetch` or a custom `transport` when creating the SDK client.",
+      "No fetch implementation available. Pass `fetch` or a custom `transport` when creating the SDK client."
     );
   }
 
@@ -62,10 +60,7 @@ function readHeaders(headers: { forEach(callback: (value: string, key: string) =
   return normalized;
 }
 
-function parseResponseBody<TData>(
-  rawText: string,
-  contentType: string | undefined,
-): TData {
+function parseResponseBody<TData>(rawText: string, contentType: string | undefined): TData {
   if (!rawText) {
     return undefined as TData;
   }

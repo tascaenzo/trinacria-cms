@@ -1,14 +1,10 @@
-import {
-  createPluginDbScope,
-  type DbAdapter,
-  type PluginDbScope,
-} from "@trinacria-cms/kernel";
+import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import {
   CreateRoleInputSchema,
   type CreateRoleInput,
   type UpdateRoleStatusInput,
-  UpdateRoleStatusInputSchema,
+  UpdateRoleStatusInputSchema
 } from "./dto/roles.input.dto.js";
 import { RoleRecordSchema, type RoleRecord } from "./roles.schemas.js";
 
@@ -29,13 +25,11 @@ export class RolesRepository {
     const record = {
       code: parsedInput.code,
       name: parsedInput.name,
-      ...(parsedInput.description
-        ? { description: parsedInput.description }
-        : {}),
+      ...(parsedInput.description ? { description: parsedInput.description } : {}),
       ownerPluginId: CORE_PACK_PLUGIN_ID,
       status: "active" as const,
       createdAt: now,
-      updatedAt: now,
+      updatedAt: now
     };
 
     const created = await this.repository().insertOne(record);
@@ -45,7 +39,7 @@ export class RolesRepository {
   async findById(id: string): Promise<RoleRecord | null> {
     const found = await this.repository().findOne({
       filter: { id },
-      parse: (value: unknown) => this.parseRoleRecord(value),
+      parse: (value: unknown) => this.parseRoleRecord(value)
     });
     return found;
   }
@@ -54,20 +48,17 @@ export class RolesRepository {
     const normalizedCode = code.trim().toLowerCase();
     const found = await this.repository().findOne({
       filter: { code: normalizedCode },
-      parse: (value: unknown) => this.parseRoleRecord(value),
+      parse: (value: unknown) => this.parseRoleRecord(value)
     });
     return found;
   }
 
-  async list(options?: {
-    limit?: number;
-    offset?: number;
-  }): Promise<readonly RoleRecord[]> {
+  async list(options?: { limit?: number; offset?: number }): Promise<readonly RoleRecord[]> {
     const roles = await this.repository().findMany({
       limit: options?.limit,
       offset: options?.offset,
       sort: { createdAt: "desc" },
-      parse: (value: unknown) => this.parseRoleRecord(value),
+      parse: (value: unknown) => this.parseRoleRecord(value)
     });
     return roles;
   }
@@ -76,22 +67,19 @@ export class RolesRepository {
     const roles = await this.repository().findMany({
       filter: { ownerPluginId: pluginId.trim().toLowerCase() },
       sort: { createdAt: "desc" },
-      parse: (value: unknown) => this.parseRoleRecord(value),
+      parse: (value: unknown) => this.parseRoleRecord(value)
     });
     return roles;
   }
 
-  async updateStatus(
-    id: string,
-    input: UpdateRoleStatusInput,
-  ): Promise<RoleRecord | null> {
+  async updateStatus(id: string, input: UpdateRoleStatusInput): Promise<RoleRecord | null> {
     const parsedInput = UpdateRoleStatusInputSchema.parse(input);
     const updated = await this.repository().updateOne(
       { filter: { id } },
       {
         status: parsedInput.status,
-        updatedAt: new Date().toISOString(),
-      },
+        updatedAt: new Date().toISOString()
+      }
     );
 
     if (!updated) return null;
@@ -109,9 +97,7 @@ export class RolesRepository {
     const existing = await this.findByCode(normalizedCode);
 
     if (existing && existing.ownerPluginId && existing.ownerPluginId !== normalizedOwner) {
-      throw new Error(
-        `Role "${normalizedCode}" is owned by plugin "${existing.ownerPluginId}"`,
-      );
+      throw new Error(`Role "${normalizedCode}" is owned by plugin "${existing.ownerPluginId}"`);
     }
 
     if (!existing) {
@@ -119,13 +105,11 @@ export class RolesRepository {
       const created = await this.repository().insertOne({
         code: normalizedCode,
         name: input.name.trim(),
-        ...(input.description?.trim()
-          ? { description: input.description.trim() }
-          : {}),
+        ...(input.description?.trim() ? { description: input.description.trim() } : {}),
         ownerPluginId: normalizedOwner,
         status: "active" as const,
         createdAt: now,
-        updatedAt: now,
+        updatedAt: now
       });
       return this.parseRoleRecord(created);
     }
@@ -134,12 +118,10 @@ export class RolesRepository {
       { filter: { id: existing.id } },
       {
         name: input.name.trim(),
-        ...(input.description?.trim()
-          ? { description: input.description.trim() }
-          : {}),
+        ...(input.description?.trim() ? { description: input.description.trim() } : {}),
         ownerPluginId: normalizedOwner,
-        updatedAt: new Date().toISOString(),
-      },
+        updatedAt: new Date().toISOString()
+      }
     );
 
     if (!updated) {

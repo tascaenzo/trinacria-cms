@@ -1,12 +1,7 @@
 import { cn } from "../../../utils/class-names.js";
 import type { BodyTextProps } from "./text.types.js";
 
-export function BodyText({
-  children,
-  className,
-  tone = "muted",
-  ...props
-}: BodyTextProps) {
+export function BodyText({ children, className, tone = "muted", ...props }: BodyTextProps) {
   return (
     <p
       className={cn(

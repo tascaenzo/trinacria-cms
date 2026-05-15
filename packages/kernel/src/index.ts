@@ -18,7 +18,7 @@ export {
   type ApplicationContext,
   type ModuleDefinition,
   type Provider,
-  type Token,
+  type Token
 } from "@trinacria/core";
 export * from "@trinacria/http";
 export * from "@trinacria/schema";

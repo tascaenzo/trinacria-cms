@@ -5,7 +5,7 @@ import { SettingsDefinitionsRepository } from "../src/modules/settings/definitio
 import { SettingsSecretsCryptoService } from "../src/modules/settings/secrets/settings-secrets-crypto.service.js";
 import {
   CORE_PACK_SETTING_DEFINITION_SEEDS,
-  provisionCorePackSettingDefinitions,
+  provisionCorePackSettingDefinitions
 } from "../src/modules/settings/settings.bootstrap.js";
 import { SettingsSecretsRepository } from "../src/modules/settings/secrets/settings-secrets.repository.js";
 import { SettingsService } from "../src/modules/settings/settings.service.js";
@@ -21,7 +21,7 @@ test("core-pack settings bootstrap provisions the canonical seed catalog", async
   assert.equal(listed.length, CORE_PACK_SETTING_DEFINITION_SEEDS.length);
   assert.deepEqual(
     listed.map((item) => item.key).sort(),
-    CORE_PACK_SETTING_DEFINITION_SEEDS.map((item) => item.key).sort(),
+    CORE_PACK_SETTING_DEFINITION_SEEDS.map((item) => item.key).sort()
   );
 
   const siteName = await service.getResolvedValueByKey("core-pack:site:name");
@@ -40,7 +40,7 @@ function createSettingsService(): SettingsService {
   const secrets = new SettingsSecretsRepository(db);
   const crypto = new SettingsSecretsCryptoService({
     masterKey: "test-master-key",
-    keyVersion: "test-v1",
+    keyVersion: "test-v1"
   });
 
   return new SettingsService(definitions, values, secrets, crypto);
@@ -58,13 +58,10 @@ function createFakeDbAdapter(): DbAdapter {
     return created;
   };
 
-  const repository = <TData extends Record<string, unknown>>(
-    key: string,
-  ): DbRepository<TData> => ({
+  const repository = <TData extends Record<string, unknown>>(key: string): DbRepository<TData> => ({
     async findOne(query: DbQuery<TData>) {
       const bucket = getBucket(key) as TData[];
-      const found =
-        bucket.find((item) => matchesFilter(item, query.filter)) ?? null;
+      const found = bucket.find((item) => matchesFilter(item, query.filter)) ?? null;
       if (!found) return null;
       return query.parse ? query.parse(found) : found;
     },
@@ -93,7 +90,7 @@ function createFakeDbAdapter(): DbAdapter {
       if (index < 0) return null;
       const updated = {
         ...bucket[index],
-        ...patch,
+        ...patch
       } as TData;
       bucket[index] = updated;
       return updated;
@@ -104,7 +101,7 @@ function createFakeDbAdapter(): DbAdapter {
       if (index < 0) return false;
       bucket.splice(index, 1);
       return true;
-    },
+    }
   });
 
   return {
@@ -114,18 +111,18 @@ function createFakeDbAdapter(): DbAdapter {
     async beginTransaction() {
       return {
         async commit() {},
-        async rollback() {},
+        async rollback() {}
       };
     },
     async healthCheck() {
       return { ok: true };
-    },
+    }
   };
 }
 
 function matchesFilter(
   item: Record<string, unknown>,
-  filter: Record<string, unknown> | undefined,
+  filter: Record<string, unknown> | undefined
 ): boolean {
   if (!filter) return true;
   return Object.entries(filter).every(([key, value]) => item[key] === value);
@@ -133,7 +130,7 @@ function matchesFilter(
 
 function applySort<TData extends Record<string, unknown>>(
   values: readonly TData[],
-  sort: Record<string, "asc" | "desc"> | undefined,
+  sort: Record<string, "asc" | "desc"> | undefined
 ): TData[] {
   if (!sort || Object.keys(sort).length === 0) return [...values];
   const [field, direction] = Object.entries(sort)[0]!;

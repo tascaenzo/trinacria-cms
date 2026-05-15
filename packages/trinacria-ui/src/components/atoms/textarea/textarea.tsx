@@ -2,7 +2,7 @@ import {
   buildFormControlAria,
   FormControlShell,
   formControlClassName,
-  useFormControlIds,
+  useFormControlIds
 } from "../form-control/form-control.js";
 import type { TextareaProps } from "./textarea.types.js";
 
@@ -13,7 +13,7 @@ export function Textarea({ className, error, hint, label, id, ...props }: Textar
     error,
     errorId: ids.errorId,
     hint,
-    hintId: ids.hintId,
+    hintId: ids.hintId
   });
 
   return (
@@ -32,7 +32,12 @@ export function Textarea({ className, error, hint, label, id, ...props }: Textar
         aria-invalid={error ? true : props["aria-invalid"]}
         aria-describedby={aria.describedBy}
         aria-errormessage={aria.errorMessage}
-        className={formControlClassName({ className, disabled: props.disabled, error, multiline: true })}
+        className={formControlClassName({
+          className,
+          disabled: props.disabled,
+          error,
+          multiline: true
+        })}
         {...props}
       />
     </FormControlShell>

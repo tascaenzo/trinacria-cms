@@ -30,7 +30,11 @@ export function SummaryCard({
         </div>
         {badge}
       </div>
-      {description ? <BodyText className="mt-3" tone="subtle">{description}</BodyText> : null}
+      {description ? (
+        <BodyText className="mt-3" tone="subtle">
+          {description}
+        </BodyText>
+      ) : null}
     </Panel>
   );
 }

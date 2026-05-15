@@ -10,26 +10,33 @@ export function Switch({ className, description, error, id, label, ...props }: S
     error,
     errorId: ids.errorId,
     hint: description,
-    hintId: ids.hintId,
+    hintId: ids.hintId
   });
 
   return (
     <label
       htmlFor={ids.controlId}
       className={cn(
-        "flex items-start justify-between gap-4 rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel)] p-4",
+        "flex items-start justify-between gap-4 rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-panel)] p-4",
         error && "border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)]",
-        className,
+        className
       )}
     >
       <span className="grid gap-1">
         <span className="text-sm font-medium text-[color:var(--color-ink)]">{label}</span>
         {description ? (
-          <span id={descriptionId} className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
+          <span
+            id={descriptionId}
+            className="text-sm leading-6 text-[color:var(--color-ink-muted)]"
+          >
             {description}
           </span>
         ) : null}
-        {error ? <span id={ids.errorId} className="text-xs leading-5 text-[color:var(--color-danger-ink)]">{error}</span> : null}
+        {error ? (
+          <span id={ids.errorId} className="text-xs leading-5 text-[color:var(--color-danger-ink)]">
+            {error}
+          </span>
+        ) : null}
       </span>
       <span className="relative inline-flex shrink-0">
         <input

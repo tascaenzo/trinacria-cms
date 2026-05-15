@@ -1,6 +1,6 @@
 import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
 
-export interface SummaryGridProps extends PropsWithChildren<HTMLAttributes<HTMLDivElement>> {}
+export type SummaryGridProps = PropsWithChildren<HTMLAttributes<HTMLDivElement>>;
 
 export interface SummaryCardProps extends HTMLAttributes<HTMLDivElement> {
   label: ReactNode;

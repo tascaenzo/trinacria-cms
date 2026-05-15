@@ -23,10 +23,10 @@ const RESOURCE_SEGMENT = "[a-z0-9][a-z0-9._-]*";
 const ACTION_SEGMENT = "[a-z0-9][a-z0-9._-]*";
 
 const PERMISSION_KEY_REGEX = new RegExp(
-  `^(?<pluginId>${PLUGIN_SEGMENT}):(?<resource>${RESOURCE_SEGMENT}):(?<action>${ACTION_SEGMENT})$`,
+  `^(?<pluginId>${PLUGIN_SEGMENT}):(?<resource>${RESOURCE_SEGMENT}):(?<action>${ACTION_SEGMENT})$`
 );
 const PERMISSION_PATTERN_REGEX = new RegExp(
-  `^(?<pluginId>${PLUGIN_SEGMENT}):(?<resource>${RESOURCE_SEGMENT}|\\*):(?<action>${ACTION_SEGMENT}|\\*)$`,
+  `^(?<pluginId>${PLUGIN_SEGMENT}):(?<resource>${RESOURCE_SEGMENT}|\\*):(?<action>${ACTION_SEGMENT}|\\*)$`
 );
 
 /**
@@ -53,17 +53,14 @@ export function parsePermissionKey(value: string): ParsedPermissionKey | null {
   return {
     pluginId,
     resource,
-    action,
+    action
   };
 }
 
 /**
  * Returns true when a permission key belongs to a specific plugin id.
  */
-export function isPermissionOwnedByPlugin(
-  pluginId: string,
-  permissionKey: string,
-): boolean {
+export function isPermissionOwnedByPlugin(pluginId: string, permissionKey: string): boolean {
   const parsed = parsePermissionKey(permissionKey);
   if (!parsed) return false;
   return parsed.pluginId === pluginId.trim().toLowerCase();
@@ -79,9 +76,7 @@ export function isValidPermissionPattern(value: string): boolean {
 /**
  * Parses a permission pattern and returns null when format is invalid.
  */
-export function parsePermissionPattern(
-  value: string,
-): ParsedPermissionPattern | null {
+export function parsePermissionPattern(value: string): ParsedPermissionPattern | null {
   const normalized = value.trim().toLowerCase();
   const match = normalized.match(PERMISSION_PATTERN_REGEX);
   if (!match?.groups) return null;
@@ -95,7 +90,7 @@ export function parsePermissionPattern(
   return {
     pluginId,
     resourcePattern,
-    actionPattern,
+    actionPattern
   };
 }
 
@@ -104,7 +99,7 @@ export function parsePermissionPattern(
  */
 export function isPermissionPatternOwnedByPlugin(
   pluginId: string,
-  permissionPattern: string,
+  permissionPattern: string
 ): boolean {
   const parsed = parsePermissionPattern(permissionPattern);
   if (!parsed) return false;
@@ -116,7 +111,7 @@ export function isPermissionPatternOwnedByPlugin(
  */
 export function matchesPermissionPattern(
   permissionPattern: string,
-  permissionKey: string,
+  permissionKey: string
 ): boolean {
   const pattern = parsePermissionPattern(permissionPattern);
   const key = parsePermissionKey(permissionKey);
@@ -125,7 +120,6 @@ export function matchesPermissionPattern(
 
   const resourceMatches =
     pattern.resourcePattern === "*" || pattern.resourcePattern === key.resource;
-  const actionMatches =
-    pattern.actionPattern === "*" || pattern.actionPattern === key.action;
+  const actionMatches = pattern.actionPattern === "*" || pattern.actionPattern === key.action;
   return resourceMatches && actionMatches;
 }

@@ -1,8 +1,4 @@
-import type {
-  HTMLAttributes,
-  LabelHTMLAttributes,
-  PropsWithChildren
-} from "react";
+import type { HTMLAttributes, LabelHTMLAttributes, PropsWithChildren } from "react";
 
 export type FieldGroupProps = PropsWithChildren<HTMLAttributes<HTMLDivElement>>;
 export type FieldProps = PropsWithChildren<HTMLAttributes<HTMLDivElement>>;

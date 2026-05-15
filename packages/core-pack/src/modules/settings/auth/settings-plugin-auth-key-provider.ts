@@ -20,8 +20,8 @@ export class EnvPluginAuthKeyProvider implements PluginAuthKeyProvider {
     this.keys = new Map(
       Object.entries(options?.keys ?? readKeysFromEnv()).map(([pluginId, secret]) => [
         pluginId.trim().toLowerCase(),
-        secret,
-      ]),
+        secret
+      ])
     );
   }
 
@@ -42,7 +42,7 @@ function readKeysFromEnv(): Record<string, string> {
     parsed = JSON.parse(raw);
   } catch (error) {
     throw new Error(
-      `Invalid CMS_PLUGIN_AUTH_KEYS_JSON. Expected JSON object. Cause: ${error instanceof Error ? error.message : String(error)}`,
+      `Invalid CMS_PLUGIN_AUTH_KEYS_JSON. Expected JSON object. Cause: ${error instanceof Error ? error.message : String(error)}`
     );
   }
 
@@ -55,11 +55,10 @@ function readKeysFromEnv(): Record<string, string> {
   for (const [pluginId, secret] of entries) {
     if (typeof secret !== "string" || secret.trim().length < 8) {
       throw new Error(
-        `Invalid secret for plugin "${pluginId}" in CMS_PLUGIN_AUTH_KEYS_JSON (min length 8)`,
+        `Invalid secret for plugin "${pluginId}" in CMS_PLUGIN_AUTH_KEYS_JSON (min length 8)`
       );
     }
     result[pluginId.trim().toLowerCase()] = secret;
   }
   return result;
 }
-

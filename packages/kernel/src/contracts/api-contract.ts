@@ -39,10 +39,7 @@ export interface ApiResponseMeta {
 /**
  * Helper to build a successful API envelope.
  */
-export function apiSuccess<TData>(
-  data: TData,
-  meta?: ApiResponseMeta,
-): ApiSuccessResponse<TData> {
+export function apiSuccess<TData>(data: TData, meta?: ApiResponseMeta): ApiSuccessResponse<TData> {
   return meta ? { data, meta } : { data };
 }
 
@@ -53,14 +50,14 @@ export function apiError(
   code: string,
   message: string,
   details?: Record<string, unknown>,
-  meta?: ApiResponseMeta,
+  meta?: ApiResponseMeta
 ): ApiErrorResponse {
   return {
     error: {
       code,
       message,
-      ...(details ? { details } : {}),
+      ...(details ? { details } : {})
     },
-    ...(meta ? { meta } : {}),
+    ...(meta ? { meta } : {})
   };
 }

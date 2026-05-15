@@ -23,15 +23,15 @@ Examples:
 
 ## 2. Current collection map
 
-| Collection | Logical namespace | Logical entity | Purpose |
-| --- | --- | --- | --- |
-| `kernel__installed_plugins` | `kernel` | `installed_plugins` | persistent runtime state for installed plugins |
-| `plugin_core_pack__users` | `core-pack` | `users` | users and embedded role assignments |
-| `plugin_core_pack__roles` | `core-pack` | `roles` | roles and embedded grants |
-| `plugin_core_pack__permissions` | `core-pack` | `permissions` | canonical permission catalog |
-| `plugin_core_pack__role_policy_rules` | `core-pack` | `role_policy_rules` | advanced policy rules |
-| `plugin_core_pack__api_keys` | `core-pack` | `api_keys` | machine credentials and attached authz material |
-| `plugin_core_pack__settings` | `core-pack` | `settings` | definitions, values, and encrypted secrets |
+| Collection                            | Logical namespace | Logical entity      | Purpose                                         |
+| ------------------------------------- | ----------------- | ------------------- | ----------------------------------------------- |
+| `kernel__installed_plugins`           | `kernel`          | `installed_plugins` | persistent runtime state for installed plugins  |
+| `plugin_core_pack__users`             | `core-pack`       | `users`             | users and embedded role assignments             |
+| `plugin_core_pack__roles`             | `core-pack`       | `roles`             | roles and embedded grants                       |
+| `plugin_core_pack__permissions`       | `core-pack`       | `permissions`       | canonical permission catalog                    |
+| `plugin_core_pack__role_policy_rules` | `core-pack`       | `role_policy_rules` | advanced policy rules                           |
+| `plugin_core_pack__api_keys`          | `core-pack`       | `api_keys`          | machine credentials and attached authz material |
+| `plugin_core_pack__settings`          | `core-pack`       | `settings`          | definitions, values, and encrypted secrets      |
 
 ## 3. Compact diagram
 

@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { BodyText } from "./text.js";
 
-const meta = { title: "Primitives/Typography/Text", component: BodyText } satisfies Meta<typeof BodyText>;
+const meta = { title: "Primitives/Typography/Text", component: BodyText } satisfies Meta<
+  typeof BodyText
+>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 

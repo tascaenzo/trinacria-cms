@@ -6,7 +6,7 @@ import { EntityRegistry } from "../src/runtime/entity-registry.js";
 import {
   DbPluginRuntimeStore,
   INSTALLED_PLUGINS_ENTITY,
-  InMemoryPluginRuntimeStore,
+  InMemoryPluginRuntimeStore
 } from "../src/runtime/plugin-runtime-store.js";
 import { InMemoryPluginRuntime } from "../src/runtime/in-memory-plugin-runtime.js";
 import type { DbAdapter, DbQuery, DbRepository } from "../src/contracts/db-adapter.js";
@@ -19,7 +19,7 @@ test("DbPluginRuntimeStore initializes entity registration and indexes", async (
   const store = new DbPluginRuntimeStore({
     dbAdapter: db,
     entityRegistry,
-    now: () => fixedDate,
+    now: () => fixedDate
   });
 
   await store.initialize();
@@ -29,8 +29,8 @@ test("DbPluginRuntimeStore initializes entity registration and indexes", async (
   assert.deepEqual(db.ensureIndexesCalls, [
     {
       pluginId: "kernel",
-      entityNames: ["installed_plugins"],
-    },
+      entityNames: ["installed_plugins"]
+    }
   ]);
 });
 
@@ -42,7 +42,7 @@ test("DbPluginRuntimeStore upserts and removes persisted records", async () => {
   const store = new DbPluginRuntimeStore({
     dbAdapter: db,
     entityRegistry,
-    now: () => new Date(`2026-03-04T10:00:0${tick++}.000Z`),
+    now: () => new Date(`2026-03-04T10:00:0${tick++}.000Z`)
   });
 
   const record = createRuntimeRecord("core-pack", "registered");
@@ -62,8 +62,8 @@ test("DbPluginRuntimeStore upserts and removes persisted records", async () => {
     disabledAt: new Date("2026-03-04T10:01:00.000Z"),
     statusReason: {
       code: "plugin_disabled",
-      message: "Plugin is disabled and cannot be loaded",
-    },
+      message: "Plugin is disabled and cannot be loaded"
+    }
   });
 
   const disabled = await store.list();
@@ -91,18 +91,18 @@ test("InMemoryPluginRuntime persists state transitions through runtime store", a
     },
     async list() {
       return [];
-    },
+    }
   };
 
   const runtime = new InMemoryPluginRuntime({
     coreVersion: "0.1.0",
-    runtimeStore: store,
+    runtimeStore: store
   });
 
   await runtime.register({
     id: "core-pack",
     version: "0.1.0",
-    requiresCore: "^0.1.0",
+    requiresCore: "^0.1.0"
   });
   await runtime.load("core-pack");
   await runtime.disable("core-pack", "manual");
@@ -114,14 +114,12 @@ test("InMemoryPluginRuntime persists state transitions through runtime store", a
     "upsert:core-pack:loaded",
     "upsert:core-pack:unloaded",
     "upsert:core-pack:disabled",
-    "remove:core-pack",
+    "remove:core-pack"
   ]);
 });
 
 test("InMemoryPluginRuntimeStore keeps latest persisted state", async () => {
-  const store = new InMemoryPluginRuntimeStore(() =>
-    new Date("2026-03-04T10:00:00.000Z"),
-  );
+  const store = new InMemoryPluginRuntimeStore(() => new Date("2026-03-04T10:00:00.000Z"));
 
   await store.initialize();
   await store.upsert(createRuntimeRecord("blog-pack", "registered"));
@@ -134,9 +132,7 @@ test("InMemoryPluginRuntimeStore keeps latest persisted state", async () => {
 });
 
 test("InMemoryPluginRuntimeStore persists diagnostic error metadata", async () => {
-  const store = new InMemoryPluginRuntimeStore(() =>
-    new Date("2026-03-04T10:00:00.000Z"),
-  );
+  const store = new InMemoryPluginRuntimeStore(() => new Date("2026-03-04T10:00:00.000Z"));
 
   await store.initialize();
   await store.upsert({
@@ -144,8 +140,8 @@ test("InMemoryPluginRuntimeStore persists diagnostic error metadata", async () =
     failedAt: new Date("2026-03-04T10:10:00.000Z"),
     lastFailurePhase: "init",
     lastError: Object.assign(new Error("boom"), {
-      name: "PluginLifecycleError",
-    }),
+      name: "PluginLifecycleError"
+    })
   });
 
   const [record] = await store.list();
@@ -156,20 +152,20 @@ test("InMemoryPluginRuntimeStore persists diagnostic error metadata", async () =
 
 function createRuntimeRecord(
   pluginId: string,
-  state: PluginRuntimeRecord["state"],
+  state: PluginRuntimeRecord["state"]
 ): PluginRuntimeRecord {
   return {
     manifest: {
       id: pluginId,
       version: "0.1.0",
-      requiresCore: "^0.1.0",
+      requiresCore: "^0.1.0"
     },
     state,
     failureCount: 0,
     statusReason: {
       code: `plugin_${state}`,
-      message: `Plugin is in state ${state}`,
-    },
+      message: `Plugin is in state ${state}`
+    }
   };
 }
 
@@ -182,7 +178,7 @@ function createDbAdapterDouble(): DbAdapter & {
 
   const repository = <TData extends Record<string, unknown>>(
     namespace: string,
-    entity: string,
+    entity: string
   ): DbRepository<TData> => {
     const key = `${namespace}:${entity}`;
     const bucket = registry.get(key) ?? [];
@@ -205,7 +201,7 @@ function createDbAdapterDouble(): DbAdapter & {
         sequence += 1;
         const record = {
           ...data,
-          id: (data as Record<string, unknown>).id ?? `kernel:installed_plugins:${sequence}`,
+          id: (data as Record<string, unknown>).id ?? `kernel:installed_plugins:${sequence}`
         } as TData;
         bucket.push(record as Record<string, unknown>);
         return record;
@@ -215,7 +211,7 @@ function createDbAdapterDouble(): DbAdapter & {
         if (index < 0) return null;
         const next = {
           ...bucket[index],
-          ...patch,
+          ...patch
         } as TData;
         bucket[index] = next as Record<string, unknown>;
         return next;
@@ -225,7 +221,7 @@ function createDbAdapterDouble(): DbAdapter & {
         if (index < 0) return false;
         bucket.splice(index, 1);
         return true;
-      },
+      }
     };
   };
 
@@ -244,18 +240,18 @@ function createDbAdapterDouble(): DbAdapter & {
         },
         async rollback() {
           // no-op
-        },
+        }
       };
     },
     async healthCheck() {
       return { ok: true };
-    },
+    }
   };
 }
 
 function matchesFilter(
   value: Record<string, unknown>,
-  filter: Record<string, unknown> | undefined,
+  filter: Record<string, unknown> | undefined
 ): boolean {
   if (!filter) return true;
   return Object.entries(filter).every(([key, expected]) => value[key] === expected);
@@ -263,7 +259,7 @@ function matchesFilter(
 
 function applySort<TData extends Record<string, unknown>>(
   values: readonly TData[],
-  sort: Record<string, "asc" | "desc"> | undefined,
+  sort: Record<string, "asc" | "desc"> | undefined
 ): TData[] {
   if (!sort || Object.keys(sort).length === 0) {
     return [...values];

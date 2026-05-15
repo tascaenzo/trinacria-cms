@@ -61,7 +61,7 @@ export function formatDateAriaLabel(value: string, locale = "it-IT"): string {
     weekday: "long",
     day: "numeric",
     month: "long",
-    year: "numeric",
+    year: "numeric"
   }).format(date);
 }
 

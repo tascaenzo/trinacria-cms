@@ -59,10 +59,7 @@ Campi base:
 Esempio:
 
 ```ts
-import {
-  CORE_PACK_CAPABILITY_LIST,
-  CORE_PACK_PERMISSION_KEYS,
-} from "@trinacria-cms/core-pack";
+import { CORE_PACK_CAPABILITY_LIST, CORE_PACK_PERMISSION_KEYS } from "@trinacria-cms/core-pack";
 ```
 
 ## 4. Manifest security (nuovo standard)

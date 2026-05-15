@@ -13,8 +13,8 @@ export class CmsSwaggerController extends HttpController {
     return this.router()
       .get(this.config.path ?? "/docs", this.renderDocs, {
         docs: {
-          excludeFromOpenApi: true,
-        },
+          excludeFromOpenApi: true
+        }
       })
       .build();
   }
@@ -45,8 +45,8 @@ export class CmsSwaggerController extends HttpController {
 </html>`;
     return response(html, {
       headers: {
-        "content-type": "text/html; charset=utf-8",
-      },
+        "content-type": "text/html; charset=utf-8"
+      }
     });
   };
 }

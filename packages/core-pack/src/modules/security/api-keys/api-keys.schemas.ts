@@ -3,12 +3,10 @@ import {
   isValidPermissionKey,
   isValidPermissionPattern,
   s,
-  type Infer,
+  type Infer
 } from "@trinacria-cms/kernel";
 
-export const ApiKeyKindSchema = s.enum(
-  ["publishable", "secret", "service"] as const,
-);
+export const ApiKeyKindSchema = s.enum(["publishable", "secret", "service"] as const);
 
 export const ApiKeyStatusSchema = s.enum(["active", "revoked"] as const);
 
@@ -23,14 +21,13 @@ export const ApiKeyPolicyRuleSchema = s.object(
       .refine(
         (value) => isValidPermissionPattern(value),
         "Permission pattern must be '<pluginId>:<resource|*>:<action|*>'",
-        "invalid_permission_pattern",
+        "invalid_permission_pattern"
       ),
-    conditions: s.array(
-      s.enum(["resource_id_required", "resource_id_equals_subject"] as const),
-      { unique: true },
-    ),
+    conditions: s.array(s.enum(["resource_id_required", "resource_id_equals_subject"] as const), {
+      unique: true
+    })
   },
-  { strict: true },
+  { strict: true }
 );
 
 /**
@@ -45,7 +42,7 @@ export const ApiKeyRecordSchema = s.object(
       toLowerCase: true,
       minLength: 6,
       maxLength: 64,
-      pattern: /^[a-z0-9]+$/,
+      pattern: /^[a-z0-9]+$/
     }),
     keyPrefix: s.string({ trim: true, minLength: 1, maxLength: 120 }),
     secretHash: s.string({ trim: true, minLength: 32, maxLength: 512 }),
@@ -60,9 +57,9 @@ export const ApiKeyRecordSchema = s.object(
         toLowerCase: true,
         minLength: 2,
         maxLength: 64,
-        pattern: /^[a-z0-9][a-z0-9._-]*$/,
+        pattern: /^[a-z0-9][a-z0-9._-]*$/
       }),
-      { unique: true },
+      { unique: true }
     ),
     permissionKeys: s.array(
       s
@@ -70,26 +67,25 @@ export const ApiKeyRecordSchema = s.object(
           trim: true,
           toLowerCase: true,
           minLength: 3,
-          maxLength: 220,
+          maxLength: 220
         })
         .refine(
           (value) => isValidPermissionKey(value),
           "Permission key must be '<pluginId>:<resource>:<action>'",
-          "invalid_permission_key",
+          "invalid_permission_key"
         ),
-      { unique: true },
+      { unique: true }
     ),
     policyRules: s.array(ApiKeyPolicyRuleSchema, {
-      unique: (rule) =>
-        `${rule.effect}|${rule.permissionPattern}|${rule.conditions.join(",")}`,
+      unique: (rule) => `${rule.effect}|${rule.permissionPattern}|${rule.conditions.join(",")}`
     }),
     createdAt: s.dateTimeString(),
     updatedAt: s.dateTimeString(),
     lastUsedAt: s.dateTimeString().optional(),
     expiresAt: s.dateTimeString().optional(),
-    revokedAt: s.dateTimeString().optional(),
+    revokedAt: s.dateTimeString().optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 export type ApiKeyRecord = Infer<typeof ApiKeyRecordSchema>;
@@ -115,9 +111,9 @@ export const ApiKeyPublicRecordSchema = s.object(
     updatedAt: s.dateTimeString(),
     lastUsedAt: s.dateTimeString().optional(),
     expiresAt: s.dateTimeString().optional(),
-    revokedAt: s.dateTimeString().optional(),
+    revokedAt: s.dateTimeString().optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 export type ApiKeyPublicRecord = Infer<typeof ApiKeyPublicRecordSchema>;
@@ -133,24 +129,24 @@ export const API_KEYS_ENTITY = defineEntity({
     {
       fields: { id: 1 },
       unique: true,
-      name: "api_keys_id_unique",
+      name: "api_keys_id_unique"
     },
     {
       fields: { lookupId: 1 },
       unique: true,
-      name: "api_keys_lookup_id_unique",
+      name: "api_keys_lookup_id_unique"
     },
     {
       fields: { status: 1 },
-      name: "api_keys_status_idx",
+      name: "api_keys_status_idx"
     },
     {
       fields: { kind: 1 },
-      name: "api_keys_kind_idx",
+      name: "api_keys_kind_idx"
     },
     {
       fields: { createdAt: -1 },
-      name: "api_keys_created_at_desc_idx",
-    },
-  ] as const,
+      name: "api_keys_created_at_desc_idx"
+    }
+  ] as const
 });

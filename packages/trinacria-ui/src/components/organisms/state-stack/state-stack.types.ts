@@ -1,4 +1,4 @@
-import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 
 export interface StateStackProps extends HTMLAttributes<HTMLDivElement> {
   loading?: ReactNode;

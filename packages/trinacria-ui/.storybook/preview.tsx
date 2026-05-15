@@ -23,7 +23,8 @@ const preview: Preview = {
         items: [
           { value: "default", title: "Default" },
           { value: "ocean", title: "Ocean" },
-          { value: "forest", title: "Forest" }
+          { value: "forest", title: "Forest" },
+          { value: "trinacria", title: "Trinacria" }
         ]
       }
     }
@@ -39,7 +40,7 @@ const preview: Preview = {
     backgrounds: {
       default: "canvas",
       values: [
-        { name: "canvas", value: "#fafafa" },
+        { name: "canvas", value: "#ffffff" },
         { name: "panel", value: "#ffffff" },
         { name: "slate", value: "#0f172a" }
       ]

@@ -6,15 +6,13 @@ const SettingKeySchema = s
   .refine(
     (value) => isValidSettingKey(value),
     "Setting key must be '<pluginId>:<domain>:<name>'",
-    "invalid_setting_key",
+    "invalid_setting_key"
   );
 
 const PluginIdSchema = s.string({ trim: true, toLowerCase: true, minLength: 1 });
 
 export const SettingDefinitionStatusSchema = s.enum(["active", "disabled"] as const);
-export const SettingRecordKindSchema = s.enum(
-  ["definition", "value", "secret"] as const,
-);
+export const SettingRecordKindSchema = s.enum(["definition", "value", "secret"] as const);
 
 /**
  * Unified settings record shape stored in a single collection.
@@ -48,9 +46,9 @@ export const SettingRecordSchema = s.object(
     status: SettingDefinitionStatusSchema.optional(),
     updatedBy: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
     createdAt: s.dateTimeString(),
-    updatedAt: s.dateTimeString(),
+    updatedAt: s.dateTimeString()
   },
-  { strict: true },
+  { strict: true }
 );
 
 export type SettingRecord = Infer<typeof SettingRecordSchema>;
@@ -70,9 +68,9 @@ export const SettingDefinitionRecordSchema = s.object(
     defaultValueJson: s.string({ minLength: 2, maxLength: 200000 }).optional(),
     status: SettingDefinitionStatusSchema,
     createdAt: s.dateTimeString(),
-    updatedAt: s.dateTimeString(),
+    updatedAt: s.dateTimeString()
   },
-  { strict: true },
+  { strict: true }
 );
 
 export type SettingDefinitionRecord = Infer<typeof SettingDefinitionRecordSchema>;
@@ -90,9 +88,9 @@ export const SettingValueRecordSchema = s.object(
     version: s.number({ int: true, min: 1 }),
     updatedBy: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
     createdAt: s.dateTimeString(),
-    updatedAt: s.dateTimeString(),
+    updatedAt: s.dateTimeString()
   },
-  { strict: true },
+  { strict: true }
 );
 
 export type SettingValueRecord = Infer<typeof SettingValueRecordSchema>;
@@ -113,9 +111,9 @@ export const SettingSecretRecordSchema = s.object(
     keyVersion: s.string({ trim: true, minLength: 1, maxLength: 32 }),
     updatedBy: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
     createdAt: s.dateTimeString(),
-    updatedAt: s.dateTimeString(),
+    updatedAt: s.dateTimeString()
   },
-  { strict: true },
+  { strict: true }
 );
 
 export type SettingSecretRecord = Infer<typeof SettingSecretRecordSchema>;
@@ -132,9 +130,9 @@ export const SETTINGS_ENTITY = defineEntity({
     {
       fields: { kind: 1, key: 1 },
       unique: true,
-      name: "settings_kind_key_unique",
+      name: "settings_kind_key_unique"
     },
     { fields: { ownerPluginId: 1, kind: 1 }, name: "settings_owner_kind_idx" },
-    { fields: { key: 1 }, name: "settings_key_idx" },
-  ] as const,
+    { fields: { key: 1 }, name: "settings_key_idx" }
+  ] as const
 });

@@ -15,7 +15,9 @@ export const Composition: Story = {
           <CardDescription>Snapshot operativo del runtime plugin.</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-[color:var(--color-ink-muted)]">12 plugin registrati, 11 healthy, 1 degraded.</p>
+          <p className="text-sm text-[color:var(--color-ink-muted)]">
+            12 plugin registrati, 11 healthy, 1 degraded.
+          </p>
         </CardContent>
         <CardActions>
           <Button variant="ghost">Annulla</Button>

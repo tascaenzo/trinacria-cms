@@ -1,7 +1,7 @@
 import type {
   AuthorizationRequest,
   AuthorizationResult,
-  AuthzService,
+  AuthzService
 } from "@trinacria-cms/kernel";
 import { CoreError, matchesPermissionPattern } from "@trinacria-cms/kernel";
 import { ApiKeysService } from "./api-keys/api-keys.service.js";
@@ -14,7 +14,7 @@ import { UserAccessService } from "./user-access/user-access.service.js";
 export class CorePackAuthzService implements AuthzService {
   constructor(
     private readonly access: UserAccessService,
-    private readonly apiKeys?: ApiKeysService,
+    private readonly apiKeys?: ApiKeysService
   ) {}
 
   async can(request: AuthorizationRequest): Promise<AuthorizationResult> {
@@ -23,7 +23,7 @@ export class CorePackAuthzService implements AuthzService {
     if (rules.length === 0) {
       return {
         allowed: false,
-        reason: `No authorization rules found for subject "${request.subjectId}"`,
+        reason: `No authorization rules found for subject "${request.subjectId}"`
       };
     }
 
@@ -31,12 +31,12 @@ export class CorePackAuthzService implements AuthzService {
       (rule) =>
         rule.effect === "deny" &&
         matchesPermissionPattern(rule.permissionPattern, permissionKey) &&
-        this.conditionsSatisfied(rule, request),
+        this.conditionsSatisfied(rule, request)
     );
     if (matchingDenies.length > 0) {
       return {
         allowed: false,
-        reason: `Denied by rule "${matchingDenies[0]!.permissionPattern}"`,
+        reason: `Denied by rule "${matchingDenies[0]!.permissionPattern}"`
       };
     }
 
@@ -44,7 +44,7 @@ export class CorePackAuthzService implements AuthzService {
       (rule) =>
         rule.effect === "allow" &&
         matchesPermissionPattern(rule.permissionPattern, permissionKey) &&
-        this.conditionsSatisfied(rule, request),
+        this.conditionsSatisfied(rule, request)
     );
     const allowed = matchingAllows.length > 0;
 
@@ -52,7 +52,7 @@ export class CorePackAuthzService implements AuthzService {
       allowed,
       reason: allowed
         ? undefined
-        : `Missing permission "${permissionKey}" for subject "${request.subjectId}"`,
+        : `Missing permission "${permissionKey}" for subject "${request.subjectId}"`
     };
   }
 
@@ -60,18 +60,14 @@ export class CorePackAuthzService implements AuthzService {
     const decision = await this.can(request);
     if (decision.allowed) return;
 
-    throw new CoreError(
-      "AUTHZ_FORBIDDEN",
-      decision.reason ?? "Unauthorized request",
-      {
-        details: {
-          subjectId: request.subjectId,
-          resource: request.resource,
-          action: request.action,
-          pluginId: request.context.pluginId,
-        },
-      },
-    );
+    throw new CoreError("AUTHZ_FORBIDDEN", decision.reason ?? "Unauthorized request", {
+      details: {
+        subjectId: request.subjectId,
+        resource: request.resource,
+        action: request.action,
+        pluginId: request.context.pluginId
+      }
+    });
   }
 
   private toPermissionKey(request: AuthorizationRequest): string {
@@ -81,10 +77,7 @@ export class CorePackAuthzService implements AuthzService {
     return `${pluginId}:${resource}:${action}`;
   }
 
-  private conditionsSatisfied(
-    rule: AuthorizationRule,
-    request: AuthorizationRequest,
-  ): boolean {
+  private conditionsSatisfied(rule: AuthorizationRule, request: AuthorizationRequest): boolean {
     for (const condition of rule.conditions) {
       if (condition === "resource_id_required") {
         if (!request.resourceId || request.resourceId.trim().length === 0) {
@@ -107,9 +100,7 @@ export class CorePackAuthzService implements AuthzService {
 
   private async resolveRules(subjectId: string): Promise<readonly AuthorizationRule[]> {
     if (this.apiKeys && this.apiKeys.isApiKeySubject(subjectId)) {
-      return this.apiKeys.resolveAuthorizationRules(
-        this.apiKeys.toApiKeyId(subjectId),
-      );
+      return this.apiKeys.resolveAuthorizationRules(this.apiKeys.toApiKeyId(subjectId));
     }
 
     return this.access.resolveUserAuthorizationRules(subjectId);

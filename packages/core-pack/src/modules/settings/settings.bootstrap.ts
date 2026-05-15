@@ -20,8 +20,8 @@ export const CORE_PACK_SETTING_DEFINITION_SEEDS: readonly CorePackSettingDefinit
       schema: {
         type: "string",
         minLength: 1,
-        maxLength: 120,
-      } as JsonValue,
+        maxLength: 120
+      } as JsonValue
     },
     {
       key: "core-pack:site:url",
@@ -30,8 +30,8 @@ export const CORE_PACK_SETTING_DEFINITION_SEEDS: readonly CorePackSettingDefinit
       defaultValue: "http://localhost:3000",
       schema: {
         type: "string",
-        format: "uri",
-      } as JsonValue,
+        format: "uri"
+      } as JsonValue
     },
     {
       key: "core-pack:cms:locale",
@@ -40,29 +40,31 @@ export const CORE_PACK_SETTING_DEFINITION_SEEDS: readonly CorePackSettingDefinit
       defaultValue: "it-IT",
       schema: {
         type: "string",
-        pattern: "^[a-z]{2}(-[A-Z]{2})?$",
-      } as JsonValue,
+        pattern: "^[a-z]{2}(-[A-Z]{2})?$"
+      } as JsonValue
     },
     {
       key: "core-pack:cms:timezone",
       category: "internationalization",
-      description: "Default IANA timezone used for scheduling, editorial dates, and audit displays.",
+      description:
+        "Default IANA timezone used for scheduling, editorial dates, and audit displays.",
       defaultValue: "Europe/Rome",
       schema: {
         type: "string",
         minLength: 3,
-        maxLength: 120,
-      } as JsonValue,
+        maxLength: 120
+      } as JsonValue
     },
     {
       key: "core-pack:branding:tagline",
       category: "branding",
-      description: "Short brand descriptor surfaced in dashboards and installation handoff screens.",
+      description:
+        "Short brand descriptor surfaced in dashboards and installation handoff screens.",
       defaultValue: "Plugin-based editorial platform",
       schema: {
         type: "string",
-        maxLength: 160,
-      } as JsonValue,
+        maxLength: 160
+      } as JsonValue
     },
     {
       key: "core-pack:branding:logo_url",
@@ -71,8 +73,8 @@ export const CORE_PACK_SETTING_DEFINITION_SEEDS: readonly CorePackSettingDefinit
       defaultValue: "/assets/trinacria-logo.svg",
       schema: {
         type: "string",
-        format: "uri-reference",
-      } as JsonValue,
+        format: "uri-reference"
+      } as JsonValue
     },
     {
       key: "core-pack:features:editorial_workflow",
@@ -80,13 +82,13 @@ export const CORE_PACK_SETTING_DEFINITION_SEEDS: readonly CorePackSettingDefinit
       description: "Feature flag reserved for the editorial workflow milestone rollout.",
       defaultValue: false,
       schema: {
-        type: "boolean",
-      } as JsonValue,
-    },
+        type: "boolean"
+      } as JsonValue
+    }
   ]);
 
 export async function provisionCorePackSettingDefinitions(
-  settings: SettingsService,
+  settings: SettingsService
 ): Promise<readonly SettingsDefinition[]> {
   const definitions: SettingsDefinition[] = [];
 
@@ -99,8 +101,8 @@ export async function provisionCorePackSettingDefinitions(
         description: definition.description,
         schema: definition.schema,
         defaultValue: definition.defaultValue,
-        status: "active",
-      }),
+        status: "active"
+      })
     );
   }
 

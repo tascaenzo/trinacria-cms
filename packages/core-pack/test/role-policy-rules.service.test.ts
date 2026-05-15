@@ -14,13 +14,13 @@ test("RolePolicyRulesService supports CRUD by role code", async () => {
   await roles.upsertOwnedRole({
     code: "editor",
     name: "Editor",
-    ownerPluginId: "core-pack",
+    ownerPluginId: "core-pack"
   });
 
   const created = await service.create("editor", {
     effect: "allow",
     permissionPattern: "core-pack:users:*",
-    conditions: ["resource_id_required"],
+    conditions: ["resource_id_required"]
   });
   assert.ok(created);
   assert.equal(created.permissionPattern, "core-pack:users:*");
@@ -31,7 +31,7 @@ test("RolePolicyRulesService supports CRUD by role code", async () => {
   const updated = await service.update("editor", created!.id, {
     effect: "deny",
     permissionPattern: "core-pack:users:delete",
-    conditions: [],
+    conditions: []
   });
   assert.ok(updated);
   assert.equal(updated?.effect, "deny");
@@ -51,7 +51,7 @@ test("RolePolicyRulesService rejects create for missing role", async () => {
 
   const created = await service.create("missing-role", {
     effect: "allow",
-    permissionPattern: "core-pack:users:*",
+    permissionPattern: "core-pack:users:*"
   });
   assert.equal(created, null);
 });
@@ -68,13 +68,10 @@ function createFakeDbAdapter(): DbAdapter {
     return created;
   };
 
-  const repository = <TData extends Record<string, unknown>>(
-    key: string,
-  ): DbRepository<TData> => ({
+  const repository = <TData extends Record<string, unknown>>(key: string): DbRepository<TData> => ({
     async findOne(query: DbQuery<TData>) {
       const bucket = getBucket(key) as TData[];
-      const found =
-        bucket.find((item) => matchesFilter(item, query.filter)) ?? null;
+      const found = bucket.find((item) => matchesFilter(item, query.filter)) ?? null;
       if (!found) return null;
       return query.parse ? query.parse(found) : found;
     },
@@ -103,7 +100,7 @@ function createFakeDbAdapter(): DbAdapter {
       if (index < 0) return null;
       const updated = {
         ...bucket[index],
-        ...patch,
+        ...patch
       } as TData;
       bucket[index] = updated;
       return updated;
@@ -114,7 +111,7 @@ function createFakeDbAdapter(): DbAdapter {
       if (index < 0) return false;
       bucket.splice(index, 1);
       return true;
-    },
+    }
   });
 
   return {
@@ -124,18 +121,18 @@ function createFakeDbAdapter(): DbAdapter {
     async beginTransaction() {
       return {
         async commit() {},
-        async rollback() {},
+        async rollback() {}
       };
     },
     async healthCheck() {
       return { ok: true };
-    },
+    }
   };
 }
 
 function matchesFilter(
   item: Record<string, unknown>,
-  filter: Record<string, unknown> | undefined,
+  filter: Record<string, unknown> | undefined
 ): boolean {
   if (!filter) return true;
   return Object.entries(filter).every(([key, value]) => item[key] === value);
@@ -143,7 +140,7 @@ function matchesFilter(
 
 function applySort<TData extends Record<string, unknown>>(
   values: readonly TData[],
-  sort: Record<string, "asc" | "desc"> | undefined,
+  sort: Record<string, "asc" | "desc"> | undefined
 ): TData[] {
   if (!sort || Object.keys(sort).length === 0) return [...values];
   const [field, direction] = Object.entries(sort)[0];

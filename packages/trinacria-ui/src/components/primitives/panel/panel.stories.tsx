@@ -9,8 +9,12 @@ export const Variants: Story = {
   render: () => (
     <div className="grid gap-4 md:grid-cols-3">
       <Panel className="p-4">Default panel</Panel>
-      <Panel tone="soft" className="p-4">Soft panel</Panel>
-      <Panel tone="dashed" className="p-4">Dashed panel</Panel>
+      <Panel tone="soft" className="p-4">
+        Soft panel
+      </Panel>
+      <Panel tone="dashed" className="p-4">
+        Dashed panel
+      </Panel>
     </div>
   )
 };

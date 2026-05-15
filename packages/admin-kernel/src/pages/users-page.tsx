@@ -1,13 +1,32 @@
 import { useActionState, useCallback, useEffect, useRef, useState } from "react";
-import { Badge, Button, Card, Dialog, Input } from "@trinacria-cms/trinacria-ui";
+import {
+  Badge,
+  Button,
+  Card,
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeadCell,
+  DataTableHeaderRow,
+  DataTablePrimaryCell,
+  DataTableRow,
+  DataTableTable,
+  Dialog,
+  Input
+} from "@trinacria-cms/trinacria-ui";
 import type { ListUsersResponse } from "@trinacria-cms/sdk";
-import { MobileRecordCard, MobileRecordField, MobileRecordList } from "../components/mobile-records.js";
+import {
+  MobileRecordCard,
+  MobileRecordField,
+  MobileRecordList
+} from "../components/mobile-records.js";
 import { ErrorBanner, EmptyState } from "../components/resource-feedback.js";
 import { formatDateTime } from "../lib/formatting.js";
 import {
   type AsyncActionState,
   createIdleAsyncActionState,
-  readRequiredString,
+  readRequiredString
 } from "../runtime/action-state.js";
 import { useOptimisticStatusRecords } from "../hooks/use-optimistic-status-records.js";
 import { cms } from "../runtime/cms-sdk.js";
@@ -54,8 +73,8 @@ export function UsersPage() {
         await cms.users.createUser({
           body: {
             email: readRequiredString(formData, "email"),
-            displayName: readRequiredString(formData, "displayName"),
-          },
+            displayName: readRequiredString(formData, "displayName")
+          }
         });
         await refresh();
         return { ok: true, error: null, data: null };
@@ -63,11 +82,11 @@ export function UsersPage() {
         return {
           ok: false,
           error: toDisplayError(currentError),
-          data: null,
+          data: null
         };
       }
     },
-    createIdleAsyncActionState(),
+    createIdleAsyncActionState()
   );
 
   useEffect(() => {
@@ -87,7 +106,7 @@ export function UsersPage() {
     try {
       await cms.users.updateUserStatus({
         path: { id: record.id },
-        body: { status: nextStatus },
+        body: { status: nextStatus }
       });
       await refresh();
     } catch (currentError) {
@@ -146,32 +165,31 @@ export function UsersPage() {
               ))}
             </MobileRecordList>
 
-            <div className="hidden overflow-x-auto md:block">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[color:var(--color-border)] text-left text-[color:var(--color-ink-subtle)]">
-                    <th className="px-4 py-3 font-medium">{t("users.table.user")}</th>
-                    <th className="px-4 py-3 font-medium">{t("common.table.status")}</th>
-                    <th className="px-4 py-3 font-medium">{t("common.table.updated")}</th>
-                    <th className="px-4 py-3 font-medium">{t("common.table.action")}</th>
-                  </tr>
-                </thead>
-                <tbody>
+            <DataTable>
+              <DataTableTable>
+                <DataTableHead>
+                  <DataTableHeaderRow>
+                    <DataTableHeadCell>{t("users.table.user")}</DataTableHeadCell>
+                    <DataTableHeadCell>{t("common.table.status")}</DataTableHeadCell>
+                    <DataTableHeadCell>{t("common.table.updated")}</DataTableHeadCell>
+                    <DataTableHeadCell>{t("common.table.action")}</DataTableHeadCell>
+                  </DataTableHeaderRow>
+                </DataTableHead>
+                <DataTableBody>
                   {optimisticRecords.map((record) => (
-                    <tr key={record.id} className="border-b border-[color:var(--color-border)] last:border-b-0">
-                      <td className="px-4 py-4">
-                        <p className="font-medium text-[color:var(--color-ink)]">{record.displayName}</p>
-                        <p className="mt-1 text-[color:var(--color-ink-muted)]">{record.email}</p>
-                      </td>
-                      <td className="px-4 py-4">
+                    <DataTableRow key={record.id}>
+                      <DataTablePrimaryCell meta={record.email}>
+                        {record.displayName}
+                      </DataTablePrimaryCell>
+                      <DataTableCell>
                         <Badge tone={record.status === "active" ? "success" : "warning"}>
                           {translateStatusLabel(record.status, t)}
                         </Badge>
-                      </td>
-                      <td className="px-4 py-4 text-[color:var(--color-ink-muted)]">
+                      </DataTableCell>
+                      <DataTableCell className="text-[color:var(--color-ink-muted)]">
                         {formatDateTime(record.updatedAt)}
-                      </td>
-                      <td className="px-4 py-4">
+                      </DataTableCell>
+                      <DataTableCell>
                         <Button
                           variant="secondary"
                           disabled={actionId === record.id}
@@ -183,12 +201,12 @@ export function UsersPage() {
                               ? t("users.actions.suspend")
                               : t("common.actions.activate")}
                         </Button>
-                      </td>
-                    </tr>
+                      </DataTableCell>
+                    </DataTableRow>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </DataTableBody>
+              </DataTableTable>
+            </DataTable>
           </>
         ) : null}
       </Card>
@@ -212,7 +230,12 @@ export function UsersPage() {
           </>
         }
       >
-        <form ref={createFormRef} id="create-user-form" className="grid gap-4" action={submitCreate}>
+        <form
+          ref={createFormRef}
+          id="create-user-form"
+          className="grid gap-4"
+          action={submitCreate}
+        >
           <Input label={t("auth.login.email_label")} type="email" name="email" required />
           <Input label={t("users.form.display_name")} name="displayName" required />
           {createState.error ? <ErrorBanner message={createState.error} /> : null}

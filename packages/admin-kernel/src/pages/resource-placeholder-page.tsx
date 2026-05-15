@@ -10,18 +10,13 @@ export interface ResourcePlaceholderPageProps {
  * ResourcePlaceholderPage is a scaffold page used while a module exists in the
  * navigation contract but its full CRUD surface is not implemented yet.
  */
-export function ResourcePlaceholderPage({
-  accentLabel,
-  summary,
-}: ResourcePlaceholderPageProps) {
+export function ResourcePlaceholderPage({ accentLabel, summary }: ResourcePlaceholderPageProps) {
   const { t } = useI18n();
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1.3fr_0.7fr]">
       <Card eyebrow={accentLabel} title={t("placeholder.title")}>
-        <p className="max-w-3xl text-sm leading-7 text-[color:var(--color-ink-muted)]">
-          {summary}
-        </p>
+        <p className="max-w-3xl text-sm leading-7 text-[color:var(--color-ink-muted)]">{summary}</p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Button>{t("placeholder.actions.design_resource_table")}</Button>
           <Button variant="secondary">{t("placeholder.actions.add_filters_and_forms")}</Button>
@@ -38,10 +33,6 @@ export function ResourcePlaceholderPage({
   );
 }
 
-export function createResourcePlaceholderRender(
-  props: ResourcePlaceholderPageProps,
-) {
-  return () => (
-    <ResourcePlaceholderPage {...props} />
-  );
+export function createResourcePlaceholderRender(props: ResourcePlaceholderPageProps) {
+  return () => <ResourcePlaceholderPage {...props} />;
 }

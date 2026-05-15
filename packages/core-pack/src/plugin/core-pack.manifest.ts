@@ -4,7 +4,7 @@ import {
   CORE_PACK_ADMIN_ROLE,
   CORE_PACK_CAPABILITY_LIST,
   CORE_PACK_PERMISSION_DEFINITIONS,
-  CORE_PACK_PERMISSION_KEY_LIST,
+  CORE_PACK_PERMISSION_KEY_LIST
 } from "./core-pack.security.js";
 
 /**
@@ -19,14 +19,14 @@ export const CORE_PACK_MANIFEST: PluginManifest = {
     permissions: [...CORE_PACK_PERMISSION_DEFINITIONS],
     roles: [
       {
-        ...CORE_PACK_ADMIN_ROLE,
-      },
+        ...CORE_PACK_ADMIN_ROLE
+      }
     ],
     grants: [
       {
         roleCode: CORE_PACK_ADMIN_ROLE.code,
-        permissionKeys: [...CORE_PACK_PERMISSION_KEY_LIST],
-      },
-    ],
-  },
+        permissionKeys: [...CORE_PACK_PERMISSION_KEY_LIST]
+      }
+    ]
+  }
 };

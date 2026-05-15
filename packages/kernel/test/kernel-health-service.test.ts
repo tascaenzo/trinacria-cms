@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type {
   PluginDependencyGraphSnapshot,
-  PluginRuntimeRecord,
+  PluginRuntimeRecord
 } from "../src/contracts/plugin-runtime.js";
 import { KernelHealthService } from "../src/runtime/index.js";
 
@@ -14,24 +14,22 @@ test("KernelHealthService returns ok when runtime and db are healthy", async () 
           manifest: {
             id: "cms/plugin-content",
             version: "1.0.0",
-            requiresCore: "^0.1.0",
+            requiresCore: "^0.1.0"
           },
-          state: "loaded",
-        },
+          state: "loaded"
+        }
       ],
       describeDependencies: () => ({
-        nodes: [
-          { pluginId: "cms/plugin-content", state: "loaded", version: "1.0.0" },
-        ],
+        nodes: [{ pluginId: "cms/plugin-content", state: "loaded", version: "1.0.0" }],
         edges: [],
-        warnings: [],
-      }),
+        warnings: []
+      })
     },
     dbAdapter: {
       async healthCheck() {
         return { ok: true };
-      },
-    },
+      }
+    }
   });
 
   const snapshot = await service.snapshot();
@@ -51,24 +49,24 @@ test("KernelHealthService returns degraded on plugin failure and required depend
             to: "cms/plugin-users",
             optional: false,
             requiredRange: "^1.0.0",
-            status: "missing",
-          },
-        ]),
+            status: "missing"
+          }
+        ])
     },
     dbAdapter: {
       async healthCheck() {
         return { ok: true };
-      },
-    },
+      }
+    }
   });
 
   const snapshot = await service.snapshot();
   assert.equal(snapshot.status, "degraded");
   assert.equal(
     snapshot.issues.some((issue) =>
-      issue.includes("dependency:required:cms/plugin-content->cms/plugin-users:missing"),
+      issue.includes("dependency:required:cms/plugin-content->cms/plugin-users:missing")
     ),
-    true,
+    true
   );
 });
 
@@ -76,13 +74,13 @@ test("KernelHealthService returns down when db is unhealthy", async () => {
   const service = new KernelHealthService({
     runtime: {
       list: () => makeRecords([{ state: "loaded", id: "cms/plugin-content" }]),
-      describeDependencies: () => makeGraph([]),
+      describeDependencies: () => makeGraph([])
     },
     dbAdapter: {
       async healthCheck() {
         return { ok: false, reason: "mongo_unreachable" };
-      },
-    },
+      }
+    }
   });
 
   const snapshot = await service.snapshot();
@@ -94,8 +92,8 @@ test("KernelHealthService reports db not configured as degraded signal but not d
   const service = new KernelHealthService({
     runtime: {
       list: () => makeRecords([{ state: "loaded", id: "cms/plugin-content" }]),
-      describeDependencies: () => makeGraph([]),
-    },
+      describeDependencies: () => makeGraph([])
+    }
   });
 
   const snapshot = await service.snapshot();
@@ -105,26 +103,24 @@ test("KernelHealthService reports db not configured as degraded signal but not d
 });
 
 function makeRecords(
-  items: Array<{ id: string; state: PluginRuntimeRecord["state"] }>,
+  items: Array<{ id: string; state: PluginRuntimeRecord["state"] }>
 ): PluginRuntimeRecord[] {
   return items.map((item) => ({
     manifest: {
       id: item.id,
       version: "1.0.0",
-      requiresCore: "^0.1.0",
+      requiresCore: "^0.1.0"
     },
     state: item.state,
     lastFailurePhase: item.state === "failed" ? "init" : undefined,
-    disabledReason: item.state === "disabled" ? "manual" : undefined,
+    disabledReason: item.state === "disabled" ? "manual" : undefined
   }));
 }
 
-function makeGraph(
-  edges: PluginDependencyGraphSnapshot["edges"],
-): PluginDependencyGraphSnapshot {
+function makeGraph(edges: PluginDependencyGraphSnapshot["edges"]): PluginDependencyGraphSnapshot {
   return {
     nodes: [],
     edges,
-    warnings: [],
+    warnings: []
   };
 }

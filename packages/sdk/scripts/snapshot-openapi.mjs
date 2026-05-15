@@ -4,11 +4,7 @@ import { dirname, resolve } from "node:path";
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
 const packageDir = resolve(currentDir, "..");
-const outputPath = resolve(
-  packageDir,
-  "openapi",
-  "trinacria-cms.openapi.json",
-);
+const outputPath = resolve(packageDir, "openapi", "trinacria-cms.openapi.json");
 
 const sourceUrl =
   process.argv[2]?.trim() ||
@@ -17,14 +13,12 @@ const sourceUrl =
 
 const response = await fetch(sourceUrl, {
   headers: {
-    accept: "application/json",
-  },
+    accept: "application/json"
+  }
 });
 
 if (!response.ok) {
-  throw new Error(
-    `Unable to download OpenAPI document from ${sourceUrl}: HTTP ${response.status}`,
-  );
+  throw new Error(`Unable to download OpenAPI document from ${sourceUrl}: HTTP ${response.status}`);
 }
 
 const body = await response.text();
@@ -42,20 +36,20 @@ function normalizeOpenApiDocument(document) {
 
   patchQueryParameters(cloned, "/v1/users", "get", [
     integerQueryParameter("limit", { minimum: 1, maximum: 200 }),
-    integerQueryParameter("offset", { minimum: 0 }),
+    integerQueryParameter("offset", { minimum: 0 })
   ]);
   patchQueryParameters(cloned, "/v1/roles", "get", [
     integerQueryParameter("limit", { minimum: 1, maximum: 200 }),
-    integerQueryParameter("offset", { minimum: 0 }),
+    integerQueryParameter("offset", { minimum: 0 })
   ]);
   patchQueryParameters(cloned, "/v1/permissions", "get", [
     integerQueryParameter("limit", { minimum: 1, maximum: 200 }),
-    integerQueryParameter("offset", { minimum: 0 }),
+    integerQueryParameter("offset", { minimum: 0 })
   ]);
   patchQueryParameters(cloned, "/v1/settings/definitions", "get", [
     stringQueryParameter("ownerPluginId"),
     integerQueryParameter("limit", { minimum: 1, maximum: 200 }),
-    integerQueryParameter("offset", { minimum: 0 }),
+    integerQueryParameter("offset", { minimum: 0 })
   ]);
 
   return cloned;
@@ -77,7 +71,7 @@ function patchQueryParameters(document, path, method, parameters) {
 
   const current = Array.isArray(operation.parameters) ? operation.parameters : [];
   const byKey = new Map(
-    current.map((parameter) => [`${parameter.in}:${parameter.name}`, parameter]),
+    current.map((parameter) => [`${parameter.in}:${parameter.name}`, parameter])
   );
 
   for (const parameter of parameters) {
@@ -94,8 +88,8 @@ function integerQueryParameter(name, schema = {}) {
     required: false,
     schema: {
       type: "integer",
-      ...schema,
-    },
+      ...schema
+    }
   };
 }
 
@@ -105,7 +99,7 @@ function stringQueryParameter(name) {
     in: "query",
     required: false,
     schema: {
-      type: "string",
-    },
+      type: "string"
+    }
   };
 }

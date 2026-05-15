@@ -14,7 +14,7 @@ export const Variants: Story = {
       <Button variant="outline">Outline</Button>
       <Button variant="ghost">Ghost</Button>
     </div>
-  ),
+  )
 };
 
 export const States: Story = {
@@ -29,7 +29,7 @@ export const States: Story = {
       </Button>
       <Button size="lg">Large</Button>
     </div>
-  ),
+  )
 };
 
 export const WithIcons: Story = {
@@ -52,5 +52,5 @@ export const WithIcons: Story = {
         Refresh
       </Button>
     </div>
-  ),
+  )
 };

@@ -1,4 +1,4 @@
-import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
+import type { HTMLAttributes, PropsWithChildren } from "react";
 import { Eyebrow } from "../../primitives/eyebrow/eyebrow.js";
 import { Panel } from "../../primitives/panel/panel.js";
 import { BodyText } from "../../primitives/text/text.js";
@@ -23,7 +23,7 @@ export function MobileRecordCard({
   children,
   className,
   subtitle,
-  title,
+  title
 }: MobileRecordCardProps) {
   return (
     <Panel className={cn("p-4", className)} elevation="sm">
@@ -44,12 +44,7 @@ export function MobileRecordCard({
   );
 }
 
-export function MobileRecordField({
-  className,
-  label,
-  value,
-  ...props
-}: MobileRecordFieldProps) {
+export function MobileRecordField({ className, label, value, ...props }: MobileRecordFieldProps) {
   return (
     <div className={cn("grid gap-1", className)} {...props}>
       <Eyebrow className="tracking-[0.14em]">{label}</Eyebrow>

@@ -4,7 +4,7 @@ import {
   parsePathParam,
   toOpenApiSchema,
   type HttpContext,
-  type HttpMiddleware,
+  type HttpMiddleware
 } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import { CORE_PACK_OPENAPI_TAGS } from "../../openapi-tags.js";
@@ -15,7 +15,7 @@ import {
   UserAccessErrorResponseSchema,
   UserEffectivePermissionsResponseSchema,
   UserRoleAssignmentResponseSchema,
-  UserRoleAssignmentsResponseSchema,
+  UserRoleAssignmentsResponseSchema
 } from "../dto/index.js";
 import type { UserAccessService } from "./user-access.service.js";
 
@@ -29,11 +29,11 @@ export class UserAccessController extends HttpController {
 
   constructor(
     private readonly access: UserAccessService,
-    auth: JwtAuthService,
+    auth: JwtAuthService
   ) {
     super();
     this.adminAuthMiddleware = createJwtAuthMiddleware(auth, {
-      requireAdmin: true,
+      requireAdmin: true
     });
   }
 
@@ -49,88 +49,76 @@ export class UserAccessController extends HttpController {
           responses: {
             200: {
               description: "User role assignments",
-              schema: toOpenApiSchema(UserRoleAssignmentsResponseSchema),
+              schema: toOpenApiSchema(UserRoleAssignmentsResponseSchema)
             },
             404: {
               description: "User not found",
-              schema: toOpenApiSchema(UserAccessErrorResponseSchema),
-            },
-          },
-        },
+              schema: toOpenApiSchema(UserAccessErrorResponseSchema)
+            }
+          }
+        }
       })
-      .post(
-        "/v1/users/:id/roles",
-        this.assignUserRole,
-        {
-          middlewares: [this.adminAuthMiddleware],
-          docs: {
-            summary: "Assign a role to a user",
-            tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
-            operationId: "assignUserRole",
-            security: [{ bearerAuth: [] }],
-            requestBody: {
-              required: true,
-              schema: toOpenApiSchema(AssignUserRoleInputSchema),
-            },
-            responses: {
-              200: {
-                description: "Role assigned",
-                schema: toOpenApiSchema(UserRoleAssignmentResponseSchema),
-              },
-              404: {
-                description: "User or role not found",
-                schema: toOpenApiSchema(UserAccessErrorResponseSchema),
-              },
-            },
+      .post("/v1/users/:id/roles", this.assignUserRole, {
+        middlewares: [this.adminAuthMiddleware],
+        docs: {
+          summary: "Assign a role to a user",
+          tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
+          operationId: "assignUserRole",
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            schema: toOpenApiSchema(AssignUserRoleInputSchema)
           },
-        },
-      )
-      .delete(
-        "/v1/users/:id/roles/:roleCode",
-        this.removeUserRole,
-        {
-          middlewares: [this.adminAuthMiddleware],
-          docs: {
-            summary: "Remove a role from a user",
-            tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
-            operationId: "removeUserRole",
-            security: [{ bearerAuth: [] }],
-            responses: {
-              200: {
-                description: "Removed assignment list",
-                schema: toOpenApiSchema(UserRoleAssignmentsResponseSchema),
-              },
-              404: {
-                description: "Assignment not found",
-                schema: toOpenApiSchema(UserAccessErrorResponseSchema),
-              },
+          responses: {
+            200: {
+              description: "Role assigned",
+              schema: toOpenApiSchema(UserRoleAssignmentResponseSchema)
             },
-          },
-        },
-      )
-      .get(
-        "/v1/users/:id/permissions",
-        this.listUserEffectivePermissions,
-        {
-          middlewares: [this.adminAuthMiddleware],
-          docs: {
-            summary: "List effective permissions for a user",
-            tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
-            operationId: "listUserEffectivePermissions",
-            security: [{ bearerAuth: [] }],
-            responses: {
-              200: {
-                description: "Effective permissions",
-                schema: toOpenApiSchema(UserEffectivePermissionsResponseSchema),
-              },
-              404: {
-                description: "User not found",
-                schema: toOpenApiSchema(UserAccessErrorResponseSchema),
-              },
+            404: {
+              description: "User or role not found",
+              schema: toOpenApiSchema(UserAccessErrorResponseSchema)
+            }
+          }
+        }
+      })
+      .delete("/v1/users/:id/roles/:roleCode", this.removeUserRole, {
+        middlewares: [this.adminAuthMiddleware],
+        docs: {
+          summary: "Remove a role from a user",
+          tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
+          operationId: "removeUserRole",
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: {
+              description: "Removed assignment list",
+              schema: toOpenApiSchema(UserRoleAssignmentsResponseSchema)
             },
-          },
-        },
-      )
+            404: {
+              description: "Assignment not found",
+              schema: toOpenApiSchema(UserAccessErrorResponseSchema)
+            }
+          }
+        }
+      })
+      .get("/v1/users/:id/permissions", this.listUserEffectivePermissions, {
+        middlewares: [this.adminAuthMiddleware],
+        docs: {
+          summary: "List effective permissions for a user",
+          tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
+          operationId: "listUserEffectivePermissions",
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: {
+              description: "Effective permissions",
+              schema: toOpenApiSchema(UserEffectivePermissionsResponseSchema)
+            },
+            404: {
+              description: "User not found",
+              schema: toOpenApiSchema(UserAccessErrorResponseSchema)
+            }
+          }
+        }
+      })
       .build();
   }
 
@@ -177,9 +165,7 @@ export class UserAccessController extends HttpController {
     try {
       const removed = await this.access.removeRoleFromUser(userId, roleCode);
       if (!removed) {
-        return responder.notFound(
-          `Role assignment "${roleCode}" for user "${userId}" not found`,
-        );
+        return responder.notFound(`Role assignment "${roleCode}" for user "${userId}" not found`);
       }
       const assignments = await this.access.listUserRoles(userId);
       return responder.list(assignments);

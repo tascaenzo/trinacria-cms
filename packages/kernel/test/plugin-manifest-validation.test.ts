@@ -1,12 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {
-  PluginCompatibilityError,
-  PluginManifestError,
-} from "../src/errors/index.js";
+import { PluginCompatibilityError, PluginManifestError } from "../src/errors/index.js";
 import {
   assertPluginCompatibility,
-  validatePluginManifest,
+  validatePluginManifest
 } from "../src/runtime/plugin-manifest-validation.js";
 
 test("validatePluginManifest returns normalized manifest", () => {
@@ -15,7 +12,7 @@ test("validatePluginManifest returns normalized manifest", () => {
     version: "1.2.3",
     requiresCore: "^0.1.0",
     capabilities: ["content.read", "content.write"],
-    dependencies: [{ pluginId: "cms/plugin-users", versionRange: "~1.0.0" }],
+    dependencies: [{ pluginId: "cms/plugin-users", versionRange: "~1.0.0" }]
   });
 
   assert.equal(manifest.id, "cms/plugin-content");
@@ -26,8 +23,8 @@ test("validatePluginManifest returns normalized manifest", () => {
     {
       pluginId: "cms/plugin-users",
       versionRange: "~1.0.0",
-      optional: false,
-    },
+      optional: false
+    }
   ]);
 });
 
@@ -37,9 +34,9 @@ test("validatePluginManifest throws on invalid manifest id", () => {
       validatePluginManifest({
         id: "Invalid Plugin Id",
         version: "1.0.0",
-        requiresCore: "^0.1.0",
+        requiresCore: "^0.1.0"
       }),
-    PluginManifestError,
+    PluginManifestError
   );
 });
 
@@ -49,9 +46,9 @@ test("validatePluginManifest throws on invalid requiresCore range", () => {
       validatePluginManifest({
         id: "cms/plugin-content",
         version: "1.0.0",
-        requiresCore: "latest",
+        requiresCore: "latest"
       }),
-    PluginManifestError,
+    PluginManifestError
   );
 });
 
@@ -62,9 +59,9 @@ test("validatePluginManifest throws on unknown fields (strict object)", () => {
         id: "cms/plugin-content",
         version: "1.0.0",
         requiresCore: "^0.1.0",
-        unknownField: true,
+        unknownField: true
       }),
-    PluginManifestError,
+    PluginManifestError
   );
 });
 
@@ -78,11 +75,11 @@ test("validatePluginManifest throws on self dependency", () => {
         dependencies: [
           {
             pluginId: "cms/plugin-content",
-            versionRange: "^1.0.0",
-          },
-        ],
+            versionRange: "^1.0.0"
+          }
+        ]
       }),
-    PluginManifestError,
+    PluginManifestError
   );
 });
 
@@ -95,10 +92,10 @@ test("validatePluginManifest throws on duplicate dependency plugin ids", () => {
         requiresCore: "^0.1.0",
         dependencies: [
           { pluginId: "cms/plugin-users", versionRange: "^1.0.0" },
-          { pluginId: "cms/plugin-users", versionRange: "^1.1.0" },
-        ],
+          { pluginId: "cms/plugin-users", versionRange: "^1.1.0" }
+        ]
       }),
-    PluginManifestError,
+    PluginManifestError
   );
 });
 
@@ -109,9 +106,9 @@ test("validatePluginManifest throws on duplicate capabilities", () => {
         id: "cms/plugin-content",
         version: "1.0.0",
         requiresCore: "^0.1.0",
-        capabilities: ["content.read", "content.read"],
+        capabilities: ["content.read", "content.read"]
       }),
-    PluginManifestError,
+    PluginManifestError
   );
 });
 
@@ -122,9 +119,9 @@ test("validatePluginManifest throws on invalid dependency versionRange", () => {
         id: "cms/plugin-content",
         version: "1.0.0",
         requiresCore: "^0.1.0",
-        dependencies: [{ pluginId: "cms/plugin-users", versionRange: "latest" }],
+        dependencies: [{ pluginId: "cms/plugin-users", versionRange: "latest" }]
       }),
-    PluginManifestError,
+    PluginManifestError
   );
 });
 
@@ -132,13 +129,10 @@ test("assertPluginCompatibility throws on incompatible core version", () => {
   const manifest = validatePluginManifest({
     id: "cms/plugin-content",
     version: "1.2.3",
-    requiresCore: "^1.0.0",
+    requiresCore: "^1.0.0"
   });
 
-  assert.throws(
-    () => assertPluginCompatibility(manifest, "0.1.0"),
-    PluginCompatibilityError,
-  );
+  assert.throws(() => assertPluginCompatibility(manifest, "0.1.0"), PluginCompatibilityError);
 });
 
 test("validatePluginManifest accepts security declarations", () => {
@@ -150,22 +144,22 @@ test("validatePluginManifest accepts security declarations", () => {
       permissions: [
         {
           key: "blog-pack:posts:read",
-          displayName: "Read posts",
-        },
+          displayName: "Read posts"
+        }
       ],
       roles: [
         {
           code: "editor",
-          name: "Editor",
-        },
+          name: "Editor"
+        }
       ],
       grants: [
         {
           roleCode: "editor",
-          permissionKeys: ["blog-pack:posts:read"],
-        },
-      ],
-    },
+          permissionKeys: ["blog-pack:posts:read"]
+        }
+      ]
+    }
   });
 
   assert.equal(manifest.security?.permissions?.length, 1);
@@ -184,12 +178,12 @@ test("validatePluginManifest rejects security permissions owned by another plugi
           permissions: [
             {
               key: "core-pack:users:read",
-              displayName: "Invalid ownership",
-            },
-          ],
-        },
+              displayName: "Invalid ownership"
+            }
+          ]
+        }
       }),
-    PluginManifestError,
+    PluginManifestError
   );
 });
 
@@ -204,10 +198,10 @@ test("validatePluginManifest accepts security policy rules", () => {
           roleCode: "editor",
           effect: "allow",
           permissionPattern: "blog-pack:posts:*",
-          conditions: ["resource_id_required"],
-        },
-      ],
-    },
+          conditions: ["resource_id_required"]
+        }
+      ]
+    }
   });
 
   assert.equal(manifest.security?.policyRules?.length, 1);
@@ -226,11 +220,11 @@ test("validatePluginManifest rejects policy rules for foreign plugin namespace",
             {
               roleCode: "editor",
               effect: "deny",
-              permissionPattern: "core-pack:users:*",
-            },
-          ],
-        },
+              permissionPattern: "core-pack:users:*"
+            }
+          ]
+        }
       }),
-    PluginManifestError,
+    PluginManifestError
   );
 });

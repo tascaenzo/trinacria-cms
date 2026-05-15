@@ -13,10 +13,10 @@ test("sdk core client serializes query, auth header and json body", async () => 
         return {
           status: 200,
           headers: { "content-type": "application/json" },
-          data: { ok: true },
+          data: { ok: true }
         };
-      },
-    },
+      }
+    }
   });
 
   const response = await client.request<{ ok: boolean }>({
@@ -24,24 +24,15 @@ test("sdk core client serializes query, auth header and json body", async () => 
     path: "/v1/users/:id",
     pathParams: { id: "abc" },
     query: { limit: 10, tags: ["a", "b"] },
-    body: { name: "Alice" },
+    body: { name: "Alice" }
   });
 
   assert.equal(response.ok, true);
   assert.equal(calls.length, 1);
-  assert.equal(
-    calls[0]?.url,
-    "http://localhost:3000/v1/users/abc?limit=10&tags=a&tags=b",
-  );
+  assert.equal(calls[0]?.url, "http://localhost:3000/v1/users/abc?limit=10&tags=a&tags=b");
   assert.equal(calls[0]?.method, "POST");
-  assert.equal(
-    (calls[0]?.headers as Record<string, string>).authorization,
-    "Bearer token-123",
-  );
-  assert.equal(
-    (calls[0]?.headers as Record<string, string>)["content-type"],
-    "application/json",
-  );
+  assert.equal((calls[0]?.headers as Record<string, string>).authorization, "Bearer token-123");
+  assert.equal((calls[0]?.headers as Record<string, string>)["content-type"], "application/json");
   assert.equal(calls[0]?.body, JSON.stringify({ name: "Alice" }));
 });
 
@@ -56,23 +47,21 @@ test("sdk core client throws CmsSdkHttpError on non-2xx response", async () => {
           data: {
             error: {
               code: "auth_invalid_credentials",
-              message: "Invalid credentials",
-            },
-          },
+              message: "Invalid credentials"
+            }
+          }
         };
-      },
-    },
+      }
+    }
   });
 
   await assert.rejects(
     async () =>
       client.request({
         method: "GET",
-        path: "/v1/auth/me",
+        path: "/v1/auth/me"
       }),
     (error) =>
-      error instanceof CmsSdkHttpError &&
-      error.status === 401 &&
-      typeof error.data === "object",
+      error instanceof CmsSdkHttpError && error.status === 401 && typeof error.data === "object"
   );
 });

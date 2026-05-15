@@ -1,4 +1,4 @@
-import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Panel } from "../../primitives/panel/panel.js";
 import { BodyText } from "../../primitives/text/text.js";
 import { cn } from "../../../utils/class-names.js";
@@ -14,7 +14,7 @@ export function FeedbackBanner({
   return (
     <Panel
       className={cn(
-        "rounded-xl px-4 py-3 text-sm",
+        "rounded-md px-4 py-3 text-sm",
         tone === "neutral" &&
           "border-[color:var(--color-neutral-border)] bg-[color:var(--color-panel-soft)] text-[color:var(--color-neutral-ink)]",
         tone === "info" &&
@@ -57,7 +57,9 @@ export function EmptyState({
       tone="dashed"
       {...props}
     >
-      {title ? <p className="text-base font-semibold text-[color:var(--color-ink)]">{title}</p> : null}
+      {title ? (
+        <p className="text-base font-semibold text-[color:var(--color-ink)]">{title}</p>
+      ) : null}
       <BodyText className="leading-7">{text}</BodyText>
       {children}
       {action ? <div className="pt-1">{action}</div> : null}

@@ -1,12 +1,8 @@
-import {
-  createPluginDbScope,
-  type DbAdapter,
-  type PluginDbScope,
-} from "@trinacria-cms/kernel";
+import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import {
   SettingDefinitionRecordSchema,
-  type SettingDefinitionRecord,
+  type SettingDefinitionRecord
 } from "../settings.schemas.js";
 
 const SETTINGS_ENTITY_NAME = "settings";
@@ -42,21 +38,19 @@ export class SettingsDefinitionsRepository {
         key: normalizedKey,
         ownerPluginId: normalizedOwner,
         ...(input.category?.trim() ? { category: input.category.trim() } : {}),
-        ...(input.description?.trim()
-          ? { description: input.description.trim() }
-          : {}),
+        ...(input.description?.trim() ? { description: input.description.trim() } : {}),
         ...(input.schemaJson ? { schemaJson: input.schemaJson } : {}),
         ...(input.defaultValueJson ? { defaultValueJson: input.defaultValueJson } : {}),
         status: input.status ?? "active",
         createdAt: now,
-        updatedAt: now,
+        updatedAt: now
       });
       return this.parseRecord(created);
     }
 
     if (existing.ownerPluginId !== normalizedOwner) {
       throw new Error(
-        `Setting definition "${normalizedKey}" is owned by plugin "${existing.ownerPluginId}"`,
+        `Setting definition "${normalizedKey}" is owned by plugin "${existing.ownerPluginId}"`
       );
     }
 
@@ -64,14 +58,12 @@ export class SettingsDefinitionsRepository {
       { filter: { id: existing.id } },
       {
         ...(input.category?.trim() ? { category: input.category.trim() } : {}),
-        ...(input.description?.trim()
-          ? { description: input.description.trim() }
-          : {}),
+        ...(input.description?.trim() ? { description: input.description.trim() } : {}),
         ...(input.schemaJson ? { schemaJson: input.schemaJson } : {}),
         ...(input.defaultValueJson ? { defaultValueJson: input.defaultValueJson } : {}),
         ...(input.status ? { status: input.status } : {}),
-        updatedAt: now,
-      },
+        updatedAt: now
+      }
     );
 
     if (!updated) {
@@ -84,7 +76,7 @@ export class SettingsDefinitionsRepository {
   async findByKey(key: string): Promise<SettingDefinitionRecord | null> {
     return this.repository().findOne({
       filter: { key: key.trim().toLowerCase(), kind: DEFINITION_KIND },
-      parse: (value: unknown) => this.parseRecord(value),
+      parse: (value: unknown) => this.parseRecord(value)
     });
   }
 
@@ -98,12 +90,12 @@ export class SettingsDefinitionsRepository {
         kind: DEFINITION_KIND,
         ...(options?.ownerPluginId
           ? { ownerPluginId: options.ownerPluginId.trim().toLowerCase() }
-          : {}),
+          : {})
       },
       limit: options?.limit,
       offset: options?.offset,
       sort: { createdAt: "desc" },
-      parse: (value: unknown) => this.parseRecord(value),
+      parse: (value: unknown) => this.parseRecord(value)
     });
   }
 

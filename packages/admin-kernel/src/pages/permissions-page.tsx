@@ -1,7 +1,28 @@
 import { useActionState, useCallback, useEffect, useRef, useState } from "react";
-import { Badge, Button, Card, Dialog, Input, Textarea } from "@trinacria-cms/trinacria-ui";
+import {
+  Badge,
+  Button,
+  Card,
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeadCell,
+  DataTableHeaderRow,
+  DataTablePrimaryCell,
+  DataTableRow,
+  DataTableTable,
+  Dialog,
+  FilterBar,
+  Input,
+  Textarea
+} from "@trinacria-cms/trinacria-ui";
 import type { ListPermissionsResponse } from "@trinacria-cms/sdk";
-import { MobileRecordCard, MobileRecordField, MobileRecordList } from "../components/mobile-records.js";
+import {
+  MobileRecordCard,
+  MobileRecordField,
+  MobileRecordList
+} from "../components/mobile-records.js";
 import { ErrorBanner, EmptyState } from "../components/resource-feedback.js";
 import { useOptimisticStatusRecords } from "../hooks/use-optimistic-status-records.js";
 import { formatDateTime } from "../lib/formatting.js";
@@ -9,7 +30,7 @@ import {
   type AsyncActionState,
   createIdleAsyncActionState,
   readOptionalString,
-  readRequiredString,
+  readRequiredString
 } from "../runtime/action-state.js";
 import { cms } from "../runtime/cms-sdk.js";
 import { toDisplayError } from "../lib/sdk-errors.js";
@@ -52,8 +73,8 @@ export function PermissionsPage() {
           body: {
             key: readRequiredString(formData, "key"),
             displayName: readRequiredString(formData, "displayName"),
-            description: readOptionalString(formData, "description"),
-          },
+            description: readOptionalString(formData, "description")
+          }
         });
         await refresh();
         return { ok: true, error: null, data: null };
@@ -61,11 +82,11 @@ export function PermissionsPage() {
         return {
           ok: false,
           error: toDisplayError(currentError),
-          data: null,
+          data: null
         };
       }
     },
-    createIdleAsyncActionState(),
+    createIdleAsyncActionState()
   );
 
   useEffect(() => {
@@ -85,7 +106,7 @@ export function PermissionsPage() {
     try {
       await cms.permissions.updatePermissionStatus({
         path: { id: record.id },
-        body: { status: nextStatus },
+        body: { status: nextStatus }
       });
       await refresh();
     } catch (currentError) {
@@ -99,16 +120,26 @@ export function PermissionsPage() {
   return (
     <div className="grid gap-4">
       <Card eyebrow={t("permissions.eyebrow")} title={t("permissions.title")}>
-        <div className="mb-5 flex flex-col gap-4 border-b border-[color:var(--color-border)] pb-4 md:flex-row md:items-center md:justify-between">
-          <p className="text-sm text-[color:var(--color-ink-muted)]">
-            {t("permissions.summary")}
-          </p>
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => void refresh()}>
-              {t("common.actions.refresh")}
-            </Button>
-            <Button onClick={() => setIsCreateOpen(true)}>{t("permissions.actions.create")}</Button>
-          </div>
+        <div className="mb-5 border-b border-[color:var(--color-border)] pb-4">
+          <FilterBar
+            summary={t("permissions.summary")}
+            actions={
+              <>
+                <div className="self-end">
+                  <Button variant="secondary" onClick={() => void refresh()}>
+                    {t("common.actions.refresh")}
+                  </Button>
+                </div>
+                <div className="self-end">
+                  <Button type="button" onClick={() => setIsCreateOpen(true)}>
+                    {t("permissions.actions.create")}
+                  </Button>
+                </div>
+              </>
+            }
+          >
+            <div />
+          </FilterBar>
         </div>
         {error ? <ErrorBanner message={error} /> : null}
         {isLoading ? <EmptyState text={t("permissions.empty.loading")} /> : null}
@@ -152,32 +183,35 @@ export function PermissionsPage() {
               ))}
             </MobileRecordList>
 
-            <div className="hidden overflow-x-auto md:block">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[color:var(--color-border)] text-left text-[color:var(--color-ink-subtle)]">
-                    <th className="px-4 py-3 font-medium">{t("permissions.table.permission")}</th>
-                    <th className="px-4 py-3 font-medium">{t("permissions.table.source")}</th>
-                    <th className="px-4 py-3 font-medium">{t("common.table.status")}</th>
-                    <th className="px-4 py-3 font-medium">{t("common.table.updated")}</th>
-                    <th className="px-4 py-3 font-medium">{t("common.table.action")}</th>
-                  </tr>
-                </thead>
-                <tbody>
+            <DataTable>
+              <DataTableTable>
+                <DataTableHead>
+                  <DataTableHeaderRow>
+                    <DataTableHeadCell>{t("permissions.table.permission")}</DataTableHeadCell>
+                    <DataTableHeadCell>{t("permissions.table.source")}</DataTableHeadCell>
+                    <DataTableHeadCell>{t("common.table.status")}</DataTableHeadCell>
+                    <DataTableHeadCell>{t("common.table.updated")}</DataTableHeadCell>
+                    <DataTableHeadCell>{t("common.table.action")}</DataTableHeadCell>
+                  </DataTableHeaderRow>
+                </DataTableHead>
+                <DataTableBody>
                   {optimisticRecords.map((record) => (
-                    <tr key={record.id} className="border-b border-[color:var(--color-border)] last:border-b-0">
-                      <td className="px-4 py-4">
-                        <p className="font-medium text-[color:var(--color-ink)]">{record.displayName}</p>
-                        <p className="mt-1 text-[color:var(--color-ink-muted)]">{record.key}</p>
-                      </td>
-                      <td className="px-4 py-4 text-[color:var(--color-ink-muted)]">{record.sourcePluginId}</td>
-                      <td className="px-4 py-4">
+                    <DataTableRow key={record.id}>
+                      <DataTablePrimaryCell meta={record.key}>
+                        {record.displayName}
+                      </DataTablePrimaryCell>
+                      <DataTableCell className="text-[color:var(--color-ink-muted)]">
+                        {record.sourcePluginId}
+                      </DataTableCell>
+                      <DataTableCell>
                         <Badge tone={record.status === "active" ? "success" : "warning"}>
                           {translateStatusLabel(record.status, t)}
                         </Badge>
-                      </td>
-                      <td className="px-4 py-4 text-[color:var(--color-ink-muted)]">{formatDateTime(record.updatedAt)}</td>
-                      <td className="px-4 py-4">
+                      </DataTableCell>
+                      <DataTableCell className="text-[color:var(--color-ink-muted)]">
+                        {formatDateTime(record.updatedAt)}
+                      </DataTableCell>
+                      <DataTableCell>
                         <Button
                           variant="secondary"
                           disabled={actionId === record.id}
@@ -189,12 +223,12 @@ export function PermissionsPage() {
                               ? t("common.actions.disable")
                               : t("common.actions.activate")}
                         </Button>
-                      </td>
-                    </tr>
+                      </DataTableCell>
+                    </DataTableRow>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </DataTableBody>
+              </DataTableTable>
+            </DataTable>
           </>
         ) : null}
       </Card>
@@ -218,7 +252,12 @@ export function PermissionsPage() {
           </>
         }
       >
-        <form ref={createFormRef} id="create-permission-form" className="grid gap-4" action={submitCreate}>
+        <form
+          ref={createFormRef}
+          id="create-permission-form"
+          className="grid gap-4"
+          action={submitCreate}
+        >
           <Input
             label={t("common.form.key")}
             name="key"

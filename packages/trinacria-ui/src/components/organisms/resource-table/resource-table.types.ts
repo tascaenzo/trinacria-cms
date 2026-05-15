@@ -1,4 +1,11 @@
-import type { HTMLAttributes, PropsWithChildren, ReactNode, TableHTMLAttributes, ThHTMLAttributes, TdHTMLAttributes } from "react";
+import type {
+  HTMLAttributes,
+  PropsWithChildren,
+  ReactNode,
+  TableHTMLAttributes,
+  ThHTMLAttributes,
+  TdHTMLAttributes
+} from "react";
 
 export interface ResourceTableProps extends HTMLAttributes<HTMLDivElement> {
   empty?: ReactNode;

@@ -1,10 +1,16 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent
+} from "react";
 import { cn } from "../../../utils/class-names.js";
 import {
   buildFormControlAria,
   FormControlShell,
   formControlClassName,
-  useFormControlIds,
+  useFormControlIds
 } from "../form-control/form-control.js";
 import { Icon } from "../icon/icon.js";
 import type { DatePickerProps } from "./date-picker.types.js";
@@ -16,15 +22,19 @@ import {
   monthLabel,
   parseDateKey,
   shiftMonth,
-  toDateKey,
+  toDateKey
 } from "./date-picker.utils.js";
 
 const WEEKDAY_LABELS = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
 
-function useControllableDate(value?: string, defaultValue?: string, onValueChange?: (value: string) => void) {
+function useControllableDate(
+  value?: string,
+  defaultValue?: string,
+  onValueChange?: (value: string) => void
+) {
   const [internalValue, setInternalValue] = useState(defaultValue ?? "");
   const isControlled = value !== undefined;
-  const currentValue = isControlled ? value ?? "" : internalValue;
+  const currentValue = isControlled ? (value ?? "") : internalValue;
 
   function setValue(nextValue: string) {
     if (!isControlled) {
@@ -76,7 +86,7 @@ export function DatePicker({
     error,
     errorId: ids.errorId,
     hint,
-    hintId: ids.hintId,
+    hintId: ids.hintId
   });
 
   useEffect(() => {
@@ -114,7 +124,9 @@ export function DatePicker({
 
   const calendar = useMemo(() => buildCalendar(visibleMonth), [visibleMonth]);
   const calendarRows = useMemo(() => {
-    return Array.from({ length: 6 }, (_, rowIndex) => calendar.slice(rowIndex * 7, rowIndex * 7 + 7));
+    return Array.from({ length: 6 }, (_, rowIndex) =>
+      calendar.slice(rowIndex * 7, rowIndex * 7 + 7)
+    );
   }, [calendar]);
   const displayValue = formatDateLabel(selectedValue);
 
@@ -231,7 +243,10 @@ export function DatePicker({
             type="button"
             disabled={disabled}
             onClick={() => setIsOpen((current) => !current)}
-            className={cn("flex items-center justify-between text-left", formControlClassName({ disabled, error }))}
+            className={cn(
+              "flex items-center justify-between text-left",
+              formControlClassName({ disabled, error })
+            )}
             aria-describedby={aria.describedBy}
             aria-errormessage={aria.errorMessage}
             aria-expanded={isOpen}
@@ -264,7 +279,7 @@ export function DatePicker({
               role="dialog"
               aria-modal="false"
               aria-labelledby={monthLabelId}
-              className="absolute left-0 top-[calc(100%+0.5rem)] z-30 w-[320px] rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4 shadow-[0_24px_80px_rgba(15,23,42,0.16)]"
+              className="absolute left-0 top-[calc(100%+0.5rem)] z-30 w-[320px] rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4 shadow-[0_24px_80px_rgba(15,23,42,0.16)]"
             >
               <div className="mb-4 flex items-center justify-between gap-2">
                 <button
@@ -275,7 +290,10 @@ export function DatePicker({
                 >
                   <Icon name="chevron-left" />
                 </button>
-                <div id={monthLabelId} className="text-sm font-semibold capitalize text-[color:var(--color-ink)]">
+                <div
+                  id={monthLabelId}
+                  className="text-sm font-semibold capitalize text-[color:var(--color-ink)]"
+                >
                   {monthLabel(visibleMonth)}
                 </div>
                 <button
@@ -289,7 +307,10 @@ export function DatePicker({
               </div>
 
               <div role="grid" aria-labelledby={monthLabelId}>
-                <div role="row" className="grid grid-cols-7 gap-1 text-center text-[11px] font-medium uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)]">
+                <div
+                  role="row"
+                  className="grid grid-cols-7 gap-1 text-center text-[11px] font-medium uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)]"
+                >
                   {WEEKDAY_LABELS.map((weekday) => (
                     <span key={weekday} role="columnheader" className="py-2">
                       {weekday}
@@ -324,13 +345,19 @@ export function DatePicker({
                             onKeyDown={(event) => handleDayKeyDown(event, cell.date)}
                             onFocus={() => setFocusedKey(key)}
                             className={cn(
-                              "inline-flex h-10 items-center justify-center rounded-lg text-sm transition",
-                              cell.inCurrentMonth ? "text-[color:var(--color-ink)]" : "text-[color:var(--color-ink-subtle)]",
+                              "inline-flex h-10 items-center justify-center rounded-sm text-sm transition",
+                              cell.inCurrentMonth
+                                ? "text-[color:var(--color-ink)]"
+                                : "text-[color:var(--color-ink-subtle)]",
                               isSelected &&
                                 "bg-[color:var(--color-interactive-selected)] font-semibold text-[color:var(--color-interactive-selected-ink)] hover:bg-[color:var(--color-interactive-selected)]",
-                              !isSelected && !isDisabled && "hover:bg-[color:var(--color-interactive-hover)]",
-                              isToday && !isSelected && "border border-[color:var(--color-interactive-soft)]",
-                              isDisabled && "cursor-not-allowed opacity-35",
+                              !isSelected &&
+                                !isDisabled &&
+                                "hover:bg-[color:var(--color-interactive-hover)]",
+                              isToday &&
+                                !isSelected &&
+                                "border border-[color:var(--color-interactive-soft)]",
+                              isDisabled && "cursor-not-allowed opacity-35"
                             )}
                           >
                             {cell.date.getDate()}

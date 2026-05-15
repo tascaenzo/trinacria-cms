@@ -10,9 +10,9 @@ export const UserAccessResponseMetaSchema = s.object(
     pluginId: s.literal(CORE_PACK_PLUGIN_ID).optional(),
     count: s.number({ int: true }).optional(),
     limit: s.number({ int: true }).optional(),
-    offset: s.number({ int: true }).optional(),
+    offset: s.number({ int: true }).optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 /**
@@ -21,9 +21,9 @@ export const UserAccessResponseMetaSchema = s.object(
 export const UserAccessApiErrorSchema = s.object(
   {
     code: s.string({ trim: true, minLength: 1 }),
-    message: s.string({ trim: true, minLength: 1 }),
+    message: s.string({ trim: true, minLength: 1 })
   },
-  { strict: true },
+  { strict: true }
 );
 
 /**
@@ -32,9 +32,9 @@ export const UserAccessApiErrorSchema = s.object(
 export const UserRoleAssignmentsResponseSchema = s.object(
   {
     data: s.array(UserRoleRecordSchema),
-    meta: UserAccessResponseMetaSchema.optional(),
+    meta: UserAccessResponseMetaSchema.optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 /**
@@ -43,9 +43,9 @@ export const UserRoleAssignmentsResponseSchema = s.object(
 export const UserRoleAssignmentResponseSchema = s.object(
   {
     data: UserRoleRecordSchema,
-    meta: UserAccessResponseMetaSchema.optional(),
+    meta: UserAccessResponseMetaSchema.optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 /**
@@ -53,13 +53,10 @@ export const UserRoleAssignmentResponseSchema = s.object(
  */
 export const UserEffectivePermissionsResponseSchema = s.object(
   {
-    data: s.array(
-      s.string({ trim: true, minLength: 3, maxLength: 220 }),
-      { unique: true },
-    ),
-    meta: UserAccessResponseMetaSchema.optional(),
+    data: s.array(s.string({ trim: true, minLength: 3, maxLength: 220 }), { unique: true }),
+    meta: UserAccessResponseMetaSchema.optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 /**
@@ -68,7 +65,7 @@ export const UserEffectivePermissionsResponseSchema = s.object(
 export const UserAccessErrorResponseSchema = s.object(
   {
     error: UserAccessApiErrorSchema,
-    meta: UserAccessResponseMetaSchema.optional(),
+    meta: UserAccessResponseMetaSchema.optional()
   },
-  { strict: true },
+  { strict: true }
 );

@@ -1,4 +1,4 @@
-import { Badge, Button, Card, JsonView } from "@trinacria-cms/trinacria-ui";
+import { Badge, Button, Card, InfoCard, JsonView, StatCard } from "@trinacria-cms/trinacria-ui";
 import { useI18n } from "../lib/i18n.js";
 import { translateSystemStateLabel, translateToneLabel } from "../lib/ui-translations.js";
 
@@ -12,7 +12,11 @@ export interface DashboardPageProps {
  * DashboardPage follows a denser operational layout with KPI cards, a system
  * summary panel, and a debug snapshot area.
  */
-export function DashboardPage({ capabilityCount, pluginCount, systemStateLabel }: DashboardPageProps) {
+export function DashboardPage({
+  capabilityCount,
+  pluginCount,
+  systemStateLabel
+}: DashboardPageProps) {
   const { t } = useI18n();
   const translatedSystemState = translateSystemStateLabel(systemStateLabel, t);
 
@@ -23,9 +27,7 @@ export function DashboardPage({ capabilityCount, pluginCount, systemStateLabel }
           <h3 className="text-xl font-semibold tracking-[-0.02em] text-[color:var(--color-ink)]">
             {t("dashboard.title")}
           </h3>
-          <p className="text-sm text-[color:var(--color-ink-muted)]">
-            {t("dashboard.summary")}
-          </p>
+          <p className="text-sm text-[color:var(--color-ink-muted)]">{t("dashboard.summary")}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary">{t("dashboard.actions.export_snapshot")}</Button>
@@ -80,7 +82,7 @@ export function DashboardPage({ capabilityCount, pluginCount, systemStateLabel }
             value={{
               pluginCount,
               capabilityCount,
-              systemStateLabel,
+              systemStateLabel
             }}
           />
         </Card>
@@ -93,7 +95,7 @@ function MetricCard({
   description,
   label,
   tone = "neutral",
-  value,
+  value
 }: {
   description: string;
   label: string;
@@ -103,26 +105,18 @@ function MetricCard({
   const { t } = useI18n();
 
   return (
-    <Card className="p-4" title={undefined} eyebrow={undefined}>
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm font-medium text-[color:var(--color-ink-muted)]">{label}</p>
-          <p className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">{value}</p>
-        </div>
-        <Badge tone={tone}>{translateToneLabel(tone, t)}</Badge>
-      </div>
-      <p className="mt-3 text-sm leading-6 text-[color:var(--color-ink-subtle)]">{description}</p>
-    </Card>
+    <StatCard
+      label={label}
+      value={value}
+      description={description}
+      tone={tone}
+      badge={<Badge tone={tone}>{translateToneLabel(tone, t)}</Badge>}
+    />
   );
 }
 
 function ActivityRow({ title, text }: { title: string; text: string }) {
-  return (
-    <div className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] p-4">
-      <p className="text-sm font-medium text-[color:var(--color-ink)]">{title}</p>
-      <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink-muted)]">{text}</p>
-    </div>
-  );
+  return <InfoCard title={title} description={text} />;
 }
 
 export function createDashboardRender(props: DashboardPageProps) {

@@ -18,7 +18,7 @@ export class TrinacriaModuleBridge {
    */
   async registerModules(
     pluginId: string,
-    modules: readonly ModuleDefinition[],
+    modules: readonly ModuleDefinition[]
   ): Promise<readonly ModuleDefinition[]> {
     const registered: ModuleDefinition[] = [];
 
@@ -31,15 +31,12 @@ export class TrinacriaModuleBridge {
       return registered;
     } catch (error) {
       const rollbackErrors = await this.unregisterModules(pluginId, registered);
-      throw new PluginLifecycleError(
-        `Module registration failed for plugin "${pluginId}"`,
-        {
-          pluginId,
-          stage: "load",
-          cause: this.errorToString(error),
-          rollbackErrors: rollbackErrors.map((item) => this.errorToString(item)),
-        },
-      );
+      throw new PluginLifecycleError(`Module registration failed for plugin "${pluginId}"`, {
+        pluginId,
+        stage: "load",
+        cause: this.errorToString(error),
+        rollbackErrors: rollbackErrors.map((item) => this.errorToString(item))
+      });
     }
   }
 
@@ -48,7 +45,7 @@ export class TrinacriaModuleBridge {
    */
   async unregisterModules(
     _pluginId: string,
-    modules: readonly ModuleDefinition[],
+    modules: readonly ModuleDefinition[]
   ): Promise<readonly unknown[]> {
     const errors: unknown[] = [];
     for (let index = modules.length - 1; index >= 0; index -= 1) {

@@ -1,24 +1,12 @@
-import {
-  apiError,
-  response,
-  type HttpContext,
-  type HttpMiddleware,
-} from "@trinacria-cms/kernel";
+import { apiError, response, type HttpContext, type HttpMiddleware } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
-import {
-  AUTHENTICATED_USER_STATE_KEY,
-  extractAuthToken,
-} from "../auth/auth.middleware.js";
+import { AUTHENTICATED_USER_STATE_KEY, extractAuthToken } from "../auth/auth.middleware.js";
 import { JwtAuthError, type JwtAuthService } from "../auth/auth.service.js";
-import {
-  SETTINGS_AUTH_PLUGIN_ID_STATE_KEY,
-} from "./auth/settings-plugin-auth.middleware.js";
-import {
-  PLUGIN_AUTH_HEADERS,
-} from "./auth/settings-plugin-auth.js";
+import { SETTINGS_AUTH_PLUGIN_ID_STATE_KEY } from "./auth/settings-plugin-auth.middleware.js";
+import { PLUGIN_AUTH_HEADERS } from "./auth/settings-plugin-auth.js";
 import {
   SettingsPluginAuthError,
-  type SettingsPluginAuthService,
+  type SettingsPluginAuthService
 } from "./auth/settings-plugin-auth.service.js";
 
 export type SettingsAccessMode = "admin" | "plugin";
@@ -31,7 +19,7 @@ export function createSettingsAccessMiddleware(
   options: {
     allowAdmin: boolean;
     allowPlugin: boolean;
-  },
+  }
 ): HttpMiddleware {
   return async (ctx, next) => {
     const authToken = extractAuthToken(ctx);
@@ -40,7 +28,7 @@ export function createSettingsAccessMiddleware(
     if (options.allowAdmin && authToken) {
       try {
         const user = await auth.authenticateBearerToken(authToken, {
-          requireAdmin: true,
+          requireAdmin: true
         });
         ctx.state[AUTHENTICATED_USER_STATE_KEY] = user;
         ctx.state[SETTINGS_ACCESS_MODE_STATE_KEY] = "admin" satisfies SettingsAccessMode;
@@ -70,10 +58,7 @@ export function createSettingsAccessMiddleware(
       }
     }
 
-    return unauthorized(
-      "auth_missing_token",
-      buildMissingCredentialsMessage(options),
-    );
+    return unauthorized("auth_missing_token", buildMissingCredentialsMessage(options));
   };
 }
 
@@ -108,23 +93,15 @@ function buildMissingCredentialsMessage(options: {
   return "Missing signed plugin authentication headers";
 }
 
-function unauthorized(
-  code: string,
-  message: string,
-  details?: Record<string, unknown>,
-) {
+function unauthorized(code: string, message: string, details?: Record<string, unknown>) {
   return response(apiError(code, message, details, { pluginId: CORE_PACK_PLUGIN_ID }), {
-    status: 401,
+    status: 401
   });
 }
 
-function forbidden(
-  code: string,
-  message: string,
-  details?: Record<string, unknown>,
-) {
+function forbidden(code: string, message: string, details?: Record<string, unknown>) {
   return response(apiError(code, message, details, { pluginId: CORE_PACK_PLUGIN_ID }), {
-    status: 403,
+    status: 403
   });
 }
 

@@ -3,7 +3,7 @@ import { CorePackRootModule } from "../modules/core-pack-root.module.js";
 import {
   provisionCorePackSettingDefinitions,
   SETTINGS_SERVICE_TOKEN,
-  type SettingsService,
+  type SettingsService
 } from "../modules/settings/index.js";
 import { CORE_PACK_MANIFEST } from "./core-pack.manifest.js";
 
@@ -17,6 +17,6 @@ export function createCorePackPlugin(): KernelPluginDefinition {
     async onInit(context) {
       const settings = await context.app.resolve<SettingsService>(SETTINGS_SERVICE_TOKEN);
       await provisionCorePackSettingDefinitions(settings);
-    },
+    }
   };
 }

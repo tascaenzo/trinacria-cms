@@ -2,26 +2,23 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { s } from "@trinacria/schema";
 import { DbAdapterError } from "../src/errors/index.js";
-import {
-  createMongoDbAdapter,
-  EntityRegistry,
-} from "../src/runtime/index.js";
+import { createMongoDbAdapter, EntityRegistry } from "../src/runtime/index.js";
 
 test("MongoDbAdapter maps namespace to collection and resolves query options", async () => {
   const connection = createFakeConnection();
   const registry = new EntityRegistry();
   registry.register({
     entityName: "content_entries",
-    schema: s.object({ title: s.string() }),
+    schema: s.object({ title: s.string() })
   });
 
   const adapter = createMongoDbAdapter({
     connection,
-    entityRegistry: registry,
+    entityRegistry: registry
   });
 
   const repository = adapter.repository<{ title: string }>("content_entries", {
-    pluginId: "cms/content",
+    pluginId: "cms/content"
   });
 
   const items = await repository.findMany({
@@ -29,22 +26,19 @@ test("MongoDbAdapter maps namespace to collection and resolves query options", a
     sort: { createdAt: "desc" },
     offset: 5,
     limit: 10,
-    parse: (value) => value as { title: string },
+    parse: (value) => value as { title: string }
   });
 
   assert.equal(items.length, 1);
   assert.equal(items[0]?.title, "hello");
-  assert.equal(
-    connection.lastCollectionName,
-    "plugin_cms_content__content_entries",
-  );
+  assert.equal(connection.lastCollectionName, "plugin_cms_content__content_entries");
   assert.deepEqual(connection.queryLog.at(-1), {
     kind: "find",
     filter: { status: "published" },
     options: {},
     sort: { createdAt: -1 },
     skip: 5,
-    limit: 10,
+    limit: 10
   });
 });
 
@@ -53,29 +47,23 @@ test("MongoDbAdapter supports insert/update/delete", async () => {
   const registry = new EntityRegistry();
   registry.register({
     entityName: "settings",
-    schema: s.object({ key: s.string(), value: s.string() }),
+    schema: s.object({ key: s.string(), value: s.string() })
   });
 
   const adapter = createMongoDbAdapter({
     connection,
-    entityRegistry: registry,
+    entityRegistry: registry
   });
 
-  const repository = adapter.repository<{ key: string; value: string }>(
-    "settings",
-    {
-      pluginId: "cms/settings",
-    },
-  );
+  const repository = adapter.repository<{ key: string; value: string }>("settings", {
+    pluginId: "cms/settings"
+  });
 
   const created = await repository.insertOne({ key: "theme", value: "light" });
   assert.equal(created.value, "light");
   assert.equal(typeof (created as { id?: unknown }).id, "string");
 
-  const updated = await repository.updateOne(
-    { filter: { key: "theme" } },
-    { value: "dark" },
-  );
+  const updated = await repository.updateOne({ filter: { key: "theme" } }, { value: "dark" });
   assert.equal(updated?.value, "dark");
 
   const deleted = await repository.deleteOne({ filter: { key: "theme" } });
@@ -85,15 +73,15 @@ test("MongoDbAdapter supports insert/update/delete", async () => {
 test("EntityRegistry throws when entity is missing", () => {
   const adapter = createMongoDbAdapter({
     connection: createFakeConnection(),
-    entityRegistry: new EntityRegistry(),
+    entityRegistry: new EntityRegistry()
   });
 
   assert.throws(
     () =>
       adapter.repository("missing_entity", {
-        pluginId: "cms/content",
+        pluginId: "cms/content"
       }),
-    DbAdapterError,
+    DbAdapterError
   );
 });
 
@@ -102,12 +90,12 @@ test("MongoDbAdapter healthCheck and transactions are available", async () => {
   const registry = new EntityRegistry();
   registry.register({
     entityName: "jobs",
-    schema: s.object({ id: s.string() }),
+    schema: s.object({ id: s.string() })
   });
 
   const adapter = createMongoDbAdapter({
     connection,
-    entityRegistry: registry,
+    entityRegistry: registry
   });
 
   const health = await adapter.healthCheck();
@@ -129,14 +117,14 @@ test("MongoDbAdapter ensureIndexes uses canonical index declarations", async () 
       {
         fields: { pluginId: 1, email: 1 },
         unique: true,
-        name: "users_plugin_email_unique",
-      },
-    ],
+        name: "users_plugin_email_unique"
+      }
+    ]
   });
 
   const adapter = createMongoDbAdapter({
     connection,
-    entityRegistry: registry,
+    entityRegistry: registry
   });
 
   await adapter.ensureIndexes("core-pack", ["users"]);
@@ -147,10 +135,10 @@ test("MongoDbAdapter ensureIndexes uses canonical index declarations", async () 
         {
           key: { pluginId: 1, email: 1 },
           unique: true,
-          name: "users_plugin_email_unique",
-        },
-      ],
-    },
+          name: "users_plugin_email_unique"
+        }
+      ]
+    }
   ]);
 });
 
@@ -159,21 +147,21 @@ test("MongoDbAdapter maps reserved kernel namespace without plugin prefix", asyn
   const registry = new EntityRegistry();
   registry.register({
     entityName: "installed_plugins",
-    schema: s.object({ pluginId: s.string() }),
+    schema: s.object({ pluginId: s.string() })
   });
 
   const adapter = createMongoDbAdapter({
     connection,
-    entityRegistry: registry,
+    entityRegistry: registry
   });
 
   const repository = adapter.repository<{ pluginId: string }>("installed_plugins", {
-    pluginId: "kernel",
+    pluginId: "kernel"
   });
 
   await repository.findOne({
     filter: { pluginId: "core-pack" },
-    parse: (value) => value as { pluginId: string },
+    parse: (value) => value as { pluginId: string }
   });
 
   assert.equal(connection.lastCollectionName, "kernel__installed_plugins");
@@ -197,20 +185,14 @@ function createFakeConnection() {
     collection(name: string) {
       lastCollectionName = name;
       return {
-        async findOne(
-          _filter?: Record<string, unknown>,
-          _options?: Record<string, unknown>,
-        ) {
+        async findOne(_filter?: Record<string, unknown>, _options?: Record<string, unknown>) {
           return { ...(stored as Record<string, unknown>) };
         },
-        find(
-          filter?: Record<string, unknown>,
-          options?: Record<string, unknown>,
-        ) {
+        find(filter?: Record<string, unknown>, options?: Record<string, unknown>) {
           const trace: Record<string, unknown> = {
             kind: "find",
             filter,
-            options,
+            options
           };
           return {
             sort(sortValue: Record<string, 1 | -1>) {
@@ -228,7 +210,7 @@ function createFakeConnection() {
             async toArray() {
               queryLog.push(trace);
               return [{ title: "hello" }];
-            },
+            }
           };
         },
         async insertOne(document: Record<string, unknown>) {
@@ -237,17 +219,11 @@ function createFakeConnection() {
           stored = { _id: insertedId, ...document };
           return { insertedId };
         },
-        async findOneAndUpdate(
-          _filter: Record<string, unknown>,
-          patch: Record<string, unknown>,
-        ) {
+        async findOneAndUpdate(_filter: Record<string, unknown>, patch: Record<string, unknown>) {
           stored = applyMongoPatch(stored, patch);
           return { value: { ...(stored as Record<string, unknown>) } };
         },
-        async updateOne(
-          filter: Record<string, unknown>,
-          patch: Record<string, unknown>,
-        ) {
+        async updateOne(filter: Record<string, unknown>, patch: Record<string, unknown>) {
           if (filter._id && stored._id === filter._id) {
             stored = applyMongoPatch(stored, patch);
           }
@@ -259,7 +235,7 @@ function createFakeConnection() {
         async createIndexes(indexes: unknown[]) {
           indexCalls.push({ collection: name, indexes });
           return {};
-        },
+        }
       };
     },
     async startSession() {
@@ -276,9 +252,9 @@ function createFakeConnection() {
         },
         async endSession() {
           sessionLog.push("end");
-        },
+        }
       };
-    },
+    }
   };
 
   return connection;
@@ -286,7 +262,7 @@ function createFakeConnection() {
 
 function applyMongoPatch(
   current: Record<string, unknown>,
-  patch: Record<string, unknown>,
+  patch: Record<string, unknown>
 ): Record<string, unknown> {
   if (
     "$set" in patch &&
@@ -296,11 +272,11 @@ function applyMongoPatch(
   ) {
     return {
       ...current,
-      ...(patch.$set as Record<string, unknown>),
+      ...(patch.$set as Record<string, unknown>)
     };
   }
   return {
     ...current,
-    ...patch,
+    ...patch
   };
 }

@@ -3,21 +3,18 @@ import { PermissionsRepository } from "../../permissions/permissions.repository.
 import { RoleGrantsRepository } from "../../roles/grants/role-grants.repository.js";
 import { RolesRepository } from "../../roles/roles.repository.js";
 import { RolePolicyRulesRepository } from "../role-policy-rules/role-policy-rules.repository.js";
-import {
-  dedupeAuthorizationRules,
-  type AuthorizationRule,
-} from "../authz-rules.js";
+import { dedupeAuthorizationRules, type AuthorizationRule } from "../authz-rules.js";
 import {
   CreateApiKeyInputSchema,
   RotateApiKeyInputSchema,
   type CreateApiKeyInput,
-  type RotateApiKeyInput,
+  type RotateApiKeyInput
 } from "./dto/api-keys.input.dto.js";
 import { ApiKeyHashingService } from "./api-key-hashing.service.js";
 import {
   ApiKeyPublicRecordSchema,
   type ApiKeyPublicRecord,
-  type ApiKeyRecord,
+  type ApiKeyRecord
 } from "./api-keys.schemas.js";
 import { ApiKeysRepository } from "./api-keys.repository.js";
 
@@ -42,7 +39,7 @@ export class ApiKeysService {
     private readonly roles: RolesRepository,
     private readonly roleGrants: RoleGrantsRepository,
     private readonly rolePolicyRules: RolePolicyRulesRepository,
-    private readonly permissions: PermissionsRepository,
+    private readonly permissions: PermissionsRepository
   ) {}
 
   async create(input: CreateApiKeyInput): Promise<IssuedApiKeyResult> {
@@ -65,12 +62,12 @@ export class ApiKeysService {
       policyRules: [...(parsed.policyRules ?? [])],
       createdAt: now,
       updatedAt: now,
-      ...(parsed.expiresAt ? { expiresAt: parsed.expiresAt } : {}),
+      ...(parsed.expiresAt ? { expiresAt: parsed.expiresAt } : {})
     });
 
     return {
       record: this.toPublicRecord(record),
-      apiKey: material.rawKey,
+      apiKey: material.rawKey
     };
   }
 
@@ -89,10 +86,7 @@ export class ApiKeysService {
     return record ? this.toPublicRecord(record) : null;
   }
 
-  async rotate(
-    id: string,
-    input?: RotateApiKeyInput,
-  ): Promise<IssuedApiKeyResult | null> {
+  async rotate(id: string, input?: RotateApiKeyInput): Promise<IssuedApiKeyResult | null> {
     const existing = await this.apiKeys.findById(id);
     if (!existing) return null;
 
@@ -108,7 +102,7 @@ export class ApiKeysService {
       roleCodes: parsed.roleCodes ?? existing.roleCodes,
       permissionKeys: parsed.permissionKeys ?? existing.permissionKeys,
       policyRules: parsed.policyRules ?? existing.policyRules,
-      expiresAt: parsed.expiresAt ?? existing.expiresAt,
+      expiresAt: parsed.expiresAt ?? existing.expiresAt
     });
 
     const material = this.hashing.issue();
@@ -118,30 +112,23 @@ export class ApiKeysService {
       secretHash: material.secretHash,
       secretPreview: material.secretPreview,
       ...(parsed.name ? { name: parsed.name } : {}),
-      ...(parsed.description !== undefined
-        ? { description: parsed.description }
-        : {}),
+      ...(parsed.description !== undefined ? { description: parsed.description } : {}),
       ...(parsed.roleCodes ? { roleCodes: [...parsed.roleCodes] } : {}),
-      ...(parsed.permissionKeys
-        ? { permissionKeys: [...parsed.permissionKeys] }
-        : {}),
+      ...(parsed.permissionKeys ? { permissionKeys: [...parsed.permissionKeys] } : {}),
       ...(parsed.policyRules ? { policyRules: [...parsed.policyRules] } : {}),
       ...(parsed.expiresAt !== undefined ? { expiresAt: parsed.expiresAt } : {}),
       status: "active",
       revokedAt: undefined,
-      updatedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     });
 
     if (!updated) {
-      throw new CoreError(
-        "API_KEY_ROTATION_FAILED",
-        `API key "${id}" disappeared during rotation`,
-      );
+      throw new CoreError("API_KEY_ROTATION_FAILED", `API key "${id}" disappeared during rotation`);
     }
 
     return {
       record: this.toPublicRecord(updated),
-      apiKey: material.rawKey,
+      apiKey: material.rawKey
     };
   }
 
@@ -149,7 +136,7 @@ export class ApiKeysService {
     const updated = await this.apiKeys.updateById(id, {
       status: "revoked",
       revokedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     });
     return updated ? this.toPublicRecord(updated) : null;
   }
@@ -173,18 +160,16 @@ export class ApiKeysService {
 
     await this.apiKeys.updateById(record.id, {
       lastUsedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     });
 
     return {
       subjectId: this.toSubjectId(record.id),
-      record: this.toPublicRecord(record),
+      record: this.toPublicRecord(record)
     };
   }
 
-  async resolveAuthorizationRules(
-    apiKeyId: string,
-  ): Promise<readonly AuthorizationRule[]> {
+  async resolveAuthorizationRules(apiKeyId: string): Promise<readonly AuthorizationRule[]> {
     const record = await this.apiKeys.findById(apiKeyId);
     if (!record || record.status !== "active") {
       return [];
@@ -194,20 +179,14 @@ export class ApiKeysService {
     }
 
     const roleRules = await this.resolveRoleRules(record.roleCodes);
-    const directPermissionRules = await this.resolveDirectPermissionRules(
-      record.permissionKeys,
-    );
+    const directPermissionRules = await this.resolveDirectPermissionRules(record.permissionKeys);
     const directPolicyRules: AuthorizationRule[] = record.policyRules.map((rule) => ({
       effect: rule.effect,
       permissionPattern: rule.permissionPattern,
-      conditions: rule.conditions,
+      conditions: rule.conditions
     }));
 
-    return dedupeAuthorizationRules([
-      ...roleRules,
-      ...directPermissionRules,
-      ...directPolicyRules,
-    ]);
+    return dedupeAuthorizationRules([...roleRules, ...directPermissionRules, ...directPolicyRules]);
   }
 
   isApiKeySubject(subjectId: string): boolean {
@@ -219,12 +198,12 @@ export class ApiKeysService {
   }
 
   private async resolveRoleRules(
-    roleCodes: readonly string[],
+    roleCodes: readonly string[]
   ): Promise<readonly AuthorizationRule[]> {
     if (roleCodes.length === 0) return [];
 
     const activeRoles = await Promise.all(
-      roleCodes.map((roleCode) => this.roles.findByCode(roleCode)),
+      roleCodes.map((roleCode) => this.roles.findByCode(roleCode))
     );
     const activeRoleCodes = activeRoles
       .filter((role): role is NonNullable<typeof role> => Boolean(role))
@@ -235,7 +214,7 @@ export class ApiKeysService {
 
     const grants = await this.roleGrants.listByRoleCodes(activeRoleCodes);
     const permissionRules = await this.resolveDirectPermissionRules(
-      grants.map((grant) => grant.permissionKey),
+      grants.map((grant) => grant.permissionKey)
     );
     const policyRules = await this.rolePolicyRules.listByRoleCodes(activeRoleCodes);
 
@@ -244,19 +223,19 @@ export class ApiKeysService {
       ...policyRules.map((rule) => ({
         effect: rule.effect,
         permissionPattern: rule.permissionPattern,
-        conditions: rule.conditions,
-      })),
+        conditions: rule.conditions
+      }))
     ]);
   }
 
   private async resolveDirectPermissionRules(
-    permissionKeys: readonly string[],
+    permissionKeys: readonly string[]
   ): Promise<readonly AuthorizationRule[]> {
     const uniqueKeys = [...new Set(permissionKeys.map((item) => item.trim().toLowerCase()))];
     if (uniqueKeys.length === 0) return [];
 
     const permissionRecords = await Promise.all(
-      uniqueKeys.map((key) => this.permissions.findByKey(key)),
+      uniqueKeys.map((key) => this.permissions.findByKey(key))
     );
 
     return permissionRecords
@@ -267,8 +246,8 @@ export class ApiKeysService {
           ({
             effect: "allow",
             permissionPattern: permission.key,
-            conditions: [],
-          }) satisfies AuthorizationRule,
+            conditions: []
+          }) satisfies AuthorizationRule
       );
   }
 
@@ -284,10 +263,7 @@ export class ApiKeysService {
     for (const roleCode of input.roleCodes ?? []) {
       const role = await this.roles.findByCode(roleCode);
       if (!role) {
-        throw new CoreError(
-          "API_KEY_ROLE_NOT_FOUND",
-          `Role "${roleCode}" not found for API key`,
-        );
+        throw new CoreError("API_KEY_ROLE_NOT_FOUND", `Role "${roleCode}" not found for API key`);
       }
     }
 
@@ -296,7 +272,7 @@ export class ApiKeysService {
       if (!permission) {
         throw new CoreError(
           "API_KEY_PERMISSION_NOT_FOUND",
-          `Permission "${permissionKey}" not found for API key`,
+          `Permission "${permissionKey}" not found for API key`
         );
       }
     }
@@ -318,7 +294,7 @@ export class ApiKeysService {
       updatedAt: record.updatedAt,
       ...(record.lastUsedAt ? { lastUsedAt: record.lastUsedAt } : {}),
       ...(record.expiresAt ? { expiresAt: record.expiresAt } : {}),
-      ...(record.revokedAt ? { revokedAt: record.revokedAt } : {}),
+      ...(record.revokedAt ? { revokedAt: record.revokedAt } : {})
     });
   }
 

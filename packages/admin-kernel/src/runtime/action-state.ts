@@ -12,7 +12,7 @@ export function createIdleAsyncActionState<T = void>(): AsyncActionState<T> {
   return {
     ok: false,
     error: null,
-    data: null,
+    data: null
   };
 }
 

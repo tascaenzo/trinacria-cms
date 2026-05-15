@@ -1,10 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  content: [
-    "./src/**/*.{ts,tsx,mdx}",
-    "./.storybook/**/*.{ts,tsx}"
-  ],
+  content: ["./src/**/*.{ts,tsx,mdx}", "./.storybook/**/*.{ts,tsx}"],
   theme: {
     extend: {
       boxShadow: {

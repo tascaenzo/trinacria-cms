@@ -1,8 +1,4 @@
-import {
-  createPluginApiResponder,
-  parsePathParam,
-  toOpenApiSchema,
-} from "./api-http-utils.js";
+import { createPluginApiResponder, parsePathParam, toOpenApiSchema } from "./api-http-utils.js";
 import { apiError } from "../contracts/api-contract.js";
 import type { KernelAdminRouteGuard } from "../contracts/kernel-admin-route-guard.js";
 import { HttpController, response, type HttpContext } from "@trinacria/http";
@@ -12,7 +8,7 @@ import {
   PluginDependencyError,
   PluginLifecycleError,
   PluginRuntimeError,
-  PluginStateTransitionError,
+  PluginStateTransitionError
 } from "../errors/plugin-errors.js";
 
 const responder = createPluginApiResponder("kernel");
@@ -33,7 +29,7 @@ const KernelInstalledPluginSchema = s.object(
       "unloading",
       "failed",
       "disabled",
-      "unloaded",
+      "unloaded"
     ] as const),
     capabilities: s.array(s.string({ trim: true, minLength: 1 })),
     dependencies: s.array(
@@ -42,83 +38,73 @@ const KernelInstalledPluginSchema = s.object(
           pluginId: s.string({ trim: true, minLength: 1 }),
           versionRange: s.string({ trim: true, minLength: 1 }),
           optional: s.boolean(),
-          status: s.enum([
-            "ok",
-            "missing",
-            "disabled",
-            "version-mismatch",
-          ] as const),
+          status: s.enum(["ok", "missing", "disabled", "version-mismatch"] as const),
           currentVersion: s.string({ trim: true, minLength: 1 }).optional(),
-          state: s.enum([
-            "registered",
-            "loading",
-            "initializing",
-            "loaded",
-            "unloading",
-            "failed",
-            "disabled",
-            "unloaded",
-          ] as const).optional(),
-          reason: s.string({ trim: true, minLength: 1 }).optional(),
+          state: s
+            .enum([
+              "registered",
+              "loading",
+              "initializing",
+              "loaded",
+              "unloading",
+              "failed",
+              "disabled",
+              "unloaded"
+            ] as const)
+            .optional(),
+          reason: s.string({ trim: true, minLength: 1 }).optional()
         },
-        { strict: true },
-      ),
+        { strict: true }
+      )
     ),
     security: s.object(
       {
         permissions: s.number({ int: true, min: 0 }),
         roles: s.number({ int: true, min: 0 }),
         grants: s.number({ int: true, min: 0 }),
-        policyRules: s.number({ int: true, min: 0 }),
+        policyRules: s.number({ int: true, min: 0 })
       },
-      { strict: true },
+      { strict: true }
     ),
     failureCount: s.number({ int: true, min: 0 }),
     failedAt: s.dateTimeString().optional(),
-    lastFailurePhase: s.enum([
-      "register",
-      "dependency-check",
-      "load",
-      "init",
-      "unload",
-      "rollback",
-    ] as const).optional(),
+    lastFailurePhase: s
+      .enum(["register", "dependency-check", "load", "init", "unload", "rollback"] as const)
+      .optional(),
     disabledAt: s.dateTimeString().optional(),
     disabledReason: s.string({ trim: true, minLength: 1 }).optional(),
     loadedAt: s.dateTimeString().optional(),
-    statusReason: s.object(
-      {
-        code: s.string({ trim: true, minLength: 1 }),
-        message: s.string({ trim: true, minLength: 1 }),
-      },
-      { strict: false },
-    ).optional(),
-    lastError: s.object(
-      {
-        name: s.string({ trim: true, minLength: 1 }),
-        message: s.string({ trim: true, minLength: 1 }),
-        code: s.string({ trim: true, minLength: 1 }).optional(),
-      },
-      { strict: false },
-    ).optional(),
+    statusReason: s
+      .object(
+        {
+          code: s.string({ trim: true, minLength: 1 }),
+          message: s.string({ trim: true, minLength: 1 })
+        },
+        { strict: false }
+      )
+      .optional(),
+    lastError: s
+      .object(
+        {
+          name: s.string({ trim: true, minLength: 1 }),
+          message: s.string({ trim: true, minLength: 1 }),
+          code: s.string({ trim: true, minLength: 1 }).optional()
+        },
+        { strict: false }
+      )
+      .optional(),
     operations: s.array(
       s.object(
         {
-          operation: s.enum([
-            "load",
-            "unload",
-            "reload",
-            "disable",
-            "enable",
-          ] as const),
+          operation: s.enum(["load", "unload", "reload", "disable", "enable"] as const),
           available: s.boolean(),
-          reason: s.string({ trim: true, minLength: 1 }).optional(),
+          reason: s.string({ trim: true, minLength: 1 }).optional()
         },
-        { strict: true },
-      ),
-    ),
+        { strict: true }
+      )
+    )
   },
-  { strict: true },
+  { strict: true }
 );
 
 /**
@@ -137,71 +123,59 @@ const KernelCapabilitySchema = s.object(
       "unloading",
       "failed",
       "disabled",
-      "unloaded",
-    ] as const),
+      "unloaded"
+    ] as const)
   },
-  { strict: true },
+  { strict: true }
 );
 
 const KernelSystemMetaSchema = s.object(
   {
     pluginId: s.literal("kernel").optional(),
-    count: s.number({ int: true }).optional(),
+    count: s.number({ int: true }).optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 const ListInstalledPluginsResponseSchema = s.object(
   {
     data: s.array(KernelInstalledPluginSchema),
-    meta: KernelSystemMetaSchema.optional(),
+    meta: KernelSystemMetaSchema.optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 const ListCapabilitiesResponseSchema = s.object(
   {
     data: s.array(KernelCapabilitySchema),
-    meta: KernelSystemMetaSchema.optional(),
+    meta: KernelSystemMetaSchema.optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 const PluginOperationRequestSchema = s.object(
   {
-    operation: s.enum([
-      "load",
-      "unload",
-      "reload",
-      "disable",
-      "enable",
-    ] as const),
-    reason: s.string({ trim: true, minLength: 1, maxLength: 1000 }).optional(),
+    operation: s.enum(["load", "unload", "reload", "disable", "enable"] as const),
+    reason: s.string({ trim: true, minLength: 1, maxLength: 1000 }).optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 const PluginOperationResultSchema = s.object(
   {
     plugin: KernelInstalledPluginSchema,
-    operation: s.enum([
-      "load",
-      "unload",
-      "reload",
-      "disable",
-      "enable",
-    ] as const),
-    executedAt: s.dateTimeString(),
+    operation: s.enum(["load", "unload", "reload", "disable", "enable"] as const),
+    executedAt: s.dateTimeString()
   },
-  { strict: true },
+  { strict: true }
 );
 
 const PluginOperationResponseSchema = s.object(
   {
     data: PluginOperationResultSchema,
-    meta: KernelSystemMetaSchema.optional(),
+    meta: KernelSystemMetaSchema.optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 const PluginEventSchema = s.object(
@@ -217,49 +191,48 @@ const PluginEventSchema = s.object(
       "reload",
       "disable",
       "enable",
-      "load-many",
+      "load-many"
     ] as const),
     success: s.boolean(),
-    phase: s.enum([
-      "register",
-      "dependency-check",
-      "load",
-      "init",
-      "unload",
-      "rollback",
-    ] as const).optional(),
+    phase: s
+      .enum(["register", "dependency-check", "load", "init", "unload", "rollback"] as const)
+      .optional(),
     message: s.string({ trim: true, minLength: 1 }).optional(),
     durationMs: s.number({ int: true, min: 0 }).optional(),
-    stateBefore: s.enum([
-      "registered",
-      "loading",
-      "initializing",
-      "loaded",
-      "unloading",
-      "failed",
-      "disabled",
-      "unloaded",
-    ] as const).optional(),
-    stateAfter: s.enum([
-      "registered",
-      "loading",
-      "initializing",
-      "loaded",
-      "unloading",
-      "failed",
-      "disabled",
-      "unloaded",
-    ] as const).optional(),
+    stateBefore: s
+      .enum([
+        "registered",
+        "loading",
+        "initializing",
+        "loaded",
+        "unloading",
+        "failed",
+        "disabled",
+        "unloaded"
+      ] as const)
+      .optional(),
+    stateAfter: s
+      .enum([
+        "registered",
+        "loading",
+        "initializing",
+        "loaded",
+        "unloading",
+        "failed",
+        "disabled",
+        "unloaded"
+      ] as const)
+      .optional()
   },
-  { strict: false },
+  { strict: false }
 );
 
 const PluginEventsResponseSchema = s.object(
   {
     data: s.array(PluginEventSchema),
-    meta: KernelSystemMetaSchema.optional(),
+    meta: KernelSystemMetaSchema.optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 /**
@@ -269,15 +242,13 @@ const PluginEventsResponseSchema = s.object(
 export class KernelSystemHttpController extends HttpController {
   constructor(
     private readonly system: KernelSystemService,
-    private readonly adminRouteGuard: KernelAdminRouteGuard | null = null,
+    private readonly adminRouteGuard: KernelAdminRouteGuard | null = null
   ) {
     super();
   }
 
   routes() {
-    const guardedMiddlewares = this.adminRouteGuard
-      ? [this.adminRouteGuard.middleware]
-      : [];
+    const guardedMiddlewares = this.adminRouteGuard ? [this.adminRouteGuard.middleware] : [];
     const guardedSecurity = this.adminRouteGuard?.security;
 
     return this.router()
@@ -291,10 +262,10 @@ export class KernelSystemHttpController extends HttpController {
           responses: {
             200: {
               description: "Installed plugin discovery snapshot",
-              schema: toOpenApiSchema(ListInstalledPluginsResponseSchema),
-            },
-          },
-        },
+              schema: toOpenApiSchema(ListInstalledPluginsResponseSchema)
+            }
+          }
+        }
       })
       .get("/v1/system/capabilities", this.listCapabilities, {
         middlewares: guardedMiddlewares,
@@ -306,10 +277,10 @@ export class KernelSystemHttpController extends HttpController {
           responses: {
             200: {
               description: "Flattened capability catalog",
-              schema: toOpenApiSchema(ListCapabilitiesResponseSchema),
-            },
-          },
-        },
+              schema: toOpenApiSchema(ListCapabilitiesResponseSchema)
+            }
+          }
+        }
       })
       .get("/v1/system/plugins/:pluginId", this.getInstalledPlugin, {
         middlewares: guardedMiddlewares,
@@ -325,14 +296,14 @@ export class KernelSystemHttpController extends HttpController {
                 s.object(
                   {
                     data: KernelInstalledPluginSchema,
-                    meta: KernelSystemMetaSchema.optional(),
+                    meta: KernelSystemMetaSchema.optional()
                   },
-                  { strict: true },
-                ),
-              ),
-            },
-          },
-        },
+                  { strict: true }
+                )
+              )
+            }
+          }
+        }
       })
       .post("/v1/system/plugins/:pluginId/operations", this.executePluginOperation, {
         middlewares: guardedMiddlewares,
@@ -343,15 +314,15 @@ export class KernelSystemHttpController extends HttpController {
           ...(guardedSecurity ? { security: guardedSecurity } : {}),
           requestBody: {
             required: true,
-            schema: toOpenApiSchema(PluginOperationRequestSchema),
+            schema: toOpenApiSchema(PluginOperationRequestSchema)
           },
           responses: {
             200: {
               description: "Plugin operation result",
-              schema: toOpenApiSchema(PluginOperationResponseSchema),
-            },
-          },
-        },
+              schema: toOpenApiSchema(PluginOperationResponseSchema)
+            }
+          }
+        }
       })
       .get("/v1/system/plugins/:pluginId/events", this.listPluginEvents, {
         middlewares: guardedMiddlewares,
@@ -363,10 +334,10 @@ export class KernelSystemHttpController extends HttpController {
           responses: {
             200: {
               description: "Recent plugin lifecycle events",
-              schema: toOpenApiSchema(PluginEventsResponseSchema),
-            },
-          },
-        },
+              schema: toOpenApiSchema(PluginEventsResponseSchema)
+            }
+          }
+        }
       })
       .build();
   }
@@ -428,30 +399,24 @@ export class KernelSystemHttpController extends HttpController {
     const details = {
       ...(hasErrorDetails(error) ? error.details : {}),
       ...(snapshot ? { plugin: snapshot } : {}),
-      ...(recentEvents.length > 0 ? { recentEvents } : {}),
+      ...(recentEvents.length > 0 ? { recentEvents } : {})
     };
 
-    if (
-      error instanceof PluginStateTransitionError ||
-      error instanceof PluginDependencyError
-    ) {
+    if (error instanceof PluginStateTransitionError || error instanceof PluginDependencyError) {
       return response(
         apiError("plugin_operation_not_allowed", error.message, details, {
-          pluginId: "kernel",
+          pluginId: "kernel"
         }),
-        { status: 409 },
+        { status: 409 }
       );
     }
 
-    if (
-      error instanceof PluginRuntimeError ||
-      error instanceof PluginLifecycleError
-    ) {
+    if (error instanceof PluginRuntimeError || error instanceof PluginLifecycleError) {
       return response(
         apiError("plugin_operation_failed", error.message, details, {
-          pluginId: "kernel",
+          pluginId: "kernel"
         }),
-        { status: 409 },
+        { status: 409 }
       );
     }
 
@@ -459,8 +424,6 @@ export class KernelSystemHttpController extends HttpController {
   }
 }
 
-function hasErrorDetails(
-  error: unknown,
-): error is { details?: Record<string, unknown> } {
+function hasErrorDetails(error: unknown): error is { details?: Record<string, unknown> } {
   return Boolean(error && typeof error === "object" && "details" in error);
 }

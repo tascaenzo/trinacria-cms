@@ -1,10 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {
-  isValidVersion,
-  isValidVersionRange,
-  satisfiesVersion,
-} from "../src/runtime/semver.js";
+import { isValidVersion, isValidVersionRange, satisfiesVersion } from "../src/runtime/semver.js";
 
 test("isValidVersion validates strict semver", () => {
   assert.equal(isValidVersion("1.2.3"), true);

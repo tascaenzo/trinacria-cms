@@ -1,8 +1,4 @@
-import type {
-  HTMLAttributes,
-  LabelHTMLAttributes,
-  PropsWithChildren,
-} from "react";
+import type { HTMLAttributes, LabelHTMLAttributes, PropsWithChildren } from "react";
 import { cn } from "../../../utils/class-names.js";
 
 export function FieldGroup({
@@ -65,7 +61,10 @@ export function FieldHint({
   ...props
 }: PropsWithChildren<HTMLAttributes<HTMLParagraphElement>>) {
   return (
-    <p className={cn("text-xs leading-5 text-[color:var(--color-ink-subtle)]", className)} {...props}>
+    <p
+      className={cn("text-xs leading-5 text-[color:var(--color-ink-subtle)]", className)}
+      {...props}
+    >
       {children}
     </p>
   );
@@ -77,7 +76,10 @@ export function FieldError({
   ...props
 }: PropsWithChildren<HTMLAttributes<HTMLParagraphElement>>) {
   return (
-    <p className={cn("text-xs leading-5 text-[color:var(--color-danger-ink)]", className)} {...props}>
+    <p
+      className={cn("text-xs leading-5 text-[color:var(--color-danger-ink)]", className)}
+      {...props}
+    >
       {children}
     </p>
   );

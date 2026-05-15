@@ -1,13 +1,6 @@
-import {
-  createPluginDbScope,
-  type DbAdapter,
-  type PluginDbScope,
-} from "@trinacria-cms/kernel";
+import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
-import {
-  SettingSecretRecordSchema,
-  type SettingSecretRecord,
-} from "../settings.schemas.js";
+import { SettingSecretRecordSchema, type SettingSecretRecord } from "../settings.schemas.js";
 
 const SETTINGS_ENTITY_NAME = "settings";
 const SECRET_KIND = "secret" as const;
@@ -49,14 +42,14 @@ export class SettingsSecretsRepository {
         keyVersion: input.keyVersion,
         ...(input.updatedBy?.trim() ? { updatedBy: input.updatedBy.trim() } : {}),
         createdAt: now,
-        updatedAt: now,
+        updatedAt: now
       });
       return this.parseRecord(created);
     }
 
     if (existing.ownerPluginId !== normalizedOwner) {
       throw new Error(
-        `Setting secret "${normalizedKey}" is owned by plugin "${existing.ownerPluginId}"`,
+        `Setting secret "${normalizedKey}" is owned by plugin "${existing.ownerPluginId}"`
       );
     }
 
@@ -69,8 +62,8 @@ export class SettingsSecretsRepository {
         algorithm: input.algorithm,
         keyVersion: input.keyVersion,
         ...(input.updatedBy?.trim() ? { updatedBy: input.updatedBy.trim() } : {}),
-        updatedAt: now,
-      },
+        updatedAt: now
+      }
     );
 
     if (!updated) {
@@ -83,7 +76,7 @@ export class SettingsSecretsRepository {
   async findByKey(key: string): Promise<SettingSecretRecord | null> {
     return this.repository().findOne({
       filter: { key: key.trim().toLowerCase(), kind: SECRET_KIND },
-      parse: (value: unknown) => this.parseRecord(value),
+      parse: (value: unknown) => this.parseRecord(value)
     });
   }
 
@@ -91,10 +84,10 @@ export class SettingsSecretsRepository {
     return this.repository().findMany({
       filter: {
         ownerPluginId: ownerPluginId.trim().toLowerCase(),
-        kind: SECRET_KIND,
+        kind: SECRET_KIND
       },
       sort: { createdAt: "asc" },
-      parse: (value: unknown) => this.parseRecord(value),
+      parse: (value: unknown) => this.parseRecord(value)
     });
   }
 

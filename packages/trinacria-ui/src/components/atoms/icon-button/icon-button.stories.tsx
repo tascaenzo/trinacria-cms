@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { IconButton } from "./icon-button.js";
 
-const meta = { title: "Actions/Buttons/IconButton", component: IconButton } satisfies Meta<typeof IconButton>;
+const meta = { title: "Actions/Buttons/IconButton", component: IconButton } satisfies Meta<
+  typeof IconButton
+>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 
@@ -13,7 +15,7 @@ export const Variants: Story = {
       <IconButton icon="refresh-cw" label="Refresh list" variant="outline" />
       <IconButton icon="trash-2" label="Delete item" variant="ghost" />
     </div>
-  ),
+  )
 };
 
 export const Sizes: Story = {
@@ -24,5 +26,5 @@ export const Sizes: Story = {
       <IconButton icon="search" label="Search" size="lg" variant="outline" />
       <IconButton icon="loader-circle" label="Loading" isLoading />
     </div>
-  ),
+  )
 };

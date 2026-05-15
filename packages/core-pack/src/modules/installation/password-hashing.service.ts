@@ -17,16 +17,12 @@ export interface PasswordHashResult {
 export class PasswordHashingService {
   async hashPassword(password: string): Promise<PasswordHashResult> {
     const salt = randomBytes(16).toString("base64");
-    const derived = (await scrypt(
-      password,
-      salt,
-      DERIVED_KEY_LENGTH,
-    )) as Buffer;
+    const derived = (await scrypt(password, salt, DERIVED_KEY_LENGTH)) as Buffer;
 
     return {
       algorithm: "scrypt-v1",
       passwordHash: derived.toString("base64"),
-      passwordSalt: salt,
+      passwordSalt: salt
     };
   }
 
@@ -36,17 +32,13 @@ export class PasswordHashingService {
       algorithm: "scrypt-v1";
       passwordHash: string;
       passwordSalt: string;
-    },
+    }
   ): Promise<boolean> {
     if (credential.algorithm !== "scrypt-v1") {
       throw new Error(`Unsupported password algorithm "${credential.algorithm}"`);
     }
 
-    const derived = (await scrypt(
-      password,
-      credential.passwordSalt,
-      DERIVED_KEY_LENGTH,
-    )) as Buffer;
+    const derived = (await scrypt(password, credential.passwordSalt, DERIVED_KEY_LENGTH)) as Buffer;
     const expected = Buffer.from(credential.passwordHash, "base64");
     if (expected.length !== derived.length) {
       return false;
@@ -54,4 +46,3 @@ export class PasswordHashingService {
     return timingSafeEqual(expected, derived);
   }
 }
-

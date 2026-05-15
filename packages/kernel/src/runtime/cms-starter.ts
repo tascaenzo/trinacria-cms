@@ -4,17 +4,13 @@ import {
   factoryProvider,
   TrinacriaApp,
   valueProvider,
-  type ModuleDefinition,
+  type ModuleDefinition
 } from "@trinacria/core";
-import {
-  createHttpPlugin,
-  httpProvider,
-  type OpenApiDocument,
-} from "@trinacria/http";
+import { createHttpPlugin, httpProvider, type OpenApiDocument } from "@trinacria/http";
 import type {
   CmsSwaggerUiConfig,
   CmsStarterHandle,
-  CmsStarterOptions,
+  CmsStarterOptions
 } from "../contracts/cms-starter.js";
 import type { KernelAdminRouteGuard } from "../contracts/kernel-admin-route-guard.js";
 import type { PluginRuntime } from "../contracts/plugin-runtime.js";
@@ -25,7 +21,7 @@ import { InMemoryPluginRuntime } from "./in-memory-plugin-runtime.js";
 import {
   createDbPluginRuntimeStore,
   createDeferredPluginRuntimeStore,
-  createInMemoryPluginRuntimeStore,
+  createInMemoryPluginRuntimeStore
 } from "./plugin-runtime-store.js";
 import { CORE_TOKENS } from "../tokens/core-tokens.js";
 import { KernelHealthService } from "./kernel-health-service.js";
@@ -37,34 +33,28 @@ import { CmsSwaggerController } from "../http/cms-swagger.controller.js";
 import { KernelSystemService } from "./kernel-system-service.js";
 
 const CMS_STARTER_SWAGGER_CONFIG_TOKEN = createToken<CmsSwaggerUiConfig>(
-  "CMS_STARTER_SWAGGER_CONFIG",
+  "CMS_STARTER_SWAGGER_CONFIG"
 );
 const CMS_STARTER_SWAGGER_CONTROLLER = createToken<CmsSwaggerController>(
-  "CMS_STARTER_SWAGGER_CONTROLLER",
+  "CMS_STARTER_SWAGGER_CONTROLLER"
 );
-const CMS_STARTER_KERNEL_ADMIN_ROUTE_GUARD = createToken<
-  KernelAdminRouteGuard | null
->("CMS_STARTER_KERNEL_ADMIN_ROUTE_GUARD");
+const CMS_STARTER_KERNEL_ADMIN_ROUTE_GUARD = createToken<KernelAdminRouteGuard | null>(
+  "CMS_STARTER_KERNEL_ADMIN_ROUTE_GUARD"
+);
 
 /**
  * Starts a minimal CMS app with HTTP plugin, runtime token wiring, optional modules,
  * and optional plugin registration/autoload.
  */
-export async function startCmsApp(
-  options: CmsStarterOptions,
-): Promise<CmsStarterHandle> {
+export async function startCmsApp(options: CmsStarterOptions): Promise<CmsStarterHandle> {
   const app = new TrinacriaApp();
   const swaggerUi: CmsSwaggerUiConfig = {
     enabled: options.swaggerUi?.enabled ?? true,
     path: options.swaggerUi?.path ?? "/docs",
     openApiJsonPath: options.swaggerUi?.openApiJsonPath ?? "/openapi.json",
-    title:
-      options.swaggerUi?.title ??
-      options.http?.openApi?.title ??
-      "Trinacria CMS API Docs",
+    title: options.swaggerUi?.title ?? options.http?.openApi?.title ?? "Trinacria CMS API Docs"
   };
-  const securityProvisioningEnabled =
-    options.enablePluginSecurityProvisioning !== false;
+  const securityProvisioningEnabled = options.enablePluginSecurityProvisioning !== false;
   const openApiConfig = options.http?.openApi;
 
   app.use(
@@ -83,9 +73,9 @@ export async function startCmsApp(
             },
             onDocumentGenerated: (document) => {
               openApiConfig.onDocumentGenerated?.(document);
-            },
-          },
-    }),
+            }
+          }
+    })
   );
 
   const starterModule = defineModule({
@@ -97,7 +87,7 @@ export async function startCmsApp(
         () =>
           options.pluginRuntimeStore ??
           createDeferredPluginRuntimeStore(() => resolveDefaultRuntimeStore(app)),
-        [],
+        []
       ),
       factoryProvider(
         CORE_TOKENS.PLUGIN_RUNTIME,
@@ -114,7 +104,7 @@ export async function startCmsApp(
                   if (hasSecurityDeclarations(context.manifest)) {
                     throw new CoreError(
                       "CMS_STARTER_SECURITY_PROVISIONER_MISSING",
-                      `Plugin "${context.pluginId}" declares security metadata but no PluginSecurityProvisioner is available`,
+                      `Plugin "${context.pluginId}" declares security metadata but no PluginSecurityProvisioner is available`
                     );
                   }
                   return;
@@ -126,10 +116,10 @@ export async function startCmsApp(
                 const provisioner = await resolvePluginSecurityProvisioner(app);
                 if (!provisioner) return;
                 await provisioner.deprovision(context.manifest);
-              },
-            },
+              }
+            }
           }),
-        [CORE_TOKENS.PLUGIN_RUNTIME_STORE],
+        [CORE_TOKENS.PLUGIN_RUNTIME_STORE]
       ),
       ...(options.enableHealthModule === false
         ? []
@@ -145,50 +135,38 @@ export async function startCmsApp(
                     }
                     const dbAdapter = await app.resolve(CORE_TOKENS.DB_ADAPTER);
                     return dbAdapter.healthCheck();
-                  },
+                  }
                 }),
-              [CORE_TOKENS.PLUGIN_RUNTIME],
+              [CORE_TOKENS.PLUGIN_RUNTIME]
             ),
-            httpProvider(
-              KERNEL_HEALTH_HTTP_CONTROLLER,
-              KernelHealthHttpController,
-              [CORE_TOKENS.KERNEL_HEALTH_SERVICE],
-            ),
+            httpProvider(KERNEL_HEALTH_HTTP_CONTROLLER, KernelHealthHttpController, [
+              CORE_TOKENS.KERNEL_HEALTH_SERVICE
+            ]),
             factoryProvider(
               CORE_TOKENS.KERNEL_SYSTEM_SERVICE,
               (runtime) => new KernelSystemService(runtime as PluginRuntime),
-              [CORE_TOKENS.PLUGIN_RUNTIME],
+              [CORE_TOKENS.PLUGIN_RUNTIME]
             ),
-            factoryProvider(
-              CMS_STARTER_KERNEL_ADMIN_ROUTE_GUARD,
-              async () => {
-                if (!app.hasToken(CORE_TOKENS.KERNEL_ADMIN_ROUTE_GUARD)) {
-                  return null;
-                }
+            factoryProvider(CMS_STARTER_KERNEL_ADMIN_ROUTE_GUARD, async () => {
+              if (!app.hasToken(CORE_TOKENS.KERNEL_ADMIN_ROUTE_GUARD)) {
+                return null;
+              }
 
-                return app.resolve<KernelAdminRouteGuard>(
-                  CORE_TOKENS.KERNEL_ADMIN_ROUTE_GUARD,
-                );
-              },
-              [],
-            ),
-            httpProvider(
-              KERNEL_SYSTEM_HTTP_CONTROLLER,
-              KernelSystemHttpController,
-              [
-                CORE_TOKENS.KERNEL_SYSTEM_SERVICE,
-                CMS_STARTER_KERNEL_ADMIN_ROUTE_GUARD,
-              ],
-            ),
+              return app.resolve<KernelAdminRouteGuard>(CORE_TOKENS.KERNEL_ADMIN_ROUTE_GUARD);
+            }, []),
+            httpProvider(KERNEL_SYSTEM_HTTP_CONTROLLER, KernelSystemHttpController, [
+              CORE_TOKENS.KERNEL_SYSTEM_SERVICE,
+              CMS_STARTER_KERNEL_ADMIN_ROUTE_GUARD
+            ])
           ]),
       ...(swaggerUi.enabled === false
         ? []
         : [
             valueProvider(CMS_STARTER_SWAGGER_CONFIG_TOKEN, swaggerUi),
             httpProvider(CMS_STARTER_SWAGGER_CONTROLLER, CmsSwaggerController, [
-              CMS_STARTER_SWAGGER_CONFIG_TOKEN,
-            ]),
-          ]),
+              CMS_STARTER_SWAGGER_CONFIG_TOKEN
+            ])
+          ])
     ],
     exports: [
       CORE_TOKENS.PLUGIN_RUNTIME_STORE,
@@ -199,10 +177,10 @@ export async function startCmsApp(
             CORE_TOKENS.KERNEL_HEALTH_SERVICE,
             KERNEL_HEALTH_HTTP_CONTROLLER,
             CORE_TOKENS.KERNEL_SYSTEM_SERVICE,
-            KERNEL_SYSTEM_HTTP_CONTROLLER,
+            KERNEL_SYSTEM_HTTP_CONTROLLER
           ]),
-      ...(swaggerUi.enabled === false ? [] : [CMS_STARTER_SWAGGER_CONTROLLER]),
-    ],
+      ...(swaggerUi.enabled === false ? [] : [CMS_STARTER_SWAGGER_CONTROLLER])
+    ]
   });
 
   await app.registerModule(starterModule);
@@ -225,13 +203,11 @@ export async function startCmsApp(
     runtime,
     shutdown: async () => {
       await app.shutdown();
-    },
+    }
   };
 }
 
-async function resolveDefaultRuntimeStore(
-  app: TrinacriaApp,
-): Promise<PluginRuntimeStore> {
+async function resolveDefaultRuntimeStore(app: TrinacriaApp): Promise<PluginRuntimeStore> {
   if (!app.hasToken(CORE_TOKENS.DB_ADAPTER)) {
     return createInMemoryPluginRuntimeStore();
   }
@@ -243,24 +219,26 @@ async function resolveDefaultRuntimeStore(
 
   return createDbPluginRuntimeStore({
     dbAdapter,
-    entityRegistry,
+    entityRegistry
   });
 }
 
 async function resolvePluginSecurityProvisioner(
-  app: TrinacriaApp,
+  app: TrinacriaApp
 ): Promise<PluginSecurityProvisioner | null> {
   if (!app.hasToken(CORE_TOKENS.PLUGIN_SECURITY_PROVISIONER)) {
     return null;
   }
-  return app.resolve<PluginSecurityProvisioner>(
-    CORE_TOKENS.PLUGIN_SECURITY_PROVISIONER,
-  );
+  return app.resolve<PluginSecurityProvisioner>(CORE_TOKENS.PLUGIN_SECURITY_PROVISIONER);
 }
 
-function hasSecurityDeclarations(
-  manifest: { security?: { permissions?: readonly unknown[]; roles?: readonly unknown[]; grants?: readonly unknown[] } },
-): boolean {
+function hasSecurityDeclarations(manifest: {
+  security?: {
+    permissions?: readonly unknown[];
+    roles?: readonly unknown[];
+    grants?: readonly unknown[];
+  };
+}): boolean {
   return (
     (manifest.security?.permissions?.length ?? 0) > 0 ||
     (manifest.security?.roles?.length ?? 0) > 0 ||
@@ -270,22 +248,17 @@ function hasSecurityDeclarations(
 
 async function registerAppModules(
   app: TrinacriaApp,
-  modules: readonly ModuleDefinition[],
+  modules: readonly ModuleDefinition[]
 ): Promise<void> {
   for (const moduleDefinition of modules) {
     if (!moduleDefinition || typeof moduleDefinition !== "object") {
-      throw new CoreError(
-        "CMS_STARTER_INVALID_MODULE",
-        "Invalid module provided to CMS starter",
-      );
+      throw new CoreError("CMS_STARTER_INVALID_MODULE", "Invalid module provided to CMS starter");
     }
     await app.registerModule(moduleDefinition);
   }
 }
 
-function withJwtBearerSecurityScheme(
-  document: OpenApiDocument,
-): OpenApiDocument {
+function withJwtBearerSecurityScheme(document: OpenApiDocument): OpenApiDocument {
   const components =
     document.components && typeof document.components === "object"
       ? (document.components as Record<string, unknown>)
@@ -305,16 +278,16 @@ function withJwtBearerSecurityScheme(
           type: "http",
           scheme: "bearer",
           bearerFormat: "JWT",
-          description: "Paste access token as `Bearer <token>`",
+          description: "Paste access token as `Bearer <token>`"
         },
         pluginCallerAuth: {
           type: "apiKey",
           in: "header",
           name: "x-cms-plugin-signature",
           description:
-            "Signed plugin caller flow. Requests also require x-cms-plugin-id, x-cms-plugin-ts, and x-cms-plugin-nonce headers.",
-        },
-      },
-    },
+            "Signed plugin caller flow. Requests also require x-cms-plugin-id, x-cms-plugin-ts, and x-cms-plugin-nonce headers."
+        }
+      }
+    }
   };
 }

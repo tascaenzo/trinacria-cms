@@ -12,7 +12,7 @@ export class CoreError extends Error {
     options?: {
       cause?: unknown;
       details?: Record<string, unknown>;
-    },
+    }
   ) {
     super(message, options?.cause ? { cause: options.cause } : undefined);
     this.name = new.target.name;

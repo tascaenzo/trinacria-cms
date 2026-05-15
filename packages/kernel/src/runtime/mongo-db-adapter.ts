@@ -1,16 +1,8 @@
-import type {
-  DbAdapter,
-  DbQuery,
-  DbRepository,
-  DbTransaction,
-} from "../contracts/db-adapter.js";
+import type { DbAdapter, DbQuery, DbRepository, DbTransaction } from "../contracts/db-adapter.js";
 import type { NamespaceContext } from "../contracts/namespace-context.js";
 import { buildNamespaceKey } from "../contracts/namespace-context.js";
 import { DbAdapterError } from "../errors/db-errors.js";
-import {
-  EntityRegistry,
-  type EntityIndexDefinition,
-} from "./entity-registry.js";
+import { EntityRegistry, type EntityIndexDefinition } from "./entity-registry.js";
 
 interface MongoSessionLike {
   startTransaction?(): void;
@@ -29,29 +21,23 @@ interface MongoCursorLike<TData> {
 interface MongoCollectionLike<TData> {
   findOne(
     filter?: Record<string, unknown>,
-    options?: Record<string, unknown>,
+    options?: Record<string, unknown>
   ): Promise<TData | null>;
-  find(
-    filter?: Record<string, unknown>,
-    options?: Record<string, unknown>,
-  ): MongoCursorLike<TData>;
-  insertOne(
-    document: TData,
-    options?: Record<string, unknown>,
-  ): Promise<{ insertedId?: unknown }>;
+  find(filter?: Record<string, unknown>, options?: Record<string, unknown>): MongoCursorLike<TData>;
+  insertOne(document: TData, options?: Record<string, unknown>): Promise<{ insertedId?: unknown }>;
   findOneAndUpdate(
     filter: Record<string, unknown>,
     patch: Partial<TData> | Record<string, unknown>,
-    options?: Record<string, unknown>,
+    options?: Record<string, unknown>
   ): Promise<{ value: TData | null } | TData | null>;
   updateOne(
     filter: Record<string, unknown>,
     patch: Partial<TData> | Record<string, unknown>,
-    options?: Record<string, unknown>,
+    options?: Record<string, unknown>
   ): Promise<unknown>;
   deleteOne(
     filter: Record<string, unknown>,
-    options?: Record<string, unknown>,
+    options?: Record<string, unknown>
   ): Promise<{ deletedCount?: number }>;
   createIndexes?(
     indexes: Array<{
@@ -59,7 +45,7 @@ interface MongoCollectionLike<TData> {
       unique?: boolean;
       sparse?: boolean;
       name?: string;
-    }>,
+    }>
   ): Promise<unknown>;
 }
 
@@ -98,10 +84,7 @@ class MongoDbTransaction implements DbTransaction {
 export class MongoDbAdapter implements DbAdapter {
   constructor(private readonly options: MongoDbAdapterOptions) {}
 
-  repository<TData = unknown>(
-    entityName: string,
-    context: NamespaceContext,
-  ): DbRepository<TData> {
+  repository<TData = unknown>(entityName: string, context: NamespaceContext): DbRepository<TData> {
     const collection = this.resolveCollection<TData>(entityName, context);
     return this.createRepository(collection, context, entityName);
   }
@@ -120,7 +103,7 @@ export class MongoDbAdapter implements DbAdapter {
     } catch (error) {
       return {
         ok: false,
-        reason: error instanceof Error ? error.message : String(error),
+        reason: error instanceof Error ? error.message : String(error)
       };
     }
   }
@@ -128,10 +111,7 @@ export class MongoDbAdapter implements DbAdapter {
   /**
    * Ensures declared indexes exist for selected entities in a plugin namespace.
    */
-  async ensureIndexes(
-    pluginId: string,
-    entityNames: readonly string[],
-  ): Promise<void> {
+  async ensureIndexes(pluginId: string, entityNames: readonly string[]): Promise<void> {
     for (const entityName of entityNames) {
       const definition = this.options.entityRegistry.get(entityName);
       const collection = this.resolveCollection(entityName, { pluginId });
@@ -143,7 +123,7 @@ export class MongoDbAdapter implements DbAdapter {
 
   private resolveCollection<TData = unknown>(
     entityName: string,
-    context: NamespaceContext,
+    context: NamespaceContext
   ): MongoCollectionLike<TData> {
     this.options.entityRegistry.get(entityName);
     const collectionName = this.buildCollectionName(context, entityName);
@@ -154,19 +134,13 @@ export class MongoDbAdapter implements DbAdapter {
     collection: MongoCollectionLike<TData>,
     context: NamespaceContext,
     entityName: string,
-    options: InternalRepositoryOptions = {},
+    options: InternalRepositoryOptions = {}
   ): DbRepository<TData> {
     return {
       findOne: async (query) => {
-        const found = await collection.findOne(
-          query.filter ?? {},
-          toReadOptions(query, options),
-        );
+        const found = await collection.findOne(query.filter ?? {}, toReadOptions(query, options));
         if (!found) return null;
-        return this.applyParser(
-          query,
-          this.normalizeReadRecord(found, context, entityName),
-        );
+        return this.applyParser(query, this.normalizeReadRecord(found, context, entityName));
       },
 
       findMany: async (query) => {
@@ -182,10 +156,7 @@ export class MongoDbAdapter implements DbAdapter {
         }
         const values = await cursor.toArray();
         return values.map((value) =>
-          this.applyParser(
-            query,
-            this.normalizeReadRecord(value, context, entityName),
-          ),
+          this.applyParser(query, this.normalizeReadRecord(value, context, entityName))
         );
       },
 
@@ -199,10 +170,8 @@ export class MongoDbAdapter implements DbAdapter {
           document.id = this.buildCanonicalId(context.pluginId, entityName, storageId);
           await collection.updateOne(
             { _id: storageId },
-            toMongoUpdateDocument(
-              { id: document.id } as unknown as Partial<TData>,
-            ),
-            toWriteOptions(options),
+            toMongoUpdateDocument({ id: document.id } as unknown as Partial<TData>),
+            toWriteOptions(options)
           );
         }
 
@@ -215,24 +184,18 @@ export class MongoDbAdapter implements DbAdapter {
           toMongoUpdateDocument(patch),
           {
             returnDocument: "after",
-            ...toWriteOptions(options),
-          },
+            ...toWriteOptions(options)
+          }
         );
         const updatedValue = extractFindOneAndUpdateValue(result);
         if (!updatedValue) return null;
-        return this.applyParser(
-          query,
-          this.normalizeReadRecord(updatedValue, context, entityName),
-        );
+        return this.applyParser(query, this.normalizeReadRecord(updatedValue, context, entityName));
       },
 
       deleteOne: async (query) => {
-        const outcome = await collection.deleteOne(
-          query.filter ?? {},
-          toWriteOptions(options),
-        );
+        const outcome = await collection.deleteOne(query.filter ?? {}, toWriteOptions(options));
         return (outcome.deletedCount ?? 0) > 0;
-      },
+      }
     };
   }
 
@@ -265,22 +228,22 @@ export class MongoDbAdapter implements DbAdapter {
 
   private normalizeInsertPayload<TData>(
     data: Partial<TData>,
-    _context: NamespaceContext,
+    _context: NamespaceContext
   ): Record<string, unknown> {
     const record = this.asRecord(data);
     return {
-      ...record,
+      ...record
     };
   }
 
   private normalizeReadRecord(
     value: unknown,
     context: NamespaceContext,
-    entityName: string,
+    entityName: string
   ): unknown {
     const record = this.asRecord(value);
     const normalized: Record<string, unknown> = {
-      ...record,
+      ...record
     };
 
     const storageId = record._id;
@@ -299,11 +262,7 @@ export class MongoDbAdapter implements DbAdapter {
     return value as Record<string, unknown>;
   }
 
-  private buildCanonicalId(
-    pluginId: string,
-    entityName: string,
-    storageId: unknown,
-  ): string {
+  private buildCanonicalId(pluginId: string, entityName: string, storageId: unknown): string {
     return `${pluginId}:${entityName}:${String(storageId)}`;
   }
 }
@@ -315,14 +274,9 @@ export function createMongoDbAdapter(options: MongoDbAdapterOptions): MongoDbAda
   return new MongoDbAdapter(options);
 }
 
-function toMongoSort(
-  sort: Record<string, "asc" | "desc">,
-): Record<string, 1 | -1> {
+function toMongoSort(sort: Record<string, "asc" | "desc">): Record<string, 1 | -1> {
   return Object.fromEntries(
-    Object.entries(sort).map(([field, direction]) => [
-      field,
-      direction === "asc" ? 1 : -1,
-    ]),
+    Object.entries(sort).map(([field, direction]) => [field, direction === "asc" ? 1 : -1])
   );
 }
 
@@ -334,16 +288,14 @@ function sanitizeIdentifier(value: string): string {
     .replace(/^_+|_+$/g, "");
 }
 
-function toWriteOptions(
-  options: InternalRepositoryOptions,
-): Record<string, unknown> | undefined {
+function toWriteOptions(options: InternalRepositoryOptions): Record<string, unknown> | undefined {
   if (!options.session) return undefined;
   return { session: options.session };
 }
 
 function toReadOptions(
   query: DbQuery<unknown>,
-  options: InternalRepositoryOptions,
+  options: InternalRepositoryOptions
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   if (query.projection) {
@@ -367,7 +319,7 @@ function toMongoIndex(index: EntityIndexDefinition): {
     sparse?: boolean;
     name?: string;
   } = {
-    key: index.fields,
+    key: index.fields
   };
   if (index.unique !== undefined) {
     mapped.unique = index.unique;
@@ -382,7 +334,7 @@ function toMongoIndex(index: EntityIndexDefinition): {
 }
 
 function toMongoUpdateDocument<TData>(
-  patch: Partial<TData>,
+  patch: Partial<TData>
 ): Partial<TData> | { $set: Partial<TData> } {
   const keys = Object.keys(patch as Record<string, unknown>);
   if (keys.length === 0) return patch;
@@ -391,7 +343,7 @@ function toMongoUpdateDocument<TData>(
 }
 
 function extractFindOneAndUpdateValue<TData>(
-  value: { value: TData | null } | TData | null,
+  value: { value: TData | null } | TData | null
 ): TData | null {
   if (value === null) return null;
   if (typeof value !== "object" || Array.isArray(value)) {

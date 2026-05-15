@@ -102,17 +102,17 @@ Un admin umano puo consultare le viste aggregate utili nel backoffice, ma non pu
 
 ## Matrice attori -> operazioni
 
-| Operazione | Backoffice admin umano | Plugin owner signed | Integrazione non-owner | Note |
-| --- | --- | --- | --- | --- |
-| Leggere elenco definizioni | si | si | si | Superficie documentale/operativa |
-| Leggere dettaglio definizione | si | si | si | Nessun plaintext sensibile |
-| Leggere valore risolto non-secret | si | si | si | Utile per debugging operativo |
-| Leggere metadata secret mascherati | si, ma senza plaintext | si | no | Il non-owner non deve enumerare metadata sensibili di terzi |
-| Reveal secret | no | si | no | Solo owner signed |
-| Scrivere definizione | no in modo diretto | si | no | Eventuale UX admin solo brokerizzata |
-| Scrivere valore non-secret | no in modo diretto | si | no | Eventuale UX admin solo brokerizzata |
-| Scrivere secret | no in modo diretto | si | no | Sempre owner signed |
-| Export snapshot plugin | no in modo diretto | si, solo per il proprio plugin | no | Nessun export cross-plugin |
+| Operazione                         | Backoffice admin umano | Plugin owner signed            | Integrazione non-owner | Note                                                        |
+| ---------------------------------- | ---------------------- | ------------------------------ | ---------------------- | ----------------------------------------------------------- |
+| Leggere elenco definizioni         | si                     | si                             | si                     | Superficie documentale/operativa                            |
+| Leggere dettaglio definizione      | si                     | si                             | si                     | Nessun plaintext sensibile                                  |
+| Leggere valore risolto non-secret  | si                     | si                             | si                     | Utile per debugging operativo                               |
+| Leggere metadata secret mascherati | si, ma senza plaintext | si                             | no                     | Il non-owner non deve enumerare metadata sensibili di terzi |
+| Reveal secret                      | no                     | si                             | no                     | Solo owner signed                                           |
+| Scrivere definizione               | no in modo diretto     | si                             | no                     | Eventuale UX admin solo brokerizzata                        |
+| Scrivere valore non-secret         | no in modo diretto     | si                             | no                     | Eventuale UX admin solo brokerizzata                        |
+| Scrivere secret                    | no in modo diretto     | si                             | no                     | Sempre owner signed                                         |
+| Export snapshot plugin             | no in modo diretto     | si, solo per il proprio plugin | no                     | Nessun export cross-plugin                                  |
 
 ## Implicazioni architetturali
 

@@ -62,7 +62,7 @@ export function DateTimePicker({
     error,
     errorId: ids.errorId,
     hint,
-    hintId: ids.hintId,
+    hintId: ids.hintId
   });
 
   function update(date: string, time: string) {
@@ -111,8 +111,16 @@ export function DateTimePicker({
           {formatDateTimeLabel(currentValue)}
         </span>
       ) : null}
-      {error ? <span id={ids.errorId} className="text-xs leading-5 text-[color:var(--color-danger-ink)]">{error}</span> : null}
-      {hint ? <span id={ids.hintId} className="text-xs leading-5 text-[color:var(--color-ink-subtle)]">{hint}</span> : null}
+      {error ? (
+        <span id={ids.errorId} className="text-xs leading-5 text-[color:var(--color-danger-ink)]">
+          {error}
+        </span>
+      ) : null}
+      {hint ? (
+        <span id={ids.hintId} className="text-xs leading-5 text-[color:var(--color-ink-subtle)]">
+          {hint}
+        </span>
+      ) : null}
     </div>
   );
 }

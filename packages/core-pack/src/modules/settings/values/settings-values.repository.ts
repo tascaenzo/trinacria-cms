@@ -1,13 +1,6 @@
-import {
-  createPluginDbScope,
-  type DbAdapter,
-  type PluginDbScope,
-} from "@trinacria-cms/kernel";
+import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
-import {
-  SettingValueRecordSchema,
-  type SettingValueRecord,
-} from "../settings.schemas.js";
+import { SettingValueRecordSchema, type SettingValueRecord } from "../settings.schemas.js";
 
 const SETTINGS_ENTITY_NAME = "settings";
 const VALUE_KIND = "value" as const;
@@ -42,14 +35,14 @@ export class SettingsValuesRepository {
         version: 1,
         ...(input.updatedBy?.trim() ? { updatedBy: input.updatedBy.trim() } : {}),
         createdAt: now,
-        updatedAt: now,
+        updatedAt: now
       });
       return this.parseRecord(created);
     }
 
     if (existing.ownerPluginId !== normalizedOwner) {
       throw new Error(
-        `Setting value "${normalizedKey}" is owned by plugin "${existing.ownerPluginId}"`,
+        `Setting value "${normalizedKey}" is owned by plugin "${existing.ownerPluginId}"`
       );
     }
 
@@ -59,8 +52,8 @@ export class SettingsValuesRepository {
         valueJson: input.valueJson,
         version: existing.version + 1,
         ...(input.updatedBy?.trim() ? { updatedBy: input.updatedBy.trim() } : {}),
-        updatedAt: now,
-      },
+        updatedAt: now
+      }
     );
 
     if (!updated) {
@@ -73,7 +66,7 @@ export class SettingsValuesRepository {
   async findByKey(key: string): Promise<SettingValueRecord | null> {
     return this.repository().findOne({
       filter: { key: key.trim().toLowerCase(), kind: VALUE_KIND },
-      parse: (value: unknown) => this.parseRecord(value),
+      parse: (value: unknown) => this.parseRecord(value)
     });
   }
 
@@ -81,10 +74,10 @@ export class SettingsValuesRepository {
     return this.repository().findMany({
       filter: {
         ownerPluginId: ownerPluginId.trim().toLowerCase(),
-        kind: VALUE_KIND,
+        kind: VALUE_KIND
       },
       sort: { createdAt: "asc" },
-      parse: (value: unknown) => this.parseRecord(value),
+      parse: (value: unknown) => this.parseRecord(value)
     });
   }
 

@@ -32,7 +32,10 @@ export function translateSystemStateLabel(state: string, t: TranslateFn): string
   }
 }
 
-export function translateToneLabel(tone: "neutral" | "success" | "warning", t: TranslateFn): string {
+export function translateToneLabel(
+  tone: "neutral" | "success" | "warning",
+  t: TranslateFn
+): string {
   switch (tone) {
     case "success":
       return t("common.tone.success");

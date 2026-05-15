@@ -4,26 +4,26 @@ import {
   response,
   toOpenApiSchema,
   type HttpContext,
-  type HttpMiddleware,
+  type HttpMiddleware
 } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import { CORE_PACK_OPENAPI_TAGS } from "../openapi-tags.js";
 import {
   buildLoginSetCookieHeaders,
   buildLogoutClearCookieHeaders,
-  readJwtCookieConfigFromEnv,
+  readJwtCookieConfigFromEnv
 } from "./auth-session.js";
 import {
   createJwtAuthMiddleware,
   extractAuthToken,
-  getAuthenticatedUser,
+  getAuthenticatedUser
 } from "./auth.middleware.js";
 import {
   AuthErrorResponseSchema,
   AuthLogoutResponseSchema,
   AuthMeResponseSchema,
   AuthSessionResponseSchema,
-  LoginWithPasswordInputSchema,
+  LoginWithPasswordInputSchema
 } from "./dto/index.js";
 import type { JwtAuthService } from "./auth.service.js";
 
@@ -39,7 +39,7 @@ export class AuthController extends HttpController {
   constructor(private readonly auth: JwtAuthService) {
     super();
     this.authMiddleware = createJwtAuthMiddleware(this.auth, {
-      requireAdmin: false,
+      requireAdmin: false
     });
   }
 
@@ -52,19 +52,19 @@ export class AuthController extends HttpController {
           operationId: "loginWithPassword",
           requestBody: {
             required: true,
-            schema: toOpenApiSchema(LoginWithPasswordInputSchema),
+            schema: toOpenApiSchema(LoginWithPasswordInputSchema)
           },
           responses: {
             200: {
               description: "Authenticated session token",
-              schema: toOpenApiSchema(AuthSessionResponseSchema),
+              schema: toOpenApiSchema(AuthSessionResponseSchema)
             },
             401: {
               description: "Authentication failed",
-              schema: toOpenApiSchema(AuthErrorResponseSchema),
-            },
-          },
-        },
+              schema: toOpenApiSchema(AuthErrorResponseSchema)
+            }
+          }
+        }
       })
       .get("/v1/auth/me", this.me, {
         middlewares: [this.authMiddleware],
@@ -76,14 +76,14 @@ export class AuthController extends HttpController {
           responses: {
             200: {
               description: "Authenticated user",
-              schema: toOpenApiSchema(AuthMeResponseSchema),
+              schema: toOpenApiSchema(AuthMeResponseSchema)
             },
             401: {
               description: "Authentication failed",
-              schema: toOpenApiSchema(AuthErrorResponseSchema),
-            },
-          },
-        },
+              schema: toOpenApiSchema(AuthErrorResponseSchema)
+            }
+          }
+        }
       })
       .post("/v1/auth/logout", this.logout, {
         middlewares: [this.authMiddleware],
@@ -95,14 +95,14 @@ export class AuthController extends HttpController {
           responses: {
             200: {
               description: "Session revocation result",
-              schema: toOpenApiSchema(AuthLogoutResponseSchema),
+              schema: toOpenApiSchema(AuthLogoutResponseSchema)
             },
             401: {
               description: "Authentication failed",
-              schema: toOpenApiSchema(AuthErrorResponseSchema),
-            },
-          },
-        },
+              schema: toOpenApiSchema(AuthErrorResponseSchema)
+            }
+          }
+        }
       })
       .build();
   }
@@ -113,8 +113,8 @@ export class AuthController extends HttpController {
       const session = await this.auth.loginWithPassword(payload);
       return response(responder.success(session), {
         headers: {
-          "set-cookie": buildLoginSetCookieHeaders(session, this.cookieConfig),
-        },
+          "set-cookie": buildLoginSetCookieHeaders(session, this.cookieConfig)
+        }
       });
     } catch (error) {
       return responder.fromError(error);
@@ -138,8 +138,8 @@ export class AuthController extends HttpController {
       const revoked = await this.auth.revokeBearerToken(token);
       return response(responder.success({ revoked }), {
         headers: {
-          "set-cookie": buildLogoutClearCookieHeaders(this.cookieConfig),
-        },
+          "set-cookie": buildLogoutClearCookieHeaders(this.cookieConfig)
+        }
       });
     } catch (error) {
       return responder.fromError(error);

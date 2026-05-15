@@ -45,7 +45,7 @@ export class InstallationService {
     private readonly users: UsersRepository,
     private readonly userAccess: UserAccessService,
     private readonly securityProvisioning: PluginSecurityProvisioner,
-    private readonly passwordHashing: PasswordHashingService,
+    private readonly passwordHashing: PasswordHashingService
   ) {}
 
   async getStatus(): Promise<InstallationStatus> {
@@ -67,7 +67,7 @@ export class InstallationService {
       userId: adminUser.id,
       algorithm: password.algorithm,
       passwordHash: password.passwordHash,
-      passwordSalt: password.passwordSalt,
+      passwordSalt: password.passwordSalt
     });
 
     await this.userAccess.assignRoleToUser(adminUser.id, CORE_PACK_ADMIN_ROLE.code);
@@ -75,7 +75,7 @@ export class InstallationService {
 
     return {
       status: this.toStatus(installed),
-      adminUser,
+      adminUser
     };
   }
 
@@ -84,7 +84,7 @@ export class InstallationService {
     if (!existing) {
       return this.users.create({
         email: input.email,
-        displayName: input.displayName,
+        displayName: input.displayName
       });
     }
 
@@ -93,7 +93,7 @@ export class InstallationService {
     }
 
     const reactivated = await this.users.updateStatus(existing.id, {
-      status: "active",
+      status: "active"
     });
     if (!reactivated) {
       throw new Error(`User "${existing.id}" disappeared during activation`);
@@ -109,7 +109,7 @@ export class InstallationService {
     return {
       installed: state.installed,
       installedAt: state.installedAt,
-      adminUserId: state.adminUserId,
+      adminUserId: state.adminUserId
     };
   }
 }

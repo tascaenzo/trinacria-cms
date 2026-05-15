@@ -16,6 +16,6 @@ export const CorePackRootModule = defineModule({
     CorePackInstallationModule,
     CorePackUsersModule,
     CorePackSecurityModule,
-    CorePackSettingsModule,
-  ],
+    CorePackSettingsModule
+  ]
 });

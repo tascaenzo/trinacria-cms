@@ -4,7 +4,7 @@ import {
   defineModule,
   factoryProvider,
   httpProvider,
-  type EntityRegistry,
+  type EntityRegistry
 } from "@trinacria-cms/kernel";
 import { CorePackAuthModule } from "../auth/auth.module.js";
 import { CORE_PACK_JWT_AUTH_SERVICE_TOKEN } from "../auth/auth.tokens.js";
@@ -16,7 +16,7 @@ import {
   USERS_CONTROLLER_TOKEN,
   USERS_ENTITY_REGISTRATION_TOKEN,
   USERS_REPOSITORY_TOKEN,
-  USERS_SERVICE_TOKEN,
+  USERS_SERVICE_TOKEN
 } from "./users.tokens.js";
 
 /**
@@ -32,19 +32,19 @@ export const CorePackUsersModule = defineModule({
         (registry as EntityRegistry).register(USERS_ENTITY);
         return true;
       },
-      [CORE_TOKENS.ENTITY_REGISTRY],
+      [CORE_TOKENS.ENTITY_REGISTRY]
     ),
     classProvider(USERS_REPOSITORY_TOKEN, UsersRepository, [CORE_TOKENS.DB_ADAPTER]),
     classProvider(USERS_SERVICE_TOKEN, UsersService, [USERS_REPOSITORY_TOKEN]),
     httpProvider(USERS_CONTROLLER_TOKEN, UsersController, [
       USERS_SERVICE_TOKEN,
-      CORE_PACK_JWT_AUTH_SERVICE_TOKEN,
-    ]),
+      CORE_PACK_JWT_AUTH_SERVICE_TOKEN
+    ])
   ],
   exports: [
     USERS_CONTROLLER_TOKEN,
     USERS_ENTITY_REGISTRATION_TOKEN,
     USERS_REPOSITORY_TOKEN,
-    USERS_SERVICE_TOKEN,
-  ],
+    USERS_SERVICE_TOKEN
+  ]
 });

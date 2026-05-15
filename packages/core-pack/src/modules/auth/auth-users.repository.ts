@@ -1,8 +1,4 @@
-import {
-  createPluginDbScope,
-  type DbAdapter,
-  type PluginDbScope,
-} from "@trinacria-cms/kernel";
+import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import { UserRecordSchema, type UserRecord } from "../users/users.schemas.js";
 
@@ -20,14 +16,14 @@ export class AuthUsersRepository {
   async findById(id: string): Promise<UserRecord | null> {
     return this.repository().findOne({
       filter: { id: id.trim() },
-      parse: (value: unknown) => this.parseUserRecord(value),
+      parse: (value: unknown) => this.parseUserRecord(value)
     });
   }
 
   async findByEmail(email: string): Promise<UserRecord | null> {
     return this.repository().findOne({
       filter: { email: email.trim().toLowerCase() },
-      parse: (value: unknown) => this.parseUserRecord(value),
+      parse: (value: unknown) => this.parseUserRecord(value)
     });
   }
 

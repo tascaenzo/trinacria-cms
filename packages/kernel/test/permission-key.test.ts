@@ -7,7 +7,7 @@ import {
   isValidPermissionPattern,
   matchesPermissionPattern,
   parsePermissionKey,
-  parsePermissionPattern,
+  parsePermissionPattern
 } from "../src/runtime/permission-key.js";
 
 test("permission key parser validates canonical keys", () => {
@@ -33,20 +33,8 @@ test("permission pattern parser validates wildcard patterns", () => {
 
 test("permission ownership and pattern matching helpers work", () => {
   assert.equal(isPermissionOwnedByPlugin("core-pack", "core-pack:users:read"), true);
-  assert.equal(
-    isPermissionPatternOwnedByPlugin("core-pack", "core-pack:users:*"),
-    true,
-  );
-  assert.equal(
-    matchesPermissionPattern("core-pack:users:*", "core-pack:users:write"),
-    true,
-  );
-  assert.equal(
-    matchesPermissionPattern("core-pack:users:read", "core-pack:users:write"),
-    false,
-  );
-  assert.equal(
-    matchesPermissionPattern("core-pack:*:*", "core-pack:settings:write"),
-    true,
-  );
+  assert.equal(isPermissionPatternOwnedByPlugin("core-pack", "core-pack:users:*"), true);
+  assert.equal(matchesPermissionPattern("core-pack:users:*", "core-pack:users:write"), true);
+  assert.equal(matchesPermissionPattern("core-pack:users:read", "core-pack:users:write"), false);
+  assert.equal(matchesPermissionPattern("core-pack:*:*", "core-pack:settings:write"), true);
 });

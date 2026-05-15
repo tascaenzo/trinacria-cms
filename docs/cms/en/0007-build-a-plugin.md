@@ -57,10 +57,7 @@ Define one constant:
 Example:
 
 ```ts
-import {
-  CORE_PACK_CAPABILITY_LIST,
-  CORE_PACK_PERMISSION_KEYS,
-} from "@trinacria-cms/core-pack";
+import { CORE_PACK_CAPABILITY_LIST, CORE_PACK_PERMISSION_KEYS } from "@trinacria-cms/core-pack";
 ```
 
 ## 4. Security manifest (new standard)

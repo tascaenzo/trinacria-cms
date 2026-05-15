@@ -8,7 +8,7 @@ import {
   EntityRegistry,
   factoryProvider,
   type Provider,
-  valueProvider,
+  valueProvider
 } from "@trinacria-cms/kernel";
 
 export interface CorePackMongoModuleOptions {
@@ -19,7 +19,7 @@ export interface CorePackMongoModuleOptions {
 const CORE_PACK_MONGO_OPTIONS_TOKEN =
   createToken<CorePackMongoModuleOptions>("CORE_PACK_MONGO_OPTIONS");
 const CORE_PACK_MONGO_CONNECTION_TOKEN = createToken<CorePackMongoConnection>(
-  "CORE_PACK_MONGO_CONNECTION",
+  "CORE_PACK_MONGO_CONNECTION"
 );
 
 /**
@@ -46,15 +46,13 @@ class CorePackMongoConnection {
 /**
  * Factory for an infrastructure module that wires MongoDbAdapter + EntityRegistry.
  */
-export function createCorePackMongoModule(
-  options: CorePackMongoModuleOptions,
-) {
+export function createCorePackMongoModule(options: CorePackMongoModuleOptions) {
   return defineModule({
     name: "CorePackMongoModule",
     providers: [
       valueProvider(CORE_PACK_MONGO_OPTIONS_TOKEN, options),
       classProvider(CORE_PACK_MONGO_CONNECTION_TOKEN, CorePackMongoConnection, [
-        CORE_PACK_MONGO_OPTIONS_TOKEN,
+        CORE_PACK_MONGO_OPTIONS_TOKEN
       ]),
       factoryProvider(CORE_TOKENS.ENTITY_REGISTRY, () => new EntityRegistry(), []),
       factoryProvider(
@@ -62,12 +60,12 @@ export function createCorePackMongoModule(
         (entityRegistry, connectionManager) =>
           createMongoDbAdapter({
             connection: (connectionManager as CorePackMongoConnection).connection,
-            entityRegistry: entityRegistry as EntityRegistry,
+            entityRegistry: entityRegistry as EntityRegistry
           }),
-        [CORE_TOKENS.ENTITY_REGISTRY, CORE_PACK_MONGO_CONNECTION_TOKEN],
-      ),
+        [CORE_TOKENS.ENTITY_REGISTRY, CORE_PACK_MONGO_CONNECTION_TOKEN]
+      )
     ],
-    exports: [CORE_TOKENS.ENTITY_REGISTRY, CORE_TOKENS.DB_ADAPTER],
+    exports: [CORE_TOKENS.ENTITY_REGISTRY, CORE_TOKENS.DB_ADAPTER]
   });
 }
 
@@ -76,12 +74,12 @@ export function createCorePackMongoModule(
  * Useful when plugin modules are loaded at runtime and need globally visible DB tokens.
  */
 export function createCorePackMongoGlobalProviders(
-  options: CorePackMongoModuleOptions,
+  options: CorePackMongoModuleOptions
 ): readonly Provider[] {
   return [
     valueProvider(CORE_PACK_MONGO_OPTIONS_TOKEN, options),
     classProvider(CORE_PACK_MONGO_CONNECTION_TOKEN, CorePackMongoConnection, [
-      CORE_PACK_MONGO_OPTIONS_TOKEN,
+      CORE_PACK_MONGO_OPTIONS_TOKEN
     ]),
     factoryProvider(CORE_TOKENS.ENTITY_REGISTRY, () => new EntityRegistry(), []),
     factoryProvider(
@@ -89,9 +87,9 @@ export function createCorePackMongoGlobalProviders(
       (entityRegistry, connectionManager) =>
         createMongoDbAdapter({
           connection: (connectionManager as CorePackMongoConnection).connection,
-          entityRegistry: entityRegistry as EntityRegistry,
+          entityRegistry: entityRegistry as EntityRegistry
         }),
-      [CORE_TOKENS.ENTITY_REGISTRY, CORE_PACK_MONGO_CONNECTION_TOKEN],
-    ),
+      [CORE_TOKENS.ENTITY_REGISTRY, CORE_PACK_MONGO_CONNECTION_TOKEN]
+    )
   ] as const;
 }

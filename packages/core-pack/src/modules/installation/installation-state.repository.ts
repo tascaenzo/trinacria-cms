@@ -1,13 +1,9 @@
-import {
-  createPluginDbScope,
-  type DbAdapter,
-  type PluginDbScope,
-} from "@trinacria-cms/kernel";
+import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import {
   INSTALLATION_STATE_KEY,
   InstallationStateRecordSchema,
-  type InstallationStateRecord,
+  type InstallationStateRecord
 } from "./installation.schemas.js";
 
 const INSTALLATION_STATE_ENTITY_NAME = "installation_state";
@@ -23,7 +19,7 @@ export class InstallationStateRepository {
   async get(): Promise<InstallationStateRecord | null> {
     return this.repository().findOne({
       filter: { key: INSTALLATION_STATE_KEY },
-      parse: (value: unknown) => InstallationStateRecordSchema.parse(value),
+      parse: (value: unknown) => InstallationStateRecordSchema.parse(value)
     });
   }
 
@@ -36,7 +32,7 @@ export class InstallationStateRepository {
       key: INSTALLATION_STATE_KEY,
       installed: false,
       createdAt: now,
-      updatedAt: now,
+      updatedAt: now
     });
     return InstallationStateRecordSchema.parse(created);
   }
@@ -50,8 +46,8 @@ export class InstallationStateRepository {
         installed: true,
         installedAt: now,
         adminUserId: adminUserId.trim(),
-        updatedAt: now,
-      },
+        updatedAt: now
+      }
     );
     if (!updated) {
       throw new Error("Installation state disappeared during update");
@@ -61,9 +57,6 @@ export class InstallationStateRepository {
 
   private repository() {
     this.scope = this.scope ?? createPluginDbScope(this.db, CORE_PACK_PLUGIN_ID);
-    return this.scope.repository<InstallationStateRecord>(
-      INSTALLATION_STATE_ENTITY_NAME,
-    );
+    return this.scope.repository<InstallationStateRecord>(INSTALLATION_STATE_ENTITY_NAME);
   }
 }
-

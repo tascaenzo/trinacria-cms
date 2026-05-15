@@ -2,7 +2,9 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Icon } from "../../atoms/icon/icon.js";
 import { ButtonBase } from "./button-base.js";
 
-const meta = { title: "Primitives/Interaction/ButtonBase", component: ButtonBase } satisfies Meta<typeof ButtonBase>;
+const meta = { title: "Primitives/Interaction/ButtonBase", component: ButtonBase } satisfies Meta<
+  typeof ButtonBase
+>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 
@@ -14,7 +16,7 @@ export const Variants: Story = {
       <ButtonBase variant="outline">Outline</ButtonBase>
       <ButtonBase variant="ghost">Ghost</ButtonBase>
     </div>
-  ),
+  )
 };
 
 export const IconOnly: Story = {
@@ -30,5 +32,5 @@ export const IconOnly: Story = {
         <Icon name="trash-2" />
       </ButtonBase>
     </div>
-  ),
+  )
 };

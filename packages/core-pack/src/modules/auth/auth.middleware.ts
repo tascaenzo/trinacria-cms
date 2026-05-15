@@ -3,14 +3,11 @@ import {
   getRequestHeader,
   response,
   type HttpContext,
-  type HttpMiddleware,
+  type HttpMiddleware
 } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import { UserRecordSchema, type UserRecord } from "../users/users.schemas.js";
-import {
-  extractAccessTokenFromCookie,
-  readJwtCookieConfigFromEnv,
-} from "./auth-session.js";
+import { extractAccessTokenFromCookie, readJwtCookieConfigFromEnv } from "./auth-session.js";
 import { JwtAuthError, JwtAuthService } from "./auth.service.js";
 
 export const AUTHENTICATED_USER_STATE_KEY = "corePack.auth.authenticatedUser";
@@ -21,7 +18,7 @@ export const AUTHENTICATED_USER_STATE_KEY = "corePack.auth.authenticatedUser";
  */
 export function createJwtAuthMiddleware(
   auth: JwtAuthService,
-  options?: { requireAdmin?: boolean },
+  options?: { requireAdmin?: boolean }
 ): HttpMiddleware {
   const cookieConfig = readJwtCookieConfigFromEnv();
 
@@ -71,29 +68,21 @@ export function extractBearerToken(ctx: HttpContext): string | null {
  */
 export function extractAuthToken(
   ctx: HttpContext,
-  cookieConfig = readJwtCookieConfigFromEnv(),
+  cookieConfig = readJwtCookieConfigFromEnv()
 ): string | null {
   const bearerToken = extractBearerToken(ctx);
   if (bearerToken) return bearerToken;
   return extractAccessTokenFromCookie(ctx, cookieConfig);
 }
 
-function unauthorized(
-  code: string,
-  message: string,
-  details?: Record<string, unknown>,
-) {
+function unauthorized(code: string, message: string, details?: Record<string, unknown>) {
   return response(apiError(code, message, details, { pluginId: CORE_PACK_PLUGIN_ID }), {
-    status: 401,
+    status: 401
   });
 }
 
-function forbidden(
-  code: string,
-  message: string,
-  details?: Record<string, unknown>,
-) {
+function forbidden(code: string, message: string, details?: Record<string, unknown>) {
   return response(apiError(code, message, details, { pluginId: CORE_PACK_PLUGIN_ID }), {
-    status: 403,
+    status: 403
   });
 }

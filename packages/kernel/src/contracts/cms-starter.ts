@@ -1,10 +1,7 @@
 import type { ModuleDefinition } from "@trinacria/core";
 import type { Provider } from "@trinacria/core";
 import type { OpenApiDocument } from "@trinacria/http";
-import type {
-  KernelPluginDefinition,
-  PluginRuntime,
-} from "./plugin-runtime.js";
+import type { KernelPluginDefinition, PluginRuntime } from "./plugin-runtime.js";
 import type { PluginRuntimeStore } from "./plugin-runtime-store.js";
 
 /**
@@ -19,9 +16,7 @@ export interface CmsHttpConfig {
     title: string;
     version: string;
     description?: string;
-    transformDocument?: (
-      document: OpenApiDocument,
-    ) => OpenApiDocument;
+    transformDocument?: (document: OpenApiDocument) => OpenApiDocument;
     onDocumentGenerated?: (document: OpenApiDocument) => void;
   };
 }

@@ -73,8 +73,8 @@ test("toApiErrorResponse exposes validation issues for schema errors", () => {
   const response = toApiErrorResponse(
     new ValidationError([
       { path: ["firstName"], message: "Expected string", code: "invalid_type" },
-      { path: ["lastName"], message: "Expected string", code: "invalid_type" },
-    ]),
+      { path: ["lastName"], message: "Expected string", code: "invalid_type" }
+    ])
   );
 
   assert.equal(response.error.code, "validation_error");
@@ -83,7 +83,7 @@ test("toApiErrorResponse exposes validation issues for schema errors", () => {
   assert.deepEqual(response.error.details, {
     issues: [
       { path: ["firstName"], message: "Expected string", code: "invalid_type" },
-      { path: ["lastName"], message: "Expected string", code: "invalid_type" },
-    ],
+      { path: ["lastName"], message: "Expected string", code: "invalid_type" }
+    ]
   });
 });

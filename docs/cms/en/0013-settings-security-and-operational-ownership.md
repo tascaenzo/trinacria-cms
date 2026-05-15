@@ -102,17 +102,17 @@ A human admin may consult aggregated operational views in the backoffice, but ma
 
 ## Actor -> operation matrix
 
-| Operation | Human backoffice admin | Signed owner plugin | Non-owner integration | Notes |
-| --- | --- | --- | --- | --- |
-| Read definition list | yes | yes | yes | Documentation and operational metadata |
-| Read definition detail | yes | yes | yes | No secret plaintext |
-| Read resolved non-secret value | yes | yes | yes | Needed for operational debugging |
-| Read masked secret metadata | yes, but no plaintext | yes | no | Non-owners must not enumerate sensitive metadata of third parties |
-| Reveal secret | no | yes | no | Owner-signed only |
-| Write definition | not directly | yes | no | Any admin UX must be brokered |
-| Write non-secret value | not directly | yes | no | Any admin UX must be brokered |
-| Write secret | not directly | yes | no | Always owner-signed |
-| Export plugin snapshot | not directly | yes, only for its own plugin | no | No cross-plugin export |
+| Operation                      | Human backoffice admin | Signed owner plugin          | Non-owner integration | Notes                                                             |
+| ------------------------------ | ---------------------- | ---------------------------- | --------------------- | ----------------------------------------------------------------- |
+| Read definition list           | yes                    | yes                          | yes                   | Documentation and operational metadata                            |
+| Read definition detail         | yes                    | yes                          | yes                   | No secret plaintext                                               |
+| Read resolved non-secret value | yes                    | yes                          | yes                   | Needed for operational debugging                                  |
+| Read masked secret metadata    | yes, but no plaintext  | yes                          | no                    | Non-owners must not enumerate sensitive metadata of third parties |
+| Reveal secret                  | no                     | yes                          | no                    | Owner-signed only                                                 |
+| Write definition               | not directly           | yes                          | no                    | Any admin UX must be brokered                                     |
+| Write non-secret value         | not directly           | yes                          | no                    | Any admin UX must be brokered                                     |
+| Write secret                   | not directly           | yes                          | no                    | Always owner-signed                                               |
+| Export plugin snapshot         | not directly           | yes, only for its own plugin | no                    | No cross-plugin export                                            |
 
 ## Architectural implications
 

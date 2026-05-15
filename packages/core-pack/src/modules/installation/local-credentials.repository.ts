@@ -1,13 +1,6 @@
-import {
-  createPluginDbScope,
-  type DbAdapter,
-  type PluginDbScope,
-} from "@trinacria-cms/kernel";
+import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
-import {
-  LocalCredentialRecordSchema,
-  type LocalCredentialRecord,
-} from "./installation.schemas.js";
+import { LocalCredentialRecordSchema, type LocalCredentialRecord } from "./installation.schemas.js";
 
 const LOCAL_CREDENTIALS_ENTITY_NAME = "local_credentials";
 
@@ -29,7 +22,7 @@ export class LocalCredentialsRepository {
   async findByUserId(userId: string): Promise<LocalCredentialRecord | null> {
     return this.repository().findOne({
       filter: { userId: userId.trim() },
-      parse: (value: unknown) => LocalCredentialRecordSchema.parse(value),
+      parse: (value: unknown) => LocalCredentialRecordSchema.parse(value)
     });
   }
 
@@ -46,7 +39,7 @@ export class LocalCredentialsRepository {
         passwordSalt: input.passwordSalt,
         passwordUpdatedAt: now,
         createdAt: now,
-        updatedAt: now,
+        updatedAt: now
       });
       return LocalCredentialRecordSchema.parse(created);
     }
@@ -58,8 +51,8 @@ export class LocalCredentialsRepository {
         passwordHash: input.passwordHash,
         passwordSalt: input.passwordSalt,
         passwordUpdatedAt: now,
-        updatedAt: now,
-      },
+        updatedAt: now
+      }
     );
     if (!updated) {
       throw new Error(`Local credentials for user "${normalizedUserId}" disappeared`);
@@ -72,4 +65,3 @@ export class LocalCredentialsRepository {
     return this.scope.repository<LocalCredentialRecord>(LOCAL_CREDENTIALS_ENTITY_NAME);
   }
 }
-

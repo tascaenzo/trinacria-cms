@@ -5,7 +5,11 @@ import { BodyText } from "../../primitives/text/text.js";
 import { cn } from "../../../utils/class-names.js";
 import type { KeyValueItemProps, KeyValuePanelProps } from "./key-value-panel.types.js";
 
-export function KeyValuePanel({ children, className, ...props }: PropsWithChildren<KeyValuePanelProps>) {
+export function KeyValuePanel({
+  children,
+  className,
+  ...props
+}: PropsWithChildren<KeyValuePanelProps>) {
   return (
     <div className={cn("grid gap-4 md:grid-cols-2", className)} {...props}>
       {children}

@@ -3,7 +3,7 @@ import type {
   PluginDependencyGraphSnapshot,
   PluginRuntime,
   PluginRuntimeRecord,
-  PluginState,
+  PluginState
 } from "../contracts/plugin-runtime.js";
 
 export interface KernelHealthServiceOptions {
@@ -52,13 +52,11 @@ export class KernelHealthService {
       runtime: runtimeSummary,
       dependencies,
       db,
-      issues,
+      issues
     };
   }
 
-  private buildRuntimeSummary(
-    records: readonly PluginRuntimeRecord[],
-  ): KernelRuntimeHealthSummary {
+  private buildRuntimeSummary(records: readonly PluginRuntimeRecord[]): KernelRuntimeHealthSummary {
     const base: Record<PluginState, number> = {
       registered: 0,
       loading: 0,
@@ -67,7 +65,7 @@ export class KernelHealthService {
       unloading: 0,
       failed: 0,
       disabled: 0,
-      unloaded: 0,
+      unloaded: 0
     };
 
     for (const record of records) {
@@ -76,25 +74,23 @@ export class KernelHealthService {
 
     return {
       totalPlugins: records.length,
-      byState: base,
+      byState: base
     };
   }
 
   private deriveStatus(
     records: readonly PluginRuntimeRecord[],
     dependencies: PluginDependencyGraphSnapshot,
-    db: { ok: true } | { ok: false; reason: string },
+    db: { ok: true } | { ok: false; reason: string }
   ): "ok" | "degraded" | "down" {
     if (!db.ok && db.reason !== "not_configured") return "down";
 
     const hasRuntimeDegradation = records.some((record) =>
-      ["failed", "disabled", "loading", "initializing", "unloading"].includes(
-        record.state,
-      ),
+      ["failed", "disabled", "loading", "initializing", "unloading"].includes(record.state)
     );
 
     const hasRequiredDependencyIssue = dependencies.edges.some(
-      (edge) => !edge.optional && edge.status !== "ok",
+      (edge) => !edge.optional && edge.status !== "ok"
     );
 
     if (hasRuntimeDegradation || hasRequiredDependencyIssue) {
@@ -106,7 +102,7 @@ export class KernelHealthService {
   private collectIssues(
     records: readonly PluginRuntimeRecord[],
     dependencies: PluginDependencyGraphSnapshot,
-    db: { ok: true } | { ok: false; reason: string },
+    db: { ok: true } | { ok: false; reason: string }
   ): string[] {
     const issues: string[] = [];
 
@@ -116,12 +112,10 @@ export class KernelHealthService {
 
     for (const record of records) {
       if (record.state === "failed") {
-        issues.push(
-          `plugin:${record.manifest.id}:failed:${record.lastFailurePhase ?? "unknown"}`,
-        );
+        issues.push(`plugin:${record.manifest.id}:failed:${record.lastFailurePhase ?? "unknown"}`);
       } else if (record.state === "disabled") {
         issues.push(
-          `plugin:${record.manifest.id}:disabled:${record.disabledReason ?? "unspecified"}`,
+          `plugin:${record.manifest.id}:disabled:${record.disabledReason ?? "unspecified"}`
         );
       }
     }

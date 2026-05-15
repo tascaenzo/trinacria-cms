@@ -46,4 +46,5 @@ apps/playground/prisma/*.db-*
 
 # Storybook
 apps/**/.storybook-home/
+**/storybook-static/
 apps/**/storybook-static/

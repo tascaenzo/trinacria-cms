@@ -4,7 +4,7 @@ import {
   defineModule,
   factoryProvider,
   httpProvider,
-  type EntityRegistry,
+  type EntityRegistry
 } from "@trinacria-cms/kernel";
 import { CORE_PACK_JWT_AUTH_SERVICE_TOKEN } from "../auth/auth.tokens.js";
 import { SettingsController } from "./settings.controller.js";
@@ -13,9 +13,7 @@ import { EnvPluginAuthKeyProvider } from "./auth/settings-plugin-auth-key-provid
 import { SettingsPluginAuthService } from "./auth/settings-plugin-auth.service.js";
 import { SettingsSecretsCryptoService } from "./secrets/settings-secrets-crypto.service.js";
 import { SettingsSecretsRepository } from "./secrets/settings-secrets.repository.js";
-import {
-  SETTINGS_ENTITY,
-} from "./settings.schemas.js";
+import { SETTINGS_ENTITY } from "./settings.schemas.js";
 import { SettingsService } from "./settings.service.js";
 import { SettingsValuesRepository } from "./values/settings-values.repository.js";
 import {
@@ -27,7 +25,7 @@ import {
   SETTINGS_SECRETS_CRYPTO_SERVICE_TOKEN,
   SETTINGS_SECRETS_REPOSITORY_TOKEN,
   SETTINGS_SERVICE_TOKEN,
-  SETTINGS_VALUES_REPOSITORY_TOKEN,
+  SETTINGS_VALUES_REPOSITORY_TOKEN
 } from "./settings.tokens.js";
 
 /**
@@ -42,49 +40,47 @@ export const CorePackSettingsModule = defineModule({
         (registry as EntityRegistry).register(SETTINGS_ENTITY);
         return true;
       },
-      [CORE_TOKENS.ENTITY_REGISTRY],
+      [CORE_TOKENS.ENTITY_REGISTRY]
     ),
-    classProvider(
-      SETTINGS_DEFINITIONS_REPOSITORY_TOKEN,
-      SettingsDefinitionsRepository,
-      [CORE_TOKENS.DB_ADAPTER],
-    ),
+    classProvider(SETTINGS_DEFINITIONS_REPOSITORY_TOKEN, SettingsDefinitionsRepository, [
+      CORE_TOKENS.DB_ADAPTER
+    ]),
     classProvider(SETTINGS_VALUES_REPOSITORY_TOKEN, SettingsValuesRepository, [
-      CORE_TOKENS.DB_ADAPTER,
+      CORE_TOKENS.DB_ADAPTER
     ]),
     classProvider(SETTINGS_SECRETS_REPOSITORY_TOKEN, SettingsSecretsRepository, [
-      CORE_TOKENS.DB_ADAPTER,
+      CORE_TOKENS.DB_ADAPTER
     ]),
     factoryProvider(
       SETTINGS_SECRETS_CRYPTO_SERVICE_TOKEN,
       () =>
         new SettingsSecretsCryptoService({
           masterKey: process.env.CMS_SETTINGS_MASTER_KEY,
-          keyVersion: process.env.CMS_SETTINGS_MASTER_KEY_VERSION,
+          keyVersion: process.env.CMS_SETTINGS_MASTER_KEY_VERSION
         }),
-      [],
+      []
     ),
     factoryProvider(
       SETTINGS_PLUGIN_AUTH_KEY_PROVIDER_TOKEN,
       () => new EnvPluginAuthKeyProvider(),
-      [],
+      []
     ),
     factoryProvider(
       SETTINGS_PLUGIN_AUTH_SERVICE_TOKEN,
       (keyProvider) => new SettingsPluginAuthService(keyProvider),
-      [SETTINGS_PLUGIN_AUTH_KEY_PROVIDER_TOKEN],
+      [SETTINGS_PLUGIN_AUTH_KEY_PROVIDER_TOKEN]
     ),
     classProvider(SETTINGS_SERVICE_TOKEN, SettingsService, [
       SETTINGS_DEFINITIONS_REPOSITORY_TOKEN,
       SETTINGS_VALUES_REPOSITORY_TOKEN,
       SETTINGS_SECRETS_REPOSITORY_TOKEN,
-      SETTINGS_SECRETS_CRYPTO_SERVICE_TOKEN,
+      SETTINGS_SECRETS_CRYPTO_SERVICE_TOKEN
     ]),
     httpProvider(SETTINGS_CONTROLLER_TOKEN, SettingsController, [
       SETTINGS_SERVICE_TOKEN,
       CORE_PACK_JWT_AUTH_SERVICE_TOKEN,
-      SETTINGS_PLUGIN_AUTH_SERVICE_TOKEN,
-    ]),
+      SETTINGS_PLUGIN_AUTH_SERVICE_TOKEN
+    ])
   ],
   exports: [
     SETTINGS_CONTROLLER_TOKEN,
@@ -95,6 +91,6 @@ export const CorePackSettingsModule = defineModule({
     SETTINGS_SECRETS_CRYPTO_SERVICE_TOKEN,
     SETTINGS_PLUGIN_AUTH_KEY_PROVIDER_TOKEN,
     SETTINGS_PLUGIN_AUTH_SERVICE_TOKEN,
-    SETTINGS_SERVICE_TOKEN,
-  ],
+    SETTINGS_SERVICE_TOKEN
+  ]
 });

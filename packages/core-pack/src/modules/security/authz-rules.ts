@@ -13,7 +13,7 @@ export interface AuthorizationRule {
  * collapse into a stable set of authorization rules.
  */
 export function dedupeAuthorizationRules(
-  rules: readonly AuthorizationRule[],
+  rules: readonly AuthorizationRule[]
 ): readonly AuthorizationRule[] {
   const unique = new Map<string, AuthorizationRule>();
 

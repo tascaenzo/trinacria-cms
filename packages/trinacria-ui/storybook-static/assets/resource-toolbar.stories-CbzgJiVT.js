@@ -1,6 +1,0 @@
-import{j as e}from"./iframe-ce5-efCb.js";import{B as t}from"./button-DTZJ7PNL.js";import{I as c}from"./input-BwIcYy4A.js";import{R as s}from"./resource-toolbar-CKpJibk5.js";const l={title:"Layout/Toolbars/ResourceToolbar",component:s},o={render:()=>e.jsx(s,{leading:e.jsx("p",{className:"text-sm text-[color:var(--color-ink-muted)]",children:"24 utenti trovati"}),filters:e.jsx(c,{placeholder:"Cerca per email o nome"}),actions:e.jsxs(e.Fragment,{children:[e.jsx(t,{variant:"secondary",children:"Aggiorna"}),e.jsx(t,{children:"Nuovo utente"})]})})};var r,a,n;o.parameters={...o.parameters,docs:{...(r=o.parameters)==null?void 0:r.docs,source:{originalSource:`{
-  render: () => <ResourceToolbar leading={<p className="text-sm text-[color:var(--color-ink-muted)]">24 utenti trovati</p>} filters={<Input placeholder="Cerca per email o nome" />} actions={<>
-          <Button variant="secondary">Aggiorna</Button>
-          <Button>Nuovo utente</Button>
-        </>} />
-}`,...(n=(a=o.parameters)==null?void 0:a.docs)==null?void 0:n.source}}};const i=["Default"],x=Object.freeze(Object.defineProperty({__proto__:null,Default:o,__namedExportsOrder:i,default:l},Symbol.toStringTag,{value:"Module"}));export{o as D,x as S};

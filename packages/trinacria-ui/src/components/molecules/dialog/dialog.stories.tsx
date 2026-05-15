@@ -13,9 +13,16 @@ export const Modal: Story = {
       onClose={() => undefined}
       title="Nuova API key"
       description="Conferma i permessi e la scadenza prima di generare la chiave."
-      footer={<><Button variant="secondary">Annulla</Button><Button>Genera</Button></>}
+      footer={
+        <>
+          <Button variant="secondary">Annulla</Button>
+          <Button>Genera</Button>
+        </>
+      }
     >
-      <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">Preview del dialog operativo del backoffice.</p>
+      <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
+        Preview del dialog operativo del backoffice.
+      </p>
     </Dialog>
   ),
   parameters: { layout: "fullscreen" }

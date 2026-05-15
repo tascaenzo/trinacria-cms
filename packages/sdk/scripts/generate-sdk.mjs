@@ -4,9 +4,7 @@ import { join } from "node:path";
 const [, , inputPath, outputDir] = process.argv;
 
 if (!inputPath || !outputDir) {
-  throw new Error(
-    "Usage: node ./scripts/generate-sdk.mjs <openapi.json> <output-dir>",
-  );
+  throw new Error("Usage: node ./scripts/generate-sdk.mjs <openapi.json> <output-dir>");
 }
 
 const document = JSON.parse(await readFile(inputPath, "utf8"));
@@ -19,11 +17,7 @@ await writeFile(join(outputDir, "types.gen.ts"), renderTypesFile(document, opera
 await writeFile(join(outputDir, "index.ts"), renderIndexFile(groups), "utf8");
 
 for (const [tag, items] of Object.entries(groups)) {
-  await writeFile(
-    join(outputDir, `${tag}.gen.ts`),
-    renderGroupFile(tag, items),
-    "utf8",
-  );
+  await writeFile(join(outputDir, `${tag}.gen.ts`), renderGroupFile(tag, items), "utf8");
 }
 
 function collectOperations(document) {
@@ -37,15 +31,15 @@ function collectOperations(document) {
     for (const method of ["get", "post", "put", "patch", "delete"]) {
       const operation = pathItem[method];
       if (!operation || typeof operation !== "object") continue;
-      const operationId = sanitizeTypeName(
-        operation.operationId || `${method}_${path}`,
-      );
+      const operationId = sanitizeTypeName(operation.operationId || `${method}_${path}`);
       const tag = sanitizeTagName(operation.tags?.[0] || "default");
-      const parameters = [...pathParameters, ...(Array.isArray(operation.parameters) ? operation.parameters : [])];
+      const parameters = [
+        ...pathParameters,
+        ...(Array.isArray(operation.parameters) ? operation.parameters : [])
+      ];
       const pathParams = parameters.filter((parameter) => parameter?.in === "path");
       const queryParams = parameters.filter((parameter) => parameter?.in === "query");
-      const requestSchema =
-        operation.requestBody?.content?.["application/json"]?.schema || null;
+      const requestSchema = operation.requestBody?.content?.["application/json"]?.schema || null;
       const responseSchema = findSuccessSchema(operation.responses || {});
 
       items.push({
@@ -57,12 +51,9 @@ function collectOperations(document) {
         queryParams,
         requestSchema,
         responseSchema,
-        hasInput:
-          pathParams.length > 0 ||
-          queryParams.length > 0 ||
-          Boolean(requestSchema),
+        hasInput: pathParams.length > 0 || queryParams.length > 0 || Boolean(requestSchema),
         requestTypeName: `${operationId}Request`,
-        responseTypeName: `${operationId}Response`,
+        responseTypeName: `${operationId}Response`
       });
     }
   }
@@ -81,9 +72,7 @@ async function cleanupGeneratedFiles(outputDir) {
 }
 
 function renderTypesFile(document, operations) {
-  const typeSections = operations.flatMap((operation) =>
-    renderOperationTypes(document, operation),
-  );
+  const typeSections = operations.flatMap((operation) => renderOperationTypes(document, operation));
 
   return `/* eslint-disable */
 // Auto-generated from OpenAPI. Do not edit by hand.
@@ -96,7 +85,7 @@ function renderIndexFile(groups) {
   const imports = Object.keys(groups)
     .map(
       (tag) =>
-        `import { create${pascalCase(tag)}Api, type ${pascalCase(tag)}Api } from "./${tag}.gen.js";`,
+        `import { create${pascalCase(tag)}Api, type ${pascalCase(tag)}Api } from "./${tag}.gen.js";`
     )
     .join("\n");
 
@@ -131,14 +120,10 @@ function renderOperationTypes(document, operation) {
   const inputFields = [];
 
   if (operation.pathParams.length > 0) {
-    inputFields.push(
-      `path: ${renderObjectType(document, operation.pathParams, "path")}`,
-    );
+    inputFields.push(`path: ${renderObjectType(document, operation.pathParams, "path")}`);
   }
   if (operation.queryParams.length > 0) {
-    inputFields.push(
-      `query: ${renderObjectType(document, operation.queryParams, "query")}`,
-    );
+    inputFields.push(`query: ${renderObjectType(document, operation.queryParams, "query")}`);
   }
   if (operation.requestSchema) {
     inputFields.push(`body: ${schemaToTs(document, operation.requestSchema)}`);
@@ -146,17 +131,12 @@ function renderOperationTypes(document, operation) {
 
   sections.push(
     `export type ${operation.requestTypeName} = ${
-      !operation.hasInput
-        ? "void"
-        : `{\n${inputFields.map((field) => `  ${field};`).join("\n")}\n}`
-    };`,
+      !operation.hasInput ? "void" : `{\n${inputFields.map((field) => `  ${field};`).join("\n")}\n}`
+    };`
   );
 
   sections.push(
-    `export type ${operation.responseTypeName} = ${schemaToTs(
-      document,
-      operation.responseSchema,
-    )};`,
+    `export type ${operation.responseTypeName} = ${schemaToTs(document, operation.responseSchema)};`
   );
 
   return sections;
@@ -186,9 +166,7 @@ ${operations
 
 export function create${pascalCase(tag)}Api(client: CmsSdkClientCore): ${pascalCase(tag)}Api {
   return {
-${operations
-  .map((operation) => renderOperationFactory(operation))
-  .join(",\n")}
+${operations.map((operation) => renderOperationFactory(operation)).join(",\n")}
   };
 }
 `;
@@ -197,10 +175,8 @@ ${operations
 function renderOperationFactory(operation) {
   const fnName = camelCase(operation.operationId);
   const inputArg = operation.hasInput ? "input, " : "";
-  const pathParamsExpr =
-    operation.pathParams.length > 0 ? "input.path" : "undefined";
-  const queryExpr =
-    operation.queryParams.length > 0 ? "input.query" : "undefined";
+  const pathParamsExpr = operation.pathParams.length > 0 ? "input.path" : "undefined";
+  const queryExpr = operation.queryParams.length > 0 ? "input.query" : "undefined";
   const bodyExpr = operation.requestSchema ? "input.body" : "undefined";
 
   return `    ${fnName}: async (${inputArg}options) =>
@@ -289,13 +265,8 @@ function schemaToTs(document, schema) {
 
     if (schema.additionalProperties === true) {
       lines.push("  [key: string]: unknown;");
-    } else if (
-      schema.additionalProperties &&
-      typeof schema.additionalProperties === "object"
-    ) {
-      lines.push(
-        `  [key: string]: ${schemaToTs(document, schema.additionalProperties)};`,
-      );
+    } else if (schema.additionalProperties && typeof schema.additionalProperties === "object") {
+      lines.push(`  [key: string]: ${schemaToTs(document, schema.additionalProperties)};`);
     }
 
     if (lines.length === 0) {

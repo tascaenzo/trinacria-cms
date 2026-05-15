@@ -10,16 +10,16 @@ export function Checkbox({ className, description, error, id, label, ...props }:
     error,
     errorId: ids.errorId,
     hint: description,
-    hintId: ids.hintId,
+    hintId: ids.hintId
   });
 
   return (
     <label
       htmlFor={ids.controlId}
       className={cn(
-        "grid gap-2 rounded-lg border border-transparent p-1",
+        "grid gap-2 rounded-sm border border-transparent p-1",
         error && "text-[color:var(--color-danger-ink)]",
-        className,
+        className
       )}
     >
       <span className="flex items-start gap-3">
@@ -35,14 +35,20 @@ export function Checkbox({ className, description, error, id, label, ...props }:
         <span className="grid gap-1">
           <span className="text-sm font-medium text-[color:var(--color-ink)]">{label}</span>
           {description ? (
-            <span id={descriptionId} className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
+            <span
+              id={descriptionId}
+              className="text-sm leading-6 text-[color:var(--color-ink-muted)]"
+            >
               {description}
             </span>
           ) : null}
         </span>
       </span>
       {error ? (
-        <span id={ids.errorId} className="pl-7 text-xs leading-5 text-[color:var(--color-danger-ink)]">
+        <span
+          id={ids.errorId}
+          className="pl-7 text-xs leading-5 text-[color:var(--color-danger-ink)]"
+        >
           {error}
         </span>
       ) : null}

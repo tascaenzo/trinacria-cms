@@ -10,10 +10,10 @@ export const AssignUserRoleInputSchema = s.object(
       toLowerCase: true,
       minLength: 2,
       maxLength: 64,
-      pattern: /^[a-z0-9][a-z0-9._-]*$/,
-    }),
+      pattern: /^[a-z0-9][a-z0-9._-]*$/
+    })
   },
-  { strict: true },
+  { strict: true }
 );
 
 export type AssignUserRoleInput = Infer<typeof AssignUserRoleInputSchema>;

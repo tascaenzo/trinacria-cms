@@ -1,8 +1,10 @@
-import { isValidPermissionKey, isValidPermissionPattern, s, type Infer } from "@trinacria-cms/kernel";
 import {
-  ApiKeyKindSchema,
-  ApiKeyPolicyRuleSchema,
-} from "../api-keys.schemas.js";
+  isValidPermissionKey,
+  isValidPermissionPattern,
+  s,
+  type Infer
+} from "@trinacria-cms/kernel";
+import { ApiKeyKindSchema, ApiKeyPolicyRuleSchema } from "../api-keys.schemas.js";
 
 /**
  * DTO schema for issuing a new API key from the admin API.
@@ -19,9 +21,9 @@ export const CreateApiKeyInputSchema = s.object(
           toLowerCase: true,
           minLength: 2,
           maxLength: 64,
-          pattern: /^[a-z0-9][a-z0-9._-]*$/,
+          pattern: /^[a-z0-9][a-z0-9._-]*$/
         }),
-        { unique: true },
+        { unique: true }
       )
       .optional(),
     permissionKeys: s
@@ -31,20 +33,20 @@ export const CreateApiKeyInputSchema = s.object(
             trim: true,
             toLowerCase: true,
             minLength: 3,
-            maxLength: 220,
+            maxLength: 220
           })
           .refine(
             (value) => isValidPermissionKey(value),
             "Permission key must be '<pluginId>:<resource>:<action>'",
-            "invalid_permission_key",
+            "invalid_permission_key"
           ),
-        { unique: true },
+        { unique: true }
       )
       .optional(),
     policyRules: s.array(ApiKeyPolicyRuleSchema).optional(),
-    expiresAt: s.dateTimeString().optional(),
+    expiresAt: s.dateTimeString().optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 export type CreateApiKeyInput = Infer<typeof CreateApiKeyInputSchema>;
@@ -64,9 +66,9 @@ export const RotateApiKeyInputSchema = s.object(
           toLowerCase: true,
           minLength: 2,
           maxLength: 64,
-          pattern: /^[a-z0-9][a-z0-9._-]*$/,
+          pattern: /^[a-z0-9][a-z0-9._-]*$/
         }),
-        { unique: true },
+        { unique: true }
       )
       .optional(),
     permissionKeys: s
@@ -76,14 +78,14 @@ export const RotateApiKeyInputSchema = s.object(
             trim: true,
             toLowerCase: true,
             minLength: 3,
-            maxLength: 220,
+            maxLength: 220
           })
           .refine(
             (value) => isValidPermissionKey(value),
             "Permission key must be '<pluginId>:<resource>:<action>'",
-            "invalid_permission_key",
+            "invalid_permission_key"
           ),
-        { unique: true },
+        { unique: true }
       )
       .optional(),
     policyRules: s
@@ -96,20 +98,20 @@ export const RotateApiKeyInputSchema = s.object(
               .refine(
                 (value) => isValidPermissionPattern(value),
                 "Permission pattern must be '<pluginId>:<resource|*>:<action|*>'",
-                "invalid_permission_pattern",
+                "invalid_permission_pattern"
               ),
             conditions: s.array(
               s.enum(["resource_id_required", "resource_id_equals_subject"] as const),
-              { unique: true },
-            ),
+              { unique: true }
+            )
           },
-          { strict: true },
-        ),
+          { strict: true }
+        )
       )
       .optional(),
-    expiresAt: s.dateTimeString().optional(),
+    expiresAt: s.dateTimeString().optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 export type RotateApiKeyInput = Infer<typeof RotateApiKeyInputSchema>;
@@ -119,9 +121,9 @@ export type RotateApiKeyInput = Infer<typeof RotateApiKeyInputSchema>;
  */
 export const RevokeApiKeyInputSchema = s.object(
   {
-    reason: s.string({ trim: true, maxLength: 500 }).optional(),
+    reason: s.string({ trim: true, maxLength: 500 }).optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 export type RevokeApiKeyInput = Infer<typeof RevokeApiKeyInputSchema>;
@@ -134,9 +136,9 @@ export const ListApiKeysQuerySchema = s.object(
     kind: ApiKeyKindSchema.optional(),
     status: s.enum(["active", "revoked"] as const).optional(),
     limit: s.number({ int: true, min: 1, max: 200 }).optional(),
-    offset: s.number({ int: true, min: 0 }).optional(),
+    offset: s.number({ int: true, min: 0 }).optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 export type ListApiKeysQuery = Infer<typeof ListApiKeysQuerySchema>;

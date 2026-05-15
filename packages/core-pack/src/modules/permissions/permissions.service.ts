@@ -1,6 +1,6 @@
 import type {
   CreatePermissionInput,
-  UpdatePermissionStatusInput,
+  UpdatePermissionStatusInput
 } from "./dto/permissions.input.dto.js";
 import { type PermissionRecord } from "./permissions.schemas.js";
 import { PermissionsRepository } from "./permissions.repository.js";
@@ -29,7 +29,7 @@ export class PermissionsService {
   }): Promise<readonly PermissionRecord[]> {
     return this.repository.list({
       limit: options?.limit,
-      offset: options?.offset,
+      offset: options?.offset
     });
   }
 
@@ -43,7 +43,7 @@ export class PermissionsService {
 
   private setPermissionStatus(
     id: string,
-    input: UpdatePermissionStatusInput,
+    input: UpdatePermissionStatusInput
   ): Promise<PermissionRecord | null> {
     return this.repository.updateStatus(id, input);
   }

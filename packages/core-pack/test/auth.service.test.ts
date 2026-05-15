@@ -4,7 +4,7 @@ import {
   type DbAdapter,
   type DbQuery,
   type DbRepository,
-  type HttpContext,
+  type HttpContext
 } from "@trinacria-cms/kernel";
 import { AuthController } from "../src/modules/auth/auth.controller.js";
 import { AuthUsersRepository } from "../src/modules/auth/auth-users.repository.js";
@@ -28,22 +28,20 @@ test("JwtAuthService logs in admin and validates JWT token", async () => {
   const bootstrap = await runtime.installation.bootstrap({
     email: "admin@example.com",
     displayName: "Admin User",
-    password: "StrongPassword123!",
+    password: "StrongPassword123!"
   });
   assert.equal(bootstrap.status.installed, true);
 
   const session = await runtime.auth.loginWithPassword({
     email: "admin@example.com",
-    password: "StrongPassword123!",
+    password: "StrongPassword123!"
   });
   assert.equal(session.tokenType, "Bearer");
   assert.equal(session.user.email, "admin@example.com");
   assert.ok(session.refreshToken.length > 16);
   assert.ok(session.refreshExpiresAt.length > 10);
 
-  const authenticated = await runtime.auth.authenticateBearerToken(
-    session.accessToken,
-  );
+  const authenticated = await runtime.auth.authenticateBearerToken(session.accessToken);
   assert.equal(authenticated.id, session.user.id);
 });
 
@@ -53,23 +51,20 @@ test("JwtAuthService validates refresh token and rejects using it as access toke
   await runtime.installation.bootstrap({
     email: "admin@example.com",
     displayName: "Admin User",
-    password: "StrongPassword123!",
+    password: "StrongPassword123!"
   });
 
   const session = await runtime.auth.loginWithPassword({
     email: "admin@example.com",
-    password: "StrongPassword123!",
+    password: "StrongPassword123!"
   });
 
-  const refreshUser = await runtime.auth.authenticateRefreshToken(
-    session.refreshToken,
-  );
+  const refreshUser = await runtime.auth.authenticateRefreshToken(session.refreshToken);
   assert.equal(refreshUser.email, "admin@example.com");
 
   await assert.rejects(
     async () => runtime.auth.authenticateBearerToken(session.refreshToken),
-    (error) =>
-      error instanceof JwtAuthError && error.code === "auth_invalid_token",
+    (error) => error instanceof JwtAuthError && error.code === "auth_invalid_token"
   );
 });
 
@@ -80,10 +75,9 @@ test("JwtAuthService rejects login before installation is completed", async () =
     async () =>
       runtime.auth.loginWithPassword({
         email: "admin@example.com",
-        password: "StrongPassword123!",
+        password: "StrongPassword123!"
       }),
-    (error) =>
-      error instanceof JwtAuthError && error.code === "installation_not_completed",
+    (error) => error instanceof JwtAuthError && error.code === "installation_not_completed"
   );
 });
 
@@ -93,31 +87,29 @@ test("JwtAuthService forbids non-admin token on admin-required auth", async () =
   await runtime.installation.bootstrap({
     email: "admin@example.com",
     displayName: "Admin User",
-    password: "StrongPassword123!",
+    password: "StrongPassword123!"
   });
 
   const user = await runtime.users.create({
     email: "operator@example.com",
-    displayName: "Operator User",
+    displayName: "Operator User"
   });
   const password = await runtime.passwordHashing.hashPassword("AnotherStrongPass123!");
   await runtime.localCredentials.upsert({
     userId: user.id,
     algorithm: password.algorithm,
     passwordHash: password.passwordHash,
-    passwordSalt: password.passwordSalt,
+    passwordSalt: password.passwordSalt
   });
 
   const session = await runtime.auth.loginWithPassword({
     email: "operator@example.com",
-    password: "AnotherStrongPass123!",
+    password: "AnotherStrongPass123!"
   });
 
   await assert.rejects(
     async () => runtime.auth.authenticateBearerToken(session.accessToken),
-    (error) =>
-      error instanceof JwtAuthError &&
-      error.code === "auth_forbidden_admin_required",
+    (error) => error instanceof JwtAuthError && error.code === "auth_forbidden_admin_required"
   );
 });
 
@@ -127,7 +119,7 @@ test("AuthController login route returns 401 for invalid credentials", async () 
   await runtime.installation.bootstrap({
     email: "admin@example.com",
     displayName: "Admin User",
-    password: "StrongPassword123!",
+    password: "StrongPassword123!"
   });
 
   const controller = new AuthController(runtime.auth);
@@ -140,8 +132,8 @@ test("AuthController login route returns 401 for invalid credentials", async () 
   const result = await route.handler(
     createHttpContext({
       email: "admin@example.com",
-      password: "WrongPassword123!",
-    }),
+      password: "WrongPassword123!"
+    })
   );
 
   assert.ok(result && typeof result === "object");
@@ -151,11 +143,11 @@ test("AuthController login route returns 401 for invalid credentials", async () 
   assert.deepEqual(response.body, {
     error: {
       code: "auth_invalid_credentials",
-      message: "Invalid credentials",
+      message: "Invalid credentials"
     },
     meta: {
-      pluginId: "core-pack",
-    },
+      pluginId: "core-pack"
+    }
   });
 });
 
@@ -181,14 +173,14 @@ function createRuntime(): Runtime {
     roleGrants,
     rolePolicyRules,
     permissions,
-    userRoles,
+    userRoles
   );
   const securityProvisioning = new CorePackSecurityProvisioningService(
     roles,
     roleGrants,
     rolePolicyRules,
     permissions,
-    userRoles,
+    userRoles
   );
   const installationState = new InstallationStateRepository(db);
   const localCredentials = new LocalCredentialsRepository(db);
@@ -199,13 +191,13 @@ function createRuntime(): Runtime {
     users,
     userAccess,
     securityProvisioning,
-    passwordHashing,
+    passwordHashing
   );
   const auth = new JwtAuthService(
     new AuthUsersRepository(db),
     localCredentials,
     installationState,
-    passwordHashing,
+    passwordHashing
   );
 
   return {
@@ -213,7 +205,7 @@ function createRuntime(): Runtime {
     installation,
     users,
     localCredentials,
-    passwordHashing,
+    passwordHashing
   };
 }
 
@@ -229,9 +221,7 @@ function createFakeDbAdapter(): DbAdapter {
     return created;
   };
 
-  const repository = <TData extends Record<string, unknown>>(
-    key: string,
-  ): DbRepository<TData> => ({
+  const repository = <TData extends Record<string, unknown>>(key: string): DbRepository<TData> => ({
     async findOne(query: DbQuery<TData>) {
       const bucket = getBucket(key) as TData[];
       const found = bucket.find((item) => matchesFilter(item, query.filter)) ?? null;
@@ -271,7 +261,7 @@ function createFakeDbAdapter(): DbAdapter {
       if (index < 0) return false;
       bucket.splice(index, 1);
       return true;
-    },
+    }
   });
 
   return {
@@ -281,18 +271,18 @@ function createFakeDbAdapter(): DbAdapter {
     async beginTransaction() {
       return {
         async commit() {},
-        async rollback() {},
+        async rollback() {}
       };
     },
     async healthCheck() {
       return { ok: true };
-    },
+    }
   };
 }
 
 function matchesFilter(
   item: Record<string, unknown>,
-  filter: Record<string, unknown> | undefined,
+  filter: Record<string, unknown> | undefined
 ): boolean {
   if (!filter) return true;
   return Object.entries(filter).every(([key, value]) => item[key] === value);
@@ -300,7 +290,7 @@ function matchesFilter(
 
 function applySort<TData extends Record<string, unknown>>(
   values: readonly TData[],
-  sort: Record<string, "asc" | "desc"> | undefined,
+  sort: Record<string, "asc" | "desc"> | undefined
 ): TData[] {
   if (!sort || Object.keys(sort).length === 0) return [...values];
   const [field, direction] = Object.entries(sort)[0];
@@ -328,6 +318,6 @@ function createHttpContext(body: unknown): HttpContext {
     abort(reason?: unknown) {
       abortController.abort(reason);
     },
-    state: {},
+    state: {}
   };
 }

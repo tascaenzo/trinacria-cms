@@ -5,7 +5,7 @@ import {
   buildFormControlAria,
   FormControlShell,
   formControlClassName,
-  useFormControlIds,
+  useFormControlIds
 } from "../form-control/form-control.js";
 import { Icon } from "../icon/icon.js";
 import type { TimePickerProps } from "./time-picker.types.js";
@@ -76,7 +76,7 @@ export function TimePicker({
     error,
     errorId: ids.errorId,
     hint,
-    hintId: ids.hintId,
+    hintId: ids.hintId
   });
 
   useEffect(() => {
@@ -160,7 +160,10 @@ export function TimePicker({
             type="button"
             disabled={disabled}
             onClick={() => setIsOpen((current) => !current)}
-            className={cn("flex items-center justify-between text-left", formControlClassName({ disabled, error }))}
+            className={cn(
+              "flex items-center justify-between text-left",
+              formControlClassName({ disabled, error })
+            )}
             aria-describedby={aria.describedBy}
             aria-errormessage={aria.errorMessage}
             aria-expanded={isOpen}
@@ -181,10 +184,13 @@ export function TimePicker({
               role="dialog"
               aria-modal="false"
               aria-labelledby={popupTitleId}
-              className="absolute left-0 top-[calc(100%+0.5rem)] z-30 w-[280px] rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4 shadow-[0_24px_80px_rgba(15,23,42,0.16)]"
+              className="absolute left-0 top-[calc(100%+0.5rem)] z-30 w-[280px] rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4 shadow-[0_24px_80px_rgba(15,23,42,0.16)]"
             >
               <div className="grid gap-4">
-                <div id={popupTitleId} className="text-sm font-semibold text-[color:var(--color-ink)]">
+                <div
+                  id={popupTitleId}
+                  className="text-sm font-semibold text-[color:var(--color-ink)]"
+                >
                   Selettore orario
                 </div>
                 <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3">
@@ -196,7 +202,7 @@ export function TimePicker({
                       ref={hourSelectRef}
                       value={pad(hour)}
                       onChange={(event) => setHour(Number(event.target.value))}
-                      className="h-10 rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 text-sm text-[color:var(--color-ink)]"
+                      className="h-10 rounded-sm border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 text-sm text-[color:var(--color-ink)]"
                     >
                       {Array.from({ length: 24 }, (_, item) => (
                         <option key={item} value={pad(item)}>
@@ -205,7 +211,9 @@ export function TimePicker({
                       ))}
                     </select>
                   </label>
-                  <span className="pb-2 text-lg font-semibold text-[color:var(--color-ink-subtle)]">:</span>
+                  <span className="pb-2 text-lg font-semibold text-[color:var(--color-ink-subtle)]">
+                    :
+                  </span>
                   <label className="grid gap-2">
                     <span className="text-xs font-medium uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)]">
                       Minuti
@@ -213,7 +221,7 @@ export function TimePicker({
                     <select
                       value={pad(minute)}
                       onChange={(event) => setMinute(Number(event.target.value))}
-                      className="h-10 rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 text-sm text-[color:var(--color-ink)]"
+                      className="h-10 rounded-sm border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 text-sm text-[color:var(--color-ink)]"
                     >
                       {minuteOptions.map((item) => (
                         <option key={item} value={pad(item)}>

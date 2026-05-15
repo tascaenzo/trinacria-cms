@@ -4,7 +4,7 @@ import {
   buildPluginRequestSignature,
   normalizePath,
   PLUGIN_AUTH_HEADERS,
-  signaturesEqual,
+  signaturesEqual
 } from "./settings-plugin-auth.js";
 
 export interface SettingsPluginAuthServiceOptions {
@@ -35,7 +35,7 @@ export class SettingsPluginAuthService {
 
   constructor(
     private readonly keyProvider: PluginAuthKeyProvider,
-    options?: SettingsPluginAuthServiceOptions,
+    options?: SettingsPluginAuthServiceOptions
   ) {
     this.maxSkewSeconds = options?.maxSkewSeconds ?? readMaxSkewFromEnv();
   }
@@ -49,7 +49,7 @@ export class SettingsPluginAuthService {
     if (!pluginId || !timestampRaw || !nonce || !signature) {
       throw new SettingsPluginAuthError(
         "plugin_auth_missing_headers",
-        "Missing plugin authentication headers",
+        "Missing plugin authentication headers"
       );
     }
 
@@ -57,7 +57,7 @@ export class SettingsPluginAuthService {
     if (!Number.isFinite(timestamp)) {
       throw new SettingsPluginAuthError(
         "plugin_auth_invalid_timestamp",
-        "Invalid plugin auth timestamp",
+        "Invalid plugin auth timestamp"
       );
     }
 
@@ -65,7 +65,7 @@ export class SettingsPluginAuthService {
     if (Math.abs(now - timestamp) > this.maxSkewSeconds) {
       throw new SettingsPluginAuthError(
         "plugin_auth_timestamp_expired",
-        "Plugin auth timestamp expired",
+        "Plugin auth timestamp expired"
       );
     }
 
@@ -73,7 +73,7 @@ export class SettingsPluginAuthService {
     if (!secret) {
       throw new SettingsPluginAuthError(
         "plugin_auth_plugin_not_configured",
-        `Plugin caller "${pluginId}" is not configured`,
+        `Plugin caller "${pluginId}" is not configured`
       );
     }
 
@@ -87,13 +87,13 @@ export class SettingsPluginAuthService {
       path: normalizePath(request.url ?? "/"),
       timestamp,
       nonce,
-      body: ctx.body,
+      body: ctx.body
     });
 
     if (!signaturesEqual(signature, expected)) {
       throw new SettingsPluginAuthError(
         "plugin_auth_invalid_signature",
-        "Invalid plugin request signature",
+        "Invalid plugin request signature"
       );
     }
 
@@ -107,11 +107,7 @@ export class SettingsPluginAuthService {
     return Array.isArray(value) ? value[0] : value;
   }
 
-  private assertNonceNotReplayed(
-    pluginId: string,
-    nonce: string,
-    expiresAt: number,
-  ): void {
+  private assertNonceNotReplayed(pluginId: string, nonce: string, expiresAt: number): void {
     const key = `${pluginId}:${nonce}`;
     const now = Math.floor(Date.now() / 1000);
 
@@ -124,7 +120,7 @@ export class SettingsPluginAuthService {
     if (this.usedNonces.has(key)) {
       throw new SettingsPluginAuthError(
         "plugin_auth_nonce_replay",
-        "Plugin auth nonce replay detected",
+        "Plugin auth nonce replay detected"
       );
     }
 

@@ -1,4 +1,0 @@
-import{j as o}from"./iframe-ce5-efCb.js";import{u as r,M as s,C as i}from"./blocks-BgVWM2bA.js";import{S as a,M as m}from"./dialog.stories-BBy7FimR.js";import"./preload-helper-C1FmrZbK.js";import"./index-z7P5nfEw.js";import"./button-DTZJ7PNL.js";import"./button-base-BK7tGpG4.js";import"./class-names-2dOUpm6k.js";import"./eyebrow-UCSOs8qC.js";import"./text-8uwx9w-W.js";function t(e){const n={code:"code",h1:"h1",p:"p",...r(),...e.components};return o.jsxs(o.Fragment,{children:[o.jsx(s,{of:a}),`
-`,o.jsx(n.h1,{id:"dialog",children:"Dialog"}),`
-`,o.jsxs(n.p,{children:[o.jsx(n.code,{children:"Dialog"})," supporta modal e drawer senza introdurre dipendenze headless esterne."]}),`
-`,o.jsx(i,{of:m})]})}function C(e={}){const{wrapper:n}={...r(),...e.components};return n?o.jsx(n,{...e,children:o.jsx(t,{...e})}):t(e)}export{C as default};

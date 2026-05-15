@@ -18,13 +18,11 @@ function createDefaultCmsClient(baseUrl: string): CmsClient {
   return createCmsSdkClient({
     baseUrl,
     credentials: "include",
-    getAccessToken: () => getStoredAccessToken(),
+    getAccessToken: () => getStoredAccessToken()
   });
 }
 
-export function configureBackofficeSdk(
-  options: ConfigureBackofficeSdkOptions = {},
-): CmsClient {
+export function configureBackofficeSdk(options: ConfigureBackofficeSdkOptions = {}): CmsClient {
   cms = options.sdk ?? createDefaultCmsClient(options.baseUrl ?? "/cms");
   return cms;
 }

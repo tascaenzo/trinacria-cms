@@ -1,13 +1,6 @@
-import {
-  createPluginDbScope,
-  type DbAdapter,
-  type PluginDbScope,
-} from "@trinacria-cms/kernel";
+import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
-import {
-  ApiKeyRecordSchema,
-  type ApiKeyRecord,
-} from "./api-keys.schemas.js";
+import { ApiKeyRecordSchema, type ApiKeyRecord } from "./api-keys.schemas.js";
 
 const API_KEYS_ENTITY_NAME = "api_keys";
 
@@ -27,14 +20,14 @@ export class ApiKeysRepository {
   async findById(id: string): Promise<ApiKeyRecord | null> {
     return this.repository().findOne({
       filter: { id: id.trim() },
-      parse: (value: unknown) => this.parseRecord(value),
+      parse: (value: unknown) => this.parseRecord(value)
     });
   }
 
   async findByLookupId(lookupId: string): Promise<ApiKeyRecord | null> {
     return this.repository().findOne({
       filter: { lookupId: lookupId.trim().toLowerCase() },
-      parse: (value: unknown) => this.parseRecord(value),
+      parse: (value: unknown) => this.parseRecord(value)
     });
   }
 
@@ -57,18 +50,15 @@ export class ApiKeysRepository {
       limit: options?.limit,
       offset: options?.offset,
       sort: { createdAt: "desc" },
-      parse: (value: unknown) => this.parseRecord(value),
+      parse: (value: unknown) => this.parseRecord(value)
     });
   }
 
   async updateById(
     id: string,
-    patch: Partial<Omit<ApiKeyRecord, "id">>,
+    patch: Partial<Omit<ApiKeyRecord, "id">>
   ): Promise<ApiKeyRecord | null> {
-    const updated = await this.repository().updateOne(
-      { filter: { id: id.trim() } },
-      patch,
-    );
+    const updated = await this.repository().updateOne({ filter: { id: id.trim() } }, patch);
     if (!updated) return null;
     return this.parseRecord(updated);
   }
@@ -84,12 +74,7 @@ export class ApiKeysRepository {
     }
 
     const normalized = { ...(value as Record<string, unknown>) };
-    for (const key of [
-      "description",
-      "lastUsedAt",
-      "expiresAt",
-      "revokedAt",
-    ] as const) {
+    for (const key of ["description", "lastUsedAt", "expiresAt", "revokedAt"] as const) {
       if (normalized[key] === null) {
         delete normalized[key];
       }

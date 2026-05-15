@@ -8,7 +8,7 @@ import { cms } from "./cms-sdk.js";
 export async function loadRuntimePluginInfo(): Promise<readonly AdminRuntimePluginInfo[]> {
   const [plugins, capabilities] = await Promise.all([
     cms.system.listInstalledPlugins(),
-    cms.system.listInstalledCapabilities(),
+    cms.system.listInstalledCapabilities()
   ]);
 
   const capabilityMap = new Map<string, Set<string>>();
@@ -26,6 +26,6 @@ export async function loadRuntimePluginInfo(): Promise<readonly AdminRuntimePlug
     installed: plugin.state !== "unloaded",
     version: plugin.version,
     state: plugin.state,
-    capabilities: Array.from(capabilityMap.get(plugin.id) ?? []),
+    capabilities: Array.from(capabilityMap.get(plugin.id) ?? [])
   }));
 }

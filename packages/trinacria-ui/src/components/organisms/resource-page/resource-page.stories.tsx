@@ -5,7 +5,9 @@ import { PageHeader } from "../../molecules/page-section/page-section.js";
 import { ResourceToolbar } from "../resource-toolbar/resource-toolbar.js";
 import { ResourcePage } from "./resource-page.js";
 
-const meta = { title: "Layout/Pages/ResourcePage", component: ResourcePage } satisfies Meta<typeof ResourcePage>;
+const meta = { title: "Layout/Pages/ResourcePage", component: ResourcePage } satisfies Meta<
+  typeof ResourcePage
+>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 

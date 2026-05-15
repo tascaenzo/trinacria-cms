@@ -17,18 +17,16 @@ test("SettingsService resolves defaults and explicit values", async () => {
     category: "privacy",
     defaultValue: {
       cookieBanner: { enabled: true, mode: "opt-in" },
-      retentionDays: 365,
-    },
+      retentionDays: 365
+    }
   });
 
-  const fromDefault = await service.getResolvedValueByKey(
-    "core-pack:privacy:consents",
-  );
+  const fromDefault = await service.getResolvedValueByKey("core-pack:privacy:consents");
   assert.ok(fromDefault);
   assert.equal(fromDefault?.source, "default");
   assert.deepEqual(fromDefault?.value, {
     cookieBanner: { enabled: true, mode: "opt-in" },
-    retentionDays: 365,
+    retentionDays: 365
   });
 
   const upserted = await service.upsertValue({
@@ -36,21 +34,19 @@ test("SettingsService resolves defaults and explicit values", async () => {
     key: "core-pack:privacy:consents",
     value: {
       cookieBanner: { enabled: false, mode: "opt-out" },
-      retentionDays: 180,
-    },
+      retentionDays: 180
+    }
   });
 
   assert.equal(upserted.version, 1);
 
-  const fromValue = await service.getResolvedValueByKey(
-    "core-pack:privacy:consents",
-  );
+  const fromValue = await service.getResolvedValueByKey("core-pack:privacy:consents");
   assert.ok(fromValue);
   assert.equal(fromValue?.source, "value");
   assert.equal(fromValue?.version, 1);
   assert.deepEqual(fromValue?.value, {
     cookieBanner: { enabled: false, mode: "opt-out" },
-    retentionDays: 180,
+    retentionDays: 180
   });
 });
 
@@ -60,41 +56,34 @@ test("SettingsService masks secrets and enforces owner-only reveal", async () =>
   await service.upsertSecret({
     requesterPluginId: "core-pack",
     key: "core-pack:integrations:stripe_api_key",
-    plaintext: "sk_test_123456",
+    plaintext: "sk_test_123456"
   });
 
   const metadata = await service.getSecretMetadata(
     "core-pack",
-    "core-pack:integrations:stripe_api_key",
+    "core-pack:integrations:stripe_api_key"
   );
   assert.ok(metadata);
   assert.equal(metadata?.maskedValue, "********");
 
   const adminMetadata = await service.getSecretMetadataByKey(
-    "core-pack:integrations:stripe_api_key",
+    "core-pack:integrations:stripe_api_key"
   );
   assert.ok(adminMetadata);
   assert.equal(adminMetadata?.maskedValue, "********");
 
-  const revealed = await service.revealSecret(
-    "core-pack",
-    "core-pack:integrations:stripe_api_key",
-  );
+  const revealed = await service.revealSecret("core-pack", "core-pack:integrations:stripe_api_key");
   assert.ok(revealed);
   assert.equal(revealed?.value, "sk_test_123456");
 
   await assertSettingsAccessError(
     () => service.getSecretMetadata("blog-pack", "core-pack:integrations:stripe_api_key"),
-    "auth_forbidden_settings_owner_required",
+    "auth_forbidden_settings_owner_required"
   );
 
   await assertSettingsAccessError(
-    () =>
-      service.revealSecret(
-        "blog-pack",
-        "core-pack:integrations:stripe_api_key",
-      ),
-    "auth_forbidden_settings_owner_required",
+    () => service.revealSecret("blog-pack", "core-pack:integrations:stripe_api_key"),
+    "auth_forbidden_settings_owner_required"
   );
 
   const exported = await service.exportPluginSettings("core-pack", "core-pack");
@@ -104,13 +93,13 @@ test("SettingsService masks secrets and enforces owner-only reveal", async () =>
 
   await assertSettingsAccessError(
     () => service.exportPluginSettings("blog-pack", "core-pack"),
-    "auth_forbidden_settings_owner_required",
+    "auth_forbidden_settings_owner_required"
   );
 });
 
 async function assertSettingsAccessError(
   action: () => Promise<unknown>,
-  expectedCode: string,
+  expectedCode: string
 ): Promise<void> {
   await assert.rejects(action, (error: unknown) => {
     assert.ok(error instanceof SettingsAccessError);
@@ -126,7 +115,7 @@ function createSettingsService(): SettingsService {
   const secrets = new SettingsSecretsRepository(db);
   const crypto = new SettingsSecretsCryptoService({
     masterKey: "test-master-key",
-    keyVersion: "test-v1",
+    keyVersion: "test-v1"
   });
 
   return new SettingsService(definitions, values, secrets, crypto);
@@ -144,13 +133,10 @@ function createFakeDbAdapter(): DbAdapter {
     return created;
   };
 
-  const repository = <TData extends Record<string, unknown>>(
-    key: string,
-  ): DbRepository<TData> => ({
+  const repository = <TData extends Record<string, unknown>>(key: string): DbRepository<TData> => ({
     async findOne(query: DbQuery<TData>) {
       const bucket = getBucket(key) as TData[];
-      const found =
-        bucket.find((item) => matchesFilter(item, query.filter)) ?? null;
+      const found = bucket.find((item) => matchesFilter(item, query.filter)) ?? null;
       if (!found) return null;
       return query.parse ? query.parse(found) : found;
     },
@@ -179,7 +165,7 @@ function createFakeDbAdapter(): DbAdapter {
       if (index < 0) return null;
       const updated = {
         ...bucket[index],
-        ...patch,
+        ...patch
       } as TData;
       bucket[index] = updated;
       return updated;
@@ -190,7 +176,7 @@ function createFakeDbAdapter(): DbAdapter {
       if (index < 0) return false;
       bucket.splice(index, 1);
       return true;
-    },
+    }
   });
 
   return {
@@ -200,18 +186,18 @@ function createFakeDbAdapter(): DbAdapter {
     async beginTransaction() {
       return {
         async commit() {},
-        async rollback() {},
+        async rollback() {}
       };
     },
     async healthCheck() {
       return { ok: true };
-    },
+    }
   };
 }
 
 function matchesFilter(
   item: Record<string, unknown>,
-  filter: Record<string, unknown> | undefined,
+  filter: Record<string, unknown> | undefined
 ): boolean {
   if (!filter) return true;
   return Object.entries(filter).every(([key, value]) => item[key] === value);
@@ -219,7 +205,7 @@ function matchesFilter(
 
 function applySort<TData extends Record<string, unknown>>(
   values: readonly TData[],
-  sort: Record<string, "asc" | "desc"> | undefined,
+  sort: Record<string, "asc" | "desc"> | undefined
 ): TData[] {
   if (!sort || Object.keys(sort).length === 0) return [...values];
   const [field, direction] = Object.entries(sort)[0]!;

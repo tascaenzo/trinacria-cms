@@ -10,7 +10,7 @@ export function useFormControlIds(id?: string, name?: string) {
     controlId: baseId,
     errorId: `${baseId}-error`,
     hintId: `${baseId}-hint`,
-    labelId: `${baseId}-label`,
+    labelId: `${baseId}-label`
   };
 }
 
@@ -21,14 +21,18 @@ export function buildFormControlAria(options: {
   hint?: unknown;
   hintId: string;
 }) {
-  const ids = [options.describedBy, options.hint ? options.hintId : null, options.error ? options.errorId : null]
+  const ids = [
+    options.describedBy,
+    options.hint ? options.hintId : null,
+    options.error ? options.errorId : null
+  ]
     .filter(Boolean)
     .join(" ")
     .trim();
 
   return {
     describedBy: ids || undefined,
-    errorMessage: options.error ? options.errorId : undefined,
+    errorMessage: options.error ? options.errorId : undefined
   };
 }
 
@@ -48,12 +52,15 @@ export function formControlClassName(options?: {
   } = options ?? {};
 
   return cn(
-    multiline ? "min-h-28 w-full rounded-lg border bg-[color:var(--color-surface)] px-3 py-2.5 text-sm" : "h-10 w-full rounded-lg border bg-[color:var(--color-surface)] px-3 text-sm",
+    multiline
+      ? "min-h-28 w-full rounded-[var(--radius-control)] border bg-[color:var(--color-surface)] px-3 py-2.5 text-sm"
+      : "h-10 w-full rounded-[var(--radius-control)] border bg-[color:var(--color-surface)] px-3 text-sm",
     "border-[color:var(--color-border-strong)] text-[color:var(--color-ink)] outline-none transition placeholder:text-[color:var(--color-ink-subtle)]",
     withFocusWithin
       ? "focus-within:border-[color:var(--color-focus)] focus-within:ring-2 focus-within:ring-[color:var(--color-overlay-soft)]"
       : "focus:border-[color:var(--color-focus)] focus:ring-2 focus:ring-[color:var(--color-overlay-soft)]",
-    disabled && "cursor-not-allowed bg-[color:var(--color-panel-soft)] text-[color:var(--color-ink-subtle)]",
+    disabled &&
+      "cursor-not-allowed bg-[color:var(--color-panel-soft)] text-[color:var(--color-ink-subtle)]",
     Boolean(error) &&
       (withFocusWithin
         ? "border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] focus-within:border-[color:var(--color-danger-ink)] focus-within:ring-[color:var(--color-danger-border)]"
@@ -109,7 +116,10 @@ export function FormControlSurface({
   ...props
 }: FormControlSurfaceProps) {
   return (
-    <div className={formControlClassName({ className, disabled, error, withFocusWithin: true })} {...props}>
+    <div
+      className={formControlClassName({ className, disabled, error, withFocusWithin: true })}
+      {...props}
+    >
       {children}
     </div>
   );

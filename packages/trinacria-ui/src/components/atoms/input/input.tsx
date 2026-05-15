@@ -2,7 +2,7 @@ import {
   buildFormControlAria,
   FormControlShell,
   formControlClassName,
-  useFormControlIds,
+  useFormControlIds
 } from "../form-control/form-control.js";
 import type { InputProps } from "./input.types.js";
 
@@ -17,7 +17,7 @@ export function Input({ className, error, hint, label, id, ...props }: InputProp
     error,
     errorId: ids.errorId,
     hint,
-    hintId: ids.hintId,
+    hintId: ids.hintId
   });
 
   return (

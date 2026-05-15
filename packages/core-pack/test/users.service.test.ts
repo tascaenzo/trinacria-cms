@@ -10,7 +10,7 @@ test("UsersService creates and fetches users", async () => {
 
   const created = await service.createUser({
     email: "Alice@example.com",
-    displayName: "Alice Smith",
+    displayName: "Alice Smith"
   });
 
   assert.equal(created.email, "alice@example.com");
@@ -26,22 +26,18 @@ test("UsersService prevents duplicate email in plugin namespace", async () => {
   const db = createFakeDbAdapter();
   const service = new UsersService(new UsersRepository(db));
 
-  await service.createUser(
-    {
-      email: "alice@example.com",
-      displayName: "Alice Smith",
-    },
-  );
+  await service.createUser({
+    email: "alice@example.com",
+    displayName: "Alice Smith"
+  });
 
   await assert.rejects(
     async () =>
-      service.createUser(
-        {
-          email: "alice@example.com",
-          displayName: "Alice Johnson",
-        },
-      ),
-    /already exists/,
+      service.createUser({
+        email: "alice@example.com",
+        displayName: "Alice Johnson"
+      }),
+    /already exists/
   );
 });
 
@@ -51,11 +47,11 @@ test("UsersService updates user status and lists users", async () => {
 
   const first = await service.createUser({
     email: "a@example.com",
-    displayName: "A One",
+    displayName: "A One"
   });
   await service.createUser({
     email: "b@example.com",
-    displayName: "B Two",
+    displayName: "B Two"
   });
 
   const suspended = await service.suspendUser(first.id);
@@ -77,20 +73,20 @@ function createFakeDbAdapter(): DbAdapter {
     return created;
   };
 
-  const repository = <TData extends Record<string, unknown>>(
-    key: string,
-  ): DbRepository<TData> => ({
+  const repository = <TData extends Record<string, unknown>>(key: string): DbRepository<TData> => ({
     async findOne(query: DbQuery<TData>) {
       const bucket = getBucket(key) as TData[];
-      const found =
-        bucket.find((item) => matchesFilter(item, query.filter)) ?? null;
+      const found = bucket.find((item) => matchesFilter(item, query.filter)) ?? null;
       if (!found) return null;
       return query.parse ? query.parse(found) : found;
     },
     async findMany(query: DbQuery<TData>) {
       const bucket = getBucket(key) as TData[];
       const filtered = bucket.filter((item) => matchesFilter(item, query.filter));
-      const sliced = filtered.slice(query.offset ?? 0, (query.offset ?? 0) + (query.limit ?? filtered.length));
+      const sliced = filtered.slice(
+        query.offset ?? 0,
+        (query.offset ?? 0) + (query.limit ?? filtered.length)
+      );
       return sliced.map((item) => (query.parse ? query.parse(item) : item));
     },
     async insertOne(data: Partial<TData>) {
@@ -109,7 +105,7 @@ function createFakeDbAdapter(): DbAdapter {
       if (index < 0) return null;
       const updated = {
         ...bucket[index],
-        ...patch,
+        ...patch
       } as TData;
       bucket[index] = updated;
       return updated;
@@ -120,7 +116,7 @@ function createFakeDbAdapter(): DbAdapter {
       if (index < 0) return false;
       bucket.splice(index, 1);
       return true;
-    },
+    }
   });
 
   return {
@@ -130,18 +126,18 @@ function createFakeDbAdapter(): DbAdapter {
     async beginTransaction() {
       return {
         async commit() {},
-        async rollback() {},
+        async rollback() {}
       };
     },
     async healthCheck() {
       return { ok: true };
-    },
+    }
   };
 }
 
 function matchesFilter(
   item: Record<string, unknown>,
-  filter: Record<string, unknown> | undefined,
+  filter: Record<string, unknown> | undefined
 ): boolean {
   if (!filter) return true;
   return Object.entries(filter).every(([key, value]) => item[key] === value);

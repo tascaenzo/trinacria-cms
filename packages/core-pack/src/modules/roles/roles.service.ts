@@ -1,7 +1,4 @@
-import type {
-  CreateRoleInput,
-  UpdateRoleStatusInput,
-} from "./dto/roles.input.dto.js";
+import type { CreateRoleInput, UpdateRoleStatusInput } from "./dto/roles.input.dto.js";
 import { type RoleRecord } from "./roles.schemas.js";
 import { RoleGrantsRepository } from "./grants/role-grants.repository.js";
 import { RolesRepository } from "./roles.repository.js";
@@ -13,7 +10,7 @@ import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 export class RolesService {
   constructor(
     private readonly repository: RolesRepository,
-    private readonly grants: RoleGrantsRepository,
+    private readonly grants: RoleGrantsRepository
   ) {}
 
   async createRole(input: CreateRoleInput): Promise<RoleRecord> {
@@ -26,7 +23,7 @@ export class RolesService {
       await this.grants.upsert({
         roleCode: created.code,
         permissionKey,
-        sourcePluginId: CORE_PACK_PLUGIN_ID,
+        sourcePluginId: CORE_PACK_PLUGIN_ID
       });
     }
     return this.hydrateRolePermissions(created);
@@ -38,13 +35,10 @@ export class RolesService {
     return this.hydrateRolePermissions(role);
   }
 
-  async listRoles(options?: {
-    limit?: number;
-    offset?: number;
-  }): Promise<readonly RoleRecord[]> {
+  async listRoles(options?: { limit?: number; offset?: number }): Promise<readonly RoleRecord[]> {
     const roles = await this.repository.list({
       limit: options?.limit,
-      offset: options?.offset,
+      offset: options?.offset
     });
     return this.hydrateManyRolePermissions(roles);
   }
@@ -57,10 +51,7 @@ export class RolesService {
     return this.setRoleStatus(id, { status: "active" });
   }
 
-  private setRoleStatus(
-    id: string,
-    input: UpdateRoleStatusInput,
-  ): Promise<RoleRecord | null> {
+  private setRoleStatus(id: string, input: UpdateRoleStatusInput): Promise<RoleRecord | null> {
     return this.repository.updateStatus(id, input).then((role) => {
       if (!role) return null;
       return this.hydrateRolePermissions(role);
@@ -68,7 +59,7 @@ export class RolesService {
   }
 
   private async hydrateManyRolePermissions(
-    roles: readonly RoleRecord[],
+    roles: readonly RoleRecord[]
   ): Promise<readonly RoleRecord[]> {
     const grants = await this.grants.listByRoleCodes(roles.map((role) => role.code));
     const permissionMap = new Map<string, string[]>();
@@ -83,18 +74,16 @@ export class RolesService {
 
     return roles.map((role) => ({
       ...role,
-      permissions: permissionMap.get(role.code) ?? [],
+      permissions: permissionMap.get(role.code) ?? []
     }));
   }
 
   private async hydrateRolePermissions(role: RoleRecord): Promise<RoleRecord> {
     const grants = await this.grants.listByRoleCode(role.code);
-    const permissions = Array.from(
-      new Set(grants.map((grant) => grant.permissionKey)),
-    );
+    const permissions = Array.from(new Set(grants.map((grant) => grant.permissionKey)));
     return {
       ...role,
-      permissions,
+      permissions
     };
   }
 }

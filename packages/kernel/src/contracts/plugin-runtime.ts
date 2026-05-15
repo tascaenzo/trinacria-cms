@@ -12,12 +12,7 @@ export type PluginLifecyclePhase =
   | "unload"
   | "rollback";
 
-export type PluginRuntimeOperation =
-  | "load"
-  | "unload"
-  | "reload"
-  | "disable"
-  | "enable";
+export type PluginRuntimeOperation = "load" | "unload" | "reload" | "disable" | "enable";
 
 export interface PluginRuntimeOperationAvailability {
   operation: PluginRuntimeOperation;
@@ -57,15 +52,11 @@ export interface PluginRuntimeLifecycleHooks {
    * Called after plugin modules/hooks completed successfully and before
    * finalizing the plugin as loaded.
    */
-  onAfterLoad?(
-    context: KernelPluginRuntimeContext,
-  ): Promise<void> | void;
+  onAfterLoad?(context: KernelPluginRuntimeContext): Promise<void> | void;
   /**
    * Called before unregistering a plugin definition from the runtime catalog.
    */
-  onBeforeUnregister?(
-    context: KernelPluginRuntimeContext,
-  ): Promise<void> | void;
+  onBeforeUnregister?(context: KernelPluginRuntimeContext): Promise<void> | void;
 }
 
 /**
@@ -211,8 +202,5 @@ export interface PluginRuntime {
   /** Returns the current dependency graph and warnings. */
   describeDependencies(): PluginDependencyGraphSnapshot;
   /** Returns recent lifecycle events for diagnostics and audit. */
-  events(options?: {
-    pluginId?: string;
-    limit?: number;
-  }): readonly PluginRuntimeEvent[];
+  events(options?: { pluginId?: string; limit?: number }): readonly PluginRuntimeEvent[];
 }

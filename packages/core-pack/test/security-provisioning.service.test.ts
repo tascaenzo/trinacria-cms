@@ -20,7 +20,7 @@ test("security provisioning syncs plugin-owned permissions, roles and grants", a
     grants,
     rolePolicyRules,
     permissions,
-    userRoles,
+    userRoles
   );
 
   const pluginManifest: PluginManifest = {
@@ -30,23 +30,23 @@ test("security provisioning syncs plugin-owned permissions, roles and grants", a
     security: {
       permissions: [
         { key: "blog-pack:posts:read", displayName: "Read posts" },
-        { key: "blog-pack:posts:write", displayName: "Write posts" },
+        { key: "blog-pack:posts:write", displayName: "Write posts" }
       ],
       roles: [{ code: "editor", name: "Editor" }],
       grants: [
         {
           roleCode: "editor",
-          permissionKeys: ["blog-pack:posts:read", "blog-pack:posts:write"],
-        },
+          permissionKeys: ["blog-pack:posts:read", "blog-pack:posts:write"]
+        }
       ],
       policyRules: [
         {
           roleCode: "editor",
           effect: "allow",
-          permissionPattern: "blog-pack:posts:*",
-        },
-      ],
-    },
+          permissionPattern: "blog-pack:posts:*"
+        }
+      ]
+    }
   };
 
   await service.provision(pluginManifest);
@@ -56,20 +56,16 @@ test("security provisioning syncs plugin-owned permissions, roles and grants", a
   assert.equal(editor.ownerPluginId, "blog-pack");
 
   const roleGrants = await grants.listByRoleCode("editor");
-  assert.deepEqual(
-    roleGrants.map((item) => item.permissionKey).sort(),
-    ["blog-pack:posts:read", "blog-pack:posts:write"],
-  );
+  assert.deepEqual(roleGrants.map((item) => item.permissionKey).sort(), [
+    "blog-pack:posts:read",
+    "blog-pack:posts:write"
+  ]);
 
   const ownedPermissions = await permissions.listBySourcePlugin("blog-pack");
   assert.equal(ownedPermissions.length, 2);
-  const provisionedPolicyRules =
-    await rolePolicyRules.listBySourcePlugin("blog-pack");
+  const provisionedPolicyRules = await rolePolicyRules.listBySourcePlugin("blog-pack");
   assert.equal(provisionedPolicyRules.length, 1);
-  assert.equal(
-    provisionedPolicyRules[0]?.permissionPattern,
-    "blog-pack:posts:*",
-  );
+  assert.equal(provisionedPolicyRules[0]?.permissionPattern, "blog-pack:posts:*");
 
   await service.provision({
     ...pluginManifest,
@@ -79,21 +75,23 @@ test("security provisioning syncs plugin-owned permissions, roles and grants", a
       grants: [
         {
           roleCode: "editor",
-          permissionKeys: ["blog-pack:posts:read"],
-        },
+          permissionKeys: ["blog-pack:posts:read"]
+        }
       ],
-      policyRules: [],
-    },
+      policyRules: []
+    }
   });
 
   const syncedPermissions = await permissions.listBySourcePlugin("blog-pack");
-  assert.deepEqual(syncedPermissions.map((item) => item.key), [
-    "blog-pack:posts:read",
-  ]);
+  assert.deepEqual(
+    syncedPermissions.map((item) => item.key),
+    ["blog-pack:posts:read"]
+  );
   const syncedGrants = await grants.listByRoleCode("editor");
-  assert.deepEqual(syncedGrants.map((item) => item.permissionKey), [
-    "blog-pack:posts:read",
-  ]);
+  assert.deepEqual(
+    syncedGrants.map((item) => item.permissionKey),
+    ["blog-pack:posts:read"]
+  );
   const syncedPolicyRules = await rolePolicyRules.listBySourcePlugin("blog-pack");
   assert.equal(syncedPolicyRules.length, 0);
 });
@@ -110,7 +108,7 @@ test("deprovision keeps role as disabled when foreign plugin grants still exist"
     grants,
     rolePolicyRules,
     permissions,
-    userRoles,
+    userRoles
   );
 
   await service.provision({
@@ -123,10 +121,10 @@ test("deprovision keeps role as disabled when foreign plugin grants still exist"
       grants: [
         {
           roleCode: "editor",
-          permissionKeys: ["blog-pack:posts:read"],
-        },
-      ],
-    },
+          permissionKeys: ["blog-pack:posts:read"]
+        }
+      ]
+    }
   });
 
   await service.provision({
@@ -138,16 +136,16 @@ test("deprovision keeps role as disabled when foreign plugin grants still exist"
       grants: [
         {
           roleCode: "editor",
-          permissionKeys: ["shop-pack:catalog:read"],
-        },
-      ],
-    },
+          permissionKeys: ["shop-pack:catalog:read"]
+        }
+      ]
+    }
   });
 
   await service.deprovision({
     id: "blog-pack",
     version: "1.0.0",
-    requiresCore: "^0.1.0",
+    requiresCore: "^0.1.0"
   });
 
   const editor = await roles.findByCode("editor");
@@ -170,9 +168,7 @@ function createFakeDbAdapter(): DbAdapter {
     return created;
   };
 
-  const repository = <TData extends Record<string, unknown>>(
-    key: string,
-  ): DbRepository<TData> => ({
+  const repository = <TData extends Record<string, unknown>>(key: string): DbRepository<TData> => ({
     async findOne(query: DbQuery<TData>) {
       const bucket = getBucket(key) as TData[];
       const found = bucket.find((item) => matchesFilter(item, query.filter)) ?? null;
@@ -212,7 +208,7 @@ function createFakeDbAdapter(): DbAdapter {
       if (index < 0) return false;
       bucket.splice(index, 1);
       return true;
-    },
+    }
   });
 
   return {
@@ -222,18 +218,18 @@ function createFakeDbAdapter(): DbAdapter {
     async beginTransaction() {
       return {
         async commit() {},
-        async rollback() {},
+        async rollback() {}
       };
     },
     async healthCheck() {
       return { ok: true };
-    },
+    }
   };
 }
 
 function matchesFilter(
   item: Record<string, unknown>,
-  filter: Record<string, unknown> | undefined,
+  filter: Record<string, unknown> | undefined
 ): boolean {
   if (!filter) return true;
   return Object.entries(filter).every(([key, value]) => item[key] === value);
@@ -241,7 +237,7 @@ function matchesFilter(
 
 function applySort<TData extends Record<string, unknown>>(
   values: readonly TData[],
-  sort: Record<string, "asc" | "desc"> | undefined,
+  sort: Record<string, "asc" | "desc"> | undefined
 ): TData[] {
   if (!sort || Object.keys(sort).length === 0) return [...values];
   const [field, direction] = Object.entries(sort)[0];

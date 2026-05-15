@@ -16,7 +16,7 @@ export function ButtonGroup({
         orientation === "vertical" && "flex-col items-stretch",
         orientation === "horizontal" && wrap && "flex-wrap",
         orientation === "horizontal" && !wrap && "flex-nowrap",
-        className,
+        className
       )}
       {...props}
     >

@@ -4,10 +4,7 @@ import { RoleGrantsRepository } from "../../roles/grants/role-grants.repository.
 import { RolesRepository } from "../../roles/roles.repository.js";
 import { UsersRepository } from "../../users/users.repository.js";
 import { RolePolicyRulesRepository } from "../role-policy-rules/role-policy-rules.repository.js";
-import {
-  dedupeAuthorizationRules,
-  type AuthorizationRule,
-} from "../authz-rules.js";
+import { dedupeAuthorizationRules, type AuthorizationRule } from "../authz-rules.js";
 import { UserRolesRepository } from "./user-roles.repository.js";
 
 /**
@@ -20,13 +17,10 @@ export class UserAccessService {
     private readonly roleGrants: RoleGrantsRepository,
     private readonly rolePolicyRules: RolePolicyRulesRepository,
     private readonly permissions: PermissionsRepository,
-    private readonly userRoles: UserRolesRepository,
+    private readonly userRoles: UserRolesRepository
   ) {}
 
-  async assignRoleToUser(
-    userId: string,
-    roleCode: string,
-  ) {
+  async assignRoleToUser(userId: string, roleCode: string) {
     const user = await this.assertUserExists(userId);
     if (user.status !== "active") {
       throw new Error(`User "${user.id}" is not active`);
@@ -43,14 +37,11 @@ export class UserAccessService {
     return this.userRoles.upsert({
       userId: user.id,
       roleCode: role.code,
-      sourcePluginId: CORE_PACK_PLUGIN_ID,
+      sourcePluginId: CORE_PACK_PLUGIN_ID
     });
   }
 
-  async removeRoleFromUser(
-    userId: string,
-    roleCode: string,
-  ): Promise<boolean> {
+  async removeRoleFromUser(userId: string, roleCode: string): Promise<boolean> {
     await this.assertUserExists(userId);
     return this.userRoles.deleteByUserAndRole(userId, roleCode);
   }
@@ -67,13 +58,11 @@ export class UserAccessService {
     if (activeRoleCodes.length === 0) return [];
 
     const grants = await this.roleGrants.listByRoleCodes(activeRoleCodes);
-    const grantedPermissionKeys = Array.from(
-      new Set(grants.map((grant) => grant.permissionKey)),
-    );
+    const grantedPermissionKeys = Array.from(new Set(grants.map((grant) => grant.permissionKey)));
     if (grantedPermissionKeys.length === 0) return [];
 
     const permissionRecords = await Promise.all(
-      grantedPermissionKeys.map((key) => this.permissions.findByKey(key)),
+      grantedPermissionKeys.map((key) => this.permissions.findByKey(key))
     );
 
     return permissionRecords
@@ -82,9 +71,7 @@ export class UserAccessService {
       .map((permission) => permission.key);
   }
 
-  async resolveUserAuthorizationRules(
-    userId: string,
-  ): Promise<readonly AuthorizationRule[]> {
+  async resolveUserAuthorizationRules(userId: string): Promise<readonly AuthorizationRule[]> {
     await this.assertUserExists(userId);
 
     const activeRoleCodes = await this.resolveActiveRoleCodes(userId);
@@ -95,8 +82,8 @@ export class UserAccessService {
         ({
           effect: "allow" as const,
           permissionPattern: permissionKey,
-          conditions: [],
-        }) satisfies AuthorizationRule,
+          conditions: []
+        }) satisfies AuthorizationRule
     );
 
     const policyRules = await this.rolePolicyRules.listByRoleCodes(activeRoleCodes);
@@ -105,8 +92,8 @@ export class UserAccessService {
         ({
           effect: rule.effect,
           permissionPattern: rule.permissionPattern,
-          conditions: rule.conditions,
-        }) satisfies AuthorizationRule,
+          conditions: rule.conditions
+        }) satisfies AuthorizationRule
     );
 
     return dedupeAuthorizationRules([...allowFromGrants, ...mappedPolicies]);
@@ -117,9 +104,7 @@ export class UserAccessService {
     const roleCodes = Array.from(new Set(assignments.map((item) => item.roleCode)));
     if (roleCodes.length === 0) return [];
 
-    const roles = await Promise.all(
-      roleCodes.map((roleCode) => this.roles.findByCode(roleCode)),
-    );
+    const roles = await Promise.all(roleCodes.map((roleCode) => this.roles.findByCode(roleCode)));
     return roles
       .filter((role): role is NonNullable<typeof role> => Boolean(role))
       .filter((role) => role.status === "active")

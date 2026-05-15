@@ -7,5 +7,5 @@ import { backofficeModules } from "./custom-backoffice-modules.js";
  */
 export const backofficeOptions: MountBackofficeOptions = {
   apiBaseUrl: import.meta.env.VITE_CMS_API_BASE_URL ?? "/cms",
-  modules: backofficeModules,
+  modules: backofficeModules
 };

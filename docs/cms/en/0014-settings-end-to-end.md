@@ -81,14 +81,14 @@ Decision reference: `0013 - Settings security and operational ownership`.
 
 Condensed matrix:
 
-| Operation | Admin bearer | Signed owner plugin | Signed non-owner plugin |
-| --- | --- | --- | --- |
-| List/get definitions | yes | yes | yes |
-| Get resolved value | yes | yes | yes |
-| Get masked secret metadata | yes | yes | no |
-| Write definition/value/secret | not directly | yes | no |
-| Reveal secret | no | yes | no |
-| Export plugin snapshot | not directly | yes | no |
+| Operation                     | Admin bearer | Signed owner plugin | Signed non-owner plugin |
+| ----------------------------- | ------------ | ------------------- | ----------------------- |
+| List/get definitions          | yes          | yes                 | yes                     |
+| Get resolved value            | yes          | yes                 | yes                     |
+| Get masked secret metadata    | yes          | yes                 | no                      |
+| Write definition/value/secret | not directly | yes                 | no                      |
+| Reveal secret                 | no           | yes                 | no                      |
+| Export plugin snapshot        | not directly | yes                 | no                      |
 
 Operational consequence:
 
@@ -98,17 +98,17 @@ Operational consequence:
 
 ## 4. HTTP endpoints
 
-| Method | Endpoint | Auth | Notes |
-| --- | --- | --- | --- |
-| `GET` | `/v1/settings/definitions` | admin bearer or signed plugin | definition catalog |
-| `GET` | `/v1/settings/definitions/:key` | admin bearer or signed plugin | definition detail |
-| `POST` | `/v1/settings/definitions` | signed owner plugin | definition upsert |
-| `GET` | `/v1/settings/values/:key` | admin bearer or signed plugin | resolved value |
-| `PUT` | `/v1/settings/values/:key` | signed owner plugin | non-secret value upsert |
-| `GET` | `/v1/settings/secrets/:key` | admin bearer or signed owner plugin | masked metadata |
-| `PUT` | `/v1/settings/secrets/:key` | signed owner plugin | encrypted secret upsert |
-| `POST` | `/v1/settings/secrets/:key/reveal` | signed owner plugin | owner-only plaintext |
-| `GET` | `/v1/settings/export/:pluginId` | signed owner plugin | namespace snapshot with masked secrets |
+| Method | Endpoint                           | Auth                                | Notes                                  |
+| ------ | ---------------------------------- | ----------------------------------- | -------------------------------------- |
+| `GET`  | `/v1/settings/definitions`         | admin bearer or signed plugin       | definition catalog                     |
+| `GET`  | `/v1/settings/definitions/:key`    | admin bearer or signed plugin       | definition detail                      |
+| `POST` | `/v1/settings/definitions`         | signed owner plugin                 | definition upsert                      |
+| `GET`  | `/v1/settings/values/:key`         | admin bearer or signed plugin       | resolved value                         |
+| `PUT`  | `/v1/settings/values/:key`         | signed owner plugin                 | non-secret value upsert                |
+| `GET`  | `/v1/settings/secrets/:key`        | admin bearer or signed owner plugin | masked metadata                        |
+| `PUT`  | `/v1/settings/secrets/:key`        | signed owner plugin                 | encrypted secret upsert                |
+| `POST` | `/v1/settings/secrets/:key/reveal` | signed owner plugin                 | owner-only plaintext                   |
+| `GET`  | `/v1/settings/export/:pluginId`    | signed owner plugin                 | namespace snapshot with masked secrets |
 
 Expected errors:
 
@@ -218,7 +218,7 @@ Read example:
 
 ```ts
 const response = await cms.settings.getSettingValueByKey({
-  path: { key: "core-pack:site:name" },
+  path: { key: "core-pack:site:name" }
 });
 
 console.log(response.data.value);
@@ -232,17 +232,17 @@ await cms.settings.upsertSettingValue(
     path: { key: "core-pack:site:name" },
     body: {
       value: "Trinacria Editorial",
-      updatedBy: "core-pack:init",
-    },
+      updatedBy: "core-pack:init"
+    }
   },
   {
     headers: {
       "x-cms-plugin-id": "core-pack",
       "x-cms-plugin-ts": "<unix-ts>",
       "x-cms-plugin-nonce": "<nonce>",
-      "x-cms-plugin-signature": "<signature>",
-    },
-  },
+      "x-cms-plugin-signature": "<signature>"
+    }
+  }
 );
 ```
 

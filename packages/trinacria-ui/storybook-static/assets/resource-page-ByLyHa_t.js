@@ -1,4 +1,0 @@
-import{j as t}from"./iframe-ce5-efCb.js";import{u as n,M as a,C as s}from"./blocks-BgVWM2bA.js";import{S as i,D as m}from"./resource-page.stories-CMXLhTEq.js";import"./preload-helper-C1FmrZbK.js";import"./index-z7P5nfEw.js";import"./button-DTZJ7PNL.js";import"./button-base-BK7tGpG4.js";import"./class-names-2dOUpm6k.js";import"./feedback-BOf5M1IX.js";import"./panel-C5HhQPw_.js";import"./text-8uwx9w-W.js";import"./page-section-DAhk1toj.js";import"./eyebrow-UCSOs8qC.js";import"./resource-toolbar-CKpJibk5.js";function r(o){const e={h1:"h1",p:"p",...n(),...o.components};return t.jsxs(t.Fragment,{children:[t.jsx(a,{of:i}),`
-`,t.jsx(e.h1,{id:"resource-page",children:"Resource Page"}),`
-`,t.jsx(e.p,{children:"Wrapper pagina standard per schermate admin con header, toolbar, feedback stack e sidebar opzionale."}),`
-`,t.jsx(s,{of:m})]})}function X(o={}){const{wrapper:e}={...n(),...o.components};return e?t.jsx(e,{...o,children:t.jsx(r,{...o})}):r(o)}export{X as default};

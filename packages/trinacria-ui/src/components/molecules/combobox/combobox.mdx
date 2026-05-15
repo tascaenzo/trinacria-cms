@@ -1,0 +1,10 @@
+import { Meta, Canvas } from "@storybook/addon-docs/blocks";
+import * as Stories from "./combobox.stories";
+
+<Meta of={Stories} />
+
+# Combobox
+
+Controllo avanzato per selezione con ricerca, tastiera e dataset lunghi. Da preferire a `Select` quando le opzioni crescono o serve filtro inline.
+
+<Canvas of={Stories.Default} />

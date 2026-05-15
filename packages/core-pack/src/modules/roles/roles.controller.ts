@@ -4,7 +4,7 @@ import {
   parseQueryNumber,
   toOpenApiSchema,
   type HttpContext,
-  type HttpMiddleware,
+  type HttpMiddleware
 } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import { CORE_PACK_OPENAPI_TAGS } from "../openapi-tags.js";
@@ -16,7 +16,7 @@ import {
   ListRolesResponseSchema,
   RoleResponseSchema,
   RolesErrorResponseSchema,
-  UpdateRoleStatusInputSchema,
+  UpdateRoleStatusInputSchema
 } from "./dto/index.js";
 import type { RolesService } from "./roles.service.js";
 
@@ -27,14 +27,14 @@ const RolesListQueryParameters = [
     name: "limit",
     in: "query",
     required: false,
-    schema: { type: "integer", minimum: 1, maximum: 200 },
+    schema: { type: "integer", minimum: 1, maximum: 200 }
   },
   {
     name: "offset",
     in: "query",
     required: false,
-    schema: { type: "integer", minimum: 0 },
-  },
+    schema: { type: "integer", minimum: 0 }
+  }
 ] as const;
 
 /**
@@ -45,11 +45,11 @@ export class RolesController extends HttpController {
 
   constructor(
     private readonly roles: RolesService,
-    auth: JwtAuthService,
+    auth: JwtAuthService
   ) {
     super();
     this.adminAuthMiddleware = createJwtAuthMiddleware(auth, {
-      requireAdmin: true,
+      requireAdmin: true
     });
   }
 
@@ -66,10 +66,10 @@ export class RolesController extends HttpController {
           responses: {
             200: {
               description: "Roles list",
-              schema: toOpenApiSchema(ListRolesResponseSchema),
-            },
-          },
-        },
+              schema: toOpenApiSchema(ListRolesResponseSchema)
+            }
+          }
+        }
       })
       .get("/v1/roles/:id", this.getRoleById, {
         middlewares: [this.adminAuthMiddleware],
@@ -81,14 +81,14 @@ export class RolesController extends HttpController {
           responses: {
             200: {
               description: "Role found",
-              schema: toOpenApiSchema(RoleResponseSchema),
+              schema: toOpenApiSchema(RoleResponseSchema)
             },
             404: {
               description: "Role not found",
-              schema: toOpenApiSchema(RolesErrorResponseSchema),
-            },
-          },
-        },
+              schema: toOpenApiSchema(RolesErrorResponseSchema)
+            }
+          }
+        }
       })
       .post("/v1/roles", this.createRole, {
         middlewares: [this.adminAuthMiddleware],
@@ -99,47 +99,43 @@ export class RolesController extends HttpController {
           security: [{ bearerAuth: [] }],
           requestBody: {
             required: true,
-            schema: toOpenApiSchema(CreateRoleInputSchema),
+            schema: toOpenApiSchema(CreateRoleInputSchema)
           },
           responses: {
             200: {
               description: "Role created",
-              schema: toOpenApiSchema(RoleResponseSchema),
+              schema: toOpenApiSchema(RoleResponseSchema)
             },
             409: {
               description: "Conflict",
-              schema: toOpenApiSchema(RolesErrorResponseSchema),
-            },
-          },
-        },
+              schema: toOpenApiSchema(RolesErrorResponseSchema)
+            }
+          }
+        }
       })
-      .patch(
-        "/v1/roles/:id/status",
-        this.updateRoleStatus,
-        {
-          middlewares: [this.adminAuthMiddleware],
-          docs: {
-            summary: "Update role status",
-            tags: [CORE_PACK_OPENAPI_TAGS.ROLES],
-            operationId: "updateRoleStatus",
-            security: [{ bearerAuth: [] }],
-            requestBody: {
-              required: true,
-              schema: toOpenApiSchema(UpdateRoleStatusInputSchema),
-            },
-            responses: {
-              200: {
-                description: "Role updated",
-                schema: toOpenApiSchema(RoleResponseSchema),
-              },
-              404: {
-                description: "Role not found",
-                schema: toOpenApiSchema(RolesErrorResponseSchema),
-              },
-            },
+      .patch("/v1/roles/:id/status", this.updateRoleStatus, {
+        middlewares: [this.adminAuthMiddleware],
+        docs: {
+          summary: "Update role status",
+          tags: [CORE_PACK_OPENAPI_TAGS.ROLES],
+          operationId: "updateRoleStatus",
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            schema: toOpenApiSchema(UpdateRoleStatusInputSchema)
           },
-        },
-      )
+          responses: {
+            200: {
+              description: "Role updated",
+              schema: toOpenApiSchema(RoleResponseSchema)
+            },
+            404: {
+              description: "Role not found",
+              schema: toOpenApiSchema(RolesErrorResponseSchema)
+            }
+          }
+        }
+      })
       .build();
   }
 
@@ -147,12 +143,12 @@ export class RolesController extends HttpController {
     try {
       const query = ListRolesQuerySchema.parse({
         limit: parseQueryNumber(ctx.query.limit),
-        offset: parseQueryNumber(ctx.query.offset),
+        offset: parseQueryNumber(ctx.query.offset)
       });
       const roles = await this.roles.listRoles(query);
       return responder.list(roles, {
         limit: query.limit,
-        offset: query.offset,
+        offset: query.offset
       });
     } catch (error) {
       return responder.fromError(error);

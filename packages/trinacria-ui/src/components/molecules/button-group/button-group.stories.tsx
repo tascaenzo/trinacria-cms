@@ -3,7 +3,9 @@ import { Button } from "../../atoms/button/button.js";
 import { IconButton } from "../../atoms/icon-button/icon-button.js";
 import { ButtonGroup } from "./button-group.js";
 
-const meta = { title: "Actions/Buttons/ButtonGroup", component: ButtonGroup } satisfies Meta<typeof ButtonGroup>;
+const meta = { title: "Actions/Buttons/ButtonGroup", component: ButtonGroup } satisfies Meta<
+  typeof ButtonGroup
+>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 
@@ -14,7 +16,7 @@ export const Horizontal: Story = {
       <Button variant="outline">Save draft</Button>
       <Button>Publish</Button>
     </ButtonGroup>
-  ),
+  )
 };
 
 export const Toolbar: Story = {
@@ -25,7 +27,7 @@ export const Toolbar: Story = {
       <IconButton icon="columns-3" label="Columns" variant="outline" />
       <Button variant="secondary">Export</Button>
     </ButtonGroup>
-  ),
+  )
 };
 
 export const Vertical: Story = {
@@ -35,5 +37,5 @@ export const Vertical: Story = {
       <Button variant="outline">Archive</Button>
       <Button variant="ghost">Delete</Button>
     </ButtonGroup>
-  ),
+  )
 };

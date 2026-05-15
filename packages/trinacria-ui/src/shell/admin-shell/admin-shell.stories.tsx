@@ -5,10 +5,19 @@ import { AdminShell } from "./admin-shell.js";
 const navigation = [
   { id: "dashboard", routeId: "dashboard", title: "Dashboard", icon: "layout-dashboard" },
   { id: "users", routeId: "users", title: "Users", icon: "users", group: "Identity" },
-  { id: "settings", routeId: "settings", title: "Settings", icon: "settings-2", group: "System", badge: "core" }
+  {
+    id: "settings",
+    routeId: "settings",
+    title: "Settings",
+    icon: "settings-2",
+    group: "System",
+    badge: "core"
+  }
 ] as const;
 
-const meta = { title: "Navigation/Shell/AdminShell", component: AdminShell } satisfies Meta<typeof AdminShell>;
+const meta = { title: "Navigation/Shell/AdminShell", component: AdminShell } satisfies Meta<
+  typeof AdminShell
+>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 

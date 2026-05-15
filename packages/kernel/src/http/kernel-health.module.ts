@@ -15,15 +15,13 @@ export const KernelHealthHttpModule = defineModule({
       CORE_TOKENS.KERNEL_HEALTH_SERVICE,
       (runtime) =>
         new KernelHealthService({
-          runtime,
+          runtime
         }),
-      [CORE_TOKENS.PLUGIN_RUNTIME],
+      [CORE_TOKENS.PLUGIN_RUNTIME]
     ),
-    httpProvider(
-      KERNEL_HEALTH_HTTP_CONTROLLER,
-      KernelHealthHttpController,
-      [CORE_TOKENS.KERNEL_HEALTH_SERVICE],
-    ),
+    httpProvider(KERNEL_HEALTH_HTTP_CONTROLLER, KernelHealthHttpController, [
+      CORE_TOKENS.KERNEL_HEALTH_SERVICE
+    ])
   ],
-  exports: [CORE_TOKENS.KERNEL_HEALTH_SERVICE, KERNEL_HEALTH_HTTP_CONTROLLER],
+  exports: [CORE_TOKENS.KERNEL_HEALTH_SERVICE, KERNEL_HEALTH_HTTP_CONTROLLER]
 });

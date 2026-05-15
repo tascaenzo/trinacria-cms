@@ -20,18 +20,18 @@ test("Settings access middleware authenticates admin bearer reads", async () => 
           roleCodes: ["admin"],
           status: "active",
           createdAt: "2026-04-06T10:00:00.000Z",
-          updatedAt: "2026-04-06T10:00:00.000Z",
+          updatedAt: "2026-04-06T10:00:00.000Z"
         };
-      },
+      }
     } as never,
     createPluginAuthService(),
-    { allowAdmin: true, allowPlugin: true },
+    { allowAdmin: true, allowPlugin: true }
   );
 
   const ctx = createContext({
     method: "GET",
     url: "/v1/settings/definitions",
-    headers: { authorization: "Bearer admin-token" },
+    headers: { authorization: "Bearer admin-token" }
   });
 
   let nextCalled = false;
@@ -49,17 +49,17 @@ test("Settings access middleware authenticates signed plugin reads", async () =>
     {
       async authenticateBearerToken() {
         throw new Error("bearer auth should not be used");
-      },
+      }
     } as never,
     createPluginAuthService(),
-    { allowAdmin: true, allowPlugin: true },
+    { allowAdmin: true, allowPlugin: true }
   );
   const path = "/v1/settings/values/core-pack:site:title";
   const headers = buildPluginAuthHeaders({
     pluginId: PLUGIN_ID,
     secret: PLUGIN_SECRET,
     method: "GET",
-    path,
+    path
   });
   const ctx = createContext({ method: "GET", url: path, headers });
 
@@ -79,15 +79,15 @@ test("Settings access middleware rejects missing credentials", async () => {
     {
       async authenticateBearerToken() {
         throw new Error("bearer auth should not be used");
-      },
+      }
     } as never,
     createPluginAuthService(),
-    { allowAdmin: true, allowPlugin: true },
+    { allowAdmin: true, allowPlugin: true }
   );
   const ctx = createContext({
     method: "GET",
     url: "/v1/settings/definitions",
-    headers: {},
+    headers: {}
   });
 
   const result = await middleware(ctx, async () => {
@@ -102,7 +102,7 @@ function createPluginAuthService() {
   return new SettingsPluginAuthService({
     async getSecret(pluginId: string) {
       return pluginId === PLUGIN_ID ? PLUGIN_SECRET : null;
-    },
+    }
   });
 }
 
@@ -115,12 +115,12 @@ function createContext(input: {
     req: {
       method: input.method,
       url: input.url,
-      headers: input.headers,
+      headers: input.headers
     },
     res: {},
     params: {},
     query: {},
     body: undefined,
-    state: {},
+    state: {}
   } as HttpContext;
 }

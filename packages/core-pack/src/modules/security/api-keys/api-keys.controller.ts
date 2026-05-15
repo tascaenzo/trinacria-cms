@@ -4,7 +4,7 @@ import {
   parseQueryNumber,
   toOpenApiSchema,
   type HttpContext,
-  type HttpMiddleware,
+  type HttpMiddleware
 } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import { CORE_PACK_OPENAPI_TAGS } from "../../openapi-tags.js";
@@ -14,13 +14,13 @@ import {
   ApiKeyResponseSchema,
   ApiKeySecretResponseSchema,
   ApiKeysErrorResponseSchema,
-  ListApiKeysResponseSchema,
+  ListApiKeysResponseSchema
 } from "./dto/api-keys.response.dto.js";
 import {
   CreateApiKeyInputSchema,
   ListApiKeysQuerySchema,
   RevokeApiKeyInputSchema,
-  RotateApiKeyInputSchema,
+  RotateApiKeyInputSchema
 } from "./dto/api-keys.input.dto.js";
 import type { ApiKeysService } from "./api-keys.service.js";
 
@@ -31,26 +31,26 @@ const ApiKeysListQueryParameters = [
     name: "kind",
     in: "query",
     required: false,
-    schema: { type: "string", enum: ["publishable", "secret", "service"] },
+    schema: { type: "string", enum: ["publishable", "secret", "service"] }
   },
   {
     name: "status",
     in: "query",
     required: false,
-    schema: { type: "string", enum: ["active", "revoked"] },
+    schema: { type: "string", enum: ["active", "revoked"] }
   },
   {
     name: "limit",
     in: "query",
     required: false,
-    schema: { type: "integer", minimum: 1, maximum: 200 },
+    schema: { type: "integer", minimum: 1, maximum: 200 }
   },
   {
     name: "offset",
     in: "query",
     required: false,
-    schema: { type: "integer", minimum: 0 },
-  },
+    schema: { type: "integer", minimum: 0 }
+  }
 ] as const;
 
 /**
@@ -61,11 +61,11 @@ export class ApiKeysController extends HttpController {
 
   constructor(
     private readonly apiKeys: ApiKeysService,
-    auth: JwtAuthService,
+    auth: JwtAuthService
   ) {
     super();
     this.adminAuthMiddleware = createJwtAuthMiddleware(auth, {
-      requireAdmin: true,
+      requireAdmin: true
     });
   }
 
@@ -82,10 +82,10 @@ export class ApiKeysController extends HttpController {
           responses: {
             200: {
               description: "API key list",
-              schema: toOpenApiSchema(ListApiKeysResponseSchema),
-            },
-          },
-        },
+              schema: toOpenApiSchema(ListApiKeysResponseSchema)
+            }
+          }
+        }
       })
       .get("/v1/api-keys/:id", this.getApiKeyById, {
         middlewares: [this.adminAuthMiddleware],
@@ -97,14 +97,14 @@ export class ApiKeysController extends HttpController {
           responses: {
             200: {
               description: "API key metadata",
-              schema: toOpenApiSchema(ApiKeyResponseSchema),
+              schema: toOpenApiSchema(ApiKeyResponseSchema)
             },
             404: {
               description: "API key not found",
-              schema: toOpenApiSchema(ApiKeysErrorResponseSchema),
-            },
-          },
-        },
+              schema: toOpenApiSchema(ApiKeysErrorResponseSchema)
+            }
+          }
+        }
       })
       .post("/v1/api-keys", this.createApiKey, {
         middlewares: [this.adminAuthMiddleware],
@@ -115,19 +115,19 @@ export class ApiKeysController extends HttpController {
           security: [{ bearerAuth: [] }],
           requestBody: {
             required: true,
-            schema: toOpenApiSchema(CreateApiKeyInputSchema),
+            schema: toOpenApiSchema(CreateApiKeyInputSchema)
           },
           responses: {
             200: {
               description: "Issued API key with one-time secret",
-              schema: toOpenApiSchema(ApiKeySecretResponseSchema),
+              schema: toOpenApiSchema(ApiKeySecretResponseSchema)
             },
             409: {
               description: "API key configuration invalid",
-              schema: toOpenApiSchema(ApiKeysErrorResponseSchema),
-            },
-          },
-        },
+              schema: toOpenApiSchema(ApiKeysErrorResponseSchema)
+            }
+          }
+        }
       })
       .post("/v1/api-keys/:id/rotate", this.rotateApiKey, {
         middlewares: [this.adminAuthMiddleware],
@@ -138,19 +138,19 @@ export class ApiKeysController extends HttpController {
           security: [{ bearerAuth: [] }],
           requestBody: {
             required: false,
-            schema: toOpenApiSchema(RotateApiKeyInputSchema),
+            schema: toOpenApiSchema(RotateApiKeyInputSchema)
           },
           responses: {
             200: {
               description: "Rotated API key with one-time secret",
-              schema: toOpenApiSchema(ApiKeySecretResponseSchema),
+              schema: toOpenApiSchema(ApiKeySecretResponseSchema)
             },
             404: {
               description: "API key not found",
-              schema: toOpenApiSchema(ApiKeysErrorResponseSchema),
-            },
-          },
-        },
+              schema: toOpenApiSchema(ApiKeysErrorResponseSchema)
+            }
+          }
+        }
       })
       .post("/v1/api-keys/:id/revoke", this.revokeApiKey, {
         middlewares: [this.adminAuthMiddleware],
@@ -161,19 +161,19 @@ export class ApiKeysController extends HttpController {
           security: [{ bearerAuth: [] }],
           requestBody: {
             required: false,
-            schema: toOpenApiSchema(RevokeApiKeyInputSchema),
+            schema: toOpenApiSchema(RevokeApiKeyInputSchema)
           },
           responses: {
             200: {
               description: "Revoked API key metadata",
-              schema: toOpenApiSchema(ApiKeyResponseSchema),
+              schema: toOpenApiSchema(ApiKeyResponseSchema)
             },
             404: {
               description: "API key not found",
-              schema: toOpenApiSchema(ApiKeysErrorResponseSchema),
-            },
-          },
-        },
+              schema: toOpenApiSchema(ApiKeysErrorResponseSchema)
+            }
+          }
+        }
       })
       .build();
   }
@@ -184,12 +184,12 @@ export class ApiKeysController extends HttpController {
         kind: Array.isArray(ctx.query.kind) ? ctx.query.kind[0] : ctx.query.kind,
         status: Array.isArray(ctx.query.status) ? ctx.query.status[0] : ctx.query.status,
         limit: parseQueryNumber(ctx.query.limit),
-        offset: parseQueryNumber(ctx.query.offset),
+        offset: parseQueryNumber(ctx.query.offset)
       });
       const records = await this.apiKeys.list(query);
       return responder.list(records, {
         limit: query.limit,
-        offset: query.offset,
+        offset: query.offset
       });
     } catch (error) {
       return responder.fromError(error);

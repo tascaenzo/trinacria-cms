@@ -10,5 +10,5 @@ export const CORE_PACK_OPENAPI_TAGS = {
   SECURITY: "Security",
   API_KEYS: "Api Keys",
   SETTINGS: "Settings",
-  INSTALLATION: "Installation",
+  INSTALLATION: "Installation"
 } as const;

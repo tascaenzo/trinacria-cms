@@ -6,7 +6,7 @@ import {
   assertPluginOwnsNamespaceId,
   buildNamespaceId,
   createPluginDbScope,
-  parseNamespaceId,
+  parseNamespaceId
 } from "../src/runtime/index.js";
 import { createCapabilityToken } from "../src/tokens/index.js";
 
@@ -18,15 +18,12 @@ test("buildNamespaceId and parseNamespaceId are canonical", () => {
   assert.deepEqual(parsed, {
     pluginId: "core-pack",
     entityName: "users",
-    resourceId: "abc123",
+    resourceId: "abc123"
   });
 });
 
 test("assertPluginOwnsNamespaceId rejects cross-plugin IDs", () => {
-  assert.throws(
-    () => assertPluginOwnsNamespaceId("other", "core-pack:users:abc"),
-    DbAdapterError,
-  );
+  assert.throws(() => assertPluginOwnsNamespaceId("other", "core-pack:users:abc"), DbAdapterError);
 });
 
 test("createPluginDbScope always injects pluginId", async () => {
@@ -50,18 +47,18 @@ test("createPluginDbScope always injects pluginId", async () => {
         },
         async deleteOne() {
           return false;
-        },
+        }
       };
     },
     async beginTransaction() {
       return {
         async commit() {},
-        async rollback() {},
+        async rollback() {}
       };
     },
     async healthCheck() {
       return { ok: true };
-    },
+    }
   };
 
   const scope = createPluginDbScope(db, "core-pack");

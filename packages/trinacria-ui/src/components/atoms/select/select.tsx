@@ -2,8 +2,9 @@ import {
   buildFormControlAria,
   FormControlShell,
   formControlClassName,
-  useFormControlIds,
+  useFormControlIds
 } from "../form-control/form-control.js";
+import { Icon } from "../icon/icon.js";
 import type { SelectProps } from "./select.types.js";
 
 export function Select({ children, className, error, hint, label, id, ...props }: SelectProps) {
@@ -13,7 +14,7 @@ export function Select({ children, className, error, hint, label, id, ...props }
     error,
     errorId: ids.errorId,
     hint,
-    hintId: ids.hintId,
+    hintId: ids.hintId
   });
 
   return (
@@ -27,16 +28,25 @@ export function Select({ children, className, error, hint, label, id, ...props }
       labelFor={ids.controlId}
       labelId={ids.labelId}
     >
-      <select
-        id={ids.controlId}
-        aria-invalid={error ? true : props["aria-invalid"]}
-        aria-describedby={aria.describedBy}
-        aria-errormessage={aria.errorMessage}
-        className={formControlClassName({ className, disabled: props.disabled, error })}
-        {...props}
-      >
-        {children}
-      </select>
+      <div className="relative">
+        <select
+          id={ids.controlId}
+          aria-invalid={error ? true : props["aria-invalid"]}
+          aria-describedby={aria.describedBy}
+          aria-errormessage={aria.errorMessage}
+          className={formControlClassName({
+            className: `appearance-none pr-10 ${className ?? ""}`,
+            disabled: props.disabled,
+            error
+          })}
+          {...props}
+        >
+          {children}
+        </select>
+        <span className="pointer-events-none absolute inset-y-0 right-0 flex w-10 items-center justify-center text-[color:var(--color-ink-subtle)]">
+          <Icon name="chevron-down" className="h-4 w-4" />
+        </span>
+      </div>
     </FormControlShell>
   );
 }

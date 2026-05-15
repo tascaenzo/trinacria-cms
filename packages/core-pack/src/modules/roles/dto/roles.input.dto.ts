@@ -11,7 +11,7 @@ export const CreateRoleInputSchema = s.object(
       toLowerCase: true,
       minLength: 2,
       maxLength: 64,
-      pattern: /^[a-z0-9][a-z0-9._-]*$/,
+      pattern: /^[a-z0-9][a-z0-9._-]*$/
     }),
     name: s.string({ trim: true, minLength: 1, maxLength: 120 }),
     description: s.string({ trim: true, maxLength: 500 }).optional(),
@@ -22,18 +22,18 @@ export const CreateRoleInputSchema = s.object(
             trim: true,
             toLowerCase: true,
             minLength: 3,
-            maxLength: 220,
+            maxLength: 220
           })
           .refine(
             (value) => isValidPermissionKey(value),
             "Permission key must be '<pluginId>:<resource>:<action>'",
-            "invalid_permission_key",
+            "invalid_permission_key"
           ),
-        { unique: true },
+        { unique: true }
       )
-      .optional(),
+      .optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 export type CreateRoleInput = Infer<typeof CreateRoleInputSchema>;
@@ -43,9 +43,9 @@ export type CreateRoleInput = Infer<typeof CreateRoleInputSchema>;
  */
 export const UpdateRoleStatusInputSchema = s.object(
   {
-    status: RoleStatusSchema,
+    status: RoleStatusSchema
   },
-  { strict: true },
+  { strict: true }
 );
 
 export type UpdateRoleStatusInput = Infer<typeof UpdateRoleStatusInputSchema>;
@@ -56,9 +56,9 @@ export type UpdateRoleStatusInput = Infer<typeof UpdateRoleStatusInputSchema>;
 export const ListRolesQuerySchema = s.object(
   {
     limit: s.number({ int: true, min: 1, max: 200 }).optional(),
-    offset: s.number({ int: true, min: 0 }).optional(),
+    offset: s.number({ int: true, min: 0 }).optional()
   },
-  { strict: true },
+  { strict: true }
 );
 
 export type ListRolesQuery = Infer<typeof ListRolesQuerySchema>;

@@ -11,15 +11,15 @@ export default defineConfig({
   resolve: {
     alias: {
       "@trinacria-cms/admin-kernel": fileURLToPath(
-        new URL("../../packages/admin-kernel/src/index.ts", import.meta.url),
+        new URL("../../packages/admin-kernel/src/index.ts", import.meta.url)
       ),
       "@trinacria-cms/trinacria-ui": fileURLToPath(
-        new URL("../../packages/trinacria-ui/src/index.ts", import.meta.url),
+        new URL("../../packages/trinacria-ui/src/index.ts", import.meta.url)
       ),
       "@trinacria-cms/sdk": fileURLToPath(
-        new URL("../../packages/sdk/src/index.ts", import.meta.url),
-      ),
-    },
+        new URL("../../packages/sdk/src/index.ts", import.meta.url)
+      )
+    }
   },
   server: {
     port: 4174,
@@ -28,8 +28,8 @@ export default defineConfig({
       "/cms": {
         target: "http://127.0.0.1:3000",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/cms/, ""),
-      },
-    },
-  },
+        rewrite: (path) => path.replace(/^\/cms/, "")
+      }
+    }
+  }
 });
