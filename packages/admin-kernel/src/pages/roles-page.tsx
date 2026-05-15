@@ -289,7 +289,7 @@ export function RolesPage() {
                 {activePermissions.map((permission) => (
                   <label
                     key={permission.id}
-                    className="flex items-start gap-3 rounded-md border border-[color:var(--color-border)] bg-white px-3 py-3 text-sm"
+                    className="flex items-start gap-3 rounded-[var(--radius-control)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3 text-sm"
                   >
                     <input
                       type="checkbox"

@@ -24,6 +24,10 @@ Restano pero alcune aree da consolidare.
 
 ### F1. Form controls duplicano troppo styling base
 
+Stato:
+
+- chiuso per i controlli base
+
 Componenti coinvolti:
 
 - `Input`
@@ -33,19 +37,23 @@ Componenti coinvolti:
 - `DatePicker`
 - `TimePicker`
 
-Problema:
+Problema originale:
 
 - stessi pattern di bordo, focus, disabled ed error sono riscritti in piu file
 - ogni nuova variante rischia di divergere in altezza, ring, padding o messaggi di stato
 
-Direzione:
+Esito:
 
-- introdurre una primitive o utility `form-control` condivisa
-- tenere separati layout, chrome e stato semantico
+- `FormControlShell`, `FormControlSurface`, `formControlClassName` e `useFormControlIds` sono la base condivisa
+- `Input`, `Select`, `Textarea`, `NumberInput`, `DatePicker`, `TimePicker` usano id/aria e chrome comuni
 
-Priorita: alta
+Priorita residua: chiusa
 
 ### F2. Alcuni componenti usano ancora colori hardcoded invece di token semantici
+
+Stato:
+
+- chiuso per sorgenti UI/admin principali
 
 Componenti coinvolti:
 
@@ -58,19 +66,23 @@ Componenti coinvolti:
 - `AdminShell`
 - `JsonView`
 
-Problema:
+Problema originale:
 
 - diversi elementi usano ancora `slate-*`, `white` o valori hardcoded
 - il sistema e coerente visivamente oggi, ma meno governabile domani
 
-Direzione:
+Esito:
 
-- spostare progressivamente i casi ricorrenti verso token semantici
-- introdurre token specifici per action primary, interactive hover, overlay e code surface
+- overlay, code surface, drawer, popover e stati auth usano token dedicati
+- le classi cromatiche hardcoded ricorrenti in `trinacria-ui` e `admin-kernel` sono state riallineate ai token
 
-Priorita: alta
+Priorita residua: chiusa
 
 ### F3. Manca una primitive overlay/popup riusabile
+
+Stato:
+
+- chiuso
 
 Componenti coinvolti:
 
@@ -78,17 +90,17 @@ Componenti coinvolti:
 - `DatePicker`
 - `TimePicker`
 
-Problema:
+Problema originale:
 
 - modal e picker usano layer elevati con logiche e shadow simili ma non condivise
 - il sistema non ha ancora una famiglia esplicita di `popover`, `drawer`, `overlay-surface`
 
-Direzione:
+Esito:
 
-- creare primitive `OverlaySurface` o `Popover`
-- centralizzare radius, border, shadow, offset e dismiss behavior
+- aggiunta primitive `OverlaySurface`
+- `Dialog`, `DatePicker`, `TimePicker`, `Combobox` e `DropdownMenu` condividono bordo, radius, background e shadow
 
-Priorita: alta
+Priorita residua: chiusa
 
 ### F4. Le card avevano una gerarchia tipografica troppo editoriale
 
@@ -128,6 +140,10 @@ Priorita residua: chiusa
 
 ### F6. Story e demo interne non sono ancora completamente disciplinate dal DS
 
+Stato:
+
+- parzialmente chiuso
+
 Componenti coinvolti:
 
 - alcune story di foundations e field examples
@@ -136,14 +152,18 @@ Problema:
 
 - in alcuni casi gli esempi usano markup o classi ad hoc invece di comporre componenti del sistema
 
-Direzione:
+Esito:
 
-- trattare le story come esempi canonici, non come sandbox locali
-- evitare snippet raw dove esiste gia un componente DS
+- corrette le story che usavano `bg-white`, radius ad hoc e stati errore hardcoded nei casi intercettati
+- resta una regola di review: nuove story devono preferire componenti e token del DS
 
-Priorita: media
+Priorita residua: bassa
 
 ### F7. Il sistema form non ha ancora regole accessibili complete per tastiera e focus management
+
+Stato:
+
+- parzialmente chiuso
 
 Componenti coinvolti:
 
@@ -156,36 +176,36 @@ Problema:
 
 - i componenti funzionano, ma non sono ancora hardenizzati come controlli complessi enterprise-grade
 
-Direzione:
+Esito:
 
-- roving focus
-- keyboard navigation completa
-- focus trap per overlay quando serve
-- aria roles e annunci piu espliciti
+- `Dialog` gestisce focus trap, restore focus ed Escape
+- `DatePicker` ha roving focus su calendario, `aria-selected`, `aria-current`, grid roles ed Escape
+- `TimePicker` ripristina focus al trigger e usa `aria-expanded`/`aria-controls`
+- `NumberInput` e stato riallineato agli altri controlli con id stabili e descrizioni aria
 
-Priorita: media
+Priorita residua: media, limitata a test automatici a11y e verifica screen reader reale
 
 ## Azioni consigliate
 
 ### Sprint 1
 
-- creare una primitive `FormControlShell`
-- introdurre token interattivi semantici
-- estrarre una primitive `Popover`
+- completato: primitive form condivise
+- completato: token overlay/code surface aggiuntivi
+- completato: primitive `OverlaySurface`
 
 ### Sprint 2
 
-- rifattorizzare `Button`, `Switch`, `Checkbox`, `RadioGroup` su token interattivi
-- riallineare `JsonView` e overlay scuri a token dedicati
-- pulire le story che usano markup raw
+- completato: overlay e auth surfaces riallineati ai token
+- completato: story intercettate riallineate ai token
+- da valutare in futuro: test visuali sistematici su Storybook
 
 ### Sprint 3
 
-- hardening accessibilita tastiera e focus
+- completato in parte: focus trap, roving focus e aria base sui controlli complessi
 - definire una checklist di review DS obbligatoria per nuovi componenti
 
 ## Esito
 
 Il sistema non e disordinato: ha gia una direzione chiara.
 
-Il rischio attuale non e la mancanza di stile, ma la crescita per copie locali dello stesso pattern. La priorita quindi non e aggiungere molti altri componenti subito, ma consolidare primitive condivise per form, overlay e interaction tokens.
+Il rischio principale rimasto non e la coerenza visiva, ma la mancanza di test automatici visuali e a11y che impediscano regressioni mentre il sistema cresce.

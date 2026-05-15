@@ -22,7 +22,7 @@ export const Composition: Story = {
           <FieldLabel htmlFor="client-id">Client ID</FieldLabel>
           <input
             id="client-id"
-            className="h-10 rounded-lg border border-rose-200 bg-rose-50 px-3"
+            className="h-10 rounded-[var(--radius-control)] border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] px-3"
           />
           <FieldError>Il campo e obbligatorio.</FieldError>
         </Field>

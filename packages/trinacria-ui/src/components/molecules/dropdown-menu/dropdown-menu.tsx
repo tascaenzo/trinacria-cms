@@ -12,7 +12,7 @@ import {
   type PropsWithChildren,
   type ReactElement
 } from "react";
-import { Panel } from "../../primitives/panel/panel.js";
+import { OverlaySurface } from "../../primitives/overlay-surface/overlay-surface.js";
 import { BodyText } from "../../primitives/text/text.js";
 import { Icon } from "../../atoms/icon/icon.js";
 import { cn } from "../../../utils/class-names.js";
@@ -195,13 +195,12 @@ export function DropdownMenu({
       />
       {isOpen ? (
         <DropdownMenuContext.Provider value={contextValue}>
-          <Panel
+          <OverlaySurface
             className={cn(
-              "absolute z-40 min-w-[220px] p-2 shadow-[var(--shadow-overlay)]",
+              "absolute z-40 min-w-[220px] p-2",
               side === "bottom" ? "top-full mt-2" : "bottom-full mb-2",
               align === "start" ? "left-0" : "right-0"
             )}
-            radius="xl"
           >
             <div
               ref={menuRef}
@@ -211,7 +210,7 @@ export function DropdownMenu({
             >
               {children}
             </div>
-          </Panel>
+          </OverlaySurface>
         </DropdownMenuContext.Provider>
       ) : null}
     </div>

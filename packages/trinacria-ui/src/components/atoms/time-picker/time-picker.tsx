@@ -8,6 +8,7 @@ import {
   useFormControlIds
 } from "../form-control/form-control.js";
 import { Icon } from "../icon/icon.js";
+import { OverlaySurface } from "../../primitives/overlay-surface/overlay-surface.js";
 import type { TimePickerProps } from "./time-picker.types.js";
 
 function pad(value: number): string {
@@ -179,12 +180,12 @@ export function TimePicker({
           </button>
 
           {isOpen ? (
-            <div
+            <OverlaySurface
               id={popupId}
               role="dialog"
               aria-modal="false"
               aria-labelledby={popupTitleId}
-              className="absolute left-0 top-[calc(100%+0.5rem)] z-30 w-[280px] rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4 shadow-[0_24px_80px_rgba(15,23,42,0.16)]"
+              className="absolute left-0 top-[calc(100%+0.5rem)] z-30 w-[280px] p-4"
             >
               <div className="grid gap-4">
                 <div
@@ -257,7 +258,7 @@ export function TimePicker({
                   </Button>
                 </div>
               </div>
-            </div>
+            </OverlaySurface>
           ) : null}
         </div>
       </div>

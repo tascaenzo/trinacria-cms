@@ -7,6 +7,7 @@ import {
 } from "react";
 import { Button } from "../../atoms/button/button.js";
 import { Eyebrow } from "../../primitives/eyebrow/eyebrow.js";
+import { OverlaySurface } from "../../primitives/overlay-surface/overlay-surface.js";
 import { BodyText } from "../../primitives/text/text.js";
 import { cn } from "../../../utils/class-names.js";
 import type { DialogProps } from "./dialog.types.js";
@@ -132,21 +133,21 @@ export function Dialog({
       )}
     >
       <div className="absolute inset-0" onClick={onClose} />
-      <div
+      <OverlaySurface
         ref={dialogRef}
+        variant={variant === "drawer" ? "drawer" : "modal"}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
         onKeyDown={handleKeyDown}
         className={cn(
-          "relative z-10 w-full overflow-hidden border border-[color:var(--color-border)] bg-[color:var(--color-surface)] shadow-[0_32px_96px_rgba(15,23,42,0.18)] transition-all duration-200 ease-out",
-          variant === "modal" && "rounded-lg",
+          "relative z-10 w-full overflow-hidden transition-all duration-200 ease-out",
           variant === "modal" && width === "md" && "max-w-2xl",
           variant === "modal" && width === "lg" && "max-w-4xl",
           variant === "modal" && width === "xl" && "max-w-6xl",
           variant === "drawer" &&
-            "ml-auto flex h-full max-w-[640px] flex-col rounded-none border-y-0 border-r-0 shadow-[-24px_0_80px_rgba(15,23,42,0.18)]",
+            "ml-auto flex h-full max-w-[640px] flex-col rounded-none border-y-0 border-r-0",
           variant === "modal" &&
             (isActive
               ? "translate-y-0 scale-100 opacity-100"
@@ -196,7 +197,7 @@ export function Dialog({
             {footer}
           </footer>
         ) : null}
-      </div>
+      </OverlaySurface>
     </div>
   );
 }

@@ -33,7 +33,7 @@ export const Default: Story = {
       headerActions={<Button size="sm">Nuova impostazione</Button>}
     >
       <div className="p-8">
-        <div className="rounded-2xl border border-[color:var(--color-border)] bg-white p-6 text-sm text-[color:var(--color-ink-muted)]">
+        <div className="rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-6 text-sm text-[color:var(--color-ink-muted)]">
           Area contenuti della route attiva.
         </div>
       </div>

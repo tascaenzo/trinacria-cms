@@ -6,6 +6,7 @@ import {
   useFormControlIds
 } from "../../atoms/form-control/form-control.js";
 import { Icon } from "../../atoms/icon/icon.js";
+import { OverlaySurface } from "../../primitives/overlay-surface/overlay-surface.js";
 import { cn } from "../../../utils/class-names.js";
 import type { ComboboxOption, ComboboxProps } from "./combobox.types.js";
 
@@ -280,10 +281,10 @@ export function Combobox({
         </div>
 
         {isOpen ? (
-          <div
+          <OverlaySurface
             id={`${ids.controlId}-listbox`}
             role="listbox"
-            className="absolute z-40 mt-2 max-h-72 w-full overflow-auto rounded-[var(--radius-overlay)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-1.5 shadow-[var(--shadow-overlay)]"
+            className="absolute z-40 mt-2 max-h-72 w-full overflow-auto p-1.5"
           >
             {filteredOptions.length ? (
               <div className="grid gap-1">
@@ -352,7 +353,7 @@ export function Combobox({
                 {emptyText}
               </div>
             )}
-          </div>
+          </OverlaySurface>
         ) : null}
       </div>
     </FormControlShell>

@@ -30,12 +30,12 @@ export const Default: Story = {
       }
       feedback={<ErrorBanner message="Timeout durante refresh del catalogo runtime." />}
       sidebar={
-        <div className="rounded-2xl border border-[color:var(--color-border)] bg-white p-4 text-sm text-[color:var(--color-ink-muted)]">
+        <div className="rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4 text-sm text-[color:var(--color-ink-muted)]">
           Sidebar contestuale
         </div>
       }
     >
-      <div className="rounded-2xl border border-[color:var(--color-border)] bg-white p-6 text-sm text-[color:var(--color-ink-muted)]">
+      <div className="rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-6 text-sm text-[color:var(--color-ink-muted)]">
         Area contenuti principale
       </div>
     </ResourcePage>

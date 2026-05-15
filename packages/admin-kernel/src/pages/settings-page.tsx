@@ -622,17 +622,17 @@ export function SettingsPage() {
                   <PropertyItem
                     label={t("settings.write_flow.method")}
                     value="PUT"
-                    className="bg-white"
+                    className="bg-[color:var(--color-surface)]"
                   />
                   <PropertyItem
                     label={t("settings.write_flow.owner")}
                     value={selectedRecord.ownerPluginId}
-                    className="bg-white"
+                    className="bg-[color:var(--color-surface)]"
                   />
                   <PropertyItem
                     label={t("settings.write_flow.mode")}
                     value={t("settings.write_flow.mode_value")}
-                    className="bg-white"
+                    className="bg-[color:var(--color-surface)]"
                   />
                 </PropertyList>
                 <Textarea
@@ -653,17 +653,17 @@ export function SettingsPage() {
                 </div>
                 {preparedRequest ? (
                   <div className="grid gap-4">
-                    <InfoCard className="bg-white" tone="default">
+                    <InfoCard className="bg-[color:var(--color-surface)]" tone="default">
                       <PropertyList columns={1}>
                         <PropertyItem
                           label={t("settings.write_flow.endpoint")}
                           value={preparedRequest.path}
-                          className="bg-white"
+                          className="bg-[color:var(--color-surface)]"
                         />
                         <PropertyItem
                           label={t("settings.write_flow.headers")}
                           value={t("settings.write_flow.headers_value")}
-                          className="bg-white"
+                          className="bg-[color:var(--color-surface)]"
                         />
                       </PropertyList>
                     </InfoCard>

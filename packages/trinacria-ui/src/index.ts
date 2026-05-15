@@ -2,6 +2,7 @@ export * from "./components/primitives/eyebrow/index.js";
 export * from "./components/primitives/panel/index.js";
 export * from "./components/primitives/text/index.js";
 export * from "./components/primitives/button-base/index.js";
+export * from "./components/primitives/overlay-surface/index.js";
 export * from "./components/atoms/button/index.js";
 export * from "./components/atoms/badge/index.js";
 export * from "./components/atoms/field/index.js";

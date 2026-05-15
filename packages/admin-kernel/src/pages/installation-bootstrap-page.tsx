@@ -60,7 +60,7 @@ export function InstallationBootstrapPage({
           <p
             role="alert"
             aria-live="polite"
-            className="rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
+            className="rounded-[var(--radius-control)] border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] px-4 py-3 text-sm text-[color:var(--color-danger-ink)]"
           >
             {state.error}
           </p>

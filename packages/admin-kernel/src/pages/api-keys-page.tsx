@@ -266,7 +266,7 @@ export function ApiKeysPage() {
         </p>
         {latestIssuedKey ? (
           <div className="grid gap-4">
-            <div className="rounded-md border border-[color:var(--color-border)] bg-slate-950 px-4 py-4 font-mono text-xs leading-6 text-slate-100">
+            <div className="rounded-[var(--radius-control)] border border-[color:var(--color-border)] bg-[color:var(--color-code-surface)] px-4 py-4 font-mono text-xs leading-6 text-[color:var(--color-code-ink)]">
               {latestIssuedKey.apiKey}
             </div>
             <JsonView title={t("api_keys.secret.issued_metadata")} value={latestIssuedKey.record} />

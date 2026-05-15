@@ -464,9 +464,9 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
           trigger={
             <button
               type="button"
-              className="flex w-full items-center gap-3 rounded-sm px-2.5 py-2 text-left transition hover:bg-slate-50"
+              className="flex w-full items-center gap-3 rounded-sm px-2.5 py-2 text-left transition hover:bg-[color:var(--color-interactive-hover)]"
             >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-action-primary-bg)] text-[color:var(--color-action-primary-ink)]">
                 <Icon name="user-round" className="h-4 w-4" />
               </span>
               <span className="min-w-0 flex-1">

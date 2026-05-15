@@ -16,7 +16,7 @@ export const Overview: Story = {
         hint="Nome interno visibile solo agli amministratori."
       >
         <input
-          className="h-10 w-full rounded-lg border border-[color:var(--color-border-strong)] bg-white px-3 text-sm text-[color:var(--color-ink)] outline-none"
+          className="h-10 w-full rounded-[var(--radius-control)] border border-[color:var(--color-border-strong)] bg-[color:var(--color-surface)] px-3 text-sm text-[color:var(--color-ink)] outline-none"
           defaultValue="Public integration"
         />
       </FormControlShell>

@@ -213,7 +213,7 @@ export function PluginsPage() {
         <InfoCard
           title={operationFeedback}
           tone="default"
-          className="border-emerald-200 bg-emerald-50 text-emerald-700"
+          className="border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] text-[color:var(--color-success-ink)]"
         />
       ) : null}
 
@@ -266,7 +266,11 @@ export function PluginsPage() {
                     {plugins.map((plugin) => (
                       <DataTableRow
                         key={plugin.id}
-                        className={plugin.id === selectedPluginId ? "bg-slate-50" : undefined}
+                        className={
+                          plugin.id === selectedPluginId
+                            ? "bg-[color:var(--color-interactive-hover)]"
+                            : undefined
+                        }
                       >
                         <DataTablePrimaryCell meta={`v${plugin.version}`}>
                           <button
