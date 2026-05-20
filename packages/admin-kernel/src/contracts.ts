@@ -71,6 +71,41 @@ export interface AdminSettingsSectionDefinition {
   guards?: readonly AdminAccessGuard[];
 }
 
+export interface AdminResourceFieldDefinition {
+  key: string;
+  label: string;
+  labelKey?: string;
+  kind?: "text" | "status" | "datetime" | "json" | "secret";
+  primary?: boolean;
+  table?: boolean;
+  form?: boolean;
+}
+
+/**
+ * Resource definitions describe administrable data surfaces independently from
+ * the concrete React page that renders them.
+ */
+export interface AdminResourceDefinition {
+  id: string;
+  pluginId: string;
+  entityName: string;
+  routeId?: string;
+  title: string;
+  titleKey?: string;
+  summary?: string;
+  summaryKey?: string;
+  order?: number;
+  capabilities?: {
+    list?: string;
+    read?: string;
+    create?: string;
+    update?: string;
+    delete?: string;
+  };
+  fields?: readonly AdminResourceFieldDefinition[];
+  guards?: readonly AdminAccessGuard[];
+}
+
 /**
  * A plugin contribution is the frontend equivalent of a backend manifest: it
  * declares which routes, navigation entries, and widgets a plugin adds to the
@@ -82,6 +117,7 @@ export interface AdminPluginContribution {
   displayNameKey?: string;
   routes: readonly AdminRouteDefinition[];
   navigation: readonly AdminNavigationItem[];
+  resources?: readonly AdminResourceDefinition[];
   widgets?: readonly AdminDashboardWidgetDefinition[];
   settings?: readonly AdminSettingsSectionDefinition[];
 }
@@ -105,6 +141,7 @@ export interface AdminRuntimePluginInfo {
 export interface AdminRegistrySnapshot {
   routes: readonly AdminRouteDefinition[];
   navigation: readonly AdminNavigationItem[];
+  resources: readonly AdminResourceDefinition[];
   widgets: readonly AdminDashboardWidgetDefinition[];
   settings: readonly AdminSettingsSectionDefinition[];
 }

@@ -5,7 +5,168 @@ import { PermissionsPage } from "../pages/permissions-page.js";
 import { RolesPage } from "../pages/roles-page.js";
 import { SettingsPage } from "../pages/settings-page.js";
 import { UsersPage } from "../pages/users-page.js";
+import type { AdminResourceDefinition } from "../contracts.js";
 import type { RenderableAdminContribution } from "../runtime/admin-route-runtime.js";
+
+const OFFICIAL_CORE_RESOURCES: readonly AdminResourceDefinition[] = [
+  {
+    id: "core-pack.users",
+    pluginId: "core-pack",
+    entityName: "users",
+    routeId: "users",
+    title: "Users",
+    titleKey: "official.resource.users.title",
+    summary: "User records managed by the core identity module.",
+    summaryKey: "official.resource.users.summary",
+    order: 10,
+    capabilities: {
+      list: "users.read",
+      create: "users.write",
+      update: "users.write"
+    },
+    fields: [
+      {
+        key: "displayName",
+        label: "Display name",
+        labelKey: "common.form.display_name",
+        primary: true,
+        table: true,
+        form: true
+      },
+      { key: "email", label: "Email", labelKey: "auth.login.email_label", table: true, form: true },
+      {
+        key: "status",
+        label: "Status",
+        labelKey: "common.table.status",
+        kind: "status",
+        table: true
+      },
+      {
+        key: "updatedAt",
+        label: "Updated",
+        labelKey: "common.table.updated",
+        kind: "datetime",
+        table: true
+      }
+    ],
+    guards: [{ pluginId: "core-pack", capability: "users.read" }]
+  },
+  {
+    id: "core-pack.roles",
+    pluginId: "core-pack",
+    entityName: "roles",
+    routeId: "roles",
+    title: "Roles",
+    titleKey: "official.resource.roles.title",
+    summary: "Role records and embedded permission grants.",
+    summaryKey: "official.resource.roles.summary",
+    order: 20,
+    capabilities: {
+      list: "roles.read",
+      create: "roles.write",
+      update: "roles.write"
+    },
+    fields: [
+      {
+        key: "name",
+        label: "Name",
+        labelKey: "roles.form.name",
+        primary: true,
+        table: true,
+        form: true
+      },
+      { key: "code", label: "Code", labelKey: "roles.form.code", table: true, form: true },
+      {
+        key: "permissions",
+        label: "Permissions",
+        labelKey: "roles.table.permissions",
+        kind: "json",
+        table: true,
+        form: true
+      },
+      {
+        key: "status",
+        label: "Status",
+        labelKey: "common.table.status",
+        kind: "status",
+        table: true
+      }
+    ],
+    guards: [{ pluginId: "core-pack", capability: "roles.read" }]
+  },
+  {
+    id: "core-pack.permissions",
+    pluginId: "core-pack",
+    entityName: "permissions",
+    routeId: "permissions",
+    title: "Permissions",
+    titleKey: "official.resource.permissions.title",
+    summary: "Canonical permission records contributed by plugins.",
+    summaryKey: "official.resource.permissions.summary",
+    order: 30,
+    capabilities: {
+      list: "permissions.read",
+      create: "permissions.write",
+      update: "permissions.write"
+    },
+    fields: [
+      {
+        key: "displayName",
+        label: "Display name",
+        labelKey: "common.form.display_name",
+        primary: true,
+        table: true,
+        form: true
+      },
+      { key: "key", label: "Key", labelKey: "common.form.key", table: true, form: true },
+      { key: "sourcePluginId", label: "Source", labelKey: "permissions.table.source", table: true },
+      {
+        key: "status",
+        label: "Status",
+        labelKey: "common.table.status",
+        kind: "status",
+        table: true
+      }
+    ],
+    guards: [{ pluginId: "core-pack", capability: "permissions.read" }]
+  },
+  {
+    id: "core-pack.api-keys",
+    pluginId: "core-pack",
+    entityName: "api_keys",
+    routeId: "api-keys",
+    title: "API Keys",
+    titleKey: "official.resource.api_keys.title",
+    summary: "Machine identity records for integrations and automation.",
+    summaryKey: "official.resource.api_keys.summary",
+    order: 50,
+    capabilities: {
+      list: "api_keys.read",
+      create: "api_keys.write",
+      update: "api_keys.write"
+    },
+    fields: [
+      {
+        key: "name",
+        label: "Name",
+        labelKey: "common.form.name",
+        primary: true,
+        table: true,
+        form: true
+      },
+      { key: "keyPrefix", label: "Key", labelKey: "common.table.key", table: true },
+      { key: "kind", label: "Kind", labelKey: "api_keys.table.kind", table: true, form: true },
+      {
+        key: "status",
+        label: "Status",
+        labelKey: "common.table.status",
+        kind: "status",
+        table: true
+      }
+    ],
+    guards: [{ pluginId: "core-pack", capability: "api_keys.read" }]
+  }
+];
 
 /**
  * Official contributions define the baseline admin surface shipped by the CMS.
@@ -126,6 +287,7 @@ export function createOfficialAdminContributions(input: {
           render: () => <ApiKeysPage />
         }
       ],
+      resources: OFFICIAL_CORE_RESOURCES,
       navigation: [
         {
           id: "nav-plugins",

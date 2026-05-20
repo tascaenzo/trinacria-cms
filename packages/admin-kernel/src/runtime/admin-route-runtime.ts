@@ -2,6 +2,7 @@ import type {
   AdminNavigationItem,
   AdminPluginContribution,
   AdminRegistrySnapshot,
+  AdminResourceDefinition,
   AdminRouteDefinition,
   AdminRuntimePluginInfo
 } from "../contracts.js";
@@ -16,6 +17,7 @@ export interface AdminPageRenderContext {
   route: AdminRouteDefinition;
   runtimePlugins: readonly AdminRuntimePluginInfo[];
   capabilityIndex: ReadonlyMap<string, Set<string>>;
+  resources: readonly AdminResourceDefinition[];
   locale: Locale;
   t: TranslateFn;
 }
@@ -101,6 +103,48 @@ function isNavigationVisible(
   return true;
 }
 
+function isResourceVisible(
+  resource: AdminResourceDefinition,
+  routeIds: ReadonlySet<string>,
+  runtimePlugins: readonly AdminRuntimePluginInfo[],
+  capabilityIndex: ReadonlyMap<string, Set<string>>
+): boolean {
+  const plugin = runtimePlugins.find((entry) => entry.pluginId === resource.pluginId);
+  if (!plugin?.installed || plugin.state === "disabled" || plugin.state === "failed") {
+    return false;
+  }
+
+  if (resource.routeId && !routeIds.has(resource.routeId)) {
+    return false;
+  }
+
+  for (const guard of resource.guards ?? []) {
+    if (guard.pluginId) {
+      const guardPlugin = runtimePlugins.find((entry) => entry.pluginId === guard.pluginId);
+      if (!guardPlugin?.installed || guardPlugin.state !== "loaded") {
+        return false;
+      }
+    }
+    if (guard.capability) {
+      const pluginId = guard.pluginId ?? resource.pluginId;
+      const capabilities = capabilityIndex.get(pluginId);
+      if (!capabilities?.has(guard.capability)) {
+        return false;
+      }
+    }
+  }
+
+  const listCapability = resource.capabilities?.list ?? resource.capabilities?.read;
+  if (listCapability) {
+    const capabilities = capabilityIndex.get(resource.pluginId);
+    if (!capabilities?.has(listCapability)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 /**
  * The registry builder merges static admin contributions with runtime discovery
  * so the shell only exposes routes that make sense for the current CMS instance.
@@ -127,6 +171,20 @@ export function buildAdminRegistry(
 
   const routeIds = new Set(routes.map((route) => route.id));
 
+  const resources = contributions
+    .flatMap((contribution) => contribution.resources ?? [])
+    .filter((resource) => isResourceVisible(resource, routeIds, runtimePlugins, capabilityIndex))
+    .map((resource) => ({
+      ...resource,
+      title: resource.titleKey ? t(resource.titleKey, resource.title) : resource.title,
+      summary: resource.summaryKey ? t(resource.summaryKey, resource.summary) : resource.summary,
+      fields: resource.fields?.map((field) => ({
+        ...field,
+        label: field.labelKey ? t(field.labelKey, field.label) : field.label
+      }))
+    }))
+    .sort((left, right) => (left.order ?? 0) - (right.order ?? 0));
+
   const navigation = contributions
     .flatMap((contribution) => contribution.navigation)
     .filter((item) => isNavigationVisible(item, routeIds, runtimePlugins, capabilityIndex))
@@ -140,6 +198,7 @@ export function buildAdminRegistry(
   return {
     routes,
     navigation,
+    resources,
     widgets: contributions
       .flatMap((contribution) => contribution.widgets ?? [])
       .map((widget) => ({

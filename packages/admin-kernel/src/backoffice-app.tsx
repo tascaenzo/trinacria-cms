@@ -443,6 +443,7 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
         route: activeRoute,
         runtimePlugins,
         capabilityIndex,
+        resources: registry.resources,
         locale,
         t
       })
@@ -533,6 +534,11 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
         {
           label: t("backoffice.shell.stats.visible_routes"),
           value: String(registry.routes.length),
+          tone: "default"
+        },
+        {
+          label: t("backoffice.shell.stats.resources"),
+          value: String(registry.resources.length),
           tone: "default"
         },
         {
