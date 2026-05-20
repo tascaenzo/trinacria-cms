@@ -1,6 +1,7 @@
 # Playground API App
 
-Local app to test kernel starter + core-pack plugin HTTP APIs.
+Local app to test the CMS kernel starter, the Trinacria bridge, and core-pack
+plugin HTTP APIs against Mongo.
 
 ## Run
 

@@ -6,6 +6,9 @@ This glossary is the single source of truth for terminology used in `docs/cms/it
 
 | Concept                          | Canonical Term          | Italian Usage                           | English Usage                        | Notes                                                                      |
 | -------------------------------- | ----------------------- | --------------------------------------- | ------------------------------------ | -------------------------------------------------------------------------- |
+| Base framework                   | `Trinacria`             | `Trinacria`                             | `Trinacria`                          | The underlying library/framework authored separately from the CMS.         |
+| Framework package family         | `@trinacria/*`          | `@trinacria/*`                          | `@trinacria/*`                       | Includes core, HTTP, schema, cron, events, CLI.                            |
+| CMS product                      | `Trinacria CMS`         | `Trinacria CMS`                         | `Trinacria CMS`                      | Product built on top of Trinacria framework libraries.                     |
 | Framework core                   | `kernel`                | `kernel`                                | `kernel`                             | Keep lowercase unless sentence start.                                      |
 | Official baseline plugin         | `core-pack`             | `core-pack`                             | `core-pack`                          | Always hyphenated. Never `core pack`.                                      |
 | Plugin metadata file             | `Plugin Manifest`       | `manifest plugin`                       | `plugin manifest`                    | Refers to `id`, `version`, `requiresCore`, `capabilities`, `dependencies`. |

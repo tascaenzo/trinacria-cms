@@ -280,13 +280,13 @@ Typical lifecycle:
 4. the integration calls the CMS using `x-api-key`
 5. the CMS resolves roles, permissions, and policy rules attached to that key
 
-## Browser playground
+## Backoffice consumer
 
-The monorepo also includes [apps/web](/Users/enzo/Desktop/trinacria-cms/apps/web), a minimal browser app that:
+The monorepo also includes [apps/backoffice](/Users/enzo/Desktop/trinacria-cms/apps/backoffice),
+a thin Vite host that consumes the SDK through `@trinacria-cms/admin-kernel`.
 
-- loads the SDK as native ESM through an import map
-- proxies API calls to the CMS backend
-- supports both cookie-based auth and bearer-token auth flows
+The app itself should stay small. Session bootstrap, runtime discovery, official
+admin pages and resource registry logic live in `admin-kernel`.
 
 ## Important note
 

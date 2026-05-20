@@ -1,21 +1,28 @@
 # Trinacria CMS
 
-Modular headless CMS built on top of Trinacria.
+Modular headless CMS built on top of Trinacria, the underlying framework/library
+that provides the DI runtime, module lifecycle, HTTP integration and schema
+tooling used by this repository.
 
 ## Vision
 
 Trinacria CMS targets two usage modes:
 
-- product baseline: install `core` and start quickly
+- product baseline: install `core-pack` and start quickly
 - developer platform: extend behavior through plugins
 
-The project keeps a strict separation between kernel contracts and concrete implementations.
+The project keeps a strict separation between:
+
+- Trinacria framework primitives (`@trinacria/*`)
+- CMS kernel contracts and runtime glue
+- official baseline CMS functionality (`core-pack`)
+- domain plugins such as editorial, commerce, media, SEO, booking, or analytics
 
 ## Repository layout
 
 - `apps/playground`: development and integration playground
 - `apps/backoffice`: thin Vite host for the shared admin runtime
-- `packages/kernel`: kernel contracts, runtime primitives, default modules, and DB abstraction
+- `packages/kernel`: CMS kernel contracts, runtime primitives, Trinacria bridge, and Mongo storage core
 - `packages/core-pack`: official baseline plugin pack (auth, users, roles, permissions, api keys, settings, installation)
 - `packages/sdk`: generated SDK and OpenAPI snapshot
 - `packages/admin-kernel`: shared backoffice runtime, pages, route registry, and SDK wiring
@@ -28,11 +35,18 @@ The project keeps a strict separation between kernel contracts and concrete impl
 
 ### `@trinacria-cms/kernel`
 
-Contains contracts, lifecycle orchestration, DI primitives, plugin/module runtime, storage-agnostic interfaces, typed runtime errors, and plugin security policy support.
+Contains CMS contracts, lifecycle orchestration around Trinacria modules,
+plugin/module runtime, Mongo-first storage contracts, typed runtime errors, and
+plugin security policy support.
 
 ### `@trinacria-cms/core-pack`
 
 Official baseline plugin pack loaded by the kernel runtime. It starts as the default CMS feature set and evolves incrementally.
+
+It should stay focused on platform-level CMS capabilities: installation, auth,
+users, roles, permissions, settings, API keys, and security provisioning.
+Application domains such as editorial or commerce should live in separate
+plugins.
 
 ## Development workflow
 
@@ -128,6 +142,9 @@ Struttura principale:
 
 Start here:
 
+- [docs/cms/README.md](/Users/enzo/Desktop/trinacria-cms/docs/cms/README.md)
+- [docs/cms/architecture/plugin-first-cms-direction.md](/Users/enzo/Desktop/trinacria-cms/docs/cms/architecture/plugin-first-cms-direction.md)
+- [docs/cms/specs/core-platform/README.md](/Users/enzo/Desktop/trinacria-cms/docs/cms/specs/core-platform/README.md)
 - `docs/cms/en/README.md` (official)
 - `docs/cms/it/README.md` (Italian)
 - [docs/trinacria-ui-design-system.md](/Users/enzo/Desktop/trinacria-cms/docs/trinacria-ui-design-system.md)

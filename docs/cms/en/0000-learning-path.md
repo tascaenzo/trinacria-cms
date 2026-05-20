@@ -2,12 +2,14 @@
 
 ## Goal
 
-Understand Trinacria CMS as a software platform, not just as a set of classes.
-The focus is to learn how to design, extend, and operate a plugin-first architecture.
+Understand Trinacria CMS as a software platform built on top of the Trinacria
+framework libraries, not just as a set of classes. The focus is to learn how to
+design, extend, and operate a plugin-first CMS architecture.
 
 ## Architecture in one sentence
 
-- `@trinacria-cms/kernel` is the engine (contracts + runtime + infrastructure tokens).
+- `@trinacria/*` is the framework foundation (DI, modules, HTTP, schema).
+- `@trinacria-cms/kernel` is the CMS-specific engine (contracts + runtime + infrastructure tokens).
 - `@trinacria-cms/core-pack` is the first official plugin (baseline domains: users, roles, permissions, settings).
 
 Key principle: business logic belongs to plugins, platform governance belongs to the kernel.
@@ -28,19 +30,23 @@ Multiple teams can build plugins in parallel with one architectural language.
 
 ## Four-layer model
 
-1. `Contracts`
+1. `Trinacria Foundation`
+
+Framework primitives: DI, modules, lifecycle, HTTP, schema and tooling.
+
+2. `Contracts`
 
 Interfaces, types, and tokens that define allowed behaviors.
 
-2. `Runtime`
+3. `Runtime`
 
 Plugin state machine, lifecycle orchestration, module bridge, rollback, errors.
 
-3. `Plugin Domain`
+4. `Plugin Domain`
 
-Business modules (`users`, `roles`, etc.) built on kernel contracts.
+Business modules (`users`, `roles`, `editorial`, `commerce`, etc.) built on kernel contracts.
 
-4. `App Bootstrap`
+5. `App Bootstrap`
 
 `startCmsApp` wires HTTP, providers, and plugin registration/loading.
 

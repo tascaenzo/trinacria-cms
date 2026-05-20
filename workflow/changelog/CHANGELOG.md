@@ -1,5 +1,18 @@
 # Changelog Operativo
 
+## 2026-05-20
+
+- Aperta la milestone documentale `M4.0 - Core Platform Specifications` per chiudere confini, contratti e comportamento della piattaforma core prima di nuove implementazioni.
+- Chiusa la specifica `core-boundaries`: documentati confini tra Trinacria, `kernel`, `core-pack`, plugin dominio, `admin-kernel` e `trinacria-ui`, con regole decisionali e anti-pattern.
+- Riallineato il planner M4.0 su specifiche core: plugin contract, runtime, security, storage, settings, admin extensibility, bootstrap, packaging/discovery, observability/operations e API/SDK contract.
+- Spostati i task content/editorial precedenti in `workflow/tasks/backlog` per mantenere `todo` focalizzata sulla milestone core.
+- Marcate M4 e M5 dominio come `deferred` finche `M4.0 - Core Platform Specifications` non e chiusa.
+- Formalizzata la decisione Mongo-first: il kernel possiede il Mongo storage core, mentre `core-pack` e plugin dominio dichiarano repository/entity usando quei contratti; il supporto multi-database resta fuori scope.
+- Aggiunto il documento fondativo `m4-core-platform-foundation.md` e i draft funzionali per configuration registry/secrets, namespace governance/alias e plugin event bus opzionale.
+- Avviato il livello low-level di M4.0 con lo standard di specifica implementabile e il draft `plugin-contract.md`, includendo manifest target, API operative, DTO, storage Mongo, error model e gap col codice attuale.
+- Consolidata la documentazione CMS sotto `docs/cms`: architettura in `docs/cms/architecture`, specifiche core in `docs/cms/specs/core-platform`, lasciando `docs/trinacria` separata come riferimento del framework.
+- Completata la copertura draft low-level M4.0 per runtime plugin, security core, Mongo storage core, settings/configuration registry, admin extensibility, installation/bootstrap, packaging/discovery, observability/operations e API/SDK contract.
+
 ## 2026-05-15
 
 - Chiusa formalmente la milestone `M3.5 - Design System Backoffice` e `M3.6 - Design System Accessibility Hardening`.
@@ -9,7 +22,7 @@
 - Corretti 12 errori lint in `trinacria-ui` (import non usati, interfacce vuote).
 - Allineata formattazione su 317 file con `prettier --write`.
 - Verificato che `npm run build`, `npm run lint`, `npm run format`, `npm run typecheck` e `npm run test` passino su tutti i workspace.
-- La milestone `M4 - Content Model V1` e ora il prossimo blocco di lavoro disponibile.
+- La milestone `M4` va reinterpretata come fondazione di un plugin editoriale esterno al core, in linea con la direzione plugin-first.
 
 ## 2026-04-11
 

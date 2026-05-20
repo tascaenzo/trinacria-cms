@@ -24,6 +24,7 @@ The real application logic now lives in `@trinacria-cms/admin-kernel`, which own
 - session bootstrap
 - runtime discovery
 - route registry and visibility logic
+- resource registry for plugin-provided admin resources
 - SDK initialization
 
 ## Planned evolution

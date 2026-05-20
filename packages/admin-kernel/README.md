@@ -8,6 +8,7 @@ This package owns:
 - shell bootstrap
 - SDK initialization
 - official admin routes
+- admin resource registry
 - session bootstrap and runtime discovery
 
 Host applications should stay thin and only provide:

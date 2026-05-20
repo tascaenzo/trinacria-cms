@@ -4,14 +4,20 @@ Questo documento definisce il piano step-by-step per costruire il kernel del CMS
 
 ## Obiettivo
 
-Realizzare `kernel` come runtime stabile, agnostico rispetto ai plugin dominio, con caricamento plugin a runtime, isolamento namespace, contratti infrastrutturali e lifecycle robusto.
+Realizzare `kernel` come layer CMS stabile sopra Trinacria, agnostico rispetto
+ai plugin dominio, con caricamento plugin a runtime, isolamento namespace,
+contratti infrastrutturali e lifecycle robusto.
+
+Trinacria resta la libreria/framework base: DI, moduli, lifecycle applicativo,
+HTTP e schema tooling arrivano da `@trinacria/*`. Il `kernel` CMS non deve
+duplicare Trinacria, ma specializzarlo per un prodotto CMS plugin-first.
 
 ## Step di sviluppo
 
 1. **Scope e contratti minimi (1-2 giorni)**
-   - Definire confini `kernel` vs `core-pack`.
+   - Definire confini `Trinacria` vs `kernel` CMS vs `core-pack`.
    - Produrre `ADR-001` con decisioni architetturali.
-   - Elencare interfacce target: `PluginManifest`, `PluginRuntime`, `DbAdapter`, `AuthzService`, `NamespaceContext`.
+   - Elencare interfacce target: `PluginManifest`, `PluginRuntime`, Mongo storage core, `AuthzService`, `NamespaceContext`.
 
 2. **Skeleton package + API pubblica (1 giorno)**
    - Strutturare `packages/kernel` (`contracts`, `runtime`, `errors`, `tokens`).
@@ -34,9 +40,9 @@ Realizzare `kernel` come runtime stabile, agnostico rispetto ai plugin dominio, 
    - Definire contesto obbligatorio (`pluginId`, `workspaceId`).
    - Applicare naming policy e scoping uniforme su servizi/storage.
 
-7. **DB abstraction layer (2-3 giorni)**
-   - Introdurre contratti storage agnostici (`RepositoryFactory`, `UnitOfWork`, `QueryPort`).
-   - Fornire implementazione in-memory per test e bootstrap.
+7. **Mongo storage core (2-3 giorni)**
+   - Introdurre contratti Mongo-first per namespace, entity registry, repository, indici e mapping errori.
+   - Fornire helper test senza progettare una astrazione multi-database preventiva.
 
 8. **Security contracts (1-2 giorni)**
    - Definire contratti AuthN/AuthZ/RBAC checker.
@@ -56,13 +62,14 @@ Realizzare `kernel` come runtime stabile, agnostico rispetto ai plugin dominio, 
 
 12. **Freeze v0.1 kernel (1 giorno)**
     - Congelare API pubblica minima.
-    - Documentare contratto `Kernel v0.1` come baseline per `core-pack`.
+
+- Documentare contratto `Kernel v0.1` come baseline per `core-pack` e plugin dominio.
 
 ## Ordine operativo consigliato
 
 1. Contratti base
 2. Registry + lifecycle
-3. Namespace + DB abstraction
+3. Namespace + Mongo storage core
 4. Bridge runtime Trinacria
 5. Test + stabilizzazione
 

@@ -2,13 +2,18 @@
 
 Kernel runtime package of Trinacria CMS.
 
+This package is the CMS-specific layer built on top of the Trinacria framework
+libraries (`@trinacria/core`, `@trinacria/http`, `@trinacria/schema`). It should
+specialize Trinacria for CMS plugin orchestration without duplicating the base
+framework.
+
 ## Responsibilities
 
 - plugin contracts
 - runtime lifecycle primitives and strict state machine
 - dependency injection contracts
 - kernel provider tokens
-- DB abstraction contracts and namespace scoping helpers
+- Mongo storage core contracts and namespace scoping helpers
 - typed runtime/plugin errors
 - manifest validation and compatibility checks
 - MongoDB adapter with Mongoose-compatible bridge
@@ -38,7 +43,7 @@ Kernel runtime package of Trinacria CMS.
 - `unregister(...)` support for plugin uninstall-like flows
 - manifest security validation supports policy rules (`allow`/`deny`, wildcard, conditions)
 - starter auto-selects runtime store:
-  - `DbPluginRuntimeStore` when DB adapter is available
+  - `DbPluginRuntimeStore` when Mongo storage is available
   - `InMemoryPluginRuntimeStore` fallback otherwise
 
 ## Stability policy

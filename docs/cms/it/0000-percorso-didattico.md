@@ -4,6 +4,7 @@
 
 Trinacria CMS non e solo un'applicazione web. E un sistema composto da:
 
+- una libreria/framework base (`@trinacria/*`);
 - un kernel infrastrutturale (`@trinacria-cms/kernel`);
 - plugin caricabili a runtime (`@trinacria-cms/core-pack` e futuri plugin);
 - uno strato HTTP/OpenAPI;
@@ -19,7 +20,20 @@ Questa composizione lo rende un caso didattico completo per studiare:
 
 ## 2. Modello mentale: separare piattaforma e dominio
 
-### Piattaforma (Kernel)
+### Fondazione (Trinacria)
+
+Trinacria fornisce il motore base:
+
+- dependency injection;
+- moduli;
+- lifecycle applicativo;
+- plugin HTTP;
+- schema runtime-first;
+- tooling.
+
+Il CMS non deve duplicare questa base, ma specializzarla.
+
+### Piattaforma CMS (Kernel)
 
 Il kernel decide le regole del sistema:
 
@@ -58,8 +72,14 @@ Regola d'oro: il kernel non conosce il business, il plugin non decide le regole 
 4. `core-pack` (`packages/core-pack/src`)
 
 - implementazione riferimento di moduli dominio.
+- baseline piattaforma: utenti, ruoli, permessi, settings, API keys.
 
-5. `Playground` (`apps/playground/src/main.ts`)
+5. Plugin dominio futuri
+
+- implementano funzionalita come editoriale, ecommerce, media, SEO.
+- non devono essere assorbiti dal core.
+
+6. `Playground` (`apps/playground/src/main.ts`)
 
 - bootstrap completo per test end-to-end.
 

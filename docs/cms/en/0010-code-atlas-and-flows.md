@@ -164,17 +164,17 @@ Operational model:
 2. in a monorepo, the OpenAPI-derived layer can be regenerated for custom plugins or custom application modules
 3. the generated result is an overlay on top of the official runtime package, not a replacement for it
 
-## 14. Browser demo app
+## 14. Backoffice host app
 
-- `apps/web/src/server.ts`
-  - local static server
-  - `/cms/*` reverse proxy to backend
-  - `/sdk/*` bridge to `packages/sdk/dist`
+- `apps/backoffice/src/main.tsx`
+  - imports `@trinacria-cms/admin-kernel`
+  - imports `@trinacria-cms/trinacria-ui/theme.css`
+  - mounts the shared backoffice runtime
 
-- `apps/web/public/app.js`
-  - builds `createCmsSdkClient({ baseUrl: "/cms", credentials: "include" })`
-  - exercises login, `me`, list users, health
+- `apps/backoffice/src/backoffice.init.ts`
+  - defines mount-time API base URL
+  - registers monorepo-local backoffice modules
 
-- `apps/web/public/index.html`
-  - ESM import map
-  - minimal UI used to validate the generated client without frontend tooling
+- `apps/backoffice/src/custom-backoffice-modules.ts`
+  - local extension point for plugin admin modules
+  - keeps the host app thin while `admin-kernel` owns shell/runtime behavior

@@ -1,37 +1,49 @@
-# M4 - Content Model V1
+# M4 - Editorial Pack Foundation V1
+
+Stato: `deferred`
+
+Questa milestone non e attiva. Resta in backlog dominio finche non vengono
+chiuse le specifiche core della piattaforma plugin-first in `M4.0`.
 
 ## Obiettivo
 
-Introdurre il primo vero dominio contenuti del CMS: definizione di content type, entries persistite, validazione e API amministrative minime.
+Introdurre il primo plugin dominio esterno al core: un `editorial-pack`
+minimale con contenuti, categorie, validazione e API amministrative minime.
+
+Questa milestone non deve espandere il core. Deve dimostrare che il CMS cresce
+con plugin funzionali sopra `kernel`, `core-pack` e Mongo.
 
 ## Perimetro
 
-- modello content type
-- modello entry
+- plugin `editorial-pack`
+- modello posts/categories
 - persistenza Mongo e contratti DTO
 - API amministrative e primi flussi backoffice
+- admin contribution e admin resource iniziali
 
 ## Task inclusi
 
-- [ ] `2026-04-06-content-domain-adr-and-bounded-context.md`
-- [ ] `2026-04-06-content-types-foundation.md`
-- [ ] `2026-04-06-content-entries-persistence-and-api.md`
-- [ ] `2026-04-06-content-admin-ui-v1.md`
-- [ ] `2026-04-06-content-openapi-sdk-and-docs.md`
+- [ ] `workflow/tasks/backlog/2026-04-06-content-domain-adr-and-bounded-context.md`
+- [ ] `workflow/tasks/backlog/2026-04-06-content-types-foundation.md`
+- [ ] `workflow/tasks/backlog/2026-04-06-content-entries-persistence-and-api.md`
+- [ ] `workflow/tasks/backlog/2026-04-06-content-admin-ui-v1.md`
+- [ ] `workflow/tasks/backlog/2026-04-06-content-openapi-sdk-and-docs.md`
 
 ## Dipendenze
 
+- completamento di `M4.0 - Core Platform Specifications`
 - completamento di `M1`
 - preferibilmente completamento di `M2` per sfruttare settings e config in modo coerente
-- decisione su quale plugin ospitera il dominio contenuti iniziale
+- decisione finale sul package workspace del plugin editoriale
 
 ## Criterio di chiusura
 
-- esiste un dominio contenuti formalizzato e documentato
-- si possono definire content type e creare entries valide
+- esiste un plugin editoriale formalizzato e documentato
+- si possono creare e leggere post/categorie valide
 - il dominio e esposto via API e SDK
-- il backoffice consente almeno gestione base di content type ed entries
+- il backoffice monta una voce editoriale senza modificare il core
 
 ## Note
 
-Questa e la milestone che sposta il progetto da CMS infrastructure a CMS applicativo.
+Questa e la milestone che sposta il progetto da CMS infrastructure a CMS
+applicativo, mantenendo pero la filosofia plugin-first.

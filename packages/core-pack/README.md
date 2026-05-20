@@ -11,6 +11,10 @@ Official baseline plugin pack for Trinacria CMS.
 - advanced authz policies (`allow`/`deny`, wildcard patterns, conditions)
 - settings definitions/values/secrets (encrypted secrets + masked export)
 
+`core-pack` should remain the platform baseline. Domain functionality such as
+editorial, commerce, media, SEO, booking, or analytics should be implemented as
+separate plugins.
+
 ## Security model implemented
 
 - `permissions` are plugin-owned (`sourcePluginId`)

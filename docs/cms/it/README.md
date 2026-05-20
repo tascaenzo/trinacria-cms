@@ -2,7 +2,11 @@
 
 Questa sezione e progettata come un manuale tecnico progressivo, con un taglio da progettazione software di basso livello.
 
-Obiettivo: capire come costruire un framework/CMS plugin-based partendo dai contratti, passando per il runtime, fino ai moduli dominio (`core-pack`).
+Obiettivo: capire come Trinacria CMS viene costruito sopra le librerie
+framework Trinacria, poi come si incastrano kernel CMS, `core-pack` e futuri
+plugin dominio.
+
+Direzione architetturale: [plugin-first CMS direction](../architecture/plugin-first-cms-direction.md)
 
 Glossario terminologico unico: [GLOSSARY.md](../GLOSSARY.md)
 
@@ -27,7 +31,7 @@ Glossario terminologico unico: [GLOSSARY.md](../GLOSSARY.md)
 
 ## Cosa trovi in questo manuale
 
-- Mappa completa della struttura codice reale (`packages/kernel`, `packages/core-pack`, `packages/sdk`, `apps/playground`, `apps/web`).
+- Mappa completa della struttura codice reale (`packages/kernel`, `packages/core-pack`, `packages/sdk`, `apps/playground`, `apps/backoffice`).
 - Spiegazione dettagliata delle responsabilita di ogni file chiave.
 - Spiegazione modulo per modulo di service esportati, controller ed endpoint HTTP esposti.
 - Descrizione del formato standard delle response (`data`, `error`, `meta`) e di come viene generato dal kernel.
