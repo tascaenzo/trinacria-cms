@@ -1,5 +1,6 @@
 import { createDashboardRender } from "../pages/dashboard-page.js";
 import { ApiKeysPage } from "../pages/api-keys-page.js";
+import { PluginContributionsPage } from "../pages/plugin-contributions-page.js";
 import { PluginsPage } from "../pages/plugins-page.js";
 import { PermissionsPage } from "../pages/permissions-page.js";
 import { RolesPage } from "../pages/roles-page.js";
@@ -227,6 +228,18 @@ export function createOfficialAdminContributions(input: {
           render: () => <PluginsPage />
         },
         {
+          id: "plugin-contributions",
+          path: "/plugin-contributions",
+          pluginId: "kernel",
+          title: "Plugin contributions",
+          titleKey: "official.route.plugin_contributions.title",
+          summary: "Manifest-derived entity, settings, event, and admin contribution catalog.",
+          summaryKey: "official.route.plugin_contributions.summary",
+          order: 6,
+          guards: [{ pluginId: "core-pack", capability: "plugins.read" }],
+          render: () => <PluginContributionsPage />
+        },
+        {
           id: "users",
           path: "/users",
           pluginId: "core-pack",
@@ -299,6 +312,17 @@ export function createOfficialAdminContributions(input: {
           groupKey: "official.nav.group.core",
           badge: "OPS",
           order: 5
+        },
+        {
+          id: "nav-plugin-contributions",
+          routeId: "plugin-contributions",
+          title: "Contributions",
+          titleKey: "official.nav.plugin_contributions.title",
+          icon: "blocks",
+          group: "Core",
+          groupKey: "official.nav.group.core",
+          badge: "M4",
+          order: 6
         },
         {
           id: "nav-users",
