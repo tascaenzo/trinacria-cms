@@ -12,14 +12,19 @@
 Il core espone health, diagnostics, runtime events, audit operativo e operation
 feedback per rendere il CMS gestibile in backoffice e API.
 
+Decisione chiusa: il kernel possiede runtime diagnostics e runtime events.
+`core-pack` possiede lo storage audit centralizzato (`cms_core_audit_events`) e
+materializza gli audit events prodotti da kernel e plugin.
+
 ## Responsabilita
 
-| Area            | Owner              | Responsabilita               |
-| --------------- | ------------------ | ---------------------------- |
-| Health snapshot | `kernel`           | runtime, db, dependencies    |
-| Runtime events  | `kernel`           | plugin lifecycle diagnostics |
-| Audit events    | `core-pack`/kernel | security/settings/admin ops  |
-| Admin feedback  | `admin-kernel`     | UI operation result          |
+| Area            | Owner             | Responsabilita               |
+| --------------- | ----------------- | ---------------------------- |
+| Health snapshot | `kernel`          | runtime, db, dependencies    |
+| Runtime events  | `kernel`          | plugin lifecycle diagnostics |
+| Audit events    | `core-pack`       | storage audit centralizzato  |
+| Audit producers | `kernel` + plugin | emissione eventi audit       |
+| Admin feedback  | `admin-kernel`    | UI operation result          |
 
 ## Modello dati
 
@@ -76,6 +81,11 @@ Collections:
 - `cms_kernel_plugin_runtime_events`
 - `cms_core_audit_events`
 
+Ownership:
+
+- `cms_kernel_plugin_runtime_events`: kernel
+- `cms_core_audit_events`: core-pack
+
 Indici:
 
 | Collection              | Index                           |
@@ -127,4 +137,5 @@ richiedono nuovo event type o `version`.
 ## Gap rispetto al codice attuale
 
 - Health e plugin events esistono.
-- Audit trasversale va consolidato.
+- Audit trasversale va consolidato in `core-pack` come storage centralizzato,
+  mantenendo il kernel come produttore di runtime/audit events.

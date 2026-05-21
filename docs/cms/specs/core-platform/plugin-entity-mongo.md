@@ -14,6 +14,10 @@ namespace, entity registry, repository conventions, indici e isolation rules.
 
 Non e obiettivo astrarre database multipli nella prima architettura.
 
+Decisione chiusa: il nome `DbAdapter` puo restare nel codice come compat layer
+temporaneo, ma la specifica e la semantica pubblica della piattaforma sono
+Mongo-first. Nuove API non devono promettere portabilita SQL/NoSQL generica.
+
 ## Responsabilita
 
 | Area              | Owner        | Responsabilita                      |
@@ -183,5 +187,8 @@ scope iniziale, ma il campo deve esistere dal primo schema.
 ## Gap rispetto al codice attuale
 
 - Esistono `DbAdapter`, `MongoDbAdapter` ed `EntityRegistry`.
-- I commenti storage-agnostic del contratto vanno riallineati a Mongo-first.
+- `DbAdapter` resta compatibilita interna da rinominare o documentare come
+  Mongo-first durante l'implementazione.
+- I commenti storage-agnostic del contratto vanno rimossi o riallineati a
+  Mongo-first.
 - Manca entity declaration nel manifest plugin.

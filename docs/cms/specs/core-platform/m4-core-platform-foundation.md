@@ -67,6 +67,9 @@ Il kernel espone il contratto CMS dell'event bus e si appoggia alle primitive
 eventi di Trinacria. I plugin possono emettere e sottoscrivere eventi dichiarati,
 senza creare dipendenze dirette tra domini.
 
+La prima implementazione dell'event bus e in-process (`sync`/`async`). Delivery
+persistente e broker esterni sono evoluzioni future.
+
 ### 7. Ruoli, permessi e capability sono contratti core
 
 Capability e permission sono il linguaggio comune tra plugin, API, backoffice e
@@ -74,6 +77,13 @@ policy.
 
 Il core-pack implementa utenti/ruoli/grant come baseline, ma il contratto di
 sicurezza e trasversale alla piattaforma.
+
+### 8. Audit centralizzato nel core-pack
+
+Il kernel produce runtime diagnostics e runtime events.
+
+`core-pack` possiede lo storage audit centralizzato per security, settings,
+admin operations e audit events prodotti dalla piattaforma.
 
 ## Superfici core da specificare
 

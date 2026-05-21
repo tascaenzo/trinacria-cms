@@ -12,6 +12,8 @@
 - Avviato il livello low-level di M4.0 con lo standard di specifica implementabile e il draft `plugin-contract.md`, includendo manifest target, API operative, DTO, storage Mongo, error model e gap col codice attuale.
 - Consolidata la documentazione CMS sotto `docs/cms`: architettura in `docs/cms/architecture`, specifiche core in `docs/cms/specs/core-platform`, lasciando `docs/trinacria` separata come riferimento del framework.
 - Completata la copertura draft low-level M4.0 per runtime plugin, security core, Mongo storage core, settings/configuration registry, admin extensibility, installation/bootstrap, packaging/discovery, observability/operations e API/SDK contract.
+- Aggiunto nell'indice delle specifiche core platform l'ordine di lettura, l'ordine di implementazione consigliato, le dipendenze tra specifiche e il criterio per iniziare il codice.
+- Chiuse le decisioni aperte M4.0: manifest unico come fonte dichiarativa, `DbAdapter` solo compat layer Mongo-first, event bus iniziale in-process e audit storage centralizzato in `core-pack`.
 
 ## 2026-05-15
 

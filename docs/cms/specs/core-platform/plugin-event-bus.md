@@ -15,6 +15,10 @@ inter-plugin.
 Il kernel definisce il contratto CMS dell'event bus. L'implementazione deve
 riusare le primitive eventi di Trinacria quando possibile.
 
+Decisione chiusa: la prima implementazione e **in-process** e supporta `sync` e
+`async`. `deferred` resta nel contratto come valore riservato per una futura
+delivery persistente, ma non e obbligatorio nella prima milestone implementativa.
+
 ## Obiettivi
 
 - ridurre dipendenze dirette tra plugin
@@ -61,14 +65,22 @@ Regole:
 
 ## Delivery
 
-M4.0 deve decidere la semantica minima:
+Semantica minima:
 
 - `sync`: dentro il flusso chiamante, solo per hook controllati
 - `async`: dispatch non bloccante
 - `deferred`: persistito o programmato per elaborazione successiva
 
-La prima implementazione puo partire da `sync`/`async` in-process. Persistenza e
-code esterne restano evoluzioni future.
+La prima implementazione deve partire da `sync`/`async` in-process. Persistenza,
+code esterne e delivery `deferred` sono evoluzioni future.
+
+## Audit events
+
+Gli eventi con visibility `audit` vengono pubblicati sull'event bus e
+materializzati nello storage audit centralizzato del `core-pack`.
+
+Il kernel emette runtime events e puo pubblicare audit events, ma non possiede lo
+storage audit generale della piattaforma.
 
 ## Out of scope
 

@@ -31,6 +31,118 @@ nuovi package dominio o nuove API.
 | `observability-operations.md`         | health, event log, diagnostics, runtime status                    | `draft` |
 | `sdk-api-contract.md`                 | OpenAPI, API envelope, SDK generation, compatibility              | `draft` |
 
+## Ordine di lettura
+
+Questo e l'ordine consigliato per capire le specifiche senza perdere il filo
+architetturale.
+
+1. [`low-level-specification-standard.md`](./low-level-specification-standard.md)
+   - spiega quale livello di dettaglio deve avere ogni specifica M4.0
+2. [`m4-core-platform-foundation.md`](./m4-core-platform-foundation.md)
+   - sintetizza le decisioni fondative della milestone
+3. [`core-boundaries.md`](./core-boundaries.md)
+   - chiarisce cosa appartiene a Trinacria, kernel, core-pack, plugin,
+     admin-kernel e trinacria-ui
+4. [`plugin-contract.md`](./plugin-contract.md)
+   - definisce la forma target di un plugin CMS
+5. [`namespace-governance.md`](./namespace-governance.md)
+   - definisce namespace, alias, reserved names e collision policy
+6. [`plugin-runtime.md`](./plugin-runtime.md)
+   - definisce stati, lifecycle, dependency ordering e rollback
+7. [`security-core.md`](./security-core.md)
+   - definisce utenti, ruoli, permission, capability, policy e provisioning
+8. [`plugin-entity-mongo.md`](./plugin-entity-mongo.md)
+   - definisce Mongo storage core, entity registry, repository e indici
+9. [`settings-core.md`](./settings-core.md)
+   - definisce il settings core come configuration registry sicuro
+10. [`configuration-registry.md`](./configuration-registry.md)
+    - approfondisce settings, secrets, visibility, masking, reveal e audit
+11. [`plugin-event-bus.md`](./plugin-event-bus.md)
+    - definisce comunicazione inter-plugin opzionale tramite eventi
+12. [`admin-contribution-resource.md`](./admin-contribution-resource.md)
+    - definisce navigation, route, resource, widget e UI custom
+13. [`installation-bootstrap.md`](./installation-bootstrap.md)
+    - definisce primo setup, admin user e provisioning baseline
+14. [`plugin-packaging-discovery.md`](./plugin-packaging-discovery.md)
+    - definisce shape package, discovery locale/configurata e compatibility
+15. [`observability-operations.md`](./observability-operations.md)
+    - definisce health, diagnostics, audit e operation events
+16. [`sdk-api-contract.md`](./sdk-api-contract.md)
+    - definisce API envelope, error model, OpenAPI e SDK generation
+
+## Ordine di implementazione consigliato
+
+L'ordine di implementazione non coincide perfettamente con l'ordine di lettura:
+prima vanno messi in piedi i contratti che bloccano gli altri moduli.
+
+| Step | Area                   | Specifiche principali                                                 | Output implementativo atteso                                   |
+| ---- | ---------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------- |
+| 1    | Contratti fondativi    | `core-boundaries.md`, `plugin-contract.md`, `namespace-governance.md` | manifest target, namespace validator, collision policy         |
+| 2    | Runtime plugin         | `plugin-runtime.md`, `plugin-packaging-discovery.md`                  | state machine, operations API, discovery locale/configurata    |
+| 3    | Security baseline      | `security-core.md`                                                    | permission parser, roles/grants/policy provisioning completo   |
+| 4    | Mongo storage core     | `plugin-entity-mongo.md`                                              | entity registry, collection naming, index sync, repository API |
+| 5    | Configuration registry | `settings-core.md`, `configuration-registry.md`                       | settings registry, secret storage, reveal/rotate policy        |
+| 6    | Event bus              | `plugin-event-bus.md`, `observability-operations.md`                  | event declaration, publish/subscribe, audit events             |
+| 7    | Admin extensibility    | `admin-contribution-resource.md`, `security-core.md`                  | route/resource/widget registry capability-aware                |
+| 8    | Bootstrap piattaforma  | `installation-bootstrap.md`, `security-core.md`, `settings-core.md`   | primo setup idempotente, admin user, baseline config           |
+| 9    | API/SDK hardening      | `sdk-api-contract.md`, tutte le specifiche con endpoint               | OpenAPI/SDK coerenti con i nuovi contratti                     |
+
+## Dipendenze tra specifiche
+
+```text
+foundation
+  -> boundaries
+  -> plugin contract
+      -> namespace governance
+      -> runtime
+      -> security
+      -> Mongo storage
+      -> settings/configuration registry
+      -> event bus
+      -> admin extensibility
+      -> packaging/discovery
+      -> operations
+      -> API/SDK
+```
+
+Dipendenze critiche:
+
+- `plugin-contract.md` dipende da `core-boundaries.md`
+- `plugin-runtime.md` dipende da `plugin-contract.md` e `namespace-governance.md`
+- `security-core.md` dipende da `plugin-contract.md`
+- `plugin-entity-mongo.md` dipende da `namespace-governance.md`
+- `settings-core.md` dipende da `security-core.md` e `namespace-governance.md`
+- `plugin-event-bus.md` dipende da `plugin-contract.md`, `security-core.md` e
+  `namespace-governance.md`
+- `admin-contribution-resource.md` dipende da `security-core.md` e
+  `plugin-contract.md`
+- `sdk-api-contract.md` dipende da tutte le specifiche che espongono endpoint
+
+## Decisioni chiuse
+
+- Il manifest plugin e la fonte dichiarativa canonica: `entities`, `settings`,
+  `events` e `admin` stanno nel manifest backend. Registry e cache sono
+  derivabili.
+- `DbAdapter` resta solo come nome/compat layer interno temporaneo; la semantica
+  target e Mongo-first e non multi-database.
+- L'event bus parte in-process con delivery `sync`/`async`; `deferred`, broker
+  esterni e persistenza delivery restano evoluzioni future.
+- Il kernel possiede runtime diagnostics/runtime events; `core-pack` possiede lo
+  storage audit centralizzato.
+
+## Criterio per iniziare il codice
+
+Si puo iniziare una implementazione quando lo step corrispondente ha:
+
+- specifica in stato almeno `draft`
+- acceptance criteria presenti
+- error model presente
+- storage/API/DTO definiti se applicabili
+- gap rispetto al codice attuale esplicitati
+
+Per implementazioni ampie o condivise, lo stato target deve diventare
+`approved`.
+
 ## Regola di fase
 
 Finche queste specifiche non sono chiuse, non si implementano nuovi package

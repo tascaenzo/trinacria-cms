@@ -18,6 +18,10 @@ ufficiale baseline. I plugin dominio useranno lo stesso contratto.
 Il manifest e la fonte dichiarativa. Il runtime definition collega il manifest a
 moduli Trinacria, hook e contribution operative.
 
+Decisione chiusa: `entities`, `settings`, `events` e `admin` entrano nel manifest
+backend come dichiarazioni canoniche. I registry runtime possono materializzarle
+e indicizzarle, ma non diventano fonti di verita parallele.
+
 ## Responsabilita
 
 | Area             | Owner                      | Responsabilita                                  |
@@ -608,12 +612,13 @@ La specifica e implementabile quando:
   `requiresCore`, `capabilities`, `dependencies`, `security`.
 - Mancano nel manifest corrente: `entities`, `settings`, `events`, `admin`,
   `displayName`, `description`.
-- Il contratto `DbAdapter` contiene ancora commenti storage-agnostic; la
-  direzione M4.0 e Mongo-first.
+- Il contratto `DbAdapter` viene mantenuto temporaneamente come nome di
+  compatibilita interna, ma la semantica target e Mongo-first. Non va esteso come
+  astrazione multi-database.
 - Le contribution admin esistono in `admin-kernel`, ma non sono ancora parte del
   manifest backend.
-- Il runtime event log esiste come diagnostica, ma il plugin event bus non e
-  ancora specificato/implementato come contratto plugin.
+- Il runtime event log esiste come diagnostica; il plugin event bus target parte
+  in-process e usa dichiarazioni `events` del manifest.
 
 ## Out of scope
 
