@@ -15,6 +15,10 @@
 - Aggiunto nell'indice delle specifiche core platform l'ordine di lettura, l'ordine di implementazione consigliato, le dipendenze tra specifiche e il criterio per iniziare il codice.
 - Chiuse le decisioni aperte M4.0: manifest unico come fonte dichiarativa, `DbAdapter` solo compat layer Mongo-first, event bus iniziale in-process e audit storage centralizzato in `core-pack`.
 
+## 2026-05-21
+
+- Preparato il primo task implementativo M4 per contratti fondativi core: manifest target, namespace validator, collision policy e riallineamento Mongo-first del contratto storage.
+
 ## 2026-05-15
 
 - Chiusa formalmente la milestone `M3.5 - Design System Backoffice` e `M3.6 - Design System Accessibility Hardening`.
