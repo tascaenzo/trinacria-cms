@@ -5,6 +5,7 @@ import type {
   PluginRuntimeEvent,
   PluginRuntimeOperation,
   PluginRuntimeOperationAvailability,
+  PluginContributionCatalogSnapshot,
   PluginRuntime,
   PluginRuntimeRecord,
   PluginState
@@ -98,6 +99,7 @@ export class KernelSystemService {
       | "disable"
       | "enable"
       | "events"
+      | "describeContributions"
     >
   ) {}
 
@@ -111,6 +113,10 @@ export class KernelSystemService {
     return this.runtime
       .list()
       .flatMap((record) => this.toCapabilitySnapshots(record.manifest, record.state));
+  }
+
+  listPluginContributions(): PluginContributionCatalogSnapshot {
+    return this.runtime.describeContributions();
   }
 
   getInstalledPlugin(pluginId: string): KernelInstalledPluginSnapshot | null {

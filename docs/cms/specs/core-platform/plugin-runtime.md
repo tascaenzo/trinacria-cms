@@ -74,6 +74,7 @@ Riusa le API definite in `plugin-contract.md`:
 
 - `GET /v1/system/plugins`
 - `GET /v1/system/plugins/{pluginId}`
+- `GET /v1/system/plugin-contributions`
 - `POST /v1/system/plugins/{pluginId}/operations`
 - `GET /v1/system/plugins/{pluginId}/events`
 
@@ -174,5 +175,5 @@ essere additive o versionate.
 
 - Runtime base, event log e operations API esistono.
 - Il runtime espone un catalogo contributi derivato dal manifest.
-- Mancano ancora endpoint HTTP e consumer operativi per entity/settings/event/admin
-  contribution.
+- Il catalogo contributi e disponibile tramite `GET /v1/system/plugin-contributions`.
+- Mancano ancora consumer operativi per entity/settings/event/admin contribution.

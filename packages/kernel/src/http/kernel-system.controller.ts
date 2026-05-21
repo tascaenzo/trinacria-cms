@@ -153,6 +153,48 @@ const ListCapabilitiesResponseSchema = s.object(
   { strict: true }
 );
 
+const PluginContributionSnapshotSchema = s.object(
+  {
+    pluginId: s.string({ trim: true, minLength: 1 }),
+    key: s.string({ trim: true, minLength: 1 }),
+    declaration: s.object({}, { strict: false })
+  },
+  { strict: true }
+);
+
+const PluginContributionCatalogSchema = s.object(
+  {
+    entities: s.array(PluginContributionSnapshotSchema),
+    settings: s.array(PluginContributionSnapshotSchema),
+    events: s.object(
+      {
+        emits: s.array(PluginContributionSnapshotSchema),
+        subscribes: s.array(PluginContributionSnapshotSchema)
+      },
+      { strict: true }
+    ),
+    admin: s.object(
+      {
+        navigation: s.array(PluginContributionSnapshotSchema),
+        routes: s.array(PluginContributionSnapshotSchema),
+        resources: s.array(PluginContributionSnapshotSchema),
+        widgets: s.array(PluginContributionSnapshotSchema),
+        settingsSections: s.array(PluginContributionSnapshotSchema)
+      },
+      { strict: true }
+    )
+  },
+  { strict: true }
+);
+
+const ListPluginContributionsResponseSchema = s.object(
+  {
+    data: PluginContributionCatalogSchema,
+    meta: KernelSystemMetaSchema.optional()
+  },
+  { strict: true }
+);
+
 const PluginOperationRequestSchema = s.object(
   {
     operation: s.enum(["load", "unload", "reload", "disable", "enable"] as const),
@@ -282,6 +324,21 @@ export class KernelSystemHttpController extends HttpController {
           }
         }
       })
+      .get("/v1/system/plugin-contributions", this.listPluginContributions, {
+        middlewares: guardedMiddlewares,
+        docs: {
+          summary: "List manifest-derived plugin contributions",
+          tags: ["System"],
+          operationId: "listPluginContributions",
+          ...(guardedSecurity ? { security: guardedSecurity } : {}),
+          responses: {
+            200: {
+              description: "Manifest-derived plugin contribution catalog",
+              schema: toOpenApiSchema(ListPluginContributionsResponseSchema)
+            }
+          }
+        }
+      })
       .get("/v1/system/plugins/:pluginId", this.getInstalledPlugin, {
         middlewares: guardedMiddlewares,
         docs: {
@@ -348,6 +405,10 @@ export class KernelSystemHttpController extends HttpController {
 
   private listCapabilities = async () => {
     return responder.list(this.system.listCapabilities());
+  };
+
+  private listPluginContributions = async () => {
+    return responder.success(this.system.listPluginContributions());
   };
 
   private getInstalledPlugin = async (ctx: HttpContext) => {

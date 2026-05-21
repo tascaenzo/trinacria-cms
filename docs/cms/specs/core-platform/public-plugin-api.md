@@ -130,6 +130,23 @@ Regole:
 - le route admin e le base path admin globali non possono collidere
 - il catalogo non sostituisce il manifest come fonte di verita
 
+Endpoint operativo:
+
+```text
+GET /v1/system/plugin-contributions
+```
+
+Risposta:
+
+```ts
+{
+  data: PluginContributionCatalogSnapshot;
+  meta?: {
+    pluginId?: "kernel";
+  };
+}
+```
+
 ## Manifest validation
 
 Ogni manifest deve passare da `validatePluginManifest`.
@@ -370,7 +387,6 @@ export const plugin: KernelPluginDefinition = {
 - configuration registry completo
 - admin dynamic resource renderer
 - marketplace/discovery esterno
-- endpoint HTTP pubblico dei contributi
 
 Queste aree sono in specifica M4.0, ma non vanno considerate API stabili fino
 alla relativa implementazione.

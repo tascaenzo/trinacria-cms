@@ -71,6 +71,21 @@ test("KernelSystemService exposes operational plugin snapshots", () => {
         }
       ],
       warnings: []
+    }),
+    describeContributions: () => ({
+      entities: [],
+      settings: [],
+      events: {
+        emits: [],
+        subscribes: []
+      },
+      admin: {
+        navigation: [],
+        routes: [],
+        resources: [],
+        widgets: [],
+        settingsSections: []
+      }
     })
   });
 
@@ -88,6 +103,25 @@ test("KernelSystemService exposes operational plugin snapshots", () => {
     users?.operations.find((item) => item.operation === "load")?.reason,
     "Disabled plugins must be enabled before load"
   );
+});
+
+test("KernelSystemService exposes plugin contribution catalog", async () => {
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0" });
+  await runtime.register({
+    id: "blog-pack",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    entities: [{ name: "posts", schemaVersion: 1 }],
+    admin: {
+      routes: [{ id: "posts", path: "/blog/posts", label: "Posts" }]
+    }
+  });
+
+  const service = new KernelSystemService(runtime);
+  const catalog = service.listPluginContributions();
+
+  assert.equal(catalog.entities[0]?.key, "blog-pack:posts");
+  assert.equal(catalog.admin.routes[0]?.declaration.path, "/blog/posts");
 });
 
 test("KernelSystemService executes supported plugin operations", async () => {
