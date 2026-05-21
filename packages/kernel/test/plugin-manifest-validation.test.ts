@@ -228,3 +228,179 @@ test("validatePluginManifest rejects policy rules for foreign plugin namespace",
     PluginManifestError
   );
 });
+
+test("validatePluginManifest accepts M4 declarative contribution blocks", () => {
+  const manifest = validatePluginManifest({
+    id: "blog-pack",
+    displayName: "Blog Pack",
+    description: "Posts and editorial workflows",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    entities: [
+      {
+        name: "posts",
+        displayName: "Posts",
+        schemaVersion: 1,
+        documentSchema: {
+          type: "object"
+        },
+        indexes: [
+          {
+            name: "slug_unique",
+            fields: { slug: 1 },
+            unique: true
+          }
+        ],
+        repository: {
+          mode: "standard"
+        }
+      }
+    ],
+    settings: [
+      {
+        namespace: "editorial",
+        key: "default-status",
+        type: "string",
+        visibility: "protected",
+        required: true,
+        defaultValueJson: '"draft"'
+      }
+    ],
+    events: {
+      emits: [
+        {
+          name: "post-published",
+          visibility: "public",
+          version: 1,
+          payloadSchema: {
+            type: "object"
+          }
+        }
+      ],
+      subscribes: [
+        {
+          eventName: "media-pack:asset-updated",
+          handler: "syncPostMedia"
+        }
+      ]
+    },
+    admin: {
+      routes: [
+        {
+          id: "posts",
+          path: "/blog/posts",
+          label: "Posts",
+          requiredPermission: "blog-pack:posts:read"
+        }
+      ],
+      resources: [
+        {
+          id: "posts",
+          label: "Posts",
+          routeBase: "/blog/posts",
+          apiBase: "/api/blog/posts",
+          requiredPermission: "blog-pack:posts:read"
+        }
+      ],
+      settingsSections: [
+        {
+          id: "editorial",
+          label: "Editorial",
+          namespace: "editorial"
+        }
+      ]
+    },
+    security: {
+      permissions: [
+        {
+          key: "blog-pack:posts:read",
+          displayName: "Read posts"
+        }
+      ]
+    }
+  });
+
+  assert.equal(manifest.displayName, "Blog Pack");
+  assert.equal(manifest.entities?.[0]?.name, "posts");
+  assert.equal(manifest.settings?.[0]?.key, "default-status");
+  assert.equal(manifest.events?.emits?.[0]?.delivery, "async");
+  assert.equal(manifest.admin?.routes?.[0]?.path, "/blog/posts");
+});
+
+test("validatePluginManifest rejects reserved plugin ids and namespaces", () => {
+  assert.throws(
+    () =>
+      validatePluginManifest({
+        id: "kernel",
+        version: "1.0.0",
+        requiresCore: "^0.1.0"
+      }),
+    PluginManifestError
+  );
+
+  assert.throws(
+    () =>
+      validatePluginManifest({
+        id: "blog-pack",
+        version: "1.0.0",
+        requiresCore: "^0.1.0",
+        settings: [
+          {
+            namespace: "system",
+            key: "enabled",
+            type: "boolean",
+            visibility: "protected"
+          }
+        ]
+      }),
+    PluginManifestError
+  );
+});
+
+test("validatePluginManifest rejects duplicate M4 contribution keys", () => {
+  assert.throws(
+    () =>
+      validatePluginManifest({
+        id: "blog-pack",
+        version: "1.0.0",
+        requiresCore: "^0.1.0",
+        settings: [
+          {
+            namespace: "editorial",
+            key: "default-status",
+            type: "string",
+            visibility: "protected"
+          },
+          {
+            namespace: "editorial",
+            key: "default-status",
+            type: "string",
+            visibility: "protected"
+          }
+        ]
+      }),
+    PluginManifestError
+  );
+});
+
+test("validatePluginManifest rejects admin permission references owned by another plugin", () => {
+  assert.throws(
+    () =>
+      validatePluginManifest({
+        id: "blog-pack",
+        version: "1.0.0",
+        requiresCore: "^0.1.0",
+        admin: {
+          routes: [
+            {
+              id: "posts",
+              path: "/blog/posts",
+              label: "Posts",
+              requiredPermission: "core-pack:users:read"
+            }
+          ]
+        }
+      }),
+    PluginManifestError
+  );
+});

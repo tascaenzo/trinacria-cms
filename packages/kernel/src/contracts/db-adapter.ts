@@ -1,11 +1,12 @@
 import type { NamespaceContext } from "./namespace-context.js";
 
 /**
- * Abstract, storage-agnostic query used by kernel repositories.
- * Concrete adapters translate it into the native database dialect.
+ * Mongo-first query shape used by kernel repositories.
+ * The contract intentionally keeps a small abstract surface so services do not depend
+ * on the concrete Mongo driver API, while still mapping directly to Mongo concepts.
  */
 export interface DbQuery<TData = unknown> {
-  /** Free-form filter predicate (normalized by the adapter). */
+  /** Free-form Mongo-like filter predicate (normalized by the adapter). */
   filter?: Record<string, unknown>;
   /** Maximum number of records to return. */
   limit?: number;
@@ -38,8 +39,8 @@ export interface DbRepository<TData = unknown> {
 }
 
 /**
- * Abstract transaction handle.
- * Concrete implementations define isolation and commit/rollback semantics.
+ * Abstract transaction handle over Mongo sessions.
+ * Implementations define the exact session lifecycle and commit/rollback semantics.
  */
 export interface DbTransaction {
   commit(): Promise<void>;
@@ -48,7 +49,7 @@ export interface DbTransaction {
 
 /**
  * Single entry point to the kernel persistence layer.
- * Fully decouples core services from concrete databases (Mongo, SQL, etc.).
+ * It protects core services from Mongo driver details; it is not a promise of multi-DB support.
  */
 export interface DbAdapter {
   /** Returns entity-scoped repositories for plugin/workspace namespaces. */

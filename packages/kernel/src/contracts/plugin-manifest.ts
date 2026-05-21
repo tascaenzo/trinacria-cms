@@ -71,6 +71,123 @@ export interface PluginManifestSecurity {
   policyRules?: readonly PluginManifestSecurityPolicyRule[];
 }
 
+export type PluginManifestSettingType = "string" | "number" | "boolean" | "json" | "secret";
+
+export type PluginManifestSettingVisibility = "public" | "protected" | "secret";
+
+/**
+ * Declarative setting owned by a plugin.
+ * The canonical key is `<pluginId>:<namespace>:<key>`.
+ */
+export interface PluginManifestSetting {
+  namespace: string;
+  key: string;
+  type: PluginManifestSettingType;
+  visibility: PluginManifestSettingVisibility;
+  required?: boolean;
+  description?: string;
+  schema?: Record<string, unknown>;
+  defaultValueJson?: string;
+}
+
+export type PluginManifestEntityIndexDirection = 1 | -1 | "text";
+
+export interface PluginManifestEntityIndex {
+  name: string;
+  fields: Record<string, PluginManifestEntityIndexDirection>;
+  unique?: boolean;
+  sparse?: boolean;
+  partialFilter?: Record<string, unknown>;
+}
+
+export interface PluginManifestEntityRepository {
+  mode: "standard" | "custom";
+  token?: string;
+}
+
+/**
+ * Declarative Mongo-backed entity contributed by a plugin.
+ * Entity names are plugin-local and become globally canonical through plugin ownership.
+ */
+export interface PluginManifestEntity {
+  name: string;
+  collection?: string;
+  displayName?: string;
+  schemaVersion: number;
+  documentSchema?: Record<string, unknown>;
+  indexes?: readonly PluginManifestEntityIndex[];
+  repository?: PluginManifestEntityRepository;
+}
+
+export type PluginManifestEventVisibility = "public" | "protected" | "private" | "audit";
+
+export type PluginManifestEventDelivery = "sync" | "async" | "deferred";
+
+export interface PluginManifestEmittedEvent {
+  name: string;
+  visibility: PluginManifestEventVisibility;
+  version: number;
+  delivery?: PluginManifestEventDelivery;
+  payloadSchema?: Record<string, unknown>;
+}
+
+export interface PluginManifestEventSubscription {
+  eventName: string;
+  handler: string;
+  requiredPermission?: string;
+}
+
+export interface PluginManifestEvents {
+  emits?: readonly PluginManifestEmittedEvent[];
+  subscribes?: readonly PluginManifestEventSubscription[];
+}
+
+export interface PluginManifestAdminNavigation {
+  id: string;
+  label: string;
+  path?: string;
+  requiredPermission?: string;
+  order?: number;
+}
+
+export interface PluginManifestAdminRoute {
+  id: string;
+  path: string;
+  label: string;
+  requiredPermission?: string;
+  componentRef?: string;
+}
+
+export interface PluginManifestAdminResource {
+  id: string;
+  label: string;
+  routeBase: string;
+  apiBase: string;
+  requiredPermission?: string;
+}
+
+export interface PluginManifestAdminWidget {
+  id: string;
+  label: string;
+  requiredPermission?: string;
+  componentRef?: string;
+}
+
+export interface PluginManifestAdminSettingsSection {
+  id: string;
+  label: string;
+  namespace: string;
+  requiredPermission?: string;
+}
+
+export interface PluginManifestAdmin {
+  navigation?: readonly PluginManifestAdminNavigation[];
+  routes?: readonly PluginManifestAdminRoute[];
+  resources?: readonly PluginManifestAdminResource[];
+  widgets?: readonly PluginManifestAdminWidget[];
+  settingsSections?: readonly PluginManifestAdminSettingsSection[];
+}
+
 /**
  * Minimal public metadata describing an installable plugin.
  * This contract is input for the runtime plugin registry.
@@ -78,6 +195,10 @@ export interface PluginManifestSecurity {
 export interface PluginManifest {
   /** Stable and unique plugin ID. */
   id: string;
+  /** Human-readable plugin name for admin surfaces and registries. */
+  displayName?: string;
+  /** Short functional description. */
+  description?: string;
   /** Plugin version (semver). */
   version: string;
   /** Required `@trinacria-cms/kernel` kernel version range. */
@@ -86,6 +207,14 @@ export interface PluginManifest {
   capabilities?: readonly string[];
   /** Dependencies toward other plugins. */
   dependencies?: readonly PluginManifestDependency[];
+  /** Mongo-backed entities contributed by the plugin. */
+  entities?: readonly PluginManifestEntity[];
+  /** Centralized settings definitions contributed by the plugin. */
+  settings?: readonly PluginManifestSetting[];
+  /** Event contracts emitted or consumed by the plugin. */
+  events?: PluginManifestEvents;
+  /** Declarative admin/backoffice contribution points. */
+  admin?: PluginManifestAdmin;
   /** Optional security declarations to be provisioned by a security service. */
   security?: PluginManifestSecurity;
 }

@@ -3,9 +3,15 @@ import test from "node:test";
 import type { DbAdapter } from "../src/contracts/db-adapter.js";
 import { DbAdapterError } from "../src/errors/index.js";
 import {
+  assertNoContributionCollisions,
   assertPluginOwnsNamespaceId,
+  buildContributionKey,
   buildNamespaceId,
+  buildSettingKey,
   createPluginDbScope,
+  isReservedNamespaceSegment,
+  isValidNamespaceSegment,
+  isValidPluginId,
   parseNamespaceId
 } from "../src/runtime/index.js";
 import { createCapabilityToken } from "../src/tokens/index.js";
@@ -24,6 +30,26 @@ test("buildNamespaceId and parseNamespaceId are canonical", () => {
 
 test("assertPluginOwnsNamespaceId rejects cross-plugin IDs", () => {
   assert.throws(() => assertPluginOwnsNamespaceId("other", "core-pack:users:abc"), DbAdapterError);
+});
+
+test("plugin namespace helpers validate reserved names and canonical keys", () => {
+  assert.equal(isValidPluginId("blog-pack"), true);
+  assert.equal(isValidPluginId("kernel"), false);
+  assert.equal(isReservedNamespaceSegment("core-pack"), true);
+  assert.equal(isValidNamespaceSegment("posts"), true);
+  assert.equal(isValidNamespaceSegment("system"), false);
+  assert.equal(buildContributionKey("blog-pack", "posts"), "blog-pack:posts");
+  assert.equal(
+    buildSettingKey("blog-pack", "editorial", "default-status"),
+    "blog-pack:editorial:default-status"
+  );
+});
+
+test("assertNoContributionCollisions rejects duplicate canonical keys", () => {
+  assert.throws(
+    () => assertNoContributionCollisions("entity", ["blog-pack:posts", "blog-pack:posts"]),
+    DbAdapterError
+  );
 });
 
 test("createPluginDbScope always injects pluginId", async () => {

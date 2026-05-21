@@ -4,6 +4,7 @@ import type {
   KernelPluginRuntimeContext,
   PluginRuntimeDiagnostic,
   PluginRuntimeLifecycleHooks,
+  PluginContributionCatalogSnapshot,
   PluginRuntimeEvent,
   PluginRuntimeRetryPolicy,
   PluginLifecyclePhase,
@@ -27,6 +28,7 @@ import { assertPluginCompatibility, validatePluginManifest } from "./plugin-mani
 import { satisfiesVersion } from "./semver.js";
 import { TrinacriaModuleBridge, type TrinacriaModuleBridgeApp } from "./trinacria-module-bridge.js";
 import { createInMemoryPluginRuntimeStore } from "./plugin-runtime-store.js";
+import { PluginContributionRegistry } from "./plugin-contribution-registry.js";
 
 export interface InMemoryPluginRuntimeOptions {
   coreVersion: string;
@@ -65,6 +67,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
   private readonly retryPolicy?: PluginRuntimeRetryPolicy;
   private readonly onEvent?: (event: PluginRuntimeEvent) => void;
   private readonly runtimeStore: PluginRuntimeStore;
+  private readonly contributionRegistry = new PluginContributionRegistry();
   private readonly eventBufferSize: number;
   private readonly eventLog: PluginRuntimeEvent[] = [];
   private runtimeStoreInitialization?: Promise<void>;
@@ -130,6 +133,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
         ...definition,
         manifest
       });
+      this.contributionRegistry.upsert(manifest);
       this.records.set(manifest.id, {
         ...existing,
         manifest
@@ -151,6 +155,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       ...definition,
       manifest
     });
+    this.contributionRegistry.upsert(manifest);
     this.records.set(manifest.id, {
       manifest,
       state: "registered",
@@ -344,6 +349,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     this.records.delete(pluginId);
     this.definitions.delete(pluginId);
     this.pluginModules.delete(pluginId);
+    this.contributionRegistry.remove(pluginId);
     await this.runtimeStore.remove(pluginId);
 
     this.emitEvent({
@@ -508,6 +514,10 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       edges,
       warnings
     };
+  }
+
+  describeContributions(): PluginContributionCatalogSnapshot {
+    return this.contributionRegistry.snapshot();
   }
 
   private async loadInternal(pluginId: string, stack: Set<string>): Promise<void> {

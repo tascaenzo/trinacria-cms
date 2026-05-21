@@ -20,16 +20,19 @@ The project keeps a strict separation between:
 
 ## Repository layout
 
-- `apps/playground`: development and integration playground
+- `apps/playground`: thin backend playground for kernel + core-pack integration
 - `apps/backoffice`: thin Vite host for the shared admin runtime
-- `packages/kernel`: CMS kernel contracts, runtime primitives, Trinacria bridge, and Mongo storage core
-- `packages/core-pack`: official baseline plugin pack (auth, users, roles, permissions, api keys, settings, installation)
-- `packages/sdk`: generated SDK and OpenAPI snapshot
-- `packages/admin-kernel`: shared backoffice runtime, pages, route registry, and SDK wiring
-- `packages/trinacria-ui`: reusable admin UI components and shell
+- `packages/kernel`: CMS runtime contracts, plugin orchestration, namespace governance, Mongo-first storage core
+- `packages/core-pack`: official baseline plugin pack: auth, users, roles, permissions, API keys, settings, installation
+- `packages/sdk`: zero-dependency HTTP client generated from the OpenAPI snapshot
+- `packages/admin-kernel`: shared backoffice application runtime, pages, route registry, SDK wiring
+- `packages/trinacria-ui`: reusable React design system and backoffice presentation components
 - `docs/cms/en`: official CMS docs in English
 - `docs/cms/it`: Italian CMS docs
 - `docs/trinacria`: local imported Trinacria docs (framework reference)
+
+Detailed package ownership map:
+[docs/cms/architecture/package-map.md](/Users/enzo/Desktop/trinacria-cms/docs/cms/architecture/package-map.md).
 
 ## Architecture model
 

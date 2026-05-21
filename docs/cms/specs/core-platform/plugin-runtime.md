@@ -63,6 +63,7 @@ export interface PluginRuntime {
   unregister(pluginId: string): Promise<void>;
   loadMany(pluginIds?: readonly string[]): Promise<void>;
   list(): readonly PluginRuntimeRecord[];
+  describeContributions(): PluginContributionCatalogSnapshot;
   events(options?: PluginRuntimeEventsOptions): readonly PluginRuntimeEvent[];
 }
 ```
@@ -125,6 +126,14 @@ Retention consigliata runtime events:
 
 ## Lifecycle
 
+Register:
+
+1. validate manifest
+2. validate core compatibility
+3. validate dependency graph
+4. materialize manifest contributions in the runtime catalog
+5. persist runtime record
+
 Load:
 
 1. validate manifest
@@ -164,4 +173,6 @@ essere additive o versionate.
 ## Gap rispetto al codice attuale
 
 - Runtime base, event log e operations API esistono.
-- Manca collegamento formale con namespace governance, event bus e manifest esteso.
+- Il runtime espone un catalogo contributi derivato dal manifest.
+- Mancano ancora endpoint HTTP e consumer operativi per entity/settings/event/admin
+  contribution.
