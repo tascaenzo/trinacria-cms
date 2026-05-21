@@ -235,6 +235,1235 @@
         }
       }
     },
+    "/v1/system/plugins": {
+      "get": {
+        "operationId": "listInstalledPlugins",
+        "summary": "List installed plugins and their runtime state",
+        "tags": ["System"],
+        "responses": {
+          "200": {
+            "description": "Installed plugin discovery snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "version": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "requiresCore": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "state": {
+                            "type": "string",
+                            "enum": [
+                              "registered",
+                              "loading",
+                              "initializing",
+                              "loaded",
+                              "unloading",
+                              "failed",
+                              "disabled",
+                              "unloaded"
+                            ]
+                          },
+                          "capabilities": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "dependencies": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "pluginId": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "versionRange": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "optional": {
+                                  "type": "boolean"
+                                },
+                                "status": {
+                                  "type": "string",
+                                  "enum": ["ok", "missing", "disabled", "version-mismatch"]
+                                },
+                                "currentVersion": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "registered",
+                                    "loading",
+                                    "initializing",
+                                    "loaded",
+                                    "unloading",
+                                    "failed",
+                                    "disabled",
+                                    "unloaded"
+                                  ]
+                                },
+                                "reason": {
+                                  "type": "string",
+                                  "minLength": 1
+                                }
+                              },
+                              "required": ["pluginId", "versionRange", "optional", "status"],
+                              "additionalProperties": false
+                            }
+                          },
+                          "security": {
+                            "type": "object",
+                            "properties": {
+                              "permissions": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "roles": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "grants": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "policyRules": {
+                                "type": "integer",
+                                "minimum": 0
+                              }
+                            },
+                            "required": ["permissions", "roles", "grants", "policyRules"],
+                            "additionalProperties": false
+                          },
+                          "failureCount": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "failedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "lastFailurePhase": {
+                            "type": "string",
+                            "enum": [
+                              "register",
+                              "dependency-check",
+                              "load",
+                              "init",
+                              "unload",
+                              "rollback"
+                            ]
+                          },
+                          "disabledAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "disabledReason": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "loadedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "statusReason": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "message": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            },
+                            "required": ["code", "message"]
+                          },
+                          "lastError": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "message": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "code": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            },
+                            "required": ["name", "message"]
+                          },
+                          "operations": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "operation": {
+                                  "type": "string",
+                                  "enum": ["load", "unload", "reload", "disable", "enable"]
+                                },
+                                "available": {
+                                  "type": "boolean"
+                                },
+                                "reason": {
+                                  "type": "string",
+                                  "minLength": 1
+                                }
+                              },
+                              "required": ["operation", "available"],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "version",
+                          "requiresCore",
+                          "state",
+                          "capabilities",
+                          "dependencies",
+                          "security",
+                          "failureCount",
+                          "operations"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "pluginId": {
+                          "enum": ["kernel"]
+                        },
+                        "count": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": ["data"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/system/capabilities": {
+      "get": {
+        "operationId": "listInstalledCapabilities",
+        "summary": "List published capabilities across installed plugins",
+        "tags": ["System"],
+        "responses": {
+          "200": {
+            "description": "Flattened capability catalog",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "pluginId": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "capability": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "version": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "state": {
+                            "type": "string",
+                            "enum": [
+                              "registered",
+                              "loading",
+                              "initializing",
+                              "loaded",
+                              "unloading",
+                              "failed",
+                              "disabled",
+                              "unloaded"
+                            ]
+                          }
+                        },
+                        "required": ["pluginId", "capability", "version", "state"],
+                        "additionalProperties": false
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "pluginId": {
+                          "enum": ["kernel"]
+                        },
+                        "count": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": ["data"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/system/plugin-contributions": {
+      "get": {
+        "operationId": "listPluginContributions",
+        "summary": "List manifest-derived plugin contributions",
+        "tags": ["System"],
+        "responses": {
+          "200": {
+            "description": "Manifest-derived plugin contribution catalog",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "entities": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "pluginId": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "key": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "declaration": {
+                                "type": "object",
+                                "properties": {}
+                              }
+                            },
+                            "required": ["pluginId", "key", "declaration"],
+                            "additionalProperties": false
+                          }
+                        },
+                        "settings": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "pluginId": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "key": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "declaration": {
+                                "type": "object",
+                                "properties": {}
+                              }
+                            },
+                            "required": ["pluginId", "key", "declaration"],
+                            "additionalProperties": false
+                          }
+                        },
+                        "events": {
+                          "type": "object",
+                          "properties": {
+                            "emits": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "pluginId": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "key": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "declaration": {
+                                    "type": "object",
+                                    "properties": {}
+                                  }
+                                },
+                                "required": ["pluginId", "key", "declaration"],
+                                "additionalProperties": false
+                              }
+                            },
+                            "subscribes": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "pluginId": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "key": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "declaration": {
+                                    "type": "object",
+                                    "properties": {}
+                                  }
+                                },
+                                "required": ["pluginId", "key", "declaration"],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": ["emits", "subscribes"],
+                          "additionalProperties": false
+                        },
+                        "admin": {
+                          "type": "object",
+                          "properties": {
+                            "navigation": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "pluginId": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "key": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "declaration": {
+                                    "type": "object",
+                                    "properties": {}
+                                  }
+                                },
+                                "required": ["pluginId", "key", "declaration"],
+                                "additionalProperties": false
+                              }
+                            },
+                            "routes": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "pluginId": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "key": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "declaration": {
+                                    "type": "object",
+                                    "properties": {}
+                                  }
+                                },
+                                "required": ["pluginId", "key", "declaration"],
+                                "additionalProperties": false
+                              }
+                            },
+                            "resources": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "pluginId": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "key": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "declaration": {
+                                    "type": "object",
+                                    "properties": {}
+                                  }
+                                },
+                                "required": ["pluginId", "key", "declaration"],
+                                "additionalProperties": false
+                              }
+                            },
+                            "widgets": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "pluginId": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "key": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "declaration": {
+                                    "type": "object",
+                                    "properties": {}
+                                  }
+                                },
+                                "required": ["pluginId", "key", "declaration"],
+                                "additionalProperties": false
+                              }
+                            },
+                            "settingsSections": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "pluginId": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "key": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "declaration": {
+                                    "type": "object",
+                                    "properties": {}
+                                  }
+                                },
+                                "required": ["pluginId", "key", "declaration"],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "navigation",
+                            "routes",
+                            "resources",
+                            "widgets",
+                            "settingsSections"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": ["entities", "settings", "events", "admin"],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "pluginId": {
+                          "enum": ["kernel"]
+                        },
+                        "count": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": ["data"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/system/plugins/{pluginId}": {
+      "get": {
+        "operationId": "getInstalledPlugin",
+        "summary": "Read one installed plugin snapshot",
+        "tags": ["System"],
+        "responses": {
+          "200": {
+            "description": "Installed plugin detail snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "version": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "requiresCore": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "registered",
+                            "loading",
+                            "initializing",
+                            "loaded",
+                            "unloading",
+                            "failed",
+                            "disabled",
+                            "unloaded"
+                          ]
+                        },
+                        "capabilities": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "dependencies": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "pluginId": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "versionRange": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "optional": {
+                                "type": "boolean"
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": ["ok", "missing", "disabled", "version-mismatch"]
+                              },
+                              "currentVersion": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "state": {
+                                "type": "string",
+                                "enum": [
+                                  "registered",
+                                  "loading",
+                                  "initializing",
+                                  "loaded",
+                                  "unloading",
+                                  "failed",
+                                  "disabled",
+                                  "unloaded"
+                                ]
+                              },
+                              "reason": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            },
+                            "required": ["pluginId", "versionRange", "optional", "status"],
+                            "additionalProperties": false
+                          }
+                        },
+                        "security": {
+                          "type": "object",
+                          "properties": {
+                            "permissions": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "roles": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "grants": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "policyRules": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          },
+                          "required": ["permissions", "roles", "grants", "policyRules"],
+                          "additionalProperties": false
+                        },
+                        "failureCount": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "failedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "lastFailurePhase": {
+                          "type": "string",
+                          "enum": [
+                            "register",
+                            "dependency-check",
+                            "load",
+                            "init",
+                            "unload",
+                            "rollback"
+                          ]
+                        },
+                        "disabledAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "disabledReason": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "loadedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "statusReason": {
+                          "type": "object",
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "message": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "required": ["code", "message"]
+                        },
+                        "lastError": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "message": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "code": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "required": ["name", "message"]
+                        },
+                        "operations": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "operation": {
+                                "type": "string",
+                                "enum": ["load", "unload", "reload", "disable", "enable"]
+                              },
+                              "available": {
+                                "type": "boolean"
+                              },
+                              "reason": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            },
+                            "required": ["operation", "available"],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "version",
+                        "requiresCore",
+                        "state",
+                        "capabilities",
+                        "dependencies",
+                        "security",
+                        "failureCount",
+                        "operations"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "pluginId": {
+                          "enum": ["kernel"]
+                        },
+                        "count": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": ["data"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "pluginId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/system/plugins/{pluginId}/operations": {
+      "post": {
+        "operationId": "executePluginOperation",
+        "summary": "Execute a supported runtime operation on one installed plugin",
+        "tags": ["System"],
+        "responses": {
+          "200": {
+            "description": "Plugin operation result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "plugin": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "version": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "requiresCore": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "state": {
+                              "type": "string",
+                              "enum": [
+                                "registered",
+                                "loading",
+                                "initializing",
+                                "loaded",
+                                "unloading",
+                                "failed",
+                                "disabled",
+                                "unloaded"
+                              ]
+                            },
+                            "capabilities": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            },
+                            "dependencies": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "pluginId": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "versionRange": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "optional": {
+                                    "type": "boolean"
+                                  },
+                                  "status": {
+                                    "type": "string",
+                                    "enum": ["ok", "missing", "disabled", "version-mismatch"]
+                                  },
+                                  "currentVersion": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "state": {
+                                    "type": "string",
+                                    "enum": [
+                                      "registered",
+                                      "loading",
+                                      "initializing",
+                                      "loaded",
+                                      "unloading",
+                                      "failed",
+                                      "disabled",
+                                      "unloaded"
+                                    ]
+                                  },
+                                  "reason": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  }
+                                },
+                                "required": ["pluginId", "versionRange", "optional", "status"],
+                                "additionalProperties": false
+                              }
+                            },
+                            "security": {
+                              "type": "object",
+                              "properties": {
+                                "permissions": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "roles": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "grants": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "policyRules": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                }
+                              },
+                              "required": ["permissions", "roles", "grants", "policyRules"],
+                              "additionalProperties": false
+                            },
+                            "failureCount": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "failedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "lastFailurePhase": {
+                              "type": "string",
+                              "enum": [
+                                "register",
+                                "dependency-check",
+                                "load",
+                                "init",
+                                "unload",
+                                "rollback"
+                              ]
+                            },
+                            "disabledAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "disabledReason": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "loadedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "statusReason": {
+                              "type": "object",
+                              "properties": {
+                                "code": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "message": {
+                                  "type": "string",
+                                  "minLength": 1
+                                }
+                              },
+                              "required": ["code", "message"]
+                            },
+                            "lastError": {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "message": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "code": {
+                                  "type": "string",
+                                  "minLength": 1
+                                }
+                              },
+                              "required": ["name", "message"]
+                            },
+                            "operations": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "operation": {
+                                    "type": "string",
+                                    "enum": ["load", "unload", "reload", "disable", "enable"]
+                                  },
+                                  "available": {
+                                    "type": "boolean"
+                                  },
+                                  "reason": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  }
+                                },
+                                "required": ["operation", "available"],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "version",
+                            "requiresCore",
+                            "state",
+                            "capabilities",
+                            "dependencies",
+                            "security",
+                            "failureCount",
+                            "operations"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "operation": {
+                          "type": "string",
+                          "enum": ["load", "unload", "reload", "disable", "enable"]
+                        },
+                        "executedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": ["plugin", "operation", "executedAt"],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "pluginId": {
+                          "enum": ["kernel"]
+                        },
+                        "count": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": ["data"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "pluginId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "operation": {
+                    "type": "string",
+                    "enum": ["load", "unload", "reload", "disable", "enable"]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1000
+                  }
+                },
+                "required": ["operation"],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/system/plugins/{pluginId}/events": {
+      "get": {
+        "operationId": "listPluginEvents",
+        "summary": "Read recent lifecycle events for one installed plugin",
+        "tags": ["System"],
+        "responses": {
+          "200": {
+            "description": "Recent plugin lifecycle events",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "sequence": {
+                            "type": "integer",
+                            "minimum": 1
+                          },
+                          "timestamp": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "pluginId": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "action": {
+                            "type": "string",
+                            "enum": [
+                              "register",
+                              "unregister",
+                              "load",
+                              "unload",
+                              "reload",
+                              "disable",
+                              "enable",
+                              "load-many"
+                            ]
+                          },
+                          "success": {
+                            "type": "boolean"
+                          },
+                          "phase": {
+                            "type": "string",
+                            "enum": [
+                              "register",
+                              "dependency-check",
+                              "load",
+                              "init",
+                              "unload",
+                              "rollback"
+                            ]
+                          },
+                          "message": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "durationMs": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "stateBefore": {
+                            "type": "string",
+                            "enum": [
+                              "registered",
+                              "loading",
+                              "initializing",
+                              "loaded",
+                              "unloading",
+                              "failed",
+                              "disabled",
+                              "unloaded"
+                            ]
+                          },
+                          "stateAfter": {
+                            "type": "string",
+                            "enum": [
+                              "registered",
+                              "loading",
+                              "initializing",
+                              "loaded",
+                              "unloading",
+                              "failed",
+                              "disabled",
+                              "unloaded"
+                            ]
+                          }
+                        },
+                        "required": ["sequence", "timestamp", "pluginId", "action", "success"]
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "pluginId": {
+                          "enum": ["kernel"]
+                        },
+                        "count": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": ["data"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "pluginId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
     "/v1/auth/login": {
       "post": {
         "operationId": "loginWithPassword",
@@ -2395,6 +3624,1227 @@
         }
       }
     },
+    "/v1/api-keys": {
+      "get": {
+        "operationId": "listApiKeys",
+        "summary": "List issued API keys",
+        "tags": ["Api Keys"],
+        "responses": {
+          "200": {
+            "description": "API key list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "keyPrefix": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "secretPreview": {
+                            "type": "string",
+                            "minLength": 4
+                          },
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 120
+                          },
+                          "description": {
+                            "type": "string",
+                            "maxLength": 500
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": ["publishable", "secret", "service"]
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": ["active", "revoked"]
+                          },
+                          "roleCodes": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 2
+                            }
+                          },
+                          "permissionKeys": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 3
+                            }
+                          },
+                          "policyRules": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "effect": {
+                                  "type": "string",
+                                  "enum": ["allow", "deny"]
+                                },
+                                "permissionPattern": {
+                                  "type": "string",
+                                  "minLength": 3,
+                                  "maxLength": 220
+                                },
+                                "conditions": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "enum": ["resource_id_required", "resource_id_equals_subject"]
+                                  },
+                                  "uniqueItems": true
+                                }
+                              },
+                              "required": ["effect", "permissionPattern", "conditions"],
+                              "additionalProperties": false
+                            }
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "lastUsedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "expiresAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "revokedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "keyPrefix",
+                          "secretPreview",
+                          "name",
+                          "kind",
+                          "status",
+                          "roleCodes",
+                          "permissionKeys",
+                          "policyRules",
+                          "createdAt",
+                          "updatedAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "pluginId": {
+                          "enum": ["core-pack"]
+                        },
+                        "count": {
+                          "type": "integer"
+                        },
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": ["data"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["publishable", "secret", "service"]
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["active", "revoked"]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        ]
+      },
+      "post": {
+        "operationId": "createApiKey",
+        "summary": "Issue a new API key",
+        "tags": ["Api Keys"],
+        "responses": {
+          "200": {
+            "description": "Issued API key with one-time secret",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "record": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "keyPrefix": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "secretPreview": {
+                              "type": "string",
+                              "minLength": 4
+                            },
+                            "name": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 120
+                            },
+                            "description": {
+                              "type": "string",
+                              "maxLength": 500
+                            },
+                            "kind": {
+                              "type": "string",
+                              "enum": ["publishable", "secret", "service"]
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": ["active", "revoked"]
+                            },
+                            "roleCodes": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 2
+                              }
+                            },
+                            "permissionKeys": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 3
+                              }
+                            },
+                            "policyRules": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "effect": {
+                                    "type": "string",
+                                    "enum": ["allow", "deny"]
+                                  },
+                                  "permissionPattern": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 220
+                                  },
+                                  "conditions": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string",
+                                      "enum": ["resource_id_required", "resource_id_equals_subject"]
+                                    },
+                                    "uniqueItems": true
+                                  }
+                                },
+                                "required": ["effect", "permissionPattern", "conditions"],
+                                "additionalProperties": false
+                              }
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "updatedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "lastUsedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "expiresAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "revokedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "keyPrefix",
+                            "secretPreview",
+                            "name",
+                            "kind",
+                            "status",
+                            "roleCodes",
+                            "permissionKeys",
+                            "policyRules",
+                            "createdAt",
+                            "updatedAt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "apiKey": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": ["record", "apiKey"],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "pluginId": {
+                          "enum": ["core-pack"]
+                        },
+                        "count": {
+                          "type": "integer"
+                        },
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": ["data"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "API key configuration invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": ["code", "message"],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "pluginId": {
+                          "enum": ["core-pack"]
+                        },
+                        "count": {
+                          "type": "integer"
+                        },
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["publishable", "secret", "service"]
+                  },
+                  "roleCodes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 2,
+                      "maxLength": 64,
+                      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+                    },
+                    "uniqueItems": true
+                  },
+                  "permissionKeys": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 3,
+                      "maxLength": 220
+                    },
+                    "uniqueItems": true
+                  },
+                  "policyRules": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "effect": {
+                          "type": "string",
+                          "enum": ["allow", "deny"]
+                        },
+                        "permissionPattern": {
+                          "type": "string",
+                          "minLength": 3,
+                          "maxLength": 220
+                        },
+                        "conditions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": ["resource_id_required", "resource_id_equals_subject"]
+                          },
+                          "uniqueItems": true
+                        }
+                      },
+                      "required": ["effect", "permissionPattern", "conditions"],
+                      "additionalProperties": false
+                    }
+                  },
+                  "expiresAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": ["name"],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/api-keys/{id}": {
+      "get": {
+        "operationId": "getApiKeyById",
+        "summary": "Get one API key metadata record",
+        "tags": ["Api Keys"],
+        "responses": {
+          "200": {
+            "description": "API key metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "keyPrefix": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "secretPreview": {
+                          "type": "string",
+                          "minLength": 4
+                        },
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 120
+                        },
+                        "description": {
+                          "type": "string",
+                          "maxLength": 500
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": ["publishable", "secret", "service"]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["active", "revoked"]
+                        },
+                        "roleCodes": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 2
+                          }
+                        },
+                        "permissionKeys": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 3
+                          }
+                        },
+                        "policyRules": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "effect": {
+                                "type": "string",
+                                "enum": ["allow", "deny"]
+                              },
+                              "permissionPattern": {
+                                "type": "string",
+                                "minLength": 3,
+                                "maxLength": 220
+                              },
+                              "conditions": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "enum": ["resource_id_required", "resource_id_equals_subject"]
+                                },
+                                "uniqueItems": true
+                              }
+                            },
+                            "required": ["effect", "permissionPattern", "conditions"],
+                            "additionalProperties": false
+                          }
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "lastUsedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "expiresAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "revokedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "keyPrefix",
+                        "secretPreview",
+                        "name",
+                        "kind",
+                        "status",
+                        "roleCodes",
+                        "permissionKeys",
+                        "policyRules",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "pluginId": {
+                          "enum": ["core-pack"]
+                        },
+                        "count": {
+                          "type": "integer"
+                        },
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": ["data"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "API key not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": ["code", "message"],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "pluginId": {
+                          "enum": ["core-pack"]
+                        },
+                        "count": {
+                          "type": "integer"
+                        },
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/api-keys/{id}/rotate": {
+      "post": {
+        "operationId": "rotateApiKey",
+        "summary": "Rotate an existing API key",
+        "tags": ["Api Keys"],
+        "responses": {
+          "200": {
+            "description": "Rotated API key with one-time secret",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "record": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "keyPrefix": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "secretPreview": {
+                              "type": "string",
+                              "minLength": 4
+                            },
+                            "name": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 120
+                            },
+                            "description": {
+                              "type": "string",
+                              "maxLength": 500
+                            },
+                            "kind": {
+                              "type": "string",
+                              "enum": ["publishable", "secret", "service"]
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": ["active", "revoked"]
+                            },
+                            "roleCodes": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 2
+                              }
+                            },
+                            "permissionKeys": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 3
+                              }
+                            },
+                            "policyRules": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "effect": {
+                                    "type": "string",
+                                    "enum": ["allow", "deny"]
+                                  },
+                                  "permissionPattern": {
+                                    "type": "string",
+                                    "minLength": 3,
+                                    "maxLength": 220
+                                  },
+                                  "conditions": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string",
+                                      "enum": ["resource_id_required", "resource_id_equals_subject"]
+                                    },
+                                    "uniqueItems": true
+                                  }
+                                },
+                                "required": ["effect", "permissionPattern", "conditions"],
+                                "additionalProperties": false
+                              }
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "updatedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "lastUsedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "expiresAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "revokedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "keyPrefix",
+                            "secretPreview",
+                            "name",
+                            "kind",
+                            "status",
+                            "roleCodes",
+                            "permissionKeys",
+                            "policyRules",
+                            "createdAt",
+                            "updatedAt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "apiKey": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": ["record", "apiKey"],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "pluginId": {
+                          "enum": ["core-pack"]
+                        },
+                        "count": {
+                          "type": "integer"
+                        },
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": ["data"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "API key not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": ["code", "message"],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "pluginId": {
+                          "enum": ["core-pack"]
+                        },
+                        "count": {
+                          "type": "integer"
+                        },
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "roleCodes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 2,
+                      "maxLength": 64,
+                      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+                    },
+                    "uniqueItems": true
+                  },
+                  "permissionKeys": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 3,
+                      "maxLength": 220
+                    },
+                    "uniqueItems": true
+                  },
+                  "policyRules": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "effect": {
+                          "type": "string",
+                          "enum": ["allow", "deny"]
+                        },
+                        "permissionPattern": {
+                          "type": "string",
+                          "minLength": 3,
+                          "maxLength": 220
+                        },
+                        "conditions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": ["resource_id_required", "resource_id_equals_subject"]
+                          },
+                          "uniqueItems": true
+                        }
+                      },
+                      "required": ["effect", "permissionPattern", "conditions"],
+                      "additionalProperties": false
+                    }
+                  },
+                  "expiresAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/api-keys/{id}/revoke": {
+      "post": {
+        "operationId": "revokeApiKey",
+        "summary": "Revoke an API key",
+        "tags": ["Api Keys"],
+        "responses": {
+          "200": {
+            "description": "Revoked API key metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "keyPrefix": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "secretPreview": {
+                          "type": "string",
+                          "minLength": 4
+                        },
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 120
+                        },
+                        "description": {
+                          "type": "string",
+                          "maxLength": 500
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": ["publishable", "secret", "service"]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["active", "revoked"]
+                        },
+                        "roleCodes": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 2
+                          }
+                        },
+                        "permissionKeys": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 3
+                          }
+                        },
+                        "policyRules": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "effect": {
+                                "type": "string",
+                                "enum": ["allow", "deny"]
+                              },
+                              "permissionPattern": {
+                                "type": "string",
+                                "minLength": 3,
+                                "maxLength": 220
+                              },
+                              "conditions": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "enum": ["resource_id_required", "resource_id_equals_subject"]
+                                },
+                                "uniqueItems": true
+                              }
+                            },
+                            "required": ["effect", "permissionPattern", "conditions"],
+                            "additionalProperties": false
+                          }
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "lastUsedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "expiresAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "revokedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "keyPrefix",
+                        "secretPreview",
+                        "name",
+                        "kind",
+                        "status",
+                        "roleCodes",
+                        "permissionKeys",
+                        "policyRules",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "pluginId": {
+                          "enum": ["core-pack"]
+                        },
+                        "count": {
+                          "type": "integer"
+                        },
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": ["data"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "API key not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "message": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": ["code", "message"],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "pluginId": {
+                          "enum": ["core-pack"]
+                        },
+                        "count": {
+                          "type": "integer"
+                        },
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": ["error"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/users/{id}/roles": {
       "get": {
         "operationId": "listUserRoles",
@@ -3945,7 +6395,6 @@
       "get": {
         "operationId": "listSettingDefinitions",
         "summary": "List setting definitions",
-        "description": "Requires either an admin bearer token or signed plugin caller headers. Masked secret metadata remains owner-scoped for plugin callers.",
         "tags": ["Settings"],
         "responses": {
           "200": {
@@ -4106,6 +6555,7 @@
             }
           }
         },
+        "description": "Requires either an admin bearer token or signed plugin caller headers. Masked secret metadata remains owner-scoped for plugin callers.",
         "security": [
           {
             "bearerAuth": []
@@ -4434,7 +6884,6 @@
       "get": {
         "operationId": "getSettingDefinitionByKey",
         "summary": "Get setting definition by key",
-        "description": "Requires either an admin bearer token or signed plugin caller headers. Masked secret metadata remains owner-scoped for plugin callers.",
         "tags": ["Settings"],
         "responses": {
           "200": {
@@ -4639,6 +7088,7 @@
             }
           }
         },
+        "description": "Requires either an admin bearer token or signed plugin caller headers. Masked secret metadata remains owner-scoped for plugin callers.",
         "security": [
           {
             "bearerAuth": []
@@ -4663,7 +7113,6 @@
       "get": {
         "operationId": "getSettingValueByKey",
         "summary": "Resolve setting value by key (explicit or default)",
-        "description": "Requires either an admin bearer token or signed plugin caller headers. Masked secret metadata remains owner-scoped for plugin callers.",
         "tags": ["Settings"],
         "responses": {
           "200": {
@@ -4827,6 +7276,7 @@
             }
           }
         },
+        "description": "Requires either an admin bearer token or signed plugin caller headers. Masked secret metadata remains owner-scoped for plugin callers.",
         "security": [
           {
             "bearerAuth": []
@@ -5089,7 +7539,6 @@
       "get": {
         "operationId": "getSettingSecretMetadata",
         "summary": "Read secret metadata (masked)",
-        "description": "Requires either an admin bearer token or signed plugin caller headers. Masked secret metadata remains owner-scoped for plugin callers.",
         "tags": ["Settings"],
         "responses": {
           "200": {
@@ -5157,7 +7606,7 @@
             }
           },
           "401": {
-            "description": "Admin or plugin authentication required",
+            "description": "Plugin caller authentication failed",
             "content": {
               "application/json": {
                 "schema": {
@@ -5298,6 +7747,7 @@
             }
           }
         },
+        "description": "Requires either an admin bearer token or signed plugin caller headers. Masked secret metadata remains owner-scoped for plugin callers.",
         "security": [
           {
             "bearerAuth": []
@@ -5956,8 +8406,8 @@
               }
             }
           },
-          "403": {
-            "description": "Owner plugin required",
+          "401": {
+            "description": "Plugin caller authentication failed",
             "content": {
               "application/json": {
                 "schema": {
@@ -6003,8 +8453,8 @@
               }
             }
           },
-          "401": {
-            "description": "Plugin caller authentication failed",
+          "403": {
+            "description": "Owner plugin required",
             "content": {
               "application/json": {
                 "schema": {
@@ -6067,1747 +8517,6 @@
             }
           }
         ]
-      }
-    },
-    "/v1/system/plugins": {
-      "get": {
-        "operationId": "listInstalledPlugins",
-        "summary": "List installed plugins and their runtime state",
-        "tags": ["System"],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Installed plugin discovery snapshot",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "required": [
-                          "id",
-                          "version",
-                          "requiresCore",
-                          "state",
-                          "capabilities",
-                          "dependencies",
-                          "security",
-                          "failureCount",
-                          "operations"
-                        ],
-                        "properties": {
-                          "id": {
-                            "type": "string"
-                          },
-                          "version": {
-                            "type": "string"
-                          },
-                          "requiresCore": {
-                            "type": "string"
-                          },
-                          "state": {
-                            "type": "string",
-                            "enum": [
-                              "registered",
-                              "loading",
-                              "initializing",
-                              "loaded",
-                              "unloading",
-                              "failed",
-                              "disabled",
-                              "unloaded"
-                            ]
-                          },
-                          "capabilities": {
-                            "type": "array",
-                            "items": {
-                              "type": "string"
-                            }
-                          },
-                          "dependencies": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "additionalProperties": false,
-                              "required": ["pluginId", "versionRange", "optional", "status"],
-                              "properties": {
-                                "pluginId": {
-                                  "type": "string"
-                                },
-                                "versionRange": {
-                                  "type": "string"
-                                },
-                                "optional": {
-                                  "type": "boolean"
-                                },
-                                "status": {
-                                  "type": "string",
-                                  "enum": ["ok", "missing", "disabled", "version-mismatch"]
-                                },
-                                "currentVersion": {
-                                  "type": "string"
-                                },
-                                "state": {
-                                  "type": "string",
-                                  "enum": [
-                                    "registered",
-                                    "loading",
-                                    "initializing",
-                                    "loaded",
-                                    "unloading",
-                                    "failed",
-                                    "disabled",
-                                    "unloaded"
-                                  ]
-                                },
-                                "reason": {
-                                  "type": "string"
-                                }
-                              }
-                            }
-                          },
-                          "security": {
-                            "type": "object",
-                            "additionalProperties": false,
-                            "required": ["permissions", "roles", "grants", "policyRules"],
-                            "properties": {
-                              "permissions": {
-                                "type": "integer"
-                              },
-                              "roles": {
-                                "type": "integer"
-                              },
-                              "grants": {
-                                "type": "integer"
-                              },
-                              "policyRules": {
-                                "type": "integer"
-                              }
-                            }
-                          },
-                          "loadedAt": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
-                          "failureCount": {
-                            "type": "integer"
-                          },
-                          "failedAt": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
-                          "lastFailurePhase": {
-                            "type": "string",
-                            "enum": [
-                              "register",
-                              "dependency-check",
-                              "load",
-                              "init",
-                              "unload",
-                              "rollback"
-                            ]
-                          },
-                          "disabledAt": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
-                          "disabledReason": {
-                            "type": "string"
-                          },
-                          "statusReason": {
-                            "type": "object",
-                            "properties": {
-                              "code": {
-                                "type": "string"
-                              },
-                              "message": {
-                                "type": "string"
-                              },
-                              "details": {
-                                "type": "object",
-                                "additionalProperties": true
-                              }
-                            },
-                            "required": ["code", "message"],
-                            "additionalProperties": true
-                          },
-                          "lastError": {
-                            "type": "object",
-                            "properties": {
-                              "name": {
-                                "type": "string"
-                              },
-                              "message": {
-                                "type": "string"
-                              },
-                              "code": {
-                                "type": "string"
-                              },
-                              "details": {
-                                "type": "object",
-                                "additionalProperties": true
-                              }
-                            },
-                            "required": ["name", "message"],
-                            "additionalProperties": true
-                          },
-                          "operations": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "additionalProperties": false,
-                              "required": ["operation", "available"],
-                              "properties": {
-                                "operation": {
-                                  "type": "string",
-                                  "enum": ["load", "unload", "reload", "disable", "enable"]
-                                },
-                                "available": {
-                                  "type": "boolean"
-                                },
-                                "reason": {
-                                  "type": "string"
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "pluginId": {
-                          "enum": ["kernel"]
-                        },
-                        "count": {
-                          "type": "integer"
-                        },
-                        "limit": {
-                          "type": "integer"
-                        },
-                        "offset": {
-                          "type": "integer"
-                        }
-                      },
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": ["data"],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/system/plugins/{pluginId}": {
-      "get": {
-        "operationId": "getInstalledPlugin",
-        "summary": "Read one installed plugin snapshot",
-        "tags": ["System"],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "pluginId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Installed plugin detail snapshot",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "$ref": "#/paths/~1v1~1system~1plugins/get/responses/200/content/application~1json/schema/properties/data/items"
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "pluginId": {
-                          "enum": ["kernel"]
-                        },
-                        "count": {
-                          "type": "integer"
-                        },
-                        "limit": {
-                          "type": "integer"
-                        },
-                        "offset": {
-                          "type": "integer"
-                        }
-                      },
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": ["data"],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/system/plugins/{pluginId}/operations": {
-      "post": {
-        "operationId": "executePluginOperation",
-        "summary": "Execute a supported runtime operation on one installed plugin",
-        "tags": ["System"],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "pluginId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": false,
-                "required": ["operation"],
-                "properties": {
-                  "operation": {
-                    "type": "string",
-                    "enum": ["load", "unload", "reload", "disable", "enable"]
-                  },
-                  "reason": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Plugin operation result",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "required": ["plugin", "operation", "executedAt"],
-                      "properties": {
-                        "plugin": {
-                          "$ref": "#/paths/~1v1~1system~1plugins/get/responses/200/content/application~1json/schema/properties/data/items"
-                        },
-                        "operation": {
-                          "type": "string",
-                          "enum": ["load", "unload", "reload", "disable", "enable"]
-                        },
-                        "executedAt": {
-                          "type": "string",
-                          "format": "date-time"
-                        }
-                      }
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "pluginId": {
-                          "enum": ["kernel"]
-                        },
-                        "count": {
-                          "type": "integer"
-                        },
-                        "limit": {
-                          "type": "integer"
-                        },
-                        "offset": {
-                          "type": "integer"
-                        }
-                      },
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": ["data"],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/system/plugins/{pluginId}/events": {
-      "get": {
-        "operationId": "listPluginEvents",
-        "summary": "Read recent lifecycle events for one installed plugin",
-        "tags": ["System"],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "pluginId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Recent plugin lifecycle events",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "additionalProperties": true,
-                        "required": ["sequence", "timestamp", "pluginId", "action", "success"],
-                        "properties": {
-                          "sequence": {
-                            "type": "integer"
-                          },
-                          "timestamp": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
-                          "pluginId": {
-                            "type": "string"
-                          },
-                          "action": {
-                            "type": "string",
-                            "enum": [
-                              "register",
-                              "unregister",
-                              "load",
-                              "unload",
-                              "reload",
-                              "disable",
-                              "enable",
-                              "load-many"
-                            ]
-                          },
-                          "success": {
-                            "type": "boolean"
-                          },
-                          "phase": {
-                            "type": "string",
-                            "enum": [
-                              "register",
-                              "dependency-check",
-                              "load",
-                              "init",
-                              "unload",
-                              "rollback"
-                            ]
-                          },
-                          "message": {
-                            "type": "string"
-                          },
-                          "durationMs": {
-                            "type": "integer"
-                          },
-                          "stateBefore": {
-                            "type": "string",
-                            "enum": [
-                              "registered",
-                              "loading",
-                              "initializing",
-                              "loaded",
-                              "unloading",
-                              "failed",
-                              "disabled",
-                              "unloaded"
-                            ]
-                          },
-                          "stateAfter": {
-                            "type": "string",
-                            "enum": [
-                              "registered",
-                              "loading",
-                              "initializing",
-                              "loaded",
-                              "unloading",
-                              "failed",
-                              "disabled",
-                              "unloaded"
-                            ]
-                          },
-                          "details": {
-                            "type": "object",
-                            "additionalProperties": true
-                          }
-                        }
-                      }
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "pluginId": {
-                          "enum": ["kernel"]
-                        },
-                        "count": {
-                          "type": "integer"
-                        },
-                        "limit": {
-                          "type": "integer"
-                        },
-                        "offset": {
-                          "type": "integer"
-                        }
-                      },
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": ["data"],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/system/capabilities": {
-      "get": {
-        "operationId": "listInstalledCapabilities",
-        "summary": "List published capabilities across installed plugins",
-        "tags": ["System"],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Flattened capability catalog",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "required": ["pluginId", "capability", "version", "state"],
-                        "properties": {
-                          "pluginId": {
-                            "type": "string"
-                          },
-                          "capability": {
-                            "type": "string"
-                          },
-                          "version": {
-                            "type": "string"
-                          },
-                          "state": {
-                            "type": "string",
-                            "enum": [
-                              "registered",
-                              "loading",
-                              "initializing",
-                              "loaded",
-                              "unloading",
-                              "failed",
-                              "disabled",
-                              "unloaded"
-                            ]
-                          }
-                        }
-                      }
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "pluginId": {
-                          "enum": ["kernel"]
-                        },
-                        "count": {
-                          "type": "integer"
-                        },
-                        "limit": {
-                          "type": "integer"
-                        },
-                        "offset": {
-                          "type": "integer"
-                        }
-                      },
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": ["data"],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/api-keys": {
-      "get": {
-        "operationId": "listApiKeys",
-        "summary": "List issued API keys",
-        "tags": ["Api Keys"],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "kind",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "enum": ["publishable", "secret", "service"]
-            }
-          },
-          {
-            "name": "status",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "enum": ["active", "revoked"]
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 200
-            }
-          },
-          {
-            "name": "offset",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 0
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "API key list",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "required": [
-                          "id",
-                          "keyPrefix",
-                          "secretPreview",
-                          "name",
-                          "kind",
-                          "status",
-                          "roleCodes",
-                          "permissionKeys",
-                          "policyRules",
-                          "createdAt",
-                          "updatedAt"
-                        ],
-                        "properties": {
-                          "id": {
-                            "type": "string"
-                          },
-                          "keyPrefix": {
-                            "type": "string"
-                          },
-                          "secretPreview": {
-                            "type": "string"
-                          },
-                          "name": {
-                            "type": "string"
-                          },
-                          "description": {
-                            "type": "string"
-                          },
-                          "kind": {
-                            "type": "string",
-                            "enum": ["publishable", "secret", "service"]
-                          },
-                          "status": {
-                            "type": "string",
-                            "enum": ["active", "revoked"]
-                          },
-                          "roleCodes": {
-                            "type": "array",
-                            "items": {
-                              "type": "string"
-                            }
-                          },
-                          "permissionKeys": {
-                            "type": "array",
-                            "items": {
-                              "type": "string"
-                            }
-                          },
-                          "policyRules": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "additionalProperties": false,
-                              "required": ["effect", "permissionPattern", "conditions"],
-                              "properties": {
-                                "effect": {
-                                  "type": "string",
-                                  "enum": ["allow", "deny"]
-                                },
-                                "permissionPattern": {
-                                  "type": "string"
-                                },
-                                "conditions": {
-                                  "type": "array",
-                                  "items": {
-                                    "type": "string",
-                                    "enum": ["resource_id_required", "resource_id_equals_subject"]
-                                  }
-                                }
-                              }
-                            }
-                          },
-                          "createdAt": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
-                          "updatedAt": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
-                          "lastUsedAt": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
-                          "expiresAt": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
-                          "revokedAt": {
-                            "type": "string",
-                            "format": "date-time"
-                          }
-                        }
-                      }
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "pluginId": {
-                          "enum": ["core-pack"]
-                        },
-                        "count": {
-                          "type": "integer"
-                        },
-                        "limit": {
-                          "type": "integer"
-                        },
-                        "offset": {
-                          "type": "integer"
-                        }
-                      },
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": ["data"],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "operationId": "createApiKey",
-        "summary": "Issue a new API key",
-        "tags": ["Api Keys"],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": false,
-                "required": ["name"],
-                "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "kind": {
-                    "type": "string",
-                    "enum": ["publishable", "secret", "service"]
-                  },
-                  "roleCodes": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  },
-                  "permissionKeys": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  },
-                  "policyRules": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "required": ["effect", "permissionPattern", "conditions"],
-                      "properties": {
-                        "effect": {
-                          "type": "string",
-                          "enum": ["allow", "deny"]
-                        },
-                        "permissionPattern": {
-                          "type": "string"
-                        },
-                        "conditions": {
-                          "type": "array",
-                          "items": {
-                            "type": "string",
-                            "enum": ["resource_id_required", "resource_id_equals_subject"]
-                          }
-                        }
-                      }
-                    }
-                  },
-                  "expiresAt": {
-                    "type": "string",
-                    "format": "date-time"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Issued API key with one-time secret",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "required": ["record", "apiKey"],
-                      "properties": {
-                        "record": {
-                          "type": "object",
-                          "additionalProperties": false,
-                          "required": [
-                            "id",
-                            "keyPrefix",
-                            "secretPreview",
-                            "name",
-                            "kind",
-                            "status",
-                            "roleCodes",
-                            "permissionKeys",
-                            "policyRules",
-                            "createdAt",
-                            "updatedAt"
-                          ],
-                          "properties": {
-                            "id": {
-                              "type": "string"
-                            },
-                            "keyPrefix": {
-                              "type": "string"
-                            },
-                            "secretPreview": {
-                              "type": "string"
-                            },
-                            "name": {
-                              "type": "string"
-                            },
-                            "description": {
-                              "type": "string"
-                            },
-                            "kind": {
-                              "type": "string",
-                              "enum": ["publishable", "secret", "service"]
-                            },
-                            "status": {
-                              "type": "string",
-                              "enum": ["active", "revoked"]
-                            },
-                            "roleCodes": {
-                              "type": "array",
-                              "items": {
-                                "type": "string"
-                              }
-                            },
-                            "permissionKeys": {
-                              "type": "array",
-                              "items": {
-                                "type": "string"
-                              }
-                            },
-                            "policyRules": {
-                              "type": "array",
-                              "items": {
-                                "type": "object",
-                                "additionalProperties": false,
-                                "required": ["effect", "permissionPattern", "conditions"],
-                                "properties": {
-                                  "effect": {
-                                    "type": "string",
-                                    "enum": ["allow", "deny"]
-                                  },
-                                  "permissionPattern": {
-                                    "type": "string"
-                                  },
-                                  "conditions": {
-                                    "type": "array",
-                                    "items": {
-                                      "type": "string",
-                                      "enum": ["resource_id_required", "resource_id_equals_subject"]
-                                    }
-                                  }
-                                }
-                              }
-                            },
-                            "createdAt": {
-                              "type": "string",
-                              "format": "date-time"
-                            },
-                            "updatedAt": {
-                              "type": "string",
-                              "format": "date-time"
-                            },
-                            "lastUsedAt": {
-                              "type": "string",
-                              "format": "date-time"
-                            },
-                            "expiresAt": {
-                              "type": "string",
-                              "format": "date-time"
-                            },
-                            "revokedAt": {
-                              "type": "string",
-                              "format": "date-time"
-                            }
-                          }
-                        },
-                        "apiKey": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "pluginId": {
-                          "enum": ["core-pack"]
-                        },
-                        "count": {
-                          "type": "integer"
-                        },
-                        "limit": {
-                          "type": "integer"
-                        },
-                        "offset": {
-                          "type": "integer"
-                        }
-                      },
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": ["data"],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "API key configuration invalid",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "properties": {
-                        "code": {
-                          "type": "string"
-                        },
-                        "message": {
-                          "type": "string"
-                        }
-                      },
-                      "required": ["code", "message"],
-                      "additionalProperties": false
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "pluginId": {
-                          "enum": ["core-pack"]
-                        },
-                        "count": {
-                          "type": "integer"
-                        },
-                        "limit": {
-                          "type": "integer"
-                        },
-                        "offset": {
-                          "type": "integer"
-                        }
-                      },
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": ["error"],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/api-keys/{id}": {
-      "get": {
-        "operationId": "getApiKeyById",
-        "summary": "Get one API key metadata record",
-        "tags": ["Api Keys"],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "API key metadata",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "required": [
-                        "id",
-                        "keyPrefix",
-                        "secretPreview",
-                        "name",
-                        "kind",
-                        "status",
-                        "roleCodes",
-                        "permissionKeys",
-                        "policyRules",
-                        "createdAt",
-                        "updatedAt"
-                      ],
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "keyPrefix": {
-                          "type": "string"
-                        },
-                        "secretPreview": {
-                          "type": "string"
-                        },
-                        "name": {
-                          "type": "string"
-                        },
-                        "description": {
-                          "type": "string"
-                        },
-                        "kind": {
-                          "type": "string",
-                          "enum": ["publishable", "secret", "service"]
-                        },
-                        "status": {
-                          "type": "string",
-                          "enum": ["active", "revoked"]
-                        },
-                        "roleCodes": {
-                          "type": "array",
-                          "items": {
-                            "type": "string"
-                          }
-                        },
-                        "permissionKeys": {
-                          "type": "array",
-                          "items": {
-                            "type": "string"
-                          }
-                        },
-                        "policyRules": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": false,
-                            "required": ["effect", "permissionPattern", "conditions"],
-                            "properties": {
-                              "effect": {
-                                "type": "string",
-                                "enum": ["allow", "deny"]
-                              },
-                              "permissionPattern": {
-                                "type": "string"
-                              },
-                              "conditions": {
-                                "type": "array",
-                                "items": {
-                                  "type": "string",
-                                  "enum": ["resource_id_required", "resource_id_equals_subject"]
-                                }
-                              }
-                            }
-                          }
-                        },
-                        "createdAt": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "updatedAt": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "lastUsedAt": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "expiresAt": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "revokedAt": {
-                          "type": "string",
-                          "format": "date-time"
-                        }
-                      }
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "pluginId": {
-                          "enum": ["core-pack"]
-                        },
-                        "count": {
-                          "type": "integer"
-                        },
-                        "limit": {
-                          "type": "integer"
-                        },
-                        "offset": {
-                          "type": "integer"
-                        }
-                      },
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": ["data"],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "API key not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "properties": {
-                        "code": {
-                          "type": "string"
-                        },
-                        "message": {
-                          "type": "string"
-                        }
-                      },
-                      "required": ["code", "message"],
-                      "additionalProperties": false
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "pluginId": {
-                          "enum": ["core-pack"]
-                        },
-                        "count": {
-                          "type": "integer"
-                        },
-                        "limit": {
-                          "type": "integer"
-                        },
-                        "offset": {
-                          "type": "integer"
-                        }
-                      },
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": ["error"],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/api-keys/{id}/rotate": {
-      "post": {
-        "operationId": "rotateApiKey",
-        "summary": "Rotate an existing API key",
-        "tags": ["Api Keys"],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": false,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "roleCodes": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  },
-                  "permissionKeys": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  },
-                  "policyRules": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "required": ["effect", "permissionPattern", "conditions"],
-                      "properties": {
-                        "effect": {
-                          "type": "string",
-                          "enum": ["allow", "deny"]
-                        },
-                        "permissionPattern": {
-                          "type": "string"
-                        },
-                        "conditions": {
-                          "type": "array",
-                          "items": {
-                            "type": "string",
-                            "enum": ["resource_id_required", "resource_id_equals_subject"]
-                          }
-                        }
-                      }
-                    }
-                  },
-                  "expiresAt": {
-                    "type": "string",
-                    "format": "date-time"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Rotated API key with one-time secret",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "required": ["record", "apiKey"],
-                      "properties": {
-                        "record": {
-                          "type": "object",
-                          "additionalProperties": false,
-                          "required": [
-                            "id",
-                            "keyPrefix",
-                            "secretPreview",
-                            "name",
-                            "kind",
-                            "status",
-                            "roleCodes",
-                            "permissionKeys",
-                            "policyRules",
-                            "createdAt",
-                            "updatedAt"
-                          ],
-                          "properties": {
-                            "id": {
-                              "type": "string"
-                            },
-                            "keyPrefix": {
-                              "type": "string"
-                            },
-                            "secretPreview": {
-                              "type": "string"
-                            },
-                            "name": {
-                              "type": "string"
-                            },
-                            "description": {
-                              "type": "string"
-                            },
-                            "kind": {
-                              "type": "string",
-                              "enum": ["publishable", "secret", "service"]
-                            },
-                            "status": {
-                              "type": "string",
-                              "enum": ["active", "revoked"]
-                            },
-                            "roleCodes": {
-                              "type": "array",
-                              "items": {
-                                "type": "string"
-                              }
-                            },
-                            "permissionKeys": {
-                              "type": "array",
-                              "items": {
-                                "type": "string"
-                              }
-                            },
-                            "policyRules": {
-                              "type": "array",
-                              "items": {
-                                "type": "object",
-                                "additionalProperties": false,
-                                "required": ["effect", "permissionPattern", "conditions"],
-                                "properties": {
-                                  "effect": {
-                                    "type": "string",
-                                    "enum": ["allow", "deny"]
-                                  },
-                                  "permissionPattern": {
-                                    "type": "string"
-                                  },
-                                  "conditions": {
-                                    "type": "array",
-                                    "items": {
-                                      "type": "string",
-                                      "enum": ["resource_id_required", "resource_id_equals_subject"]
-                                    }
-                                  }
-                                }
-                              }
-                            },
-                            "createdAt": {
-                              "type": "string",
-                              "format": "date-time"
-                            },
-                            "updatedAt": {
-                              "type": "string",
-                              "format": "date-time"
-                            },
-                            "lastUsedAt": {
-                              "type": "string",
-                              "format": "date-time"
-                            },
-                            "expiresAt": {
-                              "type": "string",
-                              "format": "date-time"
-                            },
-                            "revokedAt": {
-                              "type": "string",
-                              "format": "date-time"
-                            }
-                          }
-                        },
-                        "apiKey": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "pluginId": {
-                          "enum": ["core-pack"]
-                        },
-                        "count": {
-                          "type": "integer"
-                        },
-                        "limit": {
-                          "type": "integer"
-                        },
-                        "offset": {
-                          "type": "integer"
-                        }
-                      },
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": ["data"],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "API key not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "properties": {
-                        "code": {
-                          "type": "string"
-                        },
-                        "message": {
-                          "type": "string"
-                        }
-                      },
-                      "required": ["code", "message"],
-                      "additionalProperties": false
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "pluginId": {
-                          "enum": ["core-pack"]
-                        },
-                        "count": {
-                          "type": "integer"
-                        },
-                        "limit": {
-                          "type": "integer"
-                        },
-                        "offset": {
-                          "type": "integer"
-                        }
-                      },
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": ["error"],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/api-keys/{id}/revoke": {
-      "post": {
-        "operationId": "revokeApiKey",
-        "summary": "Revoke an API key",
-        "tags": ["Api Keys"],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": false,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "reason": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Revoked API key metadata",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "required": [
-                        "id",
-                        "keyPrefix",
-                        "secretPreview",
-                        "name",
-                        "kind",
-                        "status",
-                        "roleCodes",
-                        "permissionKeys",
-                        "policyRules",
-                        "createdAt",
-                        "updatedAt"
-                      ],
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "keyPrefix": {
-                          "type": "string"
-                        },
-                        "secretPreview": {
-                          "type": "string"
-                        },
-                        "name": {
-                          "type": "string"
-                        },
-                        "description": {
-                          "type": "string"
-                        },
-                        "kind": {
-                          "type": "string",
-                          "enum": ["publishable", "secret", "service"]
-                        },
-                        "status": {
-                          "type": "string",
-                          "enum": ["active", "revoked"]
-                        },
-                        "roleCodes": {
-                          "type": "array",
-                          "items": {
-                            "type": "string"
-                          }
-                        },
-                        "permissionKeys": {
-                          "type": "array",
-                          "items": {
-                            "type": "string"
-                          }
-                        },
-                        "policyRules": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": false,
-                            "required": ["effect", "permissionPattern", "conditions"],
-                            "properties": {
-                              "effect": {
-                                "type": "string",
-                                "enum": ["allow", "deny"]
-                              },
-                              "permissionPattern": {
-                                "type": "string"
-                              },
-                              "conditions": {
-                                "type": "array",
-                                "items": {
-                                  "type": "string",
-                                  "enum": ["resource_id_required", "resource_id_equals_subject"]
-                                }
-                              }
-                            }
-                          }
-                        },
-                        "createdAt": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "updatedAt": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "lastUsedAt": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "expiresAt": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "revokedAt": {
-                          "type": "string",
-                          "format": "date-time"
-                        }
-                      }
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "pluginId": {
-                          "enum": ["core-pack"]
-                        },
-                        "count": {
-                          "type": "integer"
-                        },
-                        "limit": {
-                          "type": "integer"
-                        },
-                        "offset": {
-                          "type": "integer"
-                        }
-                      },
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": ["data"],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "API key not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "properties": {
-                        "code": {
-                          "type": "string"
-                        },
-                        "message": {
-                          "type": "string"
-                        }
-                      },
-                      "required": ["code", "message"],
-                      "additionalProperties": false
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "pluginId": {
-                          "enum": ["core-pack"]
-                        },
-                        "count": {
-                          "type": "integer"
-                        },
-                        "limit": {
-                          "type": "integer"
-                        },
-                        "offset": {
-                          "type": "integer"
-                        }
-                      },
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": ["error"],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
       }
     }
   },

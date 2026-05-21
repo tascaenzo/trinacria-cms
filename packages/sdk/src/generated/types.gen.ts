@@ -253,15 +253,54 @@ export type ExecutePluginOperationRequest = {
 
 export type ExecutePluginOperationResponse = {
   "data": {
-  "plugin": unknown;
+  "plugin": {
+  "id": string;
+  "version": string;
+  "requiresCore": string;
+  "state": "registered" | "loading" | "initializing" | "loaded" | "unloading" | "failed" | "disabled" | "unloaded";
+  "capabilities": Array<string>;
+  "dependencies": Array<{
+  "pluginId": string;
+  "versionRange": string;
+  "optional": boolean;
+  "status": "ok" | "missing" | "disabled" | "version-mismatch";
+  "currentVersion"?: string;
+  "state"?: "registered" | "loading" | "initializing" | "loaded" | "unloading" | "failed" | "disabled" | "unloaded";
+  "reason"?: string;
+}>;
+  "security": {
+  "permissions": number;
+  "roles": number;
+  "grants": number;
+  "policyRules": number;
+};
+  "failureCount": number;
+  "failedAt"?: string;
+  "lastFailurePhase"?: "register" | "dependency-check" | "load" | "init" | "unload" | "rollback";
+  "disabledAt"?: string;
+  "disabledReason"?: string;
+  "loadedAt"?: string;
+  "statusReason"?: {
+  "code": string;
+  "message": string;
+};
+  "lastError"?: {
+  "name": string;
+  "message": string;
+  "code"?: string;
+};
+  "operations": Array<{
+  "operation": "load" | "unload" | "reload" | "disable" | "enable";
+  "available": boolean;
+  "reason"?: string;
+}>;
+};
   "operation": "load" | "unload" | "reload" | "disable" | "enable";
   "executedAt": string;
 };
   "meta"?: {
   "pluginId"?: "kernel";
   "count"?: number;
-  "limit"?: number;
-  "offset"?: number;
 };
 };
 
@@ -391,12 +430,51 @@ export type GetInstalledPluginRequest = {
 };
 
 export type GetInstalledPluginResponse = {
-  "data": unknown;
+  "data": {
+  "id": string;
+  "version": string;
+  "requiresCore": string;
+  "state": "registered" | "loading" | "initializing" | "loaded" | "unloading" | "failed" | "disabled" | "unloaded";
+  "capabilities": Array<string>;
+  "dependencies": Array<{
+  "pluginId": string;
+  "versionRange": string;
+  "optional": boolean;
+  "status": "ok" | "missing" | "disabled" | "version-mismatch";
+  "currentVersion"?: string;
+  "state"?: "registered" | "loading" | "initializing" | "loaded" | "unloading" | "failed" | "disabled" | "unloaded";
+  "reason"?: string;
+}>;
+  "security": {
+  "permissions": number;
+  "roles": number;
+  "grants": number;
+  "policyRules": number;
+};
+  "failureCount": number;
+  "failedAt"?: string;
+  "lastFailurePhase"?: "register" | "dependency-check" | "load" | "init" | "unload" | "rollback";
+  "disabledAt"?: string;
+  "disabledReason"?: string;
+  "loadedAt"?: string;
+  "statusReason"?: {
+  "code": string;
+  "message": string;
+};
+  "lastError"?: {
+  "name": string;
+  "message": string;
+  "code"?: string;
+};
+  "operations": Array<{
+  "operation": "load" | "unload" | "reload" | "disable" | "enable";
+  "available": boolean;
+  "reason"?: string;
+}>;
+};
   "meta"?: {
   "pluginId"?: "kernel";
   "count"?: number;
-  "limit"?: number;
-  "offset"?: number;
 };
 };
 
@@ -656,8 +734,6 @@ export type ListInstalledCapabilitiesResponse = {
   "meta"?: {
   "pluginId"?: "kernel";
   "count"?: number;
-  "limit"?: number;
-  "offset"?: number;
 };
 };
 
@@ -685,28 +761,20 @@ export type ListInstalledPluginsResponse = {
   "grants": number;
   "policyRules": number;
 };
-  "loadedAt"?: string;
   "failureCount": number;
   "failedAt"?: string;
   "lastFailurePhase"?: "register" | "dependency-check" | "load" | "init" | "unload" | "rollback";
   "disabledAt"?: string;
   "disabledReason"?: string;
+  "loadedAt"?: string;
   "statusReason"?: {
   "code": string;
   "message": string;
-  "details"?: {
-  [key: string]: unknown;
-};
-  [key: string]: unknown;
 };
   "lastError"?: {
   "name": string;
   "message": string;
   "code"?: string;
-  "details"?: {
-  [key: string]: unknown;
-};
-  [key: string]: unknown;
 };
   "operations": Array<{
   "operation": "load" | "unload" | "reload" | "disable" | "enable";
@@ -717,8 +785,6 @@ export type ListInstalledPluginsResponse = {
   "meta"?: {
   "pluginId"?: "kernel";
   "count"?: number;
-  "limit"?: number;
-  "offset"?: number;
 };
 };
 
@@ -748,6 +814,66 @@ export type ListPermissionsResponse = {
 };
 };
 
+export type ListPluginContributionsRequest = void;
+
+export type ListPluginContributionsResponse = {
+  "data": {
+  "entities": Array<{
+  "pluginId": string;
+  "key": string;
+  "declaration": Record<string, unknown>;
+}>;
+  "settings": Array<{
+  "pluginId": string;
+  "key": string;
+  "declaration": Record<string, unknown>;
+}>;
+  "events": {
+  "emits": Array<{
+  "pluginId": string;
+  "key": string;
+  "declaration": Record<string, unknown>;
+}>;
+  "subscribes": Array<{
+  "pluginId": string;
+  "key": string;
+  "declaration": Record<string, unknown>;
+}>;
+};
+  "admin": {
+  "navigation": Array<{
+  "pluginId": string;
+  "key": string;
+  "declaration": Record<string, unknown>;
+}>;
+  "routes": Array<{
+  "pluginId": string;
+  "key": string;
+  "declaration": Record<string, unknown>;
+}>;
+  "resources": Array<{
+  "pluginId": string;
+  "key": string;
+  "declaration": Record<string, unknown>;
+}>;
+  "widgets": Array<{
+  "pluginId": string;
+  "key": string;
+  "declaration": Record<string, unknown>;
+}>;
+  "settingsSections": Array<{
+  "pluginId": string;
+  "key": string;
+  "declaration": Record<string, unknown>;
+}>;
+};
+};
+  "meta"?: {
+  "pluginId"?: "kernel";
+  "count"?: number;
+};
+};
+
 export type ListPluginEventsRequest = {
   path: {
   "pluginId": string;
@@ -766,16 +892,10 @@ export type ListPluginEventsResponse = {
   "durationMs"?: number;
   "stateBefore"?: "registered" | "loading" | "initializing" | "loaded" | "unloading" | "failed" | "disabled" | "unloaded";
   "stateAfter"?: "registered" | "loading" | "initializing" | "loaded" | "unloading" | "failed" | "disabled" | "unloaded";
-  "details"?: {
-  [key: string]: unknown;
-};
-  [key: string]: unknown;
 }>;
   "meta"?: {
   "pluginId"?: "kernel";
   "count"?: number;
-  "limit"?: number;
-  "offset"?: number;
 };
 };
 
