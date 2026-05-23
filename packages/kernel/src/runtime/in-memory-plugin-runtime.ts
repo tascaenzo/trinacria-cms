@@ -12,11 +12,7 @@ import type {
   PluginRuntimeRecord,
   PluginState
 } from "../contracts/plugin-runtime.js";
-import type {
-  PersistedPluginRuntimeRecord,
-  PluginRuntimeStore
-} from "../contracts/plugin-runtime-store.js";
-import type { PluginManifestDependency } from "../contracts/plugin-manifest.js";
+import type { PluginRuntimeStore } from "../contracts/plugin-runtime-store.js";
 import type { ApplicationContext, ModuleDefinition } from "@trinacria/core";
 import { CoreError } from "../errors/core-error.js";
 import {
@@ -28,11 +24,25 @@ import {
   PluginStateTransitionError
 } from "../errors/plugin-errors.js";
 import { assertPluginCompatibility, validatePluginManifest } from "./plugin-manifest-validation.js";
-import { satisfiesVersion } from "./semver.js";
 import { TrinacriaModuleBridge, type TrinacriaModuleBridgeApp } from "./trinacria-module-bridge.js";
 import { createInMemoryPluginRuntimeStore } from "./plugin-runtime-store.js";
 import { PluginContributionRegistry } from "./plugin-contribution-registry.js";
 import { createNamespaceValidator } from "./plugin-namespace.js";
+import {
+  assertDependencyGraphWithoutCycles,
+  assertNoLoadedDependents,
+  assertNoRegisteredDependents,
+  assertRequiredDependenciesAvailable,
+  describePluginDependencyGraph,
+  extractRequiredDependencies,
+  sortPluginsByDependencies
+} from "./plugin-runtime-dependencies.js";
+import { PluginRuntimeEventLog } from "./plugin-runtime-events.js";
+import { fromPersistedRuntimeRecord } from "./plugin-runtime-rehydration.js";
+import {
+  createPluginStatusReason,
+  transitionPluginRecord
+} from "./plugin-runtime-state-machine.js";
 
 export interface InMemoryPluginRuntimeOptions {
   coreVersion: string;
@@ -43,17 +53,6 @@ export interface InMemoryPluginRuntimeOptions {
   runtimeStore?: PluginRuntimeStore;
   eventBufferSize?: number;
 }
-
-const ALLOWED_TRANSITIONS: Readonly<Record<PluginState, readonly PluginState[]>> = {
-  registered: ["loading", "disabled"],
-  loading: ["initializing", "failed"],
-  initializing: ["loaded", "failed"],
-  loaded: ["unloading", "disabled", "failed"],
-  unloading: ["unloaded", "failed", "disabled"],
-  failed: ["loading", "disabled", "unloaded"],
-  disabled: ["registered"],
-  unloaded: ["loading", "disabled", "registered"]
-};
 
 /**
  * In-memory plugin runtime with strict lifecycle transitions,
@@ -69,25 +68,24 @@ export class InMemoryPluginRuntime implements PluginRuntime {
   private readonly pluginModules = new Map<string, readonly ModuleDefinition[]>();
   private readonly activeLoads = new Set<string>();
   private readonly retryPolicy?: PluginRuntimeRetryPolicy;
-  private readonly onEvent?: (event: PluginRuntimeEvent) => void;
   private readonly runtimeStore: PluginRuntimeStore;
   private readonly contributionValidator = new PluginContributionRegistry();
   private readonly contributionRegistry = new PluginContributionRegistry();
   private readonly namespaceValidator = createNamespaceValidator();
-  private readonly eventBufferSize: number;
-  private readonly eventLog: PluginRuntimeEvent[] = [];
+  private readonly eventsLog: PluginRuntimeEventLog;
   private runtimeStoreInitialization?: Promise<void>;
   private runtimeStoreHydrated = false;
-  private eventSequence = 0;
 
   constructor(options: InMemoryPluginRuntimeOptions) {
     this.coreVersion = options.coreVersion;
     this.app = options.app;
     this.lifecycleHooks = options.lifecycleHooks;
     this.retryPolicy = options.retryPolicy;
-    this.onEvent = options.onEvent;
     this.runtimeStore = options.runtimeStore ?? createInMemoryPluginRuntimeStore();
-    this.eventBufferSize = Math.max(1, options.eventBufferSize ?? 200);
+    this.eventsLog = new PluginRuntimeEventLog({
+      bufferSize: options.eventBufferSize,
+      onEvent: options.onEvent
+    });
 
     if (options.app) {
       this.moduleBridge = new TrinacriaModuleBridge(options.app as TrinacriaModuleBridgeApp);
@@ -104,9 +102,10 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       definition = this.normalizeDefinition(plugin);
       manifest = validatePluginManifest(definition.manifest);
       assertPluginCompatibility(manifest, this.coreVersion);
-      this.assertDependencyGraphWithoutCycles(
+      assertDependencyGraphWithoutCycles(
         manifest.id,
-        this.extractRequiredDependencies(manifest)
+        extractRequiredDependencies(manifest),
+        this.records
       );
       this.assertNamespaceValid(manifest);
     } catch (error) {
@@ -174,7 +173,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       failedAt: undefined,
       disabledAt: undefined,
       disabledReason: undefined,
-      statusReason: this.createStatusReason("registered")
+      statusReason: createPluginStatusReason("registered")
     });
     await this.persistRecord(manifest.id);
     this.emitEvent({
@@ -273,7 +272,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       );
     }
 
-    this.assertNoLoadedDependents(pluginId);
+    assertNoLoadedDependents(pluginId, this.records);
     if (record.state === "loaded") {
       this.transition(pluginId, "unloading");
     }
@@ -368,7 +367,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       );
     }
 
-    this.assertNoRegisteredDependents(pluginId);
+    assertNoRegisteredDependents(pluginId, this.records);
     const definition = this.getDefinition(pluginId);
 
     try {
@@ -413,7 +412,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
             .filter((item) => item.state !== "disabled")
             .map((item) => item.manifest.id);
 
-    const ordered = this.sortByDependencies(targets);
+    const ordered = sortPluginsByDependencies(targets, this.records);
     for (const pluginId of ordered) {
       await this.load(pluginId);
     }
@@ -504,7 +503,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       state: "registered",
       disabledAt: undefined,
       disabledReason: undefined,
-      statusReason: this.createStatusReason("registered")
+      statusReason: createPluginStatusReason("registered")
     });
     await this.persistRecord(pluginId);
     this.emitEvent({
@@ -525,64 +524,11 @@ export class InMemoryPluginRuntime implements PluginRuntime {
   }
 
   events(options?: { pluginId?: string; limit?: number }): readonly PluginRuntimeEvent[] {
-    const normalizedPluginId = options?.pluginId?.trim();
-    const filtered = normalizedPluginId
-      ? this.eventLog.filter((event) => event.pluginId === normalizedPluginId)
-      : this.eventLog;
-    const normalizedLimit =
-      typeof options?.limit === "number" && Number.isFinite(options.limit)
-        ? Math.max(1, Math.floor(options.limit))
-        : filtered.length;
-
-    return filtered.slice(-normalizedLimit);
+    return this.eventsLog.list(options);
   }
 
   describeDependencies(): PluginDependencyGraphSnapshot {
-    const nodes = this.list().map((item) => ({
-      pluginId: item.manifest.id,
-      state: item.state,
-      version: item.manifest.version
-    }));
-    const edges: PluginDependencyGraphSnapshot["edges"] = [];
-    const warnings: string[] = [];
-
-    for (const record of this.records.values()) {
-      const dependencies = record.manifest.dependencies ?? [];
-      for (const dependency of dependencies) {
-        const target = this.records.get(dependency.pluginId);
-        const versionOk = target
-          ? satisfiesVersion(target.manifest.version, dependency.versionRange)
-          : false;
-        const status = !target
-          ? "missing"
-          : target.state === "disabled"
-            ? "disabled"
-            : !versionOk
-              ? "version-mismatch"
-              : "ok";
-
-        edges.push({
-          from: record.manifest.id,
-          to: dependency.pluginId,
-          optional: Boolean(dependency.optional),
-          requiredRange: dependency.versionRange,
-          status,
-          currentVersion: target?.manifest.version
-        });
-
-        if (dependency.optional && status !== "ok") {
-          warnings.push(
-            `Optional dependency "${dependency.pluginId}" for plugin "${record.manifest.id}" is ${status}`
-          );
-        }
-      }
-    }
-
-    return {
-      nodes,
-      edges,
-      warnings
-    };
+    return describePluginDependencyGraph(this.records);
   }
 
   describeContributions(): PluginContributionCatalogSnapshot {
@@ -609,10 +555,10 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     stack.add(pluginId);
 
     const definition = this.getDefinition(pluginId);
-    const requiredDependencies = this.extractRequiredDependencies(definition.manifest);
+    const requiredDependencies = extractRequiredDependencies(definition.manifest);
 
     try {
-      this.assertRequiredDependenciesAvailable(pluginId, requiredDependencies);
+      assertRequiredDependenciesAvailable(pluginId, requiredDependencies, this.records);
     } catch (error) {
       this.markFailed(pluginId, "dependency-check", error);
       stack.delete(pluginId);
@@ -678,7 +624,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
         lastError: undefined,
         lastFailurePhase: undefined,
         failedAt: undefined,
-        statusReason: this.createStatusReason("loaded")
+        statusReason: createPluginStatusReason("loaded")
       });
       this.pluginModules.set(pluginId, registeredModules);
       this.contributionRegistry.upsert(definition.manifest);
@@ -793,25 +739,10 @@ export class InMemoryPluginRuntime implements PluginRuntime {
   }
 
   private transition(pluginId: string, nextState: PluginState): void {
-    const current = this.getRecord(pluginId);
-    const allowed = ALLOWED_TRANSITIONS[current.state] ?? [];
-    if (!allowed.includes(nextState)) {
-      throw new PluginStateTransitionError(
-        `Invalid transition for plugin "${pluginId}": "${current.state}" -> "${nextState}"`,
-        {
-          pluginId,
-          from: current.state,
-          to: nextState
-        }
-      );
-    }
-
-    this.records.set(pluginId, {
-      ...current,
-      state: nextState,
-      statusReason: this.createStatusReason(nextState),
-      ...(nextState !== "loaded" ? { loadedAt: undefined } : {})
-    });
+    this.records.set(
+      pluginId,
+      transitionPluginRecord(pluginId, this.getRecord(pluginId), nextState)
+    );
   }
 
   private markFailed(pluginId: string, phase: PluginLifecyclePhase, error: unknown): void {
@@ -825,7 +756,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       lastFailurePhase: phase,
       failureCount: (current.failureCount ?? 0) + 1,
       lastError: error instanceof Error ? error : new Error(this.errorToString(error)),
-      statusReason: this.createStatusReason("failed", {
+      statusReason: createPluginStatusReason("failed", {
         phase,
         error: this.toDiagnostic(error)
       })
@@ -847,32 +778,10 @@ export class InMemoryPluginRuntime implements PluginRuntime {
           : error
             ? new Error(this.errorToString(error))
             : current.lastError,
-      statusReason: this.createStatusReason("disabled", {
+      statusReason: createPluginStatusReason("disabled", {
         reason: reason?.trim() || "operator_request"
       })
     });
-  }
-
-  private createStatusReason(
-    state: PluginState,
-    details?: Record<string, unknown>
-  ): PluginRuntimeRecord["statusReason"] {
-    const messages: Record<PluginState, string> = {
-      registered: "Plugin is registered and ready for manual load",
-      loading: "Plugin is registering runtime modules",
-      initializing: "Plugin load completed and lifecycle init is running",
-      loaded: "Plugin is loaded and operational",
-      unloading: "Plugin unload is releasing lifecycle hooks and modules",
-      failed: "Plugin entered failed state during lifecycle execution",
-      disabled: "Plugin is disabled and cannot be loaded",
-      unloaded: "Plugin is unloaded but still registered"
-    };
-
-    return {
-      code: `plugin_${state}`,
-      message: messages[state],
-      ...(details ? { details } : {})
-    };
   }
 
   private toDiagnostic(error: unknown): PluginRuntimeDiagnostic {
@@ -898,142 +807,6 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     };
   }
 
-  private extractRequiredDependencies(
-    manifest: PluginRuntimeRecord["manifest"]
-  ): readonly PluginManifestDependency[] {
-    return (manifest.dependencies ?? []).filter((dependency) => !dependency.optional);
-  }
-
-  private assertRequiredDependenciesAvailable(
-    pluginId: string,
-    dependencies: readonly PluginManifestDependency[]
-  ): void {
-    for (const dependency of dependencies) {
-      const dependencyRecord = this.records.get(dependency.pluginId);
-      if (!dependencyRecord) {
-        throw new PluginDependencyError(
-          `Plugin "${pluginId}" is missing required dependency "${dependency.pluginId}"`,
-          {
-            pluginId,
-            dependencyId: dependency.pluginId,
-            requiredRange: dependency.versionRange
-          }
-        );
-      }
-      if (!satisfiesVersion(dependencyRecord.manifest.version, dependency.versionRange)) {
-        throw new PluginDependencyError(
-          `Plugin "${pluginId}" requires dependency "${dependency.pluginId}" version "${dependency.versionRange}" but found "${dependencyRecord.manifest.version}"`,
-          {
-            pluginId,
-            dependencyId: dependency.pluginId,
-            requiredRange: dependency.versionRange,
-            currentVersion: dependencyRecord.manifest.version
-          }
-        );
-      }
-      if (dependencyRecord.state === "disabled") {
-        throw new PluginDependencyError(
-          `Plugin "${pluginId}" depends on disabled plugin "${dependency.pluginId}"`,
-          {
-            pluginId,
-            dependencyId: dependency.pluginId
-          }
-        );
-      }
-    }
-  }
-
-  private assertNoLoadedDependents(pluginId: string): void {
-    const loadedDependents: string[] = [];
-
-    for (const [candidatePluginId, record] of this.records) {
-      if (candidatePluginId === pluginId) continue;
-      if (record.state !== "loaded") continue;
-      const dependencies = this.extractRequiredDependencies(record.manifest);
-      if (dependencies.some((dependency) => dependency.pluginId === pluginId)) {
-        loadedDependents.push(candidatePluginId);
-      }
-    }
-
-    if (loadedDependents.length > 0) {
-      throw new PluginDependencyError(
-        `Cannot unload plugin "${pluginId}" while loaded dependents exist`,
-        {
-          pluginId,
-          loadedDependents
-        }
-      );
-    }
-  }
-
-  private assertNoRegisteredDependents(pluginId: string): void {
-    const registeredDependents: string[] = [];
-
-    for (const [candidatePluginId, record] of this.records) {
-      if (candidatePluginId === pluginId) continue;
-      const dependencies = this.extractRequiredDependencies(record.manifest);
-      if (dependencies.some((dependency) => dependency.pluginId === pluginId)) {
-        registeredDependents.push(candidatePluginId);
-      }
-    }
-
-    if (registeredDependents.length > 0) {
-      throw new PluginDependencyError(
-        `Cannot unregister plugin "${pluginId}" while registered dependents exist`,
-        {
-          pluginId,
-          registeredDependents
-        }
-      );
-    }
-  }
-
-  private assertDependencyGraphWithoutCycles(
-    registeringPluginId: string,
-    registeringDependencies: readonly PluginManifestDependency[]
-  ): void {
-    const graph = new Map<string, readonly string[]>();
-
-    for (const [pluginId, record] of this.records) {
-      graph.set(
-        pluginId,
-        this.extractRequiredDependencies(record.manifest).map((dep) => dep.pluginId)
-      );
-    }
-
-    graph.set(
-      registeringPluginId,
-      registeringDependencies.map((dependency) => dependency.pluginId)
-    );
-
-    const visiting = new Set<string>();
-    const visited = new Set<string>();
-
-    const visit = (node: string, path: readonly string[]): void => {
-      if (visited.has(node)) return;
-      if (visiting.has(node)) {
-        const cycleStartIndex = path.indexOf(node);
-        const cyclePath = [...path.slice(cycleStartIndex), node];
-        throw new PluginDependencyError(`Circular dependency detected: ${cyclePath.join(" -> ")}`, {
-          cyclePath
-        });
-      }
-
-      visiting.add(node);
-      const edges = graph.get(node) ?? [];
-      for (const edge of edges) {
-        if (!graph.has(edge)) continue;
-        visit(edge, [...path, edge]);
-      }
-      visiting.delete(node);
-      visited.add(node);
-    };
-
-    for (const node of graph.keys()) {
-      visit(node, [node]);
-    }
-  }
-
   private toLifecycleError(
     pluginId: string,
     phase: PluginLifecyclePhase,
@@ -1056,18 +829,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
   }
 
   private emitEvent(event: Omit<PluginRuntimeEvent, "timestamp" | "sequence">): void {
-    const payload: PluginRuntimeEvent = {
-      ...event,
-      sequence: ++this.eventSequence,
-      timestamp: new Date()
-    };
-
-    this.eventLog.push(payload);
-    if (this.eventLog.length > this.eventBufferSize) {
-      this.eventLog.splice(0, this.eventLog.length - this.eventBufferSize);
-    }
-
-    this.onEvent?.(payload);
+    this.eventsLog.emit(event);
   }
 
   private resolveAttempts(_state: PluginState): number {
@@ -1107,108 +869,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     const persistedRecords = await this.runtimeStore.list();
     for (const persisted of persistedRecords) {
       if (this.records.has(persisted.pluginId)) continue;
-      this.records.set(persisted.pluginId, this.fromPersistedRuntimeRecord(persisted));
+      this.records.set(persisted.pluginId, fromPersistedRuntimeRecord(persisted));
     }
-  }
-
-  private fromPersistedRuntimeRecord(persisted: PersistedPluginRuntimeRecord): PluginRuntimeRecord {
-    const state = this.normalizePersistedState(persisted.state);
-    const lastError = persisted.lastErrorMessage
-      ? Object.assign(new Error(persisted.lastErrorMessage), {
-          name: persisted.lastErrorName ?? "PluginRuntimeError"
-        })
-      : undefined;
-
-    return {
-      manifest: persisted.manifest,
-      state,
-      ...(lastError ? { lastError } : {}),
-      failureCount: persisted.failureCount,
-      ...(persisted.failedAt ? { failedAt: new Date(persisted.failedAt) } : {}),
-      ...(persisted.lastFailurePhase ? { lastFailurePhase: persisted.lastFailurePhase } : {}),
-      ...(persisted.disabledAt ? { disabledAt: new Date(persisted.disabledAt) } : {}),
-      ...(persisted.disabledReason ? { disabledReason: persisted.disabledReason } : {}),
-      statusReason:
-        state === persisted.state
-          ? persisted.statusReason
-          : this.createStatusReason(state, {
-              rehydratedFromState: persisted.state
-            })
-    };
-  }
-
-  private normalizePersistedState(state: PluginState): PluginState {
-    if (state === "disabled" || state === "failed" || state === "unloaded") {
-      return state;
-    }
-
-    return "registered";
-  }
-
-  private sortByDependencies(pluginIds: readonly string[]): string[] {
-    const targetSet = new Set(pluginIds);
-    const ordered: string[] = [];
-    const visited = new Set<string>();
-    const visiting = new Set<string>();
-
-    const visit = (pluginId: string) => {
-      if (visited.has(pluginId)) return;
-      if (visiting.has(pluginId)) {
-        throw new PluginDependencyError(
-          `Circular dependency detected while sorting plugin "${pluginId}"`,
-          { pluginId }
-        );
-      }
-
-      const record = this.records.get(pluginId);
-      if (!record) {
-        throw new PluginDependencyError(
-          `Plugin "${pluginId}" is not registered and cannot be loaded`,
-          { pluginId }
-        );
-      }
-
-      visiting.add(pluginId);
-      for (const dep of this.extractRequiredDependencies(record.manifest)) {
-        const dependencyRecord = this.records.get(dep.pluginId);
-        if (!dependencyRecord) {
-          throw new PluginDependencyError(
-            `Plugin "${pluginId}" is missing required dependency "${dep.pluginId}"`,
-            { pluginId, dependencyId: dep.pluginId }
-          );
-        }
-        if (dependencyRecord.state === "disabled") {
-          throw new PluginDependencyError(
-            `Plugin "${pluginId}" depends on disabled plugin "${dep.pluginId}"`,
-            {
-              pluginId,
-              dependencyId: dep.pluginId
-            }
-          );
-        }
-        if (!satisfiesVersion(dependencyRecord.manifest.version, dep.versionRange)) {
-          throw new PluginDependencyError(
-            `Plugin "${pluginId}" requires dependency "${dep.pluginId}" version "${dep.versionRange}" but found "${dependencyRecord.manifest.version}"`,
-            {
-              pluginId,
-              dependencyId: dep.pluginId,
-              requiredRange: dep.versionRange,
-              currentVersion: dependencyRecord.manifest.version
-            }
-          );
-        }
-        visit(dep.pluginId);
-      }
-      visiting.delete(pluginId);
-      visited.add(pluginId);
-
-      ordered.push(pluginId);
-    };
-
-    for (const pluginId of targetSet) {
-      visit(pluginId);
-    }
-
-    return ordered;
   }
 }
