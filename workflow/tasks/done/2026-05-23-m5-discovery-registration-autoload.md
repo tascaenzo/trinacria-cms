@@ -37,3 +37,22 @@ bootstrap coerente.
 - `npm run typecheck -w @trinacria-cms/kernel`
 - `npm run test -w @trinacria-cms/kernel`
 - `npm run build -w @trinacria-cms/kernel`
+
+## Esito
+
+- Estratta `bootstrapDiscoveredPlugins()` come pipeline testabile per
+  discovery, registration e autoload senza avviare il server HTTP.
+- Aggiunto override opzionale `pluginDiscoveryService` in `CmsStarterOptions`
+  per test e host applicativi avanzati.
+- Verificato che i plugin scoperti vengano registrati e caricati con dependency
+  ordering tramite `loadMany()`.
+- Verificato che source fallite restino disponibili come diagnostica e che
+  `autoLoadPlugins: false` registri senza caricare.
+
+## Check eseguiti
+
+- `npm run test -w @trinacria-cms/kernel -- cms-starter.test.ts`
+- `npm run test -w @trinacria-cms/kernel -- plugin-discovery-service.test.ts`
+- `npm run test -w @trinacria-cms/kernel -- in-memory-plugin-runtime.test.ts`
+- `npm run typecheck -w @trinacria-cms/kernel`
+- `npm run build -w @trinacria-cms/kernel`

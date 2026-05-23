@@ -69,7 +69,7 @@ domini applicativi nel core.
 
 - [x] `2026-05-23-m5-runtime-state-machine.md`
 - [x] `2026-05-23-m5-dependency-graph-ordering.md`
-- `2026-05-23-m5-discovery-registration-autoload.md`
+- [x] `2026-05-23-m5-discovery-registration-autoload.md`
 - `2026-05-23-m5-runtime-store-rehydration.md`
 - `2026-05-23-m5-failure-rollback-events.md`
 - `2026-05-23-m5-api-openapi-sdk.md`
@@ -94,6 +94,9 @@ domini applicativi nel core.
 - Dependency graph e ordering rafforzati: `loadMany()` include dependency
   obbligatorie, blocca dependency disabilitate/fuori range prima del load e gli
   snapshot API mostrano operazioni indisponibili quando il grafo le blocca.
+- Discovery, registration e autoload separati in una pipeline testabile:
+  `bootstrapDiscoveredPlugins()` registra plugin scoperti, preserva diagnostica
+  source e delega il caricamento a `loadMany()`.
 
 ### Fuori scope
 

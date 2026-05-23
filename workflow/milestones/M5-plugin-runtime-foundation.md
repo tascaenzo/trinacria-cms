@@ -81,7 +81,7 @@ stabile.
 
 - [x] `workflow/tasks/done/2026-05-23-m5-runtime-state-machine.md`
 - [x] `workflow/tasks/done/2026-05-23-m5-dependency-graph-ordering.md`
-- [ ] `workflow/tasks/todo/2026-05-23-m5-discovery-registration-autoload.md`
+- [x] `workflow/tasks/done/2026-05-23-m5-discovery-registration-autoload.md`
 - [ ] `workflow/tasks/todo/2026-05-23-m5-runtime-store-rehydration.md`
 - [ ] `workflow/tasks/todo/2026-05-23-m5-failure-rollback-events.md`
 - [ ] `workflow/tasks/todo/2026-05-23-m5-api-openapi-sdk.md`
