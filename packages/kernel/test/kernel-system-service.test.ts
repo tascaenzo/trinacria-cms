@@ -124,6 +124,7 @@ test("KernelSystemService exposes plugin contribution catalog", async () => {
       routes: [{ id: "posts", path: "/blog/posts", label: "Posts" }]
     }
   });
+  await runtime.load("blog-pack");
 
   const service = new KernelSystemService(runtime);
   const catalog = service.listPluginContributions();

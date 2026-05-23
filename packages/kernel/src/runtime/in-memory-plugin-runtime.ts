@@ -71,6 +71,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
   private readonly retryPolicy?: PluginRuntimeRetryPolicy;
   private readonly onEvent?: (event: PluginRuntimeEvent) => void;
   private readonly runtimeStore: PluginRuntimeStore;
+  private readonly contributionValidator = new PluginContributionRegistry();
   private readonly contributionRegistry = new PluginContributionRegistry();
   private readonly namespaceValidator = createNamespaceValidator();
   private readonly eventBufferSize: number;
@@ -136,7 +137,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     }
 
     if (existing?.state === "disabled" || existing?.state === "failed") {
-      this.contributionRegistry.upsert(manifest);
+      this.contributionValidator.upsert(manifest);
       this.registerNamespace(manifest);
       this.definitions.set(manifest.id, {
         ...definition,
@@ -159,7 +160,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       return;
     }
 
-    this.contributionRegistry.upsert(manifest);
+    this.contributionValidator.upsert(manifest);
     this.registerNamespace(manifest);
     this.definitions.set(manifest.id, {
       ...definition,
@@ -231,19 +232,22 @@ export class InMemoryPluginRuntime implements PluginRuntime {
           await this.persistRecord(pluginId);
           lastError = error;
           const shouldRetry = attempt < attempts && this.isRetryableLoadError(error);
+          const failedRecord = this.getRecord(pluginId);
           this.emitEvent({
             pluginId,
             action: "load",
-            phase: shouldRetry ? "load" : undefined,
+            phase: failedRecord.lastFailurePhase,
             success: false,
             durationMs: Date.now() - startedAt,
             stateBefore: record.state,
-            stateAfter: this.getRecord(pluginId).state,
+            stateAfter: failedRecord.state,
             details: {
               attempt,
               attempts,
               retrying: shouldRetry,
-              cause: this.errorToString(error)
+              cause: this.errorToString(error),
+              failureCount: failedRecord.failureCount,
+              statusReason: failedRecord.statusReason
             }
           });
           if (!shouldRetry) throw error;
@@ -260,6 +264,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
   async unload(pluginId: string): Promise<void> {
     await this.ensureRuntimeStoreInitialized();
     const record = this.getRecord(pluginId);
+    const startedAt = Date.now();
     if (record.state === "disabled") return;
     if (record.state !== "loaded" && record.state !== "failed") {
       throw new PluginStateTransitionError(
@@ -297,11 +302,35 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       }
 
       this.pluginModules.set(pluginId, []);
+      this.contributionRegistry.remove(pluginId);
       this.transition(pluginId, "unloaded");
       await this.persistRecord(pluginId);
+      this.emitEvent({
+        pluginId,
+        action: "unload",
+        success: true,
+        durationMs: Date.now() - startedAt,
+        stateBefore: record.state,
+        stateAfter: "unloaded"
+      });
     } catch (error) {
       this.markFailed(pluginId, phase, error);
       await this.persistRecord(pluginId);
+      const failedRecord = this.getRecord(pluginId);
+      this.emitEvent({
+        pluginId,
+        action: "unload",
+        phase,
+        success: false,
+        durationMs: Date.now() - startedAt,
+        stateBefore: record.state,
+        stateAfter: failedRecord.state,
+        details: {
+          cause: this.errorToString(error),
+          failureCount: failedRecord.failureCount,
+          statusReason: failedRecord.statusReason
+        }
+      });
       throw this.toLifecycleError(pluginId, phase, error, "unload");
     }
   }
@@ -360,6 +389,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     this.records.delete(pluginId);
     this.definitions.delete(pluginId);
     this.pluginModules.delete(pluginId);
+    this.contributionValidator.remove(pluginId);
     this.contributionRegistry.remove(pluginId);
     this.namespaceValidator.unregisterPlugin(pluginId);
     await this.runtimeStore.remove(pluginId);
@@ -419,6 +449,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
           }
         }
       });
+      this.contributionRegistry.remove(pluginId);
       await this.persistRecord(pluginId);
     }
   }
@@ -650,6 +681,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
         statusReason: this.createStatusReason("loaded")
       });
       this.pluginModules.set(pluginId, registeredModules);
+      this.contributionRegistry.upsert(definition.manifest);
     } catch (error) {
       const rollbackErrors = await this.rollbackFailedLoad(
         pluginId,
@@ -784,6 +816,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
 
   private markFailed(pluginId: string, phase: PluginLifecyclePhase, error: unknown): void {
     const current = this.getRecord(pluginId);
+    this.contributionRegistry.remove(pluginId);
     this.records.set(pluginId, {
       ...current,
       state: "failed",
@@ -801,6 +834,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
 
   private markDisabled(pluginId: string, reason?: string, error?: unknown): void {
     const current = this.getRecord(pluginId);
+    this.contributionRegistry.remove(pluginId);
     this.records.set(pluginId, {
       ...current,
       state: "disabled",

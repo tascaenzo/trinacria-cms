@@ -71,7 +71,7 @@ domini applicativi nel core.
 - [x] `2026-05-23-m5-dependency-graph-ordering.md`
 - [x] `2026-05-23-m5-discovery-registration-autoload.md`
 - [x] `2026-05-23-m5-runtime-store-rehydration.md`
-- `2026-05-23-m5-failure-rollback-events.md`
+- [x] `2026-05-23-m5-failure-rollback-events.md`
 - `2026-05-23-m5-api-openapi-sdk.md`
 - `2026-05-23-m5-admin-plugin-operations.md`
 - `2026-05-23-m5-docs-troubleshooting-qa.md`
@@ -100,6 +100,9 @@ domini applicativi nel core.
 - Runtime store rehydration aggiunta: il runtime ripristina stati persistiti,
   preserva `disabled`/`failed`, candida `loaded` ad autoload sicuro e marca
   plugin persistiti senza source come `plugin_source_missing`.
+- Failure rollback completato: il catalogo contribution espone solo plugin
+  caricati, ripulisce contribution su failure/unload/disable e gli eventi runtime
+  includono fase, conteggio failure e `statusReason`.
 
 ### Fuori scope
 

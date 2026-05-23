@@ -37,3 +37,19 @@ lasci contribution parziali visibili.
 - `npm run typecheck -w @trinacria-cms/kernel`
 - `npm run test -w @trinacria-cms/kernel`
 - `npm run build -w @trinacria-cms/kernel`
+
+## Esito
+
+- Il catalogo contribution operativo pubblica declaration solo dopo `load`
+  riuscito.
+- I contributi vengono rimossi su `load` fallito, `unload`, `disable`,
+  `unregister` e source mancante durante rehydration.
+- Gli eventi runtime di failure includono fase lifecycle, `failureCount` e
+  `statusReason`; `unload` emette eventi success/failure.
+
+## Check eseguiti
+
+- `npx prettier --write packages/kernel/src/runtime/in-memory-plugin-runtime.ts packages/kernel/test/in-memory-plugin-runtime.test.ts packages/kernel/test/kernel-system-service.test.ts`
+- `npm run test -w @trinacria-cms/kernel`
+- `npm run typecheck -w @trinacria-cms/kernel`
+- `npm run build -w @trinacria-cms/kernel`
