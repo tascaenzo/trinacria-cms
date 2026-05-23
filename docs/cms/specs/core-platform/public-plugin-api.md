@@ -131,6 +131,12 @@ Regole:
   `plugin`, `cmsPlugin` o `definition`;
 - le sorgenti `local-path` vengono risolte come file URL.
 
+Endpoint diagnostico:
+
+```text
+GET /v1/system/plugins/sources
+```
+
 ## Runtime contribution catalog
 
 Il runtime espone un catalogo derivato dal manifest:

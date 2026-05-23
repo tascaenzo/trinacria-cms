@@ -10,7 +10,7 @@ Milestone: `M4.0 - Core Platform Specifications` — ✅ **Completata**
 Tutte le 15 specifiche sono state elevate a `low-level` specification.
 Il task implementativo (`core-contracts-foundation-implementation`) e stato
 completato (NamespaceValidator, CollisionPolicy, ContributionIndex e discovery
-configurata con 95 test kernel, 177 test totali monorepo; 1 integration Mongo
+configurata con 96 test kernel, 178 test totali monorepo; 1 integration Mongo
 gated).
 
 Prossimo step implementativo: **Step 2 — Runtime plugin** (stati, transizioni,

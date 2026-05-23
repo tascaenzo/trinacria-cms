@@ -13,6 +13,7 @@ Stato: `in corso`
 - [x] Aggiungere test limite su runtime store in-memory e DB-backed.
 - [x] Verificare l'integration Mongo reale per i casi limite del runtime store.
 - [x] Introdurre discovery plugin configurata da sorgenti esplicite.
+- [x] Esporre endpoint diagnostico delle sorgenti plugin.
 - [ ] Implementare discovery/loading reale dei plugin dentro la stessa M4.
 - [ ] Implementare provisioning security completo da manifest plugin.
 - [ ] Stabilizzare il primo flusso end-to-end di install/enable/disable plugin con Mongo.
@@ -36,6 +37,8 @@ Sono stati introdotti:
 - fix Mongo `$unset` per evitare campi runtime obsoleti dopo transizioni di stato.
 - `ConfiguredPluginDiscoveryService` e `pluginSources` nello starter CMS per
   caricare plugin da sorgenti esplicite `workspace`, `package` e `local-path`.
+- endpoint `GET /v1/system/plugins/sources` per leggere lo stato delle sorgenti
+  discovery configurate.
 
 ## Check eseguiti
 
@@ -49,5 +52,5 @@ Sono stati introdotti:
 ## Prossimo blocco M4
 
 Il prossimo blocco resta dentro M4 ed e il runtime plugin reale end-to-end:
-endpoint diagnostico delle source, audit/persistenza delle discovery, loading da
-configurazione/package, compatibilita, failure mode e persistenza Mongo.
+audit/persistenza delle discovery, loading da configurazione/package,
+compatibilita, failure mode e persistenza Mongo.

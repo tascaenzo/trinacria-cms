@@ -899,6 +899,23 @@ export type ListPluginEventsResponse = {
 };
 };
 
+export type ListPluginSourcesRequest = void;
+
+export type ListPluginSourcesResponse = {
+  "data": Array<{
+  "type": "workspace" | "package" | "local-path";
+  "name": string;
+  "entrypoint": string;
+  "status": "discovered" | "failed" | "disabled";
+  "pluginId"?: string;
+  "error"?: string;
+}>;
+  "meta"?: {
+  "pluginId"?: "kernel";
+  "count"?: number;
+};
+};
+
 export type ListRolePolicyRulesRequest = {
   path: {
   "roleCode": string;

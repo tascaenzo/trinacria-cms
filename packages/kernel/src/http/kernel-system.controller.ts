@@ -129,6 +129,18 @@ const KernelCapabilitySchema = s.object(
   { strict: true }
 );
 
+const PluginSourceSchema = s.object(
+  {
+    type: s.enum(["workspace", "package", "local-path"] as const),
+    name: s.string({ trim: true, minLength: 1 }),
+    entrypoint: s.string({ trim: true, minLength: 1 }),
+    status: s.enum(["discovered", "failed", "disabled"] as const),
+    pluginId: s.string({ trim: true, minLength: 1 }).optional(),
+    error: s.string({ trim: true, minLength: 1 }).optional()
+  },
+  { strict: true }
+);
+
 const KernelSystemMetaSchema = s.object(
   {
     pluginId: s.literal("kernel").optional(),
@@ -148,6 +160,14 @@ const ListInstalledPluginsResponseSchema = s.object(
 const ListCapabilitiesResponseSchema = s.object(
   {
     data: s.array(KernelCapabilitySchema),
+    meta: KernelSystemMetaSchema.optional()
+  },
+  { strict: true }
+);
+
+const ListPluginSourcesResponseSchema = s.object(
+  {
+    data: s.array(PluginSourceSchema),
     meta: KernelSystemMetaSchema.optional()
   },
   { strict: true }
@@ -339,6 +359,21 @@ export class KernelSystemHttpController extends HttpController {
           }
         }
       })
+      .get("/v1/system/plugins/sources", this.listPluginSources, {
+        middlewares: guardedMiddlewares,
+        docs: {
+          summary: "List configured plugin discovery sources",
+          tags: ["System"],
+          operationId: "listPluginSources",
+          ...(guardedSecurity ? { security: guardedSecurity } : {}),
+          responses: {
+            200: {
+              description: "Configured plugin discovery source diagnostics",
+              schema: toOpenApiSchema(ListPluginSourcesResponseSchema)
+            }
+          }
+        }
+      })
       .get("/v1/system/plugins/:pluginId", this.getInstalledPlugin, {
         middlewares: guardedMiddlewares,
         docs: {
@@ -409,6 +444,10 @@ export class KernelSystemHttpController extends HttpController {
 
   private listPluginContributions = async () => {
     return responder.success(this.system.listPluginContributions());
+  };
+
+  private listPluginSources = async () => {
+    return responder.list(this.system.listPluginSources());
   };
 
   private getInstalledPlugin = async (ctx: HttpContext) => {

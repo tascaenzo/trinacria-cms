@@ -155,11 +155,11 @@ Implementato nel kernel:
 - source disabilitate senza import
 - diagnostica per source `discovered`, `failed`, `disabled`
 - integrazione in `startCmsApp()` tramite `pluginSources`
+- endpoint diagnostico `GET /v1/system/plugins/sources`
 - export pubblico da `@trinacria-cms/kernel`
 
 Ancora aperto:
 
-- endpoint diagnostico `/v1/system/plugins/sources`
 - persistenza/audit delle source discovery
 - installazione da sorgenti esterne runtime, fuori scope della prima fase
 
