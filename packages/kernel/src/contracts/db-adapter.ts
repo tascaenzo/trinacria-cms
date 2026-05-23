@@ -48,8 +48,12 @@ export interface DbTransaction {
 }
 
 /**
- * Single entry point to the kernel persistence layer.
- * It protects core services from Mongo driver details; it is not a promise of multi-DB support.
+ * Mongo-first persistence entry point for the kernel.
+ *
+ * This contract deliberately mirrors Mongo concepts (filter objects, projection,
+ * sort descriptors) because Trinacria CMS is a Mongo-first platform. It is NOT
+ * an abstract multi-database adapter. Future support for other databases would
+ * require a new architectural decision, not a generic abstraction.
  */
 export interface DbAdapter {
   /** Returns entity-scoped repositories for plugin/workspace namespaces. */

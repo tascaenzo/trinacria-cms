@@ -13,6 +13,7 @@ import type {
   CmsStarterOptions
 } from "../contracts/cms-starter.js";
 import type { KernelAdminRouteGuard } from "../contracts/kernel-admin-route-guard.js";
+import type { PluginDiscoveryService } from "../contracts/plugin-discovery.js";
 import type { PluginRuntime } from "../contracts/plugin-runtime.js";
 import type { PluginRuntimeStore } from "../contracts/plugin-runtime-store.js";
 import type { PluginSecurityProvisioner } from "../contracts/plugin-security-provisioner.js";
@@ -31,6 +32,7 @@ import { KernelSystemHttpController } from "../http/kernel-system.controller.js"
 import { KERNEL_SYSTEM_HTTP_CONTROLLER } from "../http/kernel-system.tokens.js";
 import { CmsSwaggerController } from "../http/cms-swagger.controller.js";
 import { KernelSystemService } from "./kernel-system-service.js";
+import { ConfiguredPluginDiscoveryService } from "./plugin-discovery-service.js";
 
 const CMS_STARTER_SWAGGER_CONFIG_TOKEN = createToken<CmsSwaggerUiConfig>(
   "CMS_STARTER_SWAGGER_CONFIG"
@@ -121,6 +123,14 @@ export async function startCmsApp(options: CmsStarterOptions): Promise<CmsStarte
           }),
         [CORE_TOKENS.PLUGIN_RUNTIME_STORE]
       ),
+      factoryProvider(
+        CORE_TOKENS.PLUGIN_DISCOVERY_SERVICE,
+        () =>
+          new ConfiguredPluginDiscoveryService({
+            continueOnError: options.continueOnPluginDiscoveryError ?? false
+          }),
+        []
+      ),
       ...(options.enableHealthModule === false
         ? []
         : [
@@ -171,6 +181,7 @@ export async function startCmsApp(options: CmsStarterOptions): Promise<CmsStarte
     exports: [
       CORE_TOKENS.PLUGIN_RUNTIME_STORE,
       CORE_TOKENS.PLUGIN_RUNTIME,
+      CORE_TOKENS.PLUGIN_DISCOVERY_SERVICE,
       ...(options.enableHealthModule === false
         ? []
         : [
@@ -191,7 +202,11 @@ export async function startCmsApp(options: CmsStarterOptions): Promise<CmsStarte
   await app.start();
 
   const runtime = await app.resolve<PluginRuntime>(CORE_TOKENS.PLUGIN_RUNTIME);
-  const plugins = options.plugins ?? [];
+  const discoveryService = await app.resolve<PluginDiscoveryService>(
+    CORE_TOKENS.PLUGIN_DISCOVERY_SERVICE
+  );
+  const discovery = await discoveryService.discover(options.pluginSources ?? []);
+  const plugins = [...(options.plugins ?? []), ...discovery.plugins];
   for (const plugin of plugins) {
     await runtime.register(plugin);
   }
@@ -201,6 +216,7 @@ export async function startCmsApp(options: CmsStarterOptions): Promise<CmsStarte
 
   return {
     runtime,
+    pluginSources: discovery.sources,
     shutdown: async () => {
       await app.shutdown();
     }

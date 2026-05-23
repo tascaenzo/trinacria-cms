@@ -29,6 +29,7 @@ import { satisfiesVersion } from "./semver.js";
 import { TrinacriaModuleBridge, type TrinacriaModuleBridgeApp } from "./trinacria-module-bridge.js";
 import { createInMemoryPluginRuntimeStore } from "./plugin-runtime-store.js";
 import { PluginContributionRegistry } from "./plugin-contribution-registry.js";
+import { createNamespaceValidator } from "./plugin-namespace.js";
 
 export interface InMemoryPluginRuntimeOptions {
   coreVersion: string;
@@ -68,6 +69,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
   private readonly onEvent?: (event: PluginRuntimeEvent) => void;
   private readonly runtimeStore: PluginRuntimeStore;
   private readonly contributionRegistry = new PluginContributionRegistry();
+  private readonly namespaceValidator = createNamespaceValidator();
   private readonly eventBufferSize: number;
   private readonly eventLog: PluginRuntimeEvent[] = [];
   private runtimeStoreInitialization?: Promise<void>;
@@ -101,6 +103,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
         manifest.id,
         this.extractRequiredDependencies(manifest)
       );
+      this.assertNamespaceValid(manifest);
     } catch (error) {
       if (
         error instanceof PluginManifestError ||
@@ -129,11 +132,12 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     }
 
     if (existing?.state === "disabled") {
+      this.contributionRegistry.upsert(manifest);
+      this.registerNamespace(manifest);
       this.definitions.set(manifest.id, {
         ...definition,
         manifest
       });
-      this.contributionRegistry.upsert(manifest);
       this.records.set(manifest.id, {
         ...existing,
         manifest
@@ -151,11 +155,12 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       return;
     }
 
+    this.contributionRegistry.upsert(manifest);
+    this.registerNamespace(manifest);
     this.definitions.set(manifest.id, {
       ...definition,
       manifest
     });
-    this.contributionRegistry.upsert(manifest);
     this.records.set(manifest.id, {
       manifest,
       state: "registered",
@@ -350,6 +355,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     this.definitions.delete(pluginId);
     this.pluginModules.delete(pluginId);
     this.contributionRegistry.remove(pluginId);
+    this.namespaceValidator.unregisterPlugin(pluginId);
     await this.runtimeStore.remove(pluginId);
 
     this.emitEvent({
@@ -680,6 +686,26 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       pluginId: manifest.id,
       manifest
     };
+  }
+
+  private assertNamespaceValid(manifest: PluginRuntimeRecord["manifest"]): void {
+    const result = this.namespaceValidator.validateManifest(manifest);
+    if (!result.valid) {
+      throw new PluginManifestError(`Plugin "${manifest.id}" namespace validation failed`, {
+        pluginId: manifest.id,
+        errors: result.errors
+      });
+    }
+  }
+
+  private registerNamespace(manifest: PluginRuntimeRecord["manifest"]): void {
+    const result = this.namespaceValidator.registerPlugin(manifest);
+    if (!result.valid) {
+      throw new PluginManifestError(`Plugin "${manifest.id}" namespace registration failed`, {
+        pluginId: manifest.id,
+        errors: result.errors
+      });
+    }
   }
 
   private getDefinition(pluginId: string): KernelPluginDefinition {

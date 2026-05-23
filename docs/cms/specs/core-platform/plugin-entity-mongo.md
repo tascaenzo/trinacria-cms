@@ -5,7 +5,7 @@
 - Milestone: `M4.0 - Core Platform Specifications`
 - Stato: `draft`
 - Scope: low-level specification
-- Ultimo aggiornamento: `2026-05-20`
+- Ultimo aggiornamento: `2026-05-22`
 
 ## Decisione
 
@@ -130,19 +130,50 @@ Normalizzazione:
 
 ## Security e permission
 
-Un plugin puo accedere solo a repository nel proprio namespace salvo capability
-esplicita di cross-plugin integration.
+### Accesso
 
-Il backoffice non accede direttamente al repository generico: passa da API
-dominio o resource contract.
+| Risorsa                    | Chi puo leggere              | Chi puo scrivere        |
+| -------------------------- | ---------------------------- | ----------------------- |
+| Entity registry            | kernel, plugin owner         | kernel (registrazione)  |
+| Repository plugin          | solo plugin owner            | solo plugin owner       |
+| Repository cross-plugin    | solo con capability esplicita | solo con capability     |
+| Indici                     | kernel                       | kernel (sync)           |
+
+### Regole
+
+1. Un plugin puo accedere solo a repository nel proprio namespace salvo capability
+   esplicita di cross-plugin integration.
+2. Il backoffice non accede direttamente al repository generico: passa da API
+   dominio o resource contract.
+3. L'entity registry e di proprieta del kernel. I plugin non possono modificare
+   registrazioni altrui.
+4. La sincronizzazione indici e operazione protetta che richiede permission
+   `core-pack:plugins:operate`.
+5. Ogni registrazione entity e index sync produce audit.
+
+### Audit
+
+- Registrazione entity: `{ pluginId, entityName, collectionName }`
+- Index sync: `{ pluginId, entityName, indexes, success }`
+- Accesso cross-plugin negato: `{ pluginId, targetPluginId, entityName }`
 
 ## Eventi
 
-| Evento                           | Visibility  | Quando                |
-| -------------------------------- | ----------- | --------------------- |
-| `core.storage.entity.registered` | `audit`     | registrazione entity  |
-| `core.storage.index.synced`      | `audit`     | indici materializzati |
-| `core.storage.health.failed`     | `protected` | health KO             |
+### Eventi di storage
+
+| Nome canonico                       | Owner   | Visibility   | Delivery | Payload                                   | Quando                     |
+| ----------------------------------- | ------- | ------------ | -------- | ----------------------------------------- | -------------------------- |
+| `core.storage.entity.registered`    | kernel  | `audit`      | `sync`   | `{ pluginId, entityName, collectionName }` | registrazione entity       |
+| `core.storage.index.synced`         | kernel  | `audit`      | `sync`   | `{ pluginId, entityName, indexes, ok }`   | indici materializzati      |
+| `core.storage.health.failed`        | kernel  | `protected`  | `sync`   | `{ reason, details }`                     | health KO                  |
+| `core.storage.repository.forbidden` | kernel  | `audit`      | `sync`   | `{ pluginId, targetPluginId, entityName }` | accesso cross-plugin negato |
+
+### Delivery e retry
+
+- Tutti `sync` (in-process).
+- Nessun retry automatico.
+- Idempotency: la registrazione entity e gia idempotente per design (upsert su unique index).
+- Audit policy: eventi `audit` persistiti in `cms_core_audit_events`. Eventi `protected` solo in-memory.
 
 ## Errori
 
@@ -166,8 +197,12 @@ policy runtime da definire.
 
 ## Compatibilita e versioning
 
-`schemaVersion` aumenta a ogni evoluzione incompatibile. Migration runner e fuori
-scope iniziale, ma il campo deve esistere dal primo schema.
+- `schemaVersion` aumenta a ogni evoluzione incompatibile. Migration runner e fuori
+  scope iniziale, ma il campo deve esistere dal primo schema.
+- Aggiungere campi opzionali al documento non e breaking.
+- Rimuovere o rinominare campi richiede migration e `schemaVersion` bump.
+- Il nome collection (`cms_<pluginId>_<entityName>`) e immutabile dopo la registrazione.
+- Gli indici possono essere aggiunti senza breaking. Rimuovere un indice esistente e potenzialmente breaking per query in produzione.
 
 ## Acceptance criteria
 

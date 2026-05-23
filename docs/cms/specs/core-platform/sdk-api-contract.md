@@ -5,7 +5,7 @@
 - Milestone: `M4.0 - Core Platform Specifications`
 - Stato: `draft`
 - Scope: low-level specification
-- Ultimo aggiornamento: `2026-05-20`
+- Ultimo aggiornamento: `2026-05-22`
 
 ## Decisione
 
@@ -79,15 +79,36 @@ Nessuno storage diretto. Questa specifica governa contratti API.
 
 ## Security e permission
 
-OpenAPI deve esporre scheme reali:
+### Regole
 
-- bearer admin auth
-- plugin signed auth dove richiesto
+1. OpenAPI deve esporre scheme reali:
+   - bearer admin auth
+   - plugin signed auth dove richiesto
+2. Le API protette dichiarano la permission richiesta nell'OpenAPI operation.
+3. L'SDK generato non deve includere chiavi o secret.
+4. L'envelope `ApiErrorResponse` non espone stack trace o dettagli interni.
+5. Le API pubbliche (es. health, install state) non richiedono auth e sono documentate come tali.
+
+### Audit
+
+- Le API che espongono dati sensibili (audit events, secret operations) registrano l'accesso negli audit events.
+- L'SDK non ha accesso diretto agli audit events - passa dalle API core.
 
 ## Eventi
 
-Breaking change API produce changelog operativo e, se necessario, evento
-`core.api.contract.changed` in ambiente diagnostico.
+### Eventi di API contract
+
+| Nome canonico                    | Owner     | Visibility | Delivery | Payload                                     | Quando                       |
+| -------------------------------- | --------- | ---------- | -------- | ------------------------------------------- | ---------------------------- |
+| `core.api.contract.changed`      | kernel    | `audit`    | `sync`   | `{ area, change, version }`                 | breaking change API          |
+| `core.api.sdk.generated`         | kernel    | `audit`    | `sync`   | `{ version, endpointCount, timestamp }`     | SDK rigenerato               |
+
+### Delivery e retry
+
+- Tutti `sync` (in-process).
+- Nessun retry automatico.
+- Idempotency: non richiesta. Gli eventi di API contract sono puramente diagnostici.
+- Audit policy: eventi persistiti in `cms_core_audit_events`.
 
 ## Errori
 
@@ -105,15 +126,19 @@ Esempi:
 
 ## Lifecycle
 
-Flusso canonico dopo cambio contratto backend:
+1. Il backend espone nuove API o modifica DTO esistenti.
+2. Viene generato lo snapshot OpenAPI (`npm run sdk:snapshot`).
+3. Lo snapshot viene validato per breaking changes (`npm run sdk:check`).
+4. L'SDK viene rigenerato (`npm run sdk:generate`).
+5. Il changelog operativo documenta le modifiche.
+6. Se il cambiamento e breaking, viene emesso `core.api.contract.changed`.
+7. Non modificare a mano `packages/sdk/src/generated/*`.
 
-```bash
-npm run sdk:snapshot
-npm run sdk:generate
-npm run sdk:check
-```
-
-Non modificare a mano `packages/sdk/src/generated/*`.
+Regole:
+- Lo snapshot OpenAPI e la fonte di verita per l'SDK.
+- Breaking changes richiedono major version dell'API.
+- Lo snapshot deve essere committato nel repository.
+- La generazione SDK e automatica via CI dopo merge su branch principale.
 
 ## Compatibilita e versioning
 

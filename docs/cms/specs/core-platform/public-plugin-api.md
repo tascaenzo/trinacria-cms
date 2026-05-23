@@ -26,7 +26,13 @@ Package owner:
 Import principali:
 
 ```ts
-import type { KernelPluginDefinition, PluginManifest, PluginRuntime } from "@trinacria-cms/kernel";
+import type {
+  PluginDiscoverySource,
+  KernelPluginDefinition,
+  PluginManifest,
+  PluginRuntime,
+  CmsEventBus
+} from "@trinacria-cms/kernel";
 import {
   assertPluginCompatibility,
   buildContributionKey,
@@ -34,6 +40,17 @@ import {
   validatePluginManifest
 } from "@trinacria-cms/kernel";
 ```
+
+Per integrazione con il configuration registry (chiamate plugin-to-core
+signed), il plugin puo accedere al servizio `SettingsRegistry` di
+`@trinacria-cms/core-pack` tramite DI.
+
+Vedere specifiche:
+
+- `plugin-event-bus.md` per dichiarazione e consumo eventi
+- `configuration-registry.md` per accesso signed alle configurazioni
+- `namespace-governance.md` per regole di naming e collisioni
+- `plugin-contract.md` per il contratto manifest completo
 
 ## Manifest
 
@@ -91,6 +108,28 @@ export const plugin: KernelPluginDefinition = {
   }
 };
 ```
+
+## Plugin discovery
+
+Lo starter CMS puo ricevere sorgenti plugin configurate:
+
+```ts
+export interface PluginDiscoverySource {
+  type: "workspace" | "package" | "local-path";
+  name: string;
+  entrypoint: string;
+  enabledByDefault?: boolean;
+}
+```
+
+Regole:
+
+- la discovery usa solo sorgenti esplicite, non filesystem scan arbitrario;
+- `enabledByDefault: false` marca la sorgente come `disabled` e non importa
+  l'entrypoint;
+- l'entrypoint deve esportare una `KernelPluginDefinition` come `default`,
+  `plugin`, `cmsPlugin` o `definition`;
+- le sorgenti `local-path` vengono risolte come file URL.
 
 ## Runtime contribution catalog
 
@@ -255,6 +294,25 @@ Regole:
 - `secret` richiede storage cifrato nel configuration registry.
 - `defaultValueJson` e serializzato JSON, non valore JavaScript libero.
 
+### Accesso runtime alle configurazioni
+
+Un plugin puo leggere e scrivere le proprie configurazioni tramite signed call
+al `SettingsRegistry` di core-pack:
+
+```ts
+// Chiamata plugin-to-core signed (futura)
+const registry: SettingsRegistry = context.app.get(SETTINGS_REGISTRY_TOKEN);
+
+const result = await registry.get("blog-pack:editorial:default-status", {
+  type: "plugin",
+  id: "blog-pack",
+  pluginId: "blog-pack"
+});
+```
+
+Il configuration registry e descritto in dettaglio nella specifica
+`configuration-registry.md`.
+
 ## Event declaration
 
 ```ts
@@ -292,6 +350,36 @@ Regole:
 - chiave canonica evento emesso: `<pluginId>:<name>`.
 - eventi sottoscritti: `eventName` in formato `<pluginId>:<eventName>`.
 - `delivery` default: `async`.
+
+### Uso runtime dell'event bus
+
+Una volta che il plugin e caricato, puo accedere al bus tramite il token DI
+`CORE_TOKENS.EVENT_BUS` (futuro):
+
+```ts
+import { CORE_TOKENS } from "@trinacria-cms/kernel";
+import type { CmsEventBus } from "@trinacria-cms/kernel";
+
+// Nel lifecycle hook onLoad
+async function onLoad(context) {
+  const eventBus: CmsEventBus = context.app.get(CORE_TOKENS.EVENT_BUS);
+
+  // Emettere un evento dichiarato
+  await eventBus.emit({
+    name: "blog-pack:post-published",
+    source: "blog-pack",
+    payload: { postId: "123" }
+  });
+
+  // Sottoscrivere un evento (opzionale se gia dichiarato nel manifest)
+  eventBus.on("commerce:order.created", async (event) => {
+    console.log("Order received:", event.payload);
+  });
+}
+```
+
+Le sottoscrizioni dichiarate nel manifest vengono registrate automaticamente
+dal runtime al caricamento del plugin e rimosse all'unload.
 
 ## Admin declaration
 
@@ -383,10 +471,11 @@ export const plugin: KernelPluginDefinition = {
 
 ## Cosa non e ancora API pubblica stabile
 
-- event bus operativo
-- configuration registry completo
-- admin dynamic resource renderer
-- marketplace/discovery esterno
+- event bus operativo (specifica M4.0 completa, in attesa di implementazione)
+- configuration registry (specifica M4.0 completa, in attesa di implementazione)
+- namespace validator (specifica M4.0 completa, in attesa di implementazione)
+- admin dynamic resource renderer (specifica M4.0 in corso)
+- marketplace/discovery esterno (fuori scope M4.0)
 
-Queste aree sono in specifica M4.0, ma non vanno considerate API stabili fino
-alla relativa implementazione.
+Queste aree hanno specifiche M4.0 chiuse o in corso, ma non vanno considerate
+API stabili fino alla relativa implementazione e verifica col codice reale.

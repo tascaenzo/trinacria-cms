@@ -5,6 +5,7 @@ import {
   PluginCompatibilityError,
   PluginDependencyError,
   PluginLifecycleError,
+  PluginManifestError,
   PluginRuntimeError,
   PluginStateTransitionError
 } from "../src/errors/index.js";
@@ -286,7 +287,34 @@ test("register rejects global admin path collisions", async () => {
           routes: [{ id: "orders", path: "/content/posts", label: "Orders" }]
         }
       }),
-    /Duplicate admin route path/
+    PluginManifestError
+  );
+});
+
+test("register rejects cross-plugin namespace collisions", async () => {
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0" });
+
+  await runtime.register({
+    id: "blog-pack",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    entities: [{ name: "posts", schemaVersion: 1 }]
+  });
+
+  await assert.rejects(
+    async () =>
+      runtime.register({
+        id: "commerce-pack",
+        version: "1.0.0",
+        requiresCore: "^0.1.0",
+        entities: [{ name: "posts", schemaVersion: 1 }]
+      }),
+    PluginManifestError
+  );
+
+  assert.equal(
+    runtime.list().some((item) => item.manifest.id === "commerce-pack"),
+    false
   );
 });
 

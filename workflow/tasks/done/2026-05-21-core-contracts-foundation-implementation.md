@@ -3,12 +3,12 @@
 ## Meta
 
 - ID: `2026-05-21-core-contracts-foundation-implementation`
-- Stato: `todo`
+- Stato: `done`
 - Area: `kernel`
 - Milestone: `M4`
 - Owner: `enzo`
 - Creato il: `2026-05-21`
-- Ultimo aggiornamento: `2026-05-21`
+- Ultimo aggiornamento: `2026-05-22`
 
 ## Obiettivo
 
@@ -68,5 +68,5 @@ configuration registry, event bus e admin contribution.
 ## Chiusura
 
 - Changelog aggiornato: `no`
-- Documentazione aggiornata: `no`
-- Follow-up aperti:
+- Documentazione aggiornata: `si`
+- Follow-up aperti: milestone M4.0 completata, passare allo Step 2 implementativo (Runtime plugin)

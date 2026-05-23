@@ -5,7 +5,7 @@
 - Milestone: `M4.0 - Core Platform Specifications`
 - Stato: `draft`
 - Scope: low-level specification
-- Ultimo aggiornamento: `2026-05-20`
+- Ultimo aggiornamento: `2026-05-22`
 
 ## Decisione
 
@@ -99,21 +99,47 @@ Indici:
 
 ## Security e permission
 
-Prima installazione e pubblica solo se il CMS non e installato.
+### Prima dell'installazione
 
-Dopo installazione:
+- `GET /v1/installation/state` e pubblico (nessuna auth richiesta).
+- `POST /v1/installation` e pubblico solo se `installed = false`.
 
-- endpoint installazione mutativo disabilitato
-- bootstrap admin ha ruolo `admin`
-- password salvata solo come hash
+### Dopo installazione
+
+- `POST /v1/installation` disabilitato (restituisce 409).
+- `GET /v1/installation/state` rimane pubblico (solo stato, nessun dato sensibile).
+- Bootstrap admin ha ruolo `admin` con tutte le permission core.
+- Password salvata solo come hash (bcrypt o Argon2).
+- Le API key (se generate) sono mostrate una sola volta al termine dell'installazione.
+
+### Regole
+
+1. L'installazione e idempotente per step interni ma l'endpoint mutativo non e ripetibile.
+2. Non e possibile re-installare senza reset esplicito del database.
+3. Il primo utente admin non puo essere eliminato via API.
+4. Ogni step dell'installazione produce audit.
+
+### Audit
+
+Ogni fase dell'installazione produce evento audit:
+- `{ phase: "admin_user" | "baseline_roles" | "baseline_settings" | "complete", success: boolean, error?: string }`
 
 ## Eventi
 
-| Evento                 | Visibility |
-| ---------------------- | ---------- |
-| `core.install.started` | `audit`    |
-| `core.install.done`    | `audit`    |
-| `core.install.failed`  | `audit`    |
+### Eventi di installazione
+
+| Nome canonico            | Owner     | Visibility | Delivery | Payload                                         | Quando                    |
+| ------------------------ | --------- | ---------- | -------- | ----------------------------------------------- | ------------------------- |
+| `core.install.started`   | core-pack | `audit`    | `sync`   | `{ corePackVersion, schemaVersion }`            | installazione iniziata    |
+| `core.install.done`      | core-pack | `audit`    | `sync`   | `{ userId, corePackVersion, installedAt }`      | installazione completata  |
+| `core.install.failed`    | core-pack | `audit`    | `sync`   | `{ phase, error }`                              | installazione fallita     |
+
+### Delivery e retry
+
+- Tutti `sync` (in-process).
+- Nessun retry automatico: se l'installazione fallisce, il sistema resta in stato `not installed` e puo ritentare.
+- Idempotency: ogni step interno e idempotente (upsert). L'endpoint POST /v1/installation non e idempotente per design.
+- Audit policy: tutti gli eventi di installazione sono persistiti in `cms_core_audit_events`.
 
 ## Errori
 
@@ -137,8 +163,11 @@ volta marcato installed.
 
 ## Compatibilita e versioning
 
-`schemaVersion` permette evoluzione bootstrap. Migrazioni successive non devono
-riaprire installazione.
+- `schemaVersion` permette evoluzione bootstrap. Migrazioni successive non devono riaprire installazione.
+- Il `InstallCmsInput` DTO puo ricevere nuovi campi opzionali senza breaking.
+- Rimuovere campi obbligatori dall'input di installazione e breaking.
+- La struttura `InstallationStateDocument` puo evolvere con nuovi campi.
+- I baseline roles/permissions creati durante l'installazione possono essere estesi in versioni future.
 
 ## Acceptance criteria
 

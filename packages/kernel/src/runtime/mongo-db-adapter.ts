@@ -335,11 +335,25 @@ function toMongoIndex(index: EntityIndexDefinition): {
 
 function toMongoUpdateDocument<TData>(
   patch: Partial<TData>
-): Partial<TData> | { $set: Partial<TData> } {
+): Partial<TData> | { $set?: Partial<TData>; $unset?: Record<string, ""> } {
   const keys = Object.keys(patch as Record<string, unknown>);
   if (keys.length === 0) return patch;
   if (keys.some((key) => key.startsWith("$"))) return patch;
-  return { $set: patch };
+
+  const set: Record<string, unknown> = {};
+  const unset: Record<string, ""> = {};
+  for (const [key, value] of Object.entries(patch as Record<string, unknown>)) {
+    if (value === undefined) {
+      unset[key] = "";
+    } else {
+      set[key] = value;
+    }
+  }
+
+  return {
+    ...(Object.keys(set).length > 0 ? { $set: set as Partial<TData> } : {}),
+    ...(Object.keys(unset).length > 0 ? { $unset: unset } : {})
+  };
 }
 
 function extractFindOneAndUpdateValue<TData>(

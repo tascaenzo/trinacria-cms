@@ -5,7 +5,7 @@
 - Milestone: `M4.0 - Core Platform Specifications`
 - Stato: `draft`
 - Scope: low-level specification
-- Ultimo aggiornamento: `2026-05-20`
+- Ultimo aggiornamento: `2026-05-22`
 
 ## Decisione
 
@@ -139,20 +139,51 @@ Canonical key:
 
 ## Security e permission
 
-- `public`: leggibile da admin e plugin autorizzati.
-- `protected`: richiede permission/policy.
-- `secret`: ciphertext at-rest, reveal solo a owner plugin o policy esplicita.
-- il backoffice non fa reveal diretto come owner implicito.
-- ogni reveal/rotate/write produce audit.
+### Classi di visibilita
+
+| Visibilita  | Lettura valore         | Scrittura            | Reveal secret        | Uso previsto                                    |
+| ----------- | ---------------------- | -------------------- | -------------------- | ----------------------------------------------- |
+| `public`    | admin, plugin          | owner                | N/A                  | site name, locale, feature flag non sensibili   |
+| `protected` | admin, owner, policy   | owner                | N/A                  | config condivisa tra plugin, limiti, integraz   |
+| `secret`    | solo owner/policy      | owner                | solo owner/policy    | API key, webhook secret, OAuth secret, token    |
+
+### Regole
+
+1. Solo l'owner puo scrivere una voce salvo delega esplicita.
+2. Solo l'owner o una policy esplicita puo fare reveal di un secret.
+3. Un plugin non puo leggere configurazioni `protected` o `secret` di altri plugin senza capability/policy.
+4. Le chiamate plugin-to-core per reveal o scrittura sensibile devono essere signed.
+5. Ogni reveal, write, rotation e failed access genera audit.
+6. Il backoffice mostra metadata e valore mascherato. Non diventa owner implicito dei secret.
+7. Le API admin usano bearer token con permission `core-pack:settings:read` / `core-pack:settings:write`.
+
+### Audit
+
+Ogni operazione produce un audit event con:
+- canonical key
+- attore (admin ID o plugin ID)
+- operazione (read, write, reveal, rotate)
+- esito
+- timestamp
 
 ## Eventi
 
-| Evento                          | Visibility | Quando            |
-| ------------------------------- | ---------- | ----------------- |
-| `core.settings.defined`         | `audit`    | nuova definition  |
-| `core.settings.value.set`       | `audit`    | valore aggiornato |
-| `core.settings.secret.revealed` | `audit`    | reveal secret     |
-| `core.settings.secret.rotated`  | `audit`    | rotazione secret  |
+### Eventi di settings
+
+| Nome canonico                       | Owner      | Visibility | Delivery | Payload                                       | Quando                     |
+| ----------------------------------- | ---------- | ---------- | -------- | --------------------------------------------- | -------------------------- |
+| `core.settings.defined`             | core-pack  | `audit`    | `sync`   | `{ canonicalKey, ownerPluginId, type }`       | nuova definition           |
+| `core.settings.value.set`           | core-pack  | `audit`    | `sync`   | `{ canonicalKey, version, actorId }`          | valore aggiornato          |
+| `core.settings.secret.revealed`     | core-pack  | `audit`    | `sync`   | `{ canonicalKey, actorId }`                   | reveal secret              |
+| `core.settings.secret.rotated`      | core-pack  | `audit`    | `sync`   | `{ canonicalKey, keyVersion, actorId }`       | rotazione secret           |
+| `core.settings.access_denied`       | core-pack  | `audit`    | `sync`   | `{ canonicalKey, actorId, reason }`           | tentativo non autorizzato  |
+
+### Delivery e retry
+
+- Tutti `sync` (in-process).
+- Nessun retry automatico: se la pubblicazione fallisce, l'errore e loggato ma l'operazione settings non viene bloccata.
+- Idempotency: le operazioni di set/rotate sono gia idempotenti per design (versione incrementale).
+- Audit policy: tutti gli eventi settings sono `audit` e persistiti in `cms_core_audit_events`.
 
 ## Errori
 
@@ -172,8 +203,11 @@ orphaned o inactive per evitare perdita dati.
 
 ## Compatibilita e versioning
 
-`canonicalKey` e persistente. Rename richiede alias o migration esplicita.
-`schema` puo evolvere solo in modo compatibile o con migration.
+- `canonicalKey` e persistente. Rename richiede alias o migration esplicita.
+- `schema` puo evolvere solo in modo compatibile (aggiunta campi opzionali) o con migration.
+- Cambi breaking richiedono version bump del plugin che possiede la definition.
+- Nuovi tipi `type` possono essere aggiunti. Rimuovere un tipo esistente e breaking.
+- I secret cifrati con chiave precedente restano decifrabili fino a rotazione della chiave.
 
 ## Acceptance criteria
 

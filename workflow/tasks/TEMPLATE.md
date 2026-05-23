@@ -46,6 +46,6 @@ Annotazioni utili durante lo sviluppo.
 
 ## Chiusura
 
-- Changelog aggiornato: `si | no`
+- Changelog milestone aggiornato: `si | no`
 - Documentazione aggiornata: `si | no`
 - Follow-up aperti:

@@ -5,32 +5,38 @@ procedere con l'implementazione della piattaforma core plugin-first.
 
 ## Fase corrente
 
-Milestone: `M4.0 - Core Platform Specifications`
+Milestone: `M4.0 - Core Platform Specifications` — ✅ **Completata**
 
-Obiettivo: chiarire contratti, confini e comportamenti core prima di creare
-nuovi package dominio o nuove API.
+Tutte le 15 specifiche sono state elevate a `low-level` specification.
+Il task implementativo (`core-contracts-foundation-implementation`) e stato
+completato (NamespaceValidator, CollisionPolicy, ContributionIndex e discovery
+configurata con 95 test kernel, 177 test totali monorepo; 1 integration Mongo
+gated).
+
+Prossimo step implementativo: **Step 2 — Runtime plugin** (stati, transizioni,
+dependency ordering, rollback, enable/disable, discovery).
 
 ## Specifiche previste
 
-| File                                  | Focus                                                             | Stato   |
-| ------------------------------------- | ----------------------------------------------------------------- | ------- |
-| `low-level-specification-standard.md` | standard obbligatorio per specifiche implementabili M4.0          | `draft` |
-| `m4-core-platform-foundation.md`      | overview funzionale della milestone core e decisioni fondative    | `draft` |
-| `core-boundaries.md`                  | confini tra Trinacria, kernel, core-pack e plugin dominio         | `draft` |
-| `public-plugin-api.md`                | API pubbliche per sviluppatori plugin                             | `draft` |
-| `plugin-contract.md`                  | manifest, lifecycle, capability, permission, settings, admin      | `draft` |
-| `plugin-runtime.md`                   | stati, transizioni, ordering, rollback, enable/disable            | `draft` |
-| `security-core.md`                    | capability, permission, policy, provisioning, guards, signed call | `draft` |
-| `plugin-entity-mongo.md`              | Mongo storage core, entity, schema, repository, namespace         | `draft` |
-| `settings-core.md`                    | configuration registry, settings, secrets, visibility, audit      | `draft` |
-| `configuration-registry.md`           | draft funzionale del registro configurazioni e secret             | `draft` |
-| `namespace-governance.md`             | namespace, alias, reserved names, ownership e collision policy    | `draft` |
-| `plugin-event-bus.md`                 | event bus opzionale, subscription policy e delivery               | `draft` |
-| `admin-contribution-resource.md`      | route, navigation, resource registry, UI custom                   | `draft` |
-| `installation-bootstrap.md`           | setup iniziale, admin user, core-pack provisioning                | `draft` |
-| `plugin-packaging-discovery.md`       | package shape, manifest location, compatibility, discovery        | `draft` |
-| `observability-operations.md`         | health, event log, diagnostics, runtime status                    | `draft` |
-| `sdk-api-contract.md`                 | OpenAPI, API envelope, SDK generation, compatibility              | `draft` |
+| File                                  | Focus                                                             | Stato       |
+| ------------------------------------- | ----------------------------------------------------------------- | ----------- |
+| `low-level-specification-standard.md` | standard obbligatorio per specifiche implementabili M4.0          | `approved`  |
+| `m4-core-platform-foundation.md`      | overview funzionale della milestone core e decisioni fondative    | `approved`  |
+| `core-boundaries.md`                  | confini tra Trinacria, kernel, core-pack e plugin dominio         | `approved`  |
+| `public-plugin-api.md`                | API pubbliche per sviluppatori plugin                             | `approved`  |
+| `plugin-contract.md`                  | manifest, lifecycle, capability, permission, settings, admin      | `low-level` |
+| `plugin-runtime.md`                   | stati, transizioni, ordering, rollback, enable/disable            | `low-level` |
+| `security-core.md`                    | capability, permission, policy, provisioning, guards, signed call | `low-level` |
+| `plugin-entity-mongo.md`              | Mongo storage core, entity, schema, repository, namespace         | `low-level` |
+| `settings-core.md`                    | configuration registry, settings, secrets, visibility, audit      | `low-level` |
+| `configuration-registry.md`           | configuration registry: contract, secret lifecycle, audit         | `low-level` |
+| `namespace-governance.md`             | namespace, alias, reserved names, ownership e collision policy    | `low-level` |
+| `plugin-event-bus.md`                 | event bus opzionale, subscription policy e delivery               | `low-level` |
+| `admin-contribution-resource.md`      | route, navigation, resource registry, UI custom                   | `low-level` |
+| `installation-bootstrap.md`           | setup iniziale, admin user, core-pack provisioning                | `low-level` |
+| `plugin-packaging-discovery.md`       | package shape, manifest location, compatibility, discovery        | `low-level` |
+| `observability-operations.md`         | health, event log, diagnostics, runtime status                    | `low-level` |
+| `sdk-api-contract.md`                 | OpenAPI, API envelope, SDK generation, compatibility              | `low-level` |
 
 ## Ordine di lettura
 

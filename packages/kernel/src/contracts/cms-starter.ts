@@ -1,6 +1,7 @@
 import type { ModuleDefinition } from "@trinacria/core";
 import type { Provider } from "@trinacria/core";
 import type { OpenApiDocument } from "@trinacria/http";
+import type { PluginDiscoverySource, PluginSourceSnapshot } from "./plugin-discovery.js";
 import type { KernelPluginDefinition, PluginRuntime } from "./plugin-runtime.js";
 import type { PluginRuntimeStore } from "./plugin-runtime-store.js";
 
@@ -39,6 +40,8 @@ export interface CmsStarterOptions {
   modules?: readonly ModuleDefinition[];
   globalProviders?: readonly Provider[];
   plugins?: readonly KernelPluginDefinition[];
+  pluginSources?: readonly PluginDiscoverySource[];
+  continueOnPluginDiscoveryError?: boolean;
   enableHealthModule?: boolean;
   /**
    * Enables automatic calls to a registered PluginSecurityProvisioner
@@ -58,5 +61,6 @@ export interface CmsStarterOptions {
  */
 export interface CmsStarterHandle {
   runtime: PluginRuntime;
+  pluginSources: readonly PluginSourceSnapshot[];
   shutdown(): Promise<void>;
 }
