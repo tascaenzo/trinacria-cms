@@ -12,7 +12,10 @@ import type {
   PluginRuntimeRecord,
   PluginState
 } from "../contracts/plugin-runtime.js";
-import type { PluginRuntimeStore } from "../contracts/plugin-runtime-store.js";
+import type {
+  PersistedPluginRuntimeRecord,
+  PluginRuntimeStore
+} from "../contracts/plugin-runtime-store.js";
 import type { PluginManifestDependency } from "../contracts/plugin-manifest.js";
 import type { ApplicationContext, ModuleDefinition } from "@trinacria/core";
 import { CoreError } from "../errors/core-error.js";
@@ -73,6 +76,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
   private readonly eventBufferSize: number;
   private readonly eventLog: PluginRuntimeEvent[] = [];
   private runtimeStoreInitialization?: Promise<void>;
+  private runtimeStoreHydrated = false;
   private eventSequence = 0;
 
   constructor(options: InMemoryPluginRuntimeOptions) {
@@ -131,7 +135,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       );
     }
 
-    if (existing?.state === "disabled") {
+    if (existing?.state === "disabled" || existing?.state === "failed") {
       this.contributionRegistry.upsert(manifest);
       this.registerNamespace(manifest);
       this.definitions.set(manifest.id, {
@@ -150,7 +154,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
         durationMs: Date.now() - startedAt,
         stateBefore: existing.state,
         stateAfter: existing.state,
-        message: "Plugin metadata updated while disabled"
+        message: `Plugin metadata updated while ${existing.state}`
       });
       return;
     }
@@ -391,6 +395,32 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       durationMs: Date.now() - startedAt,
       details: { targets: ordered }
     });
+  }
+
+  async reconcileDiscoveredPlugins(pluginIds: readonly string[]): Promise<void> {
+    await this.ensureRuntimeStoreInitialized();
+    const discovered = new Set(pluginIds);
+
+    for (const [pluginId, record] of this.records) {
+      if (discovered.has(pluginId)) continue;
+
+      this.records.set(pluginId, {
+        ...record,
+        state: record.state === "disabled" ? "disabled" : "failed",
+        loadedAt: undefined,
+        failedAt: record.failedAt ?? new Date(),
+        lastFailurePhase: record.lastFailurePhase ?? "register",
+        statusReason: {
+          code: "plugin_source_missing",
+          message:
+            "Plugin runtime state was restored but no configured source currently provides it",
+          details: {
+            rehydratedState: record.state
+          }
+        }
+      });
+      await this.persistRecord(pluginId);
+    }
   }
 
   async disable(pluginId: string, reason?: string): Promise<void> {
@@ -1027,12 +1057,58 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     }
 
     await this.runtimeStoreInitialization;
+    if (!this.runtimeStoreHydrated) {
+      this.runtimeStoreHydrated = true;
+      await this.hydrateRuntimeStore();
+    }
   }
 
   private async persistRecord(pluginId: string): Promise<void> {
     const record = this.records.get(pluginId);
     if (!record) return;
     await this.runtimeStore.upsert(record);
+  }
+
+  private async hydrateRuntimeStore(): Promise<void> {
+    const persistedRecords = await this.runtimeStore.list();
+    for (const persisted of persistedRecords) {
+      if (this.records.has(persisted.pluginId)) continue;
+      this.records.set(persisted.pluginId, this.fromPersistedRuntimeRecord(persisted));
+    }
+  }
+
+  private fromPersistedRuntimeRecord(persisted: PersistedPluginRuntimeRecord): PluginRuntimeRecord {
+    const state = this.normalizePersistedState(persisted.state);
+    const lastError = persisted.lastErrorMessage
+      ? Object.assign(new Error(persisted.lastErrorMessage), {
+          name: persisted.lastErrorName ?? "PluginRuntimeError"
+        })
+      : undefined;
+
+    return {
+      manifest: persisted.manifest,
+      state,
+      ...(lastError ? { lastError } : {}),
+      failureCount: persisted.failureCount,
+      ...(persisted.failedAt ? { failedAt: new Date(persisted.failedAt) } : {}),
+      ...(persisted.lastFailurePhase ? { lastFailurePhase: persisted.lastFailurePhase } : {}),
+      ...(persisted.disabledAt ? { disabledAt: new Date(persisted.disabledAt) } : {}),
+      ...(persisted.disabledReason ? { disabledReason: persisted.disabledReason } : {}),
+      statusReason:
+        state === persisted.state
+          ? persisted.statusReason
+          : this.createStatusReason(state, {
+              rehydratedFromState: persisted.state
+            })
+    };
+  }
+
+  private normalizePersistedState(state: PluginState): PluginState {
+    if (state === "disabled" || state === "failed" || state === "unloaded") {
+      return state;
+    }
+
+    return "registered";
   }
 
   private sortByDependencies(pluginIds: readonly string[]): string[] {

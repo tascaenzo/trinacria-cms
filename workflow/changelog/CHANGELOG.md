@@ -70,7 +70,7 @@ domini applicativi nel core.
 - [x] `2026-05-23-m5-runtime-state-machine.md`
 - [x] `2026-05-23-m5-dependency-graph-ordering.md`
 - [x] `2026-05-23-m5-discovery-registration-autoload.md`
-- `2026-05-23-m5-runtime-store-rehydration.md`
+- [x] `2026-05-23-m5-runtime-store-rehydration.md`
 - `2026-05-23-m5-failure-rollback-events.md`
 - `2026-05-23-m5-api-openapi-sdk.md`
 - `2026-05-23-m5-admin-plugin-operations.md`
@@ -97,6 +97,9 @@ domini applicativi nel core.
 - Discovery, registration e autoload separati in una pipeline testabile:
   `bootstrapDiscoveredPlugins()` registra plugin scoperti, preserva diagnostica
   source e delega il caricamento a `loadMany()`.
+- Runtime store rehydration aggiunta: il runtime ripristina stati persistiti,
+  preserva `disabled`/`failed`, candida `loaded` ad autoload sicuro e marca
+  plugin persistiti senza source come `plugin_source_missing`.
 
 ### Fuori scope
 

@@ -6,7 +6,11 @@ import type {
   PluginDiscoverySource
 } from "../src/contracts/plugin-discovery.js";
 import type { KernelPluginDefinition } from "../src/contracts/plugin-runtime.js";
-import { bootstrapDiscoveredPlugins, InMemoryPluginRuntime } from "../src/runtime/index.js";
+import {
+  bootstrapDiscoveredPlugins,
+  InMemoryPluginRuntime,
+  InMemoryPluginRuntimeStore
+} from "../src/runtime/index.js";
 
 test("bootstrapDiscoveredPlugins registers discovered plugins and autoloads with dependency ordering", async () => {
   const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0" });
@@ -88,6 +92,139 @@ test("bootstrapDiscoveredPlugins preserves failed source diagnostics and can ski
     runtime.events().some((event) => event.action === "load"),
     false
   );
+});
+
+test("bootstrapDiscoveredPlugins preserves disabled persisted state during autoload", async () => {
+  const store = new InMemoryPluginRuntimeStore();
+  await store.upsert({
+    manifest: {
+      id: "cms/plugin-content",
+      version: "1.0.0",
+      requiresCore: "^0.1.0"
+    },
+    state: "disabled",
+    disabledReason: "maintenance",
+    disabledAt: new Date("2026-05-23T10:00:00.000Z")
+  });
+
+  const runtime = new InMemoryPluginRuntime({
+    coreVersion: "0.1.0",
+    runtimeStore: store
+  });
+
+  await bootstrapDiscoveredPlugins({
+    runtime,
+    discoveryService: createDiscoveryService({
+      plugins: [createPlugin("cms/plugin-content")],
+      sources: []
+    }),
+    pluginSources: []
+  });
+
+  const record = runtime.list().find((item) => item.manifest.id === "cms/plugin-content");
+  assert.equal(record?.state, "disabled");
+  assert.equal(record?.disabledReason, "maintenance");
+});
+
+test("bootstrapDiscoveredPlugins autoloads plugins that were previously loaded", async () => {
+  const store = new InMemoryPluginRuntimeStore();
+  await store.upsert({
+    manifest: {
+      id: "cms/plugin-content",
+      version: "1.0.0",
+      requiresCore: "^0.1.0"
+    },
+    state: "loaded",
+    loadedAt: new Date("2026-05-23T10:00:00.000Z")
+  });
+
+  const runtime = new InMemoryPluginRuntime({
+    coreVersion: "0.1.0",
+    runtimeStore: store
+  });
+
+  await bootstrapDiscoveredPlugins({
+    runtime,
+    discoveryService: createDiscoveryService({
+      plugins: [createPlugin("cms/plugin-content")],
+      sources: []
+    }),
+    pluginSources: []
+  });
+
+  const record = runtime.list().find((item) => item.manifest.id === "cms/plugin-content");
+  assert.equal(record?.state, "loaded");
+});
+
+test("bootstrapDiscoveredPlugins preserves failed persisted state until explicit operation", async () => {
+  const store = new InMemoryPluginRuntimeStore();
+  await store.upsert({
+    manifest: {
+      id: "cms/plugin-content",
+      version: "1.0.0",
+      requiresCore: "^0.1.0"
+    },
+    state: "failed",
+    failedAt: new Date("2026-05-23T10:00:00.000Z"),
+    lastFailurePhase: "init",
+    failureCount: 2,
+    lastError: Object.assign(new Error("init exploded"), {
+      name: "PluginLifecycleError"
+    })
+  });
+
+  const runtime = new InMemoryPluginRuntime({
+    coreVersion: "0.1.0",
+    runtimeStore: store
+  });
+
+  await bootstrapDiscoveredPlugins({
+    runtime,
+    discoveryService: createDiscoveryService({
+      plugins: [createPlugin("cms/plugin-content")],
+      sources: []
+    }),
+    pluginSources: []
+  });
+
+  const record = runtime.list().find((item) => item.manifest.id === "cms/plugin-content");
+  assert.equal(record?.state, "failed");
+  assert.equal(record?.failureCount, 2);
+  assert.equal(
+    runtime.events().some((event) => event.action === "load"),
+    false
+  );
+});
+
+test("bootstrapDiscoveredPlugins marks persisted plugins without current source", async () => {
+  const store = new InMemoryPluginRuntimeStore();
+  await store.upsert({
+    manifest: {
+      id: "cms/plugin-orphan",
+      version: "1.0.0",
+      requiresCore: "^0.1.0"
+    },
+    state: "loaded",
+    loadedAt: new Date("2026-05-23T10:00:00.000Z")
+  });
+
+  const runtime = new InMemoryPluginRuntime({
+    coreVersion: "0.1.0",
+    runtimeStore: store
+  });
+
+  await bootstrapDiscoveredPlugins({
+    runtime,
+    discoveryService: createDiscoveryService({
+      plugins: [],
+      sources: []
+    }),
+    pluginSources: []
+  });
+
+  const record = runtime.list().find((item) => item.manifest.id === "cms/plugin-orphan");
+  assert.equal(record?.state, "failed");
+  assert.equal(record?.statusReason?.code, "plugin_source_missing");
 });
 
 function createDiscoveryService(result: PluginDiscoveryResult): PluginDiscoveryService {

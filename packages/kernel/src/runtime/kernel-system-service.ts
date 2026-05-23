@@ -282,6 +282,7 @@ export function describeAvailableOperations(
   const loadedDependents = dependencyGraph
     ? findLoadedRequiredDependents(record.manifest.id, dependencyGraph)
     : [];
+  const sourceMissing = record.statusReason?.code === "plugin_source_missing";
   const hasLoadedDependents = loadedDependents.length > 0;
   const dependencyBlockReason = blockingDependency
     ? describeDependencyIssue(record.manifest.id, blockingDependency)
@@ -289,15 +290,22 @@ export function describeAvailableOperations(
   const dependentBlockReason = hasLoadedDependents
     ? `Plugin has loaded required dependents: ${loadedDependents.join(", ")}`
     : undefined;
+  const sourceMissingReason = sourceMissing
+    ? "Plugin cannot be operated because no configured source currently provides it"
+    : undefined;
 
   return [
     availability(
       "load",
-      ["registered", "unloaded", "failed"].includes(record.state) && !blockingDependency,
+      ["registered", "unloaded", "failed"].includes(record.state) &&
+        !blockingDependency &&
+        !sourceMissing,
       {
         disabledReason: "Disabled plugins must be enabled before load",
         defaultReason:
-          dependencyBlockReason ?? `Plugin cannot be loaded from state "${record.state}"`,
+          sourceMissingReason ??
+          dependencyBlockReason ??
+          `Plugin cannot be loaded from state "${record.state}"`,
         record
       }
     ),
@@ -309,11 +317,15 @@ export function describeAvailableOperations(
     }),
     availability(
       "reload",
-      ["registered", "unloaded", "failed", "loaded"].includes(record.state) && !blockingDependency,
+      ["registered", "unloaded", "failed", "loaded"].includes(record.state) &&
+        !blockingDependency &&
+        !sourceMissing,
       {
         disabledReason: "Disabled plugins must be enabled before reload",
         defaultReason:
-          dependencyBlockReason ?? `Plugin cannot be reloaded from state "${record.state}"`,
+          sourceMissingReason ??
+          dependencyBlockReason ??
+          `Plugin cannot be reloaded from state "${record.state}"`,
         record
       }
     ),

@@ -38,3 +38,29 @@ le source plugin correnti.
 - `npm run test -w @trinacria-cms/kernel`
 - `TRINACRIA_RUN_MONGO_INTEGRATION=1 npm run test:integration -w @trinacria-cms/kernel`
 - `npm run build -w @trinacria-cms/kernel`
+
+## Esito
+
+- Il runtime reidrata una volta i record persistiti da `PluginRuntimeStore`.
+- Gli stati persistiti `loaded`, `loading`, `initializing` e `unloading`
+  tornano come `registered`, cosi possono essere ricaricati in modo esplicito e
+  sicuro.
+- Lo stato `disabled` resta persistente e non viene autocaricato.
+- Lo stato `failed` resta diagnosticabile e non viene ritentato automaticamente
+  dal bootstrap.
+- I plugin persistiti ma non piu scoperti vengono marcati con
+  `statusReason.code = plugin_source_missing`.
+- `bootstrapDiscoveredPlugins()` carica automaticamente solo plugin in stato
+  `registered` o `unloaded`.
+
+## Check eseguiti
+
+- `npm run test -w @trinacria-cms/kernel -- cms-starter.test.ts`
+- `npm run test -w @trinacria-cms/kernel -- plugin-runtime-store.test.ts`
+- `npm run test -w @trinacria-cms/kernel -- kernel-system-service.test.ts`
+- `npm run typecheck -w @trinacria-cms/kernel`
+- `npm run build -w @trinacria-cms/kernel`
+
+## Note
+
+Il test Mongo reale resta gated e non e stato eseguito in questo passaggio.

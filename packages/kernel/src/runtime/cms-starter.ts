@@ -233,7 +233,9 @@ export async function startCmsApp(options: CmsStarterOptions): Promise<CmsStarte
 }
 
 export interface PluginBootstrapOptions {
-  runtime: Pick<PluginRuntime, "register" | "loadMany">;
+  runtime: Pick<PluginRuntime, "register" | "loadMany" | "list"> & {
+    reconcileDiscoveredPlugins?(pluginIds: readonly string[]): Promise<void>;
+  };
   discoveryService: PluginDiscoveryService;
   pluginSources: readonly PluginDiscoverySource[];
   plugins?: readonly KernelPluginDefinition[];
@@ -255,8 +257,19 @@ export async function bootstrapDiscoveredPlugins(
     await options.runtime.register(plugin);
   }
 
+  await options.runtime.reconcileDiscoveredPlugins?.(plugins.map((plugin) => plugin.manifest.id));
+
   if (options.autoLoadPlugins !== false && plugins.length > 0) {
-    await options.runtime.loadMany(plugins.map((plugin) => plugin.manifest.id));
+    const autoloadPluginIds = plugins
+      .map((plugin) => plugin.manifest.id)
+      .filter((pluginId) => {
+        const record = options.runtime.list().find((item) => item.manifest.id === pluginId);
+        return record ? ["registered", "unloaded"].includes(record.state) : false;
+      });
+
+    if (autoloadPluginIds.length > 0) {
+      await options.runtime.loadMany(autoloadPluginIds);
+    }
   }
 
   return {
