@@ -257,7 +257,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     await this.ensureRuntimeStoreInitialized();
     const record = this.getRecord(pluginId);
     if (record.state === "disabled") return;
-    if (record.state !== "loaded") {
+    if (record.state !== "loaded" && record.state !== "failed") {
       throw new PluginStateTransitionError(
         `Cannot unload plugin "${pluginId}" from state "${record.state}"`,
         { pluginId, from: record.state, action: "unload" }
@@ -265,7 +265,9 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     }
 
     this.assertNoLoadedDependents(pluginId);
-    this.transition(pluginId, "unloading");
+    if (record.state === "loaded") {
+      this.transition(pluginId, "unloading");
+    }
 
     const definition = this.getDefinition(pluginId);
     const needsRuntimeContext = Boolean(definition.onUnload);
@@ -274,7 +276,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
 
     let phase: PluginLifecyclePhase = "unload";
     try {
-      if (definition.onUnload && context) {
+      if (record.state === "loaded" && definition.onUnload && context) {
         await definition.onUnload(context);
       }
 

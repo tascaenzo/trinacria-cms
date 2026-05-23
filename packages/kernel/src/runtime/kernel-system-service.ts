@@ -281,8 +281,8 @@ export function describeAvailableOperations(
       defaultReason: `Plugin cannot be loaded from state "${record.state}"`,
       record
     }),
-    availability("unload", record.state === "loaded", {
-      defaultReason: `Only loaded plugins can be unloaded; current state is "${record.state}"`,
+    availability("unload", ["loaded", "failed"].includes(record.state), {
+      defaultReason: `Only loaded or failed plugins can be unloaded; current state is "${record.state}"`,
       record
     }),
     availability("reload", ["registered", "unloaded", "failed", "loaded"].includes(record.state), {
@@ -290,10 +290,17 @@ export function describeAvailableOperations(
       defaultReason: `Plugin cannot be reloaded from state "${record.state}"`,
       record
     }),
-    availability("disable", record.state !== "disabled", {
-      defaultReason: 'Plugin is already in state "disabled"',
-      record
-    }),
+    availability(
+      "disable",
+      ["registered", "loaded", "unloading", "failed", "unloaded"].includes(record.state),
+      {
+        defaultReason:
+          record.state === "disabled"
+            ? 'Plugin is already in state "disabled"'
+            : `Plugin cannot be disabled from transient state "${record.state}"`,
+        record
+      }
+    ),
     availability("enable", record.state === "disabled", {
       defaultReason: `Only disabled plugins can be enabled; current state is "${record.state}"`,
       record

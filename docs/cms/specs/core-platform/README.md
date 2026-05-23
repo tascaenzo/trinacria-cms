@@ -17,6 +17,9 @@ Prossima milestone implementativa: **M5 — Plugin Runtime Foundation**,
 corrispondente allo **Step 2 — Runtime plugin** (stati, transizioni, dependency
 ordering, rollback, enable/disable, discovery).
 
+Guida sviluppatore M5:
+[`m5-plugin-runtime-implementation.md`](./m5-plugin-runtime-implementation.md).
+
 ## Specifiche previste
 
 | File                                  | Focus                                                             | Stato       |
@@ -38,6 +41,7 @@ ordering, rollback, enable/disable, discovery).
 | `plugin-packaging-discovery.md`       | package shape, manifest location, compatibility, discovery        | `low-level` |
 | `observability-operations.md`         | health, event log, diagnostics, runtime status                    | `low-level` |
 | `sdk-api-contract.md`                 | OpenAPI, API envelope, SDK generation, compatibility              | `low-level` |
+| `m5-plugin-runtime-implementation.md` | guida implementativa M5 per sviluppatori                          | `planned`   |
 
 ## Ordine di lettura
 
@@ -81,6 +85,8 @@ architetturale.
     - definisce health, diagnostics, audit e operation events
 17. [`sdk-api-contract.md`](./sdk-api-contract.md)
     - definisce API envelope, error model, OpenAPI e SDK generation
+18. [`m5-plugin-runtime-implementation.md`](./m5-plugin-runtime-implementation.md)
+    - traduce le specifiche runtime in sequenza implementativa M5
 
 ## Ordine di implementazione consigliato
 

@@ -58,6 +58,24 @@ rollback contribution e persistenza Mongo.
 Rendere operativo il contratto plugin-first chiuso in M4.0 senza introdurre
 domini applicativi nel core.
 
+### Documentazione di partenza
+
+- `workflow/milestones/M5-plugin-runtime-foundation.md`
+- `docs/cms/specs/core-platform/m5-plugin-runtime-implementation.md`
+- `docs/cms/it/0016-m5-runtime-plugin-foundation.md`
+- `docs/cms/en/0016-m5-plugin-runtime-foundation.md`
+
+### Task iniziali
+
+- [x] `2026-05-23-m5-runtime-state-machine.md`
+- `2026-05-23-m5-dependency-graph-ordering.md`
+- `2026-05-23-m5-discovery-registration-autoload.md`
+- `2026-05-23-m5-runtime-store-rehydration.md`
+- `2026-05-23-m5-failure-rollback-events.md`
+- `2026-05-23-m5-api-openapi-sdk.md`
+- `2026-05-23-m5-admin-plugin-operations.md`
+- `2026-05-23-m5-docs-troubleshooting-qa.md`
+
 ### Include
 
 - Runtime state machine e transizioni valide
@@ -67,6 +85,12 @@ domini applicativi nel core.
 - Persistenza Mongo e reidratazione stato runtime
 - Failure handling, rollback contribution e runtime events
 - API operative plugin, admin diagnostics e SDK/OpenAPI aggiornati
+
+### Avanzamento
+
+- State machine e available operations allineate: `unload` recupera plugin in
+  stato `failed` dopo un unload fallito, e le operazioni esposte rispettano gli
+  stati transitori.
 
 ### Fuori scope
 

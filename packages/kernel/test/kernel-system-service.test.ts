@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { PluginRuntimeRecord } from "../src/contracts/plugin-runtime.js";
-import { InMemoryPluginRuntime, KernelSystemService } from "../src/runtime/index.js";
+import type { PluginRuntimeRecord, PluginState } from "../src/contracts/plugin-runtime.js";
+import {
+  describeAvailableOperations,
+  InMemoryPluginRuntime,
+  KernelSystemService
+} from "../src/runtime/index.js";
 
 test("KernelSystemService exposes operational plugin snapshots", () => {
   const service = new KernelSystemService({
@@ -229,3 +233,91 @@ test("KernelSystemService exposes recent plugin lifecycle events", async () => {
   assert.equal(events[1]?.action, "load");
   assert.equal(typeof events[0]?.timestamp, "string");
 });
+
+test("describeAvailableOperations follows runtime state transitions", () => {
+  const expectations: Record<
+    PluginState,
+    Partial<Record<"load" | "unload" | "reload" | "disable" | "enable", boolean>>
+  > = {
+    registered: {
+      load: true,
+      unload: false,
+      reload: true,
+      disable: true,
+      enable: false
+    },
+    loading: {
+      load: false,
+      unload: false,
+      reload: false,
+      disable: false,
+      enable: false
+    },
+    initializing: {
+      load: false,
+      unload: false,
+      reload: false,
+      disable: false,
+      enable: false
+    },
+    loaded: {
+      load: false,
+      unload: true,
+      reload: true,
+      disable: true,
+      enable: false
+    },
+    unloading: {
+      load: false,
+      unload: false,
+      reload: false,
+      disable: true,
+      enable: false
+    },
+    failed: {
+      load: true,
+      unload: true,
+      reload: true,
+      disable: true,
+      enable: false
+    },
+    disabled: {
+      load: false,
+      unload: false,
+      reload: false,
+      disable: false,
+      enable: true
+    },
+    unloaded: {
+      load: true,
+      unload: false,
+      reload: true,
+      disable: true,
+      enable: false
+    }
+  };
+
+  for (const [state, expected] of Object.entries(expectations) as Array<
+    [PluginState, (typeof expectations)[PluginState]]
+  >) {
+    const operations = describeAvailableOperations(createRuntimeRecord(state));
+    for (const [operation, available] of Object.entries(expected)) {
+      assert.equal(
+        operations.find((item) => item.operation === operation)?.available,
+        available,
+        `${operation} availability for ${state}`
+      );
+    }
+  }
+});
+
+function createRuntimeRecord(state: PluginState): PluginRuntimeRecord {
+  return {
+    manifest: {
+      id: "cms/plugin-test",
+      version: "1.0.0",
+      requiresCore: "^0.1.0"
+    },
+    state
+  };
+}

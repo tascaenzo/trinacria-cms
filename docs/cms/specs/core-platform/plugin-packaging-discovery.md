@@ -3,9 +3,13 @@
 ## Stato
 
 - Milestone: `M4.0 - Core Platform Specifications`
-- Stato: `draft`
+- Stato: `low-level`
 - Scope: low-level specification
-- Ultimo aggiornamento: `2026-05-22`
+- Ultimo aggiornamento: `2026-05-23`
+
+Nota M5: questa specifica alimenta i task di discovery, registration e autoload
+di `M5 - Plugin Runtime Foundation`. La sequenza implementativa e descritta in
+[`m5-plugin-runtime-implementation.md`](./m5-plugin-runtime-implementation.md).
 
 ## Decisione
 
@@ -188,3 +192,11 @@ Ancora aperto:
 
 - Playground registra plugin in modo esplicito.
 - Serve discovery service formale.
+
+## Mapping M5
+
+Questa specifica viene implementata in M5 tramite:
+
+- `2026-05-23-m5-discovery-registration-autoload.md`
+- `2026-05-23-m5-runtime-store-rehydration.md`
+- `2026-05-23-m5-api-openapi-sdk.md`

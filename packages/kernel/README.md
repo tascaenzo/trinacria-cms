@@ -53,6 +53,9 @@ Kernel contracts are compatibility-critical. Breaking changes should be explicit
 Developer-facing plugin API reference:
 [`docs/cms/specs/core-platform/public-plugin-api.md`](../../docs/cms/specs/core-platform/public-plugin-api.md).
 
+M5 runtime implementation guide:
+[`docs/cms/specs/core-platform/m5-plugin-runtime-implementation.md`](../../docs/cms/specs/core-platform/m5-plugin-runtime-implementation.md).
+
 ## Scripts
 
 ```bash

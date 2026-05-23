@@ -79,25 +79,37 @@ stabile.
 
 ## Task inclusi
 
-- [ ] State machine runtime e transizioni operative
-- [ ] Dependency graph, ordering e cycle detection
-- [ ] Loading reale da discovery configurata
-- [ ] Persistenza Mongo e reidratazione runtime state
-- [ ] Enable/disable/reload con available operations
-- [ ] Failure handling, rollback contribution e runtime events
-- [ ] API operative plugin e DTO allineati a SDK/OpenAPI
-- [ ] Admin plugin operations con diagnostica leggibile
-- [ ] Test unitari, contract test runtime store e integration Mongo gated
-- [ ] Documentazione operativa e changelog M5
+- [x] `workflow/tasks/done/2026-05-23-m5-runtime-state-machine.md`
+- [ ] `workflow/tasks/todo/2026-05-23-m5-dependency-graph-ordering.md`
+- [ ] `workflow/tasks/todo/2026-05-23-m5-discovery-registration-autoload.md`
+- [ ] `workflow/tasks/todo/2026-05-23-m5-runtime-store-rehydration.md`
+- [ ] `workflow/tasks/todo/2026-05-23-m5-failure-rollback-events.md`
+- [ ] `workflow/tasks/todo/2026-05-23-m5-api-openapi-sdk.md`
+- [ ] `workflow/tasks/todo/2026-05-23-m5-admin-plugin-operations.md`
+- [ ] `workflow/tasks/todo/2026-05-23-m5-docs-troubleshooting-qa.md`
 
 ## Dipendenze
 
 - `docs/cms/specs/core-platform/plugin-runtime.md`
 - `docs/cms/specs/core-platform/plugin-packaging-discovery.md`
+- `docs/cms/specs/core-platform/m5-plugin-runtime-implementation.md`
 - `docs/cms/specs/core-platform/plugin-contract.md`
 - `docs/cms/specs/core-platform/namespace-governance.md`
 - `docs/cms/specs/core-platform/observability-operations.md`
+- `docs/cms/it/0016-m5-runtime-plugin-foundation.md`
+- `docs/cms/en/0016-m5-plugin-runtime-foundation.md`
 - task completato `workflow/tasks/done/2026-05-21-core-contracts-foundation-implementation.md`
+
+## Ordine di sviluppo
+
+1. `m5-runtime-state-machine`
+2. `m5-dependency-graph-ordering`
+3. `m5-discovery-registration-autoload`
+4. `m5-runtime-store-rehydration`
+5. `m5-failure-rollback-events`
+6. `m5-api-openapi-sdk`
+7. `m5-admin-plugin-operations`
+8. `m5-docs-troubleshooting-qa`
 
 ## Out of scope
 

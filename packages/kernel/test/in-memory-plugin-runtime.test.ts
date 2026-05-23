@@ -164,6 +164,40 @@ test("module bridge rolls back registered modules when init fails", async () => 
   assert.deepEqual(app.unregisteredCalls, ["M2", "M1"]);
 });
 
+test("unload can clear failed plugin state after unload failure", async () => {
+  const app = createFakeApp();
+  let unloadAttempts = 0;
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0", app });
+
+  await runtime.register({
+    manifest: {
+      id: "cms/plugin-content",
+      version: "1.0.0",
+      requiresCore: "^0.1.0"
+    },
+    modules: [createModule("M1")],
+    async onUnload() {
+      unloadAttempts += 1;
+      if (unloadAttempts === 1) {
+        throw new Error("unload exploded");
+      }
+    }
+  });
+
+  await runtime.load("cms/plugin-content");
+  await assert.rejects(async () => runtime.unload("cms/plugin-content"), PluginLifecycleError);
+
+  const failedRecord = runtime.list().find((item) => item.manifest.id === "cms/plugin-content");
+  assert.equal(failedRecord?.state, "failed");
+  assert.deepEqual(app.listModules(), ["M1"]);
+
+  await runtime.unload("cms/plugin-content");
+
+  const unloadedRecord = runtime.list().find((item) => item.manifest.id === "cms/plugin-content");
+  assert.equal(unloadedRecord?.state, "unloaded");
+  assert.deepEqual(app.listModules(), []);
+});
+
 test("cannot unload a plugin with loaded required dependents", async () => {
   const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0" });
 
