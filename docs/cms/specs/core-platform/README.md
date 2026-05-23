@@ -13,8 +13,9 @@ completato (NamespaceValidator, CollisionPolicy, ContributionIndex e discovery
 configurata con 96 test kernel, 178 test totali monorepo; 1 integration Mongo
 gated).
 
-Prossimo step implementativo: **Step 2 — Runtime plugin** (stati, transizioni,
-dependency ordering, rollback, enable/disable, discovery).
+Prossima milestone implementativa: **M5 — Plugin Runtime Foundation**,
+corrispondente allo **Step 2 — Runtime plugin** (stati, transizioni, dependency
+ordering, rollback, enable/disable, discovery).
 
 ## Specifiche previste
 
