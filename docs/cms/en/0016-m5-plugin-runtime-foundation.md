@@ -1,7 +1,8 @@
 # 0016 - M5 Plugin runtime foundation
 
-This page is the developer entry point for M5. It explains how to read the
-runtime specifications and how to turn them into implementation work.
+This page is the developer entry point for the M5 runtime. It explains how to
+read the runtime specifications, which contracts are already available, and how
+to extend them without breaking runtime semantics.
 
 ## Milestone goal
 
@@ -15,6 +16,9 @@ M5 must make the plugin runtime operational:
 - persisted runtime state
 - readable diagnostics
 - aligned API, SDK, and backoffice
+
+Current state: these blocks are available and covered by M5 checks; any
+extension must keep runtime, OpenAPI, SDK, and backoffice aligned.
 
 M5 does not implement editorial domains, content types, or publishing workflows.
 
@@ -65,6 +69,9 @@ API and admin:
 7. Backoffice plugin operations.
 8. Troubleshooting and changelog updates.
 
+This is the order used to close M5. For new extensions, keep the same sequence:
+runtime/API first, then SDK, then admin, then docs.
+
 ## Developer rules
 
 - The backend decides operation availability; the UI only renders that decision.
@@ -76,6 +83,8 @@ API and admin:
   load.
 - Bootstrap must not fail because a single plugin fails.
 - Partial contributions must be removed after a failed load.
+- Plugin events should be read through `GET /v1/system/plugins/:pluginId/events?limit=20`
+  or through the SDK with `query.limit`.
 
 ## Minimum checks
 

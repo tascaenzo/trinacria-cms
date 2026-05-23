@@ -1,8 +1,9 @@
 # 0016 - M5 Runtime plugin foundation
 
-Questa pagina e il punto di ingresso per gli sviluppatori che devono iniziare
-M5. Non ripete tutte le specifiche: spiega come leggerle e come trasformarle in
-sviluppo ordinato.
+Questa pagina e il punto di ingresso per gli sviluppatori che devono lavorare
+sul runtime M5. Non ripete tutte le specifiche: spiega come leggerle, quali
+contratti sono gia disponibili e come estenderli senza rompere la semantica
+runtime.
 
 ## Obiettivo della milestone
 
@@ -16,6 +17,9 @@ M5 deve rendere reale il runtime plugin:
 - persistenza stato runtime
 - diagnostica leggibile
 - API, SDK e backoffice coerenti
+
+Stato corrente: questi blocchi sono disponibili e coperti da check M5; eventuali
+estensioni devono mantenere allineati runtime, OpenAPI, SDK e backoffice.
 
 Non si sviluppano ancora domini editoriali, content type o workflow di
 pubblicazione.
@@ -75,6 +79,9 @@ Test:
 7. Aggiornare backoffice.
 8. Aggiornare troubleshooting e changelog.
 
+La sequenza sopra e stata usata per chiudere M5. Per nuove estensioni resta
+valido lo stesso ordine: prima runtime/API, poi SDK, poi admin, infine docs.
+
 Ogni step deve lasciare il repository in uno stato verificabile.
 
 ## Regole pratiche per gli sviluppatori
@@ -89,6 +96,8 @@ Ogni step deve lasciare il repository in uno stato verificabile.
   load.
 - Il bootstrap non deve rompersi per il fallimento di un singolo plugin.
 - Le contribution parziali devono essere rimosse dopo un load fallito.
+- Gli eventi plugin devono essere letti via `GET /v1/system/plugins/:pluginId/events?limit=20`
+  o via SDK con `query.limit`.
 
 ## Check minimi
 

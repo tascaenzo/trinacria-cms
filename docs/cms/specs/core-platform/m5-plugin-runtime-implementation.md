@@ -4,6 +4,7 @@
 
 - Milestone: `M5 - Plugin Runtime Foundation`
 - Stato: `implementation-ready`
+- Stato runtime corrente: API/OpenAPI/SDK/admin allineati ai task M5 completati
 - Scope: developer handoff
 - Ultimo aggiornamento: `2026-05-23`
 
@@ -267,6 +268,14 @@ export interface PluginRuntimeDto {
   failedAt?: string;
   failureCount?: number;
   lastFailurePhase?: string;
+  source?: {
+    type: "workspace" | "package" | "local-path";
+    name: string;
+    entrypoint: string;
+    status: "discovered" | "failed" | "disabled";
+    pluginId?: string;
+    error?: string;
+  };
   disabledAt?: string;
   disabledReason?: string;
   statusReason?: {
@@ -276,13 +285,13 @@ export interface PluginRuntimeDto {
   };
   capabilities: string[];
   dependencies: PluginDependencyDto[];
-  availableOperations: PluginOperationAvailabilityDto[];
+  operations: PluginOperationAvailabilityDto[];
 }
 ```
 
 ## Admin UX target
 
-La pagina plugin del backoffice deve permettere a un operatore di capire lo
+La pagina plugin del backoffice permette a un operatore di capire lo
 stato senza leggere log server.
 
 Vista lista:
@@ -303,7 +312,7 @@ Vista dettaglio o pannello:
 - runtime event timeline
 - source snapshot
 
-La UI non deve esporre operazioni mutative se il backend le considera
+La UI non espone operazioni mutative se il backend le considera
 indisponibili.
 
 ## Error model

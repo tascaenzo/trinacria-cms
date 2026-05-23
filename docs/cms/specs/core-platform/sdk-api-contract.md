@@ -98,10 +98,10 @@ Nessuno storage diretto. Questa specifica governa contratti API.
 
 ### Eventi di API contract
 
-| Nome canonico                    | Owner     | Visibility | Delivery | Payload                                     | Quando                       |
-| -------------------------------- | --------- | ---------- | -------- | ------------------------------------------- | ---------------------------- |
-| `core.api.contract.changed`      | kernel    | `audit`    | `sync`   | `{ area, change, version }`                 | breaking change API          |
-| `core.api.sdk.generated`         | kernel    | `audit`    | `sync`   | `{ version, endpointCount, timestamp }`     | SDK rigenerato               |
+| Nome canonico               | Owner  | Visibility | Delivery | Payload                                 | Quando              |
+| --------------------------- | ------ | ---------- | -------- | --------------------------------------- | ------------------- |
+| `core.api.contract.changed` | kernel | `audit`    | `sync`   | `{ area, change, version }`             | breaking change API |
+| `core.api.sdk.generated`    | kernel | `audit`    | `sync`   | `{ version, endpointCount, timestamp }` | SDK rigenerato      |
 
 ### Delivery e retry
 
@@ -135,6 +135,7 @@ Esempi:
 7. Non modificare a mano `packages/sdk/src/generated/*`.
 
 Regole:
+
 - Lo snapshot OpenAPI e la fonte di verita per l'SDK.
 - Breaking changes richiedono major version dell'API.
 - Lo snapshot deve essere committato nel repository.

@@ -33,6 +33,7 @@ export interface KernelInstalledPluginSnapshot {
   version: string;
   requiresCore: string;
   state: PluginState;
+  source?: PluginSourceSnapshot;
   capabilities: readonly string[];
   dependencies: readonly KernelInstalledPluginDependencySnapshot[];
   security: {
@@ -218,12 +219,14 @@ export class KernelSystemService {
     const dependencyEdges = dependencyGraph.edges.filter(
       (edge) => edge.from === record.manifest.id
     );
+    const source = this.findPluginSource(record.manifest.id);
 
     return {
       id: record.manifest.id,
       version: record.manifest.version,
       requiresCore: record.manifest.requiresCore,
       state: record.state,
+      ...(source ? { source } : {}),
       capabilities: [...(record.manifest.capabilities ?? [])],
       dependencies: (record.manifest.dependencies ?? []).map((dependency) => {
         const edge = dependencyEdges.find((item) => item.to === dependency.pluginId);
@@ -257,6 +260,10 @@ export class KernelSystemService {
       ...(record.lastError ? { lastError: toRuntimeDiagnostic(record.lastError) } : {}),
       operations: describeAvailableOperations(record, dependencyGraph)
     };
+  }
+
+  private findPluginSource(pluginId: string): PluginSourceSnapshot | undefined {
+    return this.listPluginSources().find((source) => source.pluginId === pluginId);
   }
 
   private toCapabilitySnapshots(

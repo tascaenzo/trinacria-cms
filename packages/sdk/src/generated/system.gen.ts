@@ -76,7 +76,7 @@ export function createSystemApi(client: CmsSdkClientCore): SystemApi {
         method: "GET",
         path: "/v1/system/plugins/:pluginId/events",
         pathParams: input.path,
-        query: undefined,
+        query: input.query,
         body: undefined,
         headers: options?.headers,
         credentials: options?.credentials,

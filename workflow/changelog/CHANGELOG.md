@@ -72,9 +72,9 @@ domini applicativi nel core.
 - [x] `2026-05-23-m5-discovery-registration-autoload.md`
 - [x] `2026-05-23-m5-runtime-store-rehydration.md`
 - [x] `2026-05-23-m5-failure-rollback-events.md`
-- `2026-05-23-m5-api-openapi-sdk.md`
-- `2026-05-23-m5-admin-plugin-operations.md`
-- `2026-05-23-m5-docs-troubleshooting-qa.md`
+- [x] `2026-05-23-m5-api-openapi-sdk.md`
+- [x] `2026-05-23-m5-admin-plugin-operations.md`
+- [x] `2026-05-23-m5-docs-troubleshooting-qa.md`
 
 ### Include
 
@@ -103,6 +103,12 @@ domini applicativi nel core.
 - Failure rollback completato: il catalogo contribution espone solo plugin
   caricati, ripulisce contribution su failure/unload/disable e gli eventi runtime
   includono fase, conteggio failure e `statusReason`.
+- API/OpenAPI/SDK allineati: lo snapshot plugin include `source`, eventi plugin
+  supportano `limit` e il generated SDK espone i DTO M5 aggiornati.
+- Admin plugin operations aggiornato: la pagina mostra source, fase ultimo
+  failure, dependency status, eventi recenti e azioni consentite dal backend.
+- Documentazione M5 chiusa: guida runtime, troubleshooting IT/EN e README
+  package aggiornati con flussi API/SDK/admin.
 
 ### Fuori scope
 

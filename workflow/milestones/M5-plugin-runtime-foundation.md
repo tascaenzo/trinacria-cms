@@ -84,9 +84,9 @@ stabile.
 - [x] `workflow/tasks/done/2026-05-23-m5-discovery-registration-autoload.md`
 - [x] `workflow/tasks/done/2026-05-23-m5-runtime-store-rehydration.md`
 - [x] `workflow/tasks/done/2026-05-23-m5-failure-rollback-events.md`
-- [ ] `workflow/tasks/todo/2026-05-23-m5-api-openapi-sdk.md`
-- [ ] `workflow/tasks/todo/2026-05-23-m5-admin-plugin-operations.md`
-- [ ] `workflow/tasks/todo/2026-05-23-m5-docs-troubleshooting-qa.md`
+- [x] `workflow/tasks/done/2026-05-23-m5-api-openapi-sdk.md`
+- [x] `workflow/tasks/done/2026-05-23-m5-admin-plugin-operations.md`
+- [x] `workflow/tasks/done/2026-05-23-m5-docs-troubleshooting-qa.md`
 
 ## Dipendenze
 

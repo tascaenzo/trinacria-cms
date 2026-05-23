@@ -37,3 +37,13 @@ runtime implementato.
 ## Check
 
 - `./node_modules/.bin/prettier --check docs workflow packages/kernel/README.md packages/sdk/README.md packages/admin-kernel/README.md`
+
+## Esito
+
+- Aggiornate guida implementativa M5, manuali IT/EN e troubleshooting.
+- Aggiornati README di kernel, SDK e admin-kernel.
+- Changelog e milestone allineati alla chiusura task M5.
+
+## Check eseguiti
+
+- `npx prettier --check docs workflow packages/kernel/README.md packages/sdk/README.md packages/admin-kernel/README.md`

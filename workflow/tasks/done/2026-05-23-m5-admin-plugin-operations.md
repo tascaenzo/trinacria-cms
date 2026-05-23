@@ -35,3 +35,17 @@ plugin disponibili senza duplicare regole backend.
 
 - `npm run build -w @trinacria-cms/admin-kernel`
 - `npm run build -w @trinacria-cms/backoffice`
+
+## Esito
+
+- La pagina plugin mostra source discovery, stato runtime, dependency status,
+  fase ultimo failure ed eventi recenti.
+- Le azioni `load`, `unload`, `reload`, `enable`, `disable` continuano a usare
+  solo `operations[]` ricevute dal backend.
+- Gli eventi plugin vengono caricati via SDK con `query.limit`.
+
+## Check eseguiti
+
+- `npm run typecheck -w @trinacria-cms/admin-kernel`
+- `npm run build -w @trinacria-cms/admin-kernel`
+- `npm run build -w @trinacria-cms/backoffice`

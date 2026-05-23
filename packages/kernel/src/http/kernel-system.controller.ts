@@ -1,4 +1,9 @@
-import { createPluginApiResponder, parsePathParam, toOpenApiSchema } from "./api-http-utils.js";
+import {
+  createPluginApiResponder,
+  parsePathParam,
+  parseQueryNumber,
+  toOpenApiSchema
+} from "./api-http-utils.js";
 import { apiError } from "../contracts/api-contract.js";
 import type { KernelAdminRouteGuard } from "../contracts/kernel-admin-route-guard.js";
 import { HttpController, response, type HttpContext } from "@trinacria/http";
@@ -12,6 +17,18 @@ import {
 } from "../errors/plugin-errors.js";
 
 const responder = createPluginApiResponder("kernel");
+
+const PluginSourceSchema = s.object(
+  {
+    type: s.enum(["workspace", "package", "local-path"] as const),
+    name: s.string({ trim: true, minLength: 1 }),
+    entrypoint: s.string({ trim: true, minLength: 1 }),
+    status: s.enum(["discovered", "failed", "disabled"] as const),
+    pluginId: s.string({ trim: true, minLength: 1 }).optional(),
+    error: s.string({ trim: true, minLength: 1 }).optional()
+  },
+  { strict: true }
+);
 
 /**
  * Response shape for a single installed plugin exposed by discovery endpoints.
@@ -31,6 +48,7 @@ const KernelInstalledPluginSchema = s.object(
       "disabled",
       "unloaded"
     ] as const),
+    source: PluginSourceSchema.optional(),
     capabilities: s.array(s.string({ trim: true, minLength: 1 })),
     dependencies: s.array(
       s.object(
@@ -125,18 +143,6 @@ const KernelCapabilitySchema = s.object(
       "disabled",
       "unloaded"
     ] as const)
-  },
-  { strict: true }
-);
-
-const PluginSourceSchema = s.object(
-  {
-    type: s.enum(["workspace", "package", "local-path"] as const),
-    name: s.string({ trim: true, minLength: 1 }),
-    entrypoint: s.string({ trim: true, minLength: 1 }),
-    status: s.enum(["discovered", "failed", "disabled"] as const),
-    pluginId: s.string({ trim: true, minLength: 1 }).optional(),
-    error: s.string({ trim: true, minLength: 1 }).optional()
   },
   { strict: true }
 );
@@ -297,6 +303,15 @@ const PluginEventsResponseSchema = s.object(
   { strict: true }
 );
 
+const PluginEventsQueryParameters = [
+  {
+    name: "limit",
+    in: "query",
+    required: false,
+    schema: { type: "integer", minimum: 1, maximum: 200 }
+  }
+] as const;
+
 /**
  * Built-in kernel HTTP controller exposing runtime discovery for SDKs and
  * operational tooling.
@@ -423,6 +438,7 @@ export class KernelSystemHttpController extends HttpController {
           tags: ["System"],
           operationId: "listPluginEvents",
           ...(guardedSecurity ? { security: guardedSecurity } : {}),
+          parameters: [...PluginEventsQueryParameters],
           responses: {
             200: {
               description: "Recent plugin lifecycle events",
@@ -490,7 +506,13 @@ export class KernelSystemHttpController extends HttpController {
       return responder.notFound(`Plugin "${pluginId}" not found`);
     }
 
-    return responder.list(this.system.listPluginEvents(pluginId));
+    const requestedLimit = parseQueryNumber(ctx.query.limit);
+    const limit =
+      requestedLimit === undefined
+        ? undefined
+        : Math.min(200, Math.max(1, Math.floor(requestedLimit)));
+
+    return responder.list(this.system.listPluginEvents(pluginId, limit));
   };
 
   private fromPluginOperationError(pluginId: string, error: unknown) {

@@ -39,3 +39,17 @@ Allineare endpoint, DTO, OpenAPI e SDK agli stati runtime e alle operazioni M5.
 - `npm run build -w @trinacria-cms/kernel`
 - `npm run build -w @trinacria-cms/sdk`
 - `npm run test -w @trinacria-cms/sdk`
+
+## Esito
+
+- DTO plugin arricchito con `source` discovery.
+- Endpoint eventi plugin documentato con query `limit`.
+- OpenAPI snapshot e generated SDK aggiornati.
+- Test kernel e SDK allineati ai contratti M5.
+
+## Check eseguiti
+
+- `npm run typecheck -w @trinacria-cms/kernel`
+- `npm run test -w @trinacria-cms/kernel`
+- `npm run build -w @trinacria-cms/sdk`
+- `npm run test -w @trinacria-cms/sdk`

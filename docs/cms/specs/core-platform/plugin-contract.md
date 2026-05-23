@@ -555,10 +555,10 @@ Indexes:
 
 ### Accesso alle API plugin
 
-| Operazione | Permission                      | Chi puo fare         |
-| ---------- | ------------------------------- | -------------------- |
-| List/read  | `core-pack:plugins:read`        | admin bearer         |
-| Operate    | `core-pack:plugins:operate`     | admin bearer         |
+| Operazione | Permission                  | Chi puo fare |
+| ---------- | --------------------------- | ------------ |
+| List/read  | `core-pack:plugins:read`    | admin bearer |
+| Operate    | `core-pack:plugins:operate` | admin bearer |
 
 ### Regole
 
@@ -571,6 +571,7 @@ Indexes:
 ### Audit
 
 Ogni operazione (load, unload, reload, disable, enable) genera un evento di audit con:
+
 - attore (admin ID)
 - plugin target
 - operazione
@@ -581,15 +582,15 @@ Ogni operazione (load, unload, reload, disable, enable) genera un evento di audi
 
 ### Eventi core di piattaforma
 
-| Nome canonico                | Owner      | Visibility | Delivery | Quando                     |
-| ---------------------------- | ---------- | ---------- | -------- | -------------------------- |
-| `core.plugin.registered`     | kernel     | `audit`    | `sync`   | plugin registrato          |
-| `core.plugin.loaded`         | kernel     | `audit`    | `sync`   | plugin caricato            |
-| `core.plugin.unloaded`       | kernel     | `audit`    | `sync`   | plugin scaricato           |
-| `core.plugin.failed`         | kernel     | `audit`    | `sync`   | plugin in failure          |
-| `core.plugin.disabled`       | kernel     | `audit`    | `sync`   | plugin disabilitato        |
-| `core.plugin.enabled`        | kernel     | `audit`    | `sync`   | plugin riabilitato         |
-| `core.plugin.operation`      | kernel     | `audit`    | `sync`   | operazione su plugin       |
+| Nome canonico            | Owner  | Visibility | Delivery | Quando               |
+| ------------------------ | ------ | ---------- | -------- | -------------------- |
+| `core.plugin.registered` | kernel | `audit`    | `sync`   | plugin registrato    |
+| `core.plugin.loaded`     | kernel | `audit`    | `sync`   | plugin caricato      |
+| `core.plugin.unloaded`   | kernel | `audit`    | `sync`   | plugin scaricato     |
+| `core.plugin.failed`     | kernel | `audit`    | `sync`   | plugin in failure    |
+| `core.plugin.disabled`   | kernel | `audit`    | `sync`   | plugin disabilitato  |
+| `core.plugin.enabled`    | kernel | `audit`    | `sync`   | plugin riabilitato   |
+| `core.plugin.operation`  | kernel | `audit`    | `sync`   | operazione su plugin |
 
 ### Payload eventi
 

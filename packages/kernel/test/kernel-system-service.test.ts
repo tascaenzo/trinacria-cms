@@ -8,90 +8,109 @@ import {
 } from "../src/runtime/index.js";
 
 test("KernelSystemService exposes operational plugin snapshots", () => {
-  const service = new KernelSystemService({
-    list: () =>
-      [
-        {
-          manifest: {
-            id: "cms/plugin-content",
-            version: "1.2.0",
-            requiresCore: "^0.1.0",
-            capabilities: ["content.read"],
-            dependencies: [
-              {
-                pluginId: "cms/plugin-users",
-                versionRange: "^1.0.0"
-              }
-            ]
+  const service = new KernelSystemService(
+    {
+      list: () =>
+        [
+          {
+            manifest: {
+              id: "cms/plugin-content",
+              version: "1.2.0",
+              requiresCore: "^0.1.0",
+              capabilities: ["content.read"],
+              dependencies: [
+                {
+                  pluginId: "cms/plugin-users",
+                  versionRange: "^1.0.0"
+                }
+              ]
+            },
+            state: "failed",
+            failureCount: 2,
+            failedAt: new Date("2026-04-06T08:00:00.000Z"),
+            lastFailurePhase: "init",
+            lastError: Object.assign(new Error("init exploded"), {
+              name: "PluginLifecycleError"
+            }),
+            statusReason: {
+              code: "plugin_failed",
+              message: "Plugin entered failed state during lifecycle execution"
+            }
+          } satisfies PluginRuntimeRecord,
+          {
+            manifest: {
+              id: "cms/plugin-users",
+              version: "1.0.1",
+              requiresCore: "^0.1.0"
+            },
+            state: "disabled",
+            disabledAt: new Date("2026-04-06T09:00:00.000Z"),
+            disabledReason: "manual stop",
+            statusReason: {
+              code: "plugin_disabled",
+              message: "Plugin is disabled and cannot be loaded"
+            }
+          } satisfies PluginRuntimeRecord
+        ] as const,
+      describeDependencies: () => ({
+        nodes: [
+          {
+            pluginId: "cms/plugin-content",
+            state: "failed",
+            version: "1.2.0"
           },
-          state: "failed",
-          failureCount: 2,
-          failedAt: new Date("2026-04-06T08:00:00.000Z"),
-          lastFailurePhase: "init",
-          lastError: Object.assign(new Error("init exploded"), {
-            name: "PluginLifecycleError"
-          }),
-          statusReason: {
-            code: "plugin_failed",
-            message: "Plugin entered failed state during lifecycle execution"
+          {
+            pluginId: "cms/plugin-users",
+            state: "disabled",
+            version: "1.0.1"
           }
-        } satisfies PluginRuntimeRecord,
-        {
-          manifest: {
-            id: "cms/plugin-users",
-            version: "1.0.1",
-            requiresCore: "^0.1.0"
-          },
-          state: "disabled",
-          disabledAt: new Date("2026-04-06T09:00:00.000Z"),
-          disabledReason: "manual stop",
-          statusReason: {
-            code: "plugin_disabled",
-            message: "Plugin is disabled and cannot be loaded"
+        ],
+        edges: [
+          {
+            from: "cms/plugin-content",
+            to: "cms/plugin-users",
+            optional: false,
+            requiredRange: "^1.0.0",
+            status: "disabled",
+            currentVersion: "1.0.1"
           }
-        } satisfies PluginRuntimeRecord
-      ] as const,
-    describeDependencies: () => ({
-      nodes: [
-        {
-          pluginId: "cms/plugin-content",
-          state: "failed",
-          version: "1.2.0"
+        ],
+        warnings: []
+      }),
+      describeContributions: () => ({
+        entities: [],
+        settings: [],
+        events: {
+          emits: [],
+          subscribes: []
         },
-        {
-          pluginId: "cms/plugin-users",
-          state: "disabled",
-          version: "1.0.1"
+        admin: {
+          navigation: [],
+          routes: [],
+          resources: [],
+          widgets: [],
+          settingsSections: []
         }
-      ],
-      edges: [
+      }),
+      events: () => [],
+      load: async () => {},
+      unload: async () => {},
+      reload: async () => {},
+      disable: async () => {},
+      enable: async () => {}
+    },
+    {
+      pluginSources: () => [
         {
-          from: "cms/plugin-content",
-          to: "cms/plugin-users",
-          optional: false,
-          requiredRange: "^1.0.0",
-          status: "disabled",
-          currentVersion: "1.0.1"
+          type: "workspace",
+          name: "content",
+          entrypoint: "./plugins/content/index.ts",
+          status: "discovered",
+          pluginId: "cms/plugin-content"
         }
-      ],
-      warnings: []
-    }),
-    describeContributions: () => ({
-      entities: [],
-      settings: [],
-      events: {
-        emits: [],
-        subscribes: []
-      },
-      admin: {
-        navigation: [],
-        routes: [],
-        resources: [],
-        widgets: [],
-        settingsSections: []
-      }
-    })
-  });
+      ]
+    }
+  );
 
   const [content, users] = service.listInstalledPlugins();
 
@@ -106,6 +125,8 @@ test("KernelSystemService exposes operational plugin snapshots", () => {
   assert.equal(content?.failureCount, 2);
   assert.equal(content?.lastFailurePhase, "init");
   assert.equal(content?.statusReason?.code, "plugin_failed");
+  assert.equal(content?.source?.type, "workspace");
+  assert.equal(content?.source?.status, "discovered");
   assert.equal(users?.operations.find((item) => item.operation === "enable")?.available, true);
   assert.equal(
     users?.operations.find((item) => item.operation === "load")?.reason,

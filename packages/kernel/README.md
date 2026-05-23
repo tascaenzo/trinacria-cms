@@ -20,6 +20,8 @@ framework.
 - runtime observability events, retry policy, dependency graph snapshot
 - runtime state persistence (`PluginRuntimeStore`)
 - starter bootstrap with optional automatic plugin security provisioning
+- system API DTOs for plugin source, lifecycle operations, dependency status,
+  recent events, and contribution diagnostics
 
 ## Key exports
 
@@ -37,6 +39,9 @@ framework.
 - strict plugin transitions
 - dependency graph checks (missing deps, cycles)
 - lifecycle rollback on failure
+- contribution catalog visibility is tied to `loaded` state only
+- `GET /v1/system/plugins/:pluginId/events` supports `limit` for recent event
+  diagnostics
 - runtime hooks for cross-cutting orchestration:
   - `onAfterLoad`
   - `onBeforeUnregister`

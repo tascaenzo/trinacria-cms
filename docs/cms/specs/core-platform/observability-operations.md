@@ -98,11 +98,11 @@ Indici:
 
 ### Accesso
 
-| Endpoint                       | Permission                   | Chi puo fare        |
-| ------------------------------ | ---------------------------- | ------------------- |
-| `GET /v1/system/health`        | nessuna (pubblico ridotto)   | anyone              |
-| `GET /v1/system/events`        | `core-pack:plugins:read`     | admin bearer        |
-| `GET /v1/system/audit-events`  | `core-pack:audit:read`       | admin bearer        |
+| Endpoint                      | Permission                 | Chi puo fare |
+| ----------------------------- | -------------------------- | ------------ |
+| `GET /v1/system/health`       | nessuna (pubblico ridotto) | anyone       |
+| `GET /v1/system/events`       | `core-pack:plugins:read`   | admin bearer |
+| `GET /v1/system/audit-events` | `core-pack:audit:read`     | admin bearer |
 
 ### Regole
 
@@ -121,11 +121,11 @@ Indici:
 
 ### Eventi di observability
 
-| Nome canonico                         | Owner      | Visibility | Delivery | Payload                                       | Quando                     |
-| ------------------------------------- | ---------- | ---------- | -------- | --------------------------------------------- | -------------------------- |
-| `core.observability.health.changed`   | core-pack  | `audit`    | `sync`   | `{ status, previousStatus, details }`         | health snapshot changes    |
-| `core.observability.audit.stored`     | core-pack  | `audit`    | `sync`   | `{ eventType, actorId, success }`             | audit event persistito     |
-| `core.observability.retention.updated`| core-pack  | `audit`    | `sync`   | `{ collection, oldRetention, newRetention }`  | retention modificata       |
+| Nome canonico                          | Owner     | Visibility | Delivery | Payload                                      | Quando                  |
+| -------------------------------------- | --------- | ---------- | -------- | -------------------------------------------- | ----------------------- |
+| `core.observability.health.changed`    | core-pack | `audit`    | `sync`   | `{ status, previousStatus, details }`        | health snapshot changes |
+| `core.observability.audit.stored`      | core-pack | `audit`    | `sync`   | `{ eventType, actorId, success }`            | audit event persistito  |
+| `core.observability.retention.updated` | core-pack | `audit`    | `sync`   | `{ collection, oldRetention, newRetention }` | retention modificata    |
 
 ### Regola anti-loop
 
