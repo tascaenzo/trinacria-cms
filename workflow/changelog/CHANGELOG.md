@@ -68,7 +68,7 @@ domini applicativi nel core.
 ### Task iniziali
 
 - [x] `2026-05-23-m5-runtime-state-machine.md`
-- `2026-05-23-m5-dependency-graph-ordering.md`
+- [x] `2026-05-23-m5-dependency-graph-ordering.md`
 - `2026-05-23-m5-discovery-registration-autoload.md`
 - `2026-05-23-m5-runtime-store-rehydration.md`
 - `2026-05-23-m5-failure-rollback-events.md`
@@ -91,6 +91,9 @@ domini applicativi nel core.
 - State machine e available operations allineate: `unload` recupera plugin in
   stato `failed` dopo un unload fallito, e le operazioni esposte rispettano gli
   stati transitori.
+- Dependency graph e ordering rafforzati: `loadMany()` include dependency
+  obbligatorie, blocca dependency disabilitate/fuori range prima del load e gli
+  snapshot API mostrano operazioni indisponibili quando il grafo le blocca.
 
 ### Fuori scope
 

@@ -255,7 +255,7 @@ export class KernelSystemService {
       ...(record.loadedAt ? { loadedAt: record.loadedAt.toISOString() } : {}),
       ...(record.statusReason ? { statusReason: record.statusReason } : {}),
       ...(record.lastError ? { lastError: toRuntimeDiagnostic(record.lastError) } : {}),
-      operations: describeAvailableOperations(record)
+      operations: describeAvailableOperations(record, dependencyGraph)
     };
   }
 
@@ -273,31 +273,60 @@ export class KernelSystemService {
 }
 
 export function describeAvailableOperations(
-  record: PluginRuntimeRecord
+  record: PluginRuntimeRecord,
+  dependencyGraph?: PluginDependencyGraphSnapshot
 ): readonly PluginRuntimeOperationAvailability[] {
+  const blockingDependency = dependencyGraph
+    ? findBlockingRequiredDependency(record.manifest.id, dependencyGraph)
+    : undefined;
+  const loadedDependents = dependencyGraph
+    ? findLoadedRequiredDependents(record.manifest.id, dependencyGraph)
+    : [];
+  const hasLoadedDependents = loadedDependents.length > 0;
+  const dependencyBlockReason = blockingDependency
+    ? describeDependencyIssue(record.manifest.id, blockingDependency)
+    : undefined;
+  const dependentBlockReason = hasLoadedDependents
+    ? `Plugin has loaded required dependents: ${loadedDependents.join(", ")}`
+    : undefined;
+
   return [
-    availability("load", ["registered", "unloaded", "failed"].includes(record.state), {
-      disabledReason: "Disabled plugins must be enabled before load",
-      defaultReason: `Plugin cannot be loaded from state "${record.state}"`,
-      record
-    }),
-    availability("unload", ["loaded", "failed"].includes(record.state), {
-      defaultReason: `Only loaded or failed plugins can be unloaded; current state is "${record.state}"`,
-      record
-    }),
-    availability("reload", ["registered", "unloaded", "failed", "loaded"].includes(record.state), {
-      disabledReason: "Disabled plugins must be enabled before reload",
-      defaultReason: `Plugin cannot be reloaded from state "${record.state}"`,
+    availability(
+      "load",
+      ["registered", "unloaded", "failed"].includes(record.state) && !blockingDependency,
+      {
+        disabledReason: "Disabled plugins must be enabled before load",
+        defaultReason:
+          dependencyBlockReason ?? `Plugin cannot be loaded from state "${record.state}"`,
+        record
+      }
+    ),
+    availability("unload", ["loaded", "failed"].includes(record.state) && !hasLoadedDependents, {
+      defaultReason:
+        dependentBlockReason ??
+        `Only loaded or failed plugins can be unloaded; current state is "${record.state}"`,
       record
     }),
     availability(
+      "reload",
+      ["registered", "unloaded", "failed", "loaded"].includes(record.state) && !blockingDependency,
+      {
+        disabledReason: "Disabled plugins must be enabled before reload",
+        defaultReason:
+          dependencyBlockReason ?? `Plugin cannot be reloaded from state "${record.state}"`,
+        record
+      }
+    ),
+    availability(
       "disable",
-      ["registered", "loaded", "unloading", "failed", "unloaded"].includes(record.state),
+      ["registered", "loaded", "unloading", "failed", "unloaded"].includes(record.state) &&
+        !(record.state === "loaded" && hasLoadedDependents),
       {
         defaultReason:
-          record.state === "disabled"
+          dependentBlockReason ??
+          (record.state === "disabled"
             ? 'Plugin is already in state "disabled"'
-            : `Plugin cannot be disabled from transient state "${record.state}"`,
+            : `Plugin cannot be disabled from transient state "${record.state}"`),
         record
       }
     ),
@@ -356,9 +385,10 @@ function describeDependencyIssue(
   pluginId: string,
   edge: PluginDependencyGraphSnapshot["edges"][number]
 ): string {
+  const label = edge.optional ? "Optional dependency" : "Required dependency";
   switch (edge.status) {
     case "missing":
-      return `Required dependency "${edge.to}" is not registered for plugin "${pluginId}"`;
+      return `${label} "${edge.to}" is not registered for plugin "${pluginId}"`;
     case "disabled":
       return `Dependency "${edge.to}" is disabled`;
     case "version-mismatch":
@@ -366,4 +396,28 @@ function describeDependencyIssue(
     default:
       return `Dependency "${edge.to}" is not operational`;
   }
+}
+
+function findBlockingRequiredDependency(
+  pluginId: string,
+  dependencyGraph: PluginDependencyGraphSnapshot
+): PluginDependencyGraphSnapshot["edges"][number] | undefined {
+  return dependencyGraph.edges.find(
+    (edge) =>
+      edge.from === pluginId &&
+      !edge.optional &&
+      ["missing", "disabled", "version-mismatch"].includes(edge.status)
+  );
+}
+
+function findLoadedRequiredDependents(
+  pluginId: string,
+  dependencyGraph: PluginDependencyGraphSnapshot
+): string[] {
+  return dependencyGraph.edges
+    .filter((edge) => edge.to === pluginId && !edge.optional)
+    .filter((edge) =>
+      dependencyGraph.nodes.some((node) => node.pluginId === edge.from && node.state === "loaded")
+    )
+    .map((edge) => edge.from);
 }

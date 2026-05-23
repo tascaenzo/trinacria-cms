@@ -1060,10 +1060,31 @@ export class InMemoryPluginRuntime implements PluginRuntime {
 
       visiting.add(pluginId);
       for (const dep of this.extractRequiredDependencies(record.manifest)) {
-        if (!this.records.has(dep.pluginId)) {
+        const dependencyRecord = this.records.get(dep.pluginId);
+        if (!dependencyRecord) {
           throw new PluginDependencyError(
             `Plugin "${pluginId}" is missing required dependency "${dep.pluginId}"`,
             { pluginId, dependencyId: dep.pluginId }
+          );
+        }
+        if (dependencyRecord.state === "disabled") {
+          throw new PluginDependencyError(
+            `Plugin "${pluginId}" depends on disabled plugin "${dep.pluginId}"`,
+            {
+              pluginId,
+              dependencyId: dep.pluginId
+            }
+          );
+        }
+        if (!satisfiesVersion(dependencyRecord.manifest.version, dep.versionRange)) {
+          throw new PluginDependencyError(
+            `Plugin "${pluginId}" requires dependency "${dep.pluginId}" version "${dep.versionRange}" but found "${dependencyRecord.manifest.version}"`,
+            {
+              pluginId,
+              dependencyId: dep.pluginId,
+              requiredRange: dep.versionRange,
+              currentVersion: dependencyRecord.manifest.version
+            }
           );
         }
         visit(dep.pluginId);
@@ -1071,9 +1092,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       visiting.delete(pluginId);
       visited.add(pluginId);
 
-      if (targetSet.has(pluginId)) {
-        ordered.push(pluginId);
-      }
+      ordered.push(pluginId);
     };
 
     for (const pluginId of targetSet) {

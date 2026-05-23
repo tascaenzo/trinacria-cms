@@ -245,6 +245,60 @@ test("loadMany loads plugins in dependency order", async () => {
   assert.ok(users.loadedAt!.getTime() <= content.loadedAt!.getTime());
 });
 
+test("loadMany includes required dependencies even when only target is requested", async () => {
+  const app = createFakeApp();
+  const calls: string[] = [];
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0", app });
+
+  await runtime.register({
+    manifest: {
+      id: "cms/plugin-users",
+      version: "1.0.0",
+      requiresCore: "^0.1.0"
+    },
+    onLoad() {
+      calls.push("users");
+    }
+  });
+  await runtime.register({
+    manifest: {
+      id: "cms/plugin-content",
+      version: "1.0.0",
+      requiresCore: "^0.1.0",
+      dependencies: [{ pluginId: "cms/plugin-users", versionRange: "^1.0.0" }]
+    },
+    onLoad() {
+      calls.push("content");
+    }
+  });
+
+  await runtime.loadMany(["cms/plugin-content"]);
+
+  assert.deepEqual(calls, ["users", "content"]);
+});
+
+test("loadMany rejects disabled required dependencies before loading targets", async () => {
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0" });
+
+  await runtime.register({
+    id: "cms/plugin-users",
+    version: "1.0.0",
+    requiresCore: "^0.1.0"
+  });
+  await runtime.register({
+    id: "cms/plugin-content",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    dependencies: [{ pluginId: "cms/plugin-users", versionRange: "^1.0.0" }]
+  });
+  await runtime.disable("cms/plugin-users", "maintenance");
+
+  await assert.rejects(async () => runtime.loadMany(["cms/plugin-content"]), PluginDependencyError);
+
+  const content = runtime.list().find((item) => item.manifest.id === "cms/plugin-content");
+  assert.equal(content?.state, "registered");
+});
+
 test("describeDependencies reports optional missing dependency as warning", async () => {
   const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0" });
 

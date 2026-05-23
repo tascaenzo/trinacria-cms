@@ -97,7 +97,11 @@ test("KernelSystemService exposes operational plugin snapshots", () => {
 
   assert.equal(content?.dependencies[0]?.status, "disabled");
   assert.equal(content?.dependencies[0]?.state, "disabled");
-  assert.equal(content?.operations.find((item) => item.operation === "load")?.available, true);
+  assert.equal(content?.operations.find((item) => item.operation === "load")?.available, false);
+  assert.equal(
+    content?.operations.find((item) => item.operation === "load")?.reason,
+    'Dependency "cms/plugin-users" is disabled'
+  );
   assert.equal(content?.operations.find((item) => item.operation === "enable")?.available, false);
   assert.equal(content?.failureCount, 2);
   assert.equal(content?.lastFailurePhase, "init");
@@ -182,6 +186,32 @@ test("KernelSystemService executes supported plugin operations", async () => {
     operation: "enable"
   });
   assert.equal(enabled.plugin.state, "registered");
+});
+
+test("KernelSystemService blocks unload and disable when loaded dependents exist", async () => {
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0" });
+  await runtime.register({
+    id: "cms/plugin-users",
+    version: "1.0.0",
+    requiresCore: "^0.1.0"
+  });
+  await runtime.register({
+    id: "cms/plugin-content",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    dependencies: [{ pluginId: "cms/plugin-users", versionRange: "^1.0.0" }]
+  });
+  await runtime.loadMany(["cms/plugin-content"]);
+
+  const service = new KernelSystemService(runtime);
+  const users = service.getInstalledPlugin("cms/plugin-users");
+
+  assert.equal(users?.operations.find((item) => item.operation === "unload")?.available, false);
+  assert.equal(users?.operations.find((item) => item.operation === "disable")?.available, false);
+  assert.equal(
+    users?.operations.find((item) => item.operation === "unload")?.reason,
+    "Plugin has loaded required dependents: cms/plugin-content"
+  );
 });
 
 function createEmptyRuntime(): ConstructorParameters<typeof KernelSystemService>[0] {
