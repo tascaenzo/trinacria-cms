@@ -2,9 +2,9 @@
 
 Stato: `deferred`
 
-Questa milestone non e attiva. Resta in backlog dominio finche non vengono
-chiuse le specifiche core della piattaforma plugin-first in `M4.0` e finche non
-viene riaperta una milestone dominio dedicata.
+Questa milestone non e attiva. Resta in backlog dominio finche non viene chiusa
+`M4 - Core Platform Foundation` e finche non viene riaperta una milestone
+dominio dedicata.
 
 ## Obiettivo
 
@@ -28,8 +28,8 @@ draft/publish, revisioni, stati e audit minimo.
 
 ## Dipendenze
 
-- completamento di `M4.0 - Core Platform Specifications`
-- completamento di `M4` come plugin editoriale, non come estensione del core
+- completamento di `M4 - Core Platform Foundation`
+- completamento della futura milestone editoriale rinumerata, non come estensione del core
 - definizione chiara delle permission editoriali
 - presenza di almeno un dominio content type/entry stabile
 

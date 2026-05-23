@@ -16,7 +16,7 @@ Questa directory definisce il workflow operativo del progetto per continuare lo 
 2. Quando il lavoro parte, il file va spostato in `tasks/in-progress`.
 3. Quando il lavoro e concluso, il file va spostato in `tasks/done`.
 4. Alla chiusura di ogni task bisogna:
-   - aggiornare `workflow/changelog/CHANGELOG.md`
+   - aggiornare il changelog della milestone in `workflow/changelog/M<n>-<slug>.md`
    - allineare la documentazione tecnica toccata dal task
    - annotare nel task i file modificati e gli eventuali follow-up
 5. Le milestone sono contenitori di task. Una milestone si considera chiusa quando tutti i task collegati sono in `done`.
@@ -45,6 +45,6 @@ Un task e `done` solo se:
 
 - il codice e allineato con l'obiettivo del task
 - i check rilevanti sono stati eseguiti oppure e esplicitato cosa manca
-- il changelog e aggiornato
+- il changelog della milestone e aggiornato
 - la documentazione toccata dal task e stata riallineata
 - sono stati annotati eventuali debiti residui o task successivi

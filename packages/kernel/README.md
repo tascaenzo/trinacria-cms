@@ -24,8 +24,8 @@ framework.
 ## Key exports
 
 - contracts: `plugin-manifest`, `plugin-runtime`, `plugin-runtime-store`, `plugin-security-provisioner`, `db-adapter`, `authz-service`
-- runtime: `validatePluginManifest`, `assertPluginCompatibility`, `InMemoryPluginRuntime`
-- runtime helpers: `isValidPermissionKey`, `parsePermissionKey`
+- runtime: `validatePluginManifest`, `assertPluginCompatibility`, `InMemoryPluginRuntime`, `PluginContributionRegistry`
+- runtime helpers: `isValidPermissionKey`, `parsePermissionKey`, `buildContributionKey`, `buildSettingKey`, `isValidPluginId`, `isValidNamespaceSegment`
 - pattern helpers: `isValidPermissionPattern`, `matchesPermissionPattern`
 - runtime health: `KernelHealthService`
 - persistence: `EntityRegistry`, `MongoDbAdapter`, `createMongoDbAdapter`
@@ -49,6 +49,9 @@ framework.
 ## Stability policy
 
 Kernel contracts are compatibility-critical. Breaking changes should be explicit and versioned.
+
+Developer-facing plugin API reference:
+[`docs/cms/specs/core-platform/public-plugin-api.md`](../../docs/cms/specs/core-platform/public-plugin-api.md).
 
 ## Scripts
 

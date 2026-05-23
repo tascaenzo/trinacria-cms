@@ -6,6 +6,7 @@ import {
   httpProvider,
   type EntityRegistry
 } from "@trinacria-cms/kernel";
+import { CorePackAuthModule } from "../auth/auth.module.js";
 import { CORE_PACK_JWT_AUTH_SERVICE_TOKEN } from "../auth/auth.tokens.js";
 import { SettingsController } from "./settings.controller.js";
 import { SettingsDefinitionsRepository } from "./definitions/settings-definitions.repository.js";
@@ -33,6 +34,7 @@ import {
  */
 export const CorePackSettingsModule = defineModule({
   name: "CorePackSettingsModule",
+  imports: [CorePackAuthModule],
   providers: [
     factoryProvider(
       SETTINGS_ENTITY_REGISTRATION_TOKEN,

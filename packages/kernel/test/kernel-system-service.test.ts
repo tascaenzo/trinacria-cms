@@ -71,6 +71,21 @@ test("KernelSystemService exposes operational plugin snapshots", () => {
         }
       ],
       warnings: []
+    }),
+    describeContributions: () => ({
+      entities: [],
+      settings: [],
+      events: {
+        emits: [],
+        subscribes: []
+      },
+      admin: {
+        navigation: [],
+        routes: [],
+        resources: [],
+        widgets: [],
+        settingsSections: []
+      }
     })
   });
 
@@ -88,6 +103,53 @@ test("KernelSystemService exposes operational plugin snapshots", () => {
     users?.operations.find((item) => item.operation === "load")?.reason,
     "Disabled plugins must be enabled before load"
   );
+});
+
+test("KernelSystemService exposes plugin contribution catalog", async () => {
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0" });
+  await runtime.register({
+    id: "blog-pack",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    entities: [{ name: "posts", schemaVersion: 1 }],
+    admin: {
+      routes: [{ id: "posts", path: "/blog/posts", label: "Posts" }]
+    }
+  });
+
+  const service = new KernelSystemService(runtime);
+  const catalog = service.listPluginContributions();
+
+  assert.equal(catalog.entities[0]?.key, "blog-pack:posts");
+  assert.equal(catalog.admin.routes[0]?.declaration.path, "/blog/posts");
+});
+
+test("KernelSystemService exposes configured plugin discovery sources", () => {
+  const service = new KernelSystemService(createEmptyRuntime(), {
+    pluginSources: () => [
+      {
+        type: "package",
+        name: "blog-pack",
+        entrypoint: "@acme/blog-pack",
+        status: "discovered",
+        pluginId: "blog-pack"
+      },
+      {
+        type: "local-path",
+        name: "broken-pack",
+        entrypoint: "./plugins/broken-pack/index.mjs",
+        status: "failed",
+        error: "module not found"
+      }
+    ]
+  });
+
+  const sources = service.listPluginSources();
+
+  assert.equal(sources.length, 2);
+  assert.equal(sources[0]?.status, "discovered");
+  assert.equal(sources[1]?.status, "failed");
+  assert.equal(sources[1]?.error, "module not found");
 });
 
 test("KernelSystemService executes supported plugin operations", async () => {
@@ -117,6 +179,38 @@ test("KernelSystemService executes supported plugin operations", async () => {
   });
   assert.equal(enabled.plugin.state, "registered");
 });
+
+function createEmptyRuntime(): ConstructorParameters<typeof KernelSystemService>[0] {
+  return {
+    list: () => [],
+    describeDependencies: () => ({
+      nodes: [],
+      edges: [],
+      warnings: []
+    }),
+    describeContributions: () => ({
+      entities: [],
+      settings: [],
+      events: {
+        emits: [],
+        subscribes: []
+      },
+      admin: {
+        navigation: [],
+        routes: [],
+        resources: [],
+        widgets: [],
+        settingsSections: []
+      }
+    }),
+    load: async () => {},
+    unload: async () => {},
+    reload: async () => {},
+    disable: async () => {},
+    enable: async () => {},
+    events: () => []
+  };
+}
 
 test("KernelSystemService exposes recent plugin lifecycle events", async () => {
   const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0" });

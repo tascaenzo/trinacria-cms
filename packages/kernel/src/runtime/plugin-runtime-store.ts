@@ -192,7 +192,10 @@ export class DbPluginRuntimeStore implements PluginRuntimeStore {
     );
 
     if (existing) {
-      await repository.updateOne({ filter: { pluginId: record.manifest.id } }, payload);
+      await repository.updateOne(
+        { filter: { pluginId: record.manifest.id } },
+        withRuntimeRecordUnsetFields(payload)
+      );
       return;
     }
 
@@ -320,6 +323,32 @@ function toPersistedRuntimeRecord(
   }
 
   return persisted;
+}
+
+function withRuntimeRecordUnsetFields(
+  payload: PersistedPluginRuntimeRecord
+): Partial<PersistedPluginRuntimeRecord> {
+  const update: Partial<PersistedPluginRuntimeRecord> = { ...payload };
+  const optionalFields: Array<keyof PersistedPluginRuntimeRecord> = [
+    "lastFailurePhase",
+    "lastErrorCode",
+    "lastErrorName",
+    "lastErrorMessage",
+    "lastErrorDetails",
+    "statusReason",
+    "disabledReason",
+    "loadedAt",
+    "failedAt",
+    "disabledAt"
+  ];
+
+  for (const field of optionalFields) {
+    if (!(field in update)) {
+      update[field] = undefined;
+    }
+  }
+
+  return update;
 }
 
 function supportsIndexSetup(adapter: DbAdapter): adapter is DbAdapter & {

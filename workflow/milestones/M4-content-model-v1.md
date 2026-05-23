@@ -1,9 +1,11 @@
 # M4 - Editorial Pack Foundation V1
 
-Stato: `deferred`
+Stato: `deferred / da rinumerare`
 
-Questa milestone non e attiva. Resta in backlog dominio finche non vengono
-chiuse le specifiche core della piattaforma plugin-first in `M4.0`.
+Questa milestone non e attiva e il nome storico e fuorviante: il numero `M4`
+ora identifica la fondazione core della piattaforma plugin-first. Questo blocco
+editoriale resta in backlog dominio e andra rinumerato quando il core sara
+pronto.
 
 ## Obiettivo
 
@@ -31,7 +33,7 @@ con plugin funzionali sopra `kernel`, `core-pack` e Mongo.
 
 ## Dipendenze
 
-- completamento di `M4.0 - Core Platform Specifications`
+- completamento di `M4 - Core Platform Foundation`
 - completamento di `M1`
 - preferibilmente completamento di `M2` per sfruttare settings e config in modo coerente
 - decisione finale sul package workspace del plugin editoriale

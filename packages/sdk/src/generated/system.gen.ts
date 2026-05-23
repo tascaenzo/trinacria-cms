@@ -2,14 +2,16 @@
 // Auto-generated from OpenAPI. Do not edit by hand.
 
 import type { CmsSdkClientCore, SdkRequestOverrides } from "../runtime/types.js";
-import type { ExecutePluginOperationRequest, ExecutePluginOperationResponse, GetInstalledPluginRequest, GetInstalledPluginResponse, ListInstalledCapabilitiesRequest, ListInstalledCapabilitiesResponse, ListInstalledPluginsRequest, ListInstalledPluginsResponse, ListPluginEventsRequest, ListPluginEventsResponse } from "./types.gen.js";
+import type { ExecutePluginOperationRequest, ExecutePluginOperationResponse, GetInstalledPluginRequest, GetInstalledPluginResponse, ListInstalledCapabilitiesRequest, ListInstalledCapabilitiesResponse, ListInstalledPluginsRequest, ListInstalledPluginsResponse, ListPluginContributionsRequest, ListPluginContributionsResponse, ListPluginEventsRequest, ListPluginEventsResponse, ListPluginSourcesRequest, ListPluginSourcesResponse } from "./types.gen.js";
 
 export interface SystemApi {
   executePluginOperation(input: ExecutePluginOperationRequest, options?: SdkRequestOverrides): Promise<ExecutePluginOperationResponse>;
   getInstalledPlugin(input: GetInstalledPluginRequest, options?: SdkRequestOverrides): Promise<GetInstalledPluginResponse>;
   listInstalledCapabilities(options?: SdkRequestOverrides): Promise<ListInstalledCapabilitiesResponse>;
   listInstalledPlugins(options?: SdkRequestOverrides): Promise<ListInstalledPluginsResponse>;
+  listPluginContributions(options?: SdkRequestOverrides): Promise<ListPluginContributionsResponse>;
   listPluginEvents(input: ListPluginEventsRequest, options?: SdkRequestOverrides): Promise<ListPluginEventsResponse>;
+  listPluginSources(options?: SdkRequestOverrides): Promise<ListPluginSourcesResponse>;
 }
 
 export function createSystemApi(client: CmsSdkClientCore): SystemApi {
@@ -58,11 +60,33 @@ export function createSystemApi(client: CmsSdkClientCore): SystemApi {
         credentials: options?.credentials,
         signal: options?.signal,
       }),
+    listPluginContributions: async (options) =>
+      client.request({
+        method: "GET",
+        path: "/v1/system/plugin-contributions",
+        pathParams: undefined,
+        query: undefined,
+        body: undefined,
+        headers: options?.headers,
+        credentials: options?.credentials,
+        signal: options?.signal,
+      }),
     listPluginEvents: async (input, options) =>
       client.request({
         method: "GET",
         path: "/v1/system/plugins/:pluginId/events",
         pathParams: input.path,
+        query: undefined,
+        body: undefined,
+        headers: options?.headers,
+        credentials: options?.credentials,
+        signal: options?.signal,
+      }),
+    listPluginSources: async (options) =>
+      client.request({
+        method: "GET",
+        path: "/v1/system/plugins/sources",
+        pathParams: undefined,
         query: undefined,
         body: undefined,
         headers: options?.headers,

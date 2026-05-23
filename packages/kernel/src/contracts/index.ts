@@ -5,6 +5,7 @@ export * from "./cms-starter.js";
 export * from "./db-adapter.js";
 export * from "./kernel-admin-route-guard.js";
 export * from "./namespace-context.js";
+export * from "./plugin-discovery.js";
 export * from "./plugin-manifest.js";
 export * from "./plugin-runtime.js";
 export * from "./plugin-runtime-store.js";

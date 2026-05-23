@@ -5,7 +5,7 @@
 - Milestone: `M4.0 - Core Platform Specifications`
 - Stato: `draft`
 - Scope: low-level specification
-- Ultimo aggiornamento: `2026-05-20`
+- Ultimo aggiornamento: `2026-05-22`
 
 ## Decisione
 
@@ -551,6 +551,77 @@ Indexes:
 | `state_lookup`     | `{ state: 1 }`      | no     |
 | `updated_lookup`   | `{ updatedAt: -1 }` | no     |
 
+## Security e permission
+
+### Accesso alle API plugin
+
+| Operazione | Permission                      | Chi puo fare         |
+| ---------- | ------------------------------- | -------------------- |
+| List/read  | `core-pack:plugins:read`        | admin bearer         |
+| Operate    | `core-pack:plugins:operate`     | admin bearer         |
+
+### Regole
+
+1. Un plugin non puo operare su se stesso (load/unload/reload/disable/enable) via API.
+2. Solo operatori con `core-pack:plugins:operate` possono eseguire operazioni su altri plugin.
+3. Il backoffice mostra stato, dipendenze e operazioni disponibili ma non diventa owner implicito del runtime.
+4. Ogni operazione produce audit event.
+5. Le operazioni di security provisioning sono gestite da `core-pack` e protette dalle permission del plugin chiamante.
+
+### Audit
+
+Ogni operazione (load, unload, reload, disable, enable) genera un evento di audit con:
+- attore (admin ID)
+- plugin target
+- operazione
+- esito
+- timestamp
+
+## Eventi
+
+### Eventi core di piattaforma
+
+| Nome canonico                | Owner      | Visibility | Delivery | Quando                     |
+| ---------------------------- | ---------- | ---------- | -------- | -------------------------- |
+| `core.plugin.registered`     | kernel     | `audit`    | `sync`   | plugin registrato          |
+| `core.plugin.loaded`         | kernel     | `audit`    | `sync`   | plugin caricato            |
+| `core.plugin.unloaded`       | kernel     | `audit`    | `sync`   | plugin scaricato           |
+| `core.plugin.failed`         | kernel     | `audit`    | `sync`   | plugin in failure          |
+| `core.plugin.disabled`       | kernel     | `audit`    | `sync`   | plugin disabilitato        |
+| `core.plugin.enabled`        | kernel     | `audit`    | `sync`   | plugin riabilitato         |
+| `core.plugin.operation`      | kernel     | `audit`    | `sync`   | operazione su plugin       |
+
+### Payload eventi
+
+```ts
+export interface PluginAuditEventPayload {
+  pluginId: string;
+  operation: string;
+  actorId: string;
+  success: boolean;
+  phase?: string;
+  errorCode?: string;
+  timestamp: string;
+}
+```
+
+### Delivery e retry
+
+- Tutti gli eventi core sono `sync` (in-process).
+- Nessun retry automatico: se un subscriber fallisce, l'errore viene loggato ma non blocca il producer.
+- Idempotency: l'`idempotencyKey` e opzionale. Se presente, l'event bus deve deduplicare entro 5 minuti.
+- Audit policy: ogni evento core e persistito in `cms_core_audit_events` con retention default 90 giorni.
+
+## Compatibilita e versioning
+
+- Il `CmsPluginManifest` puo essere esteso con nuovi campi opzionali senza breaking change.
+- `id` plugin e immutabile dopo installazione.
+- `version` segue semver. Breaking change sul manifest richiede major bump del plugin.
+- `requiresCore` usa semver range. Plugin che richiede core version incompatibile non viene caricato.
+- Le API HTTP plugin sono `v1`. Breaking change richiede nuova major version dell'endpoint.
+- I DTO possono ricevere nuovi campi opzionali. Rimozione o rename di campi esistenti e breaking.
+- Gli error code sono parte del contratto pubblico. Non possono essere rimossi senza major version.
+
 Runtime event collection:
 
 ```text
@@ -606,20 +677,6 @@ La specifica e implementabile quando:
 - storage runtime ha collection, schema e indici target
 - i gap col codice attuale sono espliciti
 
-## Gap rispetto al codice attuale
-
-- Il codice attuale espone `PluginManifest` con `id`, `version`,
-  `requiresCore`, `capabilities`, `dependencies`, `security`.
-- Mancano nel manifest corrente: `entities`, `settings`, `events`, `admin`,
-  `displayName`, `description`.
-- Il contratto `DbAdapter` viene mantenuto temporaneamente come nome di
-  compatibilita interna, ma la semantica target e Mongo-first. Non va esteso come
-  astrazione multi-database.
-- Le contribution admin esistono in `admin-kernel`, ma non sono ancora parte del
-  manifest backend.
-- Il runtime event log esiste come diagnostica; il plugin event bus target parte
-  in-process e usa dichiarazioni `events` del manifest.
-
 ## Out of scope
 
 - marketplace remoto
@@ -627,3 +684,17 @@ La specifica e implementabile quando:
 - broker eventi esterno obbligatorio
 - supporto multi-database
 - UI plugin marketplace
+
+## Gap rispetto al codice attuale
+
+- Il codice attuale espone `PluginManifest` con `id`, `version`,
+  `requiresCore`, `capabilities`, `dependencies`, `security`.
+- Mancano nel manifesto corrente: `entities`, `settings`, `events`, `admin`,
+  `displayName`, `description`.
+- Il contratto `DbAdapter` viene mantenuto temporaneamente come nome di
+  compatibilita interna, ma la semantica target e Mongo-first. Non va esteso come
+  astrazione multi-database.
+- Le contribution admin esistono in `admin-kernel`, ma non sono ancora parte del
+  manifesto backend.
+- Il runtime event log esiste come diagnostica; il plugin event bus target parte
+  in-process e usa dichiarazioni `events` del manifest.

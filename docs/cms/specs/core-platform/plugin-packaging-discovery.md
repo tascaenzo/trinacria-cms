@@ -5,7 +5,7 @@
 - Milestone: `M4.0 - Core Platform Specifications`
 - Stato: `draft`
 - Scope: low-level specification
-- Ultimo aggiornamento: `2026-05-20`
+- Ultimo aggiornamento: `2026-05-22`
 
 ## Decisione
 
@@ -37,7 +37,21 @@ export interface PluginDiscoverySource {
 
 ```ts
 export interface PluginDiscoveryService {
-  discover(sources: PluginDiscoverySource[]): Promise<CmsPluginDefinition[]>;
+  discover(sources: readonly PluginDiscoverySource[]): Promise<PluginDiscoveryResult>;
+}
+
+export interface PluginDiscoveryResult {
+  plugins: readonly KernelPluginDefinition[];
+  sources: readonly PluginSourceSnapshot[];
+}
+
+export interface PluginSourceSnapshot {
+  type: "workspace" | "package" | "local-path";
+  name: string;
+  entrypoint: string;
+  status: "discovered" | "failed" | "disabled";
+  pluginId?: string;
+  error?: string;
 }
 ```
 
@@ -75,15 +89,45 @@ cms_kernel_plugin_runtime
 
 ## Security e permission
 
-Solo operatori con `core-pack:plugins:operate` possono abilitare/disabilitare
-plugin. Installazione da path/package esterni resta fuori scope.
+### Accesso
+
+| Operazione                    | Permission                   | Chi puo fare |
+| ----------------------------- | ---------------------------- | ------------ |
+| Leggere sorgenti discovery    | `core-pack:plugins:read`     | admin bearer |
+| Abilitare/disabilitare plugin | `core-pack:plugins:operate`  | admin bearer |
+| Installare da path esterno    | N/A (fuori scope prima fase) | N/A          |
+
+### Regole
+
+1. Solo operatori con `core-pack:plugins:operate` possono abilitare/disabilitare plugin.
+2. La discovery si basa su sorgenti configurate, non su filesystem scan arbitrario.
+3. Un plugin non puo registrare se stesso come sorgente di discovery.
+4. Installazione da path/package esterni resta fuori scope nella prima fase.
+5. Ogni discovery e registrazione produce evento audit.
+
+### Audit
+
+- Scoperta sorgente: `{ sourceType, name, status }`
+- Fallimento discovery: `{ sourceType, name, error }`
+- Abilitazione/disabilitazione: `{ pluginId, operation, actorId }`
 
 ## Eventi
 
-| Evento                          | Visibility |
-| ------------------------------- | ---------- |
-| `core.plugin.source.discovered` | `audit`    |
-| `core.plugin.source.failed`     | `audit`    |
+### Eventi di discovery
+
+| Nome canonico                   | Owner  | Visibility | Delivery | Payload                            | Quando                |
+| ------------------------------- | ------ | ---------- | -------- | ---------------------------------- | --------------------- |
+| `core.plugin.source.discovered` | kernel | `audit`    | `sync`   | `{ sourceType, name, entrypoint }` | sorgente scoperta     |
+| `core.plugin.source.failed`     | kernel | `audit`    | `sync`   | `{ sourceType, name, error }`      | scoperta fallita      |
+| `core.plugin.source.disabled`   | kernel | `audit`    | `sync`   | `{ sourceType, name, reason }`     | sorgente disabilitata |
+| `core.plugin.source.enabled`    | kernel | `audit`    | `sync`   | `{ sourceType, name }`             | sorgente riabilitata  |
+
+### Delivery e retry
+
+- Tutti `sync` (in-process).
+- Nessun retry automatico.
+- Idempotency: la discovery e eseguita una volta al bootstrap. La ri-scoperta e triggered esplicitamente.
+- Audit policy: eventi `audit` persistiti in `cms_core_audit_events`.
 
 ## Errori
 
@@ -99,10 +143,33 @@ plugin. Installazione da path/package esterni resta fuori scope.
 2. importa entrypoint
 3. valida plugin definition
 4. registra nel runtime
+5. se `autoLoadPlugins` e attivo, carica i plugin scoperti con `loadMany()`
+
+## Stato implementativo
+
+Implementato nel kernel:
+
+- `PluginDiscoverySource`, `PluginDiscoveryResult`, `PluginSourceSnapshot`
+- `ConfiguredPluginDiscoveryService`
+- discovery da sorgenti configurate `workspace`, `package`, `local-path`
+- source disabilitate senza import
+- diagnostica per source `discovered`, `failed`, `disabled`
+- integrazione in `startCmsApp()` tramite `pluginSources`
+- endpoint diagnostico `GET /v1/system/plugins/sources`
+- export pubblico da `@trinacria-cms/kernel`
+
+Ancora aperto:
+
+- persistenza/audit delle source discovery
+- installazione da sorgenti esterne runtime, fuori scope della prima fase
 
 ## Compatibilita e versioning
 
-`requiresCore` e semver range obbligatorio. Versioni plugin devono essere semver.
+- `requiresCore` e semver range obbligatorio. Versioni plugin devono essere semver.
+- Nuovi tipi di `PluginDiscoverySource` possono essere aggiunti senza breaking.
+- Il formato del manifest plugin e estensibile con nuovi campi opzionali.
+- Cambiare il formato di `entrypoint` o il package shape richiede nuova major version del contratto.
+- I sorgenti di discovery sono configurabili per ambiente e non richiedono migration.
 
 ## Acceptance criteria
 

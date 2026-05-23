@@ -2,6 +2,7 @@ import { createToken } from "@trinacria/core";
 import type { AuthzService } from "../contracts/authz-service.js";
 import type { DbAdapter } from "../contracts/db-adapter.js";
 import type { KernelAdminRouteGuard } from "../contracts/kernel-admin-route-guard.js";
+import type { PluginDiscoveryService } from "../contracts/plugin-discovery.js";
 import type { PluginRuntime } from "../contracts/plugin-runtime.js";
 import type { PluginRuntimeStore } from "../contracts/plugin-runtime-store.js";
 import type { PluginSecurityProvisioner } from "../contracts/plugin-security-provisioner.js";
@@ -15,6 +16,9 @@ import type { EntityRegistry } from "../runtime/entity-registry.js";
 export const CORE_TOKENS = {
   PLUGIN_RUNTIME: createToken<PluginRuntime>("CMS_CORE_PLUGIN_RUNTIME"),
   PLUGIN_RUNTIME_STORE: createToken<PluginRuntimeStore>("CMS_CORE_PLUGIN_RUNTIME_STORE"),
+  PLUGIN_DISCOVERY_SERVICE: createToken<PluginDiscoveryService>(
+    "CMS_CORE_PLUGIN_DISCOVERY_SERVICE"
+  ),
   DB_ADAPTER: createToken<DbAdapter>("CMS_CORE_DB_ADAPTER"),
   ENTITY_REGISTRY: createToken<EntityRegistry>("CMS_CORE_ENTITY_REGISTRY"),
   AUTHZ_SERVICE: createToken<AuthzService>("CMS_CORE_AUTHZ_SERVICE"),

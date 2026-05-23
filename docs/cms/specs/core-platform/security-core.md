@@ -5,7 +5,7 @@
 - Milestone: `M4.0 - Core Platform Specifications`
 - Stato: `draft`
 - Scope: low-level specification
-- Ultimo aggiornamento: `2026-05-20`
+- Ultimo aggiornamento: `2026-05-22`
 
 ## Decisione
 
@@ -186,7 +186,18 @@ Indici minimi:
 
 ## Security e permission
 
-Regole:
+### Accesso alle API security
+
+| Endpoint                        | Permission                       | Chi puo fare         |
+| ------------------------------- | -------------------------------- | -------------------- |
+| `GET /v1/security/permissions`  | `core-pack:permissions:read`     | admin bearer         |
+| `GET /v1/security/roles`        | `core-pack:roles:read`           | admin bearer         |
+| `POST /v1/security/roles`       | `core-pack:roles:write`          | admin bearer         |
+| `POST /v1/security/roles/{code}/grants` | `core-pack:roles:write`  | admin bearer         |
+| `GET /v1/security/policy-rules` | `core-pack:policy-rules:read`    | admin bearer         |
+| `POST /v1/security/policy-rules` | `core-pack:policy-rules:write`  | admin bearer         |
+
+### Regole
 
 1. Una permission dichiarata da un plugin deve appartenere al suo `pluginId`.
 2. Un plugin puo contribuire grant solo per permission che possiede.
@@ -195,14 +206,40 @@ Regole:
 4. `deny` prevale su `allow`.
 5. Le condizioni vengono valutate dopo il match del pattern.
 6. Ogni provisioning produce audit.
+7. Il backoffice puo leggere permission, ruoli e policy rules ma non puo creare
+   permission per conto di terze parti.
+8. Solo admin con permission elevata puo assegnare grant a ruoli non posseduti.
+9. Le chiamate plugin-to-core per operazioni sensibili devono essere signed.
+
+### Audit
+
+Ogni operazione su permission, ruolo, grant e policy rule genera audit:
+- attore (admin ID o plugin ID)
+- risorsa modificata
+- azione (create, update, delete)
+- esito
+- timestamp
+
+Gli audit sono persistiti in `cms_core_audit_events` con retention 90 giorni.
 
 ## Eventi
 
-| Evento                            | Visibility  | Payload                       |
-| --------------------------------- | ----------- | ----------------------------- |
-| `core.security.permission.synced` | `audit`     | `{ pluginId, permissionKey }` |
-| `core.security.role.updated`      | `audit`     | `{ roleCode, actorId }`       |
-| `core.security.policy.matched`    | `protected` | `{ subjectId, permission }`   |
+### Eventi di security
+
+| Nome canonico                       | Owner      | Visibility   | Delivery | Payload                               | Quando                     |
+| ----------------------------------- | ---------- | ------------ | -------- | ------------------------------------- | -------------------------- |
+| `core.security.permission.synced`   | core-pack  | `audit`      | `sync`   | `{ pluginId, permissionKey, action }` | provisioning permission    |
+| `core.security.role.updated`        | core-pack  | `audit`      | `sync`   | `{ roleCode, actorId, changes }`      | ruolo modificato           |
+| `core.security.policy.matched`      | core-pack  | `protected`  | `sync`   | `{ subjectId, permission, decision }` | policy valutata            |
+| `core.security.grant.created`       | core-pack  | `audit`      | `sync`   | `{ roleCode, permissionKeys }`        | grant aggiunto             |
+| `core.security.access.denied`       | core-pack  | `audit`      | `sync`   | `{ subjectId, permission, reason }`   | accesso negato             |
+
+### Delivery e retry
+
+- Tutti `sync` (in-process).
+- Nessun retry automatico: se la pubblicazione fallisce, l'errore e loggato ma non blocca l'operazione.
+- Idempotency: non richiesta per eventi di security audit.
+- Audit policy: eventi `audit` persistiti in `cms_core_audit_events` con retention 90 giorni. Eventi `protected` non persistiti.
 
 ## Errori
 
@@ -224,8 +261,12 @@ Se il provisioning fallisce, il plugin entra in `failed` con phase
 
 ## Compatibilita e versioning
 
-Permission key e role code sono contratti persistenti. Rinominare una permission
-richiede migrazione esplicita e compatibilita di policy.
+- Permission key e role code sono contratti persistenti. Rinominare una permission
+  richiede migrazione esplicita e compatibilita di policy.
+- Nuove permission possono essere aggiunte senza breaking change.
+- Le policy rules con `permissionPattern` usano wildcard supportato. Cambiare la sintassi dei pattern e breaking.
+- I DTO (`RoleDto`, `PermissionDto`, `PolicyRuleDto`) possono ricevere nuovi campi opzionali.
+- Rimuovere o rinominare un error code e breaking.
 
 ## Acceptance criteria
 

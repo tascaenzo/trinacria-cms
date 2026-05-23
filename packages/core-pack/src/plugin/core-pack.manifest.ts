@@ -12,6 +12,8 @@ import {
  */
 export const CORE_PACK_MANIFEST: PluginManifest = {
   id: CORE_PACK_PLUGIN_ID,
+  displayName: "Core Pack",
+  description: "Official baseline plugin for Trinacria CMS: auth, users, roles, permissions, settings, API keys, and platform security.",
   version: "0.1.0",
   requiresCore: "^0.1.0",
   capabilities: [...CORE_PACK_CAPABILITY_LIST],

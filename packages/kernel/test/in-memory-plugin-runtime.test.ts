@@ -5,6 +5,7 @@ import {
   PluginCompatibilityError,
   PluginDependencyError,
   PluginLifecycleError,
+  PluginManifestError,
   PluginRuntimeError,
   PluginStateTransitionError
 } from "../src/errors/index.js";
@@ -231,6 +232,107 @@ test("describeDependencies reports optional missing dependency as warning", asyn
   assert.equal(snapshot.edges[0]?.status, "missing");
   assert.equal(snapshot.edges[0]?.optional, true);
   assert.equal(snapshot.warnings.length, 1);
+});
+
+test("describeContributions exposes manifest-derived plugin declarations", async () => {
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0" });
+
+  await runtime.register({
+    id: "blog-pack",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    entities: [{ name: "posts", schemaVersion: 1 }],
+    settings: [
+      {
+        namespace: "editorial",
+        key: "default-status",
+        type: "string",
+        visibility: "protected"
+      }
+    ],
+    events: {
+      emits: [{ name: "post-published", visibility: "public", version: 1 }]
+    },
+    admin: {
+      routes: [{ id: "posts", path: "/blog/posts", label: "Posts" }]
+    }
+  });
+
+  const snapshot = runtime.describeContributions();
+  assert.equal(snapshot.entities[0]?.key, "blog-pack:posts");
+  assert.equal(snapshot.settings[0]?.key, "blog-pack:editorial:default-status");
+  assert.equal(snapshot.events.emits[0]?.key, "blog-pack:post-published");
+  assert.equal(snapshot.admin.routes[0]?.declaration.path, "/blog/posts");
+});
+
+test("register rejects global admin path collisions", async () => {
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0" });
+
+  await runtime.register({
+    id: "blog-pack",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    admin: {
+      routes: [{ id: "posts", path: "/content/posts", label: "Posts" }]
+    }
+  });
+
+  await assert.rejects(
+    async () =>
+      runtime.register({
+        id: "commerce-pack",
+        version: "1.0.0",
+        requiresCore: "^0.1.0",
+        admin: {
+          routes: [{ id: "orders", path: "/content/posts", label: "Orders" }]
+        }
+      }),
+    PluginManifestError
+  );
+});
+
+test("register rejects cross-plugin namespace collisions", async () => {
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0" });
+
+  await runtime.register({
+    id: "blog-pack",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    entities: [{ name: "posts", schemaVersion: 1 }]
+  });
+
+  await assert.rejects(
+    async () =>
+      runtime.register({
+        id: "commerce-pack",
+        version: "1.0.0",
+        requiresCore: "^0.1.0",
+        entities: [{ name: "posts", schemaVersion: 1 }]
+      }),
+    PluginManifestError
+  );
+
+  assert.equal(
+    runtime.list().some((item) => item.manifest.id === "commerce-pack"),
+    false
+  );
+});
+
+test("unregister removes plugin contributions from runtime catalog", async () => {
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0" });
+
+  await runtime.register({
+    id: "blog-pack",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    entities: [{ name: "posts", schemaVersion: 1 }]
+  });
+
+  assert.equal(runtime.describeContributions().entities.length, 1);
+
+  await runtime.unregister("blog-pack");
+
+  assert.equal(runtime.describeContributions().entities.length, 0);
 });
 
 test("runtime emits lifecycle events and retries failed load when configured", async () => {

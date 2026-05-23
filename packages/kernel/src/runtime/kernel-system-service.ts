@@ -1,10 +1,12 @@
 import type { PluginManifest } from "../contracts/plugin-manifest.js";
+import type { PluginSourceSnapshot } from "../contracts/plugin-discovery.js";
 import type {
   PluginDependencyGraphSnapshot,
   PluginRuntimeDiagnostic,
   PluginRuntimeEvent,
   PluginRuntimeOperation,
   PluginRuntimeOperationAvailability,
+  PluginContributionCatalogSnapshot,
   PluginRuntime,
   PluginRuntimeRecord,
   PluginState
@@ -82,6 +84,10 @@ export interface KernelPluginEventSnapshot {
   details?: PluginRuntimeEvent["details"];
 }
 
+export interface KernelSystemServiceOptions {
+  pluginSources?: () => readonly PluginSourceSnapshot[];
+}
+
 /**
  * Read-only system discovery service exposing what the current CMS runtime
  * has actually registered and loaded.
@@ -98,7 +104,9 @@ export class KernelSystemService {
       | "disable"
       | "enable"
       | "events"
-    >
+      | "describeContributions"
+    >,
+    private readonly options: KernelSystemServiceOptions = {}
   ) {}
 
   listInstalledPlugins(): readonly KernelInstalledPluginSnapshot[] {
@@ -111,6 +119,14 @@ export class KernelSystemService {
     return this.runtime
       .list()
       .flatMap((record) => this.toCapabilitySnapshots(record.manifest, record.state));
+  }
+
+  listPluginContributions(): PluginContributionCatalogSnapshot {
+    return this.runtime.describeContributions();
+  }
+
+  listPluginSources(): readonly PluginSourceSnapshot[] {
+    return this.options.pluginSources?.() ?? [];
   }
 
   getInstalledPlugin(pluginId: string): KernelInstalledPluginSnapshot | null {

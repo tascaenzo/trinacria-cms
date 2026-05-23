@@ -46,6 +46,12 @@ function normalizeOpenApiDocument(document) {
     integerQueryParameter("limit", { minimum: 1, maximum: 200 }),
     integerQueryParameter("offset", { minimum: 0 })
   ]);
+  patchQueryParameters(cloned, "/v1/api-keys", "get", [
+    enumQueryParameter("kind", ["publishable", "secret", "service"]),
+    enumQueryParameter("status", ["active", "revoked"]),
+    integerQueryParameter("limit", { minimum: 1, maximum: 200 }),
+    integerQueryParameter("offset", { minimum: 0 })
+  ]);
   patchQueryParameters(cloned, "/v1/settings/definitions", "get", [
     stringQueryParameter("ownerPluginId"),
     integerQueryParameter("limit", { minimum: 1, maximum: 200 }),
@@ -100,6 +106,18 @@ function stringQueryParameter(name) {
     required: false,
     schema: {
       type: "string"
+    }
+  };
+}
+
+function enumQueryParameter(name, values) {
+  return {
+    name,
+    in: "query",
+    required: false,
+    schema: {
+      type: "string",
+      enum: values
     }
   };
 }

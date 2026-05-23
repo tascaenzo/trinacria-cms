@@ -270,10 +270,21 @@ function applyMongoPatch(
     typeof patch.$set === "object" &&
     !Array.isArray(patch.$set)
   ) {
-    return {
+    const next = {
       ...current,
       ...(patch.$set as Record<string, unknown>)
     };
+    if (
+      "$unset" in patch &&
+      patch.$unset &&
+      typeof patch.$unset === "object" &&
+      !Array.isArray(patch.$unset)
+    ) {
+      for (const key of Object.keys(patch.$unset as Record<string, unknown>)) {
+        delete next[key];
+      }
+    }
+    return next;
   }
   return {
     ...current,

@@ -77,6 +77,79 @@ test("DbPluginRuntimeStore upserts and removes persisted records", async () => {
   assert.equal(afterDelete.length, 0);
 });
 
+for (const scenario of createRuntimeStoreContractScenarios()) {
+  test(`${scenario.name} clears stale optional fields on state recovery`, async () => {
+    const store = scenario.createStore();
+    await store.initialize();
+
+    await store.upsert({
+      ...createRuntimeRecord("edge-pack", "failed"),
+      failureCount: 2,
+      failedAt: new Date("2026-03-04T10:01:00.000Z"),
+      lastFailurePhase: "init",
+      lastError: Object.assign(new Error("init failed"), {
+        name: "PluginLifecycleError"
+      })
+    });
+
+    await store.upsert({
+      ...createRuntimeRecord("edge-pack", "loaded"),
+      loadedAt: new Date("2026-03-04T10:02:00.000Z")
+    });
+
+    const [loaded] = await store.list();
+    assert.equal(loaded?.state, "loaded");
+    assert.equal(loaded?.failureCount, 0);
+    assert.equal(loaded?.lastFailurePhase, undefined);
+    assert.equal(loaded?.lastErrorName, undefined);
+    assert.equal(loaded?.lastErrorMessage, undefined);
+    assert.equal(loaded?.failedAt, undefined);
+    assert.equal(loaded?.loadedAt, "2026-03-04T10:02:00.000Z");
+
+    await store.upsert({
+      ...createRuntimeRecord("edge-pack", "disabled"),
+      disabledAt: new Date("2026-03-04T10:03:00.000Z"),
+      disabledReason: "operator stop"
+    });
+
+    const [disabled] = await store.list();
+    assert.equal(disabled?.state, "disabled");
+    assert.equal(disabled?.enabled, false);
+    assert.equal(disabled?.loadedAt, undefined);
+    assert.equal(disabled?.disabledAt, "2026-03-04T10:03:00.000Z");
+    assert.equal(disabled?.disabledReason, "operator stop");
+  });
+
+  test(`${scenario.name} preserves createdAt while updatedAt advances`, async () => {
+    const store = scenario.createStore();
+    await store.initialize();
+
+    await store.upsert(createRuntimeRecord("clock-pack", "registered"));
+    const [created] = await store.list();
+
+    await store.upsert(createRuntimeRecord("clock-pack", "loaded"));
+    const [updated] = await store.list();
+
+    assert.ok(created);
+    assert.ok(updated);
+    assert.equal(updated.createdAt, created.createdAt);
+    assert.notEqual(updated.updatedAt, created.updatedAt);
+  });
+
+  test(`${scenario.name} treats remove of missing plugin as idempotent`, async () => {
+    const store = scenario.createStore();
+    await store.initialize();
+
+    await store.remove("missing-pack");
+    await store.upsert(createRuntimeRecord("present-pack", "registered"));
+    await store.remove("missing-pack");
+
+    const records = await store.list();
+    assert.equal(records.length, 1);
+    assert.equal(records[0]?.pluginId, "present-pack");
+  });
+}
+
 test("InMemoryPluginRuntime persists state transitions through runtime store", async () => {
   const calls: string[] = [];
   const store: PluginRuntimeStore = {
@@ -169,6 +242,44 @@ function createRuntimeRecord(
   };
 }
 
+function createRuntimeStoreContractScenarios(): Array<{
+  name: string;
+  createStore: () => PluginRuntimeStore;
+}> {
+  return [
+    {
+      name: "InMemoryPluginRuntimeStore contract",
+      createStore() {
+        return createClockedMemoryStore();
+      }
+    },
+    {
+      name: "DbPluginRuntimeStore contract",
+      createStore() {
+        return createClockedDbStore();
+      }
+    }
+  ];
+}
+
+function createClockedMemoryStore(): PluginRuntimeStore {
+  let tick = 0;
+  return new InMemoryPluginRuntimeStore(
+    () => new Date(`2026-03-04T10:00:${String(tick++).padStart(2, "0")}.000Z`)
+  );
+}
+
+function createClockedDbStore(): PluginRuntimeStore {
+  const db = createDbAdapterDouble();
+  const entityRegistry = new EntityRegistry();
+  let tick = 0;
+  return new DbPluginRuntimeStore({
+    dbAdapter: db,
+    entityRegistry,
+    now: () => new Date(`2026-03-04T10:00:${String(tick++).padStart(2, "0")}.000Z`)
+  });
+}
+
 function createDbAdapterDouble(): DbAdapter & {
   ensureIndexesCalls: Array<{ pluginId: string; entityNames: readonly string[] }>;
 } {
@@ -209,10 +320,7 @@ function createDbAdapterDouble(): DbAdapter & {
       async updateOne(query: DbQuery<TData>, patch: Partial<TData>) {
         const index = bucket.findIndex((item) => matchesFilter(item, query.filter));
         if (index < 0) return null;
-        const next = {
-          ...bucket[index],
-          ...patch
-        } as TData;
+        const next = applyPatch(bucket[index]!, patch as Record<string, unknown>) as TData;
         bucket[index] = next as Record<string, unknown>;
         return next;
       },
@@ -247,6 +355,21 @@ function createDbAdapterDouble(): DbAdapter & {
       return { ok: true };
     }
   };
+}
+
+function applyPatch(
+  current: Record<string, unknown>,
+  patch: Record<string, unknown>
+): Record<string, unknown> {
+  const next = { ...current };
+  for (const [key, value] of Object.entries(patch)) {
+    if (value === undefined) {
+      delete next[key];
+    } else {
+      next[key] = value;
+    }
+  }
+  return next;
 }
 
 function matchesFilter(

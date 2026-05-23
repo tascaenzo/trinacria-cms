@@ -1,4 +1,15 @@
-import type { PluginManifest } from "./plugin-manifest.js";
+import type {
+  PluginManifest,
+  PluginManifestAdminNavigation,
+  PluginManifestAdminResource,
+  PluginManifestAdminRoute,
+  PluginManifestAdminSettingsSection,
+  PluginManifestAdminWidget,
+  PluginManifestEmittedEvent,
+  PluginManifestEntity,
+  PluginManifestEventSubscription,
+  PluginManifestSetting
+} from "./plugin-manifest.js";
 import type { ApplicationContext, ModuleDefinition } from "@trinacria/core";
 
 /**
@@ -124,6 +135,32 @@ export interface PluginDependencyGraphSnapshot {
   warnings: string[];
 }
 
+export interface PluginContributionSnapshot<TDeclaration> {
+  pluginId: string;
+  key: string;
+  declaration: TDeclaration;
+}
+
+export interface PluginAdminContributionSnapshot {
+  navigation: readonly PluginContributionSnapshot<PluginManifestAdminNavigation>[];
+  routes: readonly PluginContributionSnapshot<PluginManifestAdminRoute>[];
+  resources: readonly PluginContributionSnapshot<PluginManifestAdminResource>[];
+  widgets: readonly PluginContributionSnapshot<PluginManifestAdminWidget>[];
+  settingsSections: readonly PluginContributionSnapshot<PluginManifestAdminSettingsSection>[];
+}
+
+export interface PluginEventContributionSnapshot {
+  emits: readonly PluginContributionSnapshot<PluginManifestEmittedEvent>[];
+  subscribes: readonly PluginContributionSnapshot<PluginManifestEventSubscription>[];
+}
+
+export interface PluginContributionCatalogSnapshot {
+  entities: readonly PluginContributionSnapshot<PluginManifestEntity>[];
+  settings: readonly PluginContributionSnapshot<PluginManifestSetting>[];
+  events: PluginEventContributionSnapshot;
+  admin: PluginAdminContributionSnapshot;
+}
+
 /**
  * Plugin lifecycle states inside the runtime registry.
  * The concrete state machine will be enforced by the orchestrator.
@@ -201,6 +238,8 @@ export interface PluginRuntime {
   list(): readonly PluginRuntimeRecord[];
   /** Returns the current dependency graph and warnings. */
   describeDependencies(): PluginDependencyGraphSnapshot;
+  /** Returns manifest-derived plugin contributions indexed by canonical keys. */
+  describeContributions(): PluginContributionCatalogSnapshot;
   /** Returns recent lifecycle events for diagnostics and audit. */
   events(options?: { pluginId?: string; limit?: number }): readonly PluginRuntimeEvent[];
 }

@@ -5,7 +5,7 @@
 - Milestone: `M4.0 - Core Platform Specifications`
 - Stato: `draft`
 - Scope: low-level specification
-- Ultimo aggiornamento: `2026-05-20`
+- Ultimo aggiornamento: `2026-05-22`
 
 ## Decisione
 
@@ -94,17 +94,48 @@ cms_kernel_admin_contributions_cache
 
 ## Security e permission
 
-- contribution visibili solo se permission soddisfatta
-- route custom deve dichiarare guard
-- resource API deve verificare permission lato backend
-- admin-kernel non sostituisce authorization backend
+### Accesso alle contribution admin
+
+| Risorsa                      | Chi puo leggere              | Chi puo scrivere            |
+| ---------------------------- | ---------------------------- | --------------------------- |
+| Navigation                   | admin con permission match   | plugin owner (manifest)     |
+| Route                        | admin con permission match   | plugin owner (manifest)     |
+| Resource                     | admin con permission match   | plugin owner (manifest)     |
+| Widget                       | admin con permission match   | plugin owner (manifest)     |
+| Settings section             | admin con permission match   | plugin owner (manifest)     |
+
+### Regole
+
+1. Contribution visibili solo se la `requiredPermission` dell'utente e soddisfatta.
+2. Route custom deve dichiarare guard.
+3. Resource API deve verificare permission lato backend.
+4. admin-kernel non sostituisce authorization backend.
+5. Un plugin non puo registrare contribution che usano permission di un altro plugin senza ownership.
+6. Label duplicate producono warning ma non bloccano.
+
+### Audit
+
+- Registrazione contribution: `{ pluginId, contributionType, id }`
+- Collisione route: `{ pluginId, path, existingOwner }`
+- Collisione resource ID: `{ pluginId, resourceId, existingOwner }`
 
 ## Eventi
 
-| Evento                               | Visibility |
-| ------------------------------------ | ---------- |
-| `core.admin.contribution.registered` | `audit`    |
-| `core.admin.route.collision`         | `audit`    |
+### Eventi di admin contribution
+
+| Nome canonico                           | Owner       | Visibility | Delivery | Payload                                       | Quando                     |
+| --------------------------------------- | ----------- | ---------- | -------- | --------------------------------------------- | -------------------------- |
+| `core.admin.contribution.registered`    | admin-kernel | `audit`    | `sync`   | `{ pluginId, type, id }`                      | contribution registrata    |
+| `core.admin.contribution.removed`       | admin-kernel | `audit`    | `sync`   | `{ pluginId, type, id }`                      | contribution rimossa       |
+| `core.admin.route.collision`            | admin-kernel | `audit`    | `sync`   | `{ pluginId, path, existingOwner }`           | collisione route           |
+| `core.admin.resource.collision`         | admin-kernel | `audit`    | `sync`   | `{ pluginId, resourceId, existingOwner }`     | collisione resource ID     |
+
+### Delivery e retry
+
+- Tutti `sync` (in-process).
+- Nessun retry automatico.
+- Idempotency: la registrazione contribution e gestita dal lifecycle del plugin (unload -> remove, load -> register).
+- Audit policy: eventi `audit` persistiti in `cms_core_audit_events`.
 
 ## Errori
 
@@ -116,13 +147,21 @@ cms_kernel_admin_contributions_cache
 
 ## Lifecycle
 
-Le contribution vengono validate dopo manifest e namespace validation, prima di
-rendere il plugin visibile nel backoffice.
+1. Il plugin dichiara `admin` block nel manifest.
+2. Il kernel valida namespace e collisioni su route e resource ID.
+3. Dopo il load del plugin, le contribution vengono registrate nel catalogo admin.
+4. admin-kernel monta navigation, route, resource, widget e settings section.
+5. Le contribution sono visibili solo se le permission richieste sono soddisfatte.
+6. All'unload del plugin, tutte le contribution vengono rimosse dal catalogo.
+7. Al disable del plugin, le contribution vengono nascoste ma non rimosse.
 
 ## Compatibilita e versioning
 
-`id` e `path` sono contratti stabili. Rename richiede alias/redirect o breaking
-change documentato.
+- `id` e `path` sono contratti stabili. Rename richiede alias/redirect o breaking change documentato.
+- Resource `id` e immutabile dopo la prima registrazione.
+- Aggiungere nuove contribution type (es. nuovi tipi di widget) e compatibile.
+- Rimuovere una contribution type esistente e breaking per i plugin che lo usano.
+- I campi delle contribution DTO possono essere estesi con campi opzionali.
 
 ## Acceptance criteria
 

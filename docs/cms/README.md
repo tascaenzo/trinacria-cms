@@ -18,6 +18,7 @@ mescolata con le decisioni del CMS.
 ## Fonti di verita
 
 - Direzione CMS: [architecture/plugin-first-cms-direction.md](architecture/plugin-first-cms-direction.md)
+- Mappa package: [architecture/package-map.md](architecture/package-map.md)
 - Specifiche core M4.0: [specs/core-platform/README.md](specs/core-platform/README.md)
 - Glossario: [GLOSSARY.md](GLOSSARY.md)
 

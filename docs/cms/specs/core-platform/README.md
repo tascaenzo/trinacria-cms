@@ -5,31 +5,38 @@ procedere con l'implementazione della piattaforma core plugin-first.
 
 ## Fase corrente
 
-Milestone: `M4.0 - Core Platform Specifications`
+Milestone: `M4.0 - Core Platform Specifications` — ✅ **Completata**
 
-Obiettivo: chiarire contratti, confini e comportamenti core prima di creare
-nuovi package dominio o nuove API.
+Tutte le 15 specifiche sono state elevate a `low-level` specification.
+Il task implementativo (`core-contracts-foundation-implementation`) e stato
+completato (NamespaceValidator, CollisionPolicy, ContributionIndex e discovery
+configurata con 96 test kernel, 178 test totali monorepo; 1 integration Mongo
+gated).
+
+Prossimo step implementativo: **Step 2 — Runtime plugin** (stati, transizioni,
+dependency ordering, rollback, enable/disable, discovery).
 
 ## Specifiche previste
 
-| File                                  | Focus                                                             | Stato   |
-| ------------------------------------- | ----------------------------------------------------------------- | ------- |
-| `low-level-specification-standard.md` | standard obbligatorio per specifiche implementabili M4.0          | `draft` |
-| `m4-core-platform-foundation.md`      | overview funzionale della milestone core e decisioni fondative    | `draft` |
-| `core-boundaries.md`                  | confini tra Trinacria, kernel, core-pack e plugin dominio         | `draft` |
-| `plugin-contract.md`                  | manifest, lifecycle, capability, permission, settings, admin      | `draft` |
-| `plugin-runtime.md`                   | stati, transizioni, ordering, rollback, enable/disable            | `draft` |
-| `security-core.md`                    | capability, permission, policy, provisioning, guards, signed call | `draft` |
-| `plugin-entity-mongo.md`              | Mongo storage core, entity, schema, repository, namespace         | `draft` |
-| `settings-core.md`                    | configuration registry, settings, secrets, visibility, audit      | `draft` |
-| `configuration-registry.md`           | draft funzionale del registro configurazioni e secret             | `draft` |
-| `namespace-governance.md`             | namespace, alias, reserved names, ownership e collision policy    | `draft` |
-| `plugin-event-bus.md`                 | event bus opzionale, subscription policy e delivery               | `draft` |
-| `admin-contribution-resource.md`      | route, navigation, resource registry, UI custom                   | `draft` |
-| `installation-bootstrap.md`           | setup iniziale, admin user, core-pack provisioning                | `draft` |
-| `plugin-packaging-discovery.md`       | package shape, manifest location, compatibility, discovery        | `draft` |
-| `observability-operations.md`         | health, event log, diagnostics, runtime status                    | `draft` |
-| `sdk-api-contract.md`                 | OpenAPI, API envelope, SDK generation, compatibility              | `draft` |
+| File                                  | Focus                                                             | Stato       |
+| ------------------------------------- | ----------------------------------------------------------------- | ----------- |
+| `low-level-specification-standard.md` | standard obbligatorio per specifiche implementabili M4.0          | `approved`  |
+| `m4-core-platform-foundation.md`      | overview funzionale della milestone core e decisioni fondative    | `approved`  |
+| `core-boundaries.md`                  | confini tra Trinacria, kernel, core-pack e plugin dominio         | `approved`  |
+| `public-plugin-api.md`                | API pubbliche per sviluppatori plugin                             | `approved`  |
+| `plugin-contract.md`                  | manifest, lifecycle, capability, permission, settings, admin      | `low-level` |
+| `plugin-runtime.md`                   | stati, transizioni, ordering, rollback, enable/disable            | `low-level` |
+| `security-core.md`                    | capability, permission, policy, provisioning, guards, signed call | `low-level` |
+| `plugin-entity-mongo.md`              | Mongo storage core, entity, schema, repository, namespace         | `low-level` |
+| `settings-core.md`                    | configuration registry, settings, secrets, visibility, audit      | `low-level` |
+| `configuration-registry.md`           | configuration registry: contract, secret lifecycle, audit         | `low-level` |
+| `namespace-governance.md`             | namespace, alias, reserved names, ownership e collision policy    | `low-level` |
+| `plugin-event-bus.md`                 | event bus opzionale, subscription policy e delivery               | `low-level` |
+| `admin-contribution-resource.md`      | route, navigation, resource registry, UI custom                   | `low-level` |
+| `installation-bootstrap.md`           | setup iniziale, admin user, core-pack provisioning                | `low-level` |
+| `plugin-packaging-discovery.md`       | package shape, manifest location, compatibility, discovery        | `low-level` |
+| `observability-operations.md`         | health, event log, diagnostics, runtime status                    | `low-level` |
+| `sdk-api-contract.md`                 | OpenAPI, API envelope, SDK generation, compatibility              | `low-level` |
 
 ## Ordine di lettura
 
@@ -43,31 +50,35 @@ architetturale.
 3. [`core-boundaries.md`](./core-boundaries.md)
    - chiarisce cosa appartiene a Trinacria, kernel, core-pack, plugin,
      admin-kernel e trinacria-ui
-4. [`plugin-contract.md`](./plugin-contract.md)
+4. [`public-plugin-api.md`](./public-plugin-api.md)
+   - raccoglie le API pubbliche da usare concretamente nello sviluppo plugin
+5. [`plugin-contract.md`](./plugin-contract.md)
    - definisce la forma target di un plugin CMS
-5. [`namespace-governance.md`](./namespace-governance.md)
+6. [`namespace-governance.md`](./namespace-governance.md)
    - definisce namespace, alias, reserved names e collision policy
-6. [`plugin-runtime.md`](./plugin-runtime.md)
+7. [`plugin-runtime.md`](./plugin-runtime.md)
    - definisce stati, lifecycle, dependency ordering e rollback
-7. [`security-core.md`](./security-core.md)
+8. [`security-core.md`](./security-core.md)
    - definisce utenti, ruoli, permission, capability, policy e provisioning
-8. [`plugin-entity-mongo.md`](./plugin-entity-mongo.md)
+9. [`plugin-entity-mongo.md`](./plugin-entity-mongo.md)
    - definisce Mongo storage core, entity registry, repository e indici
-9. [`settings-core.md`](./settings-core.md)
-   - definisce il settings core come configuration registry sicuro
-10. [`configuration-registry.md`](./configuration-registry.md)
+10. [`settings-core.md`](./settings-core.md)
+
+- definisce il settings core come configuration registry sicuro
+
+11. [`configuration-registry.md`](./configuration-registry.md)
     - approfondisce settings, secrets, visibility, masking, reveal e audit
-11. [`plugin-event-bus.md`](./plugin-event-bus.md)
+12. [`plugin-event-bus.md`](./plugin-event-bus.md)
     - definisce comunicazione inter-plugin opzionale tramite eventi
-12. [`admin-contribution-resource.md`](./admin-contribution-resource.md)
+13. [`admin-contribution-resource.md`](./admin-contribution-resource.md)
     - definisce navigation, route, resource, widget e UI custom
-13. [`installation-bootstrap.md`](./installation-bootstrap.md)
+14. [`installation-bootstrap.md`](./installation-bootstrap.md)
     - definisce primo setup, admin user e provisioning baseline
-14. [`plugin-packaging-discovery.md`](./plugin-packaging-discovery.md)
+15. [`plugin-packaging-discovery.md`](./plugin-packaging-discovery.md)
     - definisce shape package, discovery locale/configurata e compatibility
-15. [`observability-operations.md`](./observability-operations.md)
+16. [`observability-operations.md`](./observability-operations.md)
     - definisce health, diagnostics, audit e operation events
-16. [`sdk-api-contract.md`](./sdk-api-contract.md)
+17. [`sdk-api-contract.md`](./sdk-api-contract.md)
     - definisce API envelope, error model, OpenAPI e SDK generation
 
 ## Ordine di implementazione consigliato

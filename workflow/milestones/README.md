@@ -14,8 +14,20 @@ infrastrutturale, mentre i domini applicativi vivono in plugin.
 
 ## Milestone attiva
 
-- `M4.0-plugin-first-specifications.md`: fase documentale per chiudere le
-  specifiche core della piattaforma plugin-first prima di implementare domini.
+- `M4 - Core Platform Foundation`: milestone ombrello per rendere reale la
+  piattaforma core plugin-first prima di implementare domini.
+
+Fasi interne:
+
+- `M4.0-plugin-first-specifications.md`: specifiche low-level e contratti
+  fondativi, completata.
+- Prossimo blocco M4: runtime plugin reale con discovery/loading,
+  compatibilita, failure mode e persistenza Mongo.
+
+Nota: le vecchie milestone dominio `M4-content-model-v1.md` e
+`M5-editorial-workflow-v1.md` restano deferred finche M4 core platform non e
+chiusa. Il numero M4 ora identifica la fondazione core, non il primo dominio
+editoriale.
 
 ## Nome file consigliato
 
