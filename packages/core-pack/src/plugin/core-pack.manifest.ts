@@ -18,32 +18,17 @@ export const CORE_PACK_MANIFEST: PluginManifest = {
   version: "0.1.0",
   requiresCore: "^0.1.0",
   capabilities: [...CORE_PACK_CAPABILITY_LIST],
-  settings: CORE_PACK_SETTING_DEFINITION_SEEDS.map((item) => {
-    const [pluginId, namespace, key] = item.key.split(":");
-    if (pluginId !== CORE_PACK_PLUGIN_ID || !namespace || !key) {
-      throw new Error(`Invalid core-pack setting key "${item.key}"`);
-    }
-    const schemaObject =
-      item.schema && typeof item.schema === "object" && !Array.isArray(item.schema)
-        ? (item.schema as Record<string, unknown>)
-        : undefined;
-    const schemaType =
-      schemaObject && typeof schemaObject.type === "string" ? schemaObject.type : typeof item.defaultValue;
-    const type =
-      schemaType === "string" || schemaType === "number" || schemaType === "boolean"
-        ? schemaType
-        : "json";
-    return {
-      namespace,
-      key,
-      type,
-      visibility: "protected" as const,
-      required: false,
-      description: item.description,
-      schema: schemaObject,
-      defaultValueJson: JSON.stringify(item.defaultValue)
-    };
-  }),
+  settings: CORE_PACK_SETTING_DEFINITION_SEEDS.map((item) => ({
+    key: item.key,
+    category: item.category,
+    description: item.description,
+    ...(item.schema !== undefined ? { schema: item.schema } : {}),
+    ...(item.defaultValue !== undefined ? { defaultValue: item.defaultValue } : {}),
+    status: "active" as const,
+    secret: false,
+    mutable: true,
+    visibility: "admin" as const
+  })),
   security: {
     permissions: [...CORE_PACK_PERMISSION_DEFINITIONS],
     roles: [

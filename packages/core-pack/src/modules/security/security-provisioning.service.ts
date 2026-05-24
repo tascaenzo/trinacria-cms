@@ -332,18 +332,16 @@ export class CorePackSecurityProvisioningService implements PluginSecurityProvis
   ): Promise<void> {
     const desiredKeys = new Set<string>();
     for (const setting of settings) {
-      const fullKey = `${pluginId}:${setting.namespace}:${setting.key}`.toLowerCase();
+      const fullKey = setting.key.trim().toLowerCase();
       desiredKeys.add(fullKey);
       await this.settings.upsertDefinition({
         requesterPluginId: pluginId,
         key: fullKey,
-        category: setting.namespace,
+        category: setting.category,
         description: setting.description,
         ...(setting.schema !== undefined ? { schema: setting.schema } : {}),
-        ...(setting.defaultValueJson !== undefined
-          ? { defaultValue: JSON.parse(setting.defaultValueJson) }
-          : {}),
-        status: "active"
+        ...(setting.defaultValue !== undefined ? { defaultValue: setting.defaultValue } : {}),
+        status: setting.status ?? "active"
       });
     }
 
