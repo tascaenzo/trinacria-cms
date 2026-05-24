@@ -21,15 +21,15 @@ delivery persistente, ma non e obbligatorio nella prima milestone implementativa
 
 ## Responsabilita
 
-| Area                    | Owner                      | Responsabilita                            |
-| ----------------------- | -------------------------- | ----------------------------------------- |
-| Event bus contract      | `@trinacria-cms/kernel`    | Definizione contratto eventi CMS          |
-| Event bus impl base     | `@trinacria-cms/kernel`    | Publish/subscribe in-process sync/async   |
-| Event declarations      | `@trinacria-cms/kernel`    | Integrazione manifest -> event registry   |
-| Namespace governance    | `@trinacria-cms/kernel`    | Collisioni nomi evento, visibility        |
-| Audit event storage     | `@trinacria-cms/core-pack` | Storage centralizzato audit events        |
-| Core platform events    | `@trinacria-cms/core-pack` | Eventi core osservabili (install, etc.)   |
-| Plugin events           | plugin dominio             | Eventi applicativi dichiarati nel manifest|
+| Area                 | Owner                      | Responsabilita                             |
+| -------------------- | -------------------------- | ------------------------------------------ |
+| Event bus contract   | `@trinacria-cms/kernel`    | Definizione contratto eventi CMS           |
+| Event bus impl base  | `@trinacria-cms/kernel`    | Publish/subscribe in-process sync/async    |
+| Event declarations   | `@trinacria-cms/kernel`    | Integrazione manifest -> event registry    |
+| Namespace governance | `@trinacria-cms/kernel`    | Collisioni nomi evento, visibility         |
+| Audit event storage  | `@trinacria-cms/core-pack` | Storage centralizzato audit events         |
+| Core platform events | `@trinacria-cms/core-pack` | Eventi core osservabili (install, etc.)    |
+| Plugin events        | plugin dominio             | Eventi applicativi dichiarati nel manifest |
 
 ## Modello dati
 
@@ -149,9 +149,9 @@ al runtime.
 
 Eccezione: gli eventi runtime diagnostici sono leggibili via
 
-| Method | Path                                               | Permission                     |
-| ------ | -------------------------------------------------- | ------------------------------ |
-| `GET`  | `/v1/system/plugins/{pluginId}/events?limit=50`    | `core-pack:plugins:read`       |
+| Method | Path                                            | Permission               |
+| ------ | ----------------------------------------------- | ------------------------ |
+| `GET`  | `/v1/system/plugins/{pluginId}/events?limit=50` | `core-pack:plugins:read` |
 
 (Endpoint gia implementato nel kernel system controller.)
 
@@ -159,9 +159,9 @@ Eccezione: gli eventi runtime diagnostici sono leggibili via
 
 ### Plugin runtime events (kernel - gia esistente)
 
-| Collection                           | Unique index                      | Owner    |
-| ------------------------------------ | --------------------------------- | -------- |
-| `cms_kernel_plugin_runtime_events`   | `{ pluginId: 1, sequence: -1 }`   | kernel   |
+| Collection                         | Unique index                    | Owner  |
+| ---------------------------------- | ------------------------------- | ------ |
+| `cms_kernel_plugin_runtime_events` | `{ pluginId: 1, sequence: -1 }` | kernel |
 
 Index:
 
@@ -175,21 +175,21 @@ Index:
 
 Riservato a futura implementazione:
 
-| Collection                         | Unique index                      | Owner      |
-| ---------------------------------- | --------------------------------- | ---------- |
-| `cms_core_platform_audit_events`   | `{ eventName: 1, sequence: -1 }`  | core-pack  |
+| Collection                       | Unique index                     | Owner     |
+| -------------------------------- | -------------------------------- | --------- |
+| `cms_core_platform_audit_events` | `{ eventName: 1, sequence: -1 }` | core-pack |
 
 ## Security e permission
 
 ### Regole di visibilita
 
-| Visibility   | Chi puo emettere          | Chi puo sottoscrivere       |
-| ------------ | ------------------------- | --------------------------- |
-| `core`       | kernel, core-pack         | kernel, core-pack           |
-| `public`     | qualunque plugin          | qualunque plugin            |
-| `protected`  | qualunque plugin          | solo con capability/policy  |
-| `private`    | solo l'owner              | nessuno (contratto interno) |
-| `audit`      | kernel, core-pack, plugin | solo core-pack (storage)    |
+| Visibility  | Chi puo emettere          | Chi puo sottoscrivere       |
+| ----------- | ------------------------- | --------------------------- |
+| `core`      | kernel, core-pack         | kernel, core-pack           |
+| `public`    | qualunque plugin          | qualunque plugin            |
+| `protected` | qualunque plugin          | solo con capability/policy  |
+| `private`   | solo l'owner              | nessuno (contratto interno) |
+| `audit`     | kernel, core-pack, plugin | solo core-pack (storage)    |
 
 ### Regole
 
@@ -207,26 +207,26 @@ Riservato a futura implementazione:
 
 ### Eventi core di piattaforma
 
-| Evento                          | Visibility | Delivery | Quando                     |
-| ------------------------------- | ---------- | -------- | -------------------------- |
-| `core.plugin.registered`        | `audit`    | `sync`   | plugin registrato          |
-| `core.plugin.loaded`            | `audit`    | `sync`   | plugin caricato            |
-| `core.plugin.unloaded`          | `audit`    | `sync`   | plugin scaricato           |
-| `core.plugin.failed`            | `audit`    | `sync`   | plugin in failure          |
-| `core.plugin.disabled`          | `audit`    | `sync`   | plugin disabilitato        |
-| `core.settings.secret.revealed` | `audit`    | `sync`   | secret rivelato            |
-| `core.settings.secret.rotated`  | `audit`    | `sync`   | secret ruotato             |
-| `core.security.provisioned`     | `audit`    | `sync`   | permission/role provisioned|
+| Evento                          | Visibility | Delivery | Quando                      |
+| ------------------------------- | ---------- | -------- | --------------------------- |
+| `core.plugin.registered`        | `audit`    | `sync`   | plugin registrato           |
+| `core.plugin.loaded`            | `audit`    | `sync`   | plugin caricato             |
+| `core.plugin.unloaded`          | `audit`    | `sync`   | plugin scaricato            |
+| `core.plugin.failed`            | `audit`    | `sync`   | plugin in failure           |
+| `core.plugin.disabled`          | `audit`    | `sync`   | plugin disabilitato         |
+| `core.settings.secret.revealed` | `audit`    | `sync`   | secret rivelato             |
+| `core.settings.secret.rotated`  | `audit`    | `sync`   | secret ruotato              |
+| `core.security.provisioned`     | `audit`    | `sync`   | permission/role provisioned |
 
 ## Errori
 
-| Code                        | HTTP | Quando                                   |
-| --------------------------- | ---- | ---------------------------------------- |
-| `event_emission_failed`     | 500  | pubblicazione evento fallita             |
-| `event_subscription_invalid` | 400 | sottoscrizione con nome/handler invalido  |
-| `event_handler_error`       | 500  | handler subscriber solleva eccezione      |
-| `event_visibility_denied`   | 403  | plugin tenta evento non consentito        |
-| `event_not_found`           | 404  | evento inesistente nella dichiarazione    |
+| Code                         | HTTP | Quando                                   |
+| ---------------------------- | ---- | ---------------------------------------- |
+| `event_emission_failed`      | 500  | pubblicazione evento fallita             |
+| `event_subscription_invalid` | 400  | sottoscrizione con nome/handler invalido |
+| `event_handler_error`        | 500  | handler subscriber solleva eccezione     |
+| `event_visibility_denied`    | 403  | plugin tenta evento non consentito       |
+| `event_not_found`            | 404  | evento inesistente nella dichiarazione   |
 
 ## Lifecycle
 

@@ -1,4 +1,4 @@
-import { DbAdapterError } from "../errors/db-errors.js";
+import { DbAdapterError } from "../../errors/db-errors.js";
 import type { Schema } from "@trinacria/schema";
 
 export interface EntityIndexDefinition {
@@ -10,21 +10,10 @@ export interface EntityIndexDefinition {
 
 export interface EntityDefinition {
   entityName: string;
-  /**
-   * Canonical data schema declaration (transport and storage agnostic).
-   */
   schema: Schema<unknown>;
-  /**
-   * Logical indexes requested by the entity.
-   * Storage adapters can translate them to backend-specific index commands.
-   */
   indexes?: readonly EntityIndexDefinition[];
 }
 
-/**
- * Helper to declare a canonical entity in a single place (schema + metadata).
- * Keeps plugin code concise and avoids separate schema/entity duplication.
- */
 export function defineEntity<TSchema extends Schema<unknown>>(definition: {
   entityName: string;
   schema: TSchema;
@@ -37,9 +26,6 @@ export function defineEntity<TSchema extends Schema<unknown>>(definition: {
   return definition;
 }
 
-/**
- * Registry that maps kernel entity names to canonical schema metadata.
- */
 export class EntityRegistry {
   private readonly entities = new Map<string, EntityDefinition>();
 

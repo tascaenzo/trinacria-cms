@@ -1,103 +1,129 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { PluginRuntimeRecord } from "../src/contracts/plugin-runtime.js";
+import type { PluginRuntimeRecord, PluginState } from "../src/contracts/plugin-runtime.js";
 import { InMemoryPluginRuntime, KernelSystemService } from "../src/runtime/index.js";
+import { describeAvailableOperations } from "../src/runtime/plugin-runtime/plugin-runtime-operations.js";
 
 test("KernelSystemService exposes operational plugin snapshots", () => {
-  const service = new KernelSystemService({
-    list: () =>
-      [
-        {
-          manifest: {
-            id: "cms/plugin-content",
-            version: "1.2.0",
-            requiresCore: "^0.1.0",
-            capabilities: ["content.read"],
-            dependencies: [
-              {
-                pluginId: "cms/plugin-users",
-                versionRange: "^1.0.0"
-              }
-            ]
+  const service = new KernelSystemService(
+    {
+      list: () =>
+        [
+          {
+            manifest: {
+              id: "cms/plugin-content",
+              version: "1.2.0",
+              requiresCore: "^0.1.0",
+              capabilities: ["content.read"],
+              dependencies: [
+                {
+                  pluginId: "cms/plugin-users",
+                  versionRange: "^1.0.0"
+                }
+              ]
+            },
+            state: "failed",
+            failureCount: 2,
+            failedAt: new Date("2026-04-06T08:00:00.000Z"),
+            lastFailurePhase: "init",
+            lastError: Object.assign(new Error("init exploded"), {
+              name: "PluginLifecycleError"
+            }),
+            statusReason: {
+              code: "plugin_failed",
+              message: "Plugin entered failed state during lifecycle execution"
+            }
+          } satisfies PluginRuntimeRecord,
+          {
+            manifest: {
+              id: "cms/plugin-users",
+              version: "1.0.1",
+              requiresCore: "^0.1.0"
+            },
+            state: "disabled",
+            disabledAt: new Date("2026-04-06T09:00:00.000Z"),
+            disabledReason: "manual stop",
+            statusReason: {
+              code: "plugin_disabled",
+              message: "Plugin is disabled and cannot be loaded"
+            }
+          } satisfies PluginRuntimeRecord
+        ] as const,
+      describeDependencies: () => ({
+        nodes: [
+          {
+            pluginId: "cms/plugin-content",
+            state: "failed",
+            version: "1.2.0"
           },
-          state: "failed",
-          failureCount: 2,
-          failedAt: new Date("2026-04-06T08:00:00.000Z"),
-          lastFailurePhase: "init",
-          lastError: Object.assign(new Error("init exploded"), {
-            name: "PluginLifecycleError"
-          }),
-          statusReason: {
-            code: "plugin_failed",
-            message: "Plugin entered failed state during lifecycle execution"
+          {
+            pluginId: "cms/plugin-users",
+            state: "disabled",
+            version: "1.0.1"
           }
-        } satisfies PluginRuntimeRecord,
-        {
-          manifest: {
-            id: "cms/plugin-users",
-            version: "1.0.1",
-            requiresCore: "^0.1.0"
-          },
-          state: "disabled",
-          disabledAt: new Date("2026-04-06T09:00:00.000Z"),
-          disabledReason: "manual stop",
-          statusReason: {
-            code: "plugin_disabled",
-            message: "Plugin is disabled and cannot be loaded"
+        ],
+        edges: [
+          {
+            from: "cms/plugin-content",
+            to: "cms/plugin-users",
+            optional: false,
+            requiredRange: "^1.0.0",
+            status: "disabled",
+            currentVersion: "1.0.1"
           }
-        } satisfies PluginRuntimeRecord
-      ] as const,
-    describeDependencies: () => ({
-      nodes: [
-        {
-          pluginId: "cms/plugin-content",
-          state: "failed",
-          version: "1.2.0"
+        ],
+        warnings: []
+      }),
+      describeContributions: () => ({
+        entities: [],
+        settings: [],
+        events: {
+          emits: [],
+          subscribes: []
         },
-        {
-          pluginId: "cms/plugin-users",
-          state: "disabled",
-          version: "1.0.1"
+        admin: {
+          navigation: [],
+          routes: [],
+          resources: [],
+          widgets: [],
+          settingsSections: []
         }
-      ],
-      edges: [
+      }),
+      events: () => [],
+      load: async () => {},
+      unload: async () => {},
+      reload: async () => {},
+      disable: async () => {},
+      enable: async () => {}
+    },
+    {
+      pluginSources: () => [
         {
-          from: "cms/plugin-content",
-          to: "cms/plugin-users",
-          optional: false,
-          requiredRange: "^1.0.0",
-          status: "disabled",
-          currentVersion: "1.0.1"
+          type: "workspace",
+          name: "content",
+          entrypoint: "./plugins/content/index.ts",
+          status: "discovered",
+          pluginId: "cms/plugin-content"
         }
-      ],
-      warnings: []
-    }),
-    describeContributions: () => ({
-      entities: [],
-      settings: [],
-      events: {
-        emits: [],
-        subscribes: []
-      },
-      admin: {
-        navigation: [],
-        routes: [],
-        resources: [],
-        widgets: [],
-        settingsSections: []
-      }
-    })
-  });
+      ]
+    }
+  );
 
   const [content, users] = service.listInstalledPlugins();
 
   assert.equal(content?.dependencies[0]?.status, "disabled");
   assert.equal(content?.dependencies[0]?.state, "disabled");
-  assert.equal(content?.operations.find((item) => item.operation === "load")?.available, true);
+  assert.equal(content?.operations.find((item) => item.operation === "load")?.available, false);
+  assert.equal(
+    content?.operations.find((item) => item.operation === "load")?.reason,
+    'Dependency "cms/plugin-users" is disabled'
+  );
   assert.equal(content?.operations.find((item) => item.operation === "enable")?.available, false);
   assert.equal(content?.failureCount, 2);
   assert.equal(content?.lastFailurePhase, "init");
   assert.equal(content?.statusReason?.code, "plugin_failed");
+  assert.equal(content?.source?.type, "workspace");
+  assert.equal(content?.source?.status, "discovered");
   assert.equal(users?.operations.find((item) => item.operation === "enable")?.available, true);
   assert.equal(
     users?.operations.find((item) => item.operation === "load")?.reason,
@@ -116,6 +142,7 @@ test("KernelSystemService exposes plugin contribution catalog", async () => {
       routes: [{ id: "posts", path: "/blog/posts", label: "Posts" }]
     }
   });
+  await runtime.load("blog-pack");
 
   const service = new KernelSystemService(runtime);
   const catalog = service.listPluginContributions();
@@ -180,6 +207,32 @@ test("KernelSystemService executes supported plugin operations", async () => {
   assert.equal(enabled.plugin.state, "registered");
 });
 
+test("KernelSystemService blocks unload and disable when loaded dependents exist", async () => {
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0" });
+  await runtime.register({
+    id: "cms/plugin-users",
+    version: "1.0.0",
+    requiresCore: "^0.1.0"
+  });
+  await runtime.register({
+    id: "cms/plugin-content",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    dependencies: [{ pluginId: "cms/plugin-users", versionRange: "^1.0.0" }]
+  });
+  await runtime.loadMany(["cms/plugin-content"]);
+
+  const service = new KernelSystemService(runtime);
+  const users = service.getInstalledPlugin("cms/plugin-users");
+
+  assert.equal(users?.operations.find((item) => item.operation === "unload")?.available, false);
+  assert.equal(users?.operations.find((item) => item.operation === "disable")?.available, false);
+  assert.equal(
+    users?.operations.find((item) => item.operation === "unload")?.reason,
+    "Plugin has loaded required dependents: cms/plugin-content"
+  );
+});
+
 function createEmptyRuntime(): ConstructorParameters<typeof KernelSystemService>[0] {
   return {
     list: () => [],
@@ -229,3 +282,91 @@ test("KernelSystemService exposes recent plugin lifecycle events", async () => {
   assert.equal(events[1]?.action, "load");
   assert.equal(typeof events[0]?.timestamp, "string");
 });
+
+test("describeAvailableOperations follows runtime state transitions", () => {
+  const expectations: Record<
+    PluginState,
+    Partial<Record<"load" | "unload" | "reload" | "disable" | "enable", boolean>>
+  > = {
+    registered: {
+      load: true,
+      unload: false,
+      reload: true,
+      disable: true,
+      enable: false
+    },
+    loading: {
+      load: false,
+      unload: false,
+      reload: false,
+      disable: false,
+      enable: false
+    },
+    initializing: {
+      load: false,
+      unload: false,
+      reload: false,
+      disable: false,
+      enable: false
+    },
+    loaded: {
+      load: false,
+      unload: true,
+      reload: true,
+      disable: true,
+      enable: false
+    },
+    unloading: {
+      load: false,
+      unload: false,
+      reload: false,
+      disable: true,
+      enable: false
+    },
+    failed: {
+      load: true,
+      unload: true,
+      reload: true,
+      disable: true,
+      enable: false
+    },
+    disabled: {
+      load: false,
+      unload: false,
+      reload: false,
+      disable: false,
+      enable: true
+    },
+    unloaded: {
+      load: true,
+      unload: false,
+      reload: true,
+      disable: true,
+      enable: false
+    }
+  };
+
+  for (const [state, expected] of Object.entries(expectations) as Array<
+    [PluginState, (typeof expectations)[PluginState]]
+  >) {
+    const operations = describeAvailableOperations(createRuntimeRecord(state));
+    for (const [operation, available] of Object.entries(expected)) {
+      assert.equal(
+        operations.find((item) => item.operation === operation)?.available,
+        available,
+        `${operation} availability for ${state}`
+      );
+    }
+  }
+});
+
+function createRuntimeRecord(state: PluginState): PluginRuntimeRecord {
+  return {
+    manifest: {
+      id: "cms/plugin-test",
+      version: "1.0.0",
+      requiresCore: "^0.1.0"
+    },
+    state
+  };
+}

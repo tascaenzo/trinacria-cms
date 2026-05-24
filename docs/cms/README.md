@@ -20,6 +20,7 @@ mescolata con le decisioni del CMS.
 - Direzione CMS: [architecture/plugin-first-cms-direction.md](architecture/plugin-first-cms-direction.md)
 - Mappa package: [architecture/package-map.md](architecture/package-map.md)
 - Specifiche core M4.0: [specs/core-platform/README.md](specs/core-platform/README.md)
+- Guida implementativa M5: [specs/core-platform/m5-plugin-runtime-implementation.md](specs/core-platform/m5-plugin-runtime-implementation.md)
 - Glossario: [GLOSSARY.md](GLOSSARY.md)
 
 ## Regola

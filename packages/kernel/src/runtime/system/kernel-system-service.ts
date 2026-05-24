@@ -1,5 +1,5 @@
-import type { PluginManifest } from "../contracts/plugin-manifest.js";
-import type { PluginSourceSnapshot } from "../contracts/plugin-discovery.js";
+import type { PluginManifest } from "../../contracts/plugin-manifest.js";
+import type { PluginSourceSnapshot } from "../../contracts/plugin-discovery.js";
 import type {
   PluginDependencyGraphSnapshot,
   PluginRuntimeDiagnostic,
@@ -10,13 +10,14 @@ import type {
   PluginRuntime,
   PluginRuntimeRecord,
   PluginState
-} from "../contracts/plugin-runtime.js";
-import { CoreError } from "../errors/core-error.js";
+} from "../../contracts/plugin-runtime.js";
+import { CoreError } from "../../errors/core-error.js";
 import {
   PluginDependencyError,
   PluginRuntimeError,
   PluginStateTransitionError
-} from "../errors/plugin-errors.js";
+} from "../../errors/plugin-errors.js";
+import { describeAvailableOperations, toRuntimeDiagnostic } from "../plugin-runtime/plugin-runtime-operations.js";
 
 export interface KernelInstalledPluginDependencySnapshot {
   pluginId: string;
@@ -33,6 +34,7 @@ export interface KernelInstalledPluginSnapshot {
   version: string;
   requiresCore: string;
   state: PluginState;
+  source?: PluginSourceSnapshot;
   capabilities: readonly string[];
   dependencies: readonly KernelInstalledPluginDependencySnapshot[];
   security: {
@@ -88,10 +90,6 @@ export interface KernelSystemServiceOptions {
   pluginSources?: () => readonly PluginSourceSnapshot[];
 }
 
-/**
- * Read-only system discovery service exposing what the current CMS runtime
- * has actually registered and loaded.
- */
 export class KernelSystemService {
   constructor(
     private readonly runtime: Pick<
@@ -218,12 +216,14 @@ export class KernelSystemService {
     const dependencyEdges = dependencyGraph.edges.filter(
       (edge) => edge.from === record.manifest.id
     );
+    const source = this.findPluginSource(record.manifest.id);
 
     return {
       id: record.manifest.id,
       version: record.manifest.version,
       requiresCore: record.manifest.requiresCore,
       state: record.state,
+      ...(source ? { source } : {}),
       capabilities: [...(record.manifest.capabilities ?? [])],
       dependencies: (record.manifest.dependencies ?? []).map((dependency) => {
         const edge = dependencyEdges.find((item) => item.to === dependency.pluginId);
@@ -255,8 +255,12 @@ export class KernelSystemService {
       ...(record.loadedAt ? { loadedAt: record.loadedAt.toISOString() } : {}),
       ...(record.statusReason ? { statusReason: record.statusReason } : {}),
       ...(record.lastError ? { lastError: toRuntimeDiagnostic(record.lastError) } : {}),
-      operations: describeAvailableOperations(record)
+      operations: describeAvailableOperations(record, dependencyGraph)
     };
+  }
+
+  private findPluginSource(pluginId: string): PluginSourceSnapshot | undefined {
+    return this.listPluginSources().find((source) => source.pluginId === pluginId);
   }
 
   private toCapabilitySnapshots(
@@ -272,86 +276,14 @@ export class KernelSystemService {
   }
 }
 
-export function describeAvailableOperations(
-  record: PluginRuntimeRecord
-): readonly PluginRuntimeOperationAvailability[] {
-  return [
-    availability("load", ["registered", "unloaded", "failed"].includes(record.state), {
-      disabledReason: "Disabled plugins must be enabled before load",
-      defaultReason: `Plugin cannot be loaded from state "${record.state}"`,
-      record
-    }),
-    availability("unload", record.state === "loaded", {
-      defaultReason: `Only loaded plugins can be unloaded; current state is "${record.state}"`,
-      record
-    }),
-    availability("reload", ["registered", "unloaded", "failed", "loaded"].includes(record.state), {
-      disabledReason: "Disabled plugins must be enabled before reload",
-      defaultReason: `Plugin cannot be reloaded from state "${record.state}"`,
-      record
-    }),
-    availability("disable", record.state !== "disabled", {
-      defaultReason: 'Plugin is already in state "disabled"',
-      record
-    }),
-    availability("enable", record.state === "disabled", {
-      defaultReason: `Only disabled plugins can be enabled; current state is "${record.state}"`,
-      record
-    })
-  ];
-}
-
-function availability(
-  operation: PluginRuntimeOperation,
-  available: boolean,
-  options: {
-    defaultReason: string;
-    disabledReason?: string;
-    record: PluginRuntimeRecord;
-  }
-): PluginRuntimeOperationAvailability {
-  if (available) {
-    return { operation, available: true };
-  }
-
-  if (options.record.state === "disabled" && operation !== "enable" && options.disabledReason) {
-    return {
-      operation,
-      available: false,
-      reason: options.disabledReason
-    };
-  }
-
-  return {
-    operation,
-    available: false,
-    reason: options.defaultReason
-  };
-}
-
-function toRuntimeDiagnostic(error: Error): PluginRuntimeDiagnostic {
-  if (error instanceof CoreError) {
-    return {
-      name: error.name,
-      message: error.message,
-      code: error.code,
-      ...(error.details ? { details: error.details } : {})
-    };
-  }
-
-  return {
-    name: error.name,
-    message: error.message
-  };
-}
-
 function describeDependencyIssue(
   pluginId: string,
   edge: PluginDependencyGraphSnapshot["edges"][number]
 ): string {
+  const label = edge.optional ? "Optional dependency" : "Required dependency";
   switch (edge.status) {
     case "missing":
-      return `Required dependency "${edge.to}" is not registered for plugin "${pluginId}"`;
+      return `${label} "${edge.to}" is not registered for plugin "${pluginId}"`;
     case "disabled":
       return `Dependency "${edge.to}" is disabled`;
     case "version-mismatch":

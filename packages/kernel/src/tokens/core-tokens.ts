@@ -6,9 +6,9 @@ import type { PluginDiscoveryService } from "../contracts/plugin-discovery.js";
 import type { PluginRuntime } from "../contracts/plugin-runtime.js";
 import type { PluginRuntimeStore } from "../contracts/plugin-runtime-store.js";
 import type { PluginSecurityProvisioner } from "../contracts/plugin-security-provisioner.js";
-import type { KernelSystemService } from "../runtime/kernel-system-service.js";
-import type { KernelHealthService } from "../runtime/kernel-health-service.js";
-import type { EntityRegistry } from "../runtime/entity-registry.js";
+import type { KernelSystemService } from "../runtime/system/kernel-system-service.js";
+import type { KernelHealthService } from "../runtime/system/kernel-health-service.js";
+import type { EntityRegistry } from "../runtime/persistence/entity-registry.js";
 
 /**
  * Core DI tokens exposed as stable integration points for platform services.

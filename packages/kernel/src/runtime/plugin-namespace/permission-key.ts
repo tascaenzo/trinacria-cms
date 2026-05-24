@@ -1,17 +1,9 @@
-/**
- * Namespaced permission key parser result.
- * Canonical format: `<pluginId>:<resource>:<action>`.
- */
 export interface ParsedPermissionKey {
   pluginId: string;
   resource: string;
   action: string;
 }
 
-/**
- * Namespaced permission pattern parser result.
- * Pattern format: `<pluginId>:<resource|*>:<action|*>`.
- */
 export interface ParsedPermissionPattern {
   pluginId: string;
   resourcePattern: string;
@@ -29,16 +21,10 @@ const PERMISSION_PATTERN_REGEX = new RegExp(
   `^(?<pluginId>${PLUGIN_SEGMENT}):(?<resource>${RESOURCE_SEGMENT}|\\*):(?<action>${ACTION_SEGMENT}|\\*)$`
 );
 
-/**
- * Returns true when a permission key respects the canonical format.
- */
 export function isValidPermissionKey(value: string): boolean {
   return Boolean(parsePermissionKey(value));
 }
 
-/**
- * Parses a permission key and returns null when format is invalid.
- */
 export function parsePermissionKey(value: string): ParsedPermissionKey | null {
   const normalized = value.trim().toLowerCase();
   const match = normalized.match(PERMISSION_KEY_REGEX);
@@ -57,25 +43,16 @@ export function parsePermissionKey(value: string): ParsedPermissionKey | null {
   };
 }
 
-/**
- * Returns true when a permission key belongs to a specific plugin id.
- */
 export function isPermissionOwnedByPlugin(pluginId: string, permissionKey: string): boolean {
   const parsed = parsePermissionKey(permissionKey);
   if (!parsed) return false;
   return parsed.pluginId === pluginId.trim().toLowerCase();
 }
 
-/**
- * Returns true when a permission pattern respects the canonical wildcard format.
- */
 export function isValidPermissionPattern(value: string): boolean {
   return Boolean(parsePermissionPattern(value));
 }
 
-/**
- * Parses a permission pattern and returns null when format is invalid.
- */
 export function parsePermissionPattern(value: string): ParsedPermissionPattern | null {
   const normalized = value.trim().toLowerCase();
   const match = normalized.match(PERMISSION_PATTERN_REGEX);
@@ -94,9 +71,6 @@ export function parsePermissionPattern(value: string): ParsedPermissionPattern |
   };
 }
 
-/**
- * Returns true when a permission pattern belongs to a specific plugin id.
- */
 export function isPermissionPatternOwnedByPlugin(
   pluginId: string,
   permissionPattern: string
@@ -106,9 +80,6 @@ export function isPermissionPatternOwnedByPlugin(
   return parsed.pluginId === pluginId.trim().toLowerCase();
 }
 
-/**
- * Matches a canonical permission key against a canonical permission pattern.
- */
 export function matchesPermissionPattern(
   permissionPattern: string,
   permissionKey: string

@@ -37,7 +37,8 @@ Tutto passa dagli endpoint `kernel`:
 - `GET /v1/system/plugins`
 - `GET /v1/system/plugins/:pluginId`
 - `POST /v1/system/plugins/:pluginId/operations`
-- `GET /v1/system/plugins/:pluginId/events`
+- `GET /v1/system/plugins/:pluginId/events?limit=20`
+- `GET /v1/system/plugins/sources`
 - `GET /v1/system/capabilities`
 
 La pagina admin `Plugins` usa gli stessi endpoint, non una semantica UI dedicata.
@@ -52,6 +53,7 @@ Riceve invece un bridge esplicito (`KernelAdminRouteGuard`) fornito dal modulo a
 Campi operativi principali:
 
 - `state`: stato lifecycle corrente;
+- `source`: source discovery corrente (`workspace`, `package`, `local-path`) e relativo `status`;
 - `statusReason`: spiegazione leggibile dello stato;
 - `operations[]`: azioni ammesse in questo momento;
 - `failureCount`, `lastFailurePhase`, `failedAt`: contesto failure;
@@ -111,7 +113,7 @@ Content-Type: application/json
 ### Leggere gli eventi recenti
 
 ```http
-GET /v1/system/plugins/core-pack/events
+GET /v1/system/plugins/core-pack/events?limit=20
 ```
 
 ## 6. Esempio SDK
@@ -129,7 +131,8 @@ if (plugin.data.operations.some((item) => item.operation === "reload" && item.av
 }
 
 const events = await cms.system.listPluginEvents({
-  path: { pluginId: "core-pack" }
+  path: { pluginId: "core-pack" },
+  query: { limit: 20 }
 });
 ```
 
@@ -142,11 +145,12 @@ const events = await cms.system.listPluginEvents({
 | Dipendenza `missing`  | `dependencies[]`                                                | registra/carica prima il plugin dipendenza                                        |
 | Dipendenza `disabled` | `dependencies[]`, snapshot dipendenza                           | riabilita la dipendenza prima del plugin chiamante                                |
 | `version-mismatch`    | `dependencies[]`                                                | riallinea la versione richiesta o la versione installata                          |
+| Source mancante       | `source`, `statusReason.code === "plugin_source_missing"`       | ripristina la source configurata o rimuovi il record solo con procedura esplicita |
 | Operazione rifiutata  | `error.details.plugin.operations`, `error.details.recentEvents` | il runtime sta proteggendo uno stato non valido o un vincolo di dipendenza        |
 
-## 8. Limiti dichiarati di `M3`
+## 8. Limiti dichiarati di `M5`
 
-`M3` rende i plugin amministrabili e osservabili, ma non introduce ancora:
+`M5` rende i plugin amministrabili e osservabili, ma non introduce ancora:
 
 - provisioning da cataloghi remoti;
 - upgrade orchestrati multi-plugin;

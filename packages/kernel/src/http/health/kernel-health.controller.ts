@@ -1,6 +1,6 @@
 import type { HttpContext } from "@trinacria/http";
 import { HttpController } from "@trinacria/http";
-import type { KernelHealthService } from "../runtime/kernel-health-service.js";
+import type { KernelHealthService } from "../../runtime/system/kernel-health-service.js";
 
 const KernelDependencySnapshotSchema: Record<string, unknown> = {
   type: "object",
@@ -98,9 +98,6 @@ const KernelHealthSnapshotSchema: Record<string, unknown> = {
   }
 };
 
-/**
- * HTTP controller exposing kernel health endpoints.
- */
 export class KernelHealthHttpController extends HttpController {
   constructor(private readonly healthService: KernelHealthService) {
     super();

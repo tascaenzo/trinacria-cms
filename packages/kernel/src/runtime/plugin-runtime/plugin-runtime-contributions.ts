@@ -1,17 +1,13 @@
 import type {
   PluginContributionCatalogSnapshot,
   PluginContributionSnapshot
-} from "../contracts/plugin-runtime.js";
-import type { PluginManifest } from "../contracts/plugin-manifest.js";
-import { PluginManifestError } from "../errors/plugin-errors.js";
-import { buildContributionKey, buildSettingKey } from "./plugin-namespace.js";
+} from "../../contracts/plugin-runtime.js";
+import type { PluginManifest } from "../../contracts/plugin-manifest.js";
+import { PluginManifestError } from "../../errors/plugin-errors.js";
+import { buildContributionKey, buildSettingKey } from "../plugin-namespace/plugin-namespace.js";
 
 type ContributionMap<TDeclaration> = Map<string, PluginContributionSnapshot<TDeclaration>>;
 
-/**
- * Runtime catalog derived from plugin manifests.
- * The manifest remains the source of truth; this registry only indexes declarations.
- */
 export class PluginContributionRegistry {
   private readonly entities: ContributionMap<NonNullable<PluginManifest["entities"]>[number]> =
     new Map();

@@ -132,12 +132,12 @@ Normalizzazione:
 
 ### Accesso
 
-| Risorsa                    | Chi puo leggere              | Chi puo scrivere        |
-| -------------------------- | ---------------------------- | ----------------------- |
-| Entity registry            | kernel, plugin owner         | kernel (registrazione)  |
-| Repository plugin          | solo plugin owner            | solo plugin owner       |
-| Repository cross-plugin    | solo con capability esplicita | solo con capability     |
-| Indici                     | kernel                       | kernel (sync)           |
+| Risorsa                 | Chi puo leggere               | Chi puo scrivere       |
+| ----------------------- | ----------------------------- | ---------------------- |
+| Entity registry         | kernel, plugin owner          | kernel (registrazione) |
+| Repository plugin       | solo plugin owner             | solo plugin owner      |
+| Repository cross-plugin | solo con capability esplicita | solo con capability    |
+| Indici                  | kernel                        | kernel (sync)          |
 
 ### Regole
 
@@ -161,12 +161,12 @@ Normalizzazione:
 
 ### Eventi di storage
 
-| Nome canonico                       | Owner   | Visibility   | Delivery | Payload                                   | Quando                     |
-| ----------------------------------- | ------- | ------------ | -------- | ----------------------------------------- | -------------------------- |
-| `core.storage.entity.registered`    | kernel  | `audit`      | `sync`   | `{ pluginId, entityName, collectionName }` | registrazione entity       |
-| `core.storage.index.synced`         | kernel  | `audit`      | `sync`   | `{ pluginId, entityName, indexes, ok }`   | indici materializzati      |
-| `core.storage.health.failed`        | kernel  | `protected`  | `sync`   | `{ reason, details }`                     | health KO                  |
-| `core.storage.repository.forbidden` | kernel  | `audit`      | `sync`   | `{ pluginId, targetPluginId, entityName }` | accesso cross-plugin negato |
+| Nome canonico                       | Owner  | Visibility  | Delivery | Payload                                    | Quando                      |
+| ----------------------------------- | ------ | ----------- | -------- | ------------------------------------------ | --------------------------- |
+| `core.storage.entity.registered`    | kernel | `audit`     | `sync`   | `{ pluginId, entityName, collectionName }` | registrazione entity        |
+| `core.storage.index.synced`         | kernel | `audit`     | `sync`   | `{ pluginId, entityName, indexes, ok }`    | indici materializzati       |
+| `core.storage.health.failed`        | kernel | `protected` | `sync`   | `{ reason, details }`                      | health KO                   |
+| `core.storage.repository.forbidden` | kernel | `audit`     | `sync`   | `{ pluginId, targetPluginId, entityName }` | accesso cross-plugin negato |
 
 ### Delivery e retry
 

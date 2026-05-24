@@ -1,4 +1,3 @@
-// Barrel file for the kernel public contracts (v0.1).
 export * from "./api-contract.js";
 export * from "./authz-service.js";
 export * from "./cms-starter.js";

@@ -1,15 +1,15 @@
 import { s } from "@trinacria/schema";
-import type { DbAdapter } from "../contracts/db-adapter.js";
+import type { DbAdapter } from "../../contracts/db-adapter.js";
 import type {
   PersistedPluginRuntimeRecord,
   PluginRuntimeStore
-} from "../contracts/plugin-runtime-store.js";
-import type { PluginManifest } from "../contracts/plugin-manifest.js";
-import type { PluginRuntimeDiagnostic, PluginRuntimeRecord } from "../contracts/plugin-runtime.js";
-import { DbAdapterError } from "../errors/db-errors.js";
-import { CoreError } from "../errors/core-error.js";
+} from "../../contracts/plugin-runtime-store.js";
+import type { PluginManifest } from "../../contracts/plugin-manifest.js";
+import type { PluginRuntimeDiagnostic, PluginRuntimeRecord } from "../../contracts/plugin-runtime.js";
+import { DbAdapterError } from "../../errors/db-errors.js";
+import { CoreError } from "../../errors/core-error.js";
 import { defineEntity, type EntityRegistry } from "./entity-registry.js";
-import { validatePluginManifest } from "./plugin-manifest-validation.js";
+import { validatePluginManifest } from "../plugin-manifest/plugin-manifest-validation.js";
 
 const PluginRuntimeStateSchema = s.enum([
   "registered",
@@ -71,9 +71,6 @@ const PersistedPluginRuntimeRecordSchema = s.object(
   { strict: false }
 );
 
-/**
- * Canonical runtime persistence entity for installed plugins.
- */
 export const INSTALLED_PLUGINS_ENTITY = defineEntity({
   entityName: "installed_plugins",
   schema: PersistedPluginRuntimeRecordSchema,
@@ -112,16 +109,12 @@ export interface DbPluginRuntimeStoreOptions {
   now?: () => Date;
 }
 
-/**
- * In-memory runtime store useful for tests and no-DB deployments.
- */
 export class InMemoryPluginRuntimeStore implements PluginRuntimeStore {
   private readonly records = new Map<string, PersistedPluginRuntimeRecord>();
 
   constructor(private readonly now: () => Date = () => new Date()) {}
 
   async initialize(): Promise<void> {
-    // No setup required for in-memory storage.
   }
 
   async upsert(record: PluginRuntimeRecord): Promise<void> {
@@ -147,10 +140,6 @@ export class InMemoryPluginRuntimeStore implements PluginRuntimeStore {
   }
 }
 
-/**
- * DbAdapter-backed runtime store.
- * It persists plugin runtime state in the `installed_plugins` entity.
- */
 export class DbPluginRuntimeStore implements PluginRuntimeStore {
   private initialized = false;
   private readonly namespacePluginId: string;
@@ -225,9 +214,6 @@ export class DbPluginRuntimeStore implements PluginRuntimeStore {
   }
 }
 
-/**
- * Lazy wrapper that resolves the concrete store only when first used.
- */
 export class DeferredPluginRuntimeStore implements PluginRuntimeStore {
   private resolvedStore?: PluginRuntimeStore;
   private loading?: Promise<PluginRuntimeStore>;

@@ -1,9 +1,6 @@
 import { HttpController, response } from "@trinacria/http";
-import type { CmsSwaggerUiConfig } from "../contracts/cms-starter.js";
+import type { CmsSwaggerUiConfig } from "../../contracts/cms-starter.js";
 
-/**
- * Minimal Swagger UI controller for exposing interactive API docs.
- */
 export class CmsSwaggerController extends HttpController {
   constructor(private readonly config: CmsSwaggerUiConfig) {
     super();

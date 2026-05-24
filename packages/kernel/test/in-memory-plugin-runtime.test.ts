@@ -164,6 +164,40 @@ test("module bridge rolls back registered modules when init fails", async () => 
   assert.deepEqual(app.unregisteredCalls, ["M2", "M1"]);
 });
 
+test("unload can clear failed plugin state after unload failure", async () => {
+  const app = createFakeApp();
+  let unloadAttempts = 0;
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0", app });
+
+  await runtime.register({
+    manifest: {
+      id: "cms/plugin-content",
+      version: "1.0.0",
+      requiresCore: "^0.1.0"
+    },
+    modules: [createModule("M1")],
+    async onUnload() {
+      unloadAttempts += 1;
+      if (unloadAttempts === 1) {
+        throw new Error("unload exploded");
+      }
+    }
+  });
+
+  await runtime.load("cms/plugin-content");
+  await assert.rejects(async () => runtime.unload("cms/plugin-content"), PluginLifecycleError);
+
+  const failedRecord = runtime.list().find((item) => item.manifest.id === "cms/plugin-content");
+  assert.equal(failedRecord?.state, "failed");
+  assert.deepEqual(app.listModules(), ["M1"]);
+
+  await runtime.unload("cms/plugin-content");
+
+  const unloadedRecord = runtime.list().find((item) => item.manifest.id === "cms/plugin-content");
+  assert.equal(unloadedRecord?.state, "unloaded");
+  assert.deepEqual(app.listModules(), []);
+});
+
 test("cannot unload a plugin with loaded required dependents", async () => {
   const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0" });
 
@@ -209,6 +243,60 @@ test("loadMany loads plugins in dependency order", async () => {
   assert.ok(users?.loadedAt);
   assert.ok(content?.loadedAt);
   assert.ok(users.loadedAt!.getTime() <= content.loadedAt!.getTime());
+});
+
+test("loadMany includes required dependencies even when only target is requested", async () => {
+  const app = createFakeApp();
+  const calls: string[] = [];
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0", app });
+
+  await runtime.register({
+    manifest: {
+      id: "cms/plugin-users",
+      version: "1.0.0",
+      requiresCore: "^0.1.0"
+    },
+    onLoad() {
+      calls.push("users");
+    }
+  });
+  await runtime.register({
+    manifest: {
+      id: "cms/plugin-content",
+      version: "1.0.0",
+      requiresCore: "^0.1.0",
+      dependencies: [{ pluginId: "cms/plugin-users", versionRange: "^1.0.0" }]
+    },
+    onLoad() {
+      calls.push("content");
+    }
+  });
+
+  await runtime.loadMany(["cms/plugin-content"]);
+
+  assert.deepEqual(calls, ["users", "content"]);
+});
+
+test("loadMany rejects disabled required dependencies before loading targets", async () => {
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0" });
+
+  await runtime.register({
+    id: "cms/plugin-users",
+    version: "1.0.0",
+    requiresCore: "^0.1.0"
+  });
+  await runtime.register({
+    id: "cms/plugin-content",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    dependencies: [{ pluginId: "cms/plugin-users", versionRange: "^1.0.0" }]
+  });
+  await runtime.disable("cms/plugin-users", "maintenance");
+
+  await assert.rejects(async () => runtime.loadMany(["cms/plugin-content"]), PluginDependencyError);
+
+  const content = runtime.list().find((item) => item.manifest.id === "cms/plugin-content");
+  assert.equal(content?.state, "registered");
 });
 
 test("describeDependencies reports optional missing dependency as warning", async () => {
@@ -257,12 +345,83 @@ test("describeContributions exposes manifest-derived plugin declarations", async
       routes: [{ id: "posts", path: "/blog/posts", label: "Posts" }]
     }
   });
+  await runtime.load("blog-pack");
 
   const snapshot = runtime.describeContributions();
   assert.equal(snapshot.entities[0]?.key, "blog-pack:posts");
   assert.equal(snapshot.settings[0]?.key, "blog-pack:editorial:default-status");
   assert.equal(snapshot.events.emits[0]?.key, "blog-pack:post-published");
   assert.equal(snapshot.admin.routes[0]?.declaration.path, "/blog/posts");
+});
+
+test("describeContributions only exposes loaded plugin declarations", async () => {
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0" });
+
+  await runtime.register({
+    id: "blog-pack",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    entities: [{ name: "posts", schemaVersion: 1 }]
+  });
+
+  assert.equal(runtime.describeContributions().entities.length, 0);
+
+  await runtime.load("blog-pack");
+
+  assert.equal(runtime.describeContributions().entities.length, 1);
+
+  await runtime.unload("blog-pack");
+
+  assert.equal(runtime.describeContributions().entities.length, 0);
+});
+
+test("load failure removes partial plugin contributions and records diagnostic context", async () => {
+  const app = createFakeApp();
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0", app });
+
+  await runtime.register({
+    manifest: {
+      id: "blog-pack",
+      version: "1.0.0",
+      requiresCore: "^0.1.0",
+      entities: [{ name: "posts", schemaVersion: 1 }]
+    },
+    async onInit() {
+      throw new Error("init failed");
+    }
+  });
+
+  await assert.rejects(async () => runtime.load("blog-pack"), PluginLifecycleError);
+
+  const [record] = runtime.list();
+  const [event] = runtime.events({ pluginId: "blog-pack", limit: 1 });
+
+  assert.equal(runtime.describeContributions().entities.length, 0);
+  assert.equal(record?.state, "failed");
+  assert.equal(record?.lastFailurePhase, "init");
+  assert.equal(record?.failureCount, 1);
+  assert.equal(event?.action, "load");
+  assert.equal(event?.success, false);
+  assert.equal(event?.phase, "init");
+  assert.equal(event?.details?.failureCount, 1);
+});
+
+test("disable removes loaded plugin contributions", async () => {
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0" });
+
+  await runtime.register({
+    id: "blog-pack",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    entities: [{ name: "posts", schemaVersion: 1 }]
+  });
+  await runtime.load("blog-pack");
+
+  assert.equal(runtime.describeContributions().entities.length, 1);
+
+  await runtime.disable("blog-pack", "operator stop");
+
+  assert.equal(runtime.describeContributions().entities.length, 0);
 });
 
 test("register rejects global admin path collisions", async () => {
@@ -318,7 +477,7 @@ test("register rejects cross-plugin namespace collisions", async () => {
   );
 });
 
-test("unregister removes plugin contributions from runtime catalog", async () => {
+test("unregister removes plugin contribution reservations from runtime catalog", async () => {
   const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0" });
 
   await runtime.register({
@@ -327,10 +486,16 @@ test("unregister removes plugin contributions from runtime catalog", async () =>
     requiresCore: "^0.1.0",
     entities: [{ name: "posts", schemaVersion: 1 }]
   });
-
-  assert.equal(runtime.describeContributions().entities.length, 1);
+  await runtime.load("blog-pack");
+  await runtime.unload("blog-pack");
 
   await runtime.unregister("blog-pack");
+  await runtime.register({
+    id: "commerce-pack",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    entities: [{ name: "posts", schemaVersion: 1 }]
+  });
 
   assert.equal(runtime.describeContributions().entities.length, 0);
 });
@@ -396,10 +561,10 @@ test("runtime keeps a bounded event log for operational diagnostics", async () =
   assert.equal(events.length, 2);
   assert.deepEqual(
     events.map((event) => event.action),
-    ["load", "disable"]
+    ["unload", "disable"]
   );
-  assert.equal(events[0]?.sequence, 2);
-  assert.equal(events[1]?.sequence, 3);
+  assert.equal(events[0]?.sequence, 3);
+  assert.equal(events[1]?.sequence, 4);
 });
 
 test("runtime supports unregister when plugin is not loaded", async () => {

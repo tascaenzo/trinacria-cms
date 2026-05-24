@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import mongoose from "mongoose";
-import { EntityRegistry } from "../src/runtime/entity-registry.js";
-import { createMongoDbAdapter } from "../src/runtime/mongo-db-adapter.js";
-import { DbPluginRuntimeStore } from "../src/runtime/plugin-runtime-store.js";
+import { EntityRegistry } from "../src/runtime/persistence/entity-registry.js";
+import { createMongoDbAdapter } from "../src/runtime/persistence/mongo-db-adapter.js";
+import { DbPluginRuntimeStore } from "../src/runtime/persistence/plugin-runtime-store.js";
 import type { PluginRuntimeRecord } from "../src/contracts/plugin-runtime.js";
 
 const RUN_MONGO_INTEGRATION = process.env.TRINACRIA_RUN_MONGO_INTEGRATION === "1";

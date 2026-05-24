@@ -28,6 +28,7 @@ Glossario terminologico unico: [GLOSSARY.md](../GLOSSARY.md)
 14. [0013 - Settings: sicurezza e ownership operativa](./0013-settings-sicurezza-e-ownership-operativa.md)
 15. [0014 - Settings end-to-end](./0014-settings-end-to-end.md)
 16. [0015 - Operazioni plugin e troubleshooting](./0015-operazioni-plugin-e-troubleshooting.md)
+17. [0016 - M5 Runtime plugin foundation](./0016-m5-runtime-plugin-foundation.md)
 
 ## Cosa trovi in questo manuale
 

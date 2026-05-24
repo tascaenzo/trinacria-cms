@@ -141,11 +141,11 @@ Canonical key:
 
 ### Classi di visibilita
 
-| Visibilita  | Lettura valore         | Scrittura            | Reveal secret        | Uso previsto                                    |
-| ----------- | ---------------------- | -------------------- | -------------------- | ----------------------------------------------- |
-| `public`    | admin, plugin          | owner                | N/A                  | site name, locale, feature flag non sensibili   |
-| `protected` | admin, owner, policy   | owner                | N/A                  | config condivisa tra plugin, limiti, integraz   |
-| `secret`    | solo owner/policy      | owner                | solo owner/policy    | API key, webhook secret, OAuth secret, token    |
+| Visibilita  | Lettura valore       | Scrittura | Reveal secret     | Uso previsto                                  |
+| ----------- | -------------------- | --------- | ----------------- | --------------------------------------------- |
+| `public`    | admin, plugin        | owner     | N/A               | site name, locale, feature flag non sensibili |
+| `protected` | admin, owner, policy | owner     | N/A               | config condivisa tra plugin, limiti, integraz |
+| `secret`    | solo owner/policy    | owner     | solo owner/policy | API key, webhook secret, OAuth secret, token  |
 
 ### Regole
 
@@ -160,6 +160,7 @@ Canonical key:
 ### Audit
 
 Ogni operazione produce un audit event con:
+
 - canonical key
 - attore (admin ID o plugin ID)
 - operazione (read, write, reveal, rotate)
@@ -170,13 +171,13 @@ Ogni operazione produce un audit event con:
 
 ### Eventi di settings
 
-| Nome canonico                       | Owner      | Visibility | Delivery | Payload                                       | Quando                     |
-| ----------------------------------- | ---------- | ---------- | -------- | --------------------------------------------- | -------------------------- |
-| `core.settings.defined`             | core-pack  | `audit`    | `sync`   | `{ canonicalKey, ownerPluginId, type }`       | nuova definition           |
-| `core.settings.value.set`           | core-pack  | `audit`    | `sync`   | `{ canonicalKey, version, actorId }`          | valore aggiornato          |
-| `core.settings.secret.revealed`     | core-pack  | `audit`    | `sync`   | `{ canonicalKey, actorId }`                   | reveal secret              |
-| `core.settings.secret.rotated`      | core-pack  | `audit`    | `sync`   | `{ canonicalKey, keyVersion, actorId }`       | rotazione secret           |
-| `core.settings.access_denied`       | core-pack  | `audit`    | `sync`   | `{ canonicalKey, actorId, reason }`           | tentativo non autorizzato  |
+| Nome canonico                   | Owner     | Visibility | Delivery | Payload                                 | Quando                    |
+| ------------------------------- | --------- | ---------- | -------- | --------------------------------------- | ------------------------- |
+| `core.settings.defined`         | core-pack | `audit`    | `sync`   | `{ canonicalKey, ownerPluginId, type }` | nuova definition          |
+| `core.settings.value.set`       | core-pack | `audit`    | `sync`   | `{ canonicalKey, version, actorId }`    | valore aggiornato         |
+| `core.settings.secret.revealed` | core-pack | `audit`    | `sync`   | `{ canonicalKey, actorId }`             | reveal secret             |
+| `core.settings.secret.rotated`  | core-pack | `audit`    | `sync`   | `{ canonicalKey, keyVersion, actorId }` | rotazione secret          |
+| `core.settings.access_denied`   | core-pack | `audit`    | `sync`   | `{ canonicalKey, actorId, reason }`     | tentativo non autorizzato |
 
 ### Delivery e retry
 

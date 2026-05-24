@@ -1,7 +1,7 @@
-import type { DbAdapter, DbQuery, DbRepository, DbTransaction } from "../contracts/db-adapter.js";
-import type { NamespaceContext } from "../contracts/namespace-context.js";
-import { buildNamespaceKey } from "../contracts/namespace-context.js";
-import { DbAdapterError } from "../errors/db-errors.js";
+import type { DbAdapter, DbQuery, DbRepository, DbTransaction } from "../../contracts/db-adapter.js";
+import type { NamespaceContext } from "../../contracts/namespace-context.js";
+import { buildNamespaceKey } from "../../contracts/namespace-context.js";
+import { DbAdapterError } from "../../errors/db-errors.js";
 import { EntityRegistry, type EntityIndexDefinition } from "./entity-registry.js";
 
 interface MongoSessionLike {
@@ -77,10 +77,6 @@ class MongoDbTransaction implements DbTransaction {
   }
 }
 
-/**
- * Mongo implementation of DbAdapter using a collection-level API.
- * Plugins remain storage-agnostic and declare canonical schemas once.
- */
 export class MongoDbAdapter implements DbAdapter {
   constructor(private readonly options: MongoDbAdapterOptions) {}
 
@@ -108,9 +104,6 @@ export class MongoDbAdapter implements DbAdapter {
     }
   }
 
-  /**
-   * Ensures declared indexes exist for selected entities in a plugin namespace.
-   */
   async ensureIndexes(pluginId: string, entityNames: readonly string[]): Promise<void> {
     for (const entityName of entityNames) {
       const definition = this.options.entityRegistry.get(entityName);
@@ -205,10 +198,6 @@ export class MongoDbAdapter implements DbAdapter {
     return `${namespace}__${entity}`;
   }
 
-  /**
-   * Keeps logical namespace semantics intact while allowing reserved infrastructure
-   * namespaces to use cleaner physical collection names.
-   */
   private buildStorageNamespace(context: NamespaceContext): string {
     const pluginId = context.pluginId.trim().toLowerCase();
     if (pluginId === "kernel") {
@@ -267,9 +256,6 @@ export class MongoDbAdapter implements DbAdapter {
   }
 }
 
-/**
- * Factory helper for MongoDbAdapter.
- */
 export function createMongoDbAdapter(options: MongoDbAdapterOptions): MongoDbAdapter {
   return new MongoDbAdapter(options);
 }

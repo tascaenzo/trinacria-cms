@@ -212,6 +212,10 @@ admin apps, CLIs, and dynamic UIs.
 Kernel endpoints:
 
 - `GET /v1/system/plugins`
+- `GET /v1/system/plugins/:pluginId`
+- `POST /v1/system/plugins/:pluginId/operations`
+- `GET /v1/system/plugins/:pluginId/events?limit=20`
+- `GET /v1/system/plugins/sources`
 - `GET /v1/system/capabilities`
 
 Example:
@@ -225,6 +229,10 @@ const cms = createCmsSdkClient({
 
 const plugins = await cms.system.listInstalledPlugins();
 const capabilities = await cms.system.listInstalledCapabilities();
+const events = await cms.system.listPluginEvents({
+  path: { pluginId: "core-pack" },
+  query: { limit: 20 }
+});
 
 const hasCorePack = isPluginInstalled(plugins.data, "core-pack");
 const canManageSettings = hasCapability(capabilities.data, "core-pack", "settings.service");
