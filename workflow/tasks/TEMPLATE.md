@@ -1,51 +1,27 @@
 # Titolo Task
 
-## Meta
-
-- ID: `task-xxxx`
-- Stato: `todo`
-- Area: `kernel | core-pack | sdk | backoffice | docs | infra`
-- Milestone: `M0`
-- Owner: `enzo`
-- Creato il: `YYYY-MM-DD`
-- Ultimo aggiornamento: `YYYY-MM-DD`
-
 ## Obiettivo
 
 Descrivere in una frase il risultato atteso.
 
-## Contesto
+## Area
 
-Spiegare il problema, il vincolo o il motivo tecnico del task.
+`kernel | core-pack | sdk | backoffice | docs | infra`
+
+## Milestone
+
+`M0`
 
 ## Scope
 
 - In scope:
-- In scope:
 - Out of scope:
 
-## Deliverable
-
-- Deliverable atteso
-- Deliverable atteso
-
-## File o aree impattate
+## File impattati
 
 - `path/file`
-- `path/file`
 
-## Check da eseguire
+## Check
 
-- `npm test`
 - `npm run build`
-- check specifici del task
-
-## Note operative
-
-Annotazioni utili durante lo sviluppo.
-
-## Chiusura
-
-- Changelog milestone aggiornato: `si | no`
-- Documentazione aggiornata: `si | no`
-- Follow-up aperti:
+- check specifici

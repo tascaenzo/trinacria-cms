@@ -131,15 +131,13 @@ Sandbox note:
 
 ## Workflow operativo
 
-La gestione del lavoro attivo ora vive in [workflow/README.md](/Users/enzo/Desktop/trinacria-cms/workflow/README.md).
+La gestione del lavoro attivo vive in [workflow/](workflow/README.md).
 
-Struttura principale:
-
-- `workflow/tasks/todo`
-- `workflow/tasks/in-progress`
-- `workflow/tasks/done`
-- `workflow/changelog`
-- `workflow/milestones`
+- `workflow/tasks/todo` — task pronti
+- `workflow/tasks/done` — task completati
+- `workflow/tasks/backlog` — task futuri
+- `workflow/changelog/CHANGELOG.md` — log per milestone
+- `workflow/milestones/` — milestone attive e completate
 
 ## Documentation
 

@@ -4,7 +4,7 @@ import { PluginCompatibilityError, PluginManifestError } from "../src/errors/ind
 import {
   assertPluginCompatibility,
   validatePluginManifest
-} from "../src/runtime/plugin-manifest-validation.js";
+} from "../src/runtime/plugin-manifest/plugin-manifest-validation.js";
 
 test("validatePluginManifest returns normalized manifest", () => {
   const manifest = validatePluginManifest({

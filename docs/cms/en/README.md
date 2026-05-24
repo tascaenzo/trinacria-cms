@@ -28,6 +28,7 @@ Unified terminology glossary: [GLOSSARY.md](../GLOSSARY.md)
 14. [0013 - Settings security and operational ownership](./0013-settings-security-and-operational-ownership.md)
 15. [0014 - Settings end-to-end](./0014-settings-end-to-end.md)
 16. [0015 - Plugin operations and troubleshooting](./0015-plugin-operations-and-troubleshooting.md)
+17. [0016 - M5 Plugin runtime foundation](./0016-m5-plugin-runtime-foundation.md)
 
 ## What this manual includes
 

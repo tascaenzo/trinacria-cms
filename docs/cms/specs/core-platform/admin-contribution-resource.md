@@ -96,13 +96,13 @@ cms_kernel_admin_contributions_cache
 
 ### Accesso alle contribution admin
 
-| Risorsa                      | Chi puo leggere              | Chi puo scrivere            |
-| ---------------------------- | ---------------------------- | --------------------------- |
-| Navigation                   | admin con permission match   | plugin owner (manifest)     |
-| Route                        | admin con permission match   | plugin owner (manifest)     |
-| Resource                     | admin con permission match   | plugin owner (manifest)     |
-| Widget                       | admin con permission match   | plugin owner (manifest)     |
-| Settings section             | admin con permission match   | plugin owner (manifest)     |
+| Risorsa          | Chi puo leggere            | Chi puo scrivere        |
+| ---------------- | -------------------------- | ----------------------- |
+| Navigation       | admin con permission match | plugin owner (manifest) |
+| Route            | admin con permission match | plugin owner (manifest) |
+| Resource         | admin con permission match | plugin owner (manifest) |
+| Widget           | admin con permission match | plugin owner (manifest) |
+| Settings section | admin con permission match | plugin owner (manifest) |
 
 ### Regole
 
@@ -123,12 +123,12 @@ cms_kernel_admin_contributions_cache
 
 ### Eventi di admin contribution
 
-| Nome canonico                           | Owner       | Visibility | Delivery | Payload                                       | Quando                     |
-| --------------------------------------- | ----------- | ---------- | -------- | --------------------------------------------- | -------------------------- |
-| `core.admin.contribution.registered`    | admin-kernel | `audit`    | `sync`   | `{ pluginId, type, id }`                      | contribution registrata    |
-| `core.admin.contribution.removed`       | admin-kernel | `audit`    | `sync`   | `{ pluginId, type, id }`                      | contribution rimossa       |
-| `core.admin.route.collision`            | admin-kernel | `audit`    | `sync`   | `{ pluginId, path, existingOwner }`           | collisione route           |
-| `core.admin.resource.collision`         | admin-kernel | `audit`    | `sync`   | `{ pluginId, resourceId, existingOwner }`     | collisione resource ID     |
+| Nome canonico                        | Owner        | Visibility | Delivery | Payload                                   | Quando                  |
+| ------------------------------------ | ------------ | ---------- | -------- | ----------------------------------------- | ----------------------- |
+| `core.admin.contribution.registered` | admin-kernel | `audit`    | `sync`   | `{ pluginId, type, id }`                  | contribution registrata |
+| `core.admin.contribution.removed`    | admin-kernel | `audit`    | `sync`   | `{ pluginId, type, id }`                  | contribution rimossa    |
+| `core.admin.route.collision`         | admin-kernel | `audit`    | `sync`   | `{ pluginId, path, existingOwner }`       | collisione route        |
+| `core.admin.resource.collision`      | admin-kernel | `audit`    | `sync`   | `{ pluginId, resourceId, existingOwner }` | collisione resource ID  |
 
 ### Delivery e retry
 

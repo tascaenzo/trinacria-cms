@@ -15,27 +15,28 @@ import type {
 import type { KernelAdminRouteGuard } from "../contracts/kernel-admin-route-guard.js";
 import type {
   PluginDiscoveryService,
+  PluginDiscoverySource,
   PluginSourceSnapshot
 } from "../contracts/plugin-discovery.js";
-import type { PluginRuntime } from "../contracts/plugin-runtime.js";
+import type { KernelPluginDefinition, PluginRuntime } from "../contracts/plugin-runtime.js";
 import type { PluginRuntimeStore } from "../contracts/plugin-runtime-store.js";
 import type { PluginSecurityProvisioner } from "../contracts/plugin-security-provisioner.js";
 import { CoreError } from "../errors/core-error.js";
-import { InMemoryPluginRuntime } from "./in-memory-plugin-runtime.js";
+import { InMemoryPluginRuntime } from "./plugin-runtime/in-memory-plugin-runtime.js";
 import {
   createDbPluginRuntimeStore,
   createDeferredPluginRuntimeStore,
   createInMemoryPluginRuntimeStore
-} from "./plugin-runtime-store.js";
+} from "./persistence/plugin-runtime-store.js";
 import { CORE_TOKENS } from "../tokens/core-tokens.js";
-import { KernelHealthService } from "./kernel-health-service.js";
-import { KernelHealthHttpController } from "../http/kernel-health.controller.js";
-import { KERNEL_HEALTH_HTTP_CONTROLLER } from "../http/kernel-health.tokens.js";
-import { KernelSystemHttpController } from "../http/kernel-system.controller.js";
-import { KERNEL_SYSTEM_HTTP_CONTROLLER } from "../http/kernel-system.tokens.js";
-import { CmsSwaggerController } from "../http/cms-swagger.controller.js";
-import { KernelSystemService } from "./kernel-system-service.js";
-import { ConfiguredPluginDiscoveryService } from "./plugin-discovery-service.js";
+import { KernelHealthService } from "./system/kernel-health-service.js";
+import { KernelHealthHttpController } from "../http/health/kernel-health.controller.js";
+import { KERNEL_HEALTH_HTTP_CONTROLLER } from "../http/health/kernel-health.tokens.js";
+import { KernelSystemHttpController } from "../http/system/kernel-system.controller.js";
+import { KERNEL_SYSTEM_HTTP_CONTROLLER } from "../http/system/kernel-system.tokens.js";
+import { CmsSwaggerController } from "../http/swagger/cms-swagger.controller.js";
+import { KernelSystemService } from "./system/kernel-system-service.js";
+import { ConfiguredPluginDiscoveryService } from "./plugin-discovery/plugin-discovery-service.js";
 
 const CMS_STARTER_SWAGGER_CONFIG_TOKEN = createToken<CmsSwaggerUiConfig>(
   "CMS_STARTER_SWAGGER_CONFIG"
@@ -130,6 +131,7 @@ export async function startCmsApp(options: CmsStarterOptions): Promise<CmsStarte
       factoryProvider(
         CORE_TOKENS.PLUGIN_DISCOVERY_SERVICE,
         () =>
+          options.pluginDiscoveryService ??
           new ConfiguredPluginDiscoveryService({
             continueOnError: options.continueOnPluginDiscoveryError ?? false
           }),
@@ -212,22 +214,67 @@ export async function startCmsApp(options: CmsStarterOptions): Promise<CmsStarte
   const discoveryService = await app.resolve<PluginDiscoveryService>(
     CORE_TOKENS.PLUGIN_DISCOVERY_SERVICE
   );
-  const discovery = await discoveryService.discover(options.pluginSources ?? []);
-  pluginSourceSnapshots = discovery.sources;
-  const plugins = [...(options.plugins ?? []), ...discovery.plugins];
-  for (const plugin of plugins) {
-    await runtime.register(plugin);
-  }
-  if (options.autoLoadPlugins !== false && plugins.length > 0) {
-    await runtime.loadMany(plugins.map((plugin) => plugin.manifest.id));
-  }
+  const pluginBootstrap = await bootstrapDiscoveredPlugins({
+    runtime,
+    discoveryService,
+    pluginSources: options.pluginSources ?? [],
+    plugins: options.plugins ?? [],
+    autoLoadPlugins: options.autoLoadPlugins
+  });
+  pluginSourceSnapshots = pluginBootstrap.pluginSources;
 
   return {
     runtime,
-    pluginSources: discovery.sources,
+    pluginSources: pluginBootstrap.pluginSources,
     shutdown: async () => {
       await app.shutdown();
     }
+  };
+}
+
+export interface PluginBootstrapOptions {
+  runtime: Pick<PluginRuntime, "register" | "loadMany" | "list"> & {
+    reconcileDiscoveredPlugins?(pluginIds: readonly string[]): Promise<void>;
+  };
+  discoveryService: PluginDiscoveryService;
+  pluginSources: readonly PluginDiscoverySource[];
+  plugins?: readonly KernelPluginDefinition[];
+  autoLoadPlugins?: boolean;
+}
+
+export interface PluginBootstrapResult {
+  plugins: readonly KernelPluginDefinition[];
+  pluginSources: readonly PluginSourceSnapshot[];
+}
+
+export async function bootstrapDiscoveredPlugins(
+  options: PluginBootstrapOptions
+): Promise<PluginBootstrapResult> {
+  const discovery = await options.discoveryService.discover(options.pluginSources);
+  const plugins = [...(options.plugins ?? []), ...discovery.plugins];
+
+  for (const plugin of plugins) {
+    await options.runtime.register(plugin);
+  }
+
+  await options.runtime.reconcileDiscoveredPlugins?.(plugins.map((plugin) => plugin.manifest.id));
+
+  if (options.autoLoadPlugins !== false && plugins.length > 0) {
+    const autoloadPluginIds = plugins
+      .map((plugin) => plugin.manifest.id)
+      .filter((pluginId) => {
+        const record = options.runtime.list().find((item) => item.manifest.id === pluginId);
+        return record ? ["registered", "unloaded"].includes(record.state) : false;
+      });
+
+    if (autoloadPluginIds.length > 0) {
+      await options.runtime.loadMany(autoloadPluginIds);
+    }
+  }
+
+  return {
+    plugins,
+    pluginSources: discovery.sources
   };
 }
 

@@ -8,7 +8,7 @@ import {
   matchesPermissionPattern,
   parsePermissionKey,
   parsePermissionPattern
-} from "../src/runtime/permission-key.js";
+} from "../src/runtime/plugin-namespace/permission-key.js";
 
 test("permission key parser validates canonical keys", () => {
   const parsed = parsePermissionKey("core-pack:users:read");

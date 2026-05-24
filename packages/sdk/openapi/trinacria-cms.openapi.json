@@ -9,9 +9,7 @@
       "get": {
         "operationId": "getKernelHealth",
         "summary": "Read aggregated kernel health",
-        "tags": [
-          "Kernel Health"
-        ],
+        "tags": ["Kernel Health"],
         "responses": {
           "200": {
             "description": "Kernel health snapshot",
@@ -20,14 +18,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": [
-                    "timestamp",
-                    "status",
-                    "runtime",
-                    "dependencies",
-                    "db",
-                    "issues"
-                  ],
+                  "required": ["timestamp", "status", "runtime", "dependencies", "db", "issues"],
                   "properties": {
                     "timestamp": {
                       "type": "string",
@@ -35,19 +26,12 @@
                     },
                     "status": {
                       "type": "string",
-                      "enum": [
-                        "ok",
-                        "degraded",
-                        "down"
-                      ]
+                      "enum": ["ok", "degraded", "down"]
                     },
                     "runtime": {
                       "type": "object",
                       "additionalProperties": false,
-                      "required": [
-                        "totalPlugins",
-                        "byState"
-                      ],
+                      "required": ["totalPlugins", "byState"],
                       "properties": {
                         "totalPlugins": {
                           "type": "integer"
@@ -97,22 +81,14 @@
                     "dependencies": {
                       "type": "object",
                       "additionalProperties": false,
-                      "required": [
-                        "nodes",
-                        "edges",
-                        "warnings"
-                      ],
+                      "required": ["nodes", "edges", "warnings"],
                       "properties": {
                         "nodes": {
                           "type": "array",
                           "items": {
                             "type": "object",
                             "additionalProperties": false,
-                            "required": [
-                              "pluginId",
-                              "state",
-                              "version"
-                            ],
+                            "required": ["pluginId", "state", "version"],
                             "properties": {
                               "pluginId": {
                                 "type": "string"
@@ -131,12 +107,7 @@
                           "items": {
                             "type": "object",
                             "additionalProperties": false,
-                            "required": [
-                              "from",
-                              "to",
-                              "status",
-                              "optional"
-                            ],
+                            "required": ["from", "to", "status", "optional"],
                             "properties": {
                               "from": {
                                 "type": "string"
@@ -167,9 +138,7 @@
                     "db": {
                       "type": "object",
                       "additionalProperties": false,
-                      "required": [
-                        "ok"
-                      ],
+                      "required": ["ok"],
                       "properties": {
                         "ok": {
                           "type": "boolean"
@@ -197,9 +166,7 @@
       "get": {
         "operationId": "getKernelDependencyGraph",
         "summary": "Read plugin dependency graph snapshot",
-        "tags": [
-          "Kernel Health"
-        ],
+        "tags": ["Kernel Health"],
         "responses": {
           "200": {
             "description": "Plugin dependency graph",
@@ -208,22 +175,14 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": [
-                    "nodes",
-                    "edges",
-                    "warnings"
-                  ],
+                  "required": ["nodes", "edges", "warnings"],
                   "properties": {
                     "nodes": {
                       "type": "array",
                       "items": {
                         "type": "object",
                         "additionalProperties": false,
-                        "required": [
-                          "pluginId",
-                          "state",
-                          "version"
-                        ],
+                        "required": ["pluginId", "state", "version"],
                         "properties": {
                           "pluginId": {
                             "type": "string"
@@ -242,12 +201,7 @@
                       "items": {
                         "type": "object",
                         "additionalProperties": false,
-                        "required": [
-                          "from",
-                          "to",
-                          "status",
-                          "optional"
-                        ],
+                        "required": ["from", "to", "status", "optional"],
                         "properties": {
                           "from": {
                             "type": "string"
@@ -285,9 +239,7 @@
       "get": {
         "operationId": "listInstalledPlugins",
         "summary": "List installed plugins and their runtime state",
-        "tags": [
-          "System"
-        ],
+        "tags": ["System"],
         "responses": {
           "200": {
             "description": "Installed plugin discovery snapshot",
@@ -351,12 +303,7 @@
                                 },
                                 "status": {
                                   "type": "string",
-                                  "enum": [
-                                    "ok",
-                                    "missing",
-                                    "disabled",
-                                    "version-mismatch"
-                                  ]
+                                  "enum": ["ok", "missing", "disabled", "version-mismatch"]
                                 },
                                 "currentVersion": {
                                   "type": "string",
@@ -380,12 +327,7 @@
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "pluginId",
-                                "versionRange",
-                                "optional",
-                                "status"
-                              ],
+                              "required": ["pluginId", "versionRange", "optional", "status"],
                               "additionalProperties": false
                             }
                           },
@@ -409,12 +351,7 @@
                                 "minimum": 0
                               }
                             },
-                            "required": [
-                              "permissions",
-                              "roles",
-                              "grants",
-                              "policyRules"
-                            ],
+                            "required": ["permissions", "roles", "grants", "policyRules"],
                             "additionalProperties": false
                           },
                           "failureCount": {
@@ -460,10 +397,7 @@
                                 "minLength": 1
                               }
                             },
-                            "required": [
-                              "code",
-                              "message"
-                            ]
+                            "required": ["code", "message"]
                           },
                           "lastError": {
                             "type": "object",
@@ -481,10 +415,7 @@
                                 "minLength": 1
                               }
                             },
-                            "required": [
-                              "name",
-                              "message"
-                            ]
+                            "required": ["name", "message"]
                           },
                           "operations": {
                             "type": "array",
@@ -493,13 +424,7 @@
                               "properties": {
                                 "operation": {
                                   "type": "string",
-                                  "enum": [
-                                    "load",
-                                    "unload",
-                                    "reload",
-                                    "disable",
-                                    "enable"
-                                  ]
+                                  "enum": ["load", "unload", "reload", "disable", "enable"]
                                 },
                                 "available": {
                                   "type": "boolean"
@@ -509,12 +434,40 @@
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "operation",
-                                "available"
-                              ],
+                              "required": ["operation", "available"],
                               "additionalProperties": false
                             }
+                          },
+                          "source": {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "enum": ["workspace", "package", "local-path"]
+                              },
+                              "name": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "entrypoint": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": ["discovered", "failed", "disabled"]
+                              },
+                              "pluginId": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "error": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            },
+                            "required": ["type", "name", "entrypoint", "status"],
+                            "additionalProperties": false
                           }
                         },
                         "required": [
@@ -535,9 +488,7 @@
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "kernel"
-                          ]
+                          "enum": ["kernel"]
                         },
                         "count": {
                           "type": "integer"
@@ -546,9 +497,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -561,9 +510,7 @@
       "get": {
         "operationId": "listInstalledCapabilities",
         "summary": "List published capabilities across installed plugins",
-        "tags": [
-          "System"
-        ],
+        "tags": ["System"],
         "responses": {
           "200": {
             "description": "Flattened capability catalog",
@@ -603,12 +550,7 @@
                             ]
                           }
                         },
-                        "required": [
-                          "pluginId",
-                          "capability",
-                          "version",
-                          "state"
-                        ],
+                        "required": ["pluginId", "capability", "version", "state"],
                         "additionalProperties": false
                       }
                     },
@@ -616,9 +558,7 @@
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "kernel"
-                          ]
+                          "enum": ["kernel"]
                         },
                         "count": {
                           "type": "integer"
@@ -627,9 +567,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -642,9 +580,7 @@
       "get": {
         "operationId": "listPluginContributions",
         "summary": "List manifest-derived plugin contributions",
-        "tags": [
-          "System"
-        ],
+        "tags": ["System"],
         "responses": {
           "200": {
             "description": "Manifest-derived plugin contribution catalog",
@@ -674,11 +610,7 @@
                                 "properties": {}
                               }
                             },
-                            "required": [
-                              "pluginId",
-                              "key",
-                              "declaration"
-                            ],
+                            "required": ["pluginId", "key", "declaration"],
                             "additionalProperties": false
                           }
                         },
@@ -700,11 +632,7 @@
                                 "properties": {}
                               }
                             },
-                            "required": [
-                              "pluginId",
-                              "key",
-                              "declaration"
-                            ],
+                            "required": ["pluginId", "key", "declaration"],
                             "additionalProperties": false
                           }
                         },
@@ -729,11 +657,7 @@
                                     "properties": {}
                                   }
                                 },
-                                "required": [
-                                  "pluginId",
-                                  "key",
-                                  "declaration"
-                                ],
+                                "required": ["pluginId", "key", "declaration"],
                                 "additionalProperties": false
                               }
                             },
@@ -755,19 +679,12 @@
                                     "properties": {}
                                   }
                                 },
-                                "required": [
-                                  "pluginId",
-                                  "key",
-                                  "declaration"
-                                ],
+                                "required": ["pluginId", "key", "declaration"],
                                 "additionalProperties": false
                               }
                             }
                           },
-                          "required": [
-                            "emits",
-                            "subscribes"
-                          ],
+                          "required": ["emits", "subscribes"],
                           "additionalProperties": false
                         },
                         "admin": {
@@ -791,11 +708,7 @@
                                     "properties": {}
                                   }
                                 },
-                                "required": [
-                                  "pluginId",
-                                  "key",
-                                  "declaration"
-                                ],
+                                "required": ["pluginId", "key", "declaration"],
                                 "additionalProperties": false
                               }
                             },
@@ -817,11 +730,7 @@
                                     "properties": {}
                                   }
                                 },
-                                "required": [
-                                  "pluginId",
-                                  "key",
-                                  "declaration"
-                                ],
+                                "required": ["pluginId", "key", "declaration"],
                                 "additionalProperties": false
                               }
                             },
@@ -843,11 +752,7 @@
                                     "properties": {}
                                   }
                                 },
-                                "required": [
-                                  "pluginId",
-                                  "key",
-                                  "declaration"
-                                ],
+                                "required": ["pluginId", "key", "declaration"],
                                 "additionalProperties": false
                               }
                             },
@@ -869,11 +774,7 @@
                                     "properties": {}
                                   }
                                 },
-                                "required": [
-                                  "pluginId",
-                                  "key",
-                                  "declaration"
-                                ],
+                                "required": ["pluginId", "key", "declaration"],
                                 "additionalProperties": false
                               }
                             },
@@ -895,11 +796,7 @@
                                     "properties": {}
                                   }
                                 },
-                                "required": [
-                                  "pluginId",
-                                  "key",
-                                  "declaration"
-                                ],
+                                "required": ["pluginId", "key", "declaration"],
                                 "additionalProperties": false
                               }
                             }
@@ -914,21 +811,14 @@
                           "additionalProperties": false
                         }
                       },
-                      "required": [
-                        "entities",
-                        "settings",
-                        "events",
-                        "admin"
-                      ],
+                      "required": ["entities", "settings", "events", "admin"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "kernel"
-                          ]
+                          "enum": ["kernel"]
                         },
                         "count": {
                           "type": "integer"
@@ -937,9 +827,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -952,9 +840,7 @@
       "get": {
         "operationId": "listPluginSources",
         "summary": "List configured plugin discovery sources",
-        "tags": [
-          "System"
-        ],
+        "tags": ["System"],
         "responses": {
           "200": {
             "description": "Configured plugin discovery source diagnostics",
@@ -970,11 +856,7 @@
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": [
-                              "workspace",
-                              "package",
-                              "local-path"
-                            ]
+                            "enum": ["workspace", "package", "local-path"]
                           },
                           "name": {
                             "type": "string",
@@ -986,11 +868,7 @@
                           },
                           "status": {
                             "type": "string",
-                            "enum": [
-                              "discovered",
-                              "failed",
-                              "disabled"
-                            ]
+                            "enum": ["discovered", "failed", "disabled"]
                           },
                           "pluginId": {
                             "type": "string",
@@ -1001,12 +879,7 @@
                             "minLength": 1
                           }
                         },
-                        "required": [
-                          "type",
-                          "name",
-                          "entrypoint",
-                          "status"
-                        ],
+                        "required": ["type", "name", "entrypoint", "status"],
                         "additionalProperties": false
                       }
                     },
@@ -1014,9 +887,7 @@
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "kernel"
-                          ]
+                          "enum": ["kernel"]
                         },
                         "count": {
                           "type": "integer"
@@ -1025,9 +896,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -1040,9 +909,7 @@
       "get": {
         "operationId": "getInstalledPlugin",
         "summary": "Read one installed plugin snapshot",
-        "tags": [
-          "System"
-        ],
+        "tags": ["System"],
         "responses": {
           "200": {
             "description": "Installed plugin detail snapshot",
@@ -1104,12 +971,7 @@
                               },
                               "status": {
                                 "type": "string",
-                                "enum": [
-                                  "ok",
-                                  "missing",
-                                  "disabled",
-                                  "version-mismatch"
-                                ]
+                                "enum": ["ok", "missing", "disabled", "version-mismatch"]
                               },
                               "currentVersion": {
                                 "type": "string",
@@ -1133,12 +995,7 @@
                                 "minLength": 1
                               }
                             },
-                            "required": [
-                              "pluginId",
-                              "versionRange",
-                              "optional",
-                              "status"
-                            ],
+                            "required": ["pluginId", "versionRange", "optional", "status"],
                             "additionalProperties": false
                           }
                         },
@@ -1162,12 +1019,7 @@
                               "minimum": 0
                             }
                           },
-                          "required": [
-                            "permissions",
-                            "roles",
-                            "grants",
-                            "policyRules"
-                          ],
+                          "required": ["permissions", "roles", "grants", "policyRules"],
                           "additionalProperties": false
                         },
                         "failureCount": {
@@ -1213,10 +1065,7 @@
                               "minLength": 1
                             }
                           },
-                          "required": [
-                            "code",
-                            "message"
-                          ]
+                          "required": ["code", "message"]
                         },
                         "lastError": {
                           "type": "object",
@@ -1234,10 +1083,7 @@
                               "minLength": 1
                             }
                           },
-                          "required": [
-                            "name",
-                            "message"
-                          ]
+                          "required": ["name", "message"]
                         },
                         "operations": {
                           "type": "array",
@@ -1246,13 +1092,7 @@
                             "properties": {
                               "operation": {
                                 "type": "string",
-                                "enum": [
-                                  "load",
-                                  "unload",
-                                  "reload",
-                                  "disable",
-                                  "enable"
-                                ]
+                                "enum": ["load", "unload", "reload", "disable", "enable"]
                               },
                               "available": {
                                 "type": "boolean"
@@ -1262,12 +1102,40 @@
                                 "minLength": 1
                               }
                             },
-                            "required": [
-                              "operation",
-                              "available"
-                            ],
+                            "required": ["operation", "available"],
                             "additionalProperties": false
                           }
+                        },
+                        "source": {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "enum": ["workspace", "package", "local-path"]
+                            },
+                            "name": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "entrypoint": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": ["discovered", "failed", "disabled"]
+                            },
+                            "pluginId": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "error": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "required": ["type", "name", "entrypoint", "status"],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -1287,9 +1155,7 @@
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "kernel"
-                          ]
+                          "enum": ["kernel"]
                         },
                         "count": {
                           "type": "integer"
@@ -1298,9 +1164,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -1323,9 +1187,7 @@
       "post": {
         "operationId": "executePluginOperation",
         "summary": "Execute a supported runtime operation on one installed plugin",
-        "tags": [
-          "System"
-        ],
+        "tags": ["System"],
         "responses": {
           "200": {
             "description": "Plugin operation result",
@@ -1390,12 +1252,7 @@
                                   },
                                   "status": {
                                     "type": "string",
-                                    "enum": [
-                                      "ok",
-                                      "missing",
-                                      "disabled",
-                                      "version-mismatch"
-                                    ]
+                                    "enum": ["ok", "missing", "disabled", "version-mismatch"]
                                   },
                                   "currentVersion": {
                                     "type": "string",
@@ -1419,12 +1276,7 @@
                                     "minLength": 1
                                   }
                                 },
-                                "required": [
-                                  "pluginId",
-                                  "versionRange",
-                                  "optional",
-                                  "status"
-                                ],
+                                "required": ["pluginId", "versionRange", "optional", "status"],
                                 "additionalProperties": false
                               }
                             },
@@ -1448,12 +1300,7 @@
                                   "minimum": 0
                                 }
                               },
-                              "required": [
-                                "permissions",
-                                "roles",
-                                "grants",
-                                "policyRules"
-                              ],
+                              "required": ["permissions", "roles", "grants", "policyRules"],
                               "additionalProperties": false
                             },
                             "failureCount": {
@@ -1499,10 +1346,7 @@
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "code",
-                                "message"
-                              ]
+                              "required": ["code", "message"]
                             },
                             "lastError": {
                               "type": "object",
@@ -1520,10 +1364,7 @@
                                   "minLength": 1
                                 }
                               },
-                              "required": [
-                                "name",
-                                "message"
-                              ]
+                              "required": ["name", "message"]
                             },
                             "operations": {
                               "type": "array",
@@ -1532,13 +1373,7 @@
                                 "properties": {
                                   "operation": {
                                     "type": "string",
-                                    "enum": [
-                                      "load",
-                                      "unload",
-                                      "reload",
-                                      "disable",
-                                      "enable"
-                                    ]
+                                    "enum": ["load", "unload", "reload", "disable", "enable"]
                                   },
                                   "available": {
                                     "type": "boolean"
@@ -1548,12 +1383,40 @@
                                     "minLength": 1
                                   }
                                 },
-                                "required": [
-                                  "operation",
-                                  "available"
-                                ],
+                                "required": ["operation", "available"],
                                 "additionalProperties": false
                               }
+                            },
+                            "source": {
+                              "type": "object",
+                              "properties": {
+                                "type": {
+                                  "type": "string",
+                                  "enum": ["workspace", "package", "local-path"]
+                                },
+                                "name": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "entrypoint": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "status": {
+                                  "type": "string",
+                                  "enum": ["discovered", "failed", "disabled"]
+                                },
+                                "pluginId": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "error": {
+                                  "type": "string",
+                                  "minLength": 1
+                                }
+                              },
+                              "required": ["type", "name", "entrypoint", "status"],
+                              "additionalProperties": false
                             }
                           },
                           "required": [
@@ -1571,33 +1434,21 @@
                         },
                         "operation": {
                           "type": "string",
-                          "enum": [
-                            "load",
-                            "unload",
-                            "reload",
-                            "disable",
-                            "enable"
-                          ]
+                          "enum": ["load", "unload", "reload", "disable", "enable"]
                         },
                         "executedAt": {
                           "type": "string",
                           "format": "date-time"
                         }
                       },
-                      "required": [
-                        "plugin",
-                        "operation",
-                        "executedAt"
-                      ],
+                      "required": ["plugin", "operation", "executedAt"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "kernel"
-                          ]
+                          "enum": ["kernel"]
                         },
                         "count": {
                           "type": "integer"
@@ -1606,9 +1457,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -1634,13 +1483,7 @@
                 "properties": {
                   "operation": {
                     "type": "string",
-                    "enum": [
-                      "load",
-                      "unload",
-                      "reload",
-                      "disable",
-                      "enable"
-                    ]
+                    "enum": ["load", "unload", "reload", "disable", "enable"]
                   },
                   "reason": {
                     "type": "string",
@@ -1648,9 +1491,7 @@
                     "maxLength": 1000
                   }
                 },
-                "required": [
-                  "operation"
-                ],
+                "required": ["operation"],
                 "additionalProperties": false
               }
             }
@@ -1662,9 +1503,7 @@
       "get": {
         "operationId": "listPluginEvents",
         "summary": "Read recent lifecycle events for one installed plugin",
-        "tags": [
-          "System"
-        ],
+        "tags": ["System"],
         "responses": {
           "200": {
             "description": "Recent plugin lifecycle events",
@@ -1752,22 +1591,14 @@
                             ]
                           }
                         },
-                        "required": [
-                          "sequence",
-                          "timestamp",
-                          "pluginId",
-                          "action",
-                          "success"
-                        ]
+                        "required": ["sequence", "timestamp", "pluginId", "action", "success"]
                       }
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "kernel"
-                          ]
+                          "enum": ["kernel"]
                         },
                         "count": {
                           "type": "integer"
@@ -1776,9 +1607,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -1793,6 +1622,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
           }
         ]
       }
@@ -1801,9 +1640,7 @@
       "post": {
         "operationId": "loginWithPassword",
         "summary": "Login with email and password",
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "responses": {
           "200": {
             "description": "Authenticated session token",
@@ -1824,9 +1661,7 @@
                           "minLength": 16
                         },
                         "tokenType": {
-                          "enum": [
-                            "Bearer"
-                          ]
+                          "enum": ["Bearer"]
                         },
                         "expiresAt": {
                           "type": "string",
@@ -1854,10 +1689,7 @@
                             },
                             "status": {
                               "type": "string",
-                              "enum": [
-                                "active",
-                                "suspended"
-                              ]
+                              "enum": ["active", "suspended"]
                             },
                             "createdAt": {
                               "type": "string",
@@ -1893,17 +1725,13 @@
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         }
                       },
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -1928,27 +1756,20 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         }
                       },
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -1972,10 +1793,7 @@
                     "maxLength": 200
                   }
                 },
-                "required": [
-                  "email",
-                  "password"
-                ],
+                "required": ["email", "password"],
                 "additionalProperties": false
               }
             }
@@ -1987,9 +1805,7 @@
       "get": {
         "operationId": "getAuthenticatedUser",
         "summary": "Resolve current authenticated user",
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "responses": {
           "200": {
             "description": "Authenticated user",
@@ -2016,10 +1832,7 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "suspended"
-                          ]
+                          "enum": ["active", "suspended"]
                         },
                         "createdAt": {
                           "type": "string",
@@ -2044,17 +1857,13 @@
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         }
                       },
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -2079,27 +1888,20 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         }
                       },
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -2117,9 +1919,7 @@
       "post": {
         "operationId": "logoutSession",
         "summary": "Logout current JWT session on client side",
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "responses": {
           "200": {
             "description": "Session revocation result",
@@ -2135,26 +1935,20 @@
                           "type": "boolean"
                         }
                       },
-                      "required": [
-                        "revoked"
-                      ],
+                      "required": ["revoked"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         }
                       },
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -2179,27 +1973,20 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         }
                       },
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -2217,9 +2004,7 @@
       "get": {
         "operationId": "listUsers",
         "summary": "List users",
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "responses": {
           "200": {
             "description": "Users list",
@@ -2248,10 +2033,7 @@
                           },
                           "status": {
                             "type": "string",
-                            "enum": [
-                              "active",
-                              "suspended"
-                            ]
+                            "enum": ["active", "suspended"]
                           },
                           "createdAt": {
                             "type": "string",
@@ -2277,9 +2059,7 @@
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -2294,9 +2074,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -2333,9 +2111,7 @@
       "post": {
         "operationId": "createUser",
         "summary": "Create user",
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "responses": {
           "200": {
             "description": "User created",
@@ -2362,10 +2138,7 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "suspended"
-                          ]
+                          "enum": ["active", "suspended"]
                         },
                         "createdAt": {
                           "type": "string",
@@ -2390,9 +2163,7 @@
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -2407,9 +2178,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -2434,19 +2203,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -2461,9 +2225,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -2492,10 +2254,7 @@
                     "maxLength": 120
                   }
                 },
-                "required": [
-                  "email",
-                  "displayName"
-                ],
+                "required": ["email", "displayName"],
                 "additionalProperties": false
               }
             }
@@ -2507,9 +2266,7 @@
       "get": {
         "operationId": "getUserById",
         "summary": "Get user by id",
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "responses": {
           "200": {
             "description": "User found",
@@ -2536,10 +2293,7 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "suspended"
-                          ]
+                          "enum": ["active", "suspended"]
                         },
                         "createdAt": {
                           "type": "string",
@@ -2564,9 +2318,7 @@
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -2581,9 +2333,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -2608,19 +2358,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -2635,9 +2380,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -2665,9 +2408,7 @@
       "patch": {
         "operationId": "updateUserStatus",
         "summary": "Update user status",
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "responses": {
           "200": {
             "description": "User updated",
@@ -2694,10 +2435,7 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "suspended"
-                          ]
+                          "enum": ["active", "suspended"]
                         },
                         "createdAt": {
                           "type": "string",
@@ -2722,9 +2460,7 @@
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -2739,9 +2475,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -2766,19 +2500,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -2793,9 +2522,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -2826,15 +2553,10 @@
                 "properties": {
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "active",
-                      "suspended"
-                    ]
+                    "enum": ["active", "suspended"]
                   }
                 },
-                "required": [
-                  "status"
-                ],
+                "required": ["status"],
                 "additionalProperties": false
               }
             }
@@ -2846,9 +2568,7 @@
       "get": {
         "operationId": "listRoles",
         "summary": "List roles",
-        "tags": [
-          "Roles"
-        ],
+        "tags": ["Roles"],
         "responses": {
           "200": {
             "description": "Roles list",
@@ -2895,10 +2615,7 @@
                           },
                           "status": {
                             "type": "string",
-                            "enum": [
-                              "active",
-                              "disabled"
-                            ]
+                            "enum": ["active", "disabled"]
                           },
                           "createdAt": {
                             "type": "string",
@@ -2909,14 +2626,7 @@
                             "format": "date-time"
                           }
                         },
-                        "required": [
-                          "id",
-                          "code",
-                          "name",
-                          "status",
-                          "createdAt",
-                          "updatedAt"
-                        ],
+                        "required": ["id", "code", "name", "status", "createdAt", "updatedAt"],
                         "additionalProperties": false
                       }
                     },
@@ -2924,9 +2634,7 @@
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -2941,9 +2649,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -2980,9 +2686,7 @@
       "post": {
         "operationId": "createRole",
         "summary": "Create role",
-        "tags": [
-          "Roles"
-        ],
+        "tags": ["Roles"],
         "responses": {
           "200": {
             "description": "Role created",
@@ -3027,10 +2731,7 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "disabled"
-                          ]
+                          "enum": ["active", "disabled"]
                         },
                         "createdAt": {
                           "type": "string",
@@ -3041,23 +2742,14 @@
                           "format": "date-time"
                         }
                       },
-                      "required": [
-                        "id",
-                        "code",
-                        "name",
-                        "status",
-                        "createdAt",
-                        "updatedAt"
-                      ],
+                      "required": ["id", "code", "name", "status", "createdAt", "updatedAt"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -3072,9 +2764,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -3099,19 +2789,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -3126,9 +2811,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -3172,10 +2855,7 @@
                     "uniqueItems": true
                   }
                 },
-                "required": [
-                  "code",
-                  "name"
-                ],
+                "required": ["code", "name"],
                 "additionalProperties": false
               }
             }
@@ -3187,9 +2867,7 @@
       "get": {
         "operationId": "getRoleById",
         "summary": "Get role by id",
-        "tags": [
-          "Roles"
-        ],
+        "tags": ["Roles"],
         "responses": {
           "200": {
             "description": "Role found",
@@ -3234,10 +2912,7 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "disabled"
-                          ]
+                          "enum": ["active", "disabled"]
                         },
                         "createdAt": {
                           "type": "string",
@@ -3248,23 +2923,14 @@
                           "format": "date-time"
                         }
                       },
-                      "required": [
-                        "id",
-                        "code",
-                        "name",
-                        "status",
-                        "createdAt",
-                        "updatedAt"
-                      ],
+                      "required": ["id", "code", "name", "status", "createdAt", "updatedAt"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -3279,9 +2945,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -3306,19 +2970,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -3333,9 +2992,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -3363,9 +3020,7 @@
       "patch": {
         "operationId": "updateRoleStatus",
         "summary": "Update role status",
-        "tags": [
-          "Roles"
-        ],
+        "tags": ["Roles"],
         "responses": {
           "200": {
             "description": "Role updated",
@@ -3410,10 +3065,7 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "disabled"
-                          ]
+                          "enum": ["active", "disabled"]
                         },
                         "createdAt": {
                           "type": "string",
@@ -3424,23 +3076,14 @@
                           "format": "date-time"
                         }
                       },
-                      "required": [
-                        "id",
-                        "code",
-                        "name",
-                        "status",
-                        "createdAt",
-                        "updatedAt"
-                      ],
+                      "required": ["id", "code", "name", "status", "createdAt", "updatedAt"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -3455,9 +3098,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -3482,19 +3123,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -3509,9 +3145,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -3542,15 +3176,10 @@
                 "properties": {
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "active",
-                      "disabled"
-                    ]
+                    "enum": ["active", "disabled"]
                   }
                 },
-                "required": [
-                  "status"
-                ],
+                "required": ["status"],
                 "additionalProperties": false
               }
             }
@@ -3562,9 +3191,7 @@
       "get": {
         "operationId": "listPermissions",
         "summary": "List permissions",
-        "tags": [
-          "Permissions"
-        ],
+        "tags": ["Permissions"],
         "responses": {
           "200": {
             "description": "Permissions list",
@@ -3602,10 +3229,7 @@
                           },
                           "status": {
                             "type": "string",
-                            "enum": [
-                              "active",
-                              "disabled"
-                            ]
+                            "enum": ["active", "disabled"]
                           },
                           "createdAt": {
                             "type": "string",
@@ -3632,9 +3256,7 @@
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -3649,9 +3271,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -3688,9 +3308,7 @@
       "post": {
         "operationId": "createPermission",
         "summary": "Create permission",
-        "tags": [
-          "Permissions"
-        ],
+        "tags": ["Permissions"],
         "responses": {
           "200": {
             "description": "Permission created",
@@ -3726,10 +3344,7 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "disabled"
-                          ]
+                          "enum": ["active", "disabled"]
                         },
                         "createdAt": {
                           "type": "string",
@@ -3755,9 +3370,7 @@
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -3772,9 +3385,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -3799,19 +3410,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -3826,9 +3432,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -3862,10 +3466,7 @@
                     "maxLength": 500
                   }
                 },
-                "required": [
-                  "key",
-                  "displayName"
-                ],
+                "required": ["key", "displayName"],
                 "additionalProperties": false
               }
             }
@@ -3877,9 +3478,7 @@
       "get": {
         "operationId": "getPermissionById",
         "summary": "Get permission by id",
-        "tags": [
-          "Permissions"
-        ],
+        "tags": ["Permissions"],
         "responses": {
           "200": {
             "description": "Permission found",
@@ -3915,10 +3514,7 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "disabled"
-                          ]
+                          "enum": ["active", "disabled"]
                         },
                         "createdAt": {
                           "type": "string",
@@ -3944,9 +3540,7 @@
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -3961,9 +3555,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -3988,19 +3580,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -4015,9 +3602,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -4045,9 +3630,7 @@
       "patch": {
         "operationId": "updatePermissionStatus",
         "summary": "Update permission status",
-        "tags": [
-          "Permissions"
-        ],
+        "tags": ["Permissions"],
         "responses": {
           "200": {
             "description": "Permission updated",
@@ -4083,10 +3666,7 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "disabled"
-                          ]
+                          "enum": ["active", "disabled"]
                         },
                         "createdAt": {
                           "type": "string",
@@ -4112,9 +3692,7 @@
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -4129,9 +3707,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -4156,19 +3732,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -4183,9 +3754,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -4216,15 +3785,10 @@
                 "properties": {
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "active",
-                      "disabled"
-                    ]
+                    "enum": ["active", "disabled"]
                   }
                 },
-                "required": [
-                  "status"
-                ],
+                "required": ["status"],
                 "additionalProperties": false
               }
             }
@@ -4236,9 +3800,7 @@
       "get": {
         "operationId": "listApiKeys",
         "summary": "List issued API keys",
-        "tags": [
-          "Api Keys"
-        ],
+        "tags": ["Api Keys"],
         "responses": {
           "200": {
             "description": "API key list",
@@ -4275,18 +3837,11 @@
                           },
                           "kind": {
                             "type": "string",
-                            "enum": [
-                              "publishable",
-                              "secret",
-                              "service"
-                            ]
+                            "enum": ["publishable", "secret", "service"]
                           },
                           "status": {
                             "type": "string",
-                            "enum": [
-                              "active",
-                              "revoked"
-                            ]
+                            "enum": ["active", "revoked"]
                           },
                           "roleCodes": {
                             "type": "array",
@@ -4309,10 +3864,7 @@
                               "properties": {
                                 "effect": {
                                   "type": "string",
-                                  "enum": [
-                                    "allow",
-                                    "deny"
-                                  ]
+                                  "enum": ["allow", "deny"]
                                 },
                                 "permissionPattern": {
                                   "type": "string",
@@ -4323,19 +3875,12 @@
                                   "type": "array",
                                   "items": {
                                     "type": "string",
-                                    "enum": [
-                                      "resource_id_required",
-                                      "resource_id_equals_subject"
-                                    ]
+                                    "enum": ["resource_id_required", "resource_id_equals_subject"]
                                   },
                                   "uniqueItems": true
                                 }
                               },
-                              "required": [
-                                "effect",
-                                "permissionPattern",
-                                "conditions"
-                              ],
+                              "required": ["effect", "permissionPattern", "conditions"],
                               "additionalProperties": false
                             }
                           },
@@ -4380,9 +3925,7 @@
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -4397,9 +3940,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -4418,11 +3959,7 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": [
-                "publishable",
-                "secret",
-                "service"
-              ]
+              "enum": ["publishable", "secret", "service"]
             }
           },
           {
@@ -4431,10 +3968,7 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": [
-                "active",
-                "revoked"
-              ]
+              "enum": ["active", "revoked"]
             }
           },
           {
@@ -4461,9 +3995,7 @@
       "post": {
         "operationId": "createApiKey",
         "summary": "Issue a new API key",
-        "tags": [
-          "Api Keys"
-        ],
+        "tags": ["Api Keys"],
         "responses": {
           "200": {
             "description": "Issued API key with one-time secret",
@@ -4501,18 +4033,11 @@
                             },
                             "kind": {
                               "type": "string",
-                              "enum": [
-                                "publishable",
-                                "secret",
-                                "service"
-                              ]
+                              "enum": ["publishable", "secret", "service"]
                             },
                             "status": {
                               "type": "string",
-                              "enum": [
-                                "active",
-                                "revoked"
-                              ]
+                              "enum": ["active", "revoked"]
                             },
                             "roleCodes": {
                               "type": "array",
@@ -4535,10 +4060,7 @@
                                 "properties": {
                                   "effect": {
                                     "type": "string",
-                                    "enum": [
-                                      "allow",
-                                      "deny"
-                                    ]
+                                    "enum": ["allow", "deny"]
                                   },
                                   "permissionPattern": {
                                     "type": "string",
@@ -4549,19 +4071,12 @@
                                     "type": "array",
                                     "items": {
                                       "type": "string",
-                                      "enum": [
-                                        "resource_id_required",
-                                        "resource_id_equals_subject"
-                                      ]
+                                      "enum": ["resource_id_required", "resource_id_equals_subject"]
                                     },
                                     "uniqueItems": true
                                   }
                                 },
-                                "required": [
-                                  "effect",
-                                  "permissionPattern",
-                                  "conditions"
-                                ],
+                                "required": ["effect", "permissionPattern", "conditions"],
                                 "additionalProperties": false
                               }
                             },
@@ -4606,19 +4121,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "record",
-                        "apiKey"
-                      ],
+                      "required": ["record", "apiKey"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -4633,9 +4143,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -4660,19 +4168,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -4687,9 +4190,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -4719,11 +4220,7 @@
                   },
                   "kind": {
                     "type": "string",
-                    "enum": [
-                      "publishable",
-                      "secret",
-                      "service"
-                    ]
+                    "enum": ["publishable", "secret", "service"]
                   },
                   "roleCodes": {
                     "type": "array",
@@ -4751,10 +4248,7 @@
                       "properties": {
                         "effect": {
                           "type": "string",
-                          "enum": [
-                            "allow",
-                            "deny"
-                          ]
+                          "enum": ["allow", "deny"]
                         },
                         "permissionPattern": {
                           "type": "string",
@@ -4765,19 +4259,12 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                            "enum": [
-                              "resource_id_required",
-                              "resource_id_equals_subject"
-                            ]
+                            "enum": ["resource_id_required", "resource_id_equals_subject"]
                           },
                           "uniqueItems": true
                         }
                       },
-                      "required": [
-                        "effect",
-                        "permissionPattern",
-                        "conditions"
-                      ],
+                      "required": ["effect", "permissionPattern", "conditions"],
                       "additionalProperties": false
                     }
                   },
@@ -4786,9 +4273,7 @@
                     "format": "date-time"
                   }
                 },
-                "required": [
-                  "name"
-                ],
+                "required": ["name"],
                 "additionalProperties": false
               }
             }
@@ -4800,9 +4285,7 @@
       "get": {
         "operationId": "getApiKeyById",
         "summary": "Get one API key metadata record",
-        "tags": [
-          "Api Keys"
-        ],
+        "tags": ["Api Keys"],
         "responses": {
           "200": {
             "description": "API key metadata",
@@ -4837,18 +4320,11 @@
                         },
                         "kind": {
                           "type": "string",
-                          "enum": [
-                            "publishable",
-                            "secret",
-                            "service"
-                          ]
+                          "enum": ["publishable", "secret", "service"]
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "revoked"
-                          ]
+                          "enum": ["active", "revoked"]
                         },
                         "roleCodes": {
                           "type": "array",
@@ -4871,10 +4347,7 @@
                             "properties": {
                               "effect": {
                                 "type": "string",
-                                "enum": [
-                                  "allow",
-                                  "deny"
-                                ]
+                                "enum": ["allow", "deny"]
                               },
                               "permissionPattern": {
                                 "type": "string",
@@ -4885,19 +4358,12 @@
                                 "type": "array",
                                 "items": {
                                   "type": "string",
-                                  "enum": [
-                                    "resource_id_required",
-                                    "resource_id_equals_subject"
-                                  ]
+                                  "enum": ["resource_id_required", "resource_id_equals_subject"]
                                 },
                                 "uniqueItems": true
                               }
                             },
-                            "required": [
-                              "effect",
-                              "permissionPattern",
-                              "conditions"
-                            ],
+                            "required": ["effect", "permissionPattern", "conditions"],
                             "additionalProperties": false
                           }
                         },
@@ -4941,9 +4407,7 @@
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -4958,9 +4422,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -4985,19 +4447,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -5012,9 +4469,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -5042,9 +4497,7 @@
       "post": {
         "operationId": "rotateApiKey",
         "summary": "Rotate an existing API key",
-        "tags": [
-          "Api Keys"
-        ],
+        "tags": ["Api Keys"],
         "responses": {
           "200": {
             "description": "Rotated API key with one-time secret",
@@ -5082,18 +4535,11 @@
                             },
                             "kind": {
                               "type": "string",
-                              "enum": [
-                                "publishable",
-                                "secret",
-                                "service"
-                              ]
+                              "enum": ["publishable", "secret", "service"]
                             },
                             "status": {
                               "type": "string",
-                              "enum": [
-                                "active",
-                                "revoked"
-                              ]
+                              "enum": ["active", "revoked"]
                             },
                             "roleCodes": {
                               "type": "array",
@@ -5116,10 +4562,7 @@
                                 "properties": {
                                   "effect": {
                                     "type": "string",
-                                    "enum": [
-                                      "allow",
-                                      "deny"
-                                    ]
+                                    "enum": ["allow", "deny"]
                                   },
                                   "permissionPattern": {
                                     "type": "string",
@@ -5130,19 +4573,12 @@
                                     "type": "array",
                                     "items": {
                                       "type": "string",
-                                      "enum": [
-                                        "resource_id_required",
-                                        "resource_id_equals_subject"
-                                      ]
+                                      "enum": ["resource_id_required", "resource_id_equals_subject"]
                                     },
                                     "uniqueItems": true
                                   }
                                 },
-                                "required": [
-                                  "effect",
-                                  "permissionPattern",
-                                  "conditions"
-                                ],
+                                "required": ["effect", "permissionPattern", "conditions"],
                                 "additionalProperties": false
                               }
                             },
@@ -5187,19 +4623,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "record",
-                        "apiKey"
-                      ],
+                      "required": ["record", "apiKey"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -5214,9 +4645,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -5241,19 +4670,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -5268,9 +4692,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -5334,10 +4756,7 @@
                       "properties": {
                         "effect": {
                           "type": "string",
-                          "enum": [
-                            "allow",
-                            "deny"
-                          ]
+                          "enum": ["allow", "deny"]
                         },
                         "permissionPattern": {
                           "type": "string",
@@ -5348,19 +4767,12 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                            "enum": [
-                              "resource_id_required",
-                              "resource_id_equals_subject"
-                            ]
+                            "enum": ["resource_id_required", "resource_id_equals_subject"]
                           },
                           "uniqueItems": true
                         }
                       },
-                      "required": [
-                        "effect",
-                        "permissionPattern",
-                        "conditions"
-                      ],
+                      "required": ["effect", "permissionPattern", "conditions"],
                       "additionalProperties": false
                     }
                   },
@@ -5380,9 +4792,7 @@
       "post": {
         "operationId": "revokeApiKey",
         "summary": "Revoke an API key",
-        "tags": [
-          "Api Keys"
-        ],
+        "tags": ["Api Keys"],
         "responses": {
           "200": {
             "description": "Revoked API key metadata",
@@ -5417,18 +4827,11 @@
                         },
                         "kind": {
                           "type": "string",
-                          "enum": [
-                            "publishable",
-                            "secret",
-                            "service"
-                          ]
+                          "enum": ["publishable", "secret", "service"]
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "revoked"
-                          ]
+                          "enum": ["active", "revoked"]
                         },
                         "roleCodes": {
                           "type": "array",
@@ -5451,10 +4854,7 @@
                             "properties": {
                               "effect": {
                                 "type": "string",
-                                "enum": [
-                                  "allow",
-                                  "deny"
-                                ]
+                                "enum": ["allow", "deny"]
                               },
                               "permissionPattern": {
                                 "type": "string",
@@ -5465,19 +4865,12 @@
                                 "type": "array",
                                 "items": {
                                   "type": "string",
-                                  "enum": [
-                                    "resource_id_required",
-                                    "resource_id_equals_subject"
-                                  ]
+                                  "enum": ["resource_id_required", "resource_id_equals_subject"]
                                 },
                                 "uniqueItems": true
                               }
                             },
-                            "required": [
-                              "effect",
-                              "permissionPattern",
-                              "conditions"
-                            ],
+                            "required": ["effect", "permissionPattern", "conditions"],
                             "additionalProperties": false
                           }
                         },
@@ -5521,9 +4914,7 @@
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -5538,9 +4929,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -5565,19 +4954,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -5592,9 +4976,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -5639,9 +5021,7 @@
       "get": {
         "operationId": "listUserRoles",
         "summary": "List role assignments for a user",
-        "tags": [
-          "Security"
-        ],
+        "tags": ["Security"],
         "responses": {
           "200": {
             "description": "User role assignments",
@@ -5697,9 +5077,7 @@
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -5714,9 +5092,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -5741,19 +5117,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -5768,9 +5139,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -5796,9 +5165,7 @@
       "post": {
         "operationId": "assignUserRole",
         "summary": "Assign a role to a user",
-        "tags": [
-          "Security"
-        ],
+        "tags": ["Security"],
         "responses": {
           "200": {
             "description": "Role assigned",
@@ -5851,9 +5218,7 @@
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -5868,9 +5233,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -5895,19 +5258,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -5922,9 +5280,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -5960,9 +5316,7 @@
                     "pattern": "^[a-z0-9][a-z0-9._-]*$"
                   }
                 },
-                "required": [
-                  "roleCode"
-                ],
+                "required": ["roleCode"],
                 "additionalProperties": false
               }
             }
@@ -5974,9 +5328,7 @@
       "delete": {
         "operationId": "removeUserRole",
         "summary": "Remove a role from a user",
-        "tags": [
-          "Security"
-        ],
+        "tags": ["Security"],
         "responses": {
           "200": {
             "description": "Removed assignment list",
@@ -6032,9 +5384,7 @@
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -6049,9 +5399,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -6076,19 +5424,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -6103,9 +5446,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -6141,9 +5482,7 @@
       "get": {
         "operationId": "listUserEffectivePermissions",
         "summary": "List effective permissions for a user",
-        "tags": [
-          "Security"
-        ],
+        "tags": ["Security"],
         "responses": {
           "200": {
             "description": "Effective permissions",
@@ -6165,9 +5504,7 @@
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -6182,9 +5519,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -6209,19 +5544,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -6236,9 +5566,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -6266,9 +5594,7 @@
       "get": {
         "operationId": "listRolePolicyRules",
         "summary": "List policy rules for a role",
-        "tags": [
-          "Security"
-        ],
+        "tags": ["Security"],
         "responses": {
           "200": {
             "description": "Role policy rules list",
@@ -6294,10 +5620,7 @@
                           },
                           "effect": {
                             "type": "string",
-                            "enum": [
-                              "allow",
-                              "deny"
-                            ]
+                            "enum": ["allow", "deny"]
                           },
                           "permissionPattern": {
                             "type": "string",
@@ -6308,10 +5631,7 @@
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": [
-                                "resource_id_required",
-                                "resource_id_equals_subject"
-                              ]
+                              "enum": ["resource_id_required", "resource_id_equals_subject"]
                             },
                             "uniqueItems": true
                           },
@@ -6345,9 +5665,7 @@
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -6362,9 +5680,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -6389,19 +5705,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -6416,9 +5727,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -6444,9 +5753,7 @@
       "post": {
         "operationId": "createRolePolicyRule",
         "summary": "Create policy rule for a role",
-        "tags": [
-          "Security"
-        ],
+        "tags": ["Security"],
         "responses": {
           "200": {
             "description": "Role policy rule created",
@@ -6470,10 +5777,7 @@
                         },
                         "effect": {
                           "type": "string",
-                          "enum": [
-                            "allow",
-                            "deny"
-                          ]
+                          "enum": ["allow", "deny"]
                         },
                         "permissionPattern": {
                           "type": "string",
@@ -6484,10 +5788,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                            "enum": [
-                              "resource_id_required",
-                              "resource_id_equals_subject"
-                            ]
+                            "enum": ["resource_id_required", "resource_id_equals_subject"]
                           },
                           "uniqueItems": true
                         },
@@ -6520,9 +5821,7 @@
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -6537,9 +5836,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -6564,19 +5861,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -6591,9 +5883,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -6618,19 +5908,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -6645,9 +5930,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -6678,10 +5961,7 @@
                 "properties": {
                   "effect": {
                     "type": "string",
-                    "enum": [
-                      "allow",
-                      "deny"
-                    ]
+                    "enum": ["allow", "deny"]
                   },
                   "permissionPattern": {
                     "type": "string",
@@ -6692,19 +5972,13 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                      "enum": [
-                        "resource_id_required",
-                        "resource_id_equals_subject"
-                      ]
+                      "enum": ["resource_id_required", "resource_id_equals_subject"]
                     },
                     "uniqueItems": true,
                     "default": []
                   }
                 },
-                "required": [
-                  "effect",
-                  "permissionPattern"
-                ],
+                "required": ["effect", "permissionPattern"],
                 "additionalProperties": false
               }
             }
@@ -6716,9 +5990,7 @@
       "patch": {
         "operationId": "updateRolePolicyRule",
         "summary": "Update a role policy rule",
-        "tags": [
-          "Security"
-        ],
+        "tags": ["Security"],
         "responses": {
           "200": {
             "description": "Role policy rule updated",
@@ -6742,10 +6014,7 @@
                         },
                         "effect": {
                           "type": "string",
-                          "enum": [
-                            "allow",
-                            "deny"
-                          ]
+                          "enum": ["allow", "deny"]
                         },
                         "permissionPattern": {
                           "type": "string",
@@ -6756,10 +6025,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                            "enum": [
-                              "resource_id_required",
-                              "resource_id_equals_subject"
-                            ]
+                            "enum": ["resource_id_required", "resource_id_equals_subject"]
                           },
                           "uniqueItems": true
                         },
@@ -6792,9 +6058,7 @@
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -6809,9 +6073,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -6836,19 +6098,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -6863,9 +6120,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -6904,10 +6159,7 @@
                 "properties": {
                   "effect": {
                     "type": "string",
-                    "enum": [
-                      "allow",
-                      "deny"
-                    ]
+                    "enum": ["allow", "deny"]
                   },
                   "permissionPattern": {
                     "type": "string",
@@ -6918,19 +6170,13 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                      "enum": [
-                        "resource_id_required",
-                        "resource_id_equals_subject"
-                      ]
+                      "enum": ["resource_id_required", "resource_id_equals_subject"]
                     },
                     "uniqueItems": true,
                     "default": []
                   }
                 },
-                "required": [
-                  "effect",
-                  "permissionPattern"
-                ],
+                "required": ["effect", "permissionPattern"],
                 "additionalProperties": false
               }
             }
@@ -6940,9 +6186,7 @@
       "delete": {
         "operationId": "deleteRolePolicyRule",
         "summary": "Delete a role policy rule",
-        "tags": [
-          "Security"
-        ],
+        "tags": ["Security"],
         "responses": {
           "200": {
             "description": "Role policy rule list after delete",
@@ -6968,10 +6212,7 @@
                           },
                           "effect": {
                             "type": "string",
-                            "enum": [
-                              "allow",
-                              "deny"
-                            ]
+                            "enum": ["allow", "deny"]
                           },
                           "permissionPattern": {
                             "type": "string",
@@ -6982,10 +6223,7 @@
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": [
-                                "resource_id_required",
-                                "resource_id_equals_subject"
-                              ]
+                              "enum": ["resource_id_required", "resource_id_equals_subject"]
                             },
                             "uniqueItems": true
                           },
@@ -7019,9 +6257,7 @@
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -7036,9 +6272,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -7063,19 +6297,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -7090,9 +6319,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -7128,9 +6355,7 @@
       "get": {
         "operationId": "getInstallationStatus",
         "summary": "Read CMS installation status",
-        "tags": [
-          "Installation"
-        ],
+        "tags": ["Installation"],
         "responses": {
           "200": {
             "description": "Current installation status",
@@ -7154,26 +6379,20 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "installed"
-                      ],
+                      "required": ["installed"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         }
                       },
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -7186,9 +6405,7 @@
       "post": {
         "operationId": "bootstrapInstallation",
         "summary": "Bootstrap CMS installation and create first admin",
-        "tags": [
-          "Installation"
-        ],
+        "tags": ["Installation"],
         "responses": {
           "200": {
             "description": "Installation bootstrap completed",
@@ -7215,9 +6432,7 @@
                               "minLength": 1
                             }
                           },
-                          "required": [
-                            "installed"
-                          ],
+                          "required": ["installed"],
                           "additionalProperties": false
                         },
                         "adminUser": {
@@ -7238,10 +6453,7 @@
                             },
                             "status": {
                               "type": "string",
-                              "enum": [
-                                "active",
-                                "suspended"
-                              ]
+                              "enum": ["active", "suspended"]
                             },
                             "createdAt": {
                               "type": "string",
@@ -7263,27 +6475,20 @@
                           "additionalProperties": false
                         }
                       },
-                      "required": [
-                        "status",
-                        "adminUser"
-                      ],
+                      "required": ["status", "adminUser"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         }
                       },
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "additionalProperties": false
                 }
               }
@@ -7308,27 +6513,20 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         }
                       },
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -7357,11 +6555,7 @@
                     "maxLength": 200
                   }
                 },
-                "required": [
-                  "email",
-                  "displayName",
-                  "password"
-                ],
+                "required": ["email", "displayName", "password"],
                 "additionalProperties": false
               }
             }
@@ -7373,9 +6567,7 @@
       "get": {
         "operationId": "listSettingDefinitions",
         "summary": "List setting definitions",
-        "tags": [
-          "Settings"
-        ],
+        "tags": ["Settings"],
         "responses": {
           "200": {
             "description": "Definitions list",
@@ -7384,9 +6576,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "properties": {
                     "data": {
                       "type": "array",
@@ -7467,10 +6657,7 @@
                           },
                           "status": {
                             "type": "string",
-                            "enum": [
-                              "active",
-                              "disabled"
-                            ]
+                            "enum": ["active", "disabled"]
                           },
                           "createdAt": {
                             "type": "string",
@@ -7511,19 +6698,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -7538,9 +6720,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -7589,9 +6769,7 @@
       "post": {
         "operationId": "upsertSettingDefinition",
         "summary": "Create or update setting definition",
-        "tags": [
-          "Settings"
-        ],
+        "tags": ["Settings"],
         "responses": {
           "200": {
             "description": "Definition upserted",
@@ -7600,9 +6778,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "properties": {
                     "data": {
                       "type": "object",
@@ -7681,10 +6857,7 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "disabled"
-                          ]
+                          "enum": ["active", "disabled"]
                         },
                         "createdAt": {
                           "type": "string",
@@ -7724,19 +6897,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -7751,9 +6919,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -7778,19 +6944,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -7805,9 +6966,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -7827,9 +6986,7 @@
               "schema": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": [
-                  "key"
-                ],
+                "required": ["key"],
                 "properties": {
                   "key": {
                     "type": "string"
@@ -7899,9 +7056,7 @@
       "get": {
         "operationId": "getSettingDefinitionByKey",
         "summary": "Get setting definition by key",
-        "tags": [
-          "Settings"
-        ],
+        "tags": ["Settings"],
         "responses": {
           "200": {
             "description": "Definition",
@@ -7910,9 +7065,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "properties": {
                     "data": {
                       "type": "object",
@@ -7991,10 +7144,7 @@
                         },
                         "status": {
                           "type": "string",
-                          "enum": [
-                            "active",
-                            "disabled"
-                          ]
+                          "enum": ["active", "disabled"]
                         },
                         "createdAt": {
                           "type": "string",
@@ -8034,19 +7184,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -8061,9 +7206,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -8088,19 +7231,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -8115,9 +7253,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -8149,9 +7285,7 @@
       "get": {
         "operationId": "getSettingValueByKey",
         "summary": "Resolve setting value by key (explicit or default)",
-        "tags": [
-          "Settings"
-        ],
+        "tags": ["Settings"],
         "responses": {
           "200": {
             "description": "Resolved setting value",
@@ -8160,20 +7294,12 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "properties": {
                     "data": {
                       "type": "object",
                       "additionalProperties": false,
-                      "required": [
-                        "key",
-                        "ownerPluginId",
-                        "value",
-                        "source",
-                        "updatedAt"
-                      ],
+                      "required": ["key", "ownerPluginId", "value", "source", "updatedAt"],
                       "properties": {
                         "key": {
                           "type": "string"
@@ -8207,10 +7333,7 @@
                         },
                         "source": {
                           "type": "string",
-                          "enum": [
-                            "value",
-                            "default"
-                          ]
+                          "enum": ["value", "default"]
                         },
                         "version": {
                           "type": "integer"
@@ -8249,19 +7372,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -8276,9 +7394,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -8303,19 +7419,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -8330,9 +7441,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -8362,9 +7471,7 @@
       "put": {
         "operationId": "upsertSettingValue",
         "summary": "Create or update setting value",
-        "tags": [
-          "Settings"
-        ],
+        "tags": ["Settings"],
         "responses": {
           "200": {
             "description": "Value upserted",
@@ -8373,9 +7480,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "properties": {
                     "data": {
                       "type": "object",
@@ -8467,19 +7572,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -8494,9 +7594,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -8521,19 +7619,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -8548,9 +7641,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -8580,9 +7671,7 @@
               "schema": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": [
-                  "value"
-                ],
+                "required": ["value"],
                 "properties": {
                   "value": {
                     "oneOf": [
@@ -8622,9 +7711,7 @@
       "get": {
         "operationId": "getSettingSecretMetadata",
         "summary": "Read secret metadata (masked)",
-        "tags": [
-          "Settings"
-        ],
+        "tags": ["Settings"],
         "responses": {
           "200": {
             "description": "Secret metadata",
@@ -8633,9 +7720,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "properties": {
                     "data": {
                       "type": "object",
@@ -8662,9 +7747,7 @@
                         },
                         "algorithm": {
                           "type": "string",
-                          "enum": [
-                            "aes-256-gcm"
-                          ]
+                          "enum": ["aes-256-gcm"]
                         },
                         "keyVersion": {
                           "type": "string"
@@ -8713,19 +7796,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -8740,9 +7818,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -8767,19 +7843,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -8794,9 +7865,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -8821,19 +7890,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -8848,9 +7912,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -8880,9 +7942,7 @@
       "put": {
         "operationId": "upsertSettingSecret",
         "summary": "Create or update encrypted secret",
-        "tags": [
-          "Settings"
-        ],
+        "tags": ["Settings"],
         "responses": {
           "200": {
             "description": "Secret metadata",
@@ -8891,9 +7951,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "properties": {
                     "data": {
                       "type": "object",
@@ -8920,9 +7978,7 @@
                         },
                         "algorithm": {
                           "type": "string",
-                          "enum": [
-                            "aes-256-gcm"
-                          ]
+                          "enum": ["aes-256-gcm"]
                         },
                         "keyVersion": {
                           "type": "string"
@@ -8971,19 +8027,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -8998,9 +8049,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -9025,19 +8074,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -9052,9 +8096,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -9084,9 +8126,7 @@
               "schema": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": [
-                  "plaintext"
-                ],
+                "required": ["plaintext"],
                 "properties": {
                   "plaintext": {
                     "type": "string"
@@ -9105,9 +8145,7 @@
       "post": {
         "operationId": "revealSettingSecret",
         "summary": "Reveal secret value (owner only)",
-        "tags": [
-          "Settings"
-        ],
+        "tags": ["Settings"],
         "responses": {
           "200": {
             "description": "Secret value",
@@ -9116,17 +8154,12 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "properties": {
                     "data": {
                       "type": "object",
                       "additionalProperties": false,
-                      "required": [
-                        "key",
-                        "value"
-                      ],
+                      "required": ["key", "value"],
                       "properties": {
                         "key": {
                           "type": "string"
@@ -9164,19 +8197,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -9191,9 +8219,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -9218,19 +8244,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -9245,9 +8266,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -9272,19 +8291,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -9299,9 +8313,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -9330,9 +8342,7 @@
       "get": {
         "operationId": "exportPluginSettings",
         "summary": "Export plugin settings snapshot with masked secrets",
-        "tags": [
-          "Settings"
-        ],
+        "tags": ["Settings"],
         "responses": {
           "200": {
             "description": "Exported settings snapshot",
@@ -9341,19 +8351,12 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": [
-                    "data"
-                  ],
+                  "required": ["data"],
                   "properties": {
                     "data": {
                       "type": "object",
                       "additionalProperties": false,
-                      "required": [
-                        "pluginId",
-                        "definitions",
-                        "values",
-                        "secrets"
-                      ],
+                      "required": ["pluginId", "definitions", "values", "secrets"],
                       "properties": {
                         "pluginId": {
                           "type": "string"
@@ -9437,10 +8440,7 @@
                               },
                               "status": {
                                 "type": "string",
-                                "enum": [
-                                  "active",
-                                  "disabled"
-                                ]
+                                "enum": ["active", "disabled"]
                               },
                               "createdAt": {
                                 "type": "string",
@@ -9545,9 +8545,7 @@
                               },
                               "algorithm": {
                                 "type": "string",
-                                "enum": [
-                                  "aes-256-gcm"
-                                ]
+                                "enum": ["aes-256-gcm"]
                               },
                               "keyVersion": {
                                 "type": "string"
@@ -9599,19 +8597,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -9626,9 +8619,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }
@@ -9653,19 +8644,14 @@
                           "minLength": 1
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ],
+                      "required": ["code", "message"],
                       "additionalProperties": false
                     },
                     "meta": {
                       "type": "object",
                       "properties": {
                         "pluginId": {
-                          "enum": [
-                            "core-pack"
-                          ]
+                          "enum": ["core-pack"]
                         },
                         "count": {
                           "type": "integer"
@@ -9680,9 +8666,7 @@
                       "additionalProperties": false
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "additionalProperties": false
                 }
               }

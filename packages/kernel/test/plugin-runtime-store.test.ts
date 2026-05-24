@@ -2,13 +2,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { PluginRuntimeStore } from "../src/contracts/plugin-runtime-store.js";
 import type { PluginRuntimeRecord } from "../src/contracts/plugin-runtime.js";
-import { EntityRegistry } from "../src/runtime/entity-registry.js";
+import { EntityRegistry } from "../src/runtime/persistence/entity-registry.js";
 import {
   DbPluginRuntimeStore,
   INSTALLED_PLUGINS_ENTITY,
   InMemoryPluginRuntimeStore
-} from "../src/runtime/plugin-runtime-store.js";
-import { InMemoryPluginRuntime } from "../src/runtime/in-memory-plugin-runtime.js";
+} from "../src/runtime/persistence/plugin-runtime-store.js";
+import { InMemoryPluginRuntime } from "../src/runtime/plugin-runtime/in-memory-plugin-runtime.js";
 import type { DbAdapter, DbQuery, DbRepository } from "../src/contracts/db-adapter.js";
 
 test("DbPluginRuntimeStore initializes entity registration and indexes", async () => {

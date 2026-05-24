@@ -188,14 +188,14 @@ Indici minimi:
 
 ### Accesso alle API security
 
-| Endpoint                        | Permission                       | Chi puo fare         |
-| ------------------------------- | -------------------------------- | -------------------- |
-| `GET /v1/security/permissions`  | `core-pack:permissions:read`     | admin bearer         |
-| `GET /v1/security/roles`        | `core-pack:roles:read`           | admin bearer         |
-| `POST /v1/security/roles`       | `core-pack:roles:write`          | admin bearer         |
-| `POST /v1/security/roles/{code}/grants` | `core-pack:roles:write`  | admin bearer         |
-| `GET /v1/security/policy-rules` | `core-pack:policy-rules:read`    | admin bearer         |
-| `POST /v1/security/policy-rules` | `core-pack:policy-rules:write`  | admin bearer         |
+| Endpoint                                | Permission                     | Chi puo fare |
+| --------------------------------------- | ------------------------------ | ------------ |
+| `GET /v1/security/permissions`          | `core-pack:permissions:read`   | admin bearer |
+| `GET /v1/security/roles`                | `core-pack:roles:read`         | admin bearer |
+| `POST /v1/security/roles`               | `core-pack:roles:write`        | admin bearer |
+| `POST /v1/security/roles/{code}/grants` | `core-pack:roles:write`        | admin bearer |
+| `GET /v1/security/policy-rules`         | `core-pack:policy-rules:read`  | admin bearer |
+| `POST /v1/security/policy-rules`        | `core-pack:policy-rules:write` | admin bearer |
 
 ### Regole
 
@@ -214,6 +214,7 @@ Indici minimi:
 ### Audit
 
 Ogni operazione su permission, ruolo, grant e policy rule genera audit:
+
 - attore (admin ID o plugin ID)
 - risorsa modificata
 - azione (create, update, delete)
@@ -226,13 +227,13 @@ Gli audit sono persistiti in `cms_core_audit_events` con retention 90 giorni.
 
 ### Eventi di security
 
-| Nome canonico                       | Owner      | Visibility   | Delivery | Payload                               | Quando                     |
-| ----------------------------------- | ---------- | ------------ | -------- | ------------------------------------- | -------------------------- |
-| `core.security.permission.synced`   | core-pack  | `audit`      | `sync`   | `{ pluginId, permissionKey, action }` | provisioning permission    |
-| `core.security.role.updated`        | core-pack  | `audit`      | `sync`   | `{ roleCode, actorId, changes }`      | ruolo modificato           |
-| `core.security.policy.matched`      | core-pack  | `protected`  | `sync`   | `{ subjectId, permission, decision }` | policy valutata            |
-| `core.security.grant.created`       | core-pack  | `audit`      | `sync`   | `{ roleCode, permissionKeys }`        | grant aggiunto             |
-| `core.security.access.denied`       | core-pack  | `audit`      | `sync`   | `{ subjectId, permission, reason }`   | accesso negato             |
+| Nome canonico                     | Owner     | Visibility  | Delivery | Payload                               | Quando                  |
+| --------------------------------- | --------- | ----------- | -------- | ------------------------------------- | ----------------------- |
+| `core.security.permission.synced` | core-pack | `audit`     | `sync`   | `{ pluginId, permissionKey, action }` | provisioning permission |
+| `core.security.role.updated`      | core-pack | `audit`     | `sync`   | `{ roleCode, actorId, changes }`      | ruolo modificato        |
+| `core.security.policy.matched`    | core-pack | `protected` | `sync`   | `{ subjectId, permission, decision }` | policy valutata         |
+| `core.security.grant.created`     | core-pack | `audit`     | `sync`   | `{ roleCode, permissionKeys }`        | grant aggiunto          |
+| `core.security.access.denied`     | core-pack | `audit`     | `sync`   | `{ subjectId, permission, reason }`   | accesso negato          |
 
 ### Delivery e retry
 

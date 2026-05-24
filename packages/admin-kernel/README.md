@@ -10,6 +10,8 @@ This package owns:
 - official admin routes
 - admin resource registry
 - session bootstrap and runtime discovery
+- plugin runtime operations UI driven by backend `operations[]`
+- plugin source, dependency, failure and lifecycle event diagnostics
 
 Host applications should stay thin and only provide:
 

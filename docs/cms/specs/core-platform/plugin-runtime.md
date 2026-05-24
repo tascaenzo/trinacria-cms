@@ -3,9 +3,13 @@
 ## Stato
 
 - Milestone: `M4.0 - Core Platform Specifications`
-- Stato: `draft`
+- Stato: `low-level`
 - Scope: low-level specification
-- Ultimo aggiornamento: `2026-05-22`
+- Ultimo aggiornamento: `2026-05-23`
+
+Nota M5: questa specifica e la base normativa di
+`M5 - Plugin Runtime Foundation`. La sequenza implementativa e descritta in
+[`m5-plugin-runtime-implementation.md`](./m5-plugin-runtime-implementation.md).
 
 ## Decisione
 
@@ -295,3 +299,13 @@ Unload:
 - Il runtime espone un catalogo contributi derivato dal manifest.
 - Il catalogo contributi e disponibile tramite `GET /v1/system/plugin-contributions`.
 - Mancano ancora consumer operativi per entity/settings/event/admin contribution.
+
+## Mapping M5
+
+Questa specifica viene implementata in M5 tramite:
+
+- `2026-05-23-m5-runtime-state-machine.md`
+- `2026-05-23-m5-dependency-graph-ordering.md`
+- `2026-05-23-m5-runtime-store-rehydration.md`
+- `2026-05-23-m5-failure-rollback-events.md`
+- `2026-05-23-m5-api-openapi-sdk.md`

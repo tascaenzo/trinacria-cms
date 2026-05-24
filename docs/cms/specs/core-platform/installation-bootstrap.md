@@ -122,17 +122,18 @@ Indici:
 ### Audit
 
 Ogni fase dell'installazione produce evento audit:
+
 - `{ phase: "admin_user" | "baseline_roles" | "baseline_settings" | "complete", success: boolean, error?: string }`
 
 ## Eventi
 
 ### Eventi di installazione
 
-| Nome canonico            | Owner     | Visibility | Delivery | Payload                                         | Quando                    |
-| ------------------------ | --------- | ---------- | -------- | ----------------------------------------------- | ------------------------- |
-| `core.install.started`   | core-pack | `audit`    | `sync`   | `{ corePackVersion, schemaVersion }`            | installazione iniziata    |
-| `core.install.done`      | core-pack | `audit`    | `sync`   | `{ userId, corePackVersion, installedAt }`      | installazione completata  |
-| `core.install.failed`    | core-pack | `audit`    | `sync`   | `{ phase, error }`                              | installazione fallita     |
+| Nome canonico          | Owner     | Visibility | Delivery | Payload                                    | Quando                   |
+| ---------------------- | --------- | ---------- | -------- | ------------------------------------------ | ------------------------ |
+| `core.install.started` | core-pack | `audit`    | `sync`   | `{ corePackVersion, schemaVersion }`       | installazione iniziata   |
+| `core.install.done`    | core-pack | `audit`    | `sync`   | `{ userId, corePackVersion, installedAt }` | installazione completata |
+| `core.install.failed`  | core-pack | `audit`    | `sync`   | `{ phase, error }`                         | installazione fallita    |
 
 ### Delivery e retry
 

@@ -1,7 +1,11 @@
 import type { ModuleDefinition } from "@trinacria/core";
 import type { Provider } from "@trinacria/core";
 import type { OpenApiDocument } from "@trinacria/http";
-import type { PluginDiscoverySource, PluginSourceSnapshot } from "./plugin-discovery.js";
+import type {
+  PluginDiscoveryService,
+  PluginDiscoverySource,
+  PluginSourceSnapshot
+} from "./plugin-discovery.js";
 import type { KernelPluginDefinition, PluginRuntime } from "./plugin-runtime.js";
 import type { PluginRuntimeStore } from "./plugin-runtime-store.js";
 
@@ -41,6 +45,11 @@ export interface CmsStarterOptions {
   globalProviders?: readonly Provider[];
   plugins?: readonly KernelPluginDefinition[];
   pluginSources?: readonly PluginDiscoverySource[];
+  /**
+   * Optional discovery service override for tests or custom host applications.
+   * When omitted, the starter uses ConfiguredPluginDiscoveryService.
+   */
+  pluginDiscoveryService?: PluginDiscoveryService;
   continueOnPluginDiscoveryError?: boolean;
   enableHealthModule?: boolean;
   /**

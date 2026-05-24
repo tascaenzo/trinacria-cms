@@ -294,6 +294,14 @@ export type ExecutePluginOperationResponse = {
   "available": boolean;
   "reason"?: string;
 }>;
+  "source"?: {
+  "type": "workspace" | "package" | "local-path";
+  "name": string;
+  "entrypoint": string;
+  "status": "discovered" | "failed" | "disabled";
+  "pluginId"?: string;
+  "error"?: string;
+};
 };
   "operation": "load" | "unload" | "reload" | "disable" | "enable";
   "executedAt": string;
@@ -471,6 +479,14 @@ export type GetInstalledPluginResponse = {
   "available": boolean;
   "reason"?: string;
 }>;
+  "source"?: {
+  "type": "workspace" | "package" | "local-path";
+  "name": string;
+  "entrypoint": string;
+  "status": "discovered" | "failed" | "disabled";
+  "pluginId"?: string;
+  "error"?: string;
+};
 };
   "meta"?: {
   "pluginId"?: "kernel";
@@ -781,6 +797,14 @@ export type ListInstalledPluginsResponse = {
   "available": boolean;
   "reason"?: string;
 }>;
+  "source"?: {
+  "type": "workspace" | "package" | "local-path";
+  "name": string;
+  "entrypoint": string;
+  "status": "discovered" | "failed" | "disabled";
+  "pluginId"?: string;
+  "error"?: string;
+};
 }>;
   "meta"?: {
   "pluginId"?: "kernel";
@@ -877,6 +901,9 @@ export type ListPluginContributionsResponse = {
 export type ListPluginEventsRequest = {
   path: {
   "pluginId": string;
+};
+  query: {
+  "limit"?: number;
 };
 };
 

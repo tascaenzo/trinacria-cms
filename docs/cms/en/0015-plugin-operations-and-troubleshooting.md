@@ -37,7 +37,8 @@ Everything goes through the `kernel` endpoints:
 - `GET /v1/system/plugins`
 - `GET /v1/system/plugins/:pluginId`
 - `POST /v1/system/plugins/:pluginId/operations`
-- `GET /v1/system/plugins/:pluginId/events`
+- `GET /v1/system/plugins/:pluginId/events?limit=20`
+- `GET /v1/system/plugins/sources`
 - `GET /v1/system/capabilities`
 
 The backoffice `Plugins` page uses these same endpoints, not a UI-only contract.
@@ -52,6 +53,7 @@ Instead, it receives an explicit bridge (`KernelAdminRouteGuard`) from the `core
 Main operational fields:
 
 - `state`: current lifecycle state;
+- `source`: current discovery source (`workspace`, `package`, `local-path`) and its `status`;
 - `statusReason`: readable explanation of that state;
 - `operations[]`: actions currently allowed;
 - `failureCount`, `lastFailurePhase`, `failedAt`: failure context;
@@ -111,7 +113,7 @@ Content-Type: application/json
 ### Read recent events
 
 ```http
-GET /v1/system/plugins/core-pack/events
+GET /v1/system/plugins/core-pack/events?limit=20
 ```
 
 ## 6. SDK example
@@ -129,7 +131,8 @@ if (plugin.data.operations.some((item) => item.operation === "reload" && item.av
 }
 
 const events = await cms.system.listPluginEvents({
-  path: { pluginId: "core-pack" }
+  path: { pluginId: "core-pack" },
+  query: { limit: 20 }
 });
 ```
 
@@ -142,11 +145,12 @@ const events = await cms.system.listPluginEvents({
 | Dependency `missing`  | `dependencies[]`                                                | register/load the dependency plugin first                                          |
 | Dependency `disabled` | `dependencies[]`, dependency snapshot                           | re-enable the dependency before the caller plugin                                  |
 | `version-mismatch`    | `dependencies[]`                                                | align required and installed versions                                              |
+| Source missing        | `source`, `statusReason.code === "plugin_source_missing"`       | restore the configured source or remove the record only through an explicit flow   |
 | Operation rejected    | `error.details.plugin.operations`, `error.details.recentEvents` | the runtime is protecting an invalid state or a dependency constraint              |
 
-## 8. Declared `M3` limits
+## 8. Declared `M5` limits
 
-`M3` makes plugins observable and administrable, but it does not introduce yet:
+`M5` makes plugins observable and administrable, but it does not introduce yet:
 
 - remote catalog provisioning;
 - orchestrated multi-plugin upgrades;

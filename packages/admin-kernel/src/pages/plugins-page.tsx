@@ -84,6 +84,17 @@ function dependencyIssueCount(plugin: PluginRecord): number {
   return plugin.dependencies.filter((dependency) => dependency.status !== "ok").length;
 }
 
+function getSourceLabel(plugin: PluginRecord): string {
+  if (!plugin.source) return "-";
+  return `${plugin.source.type}:${plugin.source.status}`;
+}
+
+function getSourceTone(plugin: PluginRecord): "neutral" | "success" | "warning" {
+  if (!plugin.source) return "neutral";
+  if (plugin.source.status === "discovered") return "success";
+  return "warning";
+}
+
 function formatOperationError(details: SdkErrorDetails): string {
   return details.message ?? "Unexpected plugin operation error";
 }
@@ -128,6 +139,9 @@ export function PluginsPage() {
       const response = await cms.system.listPluginEvents({
         path: {
           pluginId
+        },
+        query: {
+          limit: 20
         }
       });
       setSelectedEvents(response.data);
@@ -258,6 +272,7 @@ export function PluginsPage() {
                     <DataTableHeaderRow>
                       <DataTableHeadCell>{t("plugins.table.plugin")}</DataTableHeadCell>
                       <DataTableHeadCell>{t("plugins.table.state")}</DataTableHeadCell>
+                      <DataTableHeadCell>{t("plugins.table.source")}</DataTableHeadCell>
                       <DataTableHeadCell>{t("plugins.table.capabilities")}</DataTableHeadCell>
                       <DataTableHeadCell>{t("plugins.table.dependencies")}</DataTableHeadCell>
                     </DataTableHeaderRow>
@@ -285,6 +300,9 @@ export function PluginsPage() {
                           <Badge tone={getStateTone(plugin.state)}>
                             {getStateLabel(plugin.state)}
                           </Badge>
+                        </DataTableCell>
+                        <DataTableCell>
+                          <Badge tone={getSourceTone(plugin)}>{getSourceLabel(plugin)}</Badge>
                         </DataTableCell>
                         <DataTableCell className="text-[color:var(--color-ink-muted)]">
                           {plugin.capabilities.length}
@@ -315,6 +333,10 @@ export function PluginsPage() {
                       </Button>
                     }
                   >
+                    <MobileRecordField
+                      label={t("plugins.table.source")}
+                      value={getSourceLabel(plugin)}
+                    />
                     <MobileRecordField
                       label={t("plugins.table.capabilities")}
                       value={String(plugin.capabilities.length)}
@@ -358,8 +380,16 @@ export function PluginsPage() {
                     value={selectedPlugin.requiresCore}
                   />
                   <PropertyItem
+                    label={t("plugins.detail.source")}
+                    value={getSourceLabel(selectedPlugin)}
+                  />
+                  <PropertyItem
                     label={t("plugins.detail.failure_count")}
                     value={String(selectedPlugin.failureCount)}
+                  />
+                  <PropertyItem
+                    label={t("plugins.detail.last_failure_phase")}
+                    value={selectedPlugin.lastFailurePhase ?? "-"}
                   />
                   <PropertyItem
                     label={t("plugins.detail.loaded_at")}

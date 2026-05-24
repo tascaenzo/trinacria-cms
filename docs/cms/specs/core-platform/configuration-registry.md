@@ -20,15 +20,15 @@ validazione delle dichiarazioni nei manifest plugin.
 
 ## Responsabilita
 
-| Area                  | Owner                      | Responsabilita                            |
-| --------------------- | -------------------------- | ----------------------------------------- |
-| Registry contract     | `@trinacria-cms/core-pack` | SettingsRegistry, definitions, valori      |
-| Encryption service    | `@trinacria-cms/core-pack` | AES-256-GCM cipher, key rotation          |
-| Signed plugin auth    | `@trinacria-cms/core-pack` | Plugin-to-core signed calls               |
-| Namespace governance  | `@trinacria-cms/kernel`    | Collisioni canonical key, reserved paths  |
-| Manifest integration  | `@trinacria-cms/kernel`    | PluginSettingDeclaration nei manifest     |
-| Backoffice broker     | `packages/admin-kernel`    | Metadata, masked value, azioni operative  |
-| Audit event storage   | `@trinacria-cms/core-pack` | Storage centralizzato audit events        |
+| Area                 | Owner                      | Responsabilita                           |
+| -------------------- | -------------------------- | ---------------------------------------- |
+| Registry contract    | `@trinacria-cms/core-pack` | SettingsRegistry, definitions, valori    |
+| Encryption service   | `@trinacria-cms/core-pack` | AES-256-GCM cipher, key rotation         |
+| Signed plugin auth   | `@trinacria-cms/core-pack` | Plugin-to-core signed calls              |
+| Namespace governance | `@trinacria-cms/kernel`    | Collisioni canonical key, reserved paths |
+| Manifest integration | `@trinacria-cms/kernel`    | PluginSettingDeclaration nei manifest    |
+| Backoffice broker    | `packages/admin-kernel`    | Metadata, masked value, azioni operative |
+| Audit event storage  | `@trinacria-cms/core-pack` | Storage centralizzato audit events       |
 
 ## Modello dati
 
@@ -121,6 +121,7 @@ export interface SettingsActor {
 ```
 
 Regole:
+
 - attore `admin`: utente umano autenticato via backoffice, ha accesso a
   `public` e `protected`, non a `secret` senza policy esplicita
 - attore `plugin`: chiamata signed da plugin owner. Puo accedere e rivelare
@@ -142,15 +143,15 @@ export interface SettingFilter {
 
 Il registry e esposto tramite le API settings di `core-pack`:
 
-| Method | Path                                            | Auth          | Permission                     |
-| ------ | ----------------------------------------------- | ------------- | ------------------------------ |
-| `GET`  | `/v1/settings/definitions`                      | admin bearer  | `core-pack:settings:read`      |
-| `GET`  | `/v1/settings/values`                           | admin bearer  | `core-pack:settings:read`      |
-| `GET`  | `/v1/settings/values/{canonicalKey}`            | admin bearer  | `core-pack:settings:read`      |
-| `PUT`  | `/v1/settings/values/{canonicalKey}`            | admin bearer  | `core-pack:settings:write`     |
-| `POST` | `/v1/settings/secrets/{canonicalKey}/reveal`    | plugin signed | owner-policy                   |
-| `POST` | `/v1/settings/secrets/{canonicalKey}/rotate`    | plugin signed | owner-policy                   |
-| `GET`  | `/v1/settings/export`                           | admin bearer  | `core-pack:settings:export`    |
+| Method | Path                                         | Auth          | Permission                  |
+| ------ | -------------------------------------------- | ------------- | --------------------------- |
+| `GET`  | `/v1/settings/definitions`                   | admin bearer  | `core-pack:settings:read`   |
+| `GET`  | `/v1/settings/values`                        | admin bearer  | `core-pack:settings:read`   |
+| `GET`  | `/v1/settings/values/{canonicalKey}`         | admin bearer  | `core-pack:settings:read`   |
+| `PUT`  | `/v1/settings/values/{canonicalKey}`         | admin bearer  | `core-pack:settings:write`  |
+| `POST` | `/v1/settings/secrets/{canonicalKey}/reveal` | plugin signed | owner-policy                |
+| `POST` | `/v1/settings/secrets/{canonicalKey}/rotate` | plugin signed | owner-policy                |
+| `GET`  | `/v1/settings/export`                        | admin bearer  | `core-pack:settings:export` |
 
 Ogni response usa `ApiSuccessResponse<T>` o `ApiErrorResponse`.
 
@@ -197,21 +198,21 @@ export interface RotateSecretRequestDto {
 
 Il registry possiede 4 collezioni:
 
-| Collection                          | Unique index                    | Owner      |
-| ----------------------------------- | ------------------------------- | ---------- |
-| `cms_core_settings_definitions`     | `{ canonicalKey: 1 }`           | core-pack  |
-| `cms_core_settings_values`          | `{ canonicalKey: 1 }`           | core-pack  |
-| `cms_core_settings_secrets`         | `{ canonicalKey: 1 }`           | core-pack  |
-| `cms_core_settings_audit_events`    | `{ canonicalKey: 1, at: -1 }`   | core-pack  |
+| Collection                       | Unique index                  | Owner     |
+| -------------------------------- | ----------------------------- | --------- |
+| `cms_core_settings_definitions`  | `{ canonicalKey: 1 }`         | core-pack |
+| `cms_core_settings_values`       | `{ canonicalKey: 1 }`         | core-pack |
+| `cms_core_settings_secrets`      | `{ canonicalKey: 1 }`         | core-pack |
+| `cms_core_settings_audit_events` | `{ canonicalKey: 1, at: -1 }` | core-pack |
 
 Index secondari:
 
-| Collection                       | Index                            | Motivo                     |
-| -------------------------------- | -------------------------------- | -------------------------- |
-| `cms_core_settings_definitions`  | `{ ownerPluginId: 1 }`           | lookup per plugin          |
-| `cms_core_settings_values`       | `{ ownerPluginId: 1 }`           | lookup per plugin          |
-| `cms_core_settings_secrets`      | `{ ownerPluginId: 1 }`           | lookup per plugin          |
-| `cms_core_settings_audit_events` | `{ actorType: 1, actorId: 1 }`   | lookup per attore          |
+| Collection                       | Index                          | Motivo            |
+| -------------------------------- | ------------------------------ | ----------------- |
+| `cms_core_settings_definitions`  | `{ ownerPluginId: 1 }`         | lookup per plugin |
+| `cms_core_settings_values`       | `{ ownerPluginId: 1 }`         | lookup per plugin |
+| `cms_core_settings_secrets`      | `{ ownerPluginId: 1 }`         | lookup per plugin |
+| `cms_core_settings_audit_events` | `{ actorType: 1, actorId: 1 }` | lookup per attore |
 
 ### Canonical key
 
@@ -234,6 +235,7 @@ commerce.payments.stripeSecret
 I secret vengono cifrati con AES-256-GCM.
 
 Ogni secret document contiene:
+
 - `ciphertext`: valore cifrato
 - `iv`: vettore di inizializzazione
 - `authTag`: tag di autenticazione
@@ -247,11 +249,11 @@ precedente non viene rimossa.
 
 ### Classi di visibilita
 
-| Visibilita  | Lettura valore         | Scrittura            | Uso previsto                                    |
-| ----------- | ---------------------- | -------------------- | ----------------------------------------------- |
-| `public`    | admin, plugin          | owner                | site name, locale, feature flag non sensibili   |
-| `protected` | admin, owner, policy   | owner                | config condivisa tra plugin, limiti, integraz   |
-| `secret`    | solo owner/policy      | owner                | API key, webhook secret, OAuth secret, token    |
+| Visibilita  | Lettura valore       | Scrittura | Uso previsto                                  |
+| ----------- | -------------------- | --------- | --------------------------------------------- |
+| `public`    | admin, plugin        | owner     | site name, locale, feature flag non sensibili |
+| `protected` | admin, owner, policy | owner     | config condivisa tra plugin, limiti, integraz |
+| `secret`    | solo owner/policy    | owner     | API key, webhook secret, OAuth secret, token  |
 
 ### Regole
 
@@ -267,13 +269,13 @@ precedente non viene rimossa.
 
 ## Eventi
 
-| Evento                          | Visibility | Delivery | Quando                      |
-| ------------------------------- | ---------- | -------- | --------------------------- |
-| `core.settings.defined`         | `audit`    | `sync`   | nuova definizione           |
-| `core.settings.value.set`       | `audit`    | `sync`   | valore aggiornato           |
-| `core.settings.secret.revealed` | `audit`    | `sync`   | reveal secret               |
-| `core.settings.secret.rotated`  | `audit`    | `sync`   | rotazione secret            |
-| `core.settings.access_denied`   | `audit`    | `sync`   | tentativo non autorizzato   |
+| Evento                          | Visibility | Delivery | Quando                    |
+| ------------------------------- | ---------- | -------- | ------------------------- |
+| `core.settings.defined`         | `audit`    | `sync`   | nuova definizione         |
+| `core.settings.value.set`       | `audit`    | `sync`   | valore aggiornato         |
+| `core.settings.secret.revealed` | `audit`    | `sync`   | reveal secret             |
+| `core.settings.secret.rotated`  | `audit`    | `sync`   | rotazione secret          |
+| `core.settings.access_denied`   | `audit`    | `sync`   | tentativo non autorizzato |
 
 Payload comune:
 
@@ -289,15 +291,15 @@ export interface SettingsAuditEventPayload {
 
 ## Errori
 
-| Code                            | HTTP | Quando                         |
-| ------------------------------- | ---- | ------------------------------ |
-| `settings_definition_invalid`   | 400  | definizione non valida         |
-| `settings_key_not_found`        | 404  | canonical key inesistente      |
-| `settings_access_denied`        | 403  | attore non autorizzato         |
-| `settings_secret_required`      | 400  | valore secret mancante         |
-| `settings_secret_reveal_denied` | 403  | reveal non autorizzato         |
-| `settings_unsupported_type`     | 400  | type non supportato            |
-| `settings_namespace_collision`  | 409  | canonical key gia registrata   |
+| Code                            | HTTP | Quando                       |
+| ------------------------------- | ---- | ---------------------------- |
+| `settings_definition_invalid`   | 400  | definizione non valida       |
+| `settings_key_not_found`        | 404  | canonical key inesistente    |
+| `settings_access_denied`        | 403  | attore non autorizzato       |
+| `settings_secret_required`      | 400  | valore secret mancante       |
+| `settings_secret_reveal_denied` | 403  | reveal non autorizzato       |
+| `settings_unsupported_type`     | 400  | type non supportato          |
+| `settings_namespace_collision`  | 409  | canonical key gia registrata |
 
 ## Lifecycle
 
