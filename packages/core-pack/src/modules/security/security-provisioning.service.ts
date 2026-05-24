@@ -1,17 +1,24 @@
-import type {
-  PluginManifest,
-  PluginManifestSecurity,
-  PluginManifestSecurityGrant,
-  PluginManifestSecurityPolicyRule,
-  PluginManifestSecurityPermission,
-  PluginManifestSecurityRole,
-  PluginSecurityProvisioner
+import {
+  isValidPermissionPattern,
+  type PluginManifest,
+  type PluginManifestSetting,
+  type PluginManifestSecurity,
+  type PluginManifestSecurityGrant,
+  type PluginManifestSecurityPolicyRule,
+  type PluginManifestSecurityPermission,
+  type PluginManifestSecurityRole,
+  type PluginSecurityProvisioner
 } from "@trinacria-cms/kernel";
+import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import { PermissionsRepository } from "../permissions/permissions.repository.js";
 import { RoleGrantsRepository } from "../roles/grants/role-grants.repository.js";
 import { RolesRepository } from "../roles/roles.repository.js";
-import { RolePolicyRulesRepository } from "./role-policy-rules/role-policy-rules.repository.js";
+import {
+  EmbeddedRolePolicyRuleSchema,
+  type EmbeddedRolePolicyRule
+} from "../roles/roles.schemas.js";
 import { UserRolesRepository } from "./user-access/user-roles.repository.js";
+import { SettingsService } from "../settings/settings.service.js";
 
 interface NormalizedSecurityManifest {
   permissions: readonly PluginManifestSecurityPermission[];
@@ -23,14 +30,19 @@ interface NormalizedSecurityManifest {
 /**
  * Provisions plugin-contributed permissions, roles, and grants.
  * Ownership is tracked by `sourcePluginId` to keep uninstall operations safe.
+ *
+ * Policy rules are stored as an embedded array inside the role document
+ * (no separate collection is used).
  */
 export class CorePackSecurityProvisioningService implements PluginSecurityProvisioner {
+  private static readonly POLICY_UPDATE_MAX_RETRIES = 3;
+
   constructor(
     private readonly roles: RolesRepository,
     private readonly roleGrants: RoleGrantsRepository,
-    private readonly rolePolicyRules: RolePolicyRulesRepository,
     private readonly permissions: PermissionsRepository,
-    private readonly userRoles: UserRolesRepository
+    private readonly userRoles: UserRolesRepository,
+    private readonly settings: SettingsService
   ) {}
 
   async provision(manifest: PluginManifest): Promise<void> {
@@ -87,26 +99,26 @@ export class CorePackSecurityProvisioningService implements PluginSecurityProvis
         );
       }
 
-      await this.rolePolicyRules.upsert({
-        roleCode: rule.roleCode,
+      await this.upsertEmbeddedPolicyRule(targetRole.id, {
         effect: rule.effect,
         permissionPattern: rule.permissionPattern,
-        conditions: rule.conditions,
+        conditions: rule.conditions ?? [],
         sourcePluginId: pluginId
       });
     }
 
     await this.syncOwnedGrants(pluginId, security);
-    await this.syncOwnedPolicyRules(pluginId, security);
     await this.syncOwnedPermissions(pluginId, security);
+    await this.syncOwnedPolicyRules(pluginId, security);
     await this.syncOwnedRoles(pluginId, security);
+    await this.syncManifestSettings(pluginId, manifest.settings ?? []);
   }
 
   async deprovision(manifest: PluginManifest): Promise<void> {
     const pluginId = manifest.id.trim().toLowerCase();
     await this.userRoles.deleteBySourcePlugin(pluginId);
     await this.roleGrants.deleteBySourcePlugin(pluginId);
-    await this.rolePolicyRules.deleteBySourcePlugin(pluginId);
+    await this.deletePolicyRulesBySourcePlugin(pluginId);
 
     const ownedPermissions = await this.permissions.listBySourcePlugin(pluginId);
     for (const permission of ownedPermissions) {
@@ -122,6 +134,19 @@ export class CorePackSecurityProvisioningService implements PluginSecurityProvis
       }
       await this.roleGrants.deleteByRoleCode(role.code);
       await this.roles.deleteById(role.id);
+    }
+
+    const existingDefinitions = await this.settings.listDefinitions({ ownerPluginId: pluginId });
+    for (const definition of existingDefinitions) {
+      await this.settings.upsertDefinition({
+        requesterPluginId: pluginId,
+        key: definition.key,
+        category: definition.category,
+        description: definition.description,
+        schema: definition.schema,
+        defaultValue: definition.defaultValue,
+        status: "disabled"
+      });
     }
   }
 
@@ -160,34 +185,106 @@ export class CorePackSecurityProvisioningService implements PluginSecurityProvis
     }
   }
 
+  private async upsertEmbeddedPolicyRule(
+    roleId: string,
+    rule: {
+      effect: "allow" | "deny";
+      permissionPattern: string;
+      conditions: readonly string[];
+      sourcePluginId: string;
+    }
+  ): Promise<void> {
+    const normalizedPattern = rule.permissionPattern.trim().toLowerCase();
+    const normalizedSource = rule.sourcePluginId.trim().toLowerCase();
+    const normalizedConditions = Array.from(
+      new Set(rule.conditions.map((c) => c.trim().toLowerCase()).sort())
+    );
+
+    for (let attempt = 0; attempt < CorePackSecurityProvisioningService.POLICY_UPDATE_MAX_RETRIES; attempt += 1) {
+      const role = await this.roles.findRawById(roleId);
+      if (!role) return;
+      const roleRecord = role as Record<string, unknown>;
+      const existingRules = Array.isArray(roleRecord.policyRules)
+        ? (roleRecord.policyRules as EmbeddedRolePolicyRule[])
+        : [];
+      const conflict = existingRules.find(
+        (r) =>
+          r.effect === rule.effect &&
+          r.permissionPattern === normalizedPattern &&
+          r.sourcePluginId === normalizedSource &&
+          r.conditions.join(",") === normalizedConditions.join(",")
+      );
+      if (conflict) return;
+
+      const now = new Date().toISOString();
+      const newRule = EmbeddedRolePolicyRuleSchema.parse({
+        effect: rule.effect,
+        permissionPattern: normalizedPattern,
+        conditions: normalizedConditions,
+        sourcePluginId: normalizedSource,
+        createdAt: now,
+        updatedAt: now
+      });
+      const updated = await this.roles.rawCompareAndSwap(
+        String(roleRecord.id ?? ""),
+        String(roleRecord.updatedAt ?? ""),
+        { policyRules: [...existingRules, newRule], updatedAt: now }
+      );
+      if (updated) return;
+    }
+    throw new Error(`Policy rule upsert failed due to concurrent updates for role "${roleId}"`);
+  }
+
+  private async listRolesPolicyRules(roleId: string): Promise<readonly EmbeddedRolePolicyRule[]> {
+    const role = await this.roles.findRawById(roleId);
+    if (!role) return [];
+    const rules = (role as Record<string, unknown>).policyRules;
+    return Array.isArray(rules) ? (rules as EmbeddedRolePolicyRule[]) : [];
+  }
+
+  private async deletePolicyRulesBySourcePlugin(sourcePluginId: string): Promise<void> {
+    const normalizedSource = sourcePluginId.trim().toLowerCase();
+    const allRoles = await this.roles.list();
+    for (const role of allRoles) {
+      const existingRules = await this.listRolesPolicyRules(role.id);
+      const remaining = existingRules.filter((r) => r.sourcePluginId !== normalizedSource);
+      if (remaining.length === existingRules.length) continue;
+
+      await this.updateRolePolicyRulesWithRetry(role.id, (existingRules) => {
+        const next = existingRules.filter((r) => r.sourcePluginId !== normalizedSource);
+        return next.length === existingRules.length ? null : next;
+      });
+    }
+  }
+
   private async syncOwnedPolicyRules(
     pluginId: string,
     security: NormalizedSecurityManifest
   ): Promise<void> {
-    const desired = new Set(
-      security.policyRules.map((rule) =>
-        this.serializePolicyRule(
-          rule.roleCode,
-          rule.effect,
-          rule.permissionPattern,
-          rule.conditions ?? [],
-          pluginId
-        )
-      )
-    );
-
-    const existing = await this.rolePolicyRules.listBySourcePlugin(pluginId);
-    for (const record of existing) {
-      const key = this.serializePolicyRule(
-        record.roleCode,
-        record.effect,
-        record.permissionPattern,
-        record.conditions,
-        record.sourcePluginId
+    const normalizedPluginId = pluginId.trim().toLowerCase();
+    const desiredByRole = new Map<string, Set<string>>();
+    for (const rule of security.policyRules) {
+      const rc = rule.roleCode.trim().toLowerCase();
+      const conds = Array.from(
+        new Set((rule.conditions ?? []).map((c) => c.trim().toLowerCase()).sort())
       );
-      if (!desired.has(key)) {
-        await this.rolePolicyRules.deleteById(record.id);
-      }
+      const key = `${rc}|${rule.effect}|${rule.permissionPattern.trim().toLowerCase()}|${conds.join(",")}`;
+      if (!desiredByRole.has(rc)) desiredByRole.set(rc, new Set());
+      desiredByRole.get(rc)!.add(key);
+    }
+
+    const allRoles = await this.roles.list();
+    for (const role of allRoles) {
+      const existing = await this.listRolesPolicyRules(role.id);
+      const desired = desiredByRole.get(role.code);
+      const remaining = existing.filter((r) => {
+        if (r.sourcePluginId !== normalizedPluginId) return true;
+        if (!desired) return false;
+        const key = `${role.code}|${r.effect}|${r.permissionPattern}|${r.conditions.join(",")}`;
+        return desired.has(key);
+      });
+      if (remaining.length === existing.length) continue;
+      await this.updateRolePolicyRulesWithRetry(role.id, () => remaining);
     }
   }
 
@@ -218,21 +315,6 @@ export class CorePackSecurityProvisioningService implements PluginSecurityProvis
       .toLowerCase()}|${sourcePluginId.trim().toLowerCase()}`;
   }
 
-  private serializePolicyRule(
-    roleCode: string,
-    effect: "allow" | "deny",
-    permissionPattern: string,
-    conditions: readonly string[],
-    sourcePluginId: string
-  ): string {
-    const normalizedConditions = Array.from(
-      new Set(conditions.map((item) => item.trim().toLowerCase()).sort())
-    );
-    return `${roleCode.trim().toLowerCase()}|${effect}|${permissionPattern
-      .trim()
-      .toLowerCase()}|${normalizedConditions.join(",")}|${sourcePluginId.trim().toLowerCase()}`;
-  }
-
   private normalizeSecurity(
     security: PluginManifestSecurity | undefined
   ): NormalizedSecurityManifest {
@@ -242,5 +324,65 @@ export class CorePackSecurityProvisioningService implements PluginSecurityProvis
       grants: security?.grants ?? [],
       policyRules: security?.policyRules ?? []
     };
+  }
+
+  private async syncManifestSettings(
+    pluginId: string,
+    settings: readonly PluginManifestSetting[]
+  ): Promise<void> {
+    const desiredKeys = new Set<string>();
+    for (const setting of settings) {
+      const fullKey = `${pluginId}:${setting.namespace}:${setting.key}`.toLowerCase();
+      desiredKeys.add(fullKey);
+      await this.settings.upsertDefinition({
+        requesterPluginId: pluginId,
+        key: fullKey,
+        category: setting.namespace,
+        description: setting.description,
+        ...(setting.schema !== undefined ? { schema: setting.schema } : {}),
+        ...(setting.defaultValueJson !== undefined
+          ? { defaultValue: JSON.parse(setting.defaultValueJson) }
+          : {}),
+        status: "active"
+      });
+    }
+
+    const existingDefinitions = await this.settings.listDefinitions({ ownerPluginId: pluginId });
+    for (const definition of existingDefinitions) {
+      if (desiredKeys.has(definition.key)) continue;
+      await this.settings.upsertDefinition({
+        requesterPluginId: pluginId,
+        key: definition.key,
+        category: definition.category,
+        description: definition.description,
+        schema: definition.schema,
+        defaultValue: definition.defaultValue,
+        status: "disabled"
+      });
+    }
+  }
+
+  private async updateRolePolicyRulesWithRetry(
+    roleId: string,
+    mutate: (existingRules: readonly EmbeddedRolePolicyRule[]) => EmbeddedRolePolicyRule[] | null
+  ): Promise<void> {
+    for (let attempt = 0; attempt < CorePackSecurityProvisioningService.POLICY_UPDATE_MAX_RETRIES; attempt += 1) {
+      const raw = await this.roles.findRawById(roleId);
+      if (!raw) return;
+      const role = raw as Record<string, unknown>;
+      const existingRules = Array.isArray(role.policyRules)
+        ? (role.policyRules as EmbeddedRolePolicyRule[])
+        : [];
+      const nextRules = mutate(existingRules);
+      if (!nextRules) return;
+      const now = new Date().toISOString();
+      const updated = await this.roles.rawCompareAndSwap(
+        String(role.id ?? ""),
+        String(role.updatedAt ?? ""),
+        { policyRules: nextRules, updatedAt: now }
+      );
+      if (updated) return;
+    }
+    throw new Error(`Policy rule update failed due to concurrent updates for role "${roleId}"`);
   }
 }

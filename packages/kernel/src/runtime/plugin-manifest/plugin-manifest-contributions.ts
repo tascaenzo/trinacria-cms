@@ -75,7 +75,7 @@ export const settingSchema = s.object(
     required: s.boolean().optional().default(false),
     description: s.string({ trim: true, maxLength: 500 }).optional(),
     schema: looseObjectSchema.optional(),
-    defaultValueJson: s.string({ minLength: 2, maxLength: 200000 }).optional()
+    defaultValueJson: s.string({ minLength: 1, maxLength: 200000 }).optional()
   },
   { strict: true }
 );

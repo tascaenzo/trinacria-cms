@@ -7,6 +7,11 @@ import { RolesRepository } from "../src/modules/roles/roles.repository.js";
 import { CorePackSecurityProvisioningService } from "../src/modules/security/security-provisioning.service.js";
 import { RolePolicyRulesRepository } from "../src/modules/security/role-policy-rules/role-policy-rules.repository.js";
 import { UserRolesRepository } from "../src/modules/security/user-access/user-roles.repository.js";
+import { SettingsDefinitionsRepository } from "../src/modules/settings/definitions/settings-definitions.repository.js";
+import { SettingsValuesRepository } from "../src/modules/settings/values/settings-values.repository.js";
+import { SettingsSecretsRepository } from "../src/modules/settings/secrets/settings-secrets.repository.js";
+import { SettingsSecretsCryptoService } from "../src/modules/settings/secrets/settings-secrets-crypto.service.js";
+import { SettingsService } from "../src/modules/settings/settings.service.js";
 
 test("security provisioning syncs plugin-owned permissions, roles and grants", async () => {
   const db = createFakeDbAdapter();
@@ -15,12 +20,13 @@ test("security provisioning syncs plugin-owned permissions, roles and grants", a
   const rolePolicyRules = new RolePolicyRulesRepository(db);
   const permissions = new PermissionsRepository(db);
   const userRoles = new UserRolesRepository(db);
+  const settings = createSettingsService(db);
   const service = new CorePackSecurityProvisioningService(
     roles,
     grants,
-    rolePolicyRules,
     permissions,
-    userRoles
+    userRoles,
+    settings
   );
 
   const pluginManifest: PluginManifest = {
@@ -103,12 +109,13 @@ test("deprovision keeps role as disabled when foreign plugin grants still exist"
   const rolePolicyRules = new RolePolicyRulesRepository(db);
   const permissions = new PermissionsRepository(db);
   const userRoles = new UserRolesRepository(db);
+  const settings = createSettingsService(db);
   const service = new CorePackSecurityProvisioningService(
     roles,
     grants,
-    rolePolicyRules,
     permissions,
-    userRoles
+    userRoles,
+    settings
   );
 
   await service.provision({
@@ -225,6 +232,15 @@ function createFakeDbAdapter(): DbAdapter {
       return { ok: true };
     }
   };
+}
+
+function createSettingsService(db: DbAdapter): SettingsService {
+  return new SettingsService(
+    new SettingsDefinitionsRepository(db),
+    new SettingsValuesRepository(db),
+    new SettingsSecretsRepository(db),
+    new SettingsSecretsCryptoService()
+  );
 }
 
 function matchesFilter(
