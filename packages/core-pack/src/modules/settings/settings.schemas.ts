@@ -1,5 +1,7 @@
-import { defineEntity, s, type Infer } from "@trinacria-cms/kernel";
+import { defineEntity, s, type Infer, type Schema } from "@trinacria-cms/kernel";
 import { isValidSettingKey } from "./settings-key.js";
+import { isJsonValue, type JsonValue } from "./settings-json.js";
+import { createSchema } from "@trinacria/schema/dist/core/index.js";
 
 const SettingKeySchema = s
   .string({ trim: true, toLowerCase: true, minLength: 5, maxLength: 220 })
@@ -15,8 +17,37 @@ export const SettingDefinitionStatusSchema = s.enum(["active", "disabled"] as co
 export const SettingRecordKindSchema = s.enum(["definition", "value", "secret"] as const);
 
 /**
+ * Schema that accepts any JSON-compatible value (object, array, primitive, null).
+ * MongoDB stores these natively as nested documents — no string serialization needed.
+ */
+export function jsonValue<T extends JsonValue = JsonValue>(): Schema<T> {
+  return createSchema<T>(
+    "json",
+    (input) => {
+      if (!isJsonValue(input)) {
+        throw new Error("Value must be JSON-compatible");
+      }
+      return input as T;
+    },
+    () => ({
+      oneOf: [
+        { type: "string" },
+        { type: "number" },
+        { type: "boolean" },
+        { type: "null" },
+        { type: "array", items: {} },
+        { type: "object", additionalProperties: true }
+      ]
+    })
+  );
+}
+
+/**
  * Unified settings record shape stored in a single collection.
  * `kind` discriminates definition/value/secret logical views.
+ *
+ * JSON sub-objects (schema, defaultValue, value) are stored directly as
+ * native MongoDB documents rather than serialized strings.
  */
 export const SettingRecordSchema = s.object(
   {
@@ -28,11 +59,11 @@ export const SettingRecordSchema = s.object(
     // Definition-specific fields.
     category: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
     description: s.string({ trim: true, minLength: 1, maxLength: 500 }).optional(),
-    schemaJson: s.string({ minLength: 2, maxLength: 200000 }).optional(),
-    defaultValueJson: s.string({ minLength: 2, maxLength: 200000 }).optional(),
+    schema: jsonValue().optional(),
+    defaultValue: jsonValue().optional(),
 
     // Value-specific fields.
-    valueJson: s.string({ minLength: 2, maxLength: 200000 }).optional(),
+    value: jsonValue().optional(),
     version: s.number({ int: true, min: 1 }).optional(),
 
     // Secret-specific fields.
@@ -64,8 +95,8 @@ export const SettingDefinitionRecordSchema = s.object(
     ownerPluginId: PluginIdSchema,
     category: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
     description: s.string({ trim: true, minLength: 1, maxLength: 500 }).optional(),
-    schemaJson: s.string({ minLength: 2, maxLength: 200000 }).optional(),
-    defaultValueJson: s.string({ minLength: 2, maxLength: 200000 }).optional(),
+    schema: jsonValue().optional(),
+    defaultValue: jsonValue().optional(),
     status: SettingDefinitionStatusSchema,
     createdAt: s.dateTimeString(),
     updatedAt: s.dateTimeString()
@@ -84,7 +115,7 @@ export const SettingValueRecordSchema = s.object(
     kind: s.literal("value"),
     key: SettingKeySchema,
     ownerPluginId: PluginIdSchema,
-    valueJson: s.string({ minLength: 2, maxLength: 200000 }),
+    value: jsonValue(),
     version: s.number({ int: true, min: 1 }),
     updatedBy: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
     createdAt: s.dateTimeString(),

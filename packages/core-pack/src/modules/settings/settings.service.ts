@@ -1,9 +1,7 @@
 import { assertRequesterOwnsSettingKey, getOwnerPluginIdFromSettingKey } from "./settings-key.js";
 import {
   cloneJsonValue,
-  deserializeJsonValue,
   parseJsonValue,
-  serializeJsonValue,
   type JsonValue
 } from "./settings-json.js";
 import {
@@ -101,10 +99,10 @@ export class SettingsService {
       category: input.category,
       description: input.description,
       ...(input.schema !== undefined
-        ? { schemaJson: serializeJsonValue(parseJsonValue(input.schema)) }
+        ? { schema: parseJsonValue(input.schema) }
         : {}),
       ...(input.defaultValue !== undefined
-        ? { defaultValueJson: serializeJsonValue(parseJsonValue(input.defaultValue)) }
+        ? { defaultValue: parseJsonValue(input.defaultValue) }
         : {}),
       status: input.status
     } satisfies UpsertSettingDefinitionRecordInput);
@@ -138,7 +136,7 @@ export class SettingsService {
     const record = await this.values.upsert({
       key: input.key,
       ownerPluginId: getOwnerPluginIdFromSettingKey(input.key),
-      valueJson: serializeJsonValue(parsedValue),
+      value: parsedValue,
       updatedBy: input.updatedBy
     } satisfies UpsertSettingValueRecordInput);
 
@@ -148,11 +146,10 @@ export class SettingsService {
   async getResolvedValueByKey(key: string): Promise<ResolvedSettingValue | null> {
     const value = await this.values.findByKey(key);
     if (value) {
-      const parsed = parseJsonValue(deserializeJsonValue(value.valueJson));
       return {
         key: value.key,
         ownerPluginId: value.ownerPluginId,
-        value: cloneJsonValue(parsed),
+        value: cloneJsonValue(value.value),
         source: "value",
         version: value.version,
         updatedAt: value.updatedAt
@@ -160,15 +157,14 @@ export class SettingsService {
     }
 
     const definition = await this.definitions.findByKey(key);
-    if (!definition || !definition.defaultValueJson) {
+    if (!definition || definition.defaultValue === undefined) {
       return null;
     }
 
-    const parsed = parseJsonValue(deserializeJsonValue(definition.defaultValueJson));
     return {
       key: definition.key,
       ownerPluginId: definition.ownerPluginId,
-      value: cloneJsonValue(parsed),
+      value: cloneJsonValue(definition.defaultValue),
       source: "default",
       updatedAt: definition.updatedAt
     };
@@ -282,8 +278,8 @@ export class SettingsService {
     ownerPluginId: string;
     category?: string;
     description?: string;
-    schemaJson?: string;
-    defaultValueJson?: string;
+    schema?: JsonValue;
+    defaultValue?: JsonValue;
     status: "active" | "disabled";
     createdAt: string;
     updatedAt: string;
@@ -294,11 +290,11 @@ export class SettingsService {
       ownerPluginId: record.ownerPluginId,
       ...(record.category ? { category: record.category } : {}),
       ...(record.description ? { description: record.description } : {}),
-      ...(record.schemaJson
-        ? { schema: parseJsonValue(deserializeJsonValue(record.schemaJson)) }
+      ...(record.schema !== undefined
+        ? { schema: cloneJsonValue(record.schema) }
         : {}),
-      ...(record.defaultValueJson
-        ? { defaultValue: parseJsonValue(deserializeJsonValue(record.defaultValueJson)) }
+      ...(record.defaultValue !== undefined
+        ? { defaultValue: cloneJsonValue(record.defaultValue) }
         : {}),
       status: record.status,
       createdAt: record.createdAt,
@@ -310,7 +306,7 @@ export class SettingsService {
     id: string;
     key: string;
     ownerPluginId: string;
-    valueJson: string;
+    value: JsonValue;
     version: number;
     updatedBy?: string;
     createdAt: string;
@@ -320,7 +316,7 @@ export class SettingsService {
       id: record.id,
       key: record.key,
       ownerPluginId: record.ownerPluginId,
-      value: parseJsonValue(deserializeJsonValue(record.valueJson)),
+      value: cloneJsonValue(record.value),
       version: record.version,
       ...(record.updatedBy ? { updatedBy: record.updatedBy } : {}),
       createdAt: record.createdAt,

@@ -36,7 +36,7 @@ test("RolePolicyRulesService supports CRUD by role code", async () => {
   assert.ok(updated);
   assert.equal(updated?.effect, "deny");
 
-  const deleted = await service.delete("editor", created!.id);
+  const deleted = await service.delete("editor", updated!.id);
   assert.equal(deleted, true);
 
   const emptyList = await service.listByRoleCode("editor");

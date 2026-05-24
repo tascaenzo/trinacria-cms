@@ -7,7 +7,7 @@ import {
 } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import { UserRecordSchema, type UserRecord } from "../users/users.schemas.js";
-import { extractAccessTokenFromCookie, readJwtCookieConfigFromEnv } from "./auth-session.js";
+import { extractAccessTokenFromCookie, readJwtCookieConfigFromEnv, type JwtCookieConfig } from "./auth-session.js";
 import { JwtAuthError, JwtAuthService } from "./auth.service.js";
 
 export const AUTHENTICATED_USER_STATE_KEY = "corePack.auth.authenticatedUser";
@@ -20,9 +20,8 @@ export function createJwtAuthMiddleware(
   auth: JwtAuthService,
   options?: { requireAdmin?: boolean }
 ): HttpMiddleware {
-  const cookieConfig = readJwtCookieConfigFromEnv();
-
   return async (ctx, next) => {
+    const cookieConfig = await auth.getJwtCookieConfig();
     const token = extractAuthToken(ctx, cookieConfig);
     if (!token) {
       return unauthorized("auth_missing_token", "Missing bearer token");

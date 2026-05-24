@@ -111,7 +111,7 @@ export async function startCmsApp(options: CmsStarterOptions): Promise<CmsStarte
                   if (hasSecurityDeclarations(context.manifest)) {
                     throw new CoreError(
                       "CMS_STARTER_SECURITY_PROVISIONER_MISSING",
-                      `Plugin "${context.pluginId}" declares security metadata but no PluginSecurityProvisioner is available`
+                      `Plugin "${context.pluginId}" declares provisioning metadata but no PluginSecurityProvisioner is available`
                     );
                   }
                   return;
@@ -308,12 +308,16 @@ function hasSecurityDeclarations(manifest: {
     permissions?: readonly unknown[];
     roles?: readonly unknown[];
     grants?: readonly unknown[];
+    policyRules?: readonly unknown[];
   };
+  settings?: readonly unknown[];
 }): boolean {
   return (
     (manifest.security?.permissions?.length ?? 0) > 0 ||
     (manifest.security?.roles?.length ?? 0) > 0 ||
-    (manifest.security?.grants?.length ?? 0) > 0
+    (manifest.security?.grants?.length ?? 0) > 0 ||
+    (manifest.security?.policyRules?.length ?? 0) > 0 ||
+    (manifest.settings?.length ?? 0) > 0
   );
 }
 

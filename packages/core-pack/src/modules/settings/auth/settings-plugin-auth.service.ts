@@ -1,5 +1,7 @@
+import type { DbAdapter } from "@trinacria-cms/kernel";
 import type { HttpContext } from "@trinacria-cms/kernel";
 import type { PluginAuthKeyProvider } from "./settings-plugin-auth-key-provider.js";
+import { readCorePackSettingValue } from "../runtime-settings.js";
 import {
   buildPluginRequestSignature,
   normalizePath,
@@ -30,17 +32,33 @@ export class SettingsPluginAuthError extends Error {
  * Validates signed plugin caller headers and prevents short-window replays.
  */
 export class SettingsPluginAuthService {
-  private readonly maxSkewSeconds: number;
+  private readonly envMaxSkewSeconds: number;
   private readonly usedNonces = new Map<string, number>();
+  private configCache?: {
+    loadedAtMs: number;
+    maxSkewSeconds: number;
+    nonceCacheMaxEntries: number;
+  };
 
   constructor(
     private readonly keyProvider: PluginAuthKeyProvider,
+    dbOrOptions?: DbAdapter | SettingsPluginAuthServiceOptions,
     options?: SettingsPluginAuthServiceOptions
   ) {
-    this.maxSkewSeconds = options?.maxSkewSeconds ?? readMaxSkewFromEnv();
+    const maybeDb = dbOrOptions as DbAdapter | undefined;
+    const resolvedOptions =
+      dbOrOptions && typeof dbOrOptions === "object" && "repository" in dbOrOptions
+        ? options
+        : (dbOrOptions as SettingsPluginAuthServiceOptions | undefined);
+
+    this.db =
+      maybeDb && typeof maybeDb === "object" && "repository" in maybeDb ? maybeDb : null;
+    this.envMaxSkewSeconds = resolvedOptions?.maxSkewSeconds ?? readMaxSkewFromEnv();
   }
+  private readonly db: DbAdapter | null;
 
   async authenticateRequest(ctx: HttpContext): Promise<string> {
+    const config = await this.getConfig();
     const pluginId = this.getHeader(ctx, PLUGIN_AUTH_HEADERS.pluginId)?.trim().toLowerCase();
     const timestampRaw = this.getHeader(ctx, PLUGIN_AUTH_HEADERS.timestamp)?.trim();
     const nonce = this.getHeader(ctx, PLUGIN_AUTH_HEADERS.nonce)?.trim();
@@ -62,7 +80,7 @@ export class SettingsPluginAuthService {
     }
 
     const now = Math.floor(Date.now() / 1000);
-    if (Math.abs(now - timestamp) > this.maxSkewSeconds) {
+    if (Math.abs(now - timestamp) > config.maxSkewSeconds) {
       throw new SettingsPluginAuthError(
         "plugin_auth_timestamp_expired",
         "Plugin auth timestamp expired"
@@ -77,7 +95,7 @@ export class SettingsPluginAuthService {
       );
     }
 
-    this.assertNonceNotReplayed(pluginId, nonce, now + this.maxSkewSeconds);
+    this.assertNonceNotReplayed(pluginId, nonce, now + config.maxSkewSeconds, config.nonceCacheMaxEntries);
 
     const request = toNodeRequest(ctx.req);
     const expected = buildPluginRequestSignature({
@@ -107,7 +125,12 @@ export class SettingsPluginAuthService {
     return Array.isArray(value) ? value[0] : value;
   }
 
-  private assertNonceNotReplayed(pluginId: string, nonce: string, expiresAt: number): void {
+  private assertNonceNotReplayed(
+    pluginId: string,
+    nonce: string,
+    expiresAt: number,
+    nonceCacheMaxEntries: number
+  ): void {
     const key = `${pluginId}:${nonce}`;
     const now = Math.floor(Date.now() / 1000);
 
@@ -124,7 +147,45 @@ export class SettingsPluginAuthService {
       );
     }
 
+    if (this.usedNonces.size >= nonceCacheMaxEntries) {
+      const first = this.usedNonces.keys().next();
+      if (!first.done) {
+        this.usedNonces.delete(first.value);
+      }
+    }
     this.usedNonces.set(key, expiresAt);
+  }
+
+  private async getConfig(): Promise<{ maxSkewSeconds: number; nonceCacheMaxEntries: number }> {
+    const nowMs = Date.now();
+    if (this.configCache && nowMs - this.configCache.loadedAtMs < 30_000) {
+      return this.configCache;
+    }
+    if (!this.db) {
+      const value = {
+        loadedAtMs: nowMs,
+        maxSkewSeconds: this.envMaxSkewSeconds,
+        nonceCacheMaxEntries: 10_000
+      };
+      this.configCache = value;
+      return value;
+    }
+    const maxSkewRaw = await readCorePackSettingValue(this.db, "core-pack:plugin_auth:max_skew_seconds");
+    const nonceMaxRaw = await readCorePackSettingValue(
+      this.db,
+      "core-pack:plugin_auth:nonce_cache_max_entries"
+    );
+    const maxSkewSeconds =
+      typeof maxSkewRaw === "number" && Number.isFinite(maxSkewRaw) && maxSkewRaw > 0
+        ? Math.floor(maxSkewRaw)
+        : this.envMaxSkewSeconds;
+    const nonceCacheMaxEntries =
+      typeof nonceMaxRaw === "number" && Number.isFinite(nonceMaxRaw) && nonceMaxRaw > 0
+        ? Math.floor(nonceMaxRaw)
+        : 10_000;
+    const value = { loadedAtMs: nowMs, maxSkewSeconds, nonceCacheMaxEntries };
+    this.configCache = value;
+    return value;
   }
 }
 

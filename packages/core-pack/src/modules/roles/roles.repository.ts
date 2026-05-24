@@ -1,5 +1,6 @@
 import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
+import type { CacheService } from "../cache/cache.service.js";
 import {
   CreateRoleInputSchema,
   type CreateRoleInput,
@@ -9,6 +10,7 @@ import {
 import { RoleRecordSchema, type RoleRecord } from "./roles.schemas.js";
 
 const ROLES_ENTITY_NAME = "roles";
+const CACHE_NAMESPACE = "roles";
 
 /**
  * Persistence adapter for roles module over kernel DbAdapter.
@@ -16,7 +18,10 @@ const ROLES_ENTITY_NAME = "roles";
 export class RolesRepository {
   private scope?: PluginDbScope;
 
-  constructor(private readonly db: DbAdapter) {}
+  constructor(
+    private readonly db: DbAdapter,
+    private readonly cache?: CacheService
+  ) {}
 
   async create(input: CreateRoleInput): Promise<RoleRecord> {
     const parsedInput = CreateRoleInputSchema.parse(input);
@@ -33,24 +38,39 @@ export class RolesRepository {
     };
 
     const created = await this.repository().insertOne(record);
+    await this.cache?.invalidate(CACHE_NAMESPACE);
     return this.parseRoleRecord(created);
   }
 
   async findById(id: string): Promise<RoleRecord | null> {
-    const found = await this.repository().findOne({
+    if (!this.cache) {
+      return this.findByIdFromDb(id);
+    }
+    return this.cache.getOrCompute(CACHE_NAMESPACE, `id:${id}`, () => this.findByIdFromDb(id));
+  }
+
+  private async findByIdFromDb(id: string): Promise<RoleRecord | null> {
+    return this.repository().findOne({
       filter: { id },
       parse: (value: unknown) => this.parseRoleRecord(value)
     });
-    return found;
   }
 
   async findByCode(code: string): Promise<RoleRecord | null> {
     const normalizedCode = code.trim().toLowerCase();
-    const found = await this.repository().findOne({
-      filter: { code: normalizedCode },
+    if (!this.cache) {
+      return this.findByCodeFromDb(normalizedCode);
+    }
+    return this.cache.getOrCompute(CACHE_NAMESPACE, `code:${normalizedCode}`, () =>
+      this.findByCodeFromDb(normalizedCode)
+    );
+  }
+
+  private async findByCodeFromDb(code: string): Promise<RoleRecord | null> {
+    return this.repository().findOne({
+      filter: { code },
       parse: (value: unknown) => this.parseRoleRecord(value)
     });
-    return found;
   }
 
   async list(options?: { limit?: number; offset?: number }): Promise<readonly RoleRecord[]> {
@@ -58,6 +78,16 @@ export class RolesRepository {
       limit: options?.limit,
       offset: options?.offset,
       sort: { createdAt: "desc" },
+      parse: (value: unknown) => this.parseRoleRecord(value)
+    });
+    return roles;
+  }
+
+  async listByCodes(codes: readonly string[]): Promise<readonly RoleRecord[]> {
+    if (codes.length === 0) return [];
+    const normalized = codes.map((c) => c.trim().toLowerCase());
+    const roles = await this.repository().findMany({
+      filter: { code: { $in: normalized } },
       parse: (value: unknown) => this.parseRoleRecord(value)
     });
     return roles;
@@ -83,6 +113,7 @@ export class RolesRepository {
     );
 
     if (!updated) return null;
+    await this.cache?.invalidate(CACHE_NAMESPACE);
     return this.parseRoleRecord(updated);
   }
 
@@ -111,6 +142,7 @@ export class RolesRepository {
         createdAt: now,
         updatedAt: now
       });
+      await this.cache?.invalidate(CACHE_NAMESPACE);
       return this.parseRoleRecord(created);
     }
 
@@ -127,11 +159,42 @@ export class RolesRepository {
     if (!updated) {
       throw new Error(`Role "${normalizedCode}" disappeared during upsert`);
     }
+    await this.cache?.invalidate(CACHE_NAMESPACE);
     return this.parseRoleRecord(updated);
   }
 
   async deleteById(id: string): Promise<boolean> {
-    return this.repository().deleteOne({ filter: { id } });
+    const deleted = await this.repository().deleteOne({ filter: { id } });
+    if (deleted) {
+      await this.cache?.invalidate(CACHE_NAMESPACE);
+    }
+    return deleted;
+  }
+
+  /**
+   * Low-level update used by the provisioning service for embedded array operations.
+   */
+  async findRawById(id: string): Promise<Record<string, unknown> | null> {
+    return this.repository().findOne({ filter: { id: id.trim() } });
+  }
+
+  async rawUpdate(id: string, patch: Record<string, unknown>): Promise<void> {
+    await this.repository().updateOne({ filter: { id } }, patch as Partial<RoleRecord>);
+    await this.cache?.invalidate(CACHE_NAMESPACE);
+  }
+
+  async rawCompareAndSwap(
+    id: string,
+    expectedUpdatedAt: string,
+    patch: Record<string, unknown>
+  ): Promise<boolean> {
+    const updated = await this.repository().updateOne(
+      { filter: { id, updatedAt: expectedUpdatedAt } },
+      patch as Partial<RoleRecord>
+    );
+    if (!updated) return false;
+    await this.cache?.invalidate(CACHE_NAMESPACE);
+    return true;
   }
 
   private repository() {
@@ -151,9 +214,12 @@ export class RolesRepository {
     if (normalized.permissions === null) {
       delete normalized.permissions;
     }
-    // Internal embedded grants must not leak into API RoleRecord shape.
+    // Internal embedded arrays must not leak into API RoleRecord shape.
     if ("permissionGrants" in normalized) {
       delete normalized.permissionGrants;
+    }
+    if ("policyRules" in normalized) {
+      delete normalized.policyRules;
     }
     if (normalized.ownerPluginId === null) {
       delete normalized.ownerPluginId;

@@ -45,21 +45,6 @@ export function parseJsonValue(value: unknown): JsonValue {
 }
 
 /**
- * Serializes JSON payload for storage where schema is strict on scalar fields.
- */
-export function serializeJsonValue(value: JsonValue): string {
-  return JSON.stringify(value);
-}
-
-/**
- * Parses JSON payload from persisted serialized form.
- */
-export function deserializeJsonValue(value: string): JsonValue {
-  const parsed: unknown = JSON.parse(value);
-  return parseJsonValue(parsed);
-}
-
-/**
  * Performs a deep clone preserving JSON semantics.
  */
 export function cloneJsonValue<T extends JsonValue>(value: T): T {

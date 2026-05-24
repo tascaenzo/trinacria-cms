@@ -3,6 +3,7 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:
 export interface SettingsSecretsCryptoOptions {
   masterKey?: string;
   keyVersion?: string;
+  strictMasterKeyRequired?: boolean;
 }
 
 export interface EncryptedSecretPayload {
@@ -21,9 +22,11 @@ export class SettingsSecretsCryptoService {
   private readonly algorithm = "aes-256-gcm" as const;
   private readonly keyVersion: string;
   private readonly key: Buffer;
+  private readonly strictMasterKeyRequired: boolean;
 
   constructor(options?: SettingsSecretsCryptoOptions) {
     this.keyVersion = options?.keyVersion?.trim() || "v1";
+    this.strictMasterKeyRequired = options?.strictMasterKeyRequired ?? false;
     this.key = this.resolveKey(options?.masterKey);
   }
 
@@ -58,9 +61,12 @@ export class SettingsSecretsCryptoService {
   }
 
   private resolveKey(configured?: string): Buffer {
-    const source =
-      configured ?? process.env.CMS_SETTINGS_MASTER_KEY ?? "trinacria-cms-dev-master-key";
+    const envMasterKey = process.env.CMS_SETTINGS_MASTER_KEY;
+    const source = configured ?? envMasterKey ?? "trinacria-cms-dev-master-key";
     const normalized = source.trim();
+    if (!configured && !envMasterKey && this.strictMasterKeyRequired) {
+      throw new Error("CMS_SETTINGS_MASTER_KEY is required by strict master key policy");
+    }
 
     if (normalized.startsWith("base64:")) {
       const decoded = Buffer.from(normalized.slice("base64:".length), "base64");
