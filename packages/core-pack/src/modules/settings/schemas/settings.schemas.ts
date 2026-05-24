@@ -14,6 +14,7 @@ const SettingKeySchema = s
 const PluginIdSchema = s.string({ trim: true, toLowerCase: true, minLength: 1 });
 
 export const SettingDefinitionStatusSchema = s.enum(["active", "disabled"] as const);
+export const SettingVisibilitySchema = s.enum(["public", "admin", "internal"] as const);
 export const SettingRecordKindSchema = s.enum(["definition", "value", "secret"] as const);
 
 /**
@@ -61,6 +62,9 @@ export const SettingRecordSchema = s.object(
     description: s.string({ trim: true, minLength: 1, maxLength: 500 }).optional(),
     schema: jsonValue().optional(),
     defaultValue: jsonValue().optional(),
+    visibility: SettingVisibilitySchema.optional(),
+    mutable: s.boolean().optional(),
+    secret: s.boolean().optional(),
 
     // Value-specific fields.
     value: jsonValue().optional(),
@@ -97,6 +101,9 @@ export const SettingDefinitionRecordSchema = s.object(
     description: s.string({ trim: true, minLength: 1, maxLength: 500 }).optional(),
     schema: jsonValue().optional(),
     defaultValue: jsonValue().optional(),
+    visibility: SettingVisibilitySchema,
+    mutable: s.boolean(),
+    secret: s.boolean(),
     status: SettingDefinitionStatusSchema,
     createdAt: s.dateTimeString(),
     updatedAt: s.dateTimeString()

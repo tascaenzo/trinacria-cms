@@ -12,6 +12,12 @@ export interface SettingsPluginAuthServiceOptions {
   maxSkewSeconds?: number;
 }
 
+export interface SettingsPluginAuthObservabilitySnapshot {
+  successes: number;
+  failures: number;
+  replays: number;
+}
+
 /**
  * Typed authentication error used by settings endpoints.
  */
@@ -32,6 +38,11 @@ export class SettingsPluginAuthError extends Error {
  */
 export class SettingsPluginAuthService {
   private readonly usedNonces = new Map<string, number>();
+  private readonly metrics: SettingsPluginAuthObservabilitySnapshot = {
+    successes: 0,
+    failures: 0,
+    replays: 0
+  };
 
   constructor(
     private readonly keyProvider: PluginAuthKeyProvider,
@@ -45,64 +56,74 @@ export class SettingsPluginAuthService {
   private readonly envMaxSkewSeconds: number = 300;
 
   async authenticateRequest(ctx: HttpContext): Promise<string> {
-    const config = await this.getConfig();
-    const pluginId = this.getHeader(ctx, PLUGIN_AUTH_HEADERS.pluginId)?.trim().toLowerCase();
-    const timestampRaw = this.getHeader(ctx, PLUGIN_AUTH_HEADERS.timestamp)?.trim();
-    const nonce = this.getHeader(ctx, PLUGIN_AUTH_HEADERS.nonce)?.trim();
-    const signature = this.getHeader(ctx, PLUGIN_AUTH_HEADERS.signature)?.trim().toLowerCase();
+    try {
+      const config = await this.getConfig();
+      const pluginId = this.getHeader(ctx, PLUGIN_AUTH_HEADERS.pluginId)?.trim().toLowerCase();
+      const timestampRaw = this.getHeader(ctx, PLUGIN_AUTH_HEADERS.timestamp)?.trim();
+      const nonce = this.getHeader(ctx, PLUGIN_AUTH_HEADERS.nonce)?.trim();
+      const signature = this.getHeader(ctx, PLUGIN_AUTH_HEADERS.signature)?.trim().toLowerCase();
 
-    if (!pluginId || !timestampRaw || !nonce || !signature) {
-      throw new SettingsPluginAuthError(
-        "plugin_auth_missing_headers",
-        "Missing plugin authentication headers"
-      );
+      if (!pluginId || !timestampRaw || !nonce || !signature) {
+        throw new SettingsPluginAuthError(
+          "plugin_auth_missing_headers",
+          "Missing plugin authentication headers"
+        );
+      }
+
+      const timestamp = Number.parseInt(timestampRaw, 10);
+      if (!Number.isFinite(timestamp)) {
+        throw new SettingsPluginAuthError(
+          "plugin_auth_invalid_timestamp",
+          "Invalid plugin auth timestamp"
+        );
+      }
+
+      const now = Math.floor(Date.now() / 1000);
+      if (Math.abs(now - timestamp) > config.maxSkewSeconds) {
+        throw new SettingsPluginAuthError(
+          "plugin_auth_timestamp_expired",
+          "Plugin auth timestamp expired"
+        );
+      }
+
+      const secrets = await this.getSecrets(pluginId);
+      if (secrets.length === 0) {
+        throw new SettingsPluginAuthError(
+          "plugin_auth_plugin_not_configured",
+          `Plugin caller "${pluginId}" is not configured`
+        );
+      }
+
+      this.assertNonceNotReplayed(pluginId, nonce, now + config.maxSkewSeconds, config.nonceCacheMaxEntries);
+
+      const request = toNodeRequest(ctx.req);
+      const isValid = secrets.some((secret) => {
+        const expected = buildPluginRequestSignature({
+          pluginId,
+          secret,
+          method: request.method ?? "GET",
+          path: normalizePath(request.url ?? "/"),
+          timestamp,
+          nonce,
+          body: ctx.body
+        });
+        return signaturesEqual(signature, expected);
+      });
+
+      if (!isValid) {
+        throw new SettingsPluginAuthError(
+          "plugin_auth_invalid_signature",
+          "Invalid plugin request signature"
+        );
+      }
+      this.metrics.successes += 1;
+      return pluginId;
+    } catch (error) {
+      if (error instanceof SettingsPluginAuthError) {
+        this.metrics.failures += 1;
+      }
+      throw error;
     }
-
-    const timestamp = Number.parseInt(timestampRaw, 10);
-    if (!Number.isFinite(timestamp)) {
-      throw new SettingsPluginAuthError(
-        "plugin_auth_invalid_timestamp",
-        "Invalid plugin auth timestamp"
-      );
-    }
-
-    const now = Math.floor(Date.now() / 1000);
-    if (Math.abs(now - timestamp) > config.maxSkewSeconds) {
-      throw new SettingsPluginAuthError(
-        "plugin_auth_timestamp_expired",
-        "Plugin auth timestamp expired"
-      );
-    }
-
-    const secret = await this.keyProvider.getSecret(pluginId);
-    if (!secret) {
-      throw new SettingsPluginAuthError(
-        "plugin_auth_plugin_not_configured",
-        `Plugin caller "${pluginId}" is not configured`
-      );
-    }
-
-    this.assertNonceNotReplayed(pluginId, nonce, now + config.maxSkewSeconds, config.nonceCacheMaxEntries);
-
-    const request = toNodeRequest(ctx.req);
-    const expected = buildPluginRequestSignature({
-      pluginId,
-      secret,
-      method: request.method ?? "GET",
-      path: normalizePath(request.url ?? "/"),
-      timestamp,
-      nonce,
-      body: ctx.body
-    });
-
-    if (!signaturesEqual(signature, expected)) {
-      throw new SettingsPluginAuthError(
-        "plugin_auth_invalid_signature",
-        "Invalid plugin request signature"
-      );
-    }
-
-    return pluginId;
   }
 
   private getHeader(ctx: HttpContext, name: string): string | undefined {
@@ -128,6 +149,7 @@ export class SettingsPluginAuthService {
     }
 
     if (this.usedNonces.has(key)) {
+      this.metrics.replays += 1;
       throw new SettingsPluginAuthError(
         "plugin_auth_nonce_replay",
         "Plugin auth nonce replay detected"
@@ -162,6 +184,19 @@ export class SettingsPluginAuthService {
       max: 200_000
     }) ?? 10_000;
     return { maxSkewSeconds, nonceCacheMaxEntries };
+  }
+
+  getObservabilitySnapshot(): SettingsPluginAuthObservabilitySnapshot {
+    return { ...this.metrics };
+  }
+
+  private async getSecrets(pluginId: string): Promise<readonly string[]> {
+    if (typeof this.keyProvider.getSecrets === "function") {
+      const secrets = await this.keyProvider.getSecrets(pluginId);
+      return secrets.filter((secret) => secret.trim().length >= 8);
+    }
+    const secret = await this.keyProvider.getSecret(pluginId);
+    return secret ? [secret] : [];
   }
 }
 
@@ -201,5 +236,4 @@ function toNodeRequest(value: unknown): {
 
   return { method, url, headers };
 }
-
 

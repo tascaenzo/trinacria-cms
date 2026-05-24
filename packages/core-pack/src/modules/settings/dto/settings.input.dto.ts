@@ -17,7 +17,11 @@ export const UpsertSettingDefinitionInputSchema = s.object(
   {
     key: SettingKeySchema,
     category: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
-    description: s.string({ trim: true, minLength: 1, maxLength: 500 }).optional()
+    description: s.string({ trim: true, minLength: 1, maxLength: 500 }).optional(),
+    status: s.enum(["active", "disabled"] as const).optional(),
+    visibility: s.enum(["public", "admin", "internal"] as const).optional(),
+    mutable: s.boolean().optional(),
+    secret: s.boolean().optional()
   },
   // Keep non-strict to allow free-form payload fields (e.g. defaultValue, schema)
   // validated later in service layer as JSON-compatible values.
@@ -123,6 +127,10 @@ export const UpsertSettingDefinitionBodyOpenApiSchema: Record<string, unknown> =
     key: { type: "string" },
     category: { type: "string" },
     description: { type: "string" },
+    status: { type: "string", enum: ["active", "disabled"] },
+    visibility: { type: "string", enum: ["public", "admin", "internal"] },
+    mutable: { type: "boolean" },
+    secret: { type: "boolean" },
     schema: JsonValueOpenApiSchema,
     defaultValue: JsonValueOpenApiSchema
   }

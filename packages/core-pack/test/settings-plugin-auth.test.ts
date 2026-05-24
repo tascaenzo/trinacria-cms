@@ -89,6 +89,35 @@ test("SettingsPluginAuthService rejects expired timestamp", async () => {
   await assertAuthError(() => service.authenticateRequest(ctx), "plugin_auth_timestamp_expired");
 });
 
+test("SettingsPluginAuthService accepts rotated key ring secrets", async () => {
+  const service = new SettingsPluginAuthService(
+    {
+      async getSecret() {
+        return null;
+      },
+      async getSecrets(pluginId: string) {
+        if (pluginId !== PLUGIN_ID) return [];
+        return ["old-secret-not-used", PLUGIN_SECRET];
+      }
+    },
+    null,
+    { maxSkewSeconds: 300 }
+  );
+
+  const body = { key: "core-pack:features:new_home", value: true };
+  const path = "/v1/settings/values/core-pack:features:new_home";
+  const headers = buildPluginAuthHeaders({
+    pluginId: PLUGIN_ID,
+    secret: PLUGIN_SECRET,
+    method: "PUT",
+    path,
+    body
+  });
+  const ctx = createContext({ method: "PUT", url: path, headers, body });
+  const authenticatedPluginId = await service.authenticateRequest(ctx);
+  assert.equal(authenticatedPluginId, PLUGIN_ID);
+});
+
 test("SettingsPluginAuth middleware stores authenticated plugin id in context state", async () => {
   const service = createAuthService();
   const body = { key: "core-pack:features:new_home", value: true };

@@ -501,3 +501,21 @@ test("validatePluginManifest rejects duplicate setting keys", () => {
     PluginManifestError
   );
 });
+
+test("validatePluginManifest rejects setting keys owned by another plugin", () => {
+  assert.throws(
+    () =>
+      validatePluginManifest({
+        id: "blog-pack",
+        version: "1.0.0",
+        requiresCore: "^0.1.0",
+        settings: [
+          {
+            key: "core-pack:editorial:default_status",
+            category: "editorial"
+          }
+        ]
+      }),
+    PluginManifestError
+  );
+});

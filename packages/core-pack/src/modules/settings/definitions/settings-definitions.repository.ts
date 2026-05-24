@@ -16,6 +16,9 @@ export interface UpsertSettingDefinitionRecordInput {
   description?: string;
   schema?: JsonValue;
   defaultValue?: JsonValue;
+  visibility?: "public" | "admin" | "internal";
+  mutable?: boolean;
+  secret?: boolean;
   status?: "active" | "disabled";
 }
 
@@ -42,6 +45,9 @@ export class SettingsDefinitionsRepository {
         ...(input.description?.trim() ? { description: input.description.trim() } : {}),
         ...(input.schema !== undefined ? { schema: input.schema } : {}),
         ...(input.defaultValue !== undefined ? { defaultValue: input.defaultValue } : {}),
+        visibility: input.visibility ?? "public",
+        mutable: input.mutable ?? true,
+        secret: input.secret ?? false,
         status: input.status ?? "active",
         createdAt: now,
         updatedAt: now
@@ -62,6 +68,9 @@ export class SettingsDefinitionsRepository {
         ...(input.description?.trim() ? { description: input.description.trim() } : {}),
         ...(input.schema !== undefined ? { schema: input.schema } : {}),
         ...(input.defaultValue !== undefined ? { defaultValue: input.defaultValue } : {}),
+        ...(input.visibility ? { visibility: input.visibility } : {}),
+        ...(input.mutable !== undefined ? { mutable: input.mutable } : {}),
+        ...(input.secret !== undefined ? { secret: input.secret } : {}),
         ...(input.status ? { status: input.status } : {}),
         updatedAt: now
       }
@@ -113,6 +122,9 @@ export class SettingsDefinitionsRepository {
     const normalized = { ...(value as Record<string, unknown>) };
     if (normalized.category === null) delete normalized.category;
     if (normalized.description === null) delete normalized.description;
+    if (normalized.visibility === null) delete normalized.visibility;
+    if (normalized.mutable === null) delete normalized.mutable;
+    if (normalized.secret === null) delete normalized.secret;
     if (normalized.status === null) delete normalized.status;
 
     return SettingDefinitionRecordSchema.parse(normalized);

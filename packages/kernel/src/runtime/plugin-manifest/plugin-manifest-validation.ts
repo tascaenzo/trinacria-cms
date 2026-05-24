@@ -104,6 +104,12 @@ const pluginManifestSchema = s
   )
   .refine(
     (manifest) =>
+      (manifest.settings ?? []).every((setting) => setting.key.startsWith(`${manifest.id}:`)),
+    "Each setting key must be owned by the manifest plugin id",
+    "setting_ownership_violation"
+  )
+  .refine(
+    (manifest) =>
       (manifest.security?.permissions ?? []).every((permission) =>
         isPermissionOwnedByPlugin(manifest.id, permission.key)
       ),
