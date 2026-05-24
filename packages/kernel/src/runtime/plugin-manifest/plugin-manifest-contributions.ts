@@ -1,4 +1,5 @@
 import { s } from "@trinacria/schema";
+import { createSchema, type Schema } from "@trinacria/schema/dist/core/index.js";
 import { isValidPluginId, isValidNamespaceSegment, isReservedNamespaceSegment, buildContributionKey, buildSettingKey, findContributionCollisions } from "../plugin-namespace/plugin-namespace.js";
 import { isValidPermissionKey, isPermissionOwnedByPlugin } from "../plugin-namespace/permission-key.js";
 
@@ -66,6 +67,66 @@ export const entitySchema = s.object(
   { strict: true }
 );
 
+/**
+ * Schema that accepts any JSON-compatible value.
+ */
+function jsonValueSchema<T = unknown>(): Schema<T> {
+  return createSchema<T>(
+    "json",
+    (input) => {
+      if (input === null || typeof input === "string" || typeof input === "number" || typeof input === "boolean") {
+        return input as T;
+      }
+      if (Array.isArray(input)) {
+        return input as T;
+      }
+      if (typeof input === "object") {
+        return input as T;
+      }
+      throw new Error("Value must be JSON-compatible");
+    },
+    () => ({
+      oneOf: [
+        { type: "string" },
+        { type: "number" },
+        { type: "boolean" },
+        { type: "null" },
+        { type: "array", items: {} },
+        { type: "object", additionalProperties: true }
+      ]
+    })
+  );
+}
+
+const settingKeySchema = s
+  .string({ trim: true, toLowerCase: true, minLength: 5, maxLength: 220 })
+  .refine(
+    (value) => /^[a-z0-9][a-z0-9._/-]*:[a-z0-9][a-z0-9._-]*:[a-z0-9][a-z0-9._-]*$/.test(value),
+    "v2 setting key must be '<pluginId>:<domain>:<name>'",
+    "invalid_setting_key_v2"
+  );
+
+const settingV2VisibilitySchema = s.enum(["public", "admin", "internal"] as const);
+
+export const settingV2Schema = s.object(
+  {
+    key: settingKeySchema,
+    category: s.string({ trim: true, minLength: 1, maxLength: 120 }),
+    description: s.string({ trim: true, maxLength: 500 }).optional(),
+    schema: jsonValueSchema().optional(),
+    defaultValue: jsonValueSchema().optional(),
+    status: s.enum(["active", "disabled"] as const).optional().default("active"),
+    secret: s.boolean().optional().default(false),
+    mutable: s.boolean().optional().default(true),
+    visibility: settingV2VisibilitySchema.optional().default("public")
+  },
+  { strict: true }
+);
+
+/**
+ * v1 legacy setting schema. Kept for backward compatibility.
+ * @deprecated Use settingV2Schema instead.
+ */
 export const settingSchema = s.object(
   {
     namespace: namespaceSegmentSchema,
@@ -79,6 +140,21 @@ export const settingSchema = s.object(
   },
   { strict: true }
 );
+
+/**
+ * Normalized internal setting shape used after manifest validation.
+ */
+export interface NormalizedManifestSetting {
+  key: string;
+  category: string;
+  description?: string;
+  schema?: Record<string, unknown>;
+  defaultValue?: unknown;
+  status: "active" | "disabled";
+  secret: boolean;
+  mutable: boolean;
+  visibility: "public" | "admin" | "internal";
+}
 
 const emittedEventSchema = s.object(
   {
@@ -273,10 +349,13 @@ export function createContributionRefines(manifestId: string) {
       );
       return findContributionCollisions("entity", keys).length === 0;
     },
-    settingCollision: (manifest: { id: string; settings?: readonly { namespace: string; key: string }[] }) => {
-      const keys = (manifest.settings ?? []).map((setting) =>
-        buildSettingKey(manifest.id, setting.namespace, setting.key)
-      );
+    settingCollision: (manifest: { id: string; settings?: readonly ({ namespace: string; key: string } | { key: string })[] }) => {
+      const keys = (manifest.settings ?? []).map((setting) => {
+        if ("namespace" in setting) {
+          return buildSettingKey(manifest.id, setting.namespace, setting.key);
+        }
+        return setting.key;
+      });
       return findContributionCollisions("setting", keys).length === 0;
     },
     eventCollision: (manifest: { id: string; events?: { emits?: readonly { name: string }[] } }) => {

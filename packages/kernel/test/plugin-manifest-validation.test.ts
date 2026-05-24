@@ -404,3 +404,114 @@ test("validatePluginManifest rejects admin permission references owned by anothe
     PluginManifestError
   );
 });
+
+test("validatePluginManifest accepts v2 settings format", () => {
+  const manifest = validatePluginManifest({
+    id: "blog-pack",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    settings: [
+      {
+        key: "blog-pack:editorial:default_status",
+        category: "editorial",
+        description: "Default post status",
+        defaultValue: "draft",
+        status: "active",
+        secret: false,
+        mutable: true,
+        visibility: "public"
+      },
+      {
+        key: "blog-pack:editorial:max_authors",
+        category: "editorial",
+        description: "Max authors per post",
+        defaultValue: 5,
+        schema: { type: "number", minimum: 1, maximum: 100 }
+      }
+    ]
+  });
+
+  assert.equal(manifest.settings?.length, 2);
+  // V2 settings should be normalized to v1 shape
+  const first = manifest.settings?.[0]!;
+  assert.equal(first.namespace, "editorial");
+  assert.equal(first.key, "default_status");
+  assert.equal(first.type, "string");
+  assert.equal(first.visibility, "public");
+  assert.equal(first.required, false);
+  assert.equal(first.defaultValueJson, '"draft"');
+
+  const second = manifest.settings?.[1]!;
+  assert.equal(second.namespace, "editorial");
+  assert.equal(second.key, "max_authors");
+  assert.equal(second.type, "number");
+  assert.equal(second.defaultValueJson, "5");
+});
+
+test("validatePluginManifest accepts v2 secret setting", () => {
+  const manifest = validatePluginManifest({
+    id: "blog-pack",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    settings: [
+      {
+        key: "blog-pack:integrations:api_key",
+        category: "integrations",
+        description: "External API key",
+        secret: true,
+        visibility: "admin"
+      }
+    ]
+  });
+
+  assert.equal(manifest.settings?.length, 1);
+  const setting = manifest.settings?.[0]!;
+  assert.equal(setting.type, "secret");
+  assert.equal(setting.visibility, "protected"); // admin -> protected mapping
+  assert.equal(setting.required, true); // no defaultValue
+});
+
+test("validatePluginManifest rejects invalid v2 setting key format", () => {
+  assert.throws(
+    () =>
+      validatePluginManifest({
+        id: "blog-pack",
+        version: "1.0.0",
+        requiresCore: "^0.1.0",
+        settings: [
+          {
+            key: "invalid-key-format",
+            category: "test",
+            description: "Bad key"
+          }
+        ]
+      }),
+    PluginManifestError
+  );
+});
+
+test("validatePluginManifest rejects duplicate v2 setting keys", () => {
+  assert.throws(
+    () =>
+      validatePluginManifest({
+        id: "blog-pack",
+        version: "1.0.0",
+        requiresCore: "^0.1.0",
+        settings: [
+          {
+            key: "blog-pack:editorial:default_status",
+            category: "editorial",
+            defaultValue: "draft"
+          },
+          {
+            key: "blog-pack:editorial:default_status",
+            category: "editorial",
+            defaultValue: "published"
+          }
+        ]
+      }),
+    PluginManifestError
+  );
+});
+
+

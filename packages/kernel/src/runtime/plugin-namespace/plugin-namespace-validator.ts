@@ -10,6 +10,20 @@ function normalizeSettingKey(pluginId: string, namespace: string, key: string): 
   return `${pluginId.toLowerCase()}:${namespace.toLowerCase()}:${key.toLowerCase()}`;
 }
 
+function toSettingParts(setting: NonNullable<PluginManifest["settings"]>[number]): {
+  namespace: string;
+  key: string;
+} {
+  if ("namespace" in setting) {
+    return { namespace: setting.namespace, key: setting.key };
+  }
+  const parts = setting.key.split(":");
+  if (parts.length !== 3) {
+    return { namespace: "", key: setting.key };
+  }
+  return { namespace: parts[1] ?? "", key: parts[2] ?? "" };
+}
+
 export function createNamespaceValidator(
   policy: readonly CollisionRule[] = DEFAULT_COLLISION_POLICY
 ): NamespaceValidator {
@@ -68,8 +82,9 @@ export function createNamespaceValidator(
       next.eventNames.set(normalizeContributionKey(pluginId, event.name), pluginId);
     }
     for (const setting of manifest.settings ?? []) {
+      const parts = toSettingParts(setting);
       next.settingCanonicalKeys.set(
-        normalizeSettingKey(pluginId, setting.namespace, setting.key),
+        normalizeSettingKey(pluginId, parts.namespace, parts.key),
         pluginId
       );
     }

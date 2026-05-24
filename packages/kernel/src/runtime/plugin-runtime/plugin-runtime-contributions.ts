@@ -8,6 +8,20 @@ import { buildContributionKey, buildSettingKey } from "../plugin-namespace/plugi
 
 type ContributionMap<TDeclaration> = Map<string, PluginContributionSnapshot<TDeclaration>>;
 
+function toSettingParts(setting: NonNullable<PluginManifest["settings"]>[number]): {
+  namespace: string;
+  key: string;
+} {
+  if ("namespace" in setting) {
+    return { namespace: setting.namespace, key: setting.key };
+  }
+  const parts = setting.key.split(":");
+  if (parts.length !== 3) {
+    return { namespace: "", key: setting.key };
+  }
+  return { namespace: parts[1] ?? "", key: parts[2] ?? "" };
+}
+
 export class PluginContributionRegistry {
   private readonly entities: ContributionMap<NonNullable<PluginManifest["entities"]>[number]> =
     new Map();
@@ -83,9 +97,10 @@ export class PluginContributionRegistry {
     }
 
     for (const setting of manifest.settings ?? []) {
-      this.settings.set(buildSettingKey(manifest.id, setting.namespace, setting.key), {
+      const parts = toSettingParts(setting);
+      this.settings.set(buildSettingKey(manifest.id, parts.namespace, parts.key), {
         pluginId: manifest.id,
-        key: buildSettingKey(manifest.id, setting.namespace, setting.key),
+        key: buildSettingKey(manifest.id, parts.namespace, parts.key),
         declaration: setting
       });
     }
