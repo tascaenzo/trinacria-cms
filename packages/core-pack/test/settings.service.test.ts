@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { DbAdapter, DbQuery, DbRepository } from "@trinacria-cms/kernel";
 import { SettingsDefinitionsRepository } from "../src/modules/settings/definitions/settings-definitions.repository.js";
-import { SettingsAccessError } from "../src/modules/settings/settings.errors.js";
+import { SettingsAccessError } from "../src/modules/settings/_shared/settings.errors.js";
 import { SettingsSecretsCryptoService } from "../src/modules/settings/secrets/settings-secrets-crypto.service.js";
 import { SettingsSecretsRepository } from "../src/modules/settings/secrets/settings-secrets.repository.js";
 import { SettingsService } from "../src/modules/settings/settings.service.js";

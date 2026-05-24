@@ -29,14 +29,14 @@ import {
   UpsertSettingValueBodyOpenApiSchema,
   UpsertSettingValueInputSchema
 } from "./dto/index.js";
-import { readOptionalJsonField } from "./settings-http-mapping.js";
-import { parseJsonValue } from "./settings-json.js";
-import { getAuthenticatedPluginId } from "./auth/settings-plugin-auth.middleware.js";
-import { SettingsPluginAuthService } from "./auth/settings-plugin-auth.service.js";
+import { readOptionalJsonField } from "./_shared/settings-http-mapping.js";
+import { parseJsonValue } from "./_shared/settings-json.js";
+import { getAuthenticatedPluginId } from "./auth/plugin-auth.middleware.js";
+import { SettingsPluginAuthService } from "./auth/plugin-auth.service.js";
 import {
   createSettingsAccessMiddleware,
   getSettingsAccessMode
-} from "./settings-access.middleware.js";
+} from "./auth/settings-access.middleware.js";
 import type { SettingsService } from "./settings.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);

@@ -8,8 +8,8 @@ import { PasswordHashingService } from "../installation/password-hashing.service
 import { AuthUsersRepository } from "./auth-users.repository.js";
 import { AuthBlacklistRepository } from "./auth-blacklist.repository.js";
 import { AuthLoginAttemptRepository } from "./auth-login-attempt.repository.js";
-import { readCorePackSettingValue } from "../settings/runtime-settings.js";
-import { type JwtCookieConfig, readJwtCookieConfig, readJwtCookieConfigFromEnv } from "./auth-session.js";
+import type { RuntimeConfigService } from "../settings/config/runtime-config.service.js";
+import { type JwtCookieConfig, readJwtCookieConfig } from "./auth-session.js";
 
 export interface LoginResult {
   accessToken: string;
@@ -59,6 +59,7 @@ export class JwtAuthService {
     private readonly passwordHashing: PasswordHashingService,
     private readonly blacklist: AuthBlacklistRepository,
     private readonly loginAttempts: AuthLoginAttemptRepository,
+    private readonly config: RuntimeConfigService,
     private readonly db: DbAdapter
   ) {}
 
@@ -215,7 +216,7 @@ export class JwtAuthService {
     if (this.cookieConfigCache && nowMs - this.cookieConfigCache.loadedAtMs < 30_000) {
       return this.cookieConfigCache.value;
     }
-    const value = await readJwtCookieConfig(this.db, readJwtCookieConfigFromEnv());
+    const value = await readJwtCookieConfig(this.config);
     this.cookieConfigCache = { loadedAtMs: nowMs, value };
     return value;
   }
@@ -274,31 +275,29 @@ export class JwtAuthService {
       return this.authSettingsCache;
     }
 
-    const accessTtlSeconds = await readIntSetting(
-      this.db,
-      "core-pack:auth:jwt_access_ttl_seconds",
-      readAccessTtlSecondsFromEnv(),
-      60
-    );
-    const refreshTtlSeconds = await readIntSetting(
-      this.db,
-      "core-pack:auth:jwt_refresh_ttl_seconds",
-      readRefreshTtlSecondsFromEnv(),
-      300
-    );
-    const maxLoginAttempts = await readIntSetting(
-      this.db,
-      "core-pack:auth:login_max_attempts",
-      readMaxLoginAttemptsFromEnv(),
-      1
-    );
-    const loginLockoutMinutes = await readIntSetting(
-      this.db,
-      "core-pack:auth:login_lockout_minutes",
-      readLoginLockoutMinutesFromEnv(),
-      1
-    );
-    const strictSecret = await readBooleanSetting(this.db, "core-pack:auth:strict_jwt_secret_required", false);
+    const accessTtlSeconds = await this.config.getNumber("core-pack:auth:jwt_access_ttl_seconds", {
+      envVar: "CMS_JWT_ACCESS_TTL_SECONDS",
+      fallback: 24 * 60 * 60,
+      min: 60
+    }) ?? 24 * 60 * 60;
+    const refreshTtlSeconds = await this.config.getNumber("core-pack:auth:jwt_refresh_ttl_seconds", {
+      envVar: "CMS_JWT_REFRESH_TTL_SECONDS",
+      fallback: 30 * 24 * 60 * 60,
+      min: 300
+    }) ?? 30 * 24 * 60 * 60;
+    const maxLoginAttempts = await this.config.getNumber("core-pack:auth:login_max_attempts", {
+      envVar: "CMS_LOGIN_MAX_ATTEMPTS",
+      fallback: 5,
+      min: 1
+    }) ?? 5;
+    const loginLockoutMinutes = await this.config.getNumber("core-pack:auth:login_lockout_minutes", {
+      envVar: "CMS_LOGIN_LOCKOUT_MINUTES",
+      fallback: 15,
+      min: 1
+    }) ?? 15;
+    const strictSecret = await this.config.getBoolean("core-pack:auth:strict_jwt_secret_required", {
+      fallback: false
+    }) ?? false;
     const jwtSecret = readJwtSecretFromEnv(strictSecret);
     const value = {
       loadedAtMs: nowMs,
@@ -311,46 +310,6 @@ export class JwtAuthService {
     this.authSettingsCache = value;
     return value;
   }
-}
-
-function readAccessTtlSecondsFromEnv(): number {
-  const raw = process.env.CMS_JWT_ACCESS_TTL_SECONDS?.trim();
-  if (!raw) return 24 * 60 * 60;
-  const parsed = Number.parseInt(raw, 10);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    throw new Error("CMS_JWT_ACCESS_TTL_SECONDS must be a positive integer");
-  }
-  return parsed;
-}
-
-function readRefreshTtlSecondsFromEnv(): number {
-  const raw = process.env.CMS_JWT_REFRESH_TTL_SECONDS?.trim();
-  if (!raw) return 30 * 24 * 60 * 60;
-  const parsed = Number.parseInt(raw, 10);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    throw new Error("CMS_JWT_REFRESH_TTL_SECONDS must be a positive integer");
-  }
-  return parsed;
-}
-
-function readMaxLoginAttemptsFromEnv(): number {
-  const raw = process.env.CMS_LOGIN_MAX_ATTEMPTS?.trim();
-  if (!raw) return 5;
-  const parsed = Number.parseInt(raw, 10);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    throw new Error("CMS_LOGIN_MAX_ATTEMPTS must be a positive integer");
-  }
-  return parsed;
-}
-
-function readLoginLockoutMinutesFromEnv(): number {
-  const raw = process.env.CMS_LOGIN_LOCKOUT_MINUTES?.trim();
-  if (!raw) return 15;
-  const parsed = Number.parseInt(raw, 10);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    throw new Error("CMS_LOGIN_LOCKOUT_MINUTES must be a positive integer");
-  }
-  return parsed;
 }
 
 function readJwtSecretFromEnv(strictRequired = false): string {
@@ -420,23 +379,6 @@ async function verifyJwtToken(token: string, secret: Uint8Array): Promise<JwtCla
 
     throw new JwtAuthError("auth_invalid_token", "Invalid JWT token");
   }
-}
-
-async function readIntSetting(
-  db: DbAdapter,
-  key: string,
-  fallback: number,
-  min: number
-): Promise<number> {
-  const raw = await readCorePackSettingValue(db, key);
-  if (typeof raw !== "number" || !Number.isFinite(raw)) return fallback;
-  const parsed = Math.floor(raw);
-  return parsed >= min ? parsed : fallback;
-}
-
-async function readBooleanSetting(db: DbAdapter, key: string, fallback: boolean): Promise<boolean> {
-  const raw = await readCorePackSettingValue(db, key);
-  return typeof raw === "boolean" ? raw : fallback;
 }
 
 function normalizeClaims(payload: Partial<JwtClaims>): JwtClaims {

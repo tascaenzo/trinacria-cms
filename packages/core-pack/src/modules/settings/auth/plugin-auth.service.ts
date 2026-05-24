@@ -1,13 +1,12 @@
-import type { DbAdapter } from "@trinacria-cms/kernel";
 import type { HttpContext } from "@trinacria-cms/kernel";
-import type { PluginAuthKeyProvider } from "./settings-plugin-auth-key-provider.js";
-import { readCorePackSettingValue } from "../runtime-settings.js";
+import type { PluginAuthKeyProvider } from "./plugin-auth-key-provider.js";
+import type { RuntimeConfigService } from "../config/runtime-config.service.js";
 import {
   buildPluginRequestSignature,
   normalizePath,
   PLUGIN_AUTH_HEADERS,
   signaturesEqual
-} from "./settings-plugin-auth.js";
+} from "./plugin-auth.js";
 
 export interface SettingsPluginAuthServiceOptions {
   maxSkewSeconds?: number;
@@ -32,30 +31,18 @@ export class SettingsPluginAuthError extends Error {
  * Validates signed plugin caller headers and prevents short-window replays.
  */
 export class SettingsPluginAuthService {
-  private readonly envMaxSkewSeconds: number;
   private readonly usedNonces = new Map<string, number>();
-  private configCache?: {
-    loadedAtMs: number;
-    maxSkewSeconds: number;
-    nonceCacheMaxEntries: number;
-  };
 
   constructor(
     private readonly keyProvider: PluginAuthKeyProvider,
-    dbOrOptions?: DbAdapter | SettingsPluginAuthServiceOptions,
+    private readonly config: RuntimeConfigService | null,
     options?: SettingsPluginAuthServiceOptions
   ) {
-    const maybeDb = dbOrOptions as DbAdapter | undefined;
-    const resolvedOptions =
-      dbOrOptions && typeof dbOrOptions === "object" && "repository" in dbOrOptions
-        ? options
-        : (dbOrOptions as SettingsPluginAuthServiceOptions | undefined);
-
-    this.db =
-      maybeDb && typeof maybeDb === "object" && "repository" in maybeDb ? maybeDb : null;
-    this.envMaxSkewSeconds = resolvedOptions?.maxSkewSeconds ?? readMaxSkewFromEnv();
+    if (!config && options?.maxSkewSeconds !== undefined) {
+      this.envMaxSkewSeconds = options.maxSkewSeconds;
+    }
   }
-  private readonly db: DbAdapter | null;
+  private readonly envMaxSkewSeconds: number = 300;
 
   async authenticateRequest(ctx: HttpContext): Promise<string> {
     const config = await this.getConfig();
@@ -157,35 +144,24 @@ export class SettingsPluginAuthService {
   }
 
   private async getConfig(): Promise<{ maxSkewSeconds: number; nonceCacheMaxEntries: number }> {
-    const nowMs = Date.now();
-    if (this.configCache && nowMs - this.configCache.loadedAtMs < 30_000) {
-      return this.configCache;
-    }
-    if (!this.db) {
-      const value = {
-        loadedAtMs: nowMs,
+    if (!this.config) {
+      return {
         maxSkewSeconds: this.envMaxSkewSeconds,
         nonceCacheMaxEntries: 10_000
       };
-      this.configCache = value;
-      return value;
     }
-    const maxSkewRaw = await readCorePackSettingValue(this.db, "core-pack:plugin_auth:max_skew_seconds");
-    const nonceMaxRaw = await readCorePackSettingValue(
-      this.db,
-      "core-pack:plugin_auth:nonce_cache_max_entries"
-    );
-    const maxSkewSeconds =
-      typeof maxSkewRaw === "number" && Number.isFinite(maxSkewRaw) && maxSkewRaw > 0
-        ? Math.floor(maxSkewRaw)
-        : this.envMaxSkewSeconds;
-    const nonceCacheMaxEntries =
-      typeof nonceMaxRaw === "number" && Number.isFinite(nonceMaxRaw) && nonceMaxRaw > 0
-        ? Math.floor(nonceMaxRaw)
-        : 10_000;
-    const value = { loadedAtMs: nowMs, maxSkewSeconds, nonceCacheMaxEntries };
-    this.configCache = value;
-    return value;
+    const maxSkewSeconds = await this.config.getNumber("core-pack:plugin_auth:max_skew_seconds", {
+      envVar: "CMS_PLUGIN_AUTH_MAX_SKEW_SECONDS",
+      fallback: this.envMaxSkewSeconds,
+      min: 30,
+      max: 3600
+    }) ?? this.envMaxSkewSeconds;
+    const nonceCacheMaxEntries = await this.config.getNumber("core-pack:plugin_auth:nonce_cache_max_entries", {
+      fallback: 10_000,
+      min: 100,
+      max: 200_000
+    }) ?? 10_000;
+    return { maxSkewSeconds, nonceCacheMaxEntries };
   }
 }
 
@@ -226,12 +202,4 @@ function toNodeRequest(value: unknown): {
   return { method, url, headers };
 }
 
-function readMaxSkewFromEnv(): number {
-  const raw = process.env.CMS_PLUGIN_AUTH_MAX_SKEW_SECONDS?.trim();
-  if (!raw) return 300;
-  const parsed = Number.parseInt(raw, 10);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    throw new Error("CMS_PLUGIN_AUTH_MAX_SKEW_SECONDS must be a positive integer");
-  }
-  return parsed;
-}
+

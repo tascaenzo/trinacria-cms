@@ -1,5 +1,5 @@
 import { s, type Infer } from "@trinacria-cms/kernel";
-import { isValidSettingKey } from "../settings-key.js";
+import { isValidSettingKey } from "../_shared/settings-key.js";
 
 const SettingKeySchema = s
   .string({ trim: true, toLowerCase: true, minLength: 5, maxLength: 220 })

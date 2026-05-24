@@ -1,8 +1,10 @@
 import { createCapabilityToken, createToken } from "@trinacria-cms/kernel";
+import type { RuntimeConfigService } from "./config/runtime-config.service.js";
+import type { SettingsAuditRepository } from "./audit/settings-audit.repository.js";
 import { SettingsController } from "./settings.controller.js";
 import { SettingsDefinitionsRepository } from "./definitions/settings-definitions.repository.js";
-import type { PluginAuthKeyProvider } from "./auth/settings-plugin-auth-key-provider.js";
-import { SettingsPluginAuthService } from "./auth/settings-plugin-auth.service.js";
+import type { PluginAuthKeyProvider } from "./auth/plugin-auth-key-provider.js";
+import { SettingsPluginAuthService } from "./auth/plugin-auth.service.js";
 import { SettingsSecretsCryptoService } from "./secrets/settings-secrets-crypto.service.js";
 import { SettingsSecretsRepository } from "./secrets/settings-secrets.repository.js";
 import { SettingsService } from "./settings.service.js";
@@ -32,4 +34,16 @@ export const SETTINGS_ENTITY_REGISTRATION_TOKEN = createToken<boolean>(
 );
 export const SETTINGS_CONTROLLER_TOKEN = createToken<SettingsController>(
   "CORE_PACK_SETTINGS_CONTROLLER"
+);
+
+export const RUNTIME_CONFIG_SERVICE_TOKEN = createToken<RuntimeConfigService>(
+  "CORE_PACK_RUNTIME_CONFIG_SERVICE"
+);
+
+export const SETTINGS_AUDIT_REPOSITORY_TOKEN = createToken<SettingsAuditRepository>(
+  "CORE_PACK_SETTINGS_AUDIT_REPOSITORY"
+);
+
+export const SETTINGS_AUDIT_ENTITY_REGISTRATION_TOKEN = createToken<boolean>(
+  "CORE_PACK_SETTINGS_AUDIT_ENTITY_REGISTRATION"
 );

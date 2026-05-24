@@ -3,9 +3,7 @@ import { Redis } from "ioredis";
 import type { CacheAdapter } from "./adapters/cache-adapter.js";
 import { MemoryCacheAdapter } from "./adapters/memory-cache-adapter.js";
 import { RedisCacheAdapter } from "./adapters/redis-cache-adapter.js";
-import { readCorePackSettingValue } from "../settings/runtime-settings.js";
-
-const SETTINGS_ENTITY_NAME = "settings";
+import type { RuntimeConfigService } from "../settings/config/runtime-config.service.js";
 
 /*
  * Global registry for custom cache adapters.
@@ -25,28 +23,35 @@ export function getCustomCacheAdapter(): CacheAdapter | null {
  * Default adapter factory.
  * Priority: custom adapter > Redis (from settings) > Memory.
  */
-export async function createDefaultCacheAdapter(db: DbAdapter): Promise<CacheAdapter> {
+export async function createDefaultCacheAdapter(
+  db: DbAdapter,
+  config: RuntimeConfigService
+): Promise<CacheAdapter> {
   if (customAdapter) {
     return customAdapter;
   }
 
-  const redisUrl = await readRedisUrlFromSettings(db);
+  const redisUrl = await config.getString("core-pack:cache:redis_url");
   if (redisUrl) {
-    const prefix = await readStringSetting(db, "core-pack:cache:redis_prefix", "trinacria");
-    const maxRetriesPerRequest = await readIntSetting(
-      db,
-      "core-pack:cache:redis_max_retries_per_request",
-      3,
-      0
-    );
-    const retryMaxAttempts = await readIntSetting(
-      db,
-      "core-pack:cache:redis_retry_max_attempts",
-      3,
-      0
-    );
-    const retryBaseMs = await readIntSetting(db, "core-pack:cache:redis_retry_base_ms", 200, 10);
-    const retryCapMs = await readIntSetting(db, "core-pack:cache:redis_retry_cap_ms", 2000, 50);
+    const prefix = await config.getString("core-pack:cache:redis_prefix", {
+      fallback: "trinacria"
+    }) ?? "trinacria";
+    const maxRetriesPerRequest = await config.getNumber("core-pack:cache:redis_max_retries_per_request", {
+      fallback: 3,
+      min: 0
+    }) ?? 3;
+    const retryMaxAttempts = await config.getNumber("core-pack:cache:redis_retry_max_attempts", {
+      fallback: 3,
+      min: 0
+    }) ?? 3;
+    const retryBaseMs = await config.getNumber("core-pack:cache:redis_retry_base_ms", {
+      fallback: 200,
+      min: 10
+    }) ?? 200;
+    const retryCapMs = await config.getNumber("core-pack:cache:redis_retry_cap_ms", {
+      fallback: 2000,
+      min: 50
+    }) ?? 2000;
 
     const redis = new Redis(redisUrl, {
       lazyConnect: true,
@@ -59,49 +64,4 @@ export async function createDefaultCacheAdapter(db: DbAdapter): Promise<CacheAda
     return new RedisCacheAdapter(redis, prefix);
   }
   return new MemoryCacheAdapter();
-}
-
-async function readRedisUrlFromSettings(db: DbAdapter): Promise<string | null> {
-  try {
-    const repo = db.repository(SETTINGS_ENTITY_NAME, { pluginId: "core-pack" });
-
-    const valueRecord = await repo.findOne({
-      filter: { kind: "value", key: "core-pack:cache:redis_url" }
-    });
-    if (valueRecord) {
-      const url = ((valueRecord as Record<string, unknown>).value as string) ?? "";
-      if (url.trim().length > 0) return url.trim();
-    }
-
-    const defRecord = await repo.findOne({
-      filter: { kind: "definition", key: "core-pack:cache:redis_url" }
-    });
-    if (defRecord) {
-      const url = ((defRecord as Record<string, unknown>).defaultValue as string) ?? "";
-      if (url.trim().length > 0) return url.trim();
-    }
-  } catch {
-    // Settings collection may not exist yet during first bootstrap.
-    // Fall back to in-memory cache.
-  }
-  return null;
-}
-
-async function readIntSetting(
-  db: DbAdapter,
-  key: string,
-  fallback: number,
-  min: number
-): Promise<number> {
-  const raw = await readCorePackSettingValue(db, key);
-  if (typeof raw !== "number" || !Number.isFinite(raw)) return fallback;
-  const parsed = Math.floor(raw);
-  return parsed >= min ? parsed : fallback;
-}
-
-async function readStringSetting(db: DbAdapter, key: string, fallback: string): Promise<string> {
-  const raw = await readCorePackSettingValue(db, key);
-  if (typeof raw !== "string") return fallback;
-  const value = raw.trim();
-  return value || fallback;
 }

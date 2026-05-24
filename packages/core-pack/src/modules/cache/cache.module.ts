@@ -5,12 +5,14 @@ import {
   CORE_PACK_CACHE_ADAPTER_TOKEN,
   CORE_PACK_CACHE_SERVICE_TOKEN
 } from "./cache.tokens.js";
+import { RUNTIME_CONFIG_SERVICE_TOKEN } from "../settings/settings.tokens.js";
 
 export const CorePackCacheModule = defineModule({
   name: "CorePackCacheModule",
   providers: [
     factoryProvider(CORE_PACK_CACHE_ADAPTER_TOKEN, createDefaultCacheAdapter, [
-      CORE_TOKENS.DB_ADAPTER
+      CORE_TOKENS.DB_ADAPTER,
+      RUNTIME_CONFIG_SERVICE_TOKEN
     ]),
     classProvider(CORE_PACK_CACHE_SERVICE_TOKEN, CacheService, [
       CORE_PACK_CACHE_ADAPTER_TOKEN

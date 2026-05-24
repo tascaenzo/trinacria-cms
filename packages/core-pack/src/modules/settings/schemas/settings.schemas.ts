@@ -1,6 +1,6 @@
 import { defineEntity, s, type Infer, type Schema } from "@trinacria-cms/kernel";
-import { isValidSettingKey } from "./settings-key.js";
-import { isJsonValue, type JsonValue } from "./settings-json.js";
+import { isValidSettingKey } from "../_shared/settings-key.js";
+import { isJsonValue, type JsonValue } from "../_shared/settings-json.js";
 import { createSchema } from "@trinacria/schema/dist/core/index.js";
 
 const SettingKeySchema = s

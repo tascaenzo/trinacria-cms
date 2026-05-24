@@ -1,9 +1,11 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
+import type { RuntimeConfigService } from "../config/runtime-config.service.js";
 
 export interface SettingsSecretsCryptoOptions {
   masterKey?: string;
   keyVersion?: string;
   strictMasterKeyRequired?: boolean;
+  config?: RuntimeConfigService;
 }
 
 export interface EncryptedSecretPayload {
@@ -27,8 +29,10 @@ export class SettingsSecretsCryptoService {
   constructor(options?: SettingsSecretsCryptoOptions) {
     this.keyVersion = options?.keyVersion?.trim() || "v1";
     this.strictMasterKeyRequired = options?.strictMasterKeyRequired ?? false;
+    this.config = options?.config ?? null;
     this.key = this.resolveKey(options?.masterKey);
   }
+  private readonly config: RuntimeConfigService | null;
 
   encrypt(plaintext: string): EncryptedSecretPayload {
     const iv = randomBytes(12);
@@ -74,5 +78,24 @@ export class SettingsSecretsCryptoService {
     }
 
     return createHash("sha256").update(normalized, "utf8").digest();
+  }
+
+  static async createFromConfig(
+    config: RuntimeConfigService,
+    masterKey?: string
+  ): Promise<SettingsSecretsCryptoService> {
+    const keyVersion = await config.getString("core-pack:settings:master_key_version", {
+      envVar: "CMS_SETTINGS_MASTER_KEY_VERSION",
+      fallback: "v1"
+    }) ?? "v1";
+    const strictRequired = await config.getBoolean("core-pack:settings:strict_master_key_required", {
+      fallback: false
+    }) ?? false;
+    return new SettingsSecretsCryptoService({
+      masterKey: masterKey ?? process.env.CMS_SETTINGS_MASTER_KEY,
+      keyVersion,
+      strictMasterKeyRequired: strictRequired,
+      config
+    });
   }
 }

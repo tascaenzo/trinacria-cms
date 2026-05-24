@@ -1,5 +1,5 @@
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
-import type { JsonValue } from "./settings-json.js";
+import type { JsonValue } from "./_shared/settings-json.js";
 import type { SettingsDefinition, SettingsService } from "./settings.service.js";
 
 export interface CorePackSettingDefinitionSeed {

@@ -1,5 +1,5 @@
 import type { HttpContext, HttpMiddleware } from "@trinacria-cms/kernel";
-import { SettingsPluginAuthService } from "./settings-plugin-auth.service.js";
+import { SettingsPluginAuthService } from "./plugin-auth.service.js";
 
 export const SETTINGS_AUTH_PLUGIN_ID_STATE_KEY = "corePack.settings.authenticatedPluginId";
 

@@ -120,6 +120,7 @@ function createAuthService(options?: { maxSkewSeconds?: number }) {
         return pluginId === PLUGIN_ID ? PLUGIN_SECRET : null;
       }
     },
+    null,
     { maxSkewSeconds: options?.maxSkewSeconds ?? 300 }
   );
 }

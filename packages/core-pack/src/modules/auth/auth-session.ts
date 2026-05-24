@@ -1,5 +1,5 @@
-import { type DbAdapter, getCookieValue, serializeCookie, type HttpContext } from "@trinacria-cms/kernel";
-import { readCorePackSettingValue } from "../settings/runtime-settings.js";
+import { getCookieValue, serializeCookie, type HttpContext } from "@trinacria-cms/kernel";
+import type { RuntimeConfigService } from "../settings/config/runtime-config.service.js";
 import type { LoginResult } from "./auth.service.js";
 
 export interface JwtCookieConfig {
@@ -11,10 +11,41 @@ export interface JwtCookieConfig {
   secure: boolean;
 }
 
-/**
- * Reads JWT cookie policy from environment.
- * Defaults are secure-by-default and suitable for production.
- */
+export async function readJwtCookieConfig(
+  config: RuntimeConfigService,
+  envFallback?: JwtCookieConfig
+): Promise<JwtCookieConfig> {
+  const fallback = envFallback ?? readJwtCookieConfigFromEnv();
+
+  const accessCookieName = await config.getString("core-pack:auth:jwt_cookie_access_name", {
+    fallback: fallback.accessCookieName
+  }) ?? fallback.accessCookieName;
+  const refreshCookieName = await config.getString("core-pack:auth:jwt_cookie_refresh_name", {
+    fallback: fallback.refreshCookieName
+  }) ?? fallback.refreshCookieName;
+  const path = await config.getString("core-pack:auth:jwt_cookie_path", {
+    fallback: fallback.path
+  }) ?? fallback.path;
+  const domainRaw = await config.getString("core-pack:auth:jwt_cookie_domain", {
+    fallback: fallback.domain ?? ""
+  }) ?? "";
+  const sameSiteRaw = await config.getString("core-pack:auth:jwt_cookie_same_site", {
+    fallback: fallback.sameSite
+  }) ?? fallback.sameSite;
+  const secure = await config.getBoolean("core-pack:auth:jwt_cookie_secure", {
+    fallback: fallback.secure
+  }) ?? fallback.secure;
+
+  return {
+    accessCookieName,
+    refreshCookieName,
+    path,
+    domain: domainRaw.trim() ? domainRaw.trim() : undefined,
+    sameSite: normalizeSameSite(sameSiteRaw, fallback.sameSite),
+    secure
+  };
+}
+
 export function readJwtCookieConfigFromEnv(): JwtCookieConfig {
   const sameSiteRaw = process.env.CMS_JWT_COOKIE_SAME_SITE?.trim().toLowerCase();
   const sameSite: JwtCookieConfig["sameSite"] =
@@ -30,50 +61,6 @@ export function readJwtCookieConfigFromEnv(): JwtCookieConfig {
   };
 }
 
-export async function readJwtCookieConfig(
-  db: DbAdapter,
-  fallback = readJwtCookieConfigFromEnv()
-): Promise<JwtCookieConfig> {
-  const accessCookieName = await readStringSetting(
-    db,
-    "core-pack:auth:jwt_cookie_access_name",
-    fallback.accessCookieName
-  );
-  const refreshCookieName = await readStringSetting(
-    db,
-    "core-pack:auth:jwt_cookie_refresh_name",
-    fallback.refreshCookieName
-  );
-  const path = await readStringSetting(db, "core-pack:auth:jwt_cookie_path", fallback.path);
-  const domainRaw = await readStringSetting(
-    db,
-    "core-pack:auth:jwt_cookie_domain",
-    fallback.domain ?? ""
-  );
-  const sameSiteRaw = await readStringSetting(
-    db,
-    "core-pack:auth:jwt_cookie_same_site",
-    fallback.sameSite
-  );
-  const secure = await readBooleanSetting(
-    db,
-    "core-pack:auth:jwt_cookie_secure",
-    fallback.secure
-  );
-
-  return {
-    accessCookieName,
-    refreshCookieName,
-    path,
-    domain: domainRaw.trim() ? domainRaw.trim() : undefined,
-    sameSite: normalizeSameSite(sameSiteRaw, fallback.sameSite),
-    secure
-  };
-}
-
-/**
- * Builds Set-Cookie headers for login response.
- */
 export function buildLoginSetCookieHeaders(
   session: LoginResult,
   config: JwtCookieConfig
@@ -100,9 +87,6 @@ export function buildLoginSetCookieHeaders(
   ];
 }
 
-/**
- * Builds Set-Cookie headers that clear auth cookies.
- */
 export function buildLogoutClearCookieHeaders(config: JwtCookieConfig): readonly string[] {
   const cookieOptions = {
     path: config.path,
@@ -119,9 +103,6 @@ export function buildLogoutClearCookieHeaders(config: JwtCookieConfig): readonly
   ];
 }
 
-/**
- * Extracts access token from auth cookie.
- */
 export function extractAccessTokenFromCookie(
   ctx: Pick<HttpContext, "req">,
   config: JwtCookieConfig
@@ -153,16 +134,4 @@ function normalizeSameSite(value: string, fallback: JwtCookieConfig["sameSite"])
   if (raw === "none") return "None";
   if (raw === "lax") return "Lax";
   return fallback;
-}
-
-async function readStringSetting(db: DbAdapter, key: string, fallback: string): Promise<string> {
-  const value = await readCorePackSettingValue(db, key);
-  if (typeof value !== "string") return fallback;
-  const normalized = value.trim();
-  return normalized || fallback;
-}
-
-async function readBooleanSetting(db: DbAdapter, key: string, fallback: boolean): Promise<boolean> {
-  const value = await readCorePackSettingValue(db, key);
-  return typeof value === "boolean" ? value : fallback;
 }

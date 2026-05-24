@@ -3,8 +3,8 @@ import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import {
   SettingDefinitionRecordSchema,
   type SettingDefinitionRecord
-} from "../settings.schemas.js";
-import type { JsonValue } from "../settings-json.js";
+} from "../schemas/settings.schemas.js";
+import type { JsonValue } from "../_shared/settings-json.js";
 
 const SETTINGS_ENTITY_NAME = "settings";
 const DEFINITION_KIND = "definition" as const;

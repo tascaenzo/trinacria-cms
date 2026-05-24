@@ -1,8 +1,15 @@
 import type { DbAdapter } from "@trinacria-cms/kernel";
-import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
+import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 
 const SETTINGS_ENTITY_NAME = "settings";
 
+/**
+ * Legacy direct setting reader.
+ *
+ * @deprecated Use RuntimeConfigService instead (inject RUNTIME_CONFIG_SERVICE_TOKEN).
+ *             RuntimeConfigService provides typed getters with caching, env fallback,
+ *             and validation.
+ */
 export async function readCorePackSettingValue(
   db: DbAdapter,
   key: string

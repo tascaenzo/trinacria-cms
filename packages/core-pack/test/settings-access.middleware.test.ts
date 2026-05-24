@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { HttpContext } from "@trinacria-cms/kernel";
-import { createSettingsAccessMiddleware } from "../src/modules/settings/settings-access.middleware.js";
-import { buildPluginAuthHeaders } from "../src/modules/settings/auth/settings-plugin-auth.js";
-import { SettingsPluginAuthService } from "../src/modules/settings/auth/settings-plugin-auth.service.js";
+import { createSettingsAccessMiddleware } from "../src/modules/settings/auth/settings-access.middleware.js";
+import { buildPluginAuthHeaders } from "../src/modules/settings/auth/plugin-auth.js";
+import { SettingsPluginAuthService } from "../src/modules/settings/auth/plugin-auth.service.js";
 
 const PLUGIN_ID = "core-pack";
 const PLUGIN_SECRET = "super-secret-key-for-tests";
@@ -99,11 +99,14 @@ test("Settings access middleware rejects missing credentials", async () => {
 });
 
 function createPluginAuthService() {
-  return new SettingsPluginAuthService({
-    async getSecret(pluginId: string) {
-      return pluginId === PLUGIN_ID ? PLUGIN_SECRET : null;
-    }
-  });
+  return new SettingsPluginAuthService(
+    {
+      async getSecret(pluginId: string) {
+        return pluginId === PLUGIN_ID ? PLUGIN_SECRET : null;
+      }
+    },
+    null
+  );
 }
 
 function createContext(input: {

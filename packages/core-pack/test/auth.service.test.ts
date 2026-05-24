@@ -25,6 +25,7 @@ import { UserRolesRepository } from "../src/modules/security/user-access/user-ro
 import { SettingsDefinitionsRepository } from "../src/modules/settings/definitions/settings-definitions.repository.js";
 import { SettingsValuesRepository } from "../src/modules/settings/values/settings-values.repository.js";
 import { SettingsSecretsRepository } from "../src/modules/settings/secrets/settings-secrets.repository.js";
+import { RuntimeConfigService } from "../src/modules/settings/config/runtime-config.service.js";
 import { SettingsSecretsCryptoService } from "../src/modules/settings/secrets/settings-secrets-crypto.service.js";
 import { SettingsService } from "../src/modules/settings/settings.service.js";
 import { UsersRepository } from "../src/modules/users/users.repository.js";
@@ -206,6 +207,12 @@ function createRuntime(): Runtime {
     securityProvisioning,
     passwordHashing
   );
+  const config = new RuntimeConfigService(db, {
+    info: () => {},
+    warn: () => {},
+    error: () => {}
+  });
+
   const auth = new JwtAuthService(
     new AuthUsersRepository(db),
     localCredentials,
@@ -213,6 +220,7 @@ function createRuntime(): Runtime {
     passwordHashing,
     new AuthBlacklistRepository(db),
     new AuthLoginAttemptRepository(db),
+    config,
     db
   );
 
