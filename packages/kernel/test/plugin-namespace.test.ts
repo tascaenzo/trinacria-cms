@@ -279,7 +279,7 @@ test("createNamespaceValidator.registerPlugin does not commit failed manifests",
     version: "1.0.0",
     requiresCore: "^0.1.0",
     entities: [{ name: "posts", schemaVersion: 1 }],
-    settings: [{ namespace: "editorial", key: "status", type: "string", visibility: "protected" }]
+    settings: [{ key: "pack-b:editorial:status", category: "editorial", visibility: "admin" }]
   };
 
   assert.equal(validator.registerPlugin(manifestA).valid, true);

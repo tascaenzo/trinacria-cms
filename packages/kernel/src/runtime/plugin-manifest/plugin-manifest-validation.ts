@@ -1,8 +1,5 @@
 import type {
-  PluginManifest,
-  PluginManifestSetting,
-  PluginManifestSettingType,
-  PluginManifestSettingVisibility
+  PluginManifest
 } from "../../contracts/plugin-manifest.js";
 import { ValidationError, formatValidationError, s, type Infer } from "@trinacria/schema";
 import { PluginCompatibilityError, PluginManifestError } from "../../errors/plugin-errors.js";
@@ -13,18 +10,14 @@ import {
 } from "../plugin-namespace/permission-key.js";
 import {
   buildContributionKey,
-  buildSettingKey,
   findContributionCollisions,
-  isValidPluginId,
-  isValidNamespaceSegment
+  isValidPluginId
 } from "../plugin-namespace/plugin-namespace.js";
 import {
   entitySchema,
   settingSchema,
-  settingV2Schema,
   eventsSchema,
-  adminSchema,
-  type NormalizedManifestSetting
+  adminSchema
 } from "./plugin-manifest-contributions.js";
 import { securitySectionSchema } from "./plugin-manifest-security.js";
 
@@ -94,14 +87,7 @@ const pluginManifestSchema = s
         .optional()
         .default([]),
       settings: s
-        .array(s.union([settingSchema, settingV2Schema]), {
-          unique: (setting) => {
-            if ("namespace" in setting) {
-              return `${setting.namespace}:${setting.key}`;
-            }
-            return setting.key;
-          }
-        })
+        .array(settingSchema, { unique: (setting) => setting.key })
         .optional()
         .default([]),
       events: eventsSchema.optional(),
@@ -154,12 +140,7 @@ const pluginManifestSchema = s
   )
   .refine(
     (manifest) => {
-      const keys = (manifest.settings ?? []).map((setting) => {
-        if ("namespace" in setting) {
-          return buildSettingKey(manifest.id, setting.namespace, setting.key);
-        }
-        return setting.key;
-      });
+      const keys = (manifest.settings ?? []).map((setting) => setting.key);
       return findContributionCollisions("setting", keys).length === 0;
     },
     "Each setting contribution must have a unique canonical key",
@@ -198,50 +179,6 @@ const pluginManifestSchema = s
 
 type ParsedPluginManifest = Infer<typeof pluginManifestSchema>;
 
-function normalizeManifestSettings(
-  pluginId: string,
-  settings: readonly (Infer<typeof settingSchema> | Infer<typeof settingV2Schema>)[]
-): PluginManifestSetting[] {
-  return settings.map((s) => {
-    if ("namespace" in s) {
-      // v1 format — pass through as-is
-      return s as PluginManifestSetting;
-    }
-    // v2 format — convert to v1 for backward compatibility
-    const parts = s.key.split(":");
-    const namespace = parts[1]!;
-    const key = parts[2]!;
-
-    let type: PluginManifestSettingType = "string";
-    if (s.secret) {
-      type = "secret";
-    } else if (s.schema && typeof s.schema === "object" && "type" in s.schema) {
-      const schemaType = (s.schema as Record<string, unknown>).type;
-      if (schemaType === "number" || schemaType === "boolean") {
-        type = schemaType;
-      }
-    }
-
-    const visibilityMap: Record<string, PluginManifestSettingVisibility> = {
-      public: "public",
-      admin: "protected",
-      internal: "secret"
-    };
-    const visibility = visibilityMap[s.visibility ?? "public"] ?? "public";
-
-    return {
-      namespace,
-      key,
-      type,
-      visibility,
-      required: s.defaultValue === undefined,
-      description: s.description,
-      schema: s.schema as Record<string, unknown> | undefined,
-      defaultValueJson: s.defaultValue !== undefined ? JSON.stringify(s.defaultValue) : undefined
-    };
-  });
-}
-
 export function validatePluginManifest(input: unknown): PluginManifest {
   try {
     const parsed: ParsedPluginManifest = pluginManifestSchema.parse(input);
@@ -250,8 +187,6 @@ export function validatePluginManifest(input: unknown): PluginManifest {
       versionRange: dependency.versionRange,
       optional: dependency.optional
     }));
-
-    const normalizedSettings = normalizeManifestSettings(parsed.id, parsed.settings ?? []);
 
     return {
       id: parsed.id,
@@ -262,7 +197,7 @@ export function validatePluginManifest(input: unknown): PluginManifest {
       capabilities: [...(parsed.capabilities ?? [])],
       dependencies,
       entities: [...(parsed.entities ?? [])],
-      settings: normalizedSettings,
+      settings: [...(parsed.settings ?? [])],
       ...(parsed.events
         ? {
             events: {

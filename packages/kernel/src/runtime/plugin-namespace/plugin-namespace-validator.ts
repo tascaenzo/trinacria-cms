@@ -1,27 +1,13 @@
 import type { PluginManifest } from "../../contracts/plugin-manifest.js";
 import type { ContributionIndex, CollisionRule, NamespaceValidationResult, NamespaceValidator } from "./plugin-namespace.js";
-import { isReservedPluginId, isValidPluginId, DEFAULT_COLLISION_POLICY, isReservedNamespaceSegment, buildContributionKey, buildSettingKey } from "./plugin-namespace.js";
+import { isReservedPluginId, isValidPluginId, DEFAULT_COLLISION_POLICY, isReservedNamespaceSegment, buildContributionKey } from "./plugin-namespace.js";
 
 function normalizeContributionKey(pluginId: string, localName: string): string {
   return `${pluginId.toLowerCase()}:${localName.toLowerCase()}`;
 }
 
-function normalizeSettingKey(pluginId: string, namespace: string, key: string): string {
-  return `${pluginId.toLowerCase()}:${namespace.toLowerCase()}:${key.toLowerCase()}`;
-}
-
-function toSettingParts(setting: NonNullable<PluginManifest["settings"]>[number]): {
-  namespace: string;
-  key: string;
-} {
-  if ("namespace" in setting) {
-    return { namespace: setting.namespace, key: setting.key };
-  }
-  const parts = setting.key.split(":");
-  if (parts.length !== 3) {
-    return { namespace: "", key: setting.key };
-  }
-  return { namespace: parts[1] ?? "", key: parts[2] ?? "" };
+function normalizeSettingKey(key: string): string {
+  return key.trim().toLowerCase();
 }
 
 export function createNamespaceValidator(
@@ -82,11 +68,7 @@ export function createNamespaceValidator(
       next.eventNames.set(normalizeContributionKey(pluginId, event.name), pluginId);
     }
     for (const setting of manifest.settings ?? []) {
-      const parts = toSettingParts(setting);
-      next.settingCanonicalKeys.set(
-        normalizeSettingKey(pluginId, parts.namespace, parts.key),
-        pluginId
-      );
+      next.settingCanonicalKeys.set(normalizeSettingKey(setting.key), pluginId);
     }
 
     return next;

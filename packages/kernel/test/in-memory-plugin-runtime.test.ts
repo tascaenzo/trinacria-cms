@@ -332,10 +332,9 @@ test("describeContributions exposes manifest-derived plugin declarations", async
     entities: [{ name: "posts", schemaVersion: 1 }],
     settings: [
       {
-        namespace: "editorial",
-        key: "default-status",
-        type: "string",
-        visibility: "protected"
+        key: "blog-pack:editorial:default-status",
+        category: "editorial",
+        visibility: "admin"
       }
     ],
     events: {

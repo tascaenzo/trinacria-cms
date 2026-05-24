@@ -71,29 +71,7 @@ export interface PluginManifestSecurity {
   policyRules?: readonly PluginManifestSecurityPolicyRule[];
 }
 
-export type PluginManifestSettingType = "string" | "number" | "boolean" | "json" | "secret";
-
-export type PluginManifestSettingVisibility = "public" | "protected" | "secret";
-
-/**
- * Declarative setting owned by a plugin (v1 legacy format).
- * The canonical key is `<pluginId>:<namespace>:<key>`.
- * @deprecated Use PluginManifestSettingV2 instead. Kept for backward compatibility.
- */
-export interface PluginManifestSetting {
-  namespace: string;
-  key: string;
-  type: PluginManifestSettingType;
-  visibility: PluginManifestSettingVisibility;
-  required?: boolean;
-  description?: string;
-  schema?: Record<string, unknown>;
-  defaultValueJson?: string;
-}
-
-/**
- * Recursive JSON-compatible value type.
- */
+/** Recursive JSON-compatible value type. */
 export type JsonValue =
   | string
   | number
@@ -102,14 +80,13 @@ export type JsonValue =
   | JsonValue[]
   | { [key: string]: JsonValue };
 
-export type PluginManifestSettingV2Status = "active" | "disabled";
+export type PluginManifestSettingStatus = "active" | "disabled";
 
 /**
- * Declarative setting owned by a plugin (v2 format).
- * The canonical key is `<pluginId>:<domain>:<name>`.
+ * Declarative setting owned by a plugin.
  * `key` is fully qualified as `<pluginId>:<domain>:<name>`.
  */
-export interface PluginManifestSettingV2 {
+export interface PluginManifestSetting {
   /** Fully qualified key: <pluginId>:<domain>:<name> */
   key: string;
   /** Category/domain grouping for admin UI */
@@ -121,7 +98,7 @@ export interface PluginManifestSettingV2 {
   /** Default value (native JS value, not JSON-stringified) */
   defaultValue?: JsonValue;
   /** Whether the setting is active or disabled */
-  status?: PluginManifestSettingV2Status;
+  status?: PluginManifestSettingStatus;
   /** If true, the value is encrypted at rest */
   secret?: boolean;
   /** Whether non-admin plugins can mutate this setting */
@@ -249,8 +226,8 @@ export interface PluginManifest {
   dependencies?: readonly PluginManifestDependency[];
   /** Mongo-backed entities contributed by the plugin. */
   entities?: readonly PluginManifestEntity[];
-  /** Centralized settings definitions contributed by the plugin (v1 or v2 format). */
-  settings?: readonly (PluginManifestSetting | PluginManifestSettingV2)[];
+  /** Centralized settings definitions contributed by the plugin. */
+  settings?: readonly PluginManifestSetting[];
   /** Event contracts emitted or consumed by the plugin. */
   events?: PluginManifestEvents;
   /** Declarative admin/backoffice contribution points. */

@@ -8,8 +8,7 @@ import type {
   PluginManifestEmittedEvent,
   PluginManifestEntity,
   PluginManifestEventSubscription,
-  PluginManifestSetting,
-  PluginManifestSettingV2
+  PluginManifestSetting
 } from "./plugin-manifest.js";
 import type { ApplicationContext, ModuleDefinition } from "@trinacria/core";
 
@@ -157,7 +156,7 @@ export interface PluginEventContributionSnapshot {
 
 export interface PluginContributionCatalogSnapshot {
   entities: readonly PluginContributionSnapshot<PluginManifestEntity>[];
-  settings: readonly PluginContributionSnapshot<PluginManifestSetting | PluginManifestSettingV2>[];
+  settings: readonly PluginContributionSnapshot<PluginManifestSetting>[];
   events: PluginEventContributionSnapshot;
   admin: PluginAdminContributionSnapshot;
 }

@@ -258,12 +258,10 @@ test("validatePluginManifest accepts M4 declarative contribution blocks", () => 
     ],
     settings: [
       {
-        namespace: "editorial",
-        key: "default-status",
-        type: "string",
-        visibility: "protected",
-        required: true,
-        defaultValueJson: '"draft"'
+        key: "blog-pack:editorial:default-status",
+        category: "editorial",
+        visibility: "admin",
+        defaultValue: "draft"
       }
     ],
     events: {
@@ -322,12 +320,12 @@ test("validatePluginManifest accepts M4 declarative contribution blocks", () => 
 
   assert.equal(manifest.displayName, "Blog Pack");
   assert.equal(manifest.entities?.[0]?.name, "posts");
-  assert.equal(manifest.settings?.[0]?.key, "default-status");
+  assert.equal(manifest.settings?.[0]?.key, "blog-pack:editorial:default-status");
   assert.equal(manifest.events?.emits?.[0]?.delivery, "async");
   assert.equal(manifest.admin?.routes?.[0]?.path, "/blog/posts");
 });
 
-test("validatePluginManifest rejects reserved plugin ids and namespaces", () => {
+test("validatePluginManifest rejects reserved plugin ids and setting keys", () => {
   assert.throws(
     () =>
       validatePluginManifest({
@@ -346,10 +344,8 @@ test("validatePluginManifest rejects reserved plugin ids and namespaces", () => 
         requiresCore: "^0.1.0",
         settings: [
           {
-            namespace: "system",
-            key: "enabled",
-            type: "boolean",
-            visibility: "protected"
+            key: "blog-pack:system",
+            category: "system"
           }
         ]
       }),
@@ -366,16 +362,12 @@ test("validatePluginManifest rejects duplicate M4 contribution keys", () => {
         requiresCore: "^0.1.0",
         settings: [
           {
-            namespace: "editorial",
-            key: "default-status",
-            type: "string",
-            visibility: "protected"
+            key: "blog-pack:editorial:default-status",
+            category: "editorial"
           },
           {
-            namespace: "editorial",
-            key: "default-status",
-            type: "string",
-            visibility: "protected"
+            key: "blog-pack:editorial:default-status",
+            category: "editorial"
           }
         ]
       }),
@@ -405,7 +397,7 @@ test("validatePluginManifest rejects admin permission references owned by anothe
   );
 });
 
-test("validatePluginManifest accepts v2 settings format", () => {
+test("validatePluginManifest accepts settings format", () => {
   const manifest = validatePluginManifest({
     id: "blog-pack",
     version: "1.0.0",
@@ -432,23 +424,19 @@ test("validatePluginManifest accepts v2 settings format", () => {
   });
 
   assert.equal(manifest.settings?.length, 2);
-  // V2 settings should be normalized to v1 shape
   const first = manifest.settings?.[0]!;
-  assert.equal(first.namespace, "editorial");
-  assert.equal(first.key, "default_status");
-  assert.equal(first.type, "string");
+  assert.equal(first.key, "blog-pack:editorial:default_status");
+  assert.equal(first.category, "editorial");
   assert.equal(first.visibility, "public");
-  assert.equal(first.required, false);
-  assert.equal(first.defaultValueJson, '"draft"');
+  assert.equal(first.defaultValue, "draft");
 
   const second = manifest.settings?.[1]!;
-  assert.equal(second.namespace, "editorial");
-  assert.equal(second.key, "max_authors");
-  assert.equal(second.type, "number");
-  assert.equal(second.defaultValueJson, "5");
+  assert.equal(second.key, "blog-pack:editorial:max_authors");
+  assert.equal(second.category, "editorial");
+  assert.equal(second.defaultValue, 5);
 });
 
-test("validatePluginManifest accepts v2 secret setting", () => {
+test("validatePluginManifest accepts secret setting", () => {
   const manifest = validatePluginManifest({
     id: "blog-pack",
     version: "1.0.0",
@@ -466,12 +454,12 @@ test("validatePluginManifest accepts v2 secret setting", () => {
 
   assert.equal(manifest.settings?.length, 1);
   const setting = manifest.settings?.[0]!;
-  assert.equal(setting.type, "secret");
-  assert.equal(setting.visibility, "protected"); // admin -> protected mapping
-  assert.equal(setting.required, true); // no defaultValue
+  assert.equal(setting.secret, true);
+  assert.equal(setting.visibility, "admin");
+  assert.equal(setting.defaultValue, undefined);
 });
 
-test("validatePluginManifest rejects invalid v2 setting key format", () => {
+test("validatePluginManifest rejects invalid setting key format", () => {
   assert.throws(
     () =>
       validatePluginManifest({
@@ -490,7 +478,7 @@ test("validatePluginManifest rejects invalid v2 setting key format", () => {
   );
 });
 
-test("validatePluginManifest rejects duplicate v2 setting keys", () => {
+test("validatePluginManifest rejects duplicate setting keys", () => {
   assert.throws(
     () =>
       validatePluginManifest({
@@ -513,5 +501,3 @@ test("validatePluginManifest rejects duplicate v2 setting keys", () => {
     PluginManifestError
   );
 });
-
-
