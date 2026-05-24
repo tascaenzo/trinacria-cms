@@ -1,6 +1,6 @@
 # M5 - Plugin Runtime Foundation
 
-Stato: `planned`
+Stato: `completed`
 
 ## Obiettivo
 

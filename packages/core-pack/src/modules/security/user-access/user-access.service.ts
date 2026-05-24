@@ -86,15 +86,13 @@ export class UserAccessService {
         }) satisfies AuthorizationRule
     );
 
-    const policyRules = await this.rolePolicyRules.listByRoleCodes(activeRoleCodes);
-    const mappedPolicies = policyRules.map(
-      (rule) =>
-        ({
-          effect: rule.effect,
-          permissionPattern: rule.permissionPattern,
-          conditions: rule.conditions
-        }) satisfies AuthorizationRule
-    );
+    const mappedPolicies: AuthorizationRule[] = (
+      await this.rolePolicyRules.listByRoleCodes(activeRoleCodes)
+    ).map((rule) => ({
+      effect: rule.effect,
+      permissionPattern: rule.permissionPattern,
+      conditions: rule.conditions
+    }));
 
     return dedupeAuthorizationRules([...allowFromGrants, ...mappedPolicies]);
   }

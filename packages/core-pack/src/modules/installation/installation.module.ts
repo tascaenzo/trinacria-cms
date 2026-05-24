@@ -6,6 +6,8 @@ import {
   httpProvider,
   type EntityRegistry
 } from "@trinacria-cms/kernel";
+import { CorePackCacheModule } from "../cache/cache.module.js";
+import { CORE_PACK_CACHE_SERVICE_TOKEN } from "../cache/cache.tokens.js";
 import { CorePackSecurityModule } from "../security/security.module.js";
 import {
   CORE_PACK_SECURITY_PROVISIONING_SERVICE_TOKEN,
@@ -36,7 +38,7 @@ import {
  */
 export const CorePackInstallationModule = defineModule({
   name: "CorePackInstallationModule",
-  imports: [CorePackUsersModule, CorePackSecurityModule],
+  imports: [CorePackUsersModule, CorePackSecurityModule, CorePackCacheModule],
   providers: [
     factoryProvider(
       CORE_PACK_INSTALLATION_ENTITY_REGISTRATION_TOKEN,
@@ -48,7 +50,8 @@ export const CorePackInstallationModule = defineModule({
       [CORE_TOKENS.ENTITY_REGISTRY]
     ),
     classProvider(INSTALLATION_STATE_REPOSITORY_TOKEN, InstallationStateRepository, [
-      CORE_TOKENS.DB_ADAPTER
+      CORE_TOKENS.DB_ADAPTER,
+      CORE_PACK_CACHE_SERVICE_TOKEN
     ]),
     classProvider(LOCAL_CREDENTIALS_REPOSITORY_TOKEN, LocalCredentialsRepository, [
       CORE_TOKENS.DB_ADAPTER

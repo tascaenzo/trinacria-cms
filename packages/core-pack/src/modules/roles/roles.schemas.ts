@@ -1,4 +1,10 @@
-import { defineEntity, isValidPermissionKey, s, type Infer } from "@trinacria-cms/kernel";
+import {
+  defineEntity,
+  isValidPermissionKey,
+  isValidPermissionPattern,
+  s,
+  type Infer
+} from "@trinacria-cms/kernel";
 
 export const RoleStatusSchema = s.enum(["active", "disabled"] as const);
 
@@ -15,6 +21,33 @@ export const RolePermissionKeySchema = s
     "invalid_permission_key"
   );
 
+export const RolePolicyRuleEffectSchema = s.enum(["allow", "deny"] as const);
+
+export const RolePolicyRuleConditionSchema = s.enum([
+  "resource_id_required",
+  "resource_id_equals_subject"
+] as const);
+
+export const EmbeddedRolePolicyRuleSchema = s.object(
+  {
+    effect: RolePolicyRuleEffectSchema,
+    permissionPattern: s
+      .string({ trim: true, toLowerCase: true, minLength: 3, maxLength: 220 })
+      .refine(
+        (value) => isValidPermissionPattern(value),
+        "Permission pattern must be '<pluginId>:<resource|*>:<action|*>'",
+        "invalid_permission_pattern"
+      ),
+    conditions: s.array(RolePolicyRuleConditionSchema, { unique: true }),
+    sourcePluginId: s.string({ trim: true, minLength: 1 }),
+    createdAt: s.dateTimeString(),
+    updatedAt: s.dateTimeString()
+  },
+  { strict: true }
+);
+
+export type EmbeddedRolePolicyRule = Infer<typeof EmbeddedRolePolicyRuleSchema>;
+
 export const RoleRecordSchema = s.object(
   {
     id: s.string({ trim: true, minLength: 1 }),
@@ -29,6 +62,7 @@ export const RoleRecordSchema = s.object(
     description: s.string({ trim: true, maxLength: 500 }).optional(),
     ownerPluginId: s.string({ trim: true, minLength: 1 }).optional(),
     permissions: s.array(RolePermissionKeySchema).optional(),
+    policyRules: s.array(EmbeddedRolePolicyRuleSchema).optional(),
     status: RoleStatusSchema,
     createdAt: s.dateTimeString(),
     updatedAt: s.dateTimeString()

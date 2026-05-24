@@ -1,5 +1,6 @@
 import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
+import type { CacheService } from "../cache/cache.service.js";
 import {
   INSTALLATION_STATE_KEY,
   InstallationStateRecordSchema,
@@ -7,6 +8,7 @@ import {
 } from "./installation.schemas.js";
 
 const INSTALLATION_STATE_ENTITY_NAME = "installation_state";
+const CACHE_NAMESPACE = "installation";
 
 /**
  * Persistence adapter for singleton installation state.
@@ -14,9 +16,19 @@ const INSTALLATION_STATE_ENTITY_NAME = "installation_state";
 export class InstallationStateRepository {
   private scope?: PluginDbScope;
 
-  constructor(private readonly db: DbAdapter) {}
+  constructor(
+    private readonly db: DbAdapter,
+    private readonly cache?: CacheService
+  ) {}
 
   async get(): Promise<InstallationStateRecord | null> {
+    if (!this.cache) {
+      return this.getFromDb();
+    }
+    return this.cache.getOrCompute(CACHE_NAMESPACE, "state", () => this.getFromDb());
+  }
+
+  private async getFromDb(): Promise<InstallationStateRecord | null> {
     return this.repository().findOne({
       filter: { key: INSTALLATION_STATE_KEY },
       parse: (value: unknown) => InstallationStateRecordSchema.parse(value)
@@ -34,6 +46,7 @@ export class InstallationStateRepository {
       createdAt: now,
       updatedAt: now
     });
+    await this.cache?.invalidate(CACHE_NAMESPACE);
     return InstallationStateRecordSchema.parse(created);
   }
 
@@ -52,6 +65,7 @@ export class InstallationStateRepository {
     if (!updated) {
       throw new Error("Installation state disappeared during update");
     }
+    await this.cache?.invalidate(CACHE_NAMESPACE);
     return InstallationStateRecordSchema.parse(updated);
   }
 

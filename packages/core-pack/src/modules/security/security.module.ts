@@ -15,6 +15,8 @@ import { CorePackRolesModule } from "../roles/roles.module.js";
 import { ROLE_GRANTS_REPOSITORY_TOKEN, ROLES_REPOSITORY_TOKEN } from "../roles/roles.tokens.js";
 import { CorePackUsersModule } from "../users/users.module.js";
 import { USERS_REPOSITORY_TOKEN } from "../users/users.tokens.js";
+import { CorePackSettingsModule } from "../settings/settings.module.js";
+import { SETTINGS_SERVICE_TOKEN } from "../settings/settings.tokens.js";
 import { CorePackAuthzService } from "./core-pack-authz.service.js";
 import { ApiKeysController } from "./api-keys/api-keys.controller.js";
 import { ApiKeyHashingService } from "./api-keys/api-key-hashing.service.js";
@@ -30,7 +32,6 @@ import {
 import { RolePolicyRulesController } from "./role-policy-rules/role-policy-rules.controller.js";
 import { RolePolicyRulesRepository } from "./role-policy-rules/role-policy-rules.repository.js";
 import { RolePolicyRulesService } from "./role-policy-rules/role-policy-rules.service.js";
-import { ROLE_POLICY_RULES_ENTITY } from "./role-policy-rules/role-policy-rules.schemas.js";
 import { CorePackSecurityProvisioningService } from "./security-provisioning.service.js";
 import { UserAccessController } from "./user-access/user-access.controller.js";
 import { UserAccessService } from "./user-access/user-access.service.js";
@@ -46,29 +47,32 @@ import {
   CORE_PACK_USER_ROLES_REPOSITORY_TOKEN
 } from "./security.tokens.js";
 
-const CORE_PACK_SECURITY_ENTITY_REGISTRATION_TOKEN = createToken<boolean>(
-  "CORE_PACK_SECURITY_ENTITY_REGISTRATION"
-);
-
 /**
  * Exposes security capabilities:
  * - manifest-driven provisioning
  * - user-role assignment APIs
  * - runtime AuthzService implementation
+ *
+ * Policy rules are stored as an embedded array inside the role document
+ * (no separate role_policy_rules collection).
  */
+const CORE_PACK_SECURITY_ENTITY_REGISTRATION_TOKEN = createToken<boolean>(
+  "CORE_PACK_SECURITY_ENTITY_REGISTRATION"
+);
+
 export const CorePackSecurityModule = defineModule({
   name: "CorePackSecurityModule",
   imports: [
     CorePackAuthModule,
     CorePackUsersModule,
     CorePackRolesModule,
-    CorePackPermissionsModule
+    CorePackPermissionsModule,
+    CorePackSettingsModule
   ],
   providers: [
     factoryProvider(
       CORE_PACK_SECURITY_ENTITY_REGISTRATION_TOKEN,
       (registry) => {
-        (registry as EntityRegistry).register(ROLE_POLICY_RULES_ENTITY);
         (registry as EntityRegistry).register(API_KEYS_ENTITY);
         return true;
       },
@@ -100,9 +104,9 @@ export const CorePackSecurityModule = defineModule({
       [
         ROLES_REPOSITORY_TOKEN,
         ROLE_GRANTS_REPOSITORY_TOKEN,
-        CORE_PACK_ROLE_POLICY_RULES_REPOSITORY_TOKEN,
         PERMISSIONS_REPOSITORY_TOKEN,
-        CORE_PACK_USER_ROLES_REPOSITORY_TOKEN
+        CORE_PACK_USER_ROLES_REPOSITORY_TOKEN,
+        SETTINGS_SERVICE_TOKEN
       ]
     ),
     classProvider(CORE_PACK_USER_ACCESS_SERVICE_TOKEN, UserAccessService, [
@@ -138,7 +142,6 @@ export const CorePackSecurityModule = defineModule({
   ],
   exports: [
     CORE_PACK_USER_ROLES_REPOSITORY_TOKEN,
-    CORE_PACK_ROLE_POLICY_RULES_REPOSITORY_TOKEN,
     CORE_PACK_ROLE_POLICY_RULES_SERVICE_TOKEN,
     CORE_PACK_ROLE_POLICY_RULES_CONTROLLER_TOKEN,
     CORE_PACK_USER_ACCESS_SERVICE_TOKEN,

@@ -20,7 +20,11 @@
   },
   "dependencies": {
     "@trinacria-cms/kernel": "0.1.0",
+    "ioredis": "^5.10.1",
     "jose": "^6.2.0",
     "mongoose": ">=9"
+  },
+  "devDependencies": {
+    "@types/ioredis": "^4.28.10"
   }
 }

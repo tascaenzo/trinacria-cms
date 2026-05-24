@@ -29,6 +29,7 @@ Unified terminology glossary: [GLOSSARY.md](../GLOSSARY.md)
 15. [0014 - Settings end-to-end](./0014-settings-end-to-end.md)
 16. [0015 - Plugin operations and troubleshooting](./0015-plugin-operations-and-troubleshooting.md)
 17. [0016 - M5 Plugin runtime foundation](./0016-m5-plugin-runtime-foundation.md)
+18. [0017 - Cache system and authentication hardening](./0017-cache-and-auth-hardening.md)
 
 ## What this manual includes
 

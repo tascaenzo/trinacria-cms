@@ -51,7 +51,7 @@ rollback contribution e persistenza Mongo.
 
 ---
 
-## [M5] Plugin Runtime Foundation — pianificata
+## [M5] Plugin Runtime Foundation — completata
 
 ### Obiettivo
 

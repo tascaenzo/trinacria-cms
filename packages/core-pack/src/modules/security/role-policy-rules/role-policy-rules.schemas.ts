@@ -1,14 +1,15 @@
-import { defineEntity, isValidPermissionPattern, s, type Infer } from "@trinacria-cms/kernel";
+import { isValidPermissionPattern, s, type Infer } from "@trinacria-cms/kernel";
+import {
+  EmbeddedRolePolicyRuleSchema,
+  RolePolicyRuleConditionSchema,
+  RolePolicyRuleEffectSchema
+} from "../../roles/roles.schemas.js";
 
-export const RolePolicyRuleEffectSchema = s.enum(["allow", "deny"] as const);
-
-export const RolePolicyRuleConditionSchema = s.enum([
-  "resource_id_required",
-  "resource_id_equals_subject"
-] as const);
+export { RolePolicyRuleEffectSchema, RolePolicyRuleConditionSchema, EmbeddedRolePolicyRuleSchema };
 
 /**
- * Record containing wildcard/conditional allow/deny rules for a role.
+ * API-facing record for policy rules returned by REST endpoints.
+ * Derived from the embedded array inside a role document.
  */
 export const RolePolicyRuleRecordSchema = s.object(
   {
@@ -37,36 +38,3 @@ export const RolePolicyRuleRecordSchema = s.object(
 );
 
 export type RolePolicyRuleRecord = Infer<typeof RolePolicyRuleRecordSchema>;
-
-/**
- * Canonical role policy rules entity declaration.
- */
-export const ROLE_POLICY_RULES_ENTITY = defineEntity({
-  entityName: "role_policy_rules",
-  schema: RolePolicyRuleRecordSchema,
-  indexes: [
-    {
-      fields: { id: 1 },
-      unique: true,
-      name: "role_policy_rules_id_unique"
-    },
-    {
-      fields: {
-        roleCode: 1,
-        effect: 1,
-        permissionPattern: 1,
-        sourcePluginId: 1
-      },
-      unique: true,
-      name: "role_policy_rules_unique_rule"
-    },
-    {
-      fields: { roleCode: 1 },
-      name: "role_policy_rules_role_code_idx"
-    },
-    {
-      fields: { sourcePluginId: 1 },
-      name: "role_policy_rules_source_plugin_idx"
-    }
-  ] as const
-});

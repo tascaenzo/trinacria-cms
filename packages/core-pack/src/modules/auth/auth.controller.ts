@@ -10,8 +10,7 @@ import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import { CORE_PACK_OPENAPI_TAGS } from "../openapi-tags.js";
 import {
   buildLoginSetCookieHeaders,
-  buildLogoutClearCookieHeaders,
-  readJwtCookieConfigFromEnv
+  buildLogoutClearCookieHeaders
 } from "./auth-session.js";
 import {
   createJwtAuthMiddleware,
@@ -34,7 +33,6 @@ const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
  */
 export class AuthController extends HttpController {
   private readonly authMiddleware: HttpMiddleware;
-  private readonly cookieConfig = readJwtCookieConfigFromEnv();
 
   constructor(private readonly auth: JwtAuthService) {
     super();
@@ -111,9 +109,10 @@ export class AuthController extends HttpController {
     try {
       const payload = LoginWithPasswordInputSchema.parse(ctx.body);
       const session = await this.auth.loginWithPassword(payload);
+      const cookieConfig = await this.auth.getJwtCookieConfig();
       return response(responder.success(session), {
         headers: {
-          "set-cookie": buildLoginSetCookieHeaders(session, this.cookieConfig)
+          "set-cookie": buildLoginSetCookieHeaders(session, cookieConfig)
         }
       });
     } catch (error) {
@@ -131,14 +130,15 @@ export class AuthController extends HttpController {
 
   private logout = async (ctx: HttpContext) => {
     try {
-      const token = extractAuthToken(ctx, this.cookieConfig);
+      const cookieConfig = await this.auth.getJwtCookieConfig();
+      const token = extractAuthToken(ctx, cookieConfig);
       if (!token) {
         return responder.invalidRequest("Missing bearer token");
       }
       const revoked = await this.auth.revokeBearerToken(token);
       return response(responder.success({ revoked }), {
         headers: {
-          "set-cookie": buildLogoutClearCookieHeaders(this.cookieConfig)
+          "set-cookie": buildLogoutClearCookieHeaders(cookieConfig)
         }
       });
     } catch (error) {
