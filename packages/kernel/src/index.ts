@@ -22,3 +22,4 @@ export {
 } from "@trinacria/core";
 export * from "@trinacria/http";
 export * from "@trinacria/schema";
+export * from "@trinacria/events";

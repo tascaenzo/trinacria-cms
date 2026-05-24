@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { ApplicationContext, ModuleDefinition } from "@trinacria/core";
+import { EVENT_BUS_TOKEN, type EventBus, type EventEnvelope } from "@trinacria/events";
 import {
   PluginCompatibilityError,
   PluginDependencyError,
@@ -374,6 +375,43 @@ test("describeContributions only exposes loaded plugin declarations", async () =
   assert.equal(runtime.describeContributions().entities.length, 0);
 });
 
+test("runtime binds manifest event subscriptions and dispatches plugin handlers", async () => {
+  const { bus, app } = createFakeAppWithEventBus();
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0", app });
+  const received: Array<{ payload: unknown; envelope: EventEnvelope }> = [];
+
+  await runtime.register({
+    manifest: {
+      id: "cms/plugin-content",
+      version: "1.0.0",
+      requiresCore: "^0.1.0",
+      events: {
+        subscribes: [
+          {
+            eventName: "cms/plugin-users:user-created",
+            handler: "onUserCreated"
+          }
+        ]
+      }
+    },
+    eventHandlers: {
+      async onUserCreated(payload, envelope) {
+        received.push({ payload, envelope: envelope as EventEnvelope });
+      }
+    }
+  });
+
+  await runtime.load("cms/plugin-content");
+  await bus.emit("cms/plugin-users:user-created", { id: "u-1" });
+
+  assert.equal(received.length, 1);
+  assert.deepEqual(received[0]?.payload, { id: "u-1" });
+
+  await runtime.unload("cms/plugin-content");
+  await bus.emit("cms/plugin-users:user-created", { id: "u-2" });
+  assert.equal(received.length, 1);
+});
+
 test("load failure removes partial plugin contributions and records diagnostic context", async () => {
   const app = createFakeApp();
   const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0", app });
@@ -679,4 +717,73 @@ function createFakeApp(): ApplicationContext & {
       // no-op for tests
     }
   };
+}
+
+function createFakeAppWithEventBus(): {
+  app: ApplicationContext;
+  bus: EventBus;
+} {
+  const listeners = new Map<
+    string,
+    Array<(payload: unknown, envelope: EventEnvelope) => Promise<void> | void>
+  >();
+
+  const bus: EventBus = {
+    async emit(event, payload) {
+      const eventListeners = listeners.get(event) ?? [];
+      const envelope: EventEnvelope = {
+        id: `${event}-${Date.now()}`,
+        name: event,
+        payload,
+        publishedAt: new Date()
+      };
+      for (const listener of eventListeners) {
+        await listener(payload, envelope);
+      }
+    },
+    on(event, handler) {
+      const existing = listeners.get(event) ?? [];
+      existing.push(handler as (payload: unknown, envelope: EventEnvelope) => Promise<void> | void);
+      listeners.set(event, existing);
+      return () => {
+        const next = (listeners.get(event) ?? []).filter((item) => item !== handler);
+        listeners.set(event, next);
+      };
+    },
+    once(event, handler) {
+      const wrapped = async (payload: unknown, envelope: EventEnvelope) => {
+        off();
+        await (handler as (payload: unknown, envelope: EventEnvelope) => Promise<void> | void)(
+          payload,
+          envelope
+        );
+      };
+      const off = this.on(event, wrapped);
+      return off;
+    },
+    off(event, handler) {
+      const next = (listeners.get(event) ?? []).filter((item) => item !== handler);
+      listeners.set(event, next);
+    },
+    listenerCount(event) {
+      if (event) return (listeners.get(event) ?? []).length;
+      return Array.from(listeners.values()).reduce((acc, current) => acc + current.length, 0);
+    }
+  };
+
+  const app = createFakeApp();
+  const appWithEvents: ApplicationContext = {
+    ...app,
+    hasToken(token) {
+      return token === EVENT_BUS_TOKEN;
+    },
+    async resolve(token: unknown) {
+      if (token === EVENT_BUS_TOKEN) {
+        return bus;
+      }
+      throw new Error("not implemented in test");
+    }
+  };
+
+  return { app: appWithEvents, bus };
 }

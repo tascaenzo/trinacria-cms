@@ -40,6 +40,11 @@ export interface CmsSwaggerUiConfig {
 export interface CmsStarterOptions {
   coreVersion: string;
   http?: CmsHttpConfig;
+  /**
+   * Enables Trinacria events plugin (`@trinacria/events`) for in-process pub/sub.
+   * Enabled by default.
+   */
+  enableEventsPlugin?: boolean;
   swaggerUi?: CmsSwaggerUiConfig;
   modules?: readonly ModuleDefinition[];
   globalProviders?: readonly Provider[];
