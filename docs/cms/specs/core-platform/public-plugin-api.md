@@ -27,6 +27,7 @@ Import principali:
 
 ```ts
 import type {
+  CacheAdapter,
   PluginDiscoverySource,
   KernelPluginDefinition,
   PluginManifest,
@@ -39,6 +40,8 @@ import {
   buildSettingKey,
   validatePluginManifest
 } from "@trinacria-cms/kernel";
+import { CORE_TOKENS } from "@trinacria-cms/kernel";
+// CORE_TOKENS.CACHE_ADAPTER — token DI per l'adapter cache
 ```
 
 Per integrazione con il configuration registry (chiamate plugin-to-core
@@ -474,6 +477,82 @@ export const plugin: KernelPluginDefinition = {
   manifest
 };
 ```
+
+## Cache service
+
+Il sistema di cache e disponibile come servizio DI in core-pack.
+
+### Token
+
+```ts
+import { CORE_TOKENS } from "@trinacria-cms/kernel";
+
+// Token per l'adapter cache (livello kernel)
+CORE_TOKENS.CACHE_ADAPTER
+// Alias: CORE_PACK_CACHE_ADAPTER_TOKEN (da @trinacria-cms/core-pack, retrocompatibile)
+
+// Token per il servizio cache (da @trinacria-cms/core-pack)
+CORE_PACK_CACHE_SERVICE_TOKEN
+```
+
+### CacheService API
+
+```ts
+class CacheService {
+  get<T>(namespace: string, key: string): Promise<T | undefined>;
+  set<T>(namespace: string, key: string, value: T, ttlSeconds?: number): Promise<void>;
+  getOrCompute<T>(namespace: string, key: string, loader: () => Promise<T>, ttlSeconds?: number): Promise<T>;
+  invalidate(namespace: string, key?: string): Promise<void>;
+  clear(): Promise<void>;
+  wrap<T>(namespace: string, key: string, loader: () => Promise<T>, ttlSeconds?: number): () => Promise<T>;
+}
+```
+
+### Adapter predefiniti
+
+- `MemoryCacheAdapter` — cache in-process, persa al riavvio
+- `RedisCacheAdapter` — cache Redis condivisa tra repliche
+
+La selezione avviene automaticamente: se `core-pack:cache:redis_url` e
+configurato nelle settings si usa Redis, altrimenti Memory.
+
+### Adapter personalizzato
+
+```ts
+import { setCustomCacheAdapter } from "@trinacria-cms/core-pack";
+import type { CacheAdapter } from "@trinacria-cms/kernel";
+
+class MyAdapter implements CacheAdapter {
+  // implementa get/set/del/delNamespace/clear
+}
+
+setCustomCacheAdapter(new MyAdapter());
+```
+
+### Pattern d'uso in un repository
+
+```ts
+class MyRepository {
+  constructor(
+    private readonly db: DbAdapter,
+    private readonly cache?: CacheService  // opzionale
+  ) {}
+
+  async findById(id: string): Promise<Widget | null> {
+    if (!this.cache) return this.getFromDb(id);
+    return this.cache.getOrCompute("my-plugin:widgets", id, () => this.getFromDb(id));
+  }
+
+  async update(id: string, data: Partial<Widget>): Promise<Widget> {
+    const result = /* db update */;
+    await this.cache?.invalidate("my-plugin:widgets");
+    return result;
+  }
+}
+```
+
+Vedi specifica completa: `0017-cache-and-auth-hardening.md` (EN) /
+`0017-cache-e-indurimento-autenticazione.md` (IT).
 
 ## Cosa non e ancora API pubblica stabile
 
