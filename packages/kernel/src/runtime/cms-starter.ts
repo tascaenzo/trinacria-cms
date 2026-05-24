@@ -7,6 +7,7 @@ import {
   type ModuleDefinition
 } from "@trinacria/core";
 import { createHttpPlugin, httpProvider, type OpenApiDocument } from "@trinacria/http";
+import { createEventsPlugin } from "@trinacria/events";
 import type {
   CmsSwaggerUiConfig,
   CmsStarterHandle,
@@ -84,6 +85,10 @@ export async function startCmsApp(options: CmsStarterOptions): Promise<CmsStarte
           }
     })
   );
+
+  if (options.enableEventsPlugin !== false) {
+    app.use(createEventsPlugin());
+  }
 
   const starterModule = defineModule({
     name: "CmsStarterKernelModule",

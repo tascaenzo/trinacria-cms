@@ -12,6 +12,7 @@ import type {
 } from "../../contracts/plugin-runtime.js";
 import type { PluginRuntimeStore } from "../../contracts/plugin-runtime-store.js";
 import type { ApplicationContext } from "@trinacria/core";
+import { EVENT_BUS_TOKEN, type EventBus, type EventEnvelope } from "@trinacria/events";
 import {
   PluginCompatibilityError,
   PluginDependencyError,
@@ -72,6 +73,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
   private readonly activeLoads = new Set<string>();
   private readonly retryPolicy?: PluginRuntimeRetryPolicy;
   private readonly eventsLog: PluginRuntimeEventLog;
+  private readonly pluginEventSubscriptions = new Map<string, readonly (() => void)[]>();
   private runtimeStoreInitialization?: Promise<void>;
   private runtimeStoreHydrated = false;
 
@@ -215,6 +217,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
             app: this.app
           });
           await loadPluginInternal(ctx, pluginId, new Set<string>());
+          await this.bindPluginEventSubscriptions(pluginId);
           await persistRecord(this.registry.records, this.runtimeStore, pluginId);
           this.emitEvent({
             pluginId,
@@ -283,6 +286,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     });
 
     try {
+      this.unbindPluginEventSubscriptions(pluginId);
       await unloadPlugin(ctx, pluginId, assertNoLoadedDependents);
       this.emitEvent({
         pluginId,
@@ -362,6 +366,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     }
 
     this.registry.removePlugin(pluginId);
+    this.unbindPluginEventSubscriptions(pluginId);
     this.loadedContributions.remove(pluginId);
     await this.runtimeStore.remove(pluginId);
 
@@ -519,6 +524,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
   private markDisabled(pluginId: string, reason?: string, error?: unknown): void {
     const current = this.registry.getRecord(pluginId);
     this.loadedContributions.remove(pluginId);
+    this.unbindPluginEventSubscriptions(pluginId);
     this.registry.records.set(pluginId, {
       ...current,
       state: "disabled",
@@ -544,6 +550,69 @@ export class InMemoryPluginRuntime implements PluginRuntime {
 
   private emitEvent(event: Omit<PluginRuntimeEvent, "timestamp" | "sequence">): void {
     this.eventsLog.emit(event);
+  }
+
+  private async bindPluginEventSubscriptions(pluginId: string): Promise<void> {
+    this.unbindPluginEventSubscriptions(pluginId);
+    const definition = this.registry.getDefinition(pluginId);
+    const subscribedEvents = definition.manifest.events?.subscribes ?? [];
+    if (subscribedEvents.length === 0) return;
+
+    const bus = await this.resolveEventBus();
+    if (!bus) {
+      throw new PluginRuntimeError(
+        `Plugin "${pluginId}" declares event subscriptions but event bus is not available`,
+        { pluginId }
+      );
+    }
+
+    const eventHandlers = definition.eventHandlers ?? {};
+    const unsubs: Array<() => void> = [];
+
+    for (const subscription of subscribedEvents) {
+      const runtimeHandler = eventHandlers[subscription.handler];
+      if (!runtimeHandler) {
+        throw new PluginRuntimeError(
+          `Plugin "${pluginId}" is missing runtime handler "${subscription.handler}" for event "${subscription.eventName}"`,
+          { pluginId }
+        );
+      }
+
+      const off = bus.on(subscription.eventName, async (payload, envelope) => {
+        await runtimeHandler(payload, envelope as EventEnvelope, {
+          pluginId,
+          eventName: subscription.eventName,
+          handlerName: subscription.handler
+        });
+      });
+      unsubs.push(off);
+    }
+
+    this.pluginEventSubscriptions.set(pluginId, unsubs);
+  }
+
+  private unbindPluginEventSubscriptions(pluginId: string): void {
+    const unsubs = this.pluginEventSubscriptions.get(pluginId);
+    if (!unsubs || unsubs.length === 0) return;
+    for (const off of unsubs) {
+      try {
+        off();
+      } catch {
+        // Ignore subscriber teardown issues during runtime state transitions.
+      }
+    }
+    this.pluginEventSubscriptions.delete(pluginId);
+  }
+
+  private async resolveEventBus(): Promise<EventBus | null> {
+    if (!this.app) return null;
+    if (!("hasToken" in this.app) || typeof this.app.hasToken !== "function") {
+      return null;
+    }
+    if (!this.app.hasToken(EVENT_BUS_TOKEN)) {
+      return null;
+    }
+    return this.app.resolve<EventBus>(EVENT_BUS_TOKEN);
   }
 
   private resolveAttempts(_state: PluginState): number {

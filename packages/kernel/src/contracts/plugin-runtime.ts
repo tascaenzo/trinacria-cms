@@ -11,6 +11,7 @@ import type {
   PluginManifestSetting
 } from "./plugin-manifest.js";
 import type { ApplicationContext, ModuleDefinition } from "@trinacria/core";
+import type { EventEnvelope } from "@trinacria/events";
 
 /**
  * Lifecycle phases used for diagnostics when a plugin operation fails.
@@ -80,6 +81,18 @@ export interface KernelPluginHooks {
   onUnload?(context: KernelPluginRuntimeContext): Promise<void> | void;
 }
 
+export interface KernelPluginEventHandlerContext {
+  pluginId: string;
+  eventName: string;
+  handlerName: string;
+}
+
+export type KernelPluginEventHandler = (
+  payload: unknown,
+  envelope: EventEnvelope,
+  context: KernelPluginEventHandlerContext
+) => Promise<void> | void;
+
 /**
  * Full plugin definition accepted by the kernel runtime.
  * It binds a manifest to runtime modules and optional lifecycle hooks.
@@ -87,6 +100,7 @@ export interface KernelPluginHooks {
 export interface KernelPluginDefinition extends KernelPluginHooks {
   manifest: PluginManifest;
   modules?: readonly ModuleDefinition[];
+  eventHandlers?: Readonly<Record<string, KernelPluginEventHandler>>;
 }
 
 export interface PluginRuntimeRetryPolicy {

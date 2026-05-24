@@ -30,6 +30,7 @@ Glossario terminologico unico: [GLOSSARY.md](../GLOSSARY.md)
 16. [0015 - Operazioni plugin e troubleshooting](./0015-operazioni-plugin-e-troubleshooting.md)
 17. [0016 - M5 Runtime plugin foundation](./0016-m5-runtime-plugin-foundation.md)
 18. [0017 - Cache e indurimento autenticazione](./0017-cache-e-indurimento-autenticazione.md)
+19. [0018 - Milestone settings runtime hardening](./0018-settings-runtime-hardening.md)
 
 ## Cosa trovi in questo manuale
 
