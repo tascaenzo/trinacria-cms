@@ -1,10 +1,16 @@
-import { startCmsApp } from "@trinacria-cms/kernel";
+import {
+  EVENT_BUS_TOKEN,
+  startCmsApp,
+  type KernelPluginDefinition
+} from "@trinacria-cms/kernel";
 import { createCorePackMongoGlobalProviders, createCorePackPlugin } from "@trinacria-cms/core-pack";
 
 async function bootstrap(): Promise<void> {
   const mongoUri = resolveMongoUri();
   const host = process.env.HTTP_HOST ?? "0.0.0.0";
   const port = Number(process.env.HTTP_PORT ?? "3000");
+  const smokeMode = process.env.PLAYGROUND_EVENT_SMOKE === "1";
+  const smokeStandalone = process.env.PLAYGROUND_EVENT_SMOKE_STANDALONE === "1";
 
   const handle = await startCmsApp({
     coreVersion: "0.1.0",
@@ -17,10 +23,14 @@ async function bootstrap(): Promise<void> {
         version: "1.0.0"
       }
     },
-    globalProviders: createCorePackMongoGlobalProviders({
-      uri: mongoUri
-    }),
-    plugins: [createCorePackPlugin()],
+    globalProviders: smokeStandalone
+      ? []
+      : createCorePackMongoGlobalProviders({
+          uri: mongoUri
+        }),
+    plugins: smokeStandalone
+      ? createPlaygroundEventSmokePlugins()
+      : [createCorePackPlugin(), ...createPlaygroundEventSmokePlugins()],
     autoLoadPlugins: true
   });
 
@@ -34,8 +44,73 @@ async function bootstrap(): Promise<void> {
 
   console.log(`[playground] HTTP server ready on http://${host}:${port}`);
   console.log(`[playground] Mongo URI: ${mongoUri}`);
+  if (smokeMode) {
+    console.log(
+      `[playground] Event smoke mode enabled${smokeStandalone ? " (standalone)" : ""}`
+    );
+  }
   console.log(`[playground] OpenAPI JSON available at http://${host}:${port}/openapi.json`);
   console.log(`[playground] Swagger UI available at http://${host}:${port}/docs`);
+}
+
+function createPlaygroundEventSmokePlugins(): readonly KernelPluginDefinition[] {
+  if (process.env.PLAYGROUND_EVENT_SMOKE !== "1") {
+    return [];
+  }
+
+  const subscriberPlugin: KernelPluginDefinition = {
+    manifest: {
+      id: "playground/event-subscriber",
+      version: "1.0.0",
+      requiresCore: "^0.1.0",
+      events: {
+        subscribes: [
+          {
+            eventName: "playground/event-emitter:smoke-triggered",
+            handler: "onSmokeTriggered"
+          }
+        ]
+      }
+    },
+    eventHandlers: {
+      async onSmokeTriggered(payload) {
+        console.log("[playground:event-smoke] subscriber received payload", payload);
+      }
+    }
+  };
+
+  const emitterPlugin: KernelPluginDefinition = {
+    manifest: {
+      id: "playground/event-emitter",
+      version: "1.0.0",
+      requiresCore: "^0.1.0",
+      dependencies: [
+        {
+          pluginId: "playground/event-subscriber",
+          versionRange: "^1.0.0"
+        }
+      ],
+      events: {
+        emits: [
+          {
+            name: "smoke-triggered",
+            visibility: "private",
+            version: 1
+          }
+        ]
+      }
+    },
+    async onInit(context) {
+      const bus = await context.app.resolve(EVENT_BUS_TOKEN);
+      await bus.emit("playground/event-emitter:smoke-triggered", {
+        source: context.pluginId,
+        at: new Date().toISOString()
+      });
+      console.log("[playground:event-smoke] emitter emitted smoke-triggered");
+    }
+  };
+
+  return [subscriberPlugin, emitterPlugin];
 }
 
 bootstrap().catch(async (error) => {
