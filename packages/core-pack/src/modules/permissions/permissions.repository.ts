@@ -5,6 +5,7 @@ import {
   type PluginDbScope
 } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
+import type { CacheService } from "../cache/cache.service.js";
 import {
   CreatePermissionInputSchema,
   type CreatePermissionInput,
@@ -14,6 +15,7 @@ import {
 import { PermissionRecordSchema, type PermissionRecord } from "./permissions.schemas.js";
 
 const PERMISSIONS_ENTITY_NAME = "permissions";
+const CACHE_NAMESPACE = "permissions";
 
 /**
  * Persistence adapter for permissions module over kernel DbAdapter.
@@ -21,7 +23,10 @@ const PERMISSIONS_ENTITY_NAME = "permissions";
 export class PermissionsRepository {
   private scope?: PluginDbScope;
 
-  constructor(private readonly db: DbAdapter) {}
+  constructor(
+    private readonly db: DbAdapter,
+    private readonly cache?: CacheService
+  ) {}
 
   async create(input: CreatePermissionInput): Promise<PermissionRecord> {
     const parsedInput = CreatePermissionInputSchema.parse(input);
@@ -38,6 +43,7 @@ export class PermissionsRepository {
     };
 
     const created = await this.repository().insertOne(record);
+    await this.cache?.invalidate(CACHE_NAMESPACE, parsedInput.key);
     return this.parsePermissionRecord(created);
   }
 
@@ -51,11 +57,19 @@ export class PermissionsRepository {
 
   async findByKey(key: string): Promise<PermissionRecord | null> {
     const normalizedKey = key.trim().toLowerCase();
-    const found = await this.repository().findOne({
-      filter: { key: normalizedKey },
+    if (!this.cache) {
+      return this.findByKeyFromDb(normalizedKey);
+    }
+    return this.cache.getOrCompute(CACHE_NAMESPACE, normalizedKey, () =>
+      this.findByKeyFromDb(normalizedKey)
+    );
+  }
+
+  private async findByKeyFromDb(key: string): Promise<PermissionRecord | null> {
+    return this.repository().findOne({
+      filter: { key },
       parse: (value: unknown) => this.parsePermissionRecord(value)
     });
-    return found;
   }
 
   async list(options?: { limit?: number; offset?: number }): Promise<readonly PermissionRecord[]> {
@@ -84,6 +98,10 @@ export class PermissionsRepository {
     input: UpdatePermissionStatusInput
   ): Promise<PermissionRecord | null> {
     const parsedInput = UpdatePermissionStatusInputSchema.parse(input);
+
+    const existing = await this.findById(id);
+    if (!existing) return null;
+
     const updated = await this.repository().updateOne(
       { filter: { id } },
       {
@@ -93,6 +111,7 @@ export class PermissionsRepository {
     );
 
     if (!updated) return null;
+    await this.cache?.invalidate(CACHE_NAMESPACE, existing.key);
     return this.parsePermissionRecord(updated);
   }
 
@@ -123,6 +142,7 @@ export class PermissionsRepository {
         createdAt: now,
         updatedAt: now
       });
+      await this.cache?.invalidate(CACHE_NAMESPACE, normalizedKey);
       return this.parsePermissionRecord(created);
     }
 
@@ -139,11 +159,17 @@ export class PermissionsRepository {
     if (!updated) {
       throw new Error(`Permission "${normalizedKey}" disappeared during upsert`);
     }
+    await this.cache?.invalidate(CACHE_NAMESPACE, normalizedKey);
     return this.parsePermissionRecord(updated);
   }
 
   async deleteById(id: string): Promise<boolean> {
-    return this.repository().deleteOne({ filter: { id } });
+    const existing = await this.findById(id);
+    const deleted = await this.repository().deleteOne({ filter: { id } });
+    if (deleted && existing) {
+      await this.cache?.invalidate(CACHE_NAMESPACE, existing.key);
+    }
+    return deleted;
   }
 
   private repository() {

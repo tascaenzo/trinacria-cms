@@ -1,5 +1,6 @@
 import { createToken } from "@trinacria/core";
 import type { AuthzService } from "../contracts/authz-service.js";
+import type { CacheAdapter } from "../contracts/cache-adapter.js";
 import type { DbAdapter } from "../contracts/db-adapter.js";
 import type { KernelAdminRouteGuard } from "../contracts/kernel-admin-route-guard.js";
 import type { PluginDiscoveryService } from "../contracts/plugin-discovery.js";
@@ -20,6 +21,7 @@ export const CORE_TOKENS = {
     "CMS_CORE_PLUGIN_DISCOVERY_SERVICE"
   ),
   DB_ADAPTER: createToken<DbAdapter>("CMS_CORE_DB_ADAPTER"),
+  CACHE_ADAPTER: createToken<CacheAdapter>("CMS_CORE_CACHE_ADAPTER"),
   ENTITY_REGISTRY: createToken<EntityRegistry>("CMS_CORE_ENTITY_REGISTRY"),
   AUTHZ_SERVICE: createToken<AuthzService>("CMS_CORE_AUTHZ_SERVICE"),
   PLUGIN_SECURITY_PROVISIONER: createToken<PluginSecurityProvisioner>(

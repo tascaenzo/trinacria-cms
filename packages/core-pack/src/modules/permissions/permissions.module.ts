@@ -8,6 +8,8 @@ import {
 } from "@trinacria-cms/kernel";
 import { CorePackAuthModule } from "../auth/auth.module.js";
 import { CORE_PACK_JWT_AUTH_SERVICE_TOKEN } from "../auth/auth.tokens.js";
+import { CORE_PACK_CACHE_SERVICE_TOKEN } from "../cache/cache.tokens.js";
+import { CorePackCacheModule } from "../cache/cache.module.js";
 import { PermissionsController } from "./permissions.controller.js";
 import { PERMISSIONS_ENTITY } from "./permissions.schemas.js";
 import { PermissionsRepository } from "./permissions.repository.js";
@@ -24,7 +26,7 @@ import {
  */
 export const CorePackPermissionsModule = defineModule({
   name: "CorePackPermissionsModule",
-  imports: [CorePackAuthModule],
+  imports: [CorePackAuthModule, CorePackCacheModule],
   providers: [
     factoryProvider(
       PERMISSIONS_ENTITY_REGISTRATION_TOKEN,
@@ -34,7 +36,10 @@ export const CorePackPermissionsModule = defineModule({
       },
       [CORE_TOKENS.ENTITY_REGISTRY]
     ),
-    classProvider(PERMISSIONS_REPOSITORY_TOKEN, PermissionsRepository, [CORE_TOKENS.DB_ADAPTER]),
+    classProvider(PERMISSIONS_REPOSITORY_TOKEN, PermissionsRepository, [
+      CORE_TOKENS.DB_ADAPTER,
+      CORE_PACK_CACHE_SERVICE_TOKEN
+    ]),
     classProvider(PERMISSIONS_SERVICE_TOKEN, PermissionsService, [PERMISSIONS_REPOSITORY_TOKEN]),
     httpProvider(PERMISSIONS_CONTROLLER_TOKEN, PermissionsController, [
       PERMISSIONS_SERVICE_TOKEN,
