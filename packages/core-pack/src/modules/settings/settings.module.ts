@@ -17,6 +17,7 @@ import { SettingsSecretsRepository } from "./secrets/settings-secrets.repository
 import { SETTINGS_ENTITY } from "./settings.schemas.js";
 import { SettingsService } from "./settings.service.js";
 import { SettingsValuesRepository } from "./values/settings-values.repository.js";
+import { readCorePackSettingValue } from "./runtime-settings.js";
 import {
   SETTINGS_CONTROLLER_TOKEN,
   SETTINGS_DEFINITIONS_REPOSITORY_TOKEN,
@@ -55,12 +56,26 @@ export const CorePackSettingsModule = defineModule({
     ]),
     factoryProvider(
       SETTINGS_SECRETS_CRYPTO_SERVICE_TOKEN,
-      () =>
-        new SettingsSecretsCryptoService({
+      async (db) => {
+        const keyVersionSetting = await readCorePackSettingValue(
+          db,
+          "core-pack:settings:master_key_version"
+        );
+        const strictRequiredSetting = await readCorePackSettingValue(
+          db,
+          "core-pack:settings:strict_master_key_required"
+        );
+        return new SettingsSecretsCryptoService({
           masterKey: process.env.CMS_SETTINGS_MASTER_KEY,
-          keyVersion: process.env.CMS_SETTINGS_MASTER_KEY_VERSION
-        }),
-      []
+          keyVersion:
+            typeof keyVersionSetting === "string" && keyVersionSetting.trim()
+              ? keyVersionSetting.trim()
+              : process.env.CMS_SETTINGS_MASTER_KEY_VERSION,
+          strictMasterKeyRequired:
+            typeof strictRequiredSetting === "boolean" ? strictRequiredSetting : false
+        });
+      },
+      [CORE_TOKENS.DB_ADAPTER]
     ),
     factoryProvider(
       SETTINGS_PLUGIN_AUTH_KEY_PROVIDER_TOKEN,
@@ -69,8 +84,8 @@ export const CorePackSettingsModule = defineModule({
     ),
     factoryProvider(
       SETTINGS_PLUGIN_AUTH_SERVICE_TOKEN,
-      (keyProvider) => new SettingsPluginAuthService(keyProvider),
-      [SETTINGS_PLUGIN_AUTH_KEY_PROVIDER_TOKEN]
+      (keyProvider, db) => new SettingsPluginAuthService(keyProvider, db),
+      [SETTINGS_PLUGIN_AUTH_KEY_PROVIDER_TOKEN, CORE_TOKENS.DB_ADAPTER]
     ),
     classProvider(SETTINGS_SERVICE_TOKEN, SettingsService, [
       SETTINGS_DEFINITIONS_REPOSITORY_TOKEN,

@@ -4,6 +4,7 @@ import {
   SettingDefinitionRecordSchema,
   type SettingDefinitionRecord
 } from "../settings.schemas.js";
+import type { JsonValue } from "../settings-json.js";
 
 const SETTINGS_ENTITY_NAME = "settings";
 const DEFINITION_KIND = "definition" as const;
@@ -13,8 +14,8 @@ export interface UpsertSettingDefinitionRecordInput {
   ownerPluginId: string;
   category?: string;
   description?: string;
-  schemaJson?: string;
-  defaultValueJson?: string;
+  schema?: JsonValue;
+  defaultValue?: JsonValue;
   status?: "active" | "disabled";
 }
 
@@ -39,8 +40,8 @@ export class SettingsDefinitionsRepository {
         ownerPluginId: normalizedOwner,
         ...(input.category?.trim() ? { category: input.category.trim() } : {}),
         ...(input.description?.trim() ? { description: input.description.trim() } : {}),
-        ...(input.schemaJson ? { schemaJson: input.schemaJson } : {}),
-        ...(input.defaultValueJson ? { defaultValueJson: input.defaultValueJson } : {}),
+        ...(input.schema !== undefined ? { schema: input.schema } : {}),
+        ...(input.defaultValue !== undefined ? { defaultValue: input.defaultValue } : {}),
         status: input.status ?? "active",
         createdAt: now,
         updatedAt: now
@@ -59,8 +60,8 @@ export class SettingsDefinitionsRepository {
       {
         ...(input.category?.trim() ? { category: input.category.trim() } : {}),
         ...(input.description?.trim() ? { description: input.description.trim() } : {}),
-        ...(input.schemaJson ? { schemaJson: input.schemaJson } : {}),
-        ...(input.defaultValueJson ? { defaultValueJson: input.defaultValueJson } : {}),
+        ...(input.schema !== undefined ? { schema: input.schema } : {}),
+        ...(input.defaultValue !== undefined ? { defaultValue: input.defaultValue } : {}),
         ...(input.status ? { status: input.status } : {}),
         updatedAt: now
       }
@@ -112,8 +113,6 @@ export class SettingsDefinitionsRepository {
     const normalized = { ...(value as Record<string, unknown>) };
     if (normalized.category === null) delete normalized.category;
     if (normalized.description === null) delete normalized.description;
-    if (normalized.schemaJson === null) delete normalized.schemaJson;
-    if (normalized.defaultValueJson === null) delete normalized.defaultValueJson;
     if (normalized.status === null) delete normalized.status;
 
     return SettingDefinitionRecordSchema.parse(normalized);

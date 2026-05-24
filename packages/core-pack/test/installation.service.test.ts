@@ -15,6 +15,11 @@ import { CorePackSecurityProvisioningService } from "../src/modules/security/sec
 import { RolePolicyRulesRepository } from "../src/modules/security/role-policy-rules/role-policy-rules.repository.js";
 import { UserAccessService } from "../src/modules/security/user-access/user-access.service.js";
 import { UserRolesRepository } from "../src/modules/security/user-access/user-roles.repository.js";
+import { SettingsDefinitionsRepository } from "../src/modules/settings/definitions/settings-definitions.repository.js";
+import { SettingsValuesRepository } from "../src/modules/settings/values/settings-values.repository.js";
+import { SettingsSecretsRepository } from "../src/modules/settings/secrets/settings-secrets.repository.js";
+import { SettingsSecretsCryptoService } from "../src/modules/settings/secrets/settings-secrets-crypto.service.js";
+import { SettingsService } from "../src/modules/settings/settings.service.js";
 import { UsersRepository } from "../src/modules/users/users.repository.js";
 
 test("InstallationService reports not-installed status by default", async () => {
@@ -100,6 +105,12 @@ function createInstallationRuntime(): InstallationRuntime {
   const rolePolicyRules = new RolePolicyRulesRepository(db);
   const permissions = new PermissionsRepository(db);
   const userRoles = new UserRolesRepository(db);
+  const settings = new SettingsService(
+    new SettingsDefinitionsRepository(db),
+    new SettingsValuesRepository(db),
+    new SettingsSecretsRepository(db),
+    new SettingsSecretsCryptoService()
+  );
   const userAccess = new UserAccessService(
     users,
     roles,
@@ -111,9 +122,9 @@ function createInstallationRuntime(): InstallationRuntime {
   const securityProvisioning = new CorePackSecurityProvisioningService(
     roles,
     roleGrants,
-    rolePolicyRules,
     permissions,
-    userRoles
+    userRoles,
+    settings
   );
   const installationState = new InstallationStateRepository(db);
   const localCredentials = new LocalCredentialsRepository(db);

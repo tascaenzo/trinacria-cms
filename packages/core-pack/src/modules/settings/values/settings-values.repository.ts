@@ -1,6 +1,7 @@
 import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import { SettingValueRecordSchema, type SettingValueRecord } from "../settings.schemas.js";
+import type { JsonValue } from "../settings-json.js";
 
 const SETTINGS_ENTITY_NAME = "settings";
 const VALUE_KIND = "value" as const;
@@ -8,7 +9,7 @@ const VALUE_KIND = "value" as const;
 export interface UpsertSettingValueRecordInput {
   key: string;
   ownerPluginId: string;
-  valueJson: string;
+  value: JsonValue;
   updatedBy?: string;
 }
 
@@ -31,7 +32,7 @@ export class SettingsValuesRepository {
         kind: VALUE_KIND,
         key: normalizedKey,
         ownerPluginId: normalizedOwner,
-        valueJson: input.valueJson,
+        value: input.value,
         version: 1,
         ...(input.updatedBy?.trim() ? { updatedBy: input.updatedBy.trim() } : {}),
         createdAt: now,
@@ -49,7 +50,7 @@ export class SettingsValuesRepository {
     const updated = await this.repository().updateOne(
       { filter: { id: existing.id } },
       {
-        valueJson: input.valueJson,
+        value: input.value,
         version: existing.version + 1,
         ...(input.updatedBy?.trim() ? { updatedBy: input.updatedBy.trim() } : {}),
         updatedAt: now
