@@ -1,10 +1,10 @@
-import type { PluginManifestDependency } from "../contracts/plugin-manifest.js";
+import type { PluginManifestDependency } from "../../contracts/plugin-manifest.js";
 import type {
   PluginDependencyGraphSnapshot,
   PluginRuntimeRecord
-} from "../contracts/plugin-runtime.js";
-import { PluginDependencyError } from "../errors/plugin-errors.js";
-import { satisfiesVersion } from "./semver.js";
+} from "../../contracts/plugin-runtime.js";
+import { PluginDependencyError } from "../../errors/plugin-errors.js";
+import { satisfiesVersion } from "../plugin-manifest/semver.js";
 
 export function extractRequiredDependencies(
   manifest: PluginRuntimeRecord["manifest"]

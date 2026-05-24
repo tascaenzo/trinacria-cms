@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { PluginManifestError } from "../src/errors/index.js";
-import { ConfiguredPluginDiscoveryService } from "../src/runtime/plugin-discovery-service.js";
+import { ConfiguredPluginDiscoveryService } from "../src/runtime/plugin-discovery/plugin-discovery-service.js";
 import type { PluginDiscoverySource } from "../src/contracts/plugin-discovery.js";
 
 test("ConfiguredPluginDiscoveryService discovers configured plugin definitions", async () => {

@@ -22,21 +22,21 @@ import type { KernelPluginDefinition, PluginRuntime } from "../contracts/plugin-
 import type { PluginRuntimeStore } from "../contracts/plugin-runtime-store.js";
 import type { PluginSecurityProvisioner } from "../contracts/plugin-security-provisioner.js";
 import { CoreError } from "../errors/core-error.js";
-import { InMemoryPluginRuntime } from "./in-memory-plugin-runtime.js";
+import { InMemoryPluginRuntime } from "./plugin-runtime/in-memory-plugin-runtime.js";
 import {
   createDbPluginRuntimeStore,
   createDeferredPluginRuntimeStore,
   createInMemoryPluginRuntimeStore
-} from "./plugin-runtime-store.js";
+} from "./persistence/plugin-runtime-store.js";
 import { CORE_TOKENS } from "../tokens/core-tokens.js";
-import { KernelHealthService } from "./kernel-health-service.js";
-import { KernelHealthHttpController } from "../http/kernel-health.controller.js";
-import { KERNEL_HEALTH_HTTP_CONTROLLER } from "../http/kernel-health.tokens.js";
-import { KernelSystemHttpController } from "../http/kernel-system.controller.js";
-import { KERNEL_SYSTEM_HTTP_CONTROLLER } from "../http/kernel-system.tokens.js";
-import { CmsSwaggerController } from "../http/cms-swagger.controller.js";
-import { KernelSystemService } from "./kernel-system-service.js";
-import { ConfiguredPluginDiscoveryService } from "./plugin-discovery-service.js";
+import { KernelHealthService } from "./system/kernel-health-service.js";
+import { KernelHealthHttpController } from "../http/health/kernel-health.controller.js";
+import { KERNEL_HEALTH_HTTP_CONTROLLER } from "../http/health/kernel-health.tokens.js";
+import { KernelSystemHttpController } from "../http/system/kernel-system.controller.js";
+import { KERNEL_SYSTEM_HTTP_CONTROLLER } from "../http/system/kernel-system.tokens.js";
+import { CmsSwaggerController } from "../http/swagger/cms-swagger.controller.js";
+import { KernelSystemService } from "./system/kernel-system-service.js";
+import { ConfiguredPluginDiscoveryService } from "./plugin-discovery/plugin-discovery-service.js";
 
 const CMS_STARTER_SWAGGER_CONFIG_TOKEN = createToken<CmsSwaggerUiConfig>(
   "CMS_STARTER_SWAGGER_CONFIG"

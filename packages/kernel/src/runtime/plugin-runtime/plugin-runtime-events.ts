@@ -1,4 +1,4 @@
-import type { PluginRuntimeEvent } from "../contracts/plugin-runtime.js";
+import type { PluginRuntimeEvent } from "../../contracts/plugin-runtime.js";
 
 export interface PluginRuntimeEventLogOptions {
   bufferSize?: number;

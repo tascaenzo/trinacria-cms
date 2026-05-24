@@ -1,13 +1,10 @@
 import { defineModule, factoryProvider } from "@trinacria/core";
 import { httpProvider } from "@trinacria/http";
-import { CORE_TOKENS } from "../tokens/core-tokens.js";
-import { KernelHealthService } from "../runtime/kernel-health-service.js";
+import { CORE_TOKENS } from "../../tokens/core-tokens.js";
+import { KernelHealthService } from "../../runtime/system/kernel-health-service.js";
 import { KERNEL_HEALTH_HTTP_CONTROLLER } from "./kernel-health.tokens.js";
 import { KernelHealthHttpController } from "./kernel-health.controller.js";
 
-/**
- * Trinacria module exposing `/health` and `/health/dependencies`.
- */
 export const KernelHealthHttpModule = defineModule({
   name: "KernelHealthHttpModule",
   providers: [

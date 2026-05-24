@@ -1,11 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { PluginRuntimeRecord, PluginState } from "../src/contracts/plugin-runtime.js";
-import {
-  describeAvailableOperations,
-  InMemoryPluginRuntime,
-  KernelSystemService
-} from "../src/runtime/index.js";
+import { InMemoryPluginRuntime, KernelSystemService } from "../src/runtime/index.js";
+import { describeAvailableOperations } from "../src/runtime/plugin-runtime/plugin-runtime-operations.js";
 
 test("KernelSystemService exposes operational plugin snapshots", () => {
   const service = new KernelSystemService(

@@ -1,5 +1,5 @@
-import type { PluginRuntimeRecord, PluginState } from "../contracts/plugin-runtime.js";
-import { PluginStateTransitionError } from "../errors/plugin-errors.js";
+import type { PluginRuntimeRecord, PluginState } from "../../contracts/plugin-runtime.js";
+import { PluginStateTransitionError } from "../../errors/plugin-errors.js";
 
 export const ALLOWED_PLUGIN_STATE_TRANSITIONS: Readonly<
   Record<PluginState, readonly PluginState[]>

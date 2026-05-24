@@ -1,5 +1,5 @@
-import type { PluginRuntimeRecord } from "../contracts/plugin-runtime.js";
-import type { PersistedPluginRuntimeRecord } from "../contracts/plugin-runtime-store.js";
+import type { PluginRuntimeRecord } from "../../contracts/plugin-runtime.js";
+import type { PersistedPluginRuntimeRecord } from "../../contracts/plugin-runtime-store.js";
 import {
   createPluginStatusReason,
   normalizePersistedPluginState

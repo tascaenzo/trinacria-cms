@@ -3,17 +3,17 @@ import {
   parsePathParam,
   parseQueryNumber,
   toOpenApiSchema
-} from "./api-http-utils.js";
-import { apiError } from "../contracts/api-contract.js";
-import type { KernelAdminRouteGuard } from "../contracts/kernel-admin-route-guard.js";
+} from "../api-http-utils.js";
+import { apiError } from "../../contracts/api-contract.js";
+import type { KernelAdminRouteGuard } from "../../contracts/kernel-admin-route-guard.js";
 import { HttpController, response, type HttpContext } from "@trinacria/http";
-import type { KernelSystemService } from "../runtime/kernel-system-service.js";
+import type { KernelSystemService } from "../../runtime/system/kernel-system-service.js";
 import {
   PluginDependencyError,
   PluginLifecycleError,
   PluginRuntimeError,
   PluginStateTransitionError
-} from "../errors/plugin-errors.js";
+} from "../../errors/plugin-errors.js";
 import {
   GetInstalledPluginResponseSchema,
   ListCapabilitiesResponseSchema,
@@ -28,10 +28,6 @@ import {
 
 const responder = createPluginApiResponder("kernel");
 
-/**
- * Built-in kernel HTTP controller exposing runtime discovery for SDKs and
- * operational tooling.
- */
 export class KernelSystemHttpController extends HttpController {
   constructor(
     private readonly system: KernelSystemService,

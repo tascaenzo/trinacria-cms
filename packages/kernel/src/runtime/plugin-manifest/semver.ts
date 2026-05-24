@@ -107,11 +107,6 @@ function isValidComparator(comparator: string): boolean {
   return parseVersion(target) !== null;
 }
 
-/**
- * Minimal semver matcher used by core manifest compatibility checks.
- * Supports exact, inequalities, caret, tilde, wildcard, AND ranges,
- * and OR groups with `||`.
- */
 export function satisfiesVersion(version: string, range: string): boolean {
   const normalizedRange = range.trim();
   if (!normalizedRange || normalizedRange === "*") return true;
@@ -130,16 +125,10 @@ export function satisfiesVersion(version: string, range: string): boolean {
   );
 }
 
-/**
- * Returns true when a string is a valid strict semver.
- */
 export function isValidVersion(value: string): boolean {
   return parseVersion(value.trim()) !== null;
 }
 
-/**
- * Returns true when a semver range is syntactically valid for this matcher.
- */
 export function isValidVersionRange(range: string): boolean {
   const normalizedRange = range.trim();
   if (!normalizedRange || normalizedRange === "*") return true;

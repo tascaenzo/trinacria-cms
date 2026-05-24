@@ -1,10 +1,10 @@
-import type { DbAdapter } from "../contracts/db-adapter.js";
+import type { DbAdapter } from "../../contracts/db-adapter.js";
 import type {
   PluginDependencyGraphSnapshot,
   PluginRuntime,
   PluginRuntimeRecord,
   PluginState
-} from "../contracts/plugin-runtime.js";
+} from "../../contracts/plugin-runtime.js";
 
 export interface KernelHealthServiceOptions {
   runtime: Pick<PluginRuntime, "list" | "describeDependencies">;
@@ -26,9 +26,6 @@ export interface KernelHealthSnapshot {
   issues: string[];
 }
 
-/**
- * Aggregates kernel runtime and persistence health into a single snapshot.
- */
 export class KernelHealthService {
   constructor(private readonly options: KernelHealthServiceOptions) {}
 

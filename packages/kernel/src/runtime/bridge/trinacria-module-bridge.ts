@@ -1,5 +1,5 @@
 import type { ModuleDefinition } from "@trinacria/core";
-import { PluginLifecycleError } from "../errors/plugin-errors.js";
+import { PluginLifecycleError } from "../../errors/plugin-errors.js";
 
 export interface TrinacriaModuleBridgeApp {
   registerModule(module: ModuleDefinition): Promise<void>;
@@ -7,15 +7,9 @@ export interface TrinacriaModuleBridgeApp {
   listModules(): string[];
 }
 
-/**
- * Bridge that maps CMS plugin module lifecycle to Trinacria runtime APIs.
- */
 export class TrinacriaModuleBridge {
   constructor(private readonly app: TrinacriaModuleBridgeApp) {}
 
-  /**
-   * Registers modules in order and rolls back already-registered ones on failure.
-   */
   async registerModules(
     pluginId: string,
     modules: readonly ModuleDefinition[]
@@ -40,9 +34,6 @@ export class TrinacriaModuleBridge {
     }
   }
 
-  /**
-   * Unregisters modules in reverse order and returns collected errors.
-   */
   async unregisterModules(
     _pluginId: string,
     modules: readonly ModuleDefinition[]
