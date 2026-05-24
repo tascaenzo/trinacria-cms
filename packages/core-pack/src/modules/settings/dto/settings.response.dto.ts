@@ -49,6 +49,9 @@ export const SettingDefinitionOpenApiSchema: Record<string, unknown> = {
     description: { type: "string" },
     schema: JsonValueOpenApiSchema,
     defaultValue: JsonValueOpenApiSchema,
+    visibility: { type: "string", enum: ["public", "admin", "internal"] },
+    mutable: { type: "boolean" },
+    secret: { type: "boolean" },
     status: { type: "string", enum: ["active", "disabled"] },
     createdAt: { type: "string", format: "date-time" },
     updatedAt: { type: "string", format: "date-time" }

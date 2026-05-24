@@ -341,6 +341,9 @@ export class CorePackSecurityProvisioningService implements PluginSecurityProvis
         description: setting.description,
         ...(setting.schema !== undefined ? { schema: setting.schema } : {}),
         ...(setting.defaultValue !== undefined ? { defaultValue: setting.defaultValue } : {}),
+        visibility: setting.visibility ?? "public",
+        mutable: setting.mutable ?? true,
+        secret: setting.secret ?? false,
         status: setting.status ?? "active"
       });
     }

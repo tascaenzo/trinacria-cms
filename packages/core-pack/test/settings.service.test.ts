@@ -53,6 +53,13 @@ test("SettingsService resolves defaults and explicit values", async () => {
 test("SettingsService masks secrets and enforces owner-only reveal", async () => {
   const service = createSettingsService();
 
+  await service.upsertDefinition({
+    requesterPluginId: "core-pack",
+    key: "core-pack:integrations:stripe_api_key",
+    secret: true,
+    status: "active"
+  });
+
   await service.upsertSecret({
     requesterPluginId: "core-pack",
     key: "core-pack:integrations:stripe_api_key",
@@ -94,6 +101,50 @@ test("SettingsService masks secrets and enforces owner-only reveal", async () =>
   await assertSettingsAccessError(
     () => service.exportPluginSettings("blog-pack", "core-pack"),
     "auth_forbidden_settings_owner_required"
+  );
+});
+
+test("SettingsService enforces definition policies for value and secret writes", async () => {
+  const service = createSettingsService();
+
+  await service.upsertDefinition({
+    requesterPluginId: "core-pack",
+    key: "core-pack:security:api_secret",
+    secret: true,
+    mutable: true,
+    status: "active"
+  });
+
+  await assert.rejects(
+    () =>
+      service.upsertValue({
+        requesterPluginId: "core-pack",
+        key: "core-pack:security:api_secret",
+        value: "plain"
+      }),
+    /secret and cannot be written via value endpoint/
+  );
+
+  await service.upsertSecret({
+    requesterPluginId: "core-pack",
+    key: "core-pack:security:api_secret",
+    plaintext: "encrypted-value"
+  });
+
+  await service.upsertDefinition({
+    requesterPluginId: "core-pack",
+    key: "core-pack:features:immutable_flag",
+    mutable: false,
+    status: "active"
+  });
+  await assert.rejects(
+    () =>
+      service.upsertValue({
+        requesterPluginId: "core-pack",
+        key: "core-pack:features:immutable_flag",
+        value: true
+      }),
+    /immutable/
   );
 });
 

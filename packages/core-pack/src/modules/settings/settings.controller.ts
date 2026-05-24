@@ -82,11 +82,12 @@ const ExportPluginSettingsPathParameters = [
 export class SettingsController extends HttpController {
   private readonly readAccessMiddleware: HttpMiddleware;
   private readonly pluginAuthMiddleware: HttpMiddleware;
+  private readonly adminOnlyMiddleware: HttpMiddleware;
 
   constructor(
     private readonly settings: SettingsService,
     auth: JwtAuthService,
-    pluginAuth: SettingsPluginAuthService
+    private readonly pluginAuth: SettingsPluginAuthService
   ) {
     super();
     this.readAccessMiddleware = createSettingsAccessMiddleware(auth, pluginAuth, {
@@ -96,6 +97,10 @@ export class SettingsController extends HttpController {
     this.pluginAuthMiddleware = createSettingsAccessMiddleware(auth, pluginAuth, {
       allowAdmin: false,
       allowPlugin: true
+    });
+    this.adminOnlyMiddleware = createSettingsAccessMiddleware(auth, pluginAuth, {
+      allowAdmin: true,
+      allowPlugin: false
     });
   }
 
@@ -335,6 +340,53 @@ export class SettingsController extends HttpController {
           }
         }
       })
+      .get("/v1/settings/observability", this.getObservability, {
+        middlewares: [this.adminOnlyMiddleware],
+        docs: {
+          summary: "Read settings observability snapshot",
+          description: "Admin-only operational counters for settings read/write/deny/error flows.",
+          tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
+          operationId: "getSettingsObservability",
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: {
+              description: "Observability counters",
+              schema: {
+                type: "object",
+                additionalProperties: false,
+                required: ["data"],
+                properties: {
+                  data: {
+                    type: "object",
+                    additionalProperties: false,
+                    required: ["reads", "writes", "denies", "errors", "pluginAuth"],
+                    properties: {
+                      reads: { type: "integer" },
+                      writes: { type: "integer" },
+                      denies: { type: "integer" },
+                      errors: { type: "integer" },
+                      pluginAuth: {
+                        type: "object",
+                        additionalProperties: false,
+                        required: ["successes", "failures", "replays"],
+                        properties: {
+                          successes: { type: "integer" },
+                          failures: { type: "integer" },
+                          replays: { type: "integer" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            401: {
+              description: "Admin authentication required",
+              schema: toOpenApiSchema(SettingsErrorResponseSchema)
+            }
+          }
+        }
+      })
       .build();
   }
 
@@ -348,7 +400,10 @@ export class SettingsController extends HttpController {
         limit: parseQueryNumber(ctx.query.limit),
         offset: parseQueryNumber(ctx.query.offset)
       });
-      const definitions = await this.settings.listDefinitions(query);
+      const definitions =
+        getSettingsAccessMode(ctx) === "admin"
+          ? await this.settings.listDefinitions(query)
+          : await this.settings.listDefinitionsForPlugin(getAuthenticatedPluginId(ctx), query);
       return responder.list(definitions, {
         limit: query.limit,
         offset: query.offset
@@ -366,7 +421,10 @@ export class SettingsController extends HttpController {
 
     try {
       const params = SettingKeyParamSchema.parse({ key });
-      const definition = await this.settings.getDefinitionByKey(params.key);
+      const definition =
+        getSettingsAccessMode(ctx) === "admin"
+          ? await this.settings.getDefinitionByKey(params.key)
+          : await this.settings.getDefinitionByKeyForPlugin(getAuthenticatedPluginId(ctx), params.key);
       if (!definition) {
         return responder.notFound(`Setting definition "${params.key}" not found`);
       }
@@ -385,6 +443,10 @@ export class SettingsController extends HttpController {
         key: payload.key,
         category: payload.category,
         description: payload.description,
+        status: payload.status,
+        visibility: payload.visibility,
+        mutable: payload.mutable,
+        secret: payload.secret,
         schema: readOptionalJsonField(ctx.body, "schema"),
         defaultValue: readOptionalJsonField(ctx.body, "defaultValue")
       });
@@ -402,7 +464,10 @@ export class SettingsController extends HttpController {
 
     try {
       const params = SettingKeyParamSchema.parse({ key });
-      const value = await this.settings.getResolvedValueByKey(params.key);
+      const value =
+        getSettingsAccessMode(ctx) === "admin"
+          ? await this.settings.getResolvedValueByKey(params.key)
+          : await this.settings.getResolvedValueForPlugin(getAuthenticatedPluginId(ctx), params.key);
       if (!value) {
         return responder.notFound(`Setting value "${params.key}" not found`);
       }
@@ -518,5 +583,12 @@ export class SettingsController extends HttpController {
     } catch (error) {
       return responder.fromError(error);
     }
+  };
+
+  private getObservability = async () => {
+    return responder.success({
+      ...this.settings.getObservabilitySnapshot(),
+      pluginAuth: this.pluginAuth.getObservabilitySnapshot()
+    });
   };
 }
