@@ -22,9 +22,14 @@ export class UsersRepository {
     const parsedInput = CreateUserInputSchema.parse(input);
 
     const now = new Date().toISOString();
+    const displayName =
+      parsedInput.displayName ||
+      `${parsedInput.firstName} ${parsedInput.lastName}`.trim();
     const record = {
       email: parsedInput.email,
-      displayName: parsedInput.displayName,
+      firstName: parsedInput.firstName,
+      lastName: parsedInput.lastName,
+      displayName: displayName || "Unknown User",
       status: "active" as const,
       createdAt: now,
       updatedAt: now
@@ -93,23 +98,15 @@ export class UsersRepository {
     const displayName =
       typeof normalized.displayName === "string" ? normalized.displayName.trim() : "";
     if (!displayName) {
-      normalized.displayName = formatLegacyUserDisplayName(normalized);
-    }
-
-    if ("firstName" in normalized) {
-      delete normalized.firstName;
-    }
-    if ("lastName" in normalized) {
-      delete normalized.lastName;
+      const fn =
+        typeof normalized.firstName === "string" ? normalized.firstName.trim() : "";
+      const ln =
+        typeof normalized.lastName === "string" ? normalized.lastName.trim() : "";
+      normalized.displayName = `${fn} ${ln}`.trim() || "Unknown User";
     }
 
     return UserRecordSchema.parse(normalized);
   }
 }
 
-function formatLegacyUserDisplayName(record: Record<string, unknown>): string {
-  const firstName = typeof record.firstName === "string" ? record.firstName.trim() : "";
-  const lastName = typeof record.lastName === "string" ? record.lastName.trim() : "";
-  const combined = `${firstName} ${lastName}`.trim();
-  return combined || "Unknown User";
-}
+

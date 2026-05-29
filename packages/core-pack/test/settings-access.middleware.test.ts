@@ -59,7 +59,8 @@ test("Settings access middleware authenticates signed plugin reads", async () =>
     pluginId: PLUGIN_ID,
     secret: PLUGIN_SECRET,
     method: "GET",
-    path
+    path,
+    body: undefined
   });
   const ctx = createContext({ method: "GET", url: path, headers });
 
@@ -95,7 +96,7 @@ test("Settings access middleware rejects missing credentials", async () => {
   });
 
   assert.ok(result);
-  assert.equal(result.status, 401);
+  assert.equal((result as { status?: number }).status, 401);
 });
 
 function createPluginAuthService() {

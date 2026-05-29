@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { DbAdapter, DbQuery, DbRepository } from "@trinacria-cms/kernel";
+import type { DbAdapter, DbQuery, DbRepository, NamespaceContext } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../src/plugin/core-pack.constants.js";
 import { PermissionsRepository } from "../src/modules/permissions/permissions.repository.js";
 import { RoleGrantsRepository } from "../src/modules/roles/grants/role-grants.repository.js";
@@ -156,8 +156,8 @@ function createFakeDbAdapter(): DbAdapter {
   });
 
   return {
-    repository(entityName, context) {
-      return repository(`${context.pluginId}:${entityName}`);
+    repository<TData>(entityName: string, context: NamespaceContext): DbRepository<TData> {
+      return repository(`${context.pluginId}:${entityName}`) as unknown as DbRepository<TData>;
     },
     async beginTransaction() {
       return {

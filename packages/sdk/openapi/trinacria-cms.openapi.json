@@ -6451,6 +6451,16 @@
                               "minLength": 1,
                               "maxLength": 120
                             },
+                            "firstName": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 60
+                            },
+                            "lastName": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 60
+                            },
                             "status": {
                               "type": "string",
                               "enum": ["active", "suspended"]
@@ -6468,14 +6478,22 @@
                             "id",
                             "email",
                             "displayName",
+                            "firstName",
+                            "lastName",
                             "status",
                             "createdAt",
                             "updatedAt"
                           ],
                           "additionalProperties": false
+                        },
+                        "envWritten": {
+                          "type": "boolean"
+                        },
+                        "dbConnected": {
+                          "type": "boolean"
                         }
                       },
-                      "required": ["status", "adminUser"],
+                      "required": ["status", "adminUser", "envWritten", "dbConnected"],
                       "additionalProperties": false
                     },
                     "meta": {
@@ -6540,22 +6558,75 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "mongoHost": {
+                    "type": "string"
+                  },
+                  "mongoPort": {
+                    "type": "string"
+                  },
+                  "mongoDatabase": {
+                    "type": "string"
+                  },
+                  "mongoUsername": {
+                    "type": "string"
+                  },
+                  "mongoPassword": {
+                    "type": "string"
+                  },
+                  "mongoAuthSource": {
+                    "type": "string"
+                  },
+                  "firstName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                  },
                   "email": {
                     "type": "string",
                     "format": "email"
-                  },
-                  "displayName": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 120
                   },
                   "password": {
                     "type": "string",
                     "minLength": 10,
                     "maxLength": 200
+                  },
+                  "confirmPassword": {
+                    "type": "string",
+                    "minLength": 10,
+                    "maxLength": 200
+                  },
+                  "siteName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "siteTagline": {
+                    "type": "string",
+                    "maxLength": 160
+                  },
+                  "locale": {
+                    "type": "string",
+                    "pattern": "^[a-z]{2}(-[A-Z]{2})?$"
+                  },
+                  "timezone": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 120
                   }
                 },
-                "required": ["email", "displayName", "password"],
+                "required": [
+                  "firstName",
+                  "lastName",
+                  "email",
+                  "password",
+                  "confirmPassword",
+                  "siteName"
+                ],
                 "additionalProperties": false
               }
             }

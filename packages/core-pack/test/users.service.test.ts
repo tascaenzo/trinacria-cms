@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { DbAdapter, DbQuery, DbRepository } from "@trinacria-cms/kernel";
+import type { DbAdapter, DbQuery, DbRepository, NamespaceContext } from "@trinacria-cms/kernel";
 import { UsersRepository } from "../src/modules/users/users.repository.js";
 import { UsersService } from "../src/modules/users/users.service.js";
 
@@ -10,6 +10,8 @@ test("UsersService creates and fetches users", async () => {
 
   const created = await service.createUser({
     email: "Alice@example.com",
+    firstName: "Alice",
+    lastName: "Smith",
     displayName: "Alice Smith"
   });
 
@@ -28,6 +30,8 @@ test("UsersService prevents duplicate email in plugin namespace", async () => {
 
   await service.createUser({
     email: "alice@example.com",
+    firstName: "Alice",
+    lastName: "Smith",
     displayName: "Alice Smith"
   });
 
@@ -35,6 +39,8 @@ test("UsersService prevents duplicate email in plugin namespace", async () => {
     async () =>
       service.createUser({
         email: "alice@example.com",
+        firstName: "Alice",
+        lastName: "Johnson",
         displayName: "Alice Johnson"
       }),
     /already exists/
@@ -47,10 +53,14 @@ test("UsersService updates user status and lists users", async () => {
 
   const first = await service.createUser({
     email: "a@example.com",
+    firstName: "A",
+    lastName: "One",
     displayName: "A One"
   });
   await service.createUser({
     email: "b@example.com",
+    firstName: "B",
+    lastName: "Two",
     displayName: "B Two"
   });
 
@@ -120,8 +130,8 @@ function createFakeDbAdapter(): DbAdapter {
   });
 
   return {
-    repository(entityName, context) {
-      return repository(`${context.pluginId}:${entityName}`);
+    repository<TData>(entityName: string, context: NamespaceContext): DbRepository<TData> {
+      return repository(`${context.pluginId}:${entityName}`) as unknown as DbRepository<TData>;
     },
     async beginTransaction() {
       return {

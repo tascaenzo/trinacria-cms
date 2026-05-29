@@ -30,7 +30,10 @@ export const InstallationStatusSchema = s.object(
   {
     installed: s.boolean(),
     installedAt: s.dateTimeString().optional(),
-    adminUserId: s.string({ trim: true, minLength: 1 }).optional()
+    adminUserId: s.string({ trim: true, minLength: 1 }).optional(),
+    envFilePresent: s.boolean(),
+    dbConfigured: s.boolean(),
+    envFilePath: s.string({ trim: true, minLength: 1 })
   },
   { strict: true }
 );
@@ -63,9 +66,6 @@ export const InstallationBootstrapResponseSchema = s.object(
   { strict: true }
 );
 
-/**
- * OpenAPI response schema for installation error responses.
- */
 export const InstallationErrorResponseSchema = s.object(
   {
     error: InstallationApiErrorSchema,

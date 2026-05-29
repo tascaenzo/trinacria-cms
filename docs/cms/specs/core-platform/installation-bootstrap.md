@@ -5,24 +5,93 @@
 - Milestone: `M4.0 - Core Platform Specifications`
 - Stato: `draft`
 - Scope: low-level specification
-- Ultimo aggiornamento: `2026-05-22`
+- Ultimo aggiornamento: `2026-05-28`
 
 ## Decisione
 
-Il bootstrap crea una baseline CMS sicura e idempotente: install state, admin
-user, ruoli, permission, settings baseline, API keys iniziali se richieste.
+Il bootstrap crea una baseline CMS sicura e idempotente: admin user, ruoli,
+permission, settings baseline.
+
+MongoDB deve essere configurato manualmente dall'operatore tramite file `.env`
+prima di avviare il wizard di installazione. Se il database non e configurato,
+il backoffice mostra una guida per il setup del `.env` e chiede il riavvio.
+
+L'installazione e un flusso in 2 step (Sito + Admin) che invia i dati a
+`POST /v1/install/bootstrap`. Il backend presuppone che MongoDB sia gia
+raggiungibile (connesso all'avvio via dotenv).
+
+L'app puo avviarsi in **setup mode** (senza MongoDB) se:
+- Il file `.env` non esiste
+- Le variabili `MONGO_*` non sono configurate
+- La connessione MongoDB fallisce all'avvio
+
+In setup mode, solo gli endpoint di installazione sono accessibili.
 
 ## Responsabilita
 
 | Area              | Owner          | Responsabilita                  |
 | ----------------- | -------------- | ------------------------------- |
+| Setup mode        | `kernel`       | Avvio senza MongoDB             |
 | Install state     | `core-pack`    | Stato installazione             |
 | Admin user        | `core-pack`    | Primo utente amministratore     |
 | Baseline security | `core-pack`    | ruoli/permission default        |
 | Runtime bootstrap | `kernel`       | start app e plugin provisioning |
 | UI bootstrap      | `admin-kernel` | pagina installazione            |
+| Guida .env        | `admin-kernel` | Setup `.env` se non configurato |
+
+## Flusso di installazione
+
+### Setup mode (pre-installazione)
+
+```
+1. App avviata → tenta connessione MongoDB
+2. Se connessione fallisce o .env non configurato:
+   a. HTTP server parte comunque in setup mode
+   b. Tutti gli endpoint tranne /v1/install/* return 503 (Service Unavailable)
+   c. GET /v1/install/status → { installed: false, envFilePresent: false, dbConfigured: false }
+3. Se connessione OK ma installed = false:
+   a. HTTP server parte normalmente
+   b. Wizard di installazione mostrato (2 step: Sito + Admin)
+```
+
+### Guida .env (se database non configurato)
+
+```
+1. GET /v1/install/status → envFilePresent == false || dbConfigured == false
+2. Backoffice mostra InstallationDatabaseGuidePage:
+   a. Istruzioni per creare/aggiornare .env
+   b. Percorso del file .env evidenziato
+   c. "Riavvia l'applicazione dopo aver configurato il file"
+3. Operatore configura .env, riavvia l'app
+4. Al nuovo avvio, GET /v1/install/status → envFilePresent == true && dbConfigured == true
+5. Backoffice mostra InstallationBootstrapPage
+```
+
+### Bootstrap completo (POST /v1/install/bootstrap)
+
+```
+1. Validazione input
+2. Provisioning baseline security (ruoli, permessi)
+3. Creazione admin user (firstName, lastName, email)
+4. Hashing password e salvataggio credenziali locali
+5. Assegnazione ruolo admin
+6. Salvataggio settings sito (siteName, tagline, locale, timezone)
+7. Mark installed = true
+8. Return { status, adminUser }
+```
+
+### Dopo installazione
+
+```
+1. POST /v1/install/bootstrap → 409 (gia installato)
+2. GET /v1/install/status → { installed: true, dbConnected: true }
+3. App funziona normalmente
+4. Riavvio futuro → legge .env, connette MongoDB, avvia normalmente
+```
 
 ## Modello dati
+
+### Installation State
 
 ```ts
 export interface InstallationStateDocument {
@@ -36,154 +105,140 @@ export interface InstallationStateDocument {
 }
 ```
 
-## Contratti TypeScript target
+### Input DTO (InstallBootstrapInput)
 
 ```ts
-export interface InstallationService {
-  getState(): Promise<InstallationState>;
-  install(input: InstallCmsInput): Promise<InstallationResult>;
-}
+export interface InstallBootstrapInput {
+  // Admin account
+  firstName: string;          // 1-60 chars
+  lastName: string;           // 1-60 chars
+  email: string;              // email validata
+  password: string;           // 10-200 chars
+  confirmPassword: string;    // deve matchare password
 
-export interface InstallCmsInput {
-  adminEmail: string;
-  adminPassword: string;
-  displayName: string;
-  siteName?: string;
-  locale?: string;
-  timezone?: string;
+  // Site settings
+  siteName: string;           // 1-120 chars
+  siteTagline?: string;       // max 160 chars
+  locale?: string;            // pattern: "^[a-z]{2}(-[A-Z]{2})?$"
+  timezone?: string;          // IANA timezone, 3-120 chars
 }
 ```
 
-## API HTTP target
-
-| Method | Path                     | Auth                  |
-| ------ | ------------------------ | --------------------- |
-| `GET`  | `/v1/installation/state` | none                  |
-| `POST` | `/v1/installation`       | none if not installed |
-
-`POST /v1/installation` deve rifiutare richieste se `installed = true`.
-
-## DTO request/response
+### Response DTO
 
 ```ts
-export interface InstallationStateDto {
-  installed: boolean;
-  installedAt?: string;
-  corePackVersion: string;
-}
-
-export interface InstallCmsRequestDto {
-  adminEmail: string;
-  adminPassword: string;
-  displayName: string;
-  siteName?: string;
-  locale?: string;
-  timezone?: string;
+export interface InstallationBootstrapResult {
+  status: InstallationStatus;
+  adminUser: UserRecord;
 }
 ```
+
+### User Record (aggiornato)
+
+```ts
+export interface UserRecord {
+  id: string;
+  firstName: string;
+  lastName: string;
+  displayName: string;        // calcolato: "${firstName} ${lastName}"
+  email: string;
+  status: "active" | "suspended";
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+## API HTTP
+
+| Method | Path                    | Auth  | Setup Mode |
+| ------ | ----------------------- | ----- | ---------- |
+| `GET`  | `/v1/install/status`    | none  | pubblico   |
+| `POST` | `/v1/install/bootstrap` | none  | pubblico   |
+
+`GET /v1/install/status` ritorna anche `dbConnected` in setup mode.
 
 ## Storage Mongo
 
 Collections:
 
-- `cms_core_installation_state`
-- `cms_core_local_credentials`
-- users/roles/settings collections del `core-pack`
+- `core-pack__installation_state`
+- `core-pack__local_credentials`
+- `core-pack__users`
+- `core-pack__user_roles`
+- `core-pack__roles`
+- `core-pack__permissions`
+- `core-pack__settings_definitions`
+- `core-pack__settings_values`
 
 Indici:
 
-| Collection                    | Index           | Unique |
-| ----------------------------- | --------------- | ------ |
-| `cms_core_installation_state` | `{ id: 1 }`     | yes    |
-| `cms_core_local_credentials`  | `{ userId: 1 }` | yes    |
+| Collection                       | Index            | Unique |
+| -------------------------------- | ---------------- | ------ |
+| `core-pack__installation_state`  | `{ id: 1 }`      | yes    |
+| `core-pack__local_credentials`   | `{ userId: 1 }`  | yes    |
+| `core-pack__users`               | `{ email: 1 }`   | yes    |
 
 ## Security e permission
 
+### Setup mode
+
+- Solo endpoint di installazione sono pubblici
+- Ogni altra richiesta → 503
+- Nessun dato sensibile esposto
+
 ### Prima dell'installazione
 
-- `GET /v1/installation/state` e pubblico (nessuna auth richiesta).
-- `POST /v1/installation` e pubblico solo se `installed = false`.
+- `GET /v1/install/status` pubblico
+- `POST /v1/install/bootstrap` pubblico solo se `installed = false`
 
 ### Dopo installazione
 
-- `POST /v1/installation` disabilitato (restituisce 409).
-- `GET /v1/installation/state` rimane pubblico (solo stato, nessun dato sensibile).
-- Bootstrap admin ha ruolo `admin` con tutte le permission core.
-- Password salvata solo come hash (bcrypt o Argon2).
-- Le API key (se generate) sono mostrate una sola volta al termine dell'installazione.
-
-### Regole
-
-1. L'installazione e idempotente per step interni ma l'endpoint mutativo non e ripetibile.
-2. Non e possibile re-installare senza reset esplicito del database.
-3. Il primo utente admin non puo essere eliminato via API.
-4. Ogni step dell'installazione produce audit.
-
-### Audit
-
-Ogni fase dell'installazione produce evento audit:
-
-- `{ phase: "admin_user" | "baseline_roles" | "baseline_settings" | "complete", success: boolean, error?: string }`
-
-## Eventi
-
-### Eventi di installazione
-
-| Nome canonico          | Owner     | Visibility | Delivery | Payload                                    | Quando                   |
-| ---------------------- | --------- | ---------- | -------- | ------------------------------------------ | ------------------------ |
-| `core.install.started` | core-pack | `audit`    | `sync`   | `{ corePackVersion, schemaVersion }`       | installazione iniziata   |
-| `core.install.done`    | core-pack | `audit`    | `sync`   | `{ userId, corePackVersion, installedAt }` | installazione completata |
-| `core.install.failed`  | core-pack | `audit`    | `sync`   | `{ phase, error }`                         | installazione fallita    |
-
-### Delivery e retry
-
-- Tutti `sync` (in-process).
-- Nessun retry automatico: se l'installazione fallisce, il sistema resta in stato `not installed` e puo ritentare.
-- Idempotency: ogni step interno e idempotente (upsert). L'endpoint POST /v1/installation non e idempotente per design.
-- Audit policy: tutti gli eventi di installazione sono persistiti in `cms_core_audit_events`.
+- `POST /v1/install/bootstrap` → 409
+- `GET /v1/install/status` rimane pubblico (solo stato)
+- Bootstrap admin ha ruolo `admin` con tutte le permission core
+- Password salvata solo come hash (scrypt)
 
 ## Errori
 
-| Code                         | HTTP | Quando                   |
-| ---------------------------- | ---- | ------------------------ |
-| `installation_already_done`  | 409  | installazione gia chiusa |
-| `installation_input_invalid` | 400  | input non valido         |
-| `installation_failed`        | 500  | bootstrap fallito        |
+| Code                          | HTTP | Quando                          |
+| ----------------------------- | ---- | ------------------------------- |
+| `installation_already_done`   | 409  | installazione gia chiusa        |
+| `installation_input_invalid`  | 400  | input non valido                |
+| `installation_failed`         | 500  | bootstrap fallito               |
+| `password_mismatch`           | 400  | password e confirmPassword non coincidono |
 
 ## Lifecycle
 
-1. verifica non installato
-2. crea admin user
-3. crea roles/permission baseline
-4. crea settings baseline
-5. marca installed
-6. audit
-
-Operazione idempotente per step interni, ma endpoint mutativo non ripetibile una
-volta marcato installed.
+1. Avvio app → setup mode se DB non raggiungibile
+2. Se env non configurato → guida .env → riavvio
+3. GET /v1/install/status → verifica stato
+4. POST /v1/install/bootstrap con dati sito + admin
+5. Creazione admin user (firstName + lastName → displayName)
+6. Creazione ruoli/permission baseline
+7. Salvataggio settings sito
+8. Mark installed
+9. Audit eventi
 
 ## Compatibilita e versioning
 
-- `schemaVersion` permette evoluzione bootstrap. Migrazioni successive non devono riaprire installazione.
-- Il `InstallCmsInput` DTO puo ricevere nuovi campi opzionali senza breaking.
-- Rimuovere campi obbligatori dall'input di installazione e breaking.
-- La struttura `InstallationStateDocument` puo evolvere con nuovi campi.
-- I baseline roles/permissions creati durante l'installazione possono essere estesi in versioni future.
+- `schemaVersion` permette evoluzione bootstrap
+- `InstallBootstrapInput` puo ricevere nuovi campi opzionali senza breaking
+- `UserRecord` puo evolvere con nuovi campi (backward compatibile)
+- Il formato `.env` e compatibile con docker-compose e Node --env-file
+
+## Dipendenze
+
+- `dotenv` (npm): lettura .env all'avvio
 
 ## Acceptance criteria
 
-- stato installazione chiaro
-- endpoint e DTO definiti
-- bootstrap baseline definito
-- sicurezza primo setup esplicita
-
-## Out of scope
-
-- wizard multi-step complesso
-- recovery password admin
-- tenant bootstrap
-
-## Gap rispetto al codice attuale
-
-- Modulo installation esiste.
-- Va allineato con configuration registry e audit event bus.
+- [ ] App parte in setup mode senza MongoDB
+- [ ] Se env non configurato, guida .env mostrata con richiesta riavvio
+- [ ] Dopo setup .env e riavvio, wizard 2 step (Sito + Admin) mostrato
+- [ ] Form installazione raccoglie solo sito + admin
+- [ ] .env non viene scritto dal wizard (gia presente)
+- [ ] Dopo installazione, app funziona senza riavvio
+- [ ] Al riavvio successivo, legge .env e parte normalmente
+- [ ] `displayName` calcolato da firstName + lastName
+- [ ] Settings sito persistiti e leggibili
+- [ ] Installazione non ripetibile (409)

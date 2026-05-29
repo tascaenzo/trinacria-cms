@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { DbAdapter, DbQuery, DbRepository } from "@trinacria-cms/kernel";
+import type { DbAdapter, DbQuery, DbRepository, NamespaceContext } from "@trinacria-cms/kernel";
 import { LocalCredentialsRepository } from "../src/modules/installation/local-credentials.repository.js";
 import {
   InstallationAlreadyCompletedError,
@@ -36,14 +36,18 @@ test("InstallationService bootstraps admin user and local credentials", async ()
 
   const result = await runtime.service.bootstrap({
     email: "admin@example.com",
-    displayName: "CMS Admin",
-    password: "StrongerPass123!"
+    firstName: "CMS",
+    lastName: "Admin",
+    confirmPassword: "StrongerPass123!",
+    password: "StrongerPass123!",
+    siteName: "My Site"
   });
 
   assert.equal(result.status.installed, true);
   assert.equal(result.adminUser.email, "admin@example.com");
+  assert.equal(result.adminUser.firstName, "CMS");
+  assert.equal(result.adminUser.lastName, "Admin");
   assert.equal(result.adminUser.displayName, "CMS Admin");
-  assert.equal(result.adminUser.status, "active");
   assert.equal(result.status.adminUserId, result.adminUser.id);
 
   const state = await runtime.installationState.get();
@@ -72,20 +76,43 @@ test("InstallationService blocks bootstrap when installation is already complete
 
   await runtime.service.bootstrap({
     email: "admin@example.com",
-    displayName: "CMS Admin",
-    password: "StrongerPass123!"
+    firstName: "CMS",
+    lastName: "Admin",
+    confirmPassword: "StrongerPass123!",
+    password: "StrongerPass123!",
+    siteName: "My Site"
   });
 
   await assert.rejects(
     async () =>
       runtime.service.bootstrap({
         email: "another-admin@example.com",
-        displayName: "Another Admin",
-        password: "AnotherStrongPass123!"
+        firstName: "Another",
+        lastName: "Admin",
+        confirmPassword: "AnotherStrongPass123!",
+        password: "AnotherStrongPass123!",
+        siteName: "My Site"
       }),
     (error) =>
       error instanceof InstallationAlreadyCompletedError &&
       error.code === "installation_already_completed"
+  );
+});
+
+test("InstallationService rejects password mismatch", async () => {
+  const runtime = createInstallationRuntime();
+
+  await assert.rejects(
+    () =>
+      runtime.service.bootstrap({
+        email: "admin@example.com",
+        firstName: "CMS",
+        lastName: "Admin",
+        password: "StrongerPass123!",
+        confirmPassword: "DifferentPass123!",
+        siteName: "My Site"
+      }),
+    { code: "password_mismatch" }
   );
 });
 
@@ -137,7 +164,8 @@ function createInstallationRuntime(): InstallationRuntime {
       users,
       userAccess,
       securityProvisioning,
-      passwordHashing
+      passwordHashing,
+      settings
     ),
     installationState,
     localCredentials,
@@ -202,8 +230,8 @@ function createFakeDbAdapter(): DbAdapter {
   });
 
   return {
-    repository(entityName, context) {
-      return repository(`${context.pluginId}:${entityName}`);
+    repository<TData>(entityName: string, context: NamespaceContext): DbRepository<TData> {
+      return repository(`${context.pluginId}:${entityName}`) as unknown as DbRepository<TData>;
     },
     async beginTransaction() {
       return {

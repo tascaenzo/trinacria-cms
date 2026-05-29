@@ -14,11 +14,12 @@ import {
 export interface CorePackMongoModuleOptions {
   uri: string;
   options?: ConnectOptions;
+  allowStartupWithoutDb?: boolean;
 }
 
-const CORE_PACK_MONGO_OPTIONS_TOKEN =
+export const CORE_PACK_MONGO_OPTIONS_TOKEN =
   createToken<CorePackMongoModuleOptions>("CORE_PACK_MONGO_OPTIONS");
-const CORE_PACK_MONGO_CONNECTION_TOKEN = createToken<CorePackMongoConnection>(
+export const CORE_PACK_MONGO_CONNECTION_TOKEN = createToken<CorePackMongoConnection>(
   "CORE_PACK_MONGO_CONNECTION"
 );
 
@@ -26,10 +27,20 @@ const CORE_PACK_MONGO_CONNECTION_TOKEN = createToken<CorePackMongoConnection>(
  * Manages mongoose connection lifecycle for core-pack infrastructure.
  */
 class CorePackMongoConnection {
-  constructor(private readonly config: CorePackMongoModuleOptions) {}
+  constructor(private config: CorePackMongoModuleOptions) {}
 
   async onInit(): Promise<void> {
-    await mongoose.connect(this.config.uri, this.config.options);
+    try {
+      await mongoose.connect(this.config.uri, this.config.options);
+    } catch (error: unknown) {
+      if (!this.config.allowStartupWithoutDb) {
+        throw error;
+      }
+      console.warn(
+        "[core-pack] MongoDB unavailable at startup; continuing in installation mode:",
+        error instanceof Error ? error.message : error
+      );
+    }
   }
 
   async onDestroy(): Promise<void> {
@@ -40,6 +51,16 @@ class CorePackMongoConnection {
     return mongoose.connection as unknown as Parameters<
       typeof createMongoDbAdapter
     >[0]["connection"];
+  }
+
+  async reconnect(uri: string, options?: ConnectOptions): Promise<void> {
+    await mongoose.disconnect();
+    this.config = { uri, options: options ?? this.config.options };
+    await mongoose.connect(this.config.uri, this.config.options);
+  }
+
+  get configUri(): string {
+    return this.config.uri;
   }
 }
 

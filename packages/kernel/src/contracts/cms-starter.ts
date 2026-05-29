@@ -1,6 +1,6 @@
 import type { ModuleDefinition } from "@trinacria/core";
 import type { Provider } from "@trinacria/core";
-import type { OpenApiDocument } from "@trinacria/http";
+import type { HttpMiddleware, OpenApiDocument } from "@trinacria/http";
 import type {
   PluginDiscoveryService,
   PluginDiscoverySource,
@@ -15,6 +15,7 @@ import type { PluginRuntimeStore } from "./plugin-runtime-store.js";
 export interface CmsHttpConfig {
   host?: string;
   port?: number;
+  middlewares?: HttpMiddleware[];
   openApi?: {
     enabled?: boolean;
     jsonPath?: string;

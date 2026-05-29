@@ -29,9 +29,21 @@ export type AssignUserRoleResponse = {
 
 export type BootstrapInstallationRequest = {
   body: {
+  "mongoHost"?: string;
+  "mongoPort"?: string;
+  "mongoDatabase"?: string;
+  "mongoUsername"?: string;
+  "mongoPassword"?: string;
+  "mongoAuthSource"?: string;
+  "firstName": string;
+  "lastName": string;
   "email": string;
-  "displayName": string;
   "password": string;
+  "confirmPassword": string;
+  "siteName": string;
+  "siteTagline"?: string;
+  "locale"?: string;
+  "timezone"?: string;
 };
 };
 
@@ -46,10 +58,14 @@ export type BootstrapInstallationResponse = {
   "id": string;
   "email": string;
   "displayName": string;
+  "firstName": string;
+  "lastName": string;
   "status": "active" | "suspended";
   "createdAt": string;
   "updatedAt": string;
 };
+  "envWritten": boolean;
+  "dbConnected": boolean;
 };
   "meta"?: {
   "pluginId"?: "core-pack";

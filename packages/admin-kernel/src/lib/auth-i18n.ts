@@ -92,6 +92,15 @@ export function getLocalizedInstallationError(
   if (error.code === "installation_already_completed" || error.status === 409) {
     return t("auth.installation.error.already_completed");
   }
+  if (error.code === "password_mismatch") {
+    return t("auth.installation.error.password_mismatch");
+  }
+  if (error.code === "db_connection_failed") {
+    return t("auth.installation.error.db_connection_failed");
+  }
+  if (error.code === "env_write_failed") {
+    return t("auth.installation.error.env_write_failed");
+  }
   if (error.code === "validation_error") {
     return getSpecificErrorMessage(error) ?? t("auth.installation.error.generic");
   }

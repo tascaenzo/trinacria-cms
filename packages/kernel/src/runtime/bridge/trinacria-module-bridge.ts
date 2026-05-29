@@ -24,6 +24,8 @@ export class TrinacriaModuleBridge {
       }
       return registered;
     } catch (error) {
+      // Surface the original error in dev logs before lifecycle wrapping.
+      console.error(`[kernel:module-bridge] Failed registering modules for "${pluginId}"`, error);
       const rollbackErrors = await this.unregisterModules(pluginId, registered);
       throw new PluginLifecycleError(`Module registration failed for plugin "${pluginId}"`, {
         pluginId,
@@ -57,7 +59,13 @@ export class TrinacriaModuleBridge {
   }
 
   private errorToString(error: unknown): string {
-    if (error instanceof Error) return `${error.name}: ${error.message}`;
+    if (error instanceof Error) {
+      const cause =
+        "cause" in error && error.cause instanceof Error
+          ? ` | cause: ${error.cause.name}: ${error.cause.message}`
+          : "";
+      return `${error.name}: ${error.message}${cause}`;
+    }
     return String(error);
   }
 }

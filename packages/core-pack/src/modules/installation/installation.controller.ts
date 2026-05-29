@@ -1,6 +1,8 @@
 import {
+  apiError,
   createPluginApiResponder,
   HttpController,
+  response,
   toOpenApiSchema,
   type HttpContext
 } from "@trinacria-cms/kernel";
@@ -12,7 +14,9 @@ import {
   InstallationErrorResponseSchema,
   InstallationStatusResponseSchema
 } from "./dto/index.js";
-import type { InstallationService } from "./installation.service.js";
+import {
+  type InstallationService
+} from "./installation.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
 
@@ -41,7 +45,7 @@ export class InstallationController extends HttpController {
       })
       .post("/v1/install/bootstrap", this.bootstrap, {
         docs: {
-          summary: "Bootstrap CMS installation and create first admin",
+          summary: "Bootstrap CMS installation with site and admin account",
           tags: [CORE_PACK_OPENAPI_TAGS.INSTALLATION],
           operationId: "bootstrapInstallation",
           requestBody: {
@@ -52,6 +56,10 @@ export class InstallationController extends HttpController {
             200: {
               description: "Installation bootstrap completed",
               schema: toOpenApiSchema(InstallationBootstrapResponseSchema)
+            },
+            400: {
+              description: "Invalid input or password mismatch",
+              schema: toOpenApiSchema(InstallationErrorResponseSchema)
             },
             409: {
               description: "Installation already completed",

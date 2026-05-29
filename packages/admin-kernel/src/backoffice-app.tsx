@@ -28,6 +28,7 @@ import {
 } from "./lib/auth-i18n.js";
 import { I18nProvider, createTranslate, type I18nBundle } from "./lib/i18n.js";
 import { getSdkErrorDetails, toDisplayError, type SdkErrorDetails } from "./lib/sdk-errors.js";
+import { AuthScreenLayout } from "./components/auth-screen-layout.js";
 import { translateStatusLabel, translateSystemStateLabel } from "./lib/ui-translations.js";
 import type { BackofficeModule } from "./module.js";
 import { readRequiredString } from "./runtime/action-state.js";
@@ -35,6 +36,7 @@ import { buildAdminRegistry } from "./runtime/admin-route-runtime.js";
 import { clearBackofficeSession, persistBackofficeSession } from "./runtime/auth-session.js";
 import { cms } from "./runtime/cms-sdk.js";
 import { loadRuntimePluginInfo } from "./runtime/runtime-discovery.js";
+import { InstallationDatabaseGuidePage } from "./pages/installation-database-guide-page.js";
 import { InstallationBootstrapPage } from "./pages/installation-bootstrap-page.js";
 import { LoginPage } from "./pages/login-page.js";
 
@@ -46,7 +48,11 @@ interface HealthSnapshot {
 }
 
 type AuthenticatedUser = GetAuthenticatedUserResponse["data"];
-type InstallationStatus = GetInstallationStatusResponse["data"];
+type InstallationStatus = GetInstallationStatusResponse["data"] & {
+  envFilePresent?: boolean;
+  dbConfigured?: boolean;
+  envFilePath?: string;
+};
 type FormActionState<T> = {
   ok: boolean;
   error: SdkErrorDetails | null;
@@ -162,9 +168,15 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
 
       await cms.installation.bootstrapInstallation({
         body: {
+          firstName: readRequiredString(formData, "firstName"),
+          lastName: readRequiredString(formData, "lastName"),
           email,
-          displayName: readRequiredString(formData, "displayName"),
-          password
+          password,
+          confirmPassword: readRequiredString(formData, "confirmPassword"),
+          siteName: readRequiredString(formData, "siteName"),
+          siteTagline: formData.get("siteTagline")?.toString() || undefined,
+          locale: formData.get("locale")?.toString() || undefined,
+          timezone: formData.get("timezone")?.toString() || undefined,
         }
       });
 
@@ -202,7 +214,14 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
       return;
     }
 
-    setInstallationStatus({ installed: true });
+    setInstallationStatus((previous) => ({
+      installed: true,
+      envFilePresent: previous?.envFilePresent ?? true,
+      dbConfigured: previous?.dbConfigured ?? true,
+      envFilePath: previous?.envFilePath ?? ".env",
+      installedAt: previous?.installedAt,
+      adminUserId: previous?.adminUserId
+    }));
     completeLogin(installationActionState.data);
   }, [completeLogin, installationActionState]);
 
@@ -239,6 +258,8 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
       } catch (currentError) {
         if (isMounted) {
           setBootstrapError(getSdkErrorDetails(currentError));
+          clearBackofficeSession();
+          setAuthUser(null);
         }
       } finally {
         if (isMounted) {
@@ -412,7 +433,35 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
     );
   }
 
+  if (bootstrapError) {
+    return renderWithI18n(
+      <AuthScreenLayout
+        variant="minimal"
+        eyebrow={t("auth.installation.eyebrow")}
+        heroTitle={t("auth.installation.error.communication_title")}
+        heroBody={t("auth.installation.error.communication_body")}
+        formTitle={t("auth.installation.error.communication_form_title")}
+        formSummary={bootstrapError.message ?? ""}
+        formBadgeLabel={t("auth.installation.form_badge_label")}
+        formBadgeHint={t("auth.installation.form_badge_hint")}
+        heroMetrics={[]}
+        heroHighlights={[]}
+      >
+        <div className="grid gap-4 text-sm text-[color:var(--color-ink-muted)]">
+          <p>{t("auth.installation.error.communication_detail")}</p>
+        </div>
+      </AuthScreenLayout>
+    );
+  }
+
   if (installationStatus && !installationStatus.installed) {
+    const requiresDatabaseGuide = !installationStatus.envFilePresent || !installationStatus.dbConfigured;
+    if (requiresDatabaseGuide) {
+      return renderWithI18n(
+        <InstallationDatabaseGuidePage envFilePath={installationStatus.envFilePath ?? ".env"} />
+      );
+    }
+
     return renderWithI18n(
       <InstallationBootstrapPage
         action={submitInstallation}

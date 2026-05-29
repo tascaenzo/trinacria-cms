@@ -30,6 +30,7 @@ import {
   CORE_PACK_AUTH_USERS_REPOSITORY_TOKEN,
   CORE_PACK_JWT_AUTH_SERVICE_TOKEN
 } from "./auth.tokens.js";
+import { CorePackRuntimeConfigModule } from "../settings/config/runtime-config.module.js";
 import { RUNTIME_CONFIG_SERVICE_TOKEN } from "../settings/settings.tokens.js";
 
 const CORE_PACK_AUTH_INSTALLATION_STATE_REPOSITORY_TOKEN = createToken<InstallationStateRepository>(
@@ -49,6 +50,7 @@ const CORE_PACK_AUTH_PASSWORD_HASHING_SERVICE_TOKEN = createToken<PasswordHashin
  */
 export const CorePackAuthModule = defineModule({
   name: "CorePackAuthModule",
+  imports: [CorePackRuntimeConfigModule],
   providers: [
     factoryProvider(
       CORE_PACK_AUTH_ENTITY_REGISTRATION_TOKEN,

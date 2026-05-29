@@ -25,6 +25,7 @@
     "mongoose": ">=9"
   },
   "devDependencies": {
-    "@types/ioredis": "^4.28.10"
+    "@types/ioredis": "^4.28.10",
+    "@types/node": "^25.9.1"
   }
 }

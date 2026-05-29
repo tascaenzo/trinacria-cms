@@ -46,16 +46,9 @@ export class AuthUsersRepository {
     const displayName =
       typeof normalized.displayName === "string" ? normalized.displayName.trim() : "";
     if (!displayName) {
-      const firstName = typeof normalized.firstName === "string" ? normalized.firstName.trim() : "";
-      const lastName = typeof normalized.lastName === "string" ? normalized.lastName.trim() : "";
-      normalized.displayName = `${firstName} ${lastName}`.trim() || "Unknown User";
-    }
-
-    if ("firstName" in normalized) {
-      delete normalized.firstName;
-    }
-    if ("lastName" in normalized) {
-      delete normalized.lastName;
+      const fn = typeof normalized.firstName === "string" ? normalized.firstName.trim() : "";
+      const ln = typeof normalized.lastName === "string" ? normalized.lastName.trim() : "";
+      normalized.displayName = `${fn} ${ln}`.trim() || "Unknown User";
     }
 
     return UserRecordSchema.parse(normalized);

@@ -31,7 +31,7 @@ import {
   SETTINGS_AUDIT_REPOSITORY_TOKEN,
   SETTINGS_AUDIT_ENTITY_REGISTRATION_TOKEN
 } from "./settings.tokens.js";
-import { RuntimeConfigService } from "./config/runtime-config.service.js";
+import { CorePackRuntimeConfigModule } from "./config/runtime-config.module.js";
 import { SettingsAuditRepository } from "./audit/settings-audit.repository.js";
 import { SETTINGS_AUDIT_ENTITY } from "./schemas/settings-audit.schemas.js";
 
@@ -40,7 +40,7 @@ import { SETTINGS_AUDIT_ENTITY } from "./schemas/settings-audit.schemas.js";
  */
 export const CorePackSettingsModule = defineModule({
   name: "CorePackSettingsModule",
-  imports: [CorePackAuthModule],
+  imports: [CorePackAuthModule, CorePackRuntimeConfigModule],
   providers: [
     factoryProvider(
       SETTINGS_ENTITY_REGISTRATION_TOKEN,
@@ -85,10 +85,6 @@ export const CorePackSettingsModule = defineModule({
       (keyProvider, config) => new SettingsPluginAuthService(keyProvider, config),
       [SETTINGS_PLUGIN_AUTH_KEY_PROVIDER_TOKEN, RUNTIME_CONFIG_SERVICE_TOKEN]
     ),
-    classProvider(RUNTIME_CONFIG_SERVICE_TOKEN, RuntimeConfigService, [
-      CORE_TOKENS.DB_ADAPTER,
-      CORE_TOKENS.LOGGER
-    ]),
     classProvider(SETTINGS_SERVICE_TOKEN, SettingsService, [
       SETTINGS_DEFINITIONS_REPOSITORY_TOKEN,
       SETTINGS_VALUES_REPOSITORY_TOKEN,
@@ -112,7 +108,6 @@ export const CorePackSettingsModule = defineModule({
     SETTINGS_PLUGIN_AUTH_KEY_PROVIDER_TOKEN,
     SETTINGS_PLUGIN_AUTH_SERVICE_TOKEN,
     SETTINGS_SERVICE_TOKEN,
-    RUNTIME_CONFIG_SERVICE_TOKEN,
     SETTINGS_AUDIT_REPOSITORY_TOKEN,
     SETTINGS_AUDIT_ENTITY_REGISTRATION_TOKEN
   ]

@@ -13,6 +13,8 @@ import {
   CORE_PACK_SECURITY_PROVISIONING_SERVICE_TOKEN,
   CORE_PACK_USER_ACCESS_SERVICE_TOKEN
 } from "../security/security.tokens.js";
+import { CorePackSettingsModule } from "../settings/settings.module.js";
+import { SETTINGS_SERVICE_TOKEN } from "../settings/settings.tokens.js";
 import { CorePackUsersModule } from "../users/users.module.js";
 import { USERS_REPOSITORY_TOKEN } from "../users/users.tokens.js";
 import { InstallationController } from "./installation.controller.js";
@@ -38,7 +40,7 @@ import {
  */
 export const CorePackInstallationModule = defineModule({
   name: "CorePackInstallationModule",
-  imports: [CorePackUsersModule, CorePackSecurityModule, CorePackCacheModule],
+  imports: [CorePackUsersModule, CorePackSecurityModule, CorePackSettingsModule, CorePackCacheModule],
   providers: [
     factoryProvider(
       CORE_PACK_INSTALLATION_ENTITY_REGISTRATION_TOKEN,
@@ -63,7 +65,8 @@ export const CorePackInstallationModule = defineModule({
       USERS_REPOSITORY_TOKEN,
       CORE_PACK_USER_ACCESS_SERVICE_TOKEN,
       CORE_PACK_SECURITY_PROVISIONING_SERVICE_TOKEN,
-      PASSWORD_HASHING_SERVICE_TOKEN
+      PASSWORD_HASHING_SERVICE_TOKEN,
+      SETTINGS_SERVICE_TOKEN
     ]),
     httpProvider(CORE_PACK_INSTALLATION_CONTROLLER_TOKEN, InstallationController, [
       CORE_PACK_INSTALLATION_SERVICE_TOKEN

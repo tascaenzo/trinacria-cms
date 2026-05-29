@@ -12,7 +12,7 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
-    "dev": "npm run dev --workspaces --if-present",
+    "dev": "npm run dev:playground & npm run dev:backoffice & wait",
     "dev:playground": "npm run dev -w @trinacria-cms/playground",
     "dev:backoffice": "npm run dev -w @trinacria-cms/backoffice",
     "storybook": "npm run storybook -w @trinacria-cms/trinacria-ui",

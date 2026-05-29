@@ -1,4 +1,5 @@
-import { Button, Input } from "@trinacria-cms/trinacria-ui";
+import { useState } from "react";
+import { Button, Input, Select } from "@trinacria-cms/trinacria-ui";
 import { AuthScreenLayout } from "../components/auth-screen-layout.js";
 import { useI18n } from "../lib/i18n.js";
 
@@ -10,12 +11,254 @@ export interface InstallationBootstrapPageProps {
   action: (formData: FormData) => void;
 }
 
+type Step = "site" | "admin" | "review";
+type FormValues = {
+  siteName: string;
+  siteTagline: string;
+  locale: string;
+  timezone: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+};
+
+const STEPS: Step[] = ["site", "admin", "review"];
+
+const LOCALE_OPTIONS = [
+  { value: "en-US", label: "English (US)" },
+  { value: "it-IT", label: "Italiano" },
+  { value: "fr-FR", label: "Français" },
+  { value: "de-DE", label: "Deutsch" },
+  { value: "es-ES", label: "Español" },
+];
+
+const TIMEZONE_OPTIONS = [
+  { value: "UTC", label: "UTC" },
+  { value: "Europe/Rome", label: "Europe/Rome" },
+  { value: "Europe/Paris", label: "Europe/Paris" },
+  { value: "Europe/Berlin", label: "Europe/Berlin" },
+  { value: "Europe/London", label: "Europe/London" },
+  { value: "Europe/Madrid", label: "Europe/Madrid" },
+  { value: "America/New_York", label: "America/New_York" },
+  { value: "America/Chicago", label: "America/Chicago" },
+  { value: "America/Denver", label: "America/Denver" },
+  { value: "America/Los_Angeles", label: "America/Los_Angeles" },
+  { value: "Asia/Tokyo", label: "Asia/Tokyo" },
+  { value: "Asia/Shanghai", label: "Asia/Shanghai" },
+  { value: "Asia/Kolkata", label: "Asia/Kolkata" },
+];
+
+function getStepIndex(step: Step): number {
+  return STEPS.indexOf(step);
+}
+
 export function InstallationBootstrapPage({
   action,
   isSubmitting,
   state
 }: InstallationBootstrapPageProps) {
   const { t } = useI18n();
+  const [currentStep, setCurrentStep] = useState<Step>("site");
+  const [values, setValues] = useState<FormValues>({
+    siteName: "Trinacria CMS",
+    siteTagline: "Plugin-based editorial platform",
+    locale: "en-US",
+    timezone: "UTC",
+    firstName: "Admin",
+    lastName: "User",
+    email: "admin@example.com",
+    password: "admin12345!",
+    confirmPassword: "admin12345!"
+  });
+
+  const stepIndex = getStepIndex(currentStep);
+  const isFirstStep = currentStep === "site";
+  const isReviewStep = currentStep === "review";
+
+  function handleContinue() {
+    if (currentStep === "admin") {
+      setCurrentStep("review");
+    } else {
+      const nextIndex = getStepIndex(currentStep) + 1;
+      setCurrentStep(STEPS[nextIndex]);
+    }
+  }
+
+  function handleBack() {
+    if (currentStep === "review") {
+      setCurrentStep("admin");
+    } else {
+      const prevIndex = getStepIndex(currentStep) - 1;
+      setCurrentStep(STEPS[prevIndex]);
+    }
+  }
+
+  function setValue<K extends keyof FormValues>(key: K, next: FormValues[K]) {
+    setValues((previous) => ({
+      ...previous,
+      [key]: next
+    }));
+  }
+
+  function renderStepIndicator() {
+    return (
+      <div className="mb-6 flex items-center gap-2 text-xs font-medium text-[color:var(--color-ink-muted)]">
+        {STEPS.slice(0, -1).map((step, i) => {
+          const isActive = i === stepIndex;
+          const isDone = i < stepIndex;
+          return (
+            <span key={step} className="flex items-center gap-2">
+              {i > 0 && (
+                <span className={`h-px w-4 ${isDone ? "bg-[color:var(--color-accent)]" : "bg-[color:var(--color-border)]"}`} />
+              )}
+              <span
+                className={
+                  isActive
+                    ? "text-[color:var(--color-accent)]"
+                    : isDone
+                      ? "text-[color:var(--color-accent)]"
+                      : undefined
+                }
+              >
+                {isDone ? "✓" : i + 1}
+                {" "}
+                <span className="hidden sm:inline">{t(`auth.installation.step_${step}` as any)}</span>
+              </span>
+            </span>
+          );
+        })}
+      </div>
+    );
+  }
+
+  function renderSiteStep() {
+    return (
+      <div className="grid gap-4">
+        <Input
+          label={t("auth.installation.site_name_label")}
+          name="siteName"
+          value={values.siteName}
+          onChange={(event) => setValue("siteName", event.currentTarget.value)}
+          placeholder={t("auth.installation.site_name_default")}
+          required
+        />
+        <Input
+          label={t("auth.installation.site_tagline_label")}
+          name="siteTagline"
+          value={values.siteTagline}
+          onChange={(event) => setValue("siteTagline", event.currentTarget.value)}
+          placeholder={t("auth.installation.site_tagline_default")}
+        />
+        <Select
+          label={t("auth.installation.locale_label")}
+          name="locale"
+          value={values.locale}
+          onChange={(event) => setValue("locale", event.currentTarget.value)}
+        >
+          {LOCALE_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </Select>
+        <Select
+          label={t("auth.installation.timezone_label")}
+          name="timezone"
+          value={values.timezone}
+          onChange={(event) => setValue("timezone", event.currentTarget.value)}
+        >
+          {TIMEZONE_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </Select>
+      </div>
+    );
+  }
+
+  function renderAdminStep() {
+    return (
+      <div className="grid gap-4">
+        <div className="grid grid-cols-2 gap-3">
+          <Input
+            label={t("auth.installation.first_name_label")}
+            name="firstName"
+            value={values.firstName}
+            onChange={(event) => setValue("firstName", event.currentTarget.value)}
+            required
+          />
+          <Input
+            label={t("auth.installation.last_name_label")}
+            name="lastName"
+            value={values.lastName}
+            onChange={(event) => setValue("lastName", event.currentTarget.value)}
+            required
+          />
+        </div>
+        <Input
+          label={t("auth.installation.email_label")}
+          type="email"
+          name="email"
+          value={values.email}
+          onChange={(event) => setValue("email", event.currentTarget.value)}
+          autoComplete="email"
+          required
+        />
+        <Input
+          label={t("auth.installation.password_label")}
+          type="password"
+          name="password"
+          value={values.password}
+          onChange={(event) => setValue("password", event.currentTarget.value)}
+          autoComplete="new-password"
+          required
+        />
+        <Input
+          label={t("auth.installation.confirm_password_label")}
+          type="password"
+          name="confirmPassword"
+          value={values.confirmPassword}
+          onChange={(event) => setValue("confirmPassword", event.currentTarget.value)}
+          autoComplete="new-password"
+          required
+        />
+      </div>
+    );
+  }
+
+  function renderReviewStep() {
+    return (
+      <div className="grid gap-3 text-sm">
+        <input type="hidden" name="siteName" value={values.siteName} />
+        <input type="hidden" name="siteTagline" value={values.siteTagline} />
+        <input type="hidden" name="locale" value={values.locale} />
+        <input type="hidden" name="timezone" value={values.timezone} />
+        <input type="hidden" name="firstName" value={values.firstName} />
+        <input type="hidden" name="lastName" value={values.lastName} />
+        <input type="hidden" name="email" value={values.email} />
+        <input type="hidden" name="password" value={values.password} />
+        <input type="hidden" name="confirmPassword" value={values.confirmPassword} />
+        <div>
+          <p className="text-xs font-semibold text-[color:var(--color-ink-muted)] uppercase tracking-wide">
+            {t("auth.installation.step_site")}
+          </p>
+          <p className="mt-1">{values.siteName}</p>
+          {values.siteTagline && <p className="text-[color:var(--color-ink-muted)]">{values.siteTagline}</p>}
+          <p className="text-[color:var(--color-ink-muted)]">{values.locale} — {values.timezone}</p>
+        </div>
+        <div>
+          <p className="text-xs font-semibold text-[color:var(--color-ink-muted)] uppercase tracking-wide">
+            {t("auth.installation.step_admin")}
+          </p>
+          <p className="mt-1">{values.firstName} {values.lastName}</p>
+          <p className="text-[color:var(--color-ink-muted)]">{values.email}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <AuthScreenLayout
@@ -31,30 +274,11 @@ export function InstallationBootstrapPage({
       heroHighlights={[]}
     >
       <form className="grid gap-5" action={action}>
-        <div className="grid gap-4">
-          <Input
-            label={t("auth.installation.email_label")}
-            type="email"
-            name="email"
-            defaultValue="admin@example.com"
-            autoComplete="email"
-            required
-          />
-          <Input
-            label={t("auth.installation.display_name_label")}
-            name="displayName"
-            defaultValue="Admin User"
-            required
-          />
-          <Input
-            label={t("auth.installation.password_label")}
-            type="password"
-            name="password"
-            defaultValue="admin12345!"
-            autoComplete="new-password"
-            required
-          />
-        </div>
+        {renderStepIndicator()}
+
+        {currentStep === "site" && renderSiteStep()}
+        {currentStep === "admin" && renderAdminStep()}
+        {currentStep === "review" && renderReviewStep()}
 
         {state.error ? (
           <p
@@ -66,13 +290,40 @@ export function InstallationBootstrapPage({
           </p>
         ) : null}
 
-        <Button
-          type="submit"
-          disabled={isSubmitting}
-          className="h-11 w-full rounded-sm text-sm font-semibold"
-        >
-          {isSubmitting ? t("auth.installation.submitting") : t("auth.installation.submit")}
-        </Button>
+        <div className="flex items-center justify-between gap-3">
+          {!isFirstStep ? (
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={isSubmitting}
+              onClick={handleBack}
+              className="h-11 flex-1 rounded-sm text-sm font-semibold"
+            >
+              {t("auth.installation.back")}
+            </Button>
+          ) : (
+            <div />
+          )}
+
+          {!isReviewStep ? (
+            <Button
+              type="button"
+              disabled={isSubmitting}
+              onClick={handleContinue}
+              className="h-11 flex-1 rounded-sm text-sm font-semibold"
+            >
+              {t("auth.installation.continue")}
+            </Button>
+          ) : (
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="h-11 flex-1 rounded-sm text-sm font-semibold"
+            >
+              {isSubmitting ? t("auth.installation.submitting") : t("auth.installation.submit")}
+            </Button>
+          )}
+        </div>
       </form>
     </AuthScreenLayout>
   );

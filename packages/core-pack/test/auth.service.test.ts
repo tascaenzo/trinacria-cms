@@ -4,7 +4,8 @@ import {
   type DbAdapter,
   type DbQuery,
   type DbRepository,
-  type HttpContext
+  type HttpContext,
+  type NamespaceContext
 } from "@trinacria-cms/kernel";
 import { AuthController } from "../src/modules/auth/auth.controller.js";
 import { AuthBlacklistRepository } from "../src/modules/auth/auth-blacklist.repository.js";
@@ -35,8 +36,11 @@ test("JwtAuthService logs in admin and validates JWT token", async () => {
 
   const bootstrap = await runtime.installation.bootstrap({
     email: "admin@example.com",
-    displayName: "Admin User",
-    password: "StrongPassword123!"
+    firstName: "Admin",
+    lastName: "User",
+    password: "StrongPassword123!",
+    confirmPassword: "StrongPassword123!",
+    siteName: "Test Site"
   });
   assert.equal(bootstrap.status.installed, true);
 
@@ -58,8 +62,11 @@ test("JwtAuthService validates refresh token and rejects using it as access toke
 
   await runtime.installation.bootstrap({
     email: "admin@example.com",
-    displayName: "Admin User",
-    password: "StrongPassword123!"
+    firstName: "Admin",
+    lastName: "User",
+    password: "StrongPassword123!",
+    confirmPassword: "StrongPassword123!",
+    siteName: "Test Site"
   });
 
   const session = await runtime.auth.loginWithPassword({
@@ -72,7 +79,7 @@ test("JwtAuthService validates refresh token and rejects using it as access toke
 
   await assert.rejects(
     async () => runtime.auth.authenticateBearerToken(session.refreshToken),
-    (error) => error instanceof JwtAuthError && error.code === "auth_invalid_token"
+    (error: unknown) => error instanceof JwtAuthError && error.code === "auth_invalid_token"
   );
 });
 
@@ -85,7 +92,7 @@ test("JwtAuthService rejects login before installation is completed", async () =
         email: "admin@example.com",
         password: "StrongPassword123!"
       }),
-    (error) => error instanceof JwtAuthError && error.code === "installation_not_completed"
+    (error: unknown) => error instanceof JwtAuthError && error.code === "installation_not_completed"
   );
 });
 
@@ -94,12 +101,17 @@ test("JwtAuthService forbids non-admin token on admin-required auth", async () =
 
   await runtime.installation.bootstrap({
     email: "admin@example.com",
-    displayName: "Admin User",
-    password: "StrongPassword123!"
+    firstName: "Admin",
+    lastName: "User",
+    password: "StrongPassword123!",
+    confirmPassword: "StrongPassword123!",
+    siteName: "Test Site"
   });
 
   const user = await runtime.users.create({
     email: "operator@example.com",
+    firstName: "Operator",
+    lastName: "User",
     displayName: "Operator User"
   });
   const password = await runtime.passwordHashing.hashPassword("AnotherStrongPass123!");
@@ -117,7 +129,7 @@ test("JwtAuthService forbids non-admin token on admin-required auth", async () =
 
   await assert.rejects(
     async () => runtime.auth.authenticateBearerToken(session.accessToken),
-    (error) => error instanceof JwtAuthError && error.code === "auth_forbidden_admin_required"
+    (error: unknown) => error instanceof JwtAuthError && error.code === "auth_forbidden_admin_required"
   );
 });
 
@@ -126,8 +138,11 @@ test("AuthController login route returns 401 for invalid credentials", async () 
 
   await runtime.installation.bootstrap({
     email: "admin@example.com",
-    displayName: "Admin User",
-    password: "StrongPassword123!"
+    firstName: "Admin",
+    lastName: "User",
+    password: "StrongPassword123!",
+    confirmPassword: "StrongPassword123!",
+    siteName: "Test Site"
   });
 
   const controller = new AuthController(runtime.auth);
@@ -137,7 +152,7 @@ test("AuthController login route returns 401 for invalid credentials", async () 
 
   assert.ok(route, "Expected auth login route to be registered");
 
-  const result = await route.handler(
+  const result = await route!.handler(
     createHttpContext({
       email: "admin@example.com",
       password: "WrongPassword123!"
@@ -205,7 +220,8 @@ function createRuntime(): Runtime {
     users,
     userAccess,
     securityProvisioning,
-    passwordHashing
+    passwordHashing,
+    settings
   );
   const config = new RuntimeConfigService(db, {
     info: () => {},
@@ -289,8 +305,8 @@ function createFakeDbAdapter(): DbAdapter {
   });
 
   return {
-    repository(entityName, context) {
-      return repository(`${context.pluginId}:${entityName}`);
+    repository<TData>(entityName: string, context: NamespaceContext): DbRepository<TData> {
+      return repository(`${context.pluginId}:${entityName}`) as unknown as DbRepository<TData>;
     },
     async beginTransaction() {
       return {

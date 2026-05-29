@@ -7,6 +7,8 @@ import { UserStatusSchema } from "../users.schemas.js";
 export const CreateUserInputSchema = s.object(
   {
     email: s.string({ trim: true, toLowerCase: true, email: true }),
+    firstName: s.string({ trim: true, minLength: 1, maxLength: 60 }),
+    lastName: s.string({ trim: true, minLength: 1, maxLength: 60 }),
     displayName: s.string({ trim: true, minLength: 1, maxLength: 120 })
   },
   { strict: true }
