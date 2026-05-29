@@ -65,10 +65,10 @@ export const ButtonBase = forwardRef<HTMLButtonElement, ButtonBaseProps>(functio
     <button
       ref={ref}
       type={type}
+      {...props}
       aria-busy={isLoading || undefined}
       disabled={isLoading || props.disabled}
       className={getButtonBaseClassName({ className, iconOnly, size, variant })}
-      {...props}
     >
       {isLoading ? (
         <span

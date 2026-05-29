@@ -14,6 +14,14 @@ function normalize(text: string) {
   return text.toLocaleLowerCase().trim();
 }
 
+function sanitizeIdPart(value: string) {
+  return value.replace(/[^a-zA-Z0-9_-]/g, "-");
+}
+
+function optionDomId(controlId: string, option: ComboboxOption, index: number) {
+  return `${controlId}-option-${index}-${sanitizeIdPart(option.value)}`;
+}
+
 function useControllableValue(
   value: string | undefined,
   defaultValue: string | undefined,
@@ -97,6 +105,10 @@ export function Combobox({
     () => filteredOptions.filter((option) => !option.disabled),
     [filteredOptions]
   );
+  const activeOption = enabledOptions[activeIndex];
+  const activeOptionRenderedIndex = activeOption
+    ? filteredOptions.findIndex((option) => option === activeOption)
+    : -1;
 
   useEffect(() => {
     setQuery(selectedOption?.label ?? "");
@@ -205,7 +217,9 @@ export function Combobox({
       labelId={ids.labelId}
     >
       <div ref={rootRef} className="relative" {...props}>
-        {name ? <input type="hidden" name={name} value={selectedValue} /> : null}
+        {name ? (
+          <input type="hidden" name={name} value={selectedValue} disabled={disabled} />
+        ) : null}
         <input
           ref={inputRef}
           id={ids.controlId}
@@ -218,8 +232,8 @@ export function Combobox({
           aria-expanded={isOpen}
           aria-invalid={error ? true : undefined}
           aria-activedescendant={
-            isOpen && enabledOptions[activeIndex]
-              ? `${ids.controlId}-option-${enabledOptions[activeIndex]?.value}`
+            isOpen && activeOption && activeOptionRenderedIndex >= 0
+              ? optionDomId(ids.controlId, activeOption, activeOptionRenderedIndex)
               : undefined
           }
           disabled={disabled}
@@ -288,17 +302,17 @@ export function Combobox({
           >
             {filteredOptions.length ? (
               <div className="grid gap-1">
-                {filteredOptions.map((option) => {
+                {filteredOptions.map((option, index) => {
                   const isSelected = option.value === selectedValue;
                   const enabledIndex = enabledOptions.findIndex(
-                    (enabledOption) => enabledOption.value === option.value
+                    (enabledOption) => enabledOption === option
                   );
                   const isActive = enabledIndex >= 0 && enabledIndex === activeIndex;
 
                   return (
                     <button
-                      key={option.value}
-                      id={`${ids.controlId}-option-${option.value}`}
+                      key={`${option.value}-${index}`}
+                      id={optionDomId(ids.controlId, option, index)}
                       type="button"
                       role="option"
                       aria-selected={isSelected}

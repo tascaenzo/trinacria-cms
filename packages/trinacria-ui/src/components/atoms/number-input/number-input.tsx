@@ -48,6 +48,7 @@ export function NumberInput({
           </span>
         ) : null}
         <input
+          {...props}
           id={ids.controlId}
           type="number"
           aria-invalid={error ? true : props["aria-invalid"]}
@@ -58,7 +59,6 @@ export function NumberInput({
             "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
             className
           )}
-          {...props}
         />
         {suffix ? (
           <span className="border-l border-[color:var(--color-border)] px-3 text-[color:var(--color-ink-subtle)]">

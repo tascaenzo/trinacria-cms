@@ -60,6 +60,10 @@ export function TimePicker({
   value,
   ...props
 }: TimePickerProps) {
+  const safeMinuteStep =
+    Number.isFinite(minuteStep) && minuteStep > 0
+      ? Math.min(60, Math.max(1, Math.floor(minuteStep)))
+      : 5;
   const [internalValue, setInternalValue] = useState(defaultValue ?? "");
   const currentValue = value ?? internalValue;
   const parsed = parseTime(currentValue) ?? { hour: 9, minute: 0 };
@@ -120,11 +124,11 @@ export function TimePicker({
 
   const minuteOptions = useMemo(() => {
     const values: number[] = [];
-    for (let current = 0; current < 60; current += minuteStep) {
+    for (let current = 0; current < 60; current += safeMinuteStep) {
       values.push(current);
     }
     return values;
-  }, [minuteStep]);
+  }, [safeMinuteStep]);
 
   function commit(nextHour: number, nextMinute: number) {
     const nextValue = `${pad(nextHour)}:${pad(nextMinute)}`;

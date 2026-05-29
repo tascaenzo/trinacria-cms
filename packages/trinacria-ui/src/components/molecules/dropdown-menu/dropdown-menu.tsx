@@ -10,7 +10,8 @@ import {
   type MouseEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type PropsWithChildren,
-  type ReactElement
+  type ReactElement,
+  type Ref
 } from "react";
 import { OverlaySurface } from "../../primitives/overlay-surface/overlay-surface.js";
 import { BodyText } from "../../primitives/text/text.js";
@@ -27,6 +28,27 @@ interface DropdownMenuContextValue {
 }
 
 const DropdownMenuContext = createContext<DropdownMenuContextValue | null>(null);
+
+function assignRef<T>(ref: Ref<T> | undefined, value: T | null) {
+  if (!ref) {
+    return;
+  }
+
+  if (typeof ref === "function") {
+    ref(value);
+    return;
+  }
+
+  ref.current = value;
+}
+
+function composeRefs<T>(...refs: Array<Ref<T> | undefined>) {
+  return (value: T | null) => {
+    for (const ref of refs) {
+      assignRef(ref, value);
+    }
+  };
+}
 
 function useControllableOpen(
   open: boolean | undefined,
@@ -238,15 +260,16 @@ function DropdownTrigger({
       onKeyDown?: (event: ReactKeyboardEvent<HTMLElement>) => void;
       "aria-expanded"?: boolean;
       "aria-haspopup"?: string;
-      ref?: unknown;
+      ref?: Ref<HTMLElement>;
     }>;
+    const composedTriggerRef = composeRefs(element.props.ref, (node: HTMLElement | null) => {
+      triggerRef.current = node;
+    });
 
     return cloneElement(element, {
       "aria-expanded": isOpen,
       "aria-haspopup": "menu",
-      ref: (node: HTMLElement | null) => {
-        triggerRef.current = node;
-      },
+      ref: composedTriggerRef,
       onClick: (event: MouseEvent<HTMLElement>) => {
         element.props.onClick?.(event);
         if (!event.defaultPrevented) {

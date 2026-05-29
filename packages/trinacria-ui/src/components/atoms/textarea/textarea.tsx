@@ -28,6 +28,7 @@ export function Textarea({ className, error, hint, label, id, ...props }: Textar
       labelId={ids.labelId}
     >
       <textarea
+        {...props}
         id={ids.controlId}
         aria-invalid={error ? true : props["aria-invalid"]}
         aria-describedby={aria.describedBy}
@@ -38,7 +39,6 @@ export function Textarea({ className, error, hint, label, id, ...props }: Textar
           error,
           multiline: true
         })}
-        {...props}
       />
     </FormControlShell>
   );

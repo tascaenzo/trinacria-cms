@@ -13,8 +13,9 @@
     "./theme.css": "./theme.css"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --import tsx --test src/**/*.test.tsx",
     "storybook": "HOME=.storybook-home storybook dev -p 6006 -c .storybook",
     "storybook:build": "HOME=.storybook-home storybook build -c .storybook"
   },
@@ -22,11 +23,14 @@
     "lucide-react": "^0.577.0"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.2.2",
     "@storybook/addon-docs": "10.4.0",
     "@storybook/react-vite": "10.4.0",
+    "@tailwindcss/postcss": "^4.2.2",
+    "@types/jsdom": "^28.0.3",
+    "@types/node": "^25.9.1",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
+    "jsdom": "^29.1.1",
     "postcss": "^8.4.49",
     "storybook": "10.4.0",
     "tailwindcss": "^4.2.2"

@@ -263,7 +263,7 @@ export function DatePicker({
               <Icon name="calendar-days" />
             </span>
           </button>
-          {selectedValue ? (
+          {selectedValue && !disabled ? (
             <button
               type="button"
               onClick={() => setSelectedValue("")}

@@ -32,12 +32,12 @@ export function Input({ className, error, hint, label, id, ...props }: InputProp
       labelId={ids.labelId}
     >
       <input
+        {...props}
         id={ids.controlId}
         aria-invalid={error ? true : props["aria-invalid"]}
         aria-describedby={aria.describedBy}
         aria-errormessage={aria.errorMessage}
         className={formControlClassName({ className, disabled: props.disabled, error })}
-        {...props}
       />
     </FormControlShell>
   );

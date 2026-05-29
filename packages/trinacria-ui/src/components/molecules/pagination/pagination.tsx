@@ -61,14 +61,22 @@ export function Pagination({
   totalItems,
   ...props
 }: PaginationProps) {
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const safeTotalItems = Number.isFinite(totalItems) ? Math.max(0, totalItems) : 0;
+  const safePageSizeOptions = pageSizeOptions.filter(
+    (option) => Number.isFinite(option) && option > 0
+  );
+  const safePageSize =
+    Number.isFinite(pageSize) && pageSize > 0 ? pageSize : (safePageSizeOptions[0] ?? 1);
+  const totalPages = Math.max(1, Math.ceil(safeTotalItems / safePageSize));
   const currentPage = clamp(page, 1, totalPages);
-  const start = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
-  const end = totalItems === 0 ? 0 : Math.min(currentPage * pageSize, totalItems);
+  const start = safeTotalItems === 0 ? 0 : (currentPage - 1) * safePageSize + 1;
+  const end = safeTotalItems === 0 ? 0 : Math.min(currentPage * safePageSize, safeTotalItems);
   const pages = buildPages(currentPage, totalPages, siblingCount);
   const canGoPrevious = currentPage > 1;
   const canGoNext = currentPage < totalPages;
-  const summary = summaryLabel?.({ end, start, totalItems }) ?? `${start}-${end} of ${totalItems}`;
+  const summary =
+    summaryLabel?.({ end, start, totalItems: safeTotalItems }) ??
+    `${start}-${end} of ${safeTotalItems}`;
 
   return (
     <div
@@ -84,10 +92,10 @@ export function Pagination({
           <div className="w-full sm:w-[140px]">
             <Select
               aria-label="Rows per page"
-              value={pageSize}
+              value={safePageSize}
               onChange={(event) => onPageSizeChange(Number(event.target.value))}
             >
-              {pageSizeOptions.map((option) => (
+              {(safePageSizeOptions.length ? safePageSizeOptions : [safePageSize]).map((option) => (
                 <option key={option} value={option}>
                   {option} / page
                 </option>

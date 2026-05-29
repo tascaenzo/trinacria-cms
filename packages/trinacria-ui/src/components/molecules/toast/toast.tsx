@@ -30,6 +30,18 @@ export function ToastProvider({
   const [mounted, setMounted] = useState(false);
   const [toasts, setToasts] = useState<ToastRecord[]>([]);
   const timeoutsRef = useRef<Map<string, number>>(new Map());
+  const safeMaxVisible = Number.isFinite(maxVisible) && maxVisible > 0 ? Math.floor(maxVisible) : 0;
+
+  function clearToastTimeout(id: string) {
+    const timeout = timeoutsRef.current.get(id);
+
+    if (!timeout) {
+      return;
+    }
+
+    window.clearTimeout(timeout);
+    timeoutsRef.current.delete(id);
+  }
 
   useEffect(() => {
     setMounted(true);
@@ -43,13 +55,7 @@ export function ToastProvider({
   }, []);
 
   function dismissToast(id: string) {
-    const timeout = timeoutsRef.current.get(id);
-
-    if (timeout) {
-      window.clearTimeout(timeout);
-      timeoutsRef.current.delete(id);
-    }
-
+    clearToastTimeout(id);
     setToasts((current) => current.filter((toast) => toast.id !== id));
   }
 
@@ -58,9 +64,27 @@ export function ToastProvider({
     const duration = toast.duration ?? 5000;
     const nextToast: ToastRecord = { ...toast, id };
 
-    setToasts((current) => [nextToast, ...current].slice(0, maxVisible));
+    clearToastTimeout(id);
+    setToasts((current) => {
+      const nextToasts =
+        safeMaxVisible > 0
+          ? [nextToast, ...current.filter((currentToast) => currentToast.id !== id)].slice(
+              0,
+              safeMaxVisible
+            )
+          : [];
+      const visibleIds = new Set(nextToasts.map((currentToast) => currentToast.id));
 
-    if (duration > 0 && typeof window !== "undefined") {
+      for (const currentToast of current) {
+        if (!visibleIds.has(currentToast.id)) {
+          clearToastTimeout(currentToast.id);
+        }
+      }
+
+      return nextToasts;
+    });
+
+    if (safeMaxVisible > 0 && duration > 0 && typeof window !== "undefined") {
       const timeout = window.setTimeout(() => {
         dismissToast(id);
       }, duration);

@@ -25,11 +25,11 @@ export function RadioGroup({
 
   return (
     <fieldset
+      {...props}
       className={cn("grid gap-2.5", className)}
       aria-describedby={aria.describedBy}
       aria-errormessage={aria.errorMessage}
       aria-invalid={error ? true : undefined}
-      {...props}
     >
       {label ? (
         <legend id={ids.labelId} className="text-sm font-medium text-[color:var(--color-ink)]">

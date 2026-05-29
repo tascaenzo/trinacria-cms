@@ -75,16 +75,16 @@ export function DateTimePicker({
 
   return (
     <div
+      {...props}
       className={cn("grid gap-2", className)}
       role="group"
       aria-labelledby={label ? ids.labelId : undefined}
       aria-describedby={aria.describedBy}
       aria-errormessage={aria.errorMessage}
       aria-invalid={error ? true : undefined}
-      {...props}
     >
       {label ? (
-        <span id={ids.labelId} className="text-sm font-medium text-[color:var(--color-ink)]">
+        <span id={ids.labelId} className="text-sm font-medium text-(--color-ink)">
           {label}
         </span>
       ) : null}
@@ -107,17 +107,17 @@ export function DateTimePicker({
         />
       </div>
       {currentValue ? (
-        <span className="text-xs font-medium uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)]">
+        <span className="text-xs font-medium uppercase tracking-[0.12em] text-(--color-ink-subtle)">
           {formatDateTimeLabel(currentValue)}
         </span>
       ) : null}
       {error ? (
-        <span id={ids.errorId} className="text-xs leading-5 text-[color:var(--color-danger-ink)]">
+        <span id={ids.errorId} className="text-xs leading-5 text-(--color-danger-ink)">
           {error}
         </span>
       ) : null}
       {hint ? (
-        <span id={ids.hintId} className="text-xs leading-5 text-[color:var(--color-ink-subtle)]">
+        <span id={ids.hintId} className="text-xs leading-5 text-(--color-ink-subtle)">
           {hint}
         </span>
       ) : null}

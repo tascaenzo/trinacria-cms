@@ -9,7 +9,7 @@ export function Switch({ className, description, error, id, label, ...props }: S
     describedBy: [props["aria-describedby"], descriptionId].filter(Boolean).join(" "),
     error,
     errorId: ids.errorId,
-    hint: description,
+    hint: undefined,
     hintId: ids.hintId
   });
 
@@ -40,6 +40,7 @@ export function Switch({ className, description, error, id, label, ...props }: S
       </span>
       <span className="relative inline-flex shrink-0">
         <input
+          {...props}
           id={ids.controlId}
           type="checkbox"
           role="switch"
@@ -47,7 +48,6 @@ export function Switch({ className, description, error, id, label, ...props }: S
           aria-describedby={aria.describedBy}
           aria-errormessage={aria.errorMessage}
           className="peer sr-only"
-          {...props}
         />
         <span className="h-6 w-11 rounded-full bg-[color:var(--color-interactive-soft)] transition peer-checked:bg-[color:var(--color-action-primary-bg)] peer-focus:ring-2 peer-focus:ring-[color:var(--color-overlay-soft)]" />
         <span className="pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-[color:var(--color-surface)] shadow-sm transition peer-checked:translate-x-5" />

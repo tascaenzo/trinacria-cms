@@ -30,6 +30,7 @@ export function Select({ children, className, error, hint, label, id, ...props }
     >
       <div className="relative">
         <select
+          {...props}
           id={ids.controlId}
           aria-invalid={error ? true : props["aria-invalid"]}
           aria-describedby={aria.describedBy}
@@ -39,7 +40,6 @@ export function Select({ children, className, error, hint, label, id, ...props }
             disabled: props.disabled,
             error
           })}
-          {...props}
         >
           {children}
         </select>

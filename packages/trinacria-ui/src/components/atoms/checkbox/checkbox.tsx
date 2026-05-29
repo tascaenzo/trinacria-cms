@@ -9,7 +9,7 @@ export function Checkbox({ className, description, error, id, label, ...props }:
     describedBy: [props["aria-describedby"], descriptionId].filter(Boolean).join(" "),
     error,
     errorId: ids.errorId,
-    hint: description,
+    hint: undefined,
     hintId: ids.hintId
   });
 
@@ -24,13 +24,13 @@ export function Checkbox({ className, description, error, id, label, ...props }:
     >
       <span className="flex items-start gap-3">
         <input
+          {...props}
           id={ids.controlId}
           type="checkbox"
           aria-invalid={error ? true : props["aria-invalid"]}
           aria-describedby={aria.describedBy}
           aria-errormessage={aria.errorMessage}
           className="mt-0.5 h-4 w-4 rounded border-[color:var(--color-border-strong)] bg-[color:var(--color-surface)] text-[color:var(--color-action-primary-bg)] focus:ring-2 focus:ring-[color:var(--color-overlay-soft)]"
-          {...props}
         />
         <span className="grid gap-1">
           <span className="text-sm font-medium text-[color:var(--color-ink)]">{label}</span>
