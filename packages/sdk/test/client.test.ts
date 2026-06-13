@@ -65,3 +65,28 @@ test("sdk core client throws CmsSdkHttpError on non-2xx response", async () => {
       error instanceof CmsSdkHttpError && error.status === 401 && typeof error.data === "object"
   );
 });
+
+test("sdk core client attaches a timeout signal by default", async () => {
+  const calls: Array<Record<string, unknown>> = [];
+  const client = createCmsSdkClientCore({
+    baseUrl: "http://localhost:3000",
+    requestTimeoutMs: 10,
+    transport: {
+      async request(request) {
+        calls.push(request as unknown as Record<string, unknown>);
+        return {
+          status: 200,
+          headers: { "content-type": "application/json" },
+          data: { ok: true }
+        };
+      }
+    }
+  });
+
+  await client.request({
+    method: "GET",
+    path: "/v1/auth/me"
+  });
+
+  assert.ok(calls[0]?.signal);
+});

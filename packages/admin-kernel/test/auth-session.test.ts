@@ -31,36 +31,43 @@ test("readStoredBackofficeSession returns empty object when no session stored", 
 });
 
 test("persistBackofficeSession writes to sessionStorage", async () => {
-  const { persistBackofficeSession, readStoredBackofficeSession } = await import(
-    "../src/runtime/auth-session.js"
-  );
+  const { persistBackofficeSession, readStoredBackofficeSession } =
+    await import("../src/runtime/auth-session.js");
   persistBackofficeSession({
-    accessToken: "token-123",
-    refreshToken: "refresh-456",
-    expiresAt: "2026-06-01T00:00:00Z",
-    refreshExpiresAt: "2026-07-01T00:00:00Z"
+    expiresAt: "2026-06-01T00:00:00Z"
   });
 
   const session = readStoredBackofficeSession();
-  assert.equal(session.accessToken, "token-123");
-  assert.equal(session.refreshToken, "refresh-456");
+  assert.equal(session.expiresAt, "2026-06-01T00:00:00Z");
+});
+
+test("persistBackofficeSession never stores bearer tokens in sessionStorage", async () => {
+  const { persistBackofficeSession, readStoredBackofficeSession, getStoredAccessToken } =
+    await import("../src/runtime/auth-session.js");
+  persistBackofficeSession({
+    accessToken: "token-123",
+    expiresAt: "2026-06-01T00:00:00Z"
+  } as never);
+
+  assert.equal(storage.get("trinacria-cms.backoffice.session")?.includes("token-123"), false);
+  assert.deepEqual(readStoredBackofficeSession(), {
+    expiresAt: "2026-06-01T00:00:00Z"
+  });
+  assert.equal(getStoredAccessToken(), undefined);
 });
 
 test("clearBackofficeSession removes session from storage", async () => {
   const { persistBackofficeSession, clearBackofficeSession, readStoredBackofficeSession } =
     await import("../src/runtime/auth-session.js");
-  persistBackofficeSession({ accessToken: "token-123" });
+  persistBackofficeSession({ expiresAt: "2026-06-01T00:00:00Z" });
   clearBackofficeSession();
   const session = readStoredBackofficeSession();
   assert.deepEqual(session, {});
 });
 
-test("getStoredAccessToken returns the stored access token", async () => {
-  const { persistBackofficeSession, getStoredAccessToken } = await import(
-    "../src/runtime/auth-session.js"
-  );
-  persistBackofficeSession({ accessToken: "abc-xyz" });
-  assert.equal(getStoredAccessToken(), "abc-xyz");
+test("getStoredAccessToken always returns undefined", async () => {
+  const { getStoredAccessToken } = await import("../src/runtime/auth-session.js");
+  assert.equal(getStoredAccessToken(), undefined);
 });
 
 test("getStoredAccessToken returns undefined when not stored", async () => {

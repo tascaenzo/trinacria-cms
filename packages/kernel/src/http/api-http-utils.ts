@@ -122,7 +122,7 @@ export function serializeCookie(
   if (options.httpOnly !== false) {
     parts.push("HttpOnly");
   }
-  if (options.secure !== false) {
+  if (options.secure === true) {
     parts.push("Secure");
   }
   if (options.sameSite) {
@@ -160,7 +160,7 @@ export function toApiErrorResponse(error: unknown): ApiErrorResponse {
     if (error.message.includes("already exists")) {
       return apiError("conflict", error.message);
     }
-    return apiError("validation_error", error.message);
+    return apiError("internal_error", "Unexpected error");
   }
   return apiError("internal_error", "Unexpected error");
 }

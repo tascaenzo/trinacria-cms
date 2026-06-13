@@ -6,6 +6,7 @@ import {
   getStatusCodeForApiError,
   parsePathParam,
   parseQueryNumber,
+  serializeCookie,
   toApiErrorResponse
 } from "../src/http/api-http-utils.js";
 
@@ -86,4 +87,16 @@ test("toApiErrorResponse exposes validation issues for schema errors", () => {
       { path: ["lastName"], message: "Expected string", code: "invalid_type" }
     ]
   });
+});
+
+test("toApiErrorResponse maps generic errors to internal_error", () => {
+  const response = toApiErrorResponse(new Error("database is down"));
+
+  assert.equal(response.error.code, "internal_error");
+  assert.equal(response.error.message, "Unexpected error");
+});
+
+test("serializeCookie does not force Secure unless requested", () => {
+  assert.equal(serializeCookie("sid", "abc").includes("Secure"), false);
+  assert.equal(serializeCookie("sid", "abc", { secure: true }).includes("Secure"), true);
 });
