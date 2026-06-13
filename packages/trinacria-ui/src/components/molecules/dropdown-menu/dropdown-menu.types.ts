@@ -5,6 +5,7 @@ export interface DropdownMenuProps extends HTMLAttributes<HTMLDivElement> {
   trigger: ReactNode;
   align?: "start" | "end";
   side?: "top" | "bottom";
+  contentClassName?: string;
   open?: boolean;
   defaultOpen?: boolean;
   onOpenChange?: (open: boolean) => void;

@@ -258,6 +258,11 @@ select {
   font: inherit;
 }
 
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
 #root {
   min-height: 100vh;
 }

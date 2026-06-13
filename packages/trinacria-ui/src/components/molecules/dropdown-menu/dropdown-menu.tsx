@@ -73,6 +73,7 @@ export function DropdownMenu({
   align = "end",
   children,
   className,
+  contentClassName,
   defaultOpen,
   onOpenChange,
   open,
@@ -152,18 +153,6 @@ export function DropdownMenu({
     };
   }, [isOpen, setIsOpen]);
 
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    const frame = window.requestAnimationFrame(() => {
-      focusFirstItem();
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [isOpen]);
-
   function handleMenuKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
     const items = getEnabledItems();
 
@@ -221,7 +210,8 @@ export function DropdownMenu({
             className={cn(
               "absolute z-40 min-w-[220px] p-2",
               side === "bottom" ? "top-full mt-2" : "bottom-full mb-2",
-              align === "start" ? "left-0" : "right-0"
+              align === "start" ? "left-0" : "right-0",
+              contentClassName
             )}
           >
             <div

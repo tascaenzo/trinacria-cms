@@ -14,12 +14,12 @@ import {
   DataTableTable,
   InfoCard,
   Input,
-  JsonView,
   PropertyItem,
   PropertyList,
   StatCard
 } from "@trinacria-cms/trinacria-ui";
 import type { ListInstalledPluginsResponse, ListPluginEventsResponse } from "@trinacria-cms/sdk";
+import { JsonPreviewAction } from "../components/json-preview-action.js";
 import {
   MobileRecordCard,
   MobileRecordField,
@@ -139,9 +139,6 @@ export function PluginsPage() {
       const response = await cms.system.listPluginEvents({
         path: {
           pluginId
-        },
-        query: {
-          limit: 20
         }
       });
       setSelectedEvents(response.data);
@@ -519,10 +516,18 @@ export function PluginsPage() {
               </SectionBlock>
 
               {selectedPlugin.lastError ? (
-                <JsonView title={t("plugins.detail.last_error")} value={selectedPlugin.lastError} />
+                <JsonPreviewAction
+                  title={t("plugins.detail.last_error")}
+                  payloadTitle={t("plugins.detail.last_error")}
+                  value={selectedPlugin.lastError}
+                />
               ) : null}
               {operationDetails ? (
-                <JsonView title={t("plugins.detail.error_context")} value={operationDetails} />
+                <JsonPreviewAction
+                  title={t("plugins.detail.error_context")}
+                  payloadTitle={t("plugins.detail.error_context")}
+                  value={operationDetails}
+                />
               ) : null}
             </div>
           )}

@@ -21,8 +21,10 @@ export interface AdminShellProps extends PropsWithChildren {
   subtitle?: string;
   activeRouteId: string;
   navigation: readonly AdminShellNavigationItem[];
+  hiddenNavigationIds?: readonly string[];
   onNavigate: (routeId: string) => void;
   statusBadges?: readonly AdminShellStatusBadge[];
   headerActions?: ReactNode;
   sidebarFooter?: ReactNode;
+  hideHeader?: boolean;
 }

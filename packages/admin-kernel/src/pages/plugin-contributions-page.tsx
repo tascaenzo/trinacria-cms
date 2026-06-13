@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Badge, Button, Card, InfoCard, JsonView, StatCard } from "@trinacria-cms/trinacria-ui";
+import { Badge, Button, Card, InfoCard, StatCard } from "@trinacria-cms/trinacria-ui";
 import type { ListPluginContributionsResponse } from "@trinacria-cms/sdk";
+import { JsonPreviewAction } from "../components/json-preview-action.js";
 import { EmptyState, ErrorBanner } from "../components/resource-feedback.js";
 import { useI18n } from "../lib/i18n.js";
 import { toDisplayError } from "../lib/sdk-errors.js";
@@ -247,12 +248,17 @@ export function PluginContributionsPage() {
                       title={selectedRecord.key}
                       description={`${t("common.table.owner")}: ${selectedRecord.pluginId}`}
                     >
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Badge>{selectedGroup.title}</Badge>
                         <Badge tone="neutral">{selectedRecord.pluginId}</Badge>
+                        <JsonPreviewAction
+                          title={selectedRecord.key}
+                          description={`${t("common.table.owner")}: ${selectedRecord.pluginId}`}
+                          payloadTitle={selectedGroup.title}
+                          value={selectedRecord.declaration}
+                        />
                       </div>
                     </InfoCard>
-                    <JsonView value={selectedRecord.declaration} />
                   </>
                 ) : null}
               </div>
@@ -265,7 +271,13 @@ export function PluginContributionsPage() {
         eyebrow={t("plugin_contributions.raw.eyebrow")}
         title={t("plugin_contributions.raw.title")}
       >
-        <JsonView value={catalog ?? {}} />
+        <JsonPreviewAction
+          title={t("plugin_contributions.raw.title")}
+          description={t("plugin_contributions.raw.eyebrow")}
+          payloadTitle={t("plugin_contributions.raw.title")}
+          value={catalog ?? {}}
+          width="xl"
+        />
       </Card>
     </div>
   );

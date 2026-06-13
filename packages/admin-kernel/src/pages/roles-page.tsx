@@ -13,6 +13,7 @@ import {
   DataTableRow,
   DataTableTable,
   Dialog,
+  FeedbackBanner,
   FilterBar,
   InfoCard,
   Input,
@@ -50,6 +51,8 @@ export function RolesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [actionId, setActionId] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<RoleRecord | null>(null);
   const createFormRef = useRef<HTMLFormElement>(null);
   const [optimisticRecords, applyOptimisticStatus] = useOptimisticStatusRecords(records);
 
@@ -103,6 +106,34 @@ export function RolesPage() {
     createIdleAsyncActionState()
   );
 
+  const [editState, submitEdit, isEditPending] = useActionState(
+    async (_previousState: AsyncActionState, formData: FormData) => {
+      if (!selectedRole) {
+        return { ok: false, error: t("roles.feedback.select_role"), data: null };
+      }
+
+      try {
+        await cms.roles.updateRole({
+          path: { id: selectedRole.id },
+          body: {
+            name: readRequiredString(formData, "name"),
+            description: readOptionalString(formData, "description"),
+            permissions: readStringArray(formData, "permissionKeys")
+          }
+        });
+        await refresh();
+        return { ok: true, error: null, data: null };
+      } catch (currentError) {
+        return {
+          ok: false,
+          error: toDisplayError(currentError),
+          data: null
+        };
+      }
+    },
+    createIdleAsyncActionState()
+  );
+
   useEffect(() => {
     if (!createState.ok || isCreatePending) {
       return;
@@ -129,6 +160,11 @@ export function RolesPage() {
     } finally {
       setActionId(null);
     }
+  }
+
+  function openEditRole(record: RoleRecord) {
+    setSelectedRole(record);
+    setIsEditOpen(true);
   }
 
   return (
@@ -171,18 +207,27 @@ export function RolesPage() {
                     </Badge>
                   }
                   actions={
-                    <Button
-                      variant="secondary"
-                      className="w-full"
-                      disabled={actionId === record.id}
-                      onClick={() => toggleStatus(record)}
-                    >
-                      {actionId === record.id
-                        ? t("common.actions.updating")
-                        : record.status === "active"
-                          ? t("common.actions.disable")
-                          : t("common.actions.activate")}
-                    </Button>
+                    <div className="grid gap-2">
+                      <Button
+                        variant="secondary"
+                        className="w-full"
+                        onClick={() => openEditRole(record)}
+                      >
+                        {t("common.actions.edit")}
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        className="w-full"
+                        disabled={actionId === record.id}
+                        onClick={() => toggleStatus(record)}
+                      >
+                        {actionId === record.id
+                          ? t("common.actions.updating")
+                          : record.status === "active"
+                            ? t("common.actions.disable")
+                            : t("common.actions.activate")}
+                      </Button>
+                    </div>
                   }
                 >
                   <MobileRecordField
@@ -230,17 +275,22 @@ export function RolesPage() {
                         {formatDateTime(record.updatedAt)}
                       </DataTableCell>
                       <DataTableCell>
-                        <Button
-                          variant="secondary"
-                          disabled={actionId === record.id}
-                          onClick={() => toggleStatus(record)}
-                        >
-                          {actionId === record.id
-                            ? t("common.actions.updating")
-                            : record.status === "active"
-                              ? t("common.actions.disable")
-                              : t("common.actions.activate")}
-                        </Button>
+                        <div className="flex flex-wrap gap-2">
+                          <Button variant="secondary" onClick={() => openEditRole(record)}>
+                            {t("common.actions.edit")}
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            disabled={actionId === record.id}
+                            onClick={() => toggleStatus(record)}
+                          >
+                            {actionId === record.id
+                              ? t("common.actions.updating")
+                              : record.status === "active"
+                                ? t("common.actions.disable")
+                                : t("common.actions.activate")}
+                          </Button>
+                        </div>
                       </DataTableCell>
                     </DataTableRow>
                   ))}
@@ -309,6 +359,83 @@ export function RolesPage() {
             </InfoCard>
           </div>
         </form>
+      </Dialog>
+
+      <Dialog
+        open={isEditOpen}
+        title={selectedRole?.name ?? t("roles.dialog.edit.title")}
+        description={selectedRole?.code}
+        eyebrow={t("roles.dialog.edit.eyebrow")}
+        closeLabel={t("common.actions.close")}
+        closeVariant="icon"
+        variant="drawer"
+        onClose={() => setIsEditOpen(false)}
+        width="xl"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setIsEditOpen(false)}>
+              {t("common.actions.cancel")}
+            </Button>
+            <Button form="edit-role-form" type="submit" disabled={isEditPending}>
+              {isEditPending ? t("common.actions.updating") : t("common.actions.save")}
+            </Button>
+          </>
+        }
+      >
+        {selectedRole ? (
+          <form
+            id="edit-role-form"
+            className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]"
+            action={submitEdit}
+          >
+            <div className="grid gap-4">
+              <Input label={t("roles.form.code")} value={selectedRole.code} disabled />
+              <Input
+                label={t("roles.form.name")}
+                name="name"
+                defaultValue={selectedRole.name}
+                required
+              />
+              <Textarea
+                label={t("common.form.description")}
+                name="description"
+                defaultValue={selectedRole.description ?? ""}
+              />
+              {editState.ok ? (
+                <FeedbackBanner tone="success" message={t("roles.feedback.updated")} />
+              ) : null}
+              {editState.error ? <ErrorBanner message={editState.error} /> : null}
+            </div>
+            <div className="grid gap-3">
+              <InfoCard eyebrow={t("roles.form.embedded_permission_grants")}>
+                <div className="grid max-h-[520px] gap-2 overflow-auto sm:grid-cols-2">
+                  {activePermissions.map((permission) => (
+                    <label
+                      key={permission.id}
+                      className="flex items-start gap-3 rounded-[var(--radius-control)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-3 text-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        name="permissionKeys"
+                        value={permission.key}
+                        defaultChecked={(selectedRole.permissions ?? []).includes(permission.key)}
+                        className="mt-1"
+                      />
+                      <span>
+                        <span className="block font-medium text-[color:var(--color-ink)]">
+                          {permission.displayName}
+                        </span>
+                        <span className="text-[color:var(--color-ink-muted)]">
+                          {permission.key}
+                        </span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </InfoCard>
+            </div>
+          </form>
+        ) : null}
       </Dialog>
     </div>
   );

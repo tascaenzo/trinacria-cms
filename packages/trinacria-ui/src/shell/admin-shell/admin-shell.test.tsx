@@ -42,3 +42,67 @@ test("AdminShell renders navigation and calls onNavigate", async () => {
     restoreDom();
   }
 });
+
+test("AdminShell collapses navigation groups", async () => {
+  const restoreDom = installDom();
+
+  try {
+    const view = await renderClient(
+      <AdminShell
+        title="Settings"
+        activeRouteId="settings"
+        navigation={navigation}
+        onNavigate={() => undefined}
+      >
+        Content
+      </AdminShell>
+    );
+
+    const systemGroupButton = Array.from(
+      document.querySelectorAll<HTMLButtonElement>("aside button")
+    ).find((button) => button.textContent?.includes("System") && !button.getAttribute("title"));
+    assert.ok(systemGroupButton);
+    assert.equal(systemGroupButton.getAttribute("aria-expanded"), "true");
+
+    await React.act(async () => {
+      systemGroupButton.click();
+    });
+
+    assert.equal(systemGroupButton.getAttribute("aria-expanded"), "false");
+    const controlledGroupId = systemGroupButton.getAttribute("aria-controls");
+    assert.ok(controlledGroupId);
+    assert.equal(document.getElementById(controlledGroupId)?.className.includes("hidden"), true);
+
+    await view.unmount();
+  } finally {
+    restoreDom();
+  }
+});
+
+test("AdminShell can hide navigation items from sidebar without removing active route metadata", async () => {
+  const restoreDom = installDom();
+
+  try {
+    const view = await renderClient(
+      <AdminShell
+        title="Settings"
+        activeRouteId="settings"
+        navigation={navigation}
+        hiddenNavigationIds={["settings"]}
+        onNavigate={() => undefined}
+      >
+        Content
+      </AdminShell>
+    );
+
+    const settingsNavButton = Array.from(
+      document.querySelectorAll<HTMLButtonElement>("aside button")
+    ).find((button) => button.getAttribute("title") === "Settings");
+    assert.equal(settingsNavButton, undefined);
+    assert.equal(document.body.textContent?.includes("System"), true);
+
+    await view.unmount();
+  } finally {
+    restoreDom();
+  }
+});

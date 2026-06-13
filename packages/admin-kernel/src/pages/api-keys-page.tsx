@@ -15,7 +15,6 @@ import {
   DateTimePicker,
   Dialog,
   Input,
-  JsonView,
   Select,
   Textarea
 } from "@trinacria-cms/trinacria-ui";
@@ -25,6 +24,7 @@ import {
   MobileRecordField,
   MobileRecordList
 } from "../components/mobile-records.js";
+import { JsonPreviewAction } from "../components/json-preview-action.js";
 import { ErrorBanner, EmptyState } from "../components/resource-feedback.js";
 import { useOptimisticStatusRecords } from "../hooks/use-optimistic-status-records.js";
 import { formatDateTime, parseCommaSeparatedList } from "../lib/formatting.js";
@@ -269,7 +269,11 @@ export function ApiKeysPage() {
             <div className="rounded-[var(--radius-control)] border border-[color:var(--color-border)] bg-[color:var(--color-code-surface)] px-4 py-4 font-mono text-xs leading-6 text-[color:var(--color-code-ink)]">
               {latestIssuedKey.apiKey}
             </div>
-            <JsonView title={t("api_keys.secret.issued_metadata")} value={latestIssuedKey.record} />
+            <JsonPreviewAction
+              title={t("api_keys.secret.issued_metadata")}
+              payloadTitle={t("api_keys.secret.issued_metadata")}
+              value={latestIssuedKey.record}
+            />
           </div>
         ) : (
           <EmptyState text={t("api_keys.empty.secret")} />

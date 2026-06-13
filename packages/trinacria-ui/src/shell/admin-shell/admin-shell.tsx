@@ -8,6 +8,8 @@ import type {
 } from "./admin-shell.types.js";
 
 const SIDEBAR_STORAGE_KEY = "trinacria-cms:admin-sidebar-collapsed";
+const SIDEBAR_GROUPS_STORAGE_KEY = "trinacria-cms:admin-sidebar-collapsed-groups";
+const EMPTY_HIDDEN_NAVIGATION_IDS: readonly string[] = [];
 
 /**
  * The UI package only needs the shape required by the shell renderer. The full
@@ -35,6 +37,39 @@ function readSidebarState(): boolean {
   }
 }
 
+function readCollapsedGroups(): Record<string, boolean> {
+  if (typeof window === "undefined") {
+    return {};
+  }
+
+  try {
+    const value = window.localStorage.getItem(SIDEBAR_GROUPS_STORAGE_KEY);
+    if (!value) {
+      return {};
+    }
+    const parsed = JSON.parse(value);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return {};
+    }
+    return Object.fromEntries(
+      Object.entries(parsed).filter((entry): entry is [string, boolean] => {
+        const [key, collapsed] = entry;
+        return typeof key === "string" && typeof collapsed === "boolean";
+      })
+    );
+  } catch {
+    return {};
+  }
+}
+
+function toNavigationGroupId(group: string): string {
+  return group
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 /**
  * AdminShell owns the dashboard frame: responsive sidebar, compact header, and
  * a plugin-aware navigation surface that stays stable while pages change.
@@ -43,6 +78,8 @@ export function AdminShell({
   activeRouteId,
   children,
   headerActions,
+  hideHeader = false,
+  hiddenNavigationIds = EMPTY_HIDDEN_NAVIGATION_IDS,
   navigation,
   onNavigate,
   sidebarFooter,
@@ -52,6 +89,9 @@ export function AdminShell({
 }: AdminShellProps) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => readSidebarState());
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(() =>
+    readCollapsedGroups()
+  );
 
   useEffect(() => {
     try {
@@ -61,10 +101,26 @@ export function AdminShell({
     }
   }, [isSidebarCollapsed]);
 
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(SIDEBAR_GROUPS_STORAGE_KEY, JSON.stringify(collapsedGroups));
+    } catch {
+      // Ignore storage failures: group collapse is a progressive enhancement.
+    }
+  }, [collapsedGroups]);
+
+  const hiddenNavigationIdSet = useMemo(
+    () => new Set(hiddenNavigationIds),
+    [hiddenNavigationIds]
+  );
+
   const groups = useMemo(() => {
     const map = new Map<string, AdminShellNavigationItem[]>();
 
     for (const item of navigation) {
+      if (hiddenNavigationIdSet.has(item.id)) {
+        continue;
+      }
       const key = item.group ?? "Workspace";
       const list = map.get(key);
       if (list) {
@@ -78,7 +134,7 @@ export function AdminShell({
       group,
       [...items].sort((left, right) => (left.order ?? 0) - (right.order ?? 0))
     ]) as Array<[string, AdminShellNavigationItem[]]>;
-  }, [navigation]);
+  }, [hiddenNavigationIdSet, navigation]);
 
   const activeNavigation = navigation.find((item) => item.routeId === activeRouteId) ?? null;
 
@@ -87,12 +143,19 @@ export function AdminShell({
     setIsMobileSidebarOpen(false);
   }
 
+  function toggleGroup(group: string) {
+    setCollapsedGroups((current) => ({
+      ...current,
+      [group]: !current[group]
+    }));
+  }
+
   return (
-    <div className="min-h-screen bg-[color:var(--color-canvas)] text-[color:var(--color-ink)]">
+    <div className="min-h-screen bg-(--color-panel-soft) text-(--color-ink)">
       <div className="flex min-h-screen">
         <div
           className={cn(
-            "fixed inset-0 z-40 bg-[color:var(--color-overlay)] backdrop-blur-sm transition lg:hidden",
+            "fixed inset-0 z-40 bg-(--color-overlay) backdrop-blur-sm transition lg:hidden",
             isMobileSidebarOpen ? "opacity-100" : "pointer-events-none opacity-0"
           )}
           aria-hidden={!isMobileSidebarOpen}
@@ -101,168 +164,230 @@ export function AdminShell({
 
         <aside
           className={cn(
-            "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-[color:var(--color-border)] bg-[color:var(--color-panel)] transition-all duration-200",
+            "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-(--color-border) bg-(--color-panel) transition-all duration-200",
             isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
-            isSidebarCollapsed ? "lg:w-[84px]" : "lg:w-[280px]"
+            isSidebarCollapsed ? "lg:w-14" : "lg:w-64"
           )}
         >
           <div
             className={cn(
-              "flex h-16 items-center gap-3 border-b border-[color:var(--color-border)] px-4",
-              isSidebarCollapsed && "justify-center px-0"
+              "flex h-16 shrink-0 items-center gap-3 border-b border-(--color-border) px-4",
+              isSidebarCollapsed && "lg:justify-center lg:px-3"
             )}
           >
-            {!isSidebarCollapsed ? (
-              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[color:var(--color-action-primary-bg)] text-[color:var(--color-action-primary-ink)] shadow-sm">
-                <span className="text-sm font-semibold">T</span>
-              </div>
-            ) : null}
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-(--color-action-primary-bg) text-(--color-action-primary-ink) shadow-sm">
+              <span className="text-sm font-semibold">T</span>
+            </div>
             <div className={cn("min-w-0 flex-1", isSidebarCollapsed && "lg:hidden")}>
-              <p className="truncate text-sm font-semibold text-[color:var(--color-ink)]">
-                Trinacria CMS
-              </p>
-              <p className="truncate text-xs text-[color:var(--color-ink-subtle)]">
-                Admin dashboard
-              </p>
+              <p className="truncate text-sm font-semibold text-(--color-ink)">Trinacria CMS</p>
+              <p className="truncate text-xs text-(--color-ink-subtle)">Admin dashboard</p>
             </div>
             <button
               type="button"
-              onClick={() => setIsSidebarCollapsed((current) => !current)}
-              className="hidden h-9 w-9 items-center justify-center rounded-md border border-[color:var(--color-border)] text-[color:var(--color-ink-muted)] transition hover:bg-[color:var(--color-interactive-hover)] hover:text-[color:var(--color-ink)] lg:inline-flex"
-              aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              onClick={() => setIsMobileSidebarOpen(false)}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-(--color-ink-muted) transition hover:bg-(--color-interactive-hover) hover:text-(--color-ink) lg:hidden"
+              aria-label="Close sidebar"
             >
-              <Icon name={isSidebarCollapsed ? "panel-left" : "panel-left-close"} />
+              <Icon name="x" />
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-3 py-4">
-            <nav className="space-y-6">
-              {groups.map(([group, items]) => (
-                <section key={group} className="space-y-1.5">
-                  <div
-                    className={cn(
-                      "px-3 text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]",
-                      isSidebarCollapsed && "lg:hidden"
-                    )}
-                  >
-                    {group}
-                  </div>
-                  <div className="space-y-1">
-                    {items.map((item) => {
-                      const isActive = item.routeId === activeRouteId;
+          <div className="min-h-0 flex-1 overflow-y-auto px-2 py-3">
+            <nav className="space-y-5">
+              {groups.map(([group, items], groupIndex) => {
+                const groupId = `admin-shell-nav-group-${groupIndex}-${toNavigationGroupId(group)}`;
+                const isGroupCollapsed = Boolean(collapsedGroups[group]) && !isSidebarCollapsed;
 
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          title={item.title}
-                          onClick={() => handleNavigate(item.routeId)}
-                          className={cn(
-                            "flex h-10 w-full items-center gap-3 rounded-sm px-3 text-sm transition",
-                            isSidebarCollapsed ? "lg:justify-center lg:px-0" : "justify-between",
-                            isActive
-                              ? "bg-[color:var(--color-interactive-selected)] text-[color:var(--color-interactive-selected-ink)] shadow-sm"
-                              : "text-[color:var(--color-ink-muted)] hover:bg-[color:var(--color-interactive-hover)] hover:text-[color:var(--color-ink)]"
-                          )}
-                        >
-                          <span className="flex items-center gap-3 overflow-hidden">
-                            {item.icon ? (
-                              <Icon
-                                name={item.icon}
+                return (
+                  <section key={group} className="space-y-1">
+                    <button
+                      type="button"
+                      aria-expanded={!isGroupCollapsed}
+                      aria-controls={groupId}
+                      onClick={() => toggleGroup(group)}
+                      className={cn(
+                        "flex w-full items-center justify-between gap-2 rounded-md px-2 pb-1 pt-1 text-left text-[11px] font-medium uppercase tracking-[0.14em] text-(--color-ink-subtle) transition hover:bg-(--color-interactive-hover) hover:text-(--color-ink-muted)",
+                        isSidebarCollapsed && "lg:hidden"
+                      )}
+                    >
+                      <span className="truncate">{group}</span>
+                      <Icon
+                        name={isGroupCollapsed ? "chevron-right" : "chevron-down"}
+                        className="h-3.5 w-3.5"
+                      />
+                    </button>
+                    <div id={groupId} className={cn("space-y-1", isGroupCollapsed && "hidden")}>
+                      {items.map((item) => {
+                        const isActive = item.routeId === activeRouteId;
+
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            title={item.title}
+                            onClick={() => handleNavigate(item.routeId)}
+                            className={cn(
+                              "group flex h-9 w-full items-center gap-2 rounded-md px-2 text-sm transition",
+                              isSidebarCollapsed ? "lg:justify-center lg:px-0" : "justify-between",
+                              isActive
+                                ? "bg-(--color-interactive-selected) text-(--color-interactive-selected-ink)"
+                                : "text-(--color-ink-muted) hover:bg-(--color-interactive-hover) hover:text-(--color-ink)"
+                            )}
+                          >
+                            <span className="flex items-center gap-3 overflow-hidden">
+                              {item.icon ? (
+                                <Icon
+                                  name={item.icon}
+                                  className={cn(
+                                    "h-4 w-4 shrink-0",
+                                    isActive
+                                      ? "text-(--color-interactive-selected-ink)"
+                                      : "text-(--color-ink-subtle) group-hover:text-(--color-ink-muted)"
+                                  )}
+                                />
+                              ) : null}
+                              <span
                                 className={cn(
-                                  isActive
-                                    ? "text-[color:var(--color-interactive-selected-ink)]"
-                                    : "text-[color:var(--color-ink-subtle)]"
+                                  "truncate font-medium",
+                                  isSidebarCollapsed && "lg:hidden"
                                 )}
-                              />
+                              >
+                                {item.title}
+                              </span>
+                            </span>
+                            {item.badge ? (
+                              <span
+                                className={cn(
+                                  "rounded-md border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em]",
+                                  isActive
+                                    ? "border-(--color-overlay-soft) bg-(--color-overlay-soft) text-(--color-interactive-selected-ink)"
+                                    : "border-(--color-border) bg-(--color-panel-soft) text-(--color-ink-subtle)",
+                                  isSidebarCollapsed && "lg:hidden"
+                                )}
+                              >
+                                {item.badge}
+                              </span>
                             ) : null}
-                            <span
-                              className={cn(
-                                "truncate font-medium",
-                                isSidebarCollapsed && "lg:hidden"
-                              )}
-                            >
-                              {item.title}
-                            </span>
-                          </span>
-                          {item.badge ? (
-                            <span
-                              className={cn(
-                                "rounded-md border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em]",
-                                isActive
-                                  ? "border-[color:var(--color-overlay-soft)] bg-[color:var(--color-overlay-soft)] text-[color:var(--color-interactive-selected-ink)]"
-                                  : "border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] text-[color:var(--color-ink-subtle)]",
-                                isSidebarCollapsed && "lg:hidden"
-                              )}
-                            >
-                              {item.badge}
-                            </span>
-                          ) : null}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </section>
-              ))}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </section>
+                );
+              })}
             </nav>
           </div>
 
           {sidebarFooter ? (
-            <div className="border-t border-[color:var(--color-border)] p-3">{sidebarFooter}</div>
+            <div
+              className={cn(
+                "border-t border-(--color-border) p-2.5",
+                isSidebarCollapsed && "lg:hidden"
+              )}
+            >
+              {sidebarFooter}
+            </div>
           ) : null}
         </aside>
 
-        <div
-          className={cn("min-w-0 flex-1", isSidebarCollapsed ? "lg:ml-[84px]" : "lg:ml-[280px]")}
-        >
-          <header className="sticky top-0 z-20 border-b border-[color:var(--color-border)] bg-[color:var(--color-canvas)]/90 backdrop-blur-xl">
-            <div className="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
+        <div className={cn("min-w-0 flex-1", isSidebarCollapsed ? "lg:ml-14" : "lg:ml-64")}>
+          <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-2 border-b border-(--color-border) bg-(--color-panel-soft)/95 backdrop-blur-xl">
+            <div className="flex w-full items-center gap-2 px-4">
               <button
                 type="button"
                 onClick={() => setIsMobileSidebarOpen(true)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[color:var(--color-border)] text-[color:var(--color-ink-muted)] transition hover:bg-[color:var(--color-surface)] hover:text-[color:var(--color-ink)] lg:hidden"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-(--color-ink-muted) transition hover:bg-(--color-interactive-hover) hover:text-(--color-ink) lg:hidden"
                 aria-label="Open sidebar"
               >
                 <Icon name="panel-left" />
               </button>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 text-xs text-[color:var(--color-ink-subtle)]">
-                  <span>Dashboard</span>
-                  <Icon name="chevron-right" className="h-3.5 w-3.5" />
-                  <span className="truncate text-[color:var(--color-ink-muted)]">
-                    {activeNavigation?.title ?? title}
-                  </span>
-                </div>
-                <h1 className="mt-0.5 truncate text-lg font-semibold tracking-[-0.02em] text-[color:var(--color-ink)]">
-                  {title}
-                </h1>
-                {subtitle ? (
-                  <p className="truncate text-sm text-[color:var(--color-ink-subtle)]">
-                    {subtitle}
-                  </p>
-                ) : null}
+              <button
+                type="button"
+                onClick={() => setIsSidebarCollapsed((current) => !current)}
+                className="hidden h-8 w-8 items-center justify-center rounded-md text-(--color-ink-muted) transition hover:bg-(--color-interactive-hover) hover:text-(--color-ink) lg:inline-flex"
+                aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                <Icon name="panel-left" />
+              </button>
+              <div className="hidden h-4 w-px bg-(--color-border-strong) lg:block" />
+              <div className="flex min-w-0 flex-1 items-center gap-2 text-sm">
+                <span className="hidden truncate text-(--color-ink-muted) md:inline">
+                  Trinacria CMS
+                </span>
+                <Icon
+                  name="chevron-right"
+                  className="hidden h-3.5 w-3.5 text-(--color-ink-subtle) md:inline"
+                />
+                <span className="hidden truncate text-(--color-ink-muted) md:inline">
+                  {activeNavigation?.group ?? "Workspace"}
+                </span>
+                <span className="hidden text-(--color-ink-subtle) md:inline">/</span>
+                <span className="truncate font-medium text-(--color-ink)">
+                  {activeNavigation?.title ?? title}
+                </span>
               </div>
               {statusBadges.length > 0 ? (
-                <div className="hidden items-center gap-2 xl:flex">
-                  {statusBadges.map((badge) => (
+                <div className="hidden max-w-[46vw] gap-2 overflow-x-auto xl:flex">
+                  {statusBadges.slice(0, 3).map((badge) => (
                     <div
                       key={`${badge.label}:${badge.value}`}
                       className={cn(
-                        "rounded-full border px-3 py-1 text-xs font-medium",
+                        "shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium",
                         badgeToneClass(badge.tone)
                       )}
                     >
-                      <span className="text-[color:var(--color-ink-subtle)]">{badge.label}</span>
-                      <span className="ml-1 text-[color:var(--color-ink)]">{badge.value}</span>
+                      <span className="text-(--color-ink-subtle)">{badge.label}</span>
+                      <span className="ml-1 text-(--color-ink)">{badge.value}</span>
                     </div>
                   ))}
                 </div>
               ) : null}
-              <div className="flex items-center gap-2">{headerActions}</div>
+              <div className="hidden items-center gap-2 md:flex">{headerActions}</div>
             </div>
           </header>
 
-          <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>
+          <main className="px-4 py-4">
+            <div className="grid gap-4">
+              {!hideHeader ? (
+                <div className="rounded-xl border border-(--color-border) bg-(--color-panel) px-4 py-4 shadow-(--shadow-sm) sm:px-5">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 text-xs text-(--color-ink-subtle) md:hidden">
+                        <span>Trinacria CMS</span>
+                        <Icon name="chevron-right" className="h-3.5 w-3.5" />
+                        <span className="truncate">{activeNavigation?.group ?? "Workspace"}</span>
+                      </div>
+                      <h1 className="mt-1 truncate text-2xl font-semibold tracking-[-0.03em] text-(--color-ink) md:mt-0">
+                        {title}
+                      </h1>
+                      {subtitle ? (
+                        <p className="mt-1 max-w-3xl truncate text-sm text-(--color-ink-subtle)">
+                          {subtitle}
+                        </p>
+                      ) : null}
+                    </div>
+                    {statusBadges.length > 0 ? (
+                      <div className="flex gap-2 overflow-x-auto md:max-w-[50%] xl:hidden">
+                        {statusBadges.slice(0, 3).map((badge) => (
+                          <div
+                            key={`${badge.label}:${badge.value}`}
+                            className={cn(
+                              "shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium",
+                              badgeToneClass(badge.tone)
+                            )}
+                          >
+                            <span className="text-(--color-ink-subtle)">{badge.label}</span>
+                            <span className="ml-1 text-(--color-ink)">{badge.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+              {children}
+            </div>
+          </main>
         </div>
       </div>
     </div>

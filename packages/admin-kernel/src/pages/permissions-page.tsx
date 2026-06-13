@@ -13,6 +13,7 @@ import {
   DataTableRow,
   DataTableTable,
   Dialog,
+  FeedbackBanner,
   FilterBar,
   Input,
   Textarea
@@ -46,6 +47,8 @@ export function PermissionsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [actionId, setActionId] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [selectedPermission, setSelectedPermission] = useState<PermissionRecord | null>(null);
   const createFormRef = useRef<HTMLFormElement>(null);
   const [optimisticRecords, applyOptimisticStatus] = useOptimisticStatusRecords(records);
 
@@ -72,6 +75,33 @@ export function PermissionsPage() {
         await cms.permissions.createPermission({
           body: {
             key: readRequiredString(formData, "key"),
+            displayName: readRequiredString(formData, "displayName"),
+            description: readOptionalString(formData, "description")
+          }
+        });
+        await refresh();
+        return { ok: true, error: null, data: null };
+      } catch (currentError) {
+        return {
+          ok: false,
+          error: toDisplayError(currentError),
+          data: null
+        };
+      }
+    },
+    createIdleAsyncActionState()
+  );
+
+  const [editState, submitEdit, isEditPending] = useActionState(
+    async (_previousState: AsyncActionState, formData: FormData) => {
+      if (!selectedPermission) {
+        return { ok: false, error: t("permissions.feedback.select_permission"), data: null };
+      }
+
+      try {
+        await cms.permissions.updatePermission({
+          path: { id: selectedPermission.id },
+          body: {
             displayName: readRequiredString(formData, "displayName"),
             description: readOptionalString(formData, "description")
           }
@@ -117,6 +147,11 @@ export function PermissionsPage() {
     }
   }
 
+  function openEditPermission(record: PermissionRecord) {
+    setSelectedPermission(record);
+    setIsEditOpen(true);
+  }
+
   return (
     <div className="grid gap-4">
       <Card eyebrow={t("permissions.eyebrow")} title={t("permissions.title")}>
@@ -157,18 +192,27 @@ export function PermissionsPage() {
                     </Badge>
                   }
                   actions={
-                    <Button
-                      variant="secondary"
-                      className="w-full"
-                      disabled={actionId === record.id}
-                      onClick={() => toggleStatus(record)}
-                    >
-                      {actionId === record.id
-                        ? t("common.actions.updating")
-                        : record.status === "active"
-                          ? t("common.actions.disable")
-                          : t("common.actions.activate")}
-                    </Button>
+                    <div className="grid gap-2">
+                      <Button
+                        variant="secondary"
+                        className="w-full"
+                        onClick={() => openEditPermission(record)}
+                      >
+                        {t("common.actions.edit")}
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        className="w-full"
+                        disabled={actionId === record.id}
+                        onClick={() => toggleStatus(record)}
+                      >
+                        {actionId === record.id
+                          ? t("common.actions.updating")
+                          : record.status === "active"
+                            ? t("common.actions.disable")
+                            : t("common.actions.activate")}
+                      </Button>
+                    </div>
                   }
                 >
                   <MobileRecordField
@@ -212,17 +256,22 @@ export function PermissionsPage() {
                         {formatDateTime(record.updatedAt)}
                       </DataTableCell>
                       <DataTableCell>
-                        <Button
-                          variant="secondary"
-                          disabled={actionId === record.id}
-                          onClick={() => toggleStatus(record)}
-                        >
-                          {actionId === record.id
-                            ? t("common.actions.updating")
-                            : record.status === "active"
-                              ? t("common.actions.disable")
-                              : t("common.actions.activate")}
-                        </Button>
+                        <div className="flex flex-wrap gap-2">
+                          <Button variant="secondary" onClick={() => openEditPermission(record)}>
+                            {t("common.actions.edit")}
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            disabled={actionId === record.id}
+                            onClick={() => toggleStatus(record)}
+                          >
+                            {actionId === record.id
+                              ? t("common.actions.updating")
+                              : record.status === "active"
+                                ? t("common.actions.disable")
+                                : t("common.actions.activate")}
+                          </Button>
+                        </div>
                       </DataTableCell>
                     </DataTableRow>
                   ))}
@@ -268,6 +317,48 @@ export function PermissionsPage() {
           <Textarea label={t("common.form.description")} name="description" />
           {createState.error ? <ErrorBanner message={createState.error} /> : null}
         </form>
+      </Dialog>
+
+      <Dialog
+        open={isEditOpen}
+        title={selectedPermission?.displayName ?? t("permissions.dialog.edit.title")}
+        description={selectedPermission?.key}
+        eyebrow={t("permissions.dialog.edit.eyebrow")}
+        closeLabel={t("common.actions.close")}
+        closeVariant="icon"
+        variant="drawer"
+        onClose={() => setIsEditOpen(false)}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setIsEditOpen(false)}>
+              {t("common.actions.cancel")}
+            </Button>
+            <Button form="edit-permission-form" type="submit" disabled={isEditPending}>
+              {isEditPending ? t("common.actions.updating") : t("common.actions.save")}
+            </Button>
+          </>
+        }
+      >
+        {selectedPermission ? (
+          <form id="edit-permission-form" className="grid gap-4" action={submitEdit}>
+            <Input label={t("common.form.key")} value={selectedPermission.key} disabled />
+            <Input
+              label={t("common.form.display_name")}
+              name="displayName"
+              defaultValue={selectedPermission.displayName}
+              required
+            />
+            <Textarea
+              label={t("common.form.description")}
+              name="description"
+              defaultValue={selectedPermission.description ?? ""}
+            />
+            {editState.ok ? (
+              <FeedbackBanner tone="success" message={t("permissions.feedback.updated")} />
+            ) : null}
+            {editState.error ? <ErrorBanner message={editState.error} /> : null}
+          </form>
+        ) : null}
       </Dialog>
     </div>
   );
