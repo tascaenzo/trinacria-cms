@@ -10,7 +10,8 @@ import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import { CORE_PACK_OPENAPI_TAGS } from "../openapi-tags.js";
 import {
   buildLoginSetCookieHeaders,
-  buildLogoutClearCookieHeaders
+  buildLogoutClearCookieHeaders,
+  extractRefreshTokenFromCookie
 } from "./auth-session.js";
 import {
   createJwtAuthMiddleware,
@@ -22,7 +23,9 @@ import {
   AuthLogoutResponseSchema,
   AuthMeResponseSchema,
   AuthSessionResponseSchema,
-  LoginWithPasswordInputSchema
+  ChangeAuthenticatedUserPasswordInputSchema,
+  LoginWithPasswordInputSchema,
+  UpdateAuthenticatedUserProfileInputSchema
 } from "./dto/index.js";
 import type { JwtAuthService } from "./auth.service.js";
 
@@ -83,13 +86,57 @@ export class AuthController extends HttpController {
           }
         }
       })
-      .post("/v1/auth/logout", this.logout, {
+      .patch("/v1/auth/me", this.updateMe, {
         middlewares: [this.authMiddleware],
         docs: {
-          summary: "Logout current JWT session on client side",
+          summary: "Update current authenticated user profile",
+          tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
+          operationId: "updateAuthenticatedUserProfile",
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            schema: toOpenApiSchema(UpdateAuthenticatedUserProfileInputSchema)
+          },
+          responses: {
+            200: {
+              description: "Updated authenticated user",
+              schema: toOpenApiSchema(AuthMeResponseSchema)
+            },
+            401: {
+              description: "Authentication failed",
+              schema: toOpenApiSchema(AuthErrorResponseSchema)
+            }
+          }
+        }
+      })
+      .patch("/v1/auth/me/password", this.changePassword, {
+        middlewares: [this.authMiddleware],
+        docs: {
+          summary: "Change current authenticated user password",
+          tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
+          operationId: "changeAuthenticatedUserPassword",
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            schema: toOpenApiSchema(ChangeAuthenticatedUserPasswordInputSchema)
+          },
+          responses: {
+            200: {
+              description: "Password changed",
+              schema: toOpenApiSchema(AuthMeResponseSchema)
+            },
+            401: {
+              description: "Authentication failed",
+              schema: toOpenApiSchema(AuthErrorResponseSchema)
+            }
+          }
+        }
+      })
+      .post("/v1/auth/logout", this.logout, {
+        docs: {
+          summary: "Logout current JWT session and clear auth cookies",
           tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
           operationId: "logoutSession",
-          security: [{ bearerAuth: [] }],
           responses: {
             200: {
               description: "Session revocation result",
@@ -110,7 +157,14 @@ export class AuthController extends HttpController {
       const payload = LoginWithPasswordInputSchema.parse(ctx.body);
       const session = await this.auth.loginWithPassword(payload);
       const cookieConfig = await this.auth.getJwtCookieConfig();
-      return response(responder.success(session), {
+      const publicSession = {
+        accessToken: session.accessToken,
+        tokenType: session.tokenType,
+        expiresAt: session.expiresAt,
+        refreshExpiresAt: session.refreshExpiresAt,
+        user: session.user
+      };
+      return response(responder.success(publicSession), {
         headers: {
           "set-cookie": buildLoginSetCookieHeaders(session, cookieConfig)
         }
@@ -128,14 +182,36 @@ export class AuthController extends HttpController {
     }
   };
 
+  private updateMe = async (ctx: HttpContext) => {
+    try {
+      const user = getAuthenticatedUser(ctx);
+      const payload = UpdateAuthenticatedUserProfileInputSchema.parse(ctx.body);
+      const updated = await this.auth.updateAuthenticatedUserProfile(user.id, payload);
+      return responder.success(updated);
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private changePassword = async (ctx: HttpContext) => {
+    try {
+      const user = getAuthenticatedUser(ctx);
+      const payload = ChangeAuthenticatedUserPasswordInputSchema.parse(ctx.body);
+      const updated = await this.auth.changeAuthenticatedUserPassword(user.id, payload);
+      return responder.success(updated);
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
   private logout = async (ctx: HttpContext) => {
     try {
       const cookieConfig = await this.auth.getJwtCookieConfig();
       const token = extractAuthToken(ctx, cookieConfig);
-      if (!token) {
-        return responder.invalidRequest("Missing bearer token");
-      }
-      const revoked = await this.auth.revokeBearerToken(token);
+      const refreshToken = extractRefreshTokenFromCookie(ctx, cookieConfig);
+      const revokedAccess = token ? await this.auth.revokeBearerToken(token) : false;
+      const revokedRefresh = refreshToken ? await this.auth.revokeBearerToken(refreshToken) : false;
+      const revoked = revokedAccess || revokedRefresh;
       return response(responder.success({ revoked }), {
         headers: {
           "set-cookie": buildLogoutClearCookieHeaders(cookieConfig)

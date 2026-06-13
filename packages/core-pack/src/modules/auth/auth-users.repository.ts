@@ -27,6 +27,18 @@ export class AuthUsersRepository {
     });
   }
 
+  async updateProfile(id: string, input: { displayName: string }): Promise<UserRecord | null> {
+    const updated = await this.repository().updateOne(
+      { filter: { id: id.trim() } },
+      {
+        displayName: input.displayName.trim(),
+        updatedAt: new Date().toISOString()
+      }
+    );
+
+    return updated ? this.parseUserRecord(updated) : null;
+  }
+
   private repository() {
     this.scope = this.scope ?? createPluginDbScope(this.db, CORE_PACK_PLUGIN_ID);
     return this.scope.repository<UserRecord>(USERS_ENTITY_NAME);

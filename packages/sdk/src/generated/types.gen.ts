@@ -29,12 +29,6 @@ export type AssignUserRoleResponse = {
 
 export type BootstrapInstallationRequest = {
   body: {
-  "mongoHost"?: string;
-  "mongoPort"?: string;
-  "mongoDatabase"?: string;
-  "mongoUsername"?: string;
-  "mongoPassword"?: string;
-  "mongoAuthSource"?: string;
   "firstName": string;
   "lastName": string;
   "email": string;
@@ -53,19 +47,43 @@ export type BootstrapInstallationResponse = {
   "installed": boolean;
   "installedAt"?: string;
   "adminUserId"?: string;
+  "envFilePresent": boolean;
+  "dbConfigured": boolean;
+  "envFilePath": string;
 };
   "adminUser": {
   "id": string;
   "email": string;
-  "displayName": string;
   "firstName": string;
   "lastName": string;
+  "displayName": string;
   "status": "active" | "suspended";
   "createdAt": string;
   "updatedAt": string;
 };
-  "envWritten": boolean;
-  "dbConnected": boolean;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+};
+};
+
+export type ChangeAuthenticatedUserPasswordRequest = {
+  body: {
+  "currentPassword": string;
+  "newPassword": string;
+};
+};
+
+export type ChangeAuthenticatedUserPasswordResponse = {
+  "data": {
+  "id": string;
+  "email": string;
+  "firstName": string;
+  "lastName": string;
+  "displayName": string;
+  "status": "active" | "suspended";
+  "createdAt": string;
+  "updatedAt": string;
 };
   "meta"?: {
   "pluginId"?: "core-pack";
@@ -165,6 +183,14 @@ export type CreateRoleResponse = {
   "description"?: string;
   "ownerPluginId"?: string;
   "permissions"?: Array<string>;
+  "policyRules"?: Array<{
+  "effect": "allow" | "deny";
+  "permissionPattern": string;
+  "conditions": Array<"resource_id_required" | "resource_id_equals_subject">;
+  "sourcePluginId": string;
+  "createdAt": string;
+  "updatedAt": string;
+}>;
   "status": "active" | "disabled";
   "createdAt": string;
   "updatedAt": string;
@@ -210,6 +236,8 @@ export type CreateRolePolicyRuleResponse = {
 export type CreateUserRequest = {
   body: {
   "email": string;
+  "firstName": string;
+  "lastName": string;
   "displayName": string;
 };
 };
@@ -218,6 +246,8 @@ export type CreateUserResponse = {
   "data": {
   "id": string;
   "email": string;
+  "firstName": string;
+  "lastName": string;
   "displayName": string;
   "status": "active" | "suspended";
   "createdAt": string;
@@ -274,6 +304,14 @@ export type ExecutePluginOperationResponse = {
   "version": string;
   "requiresCore": string;
   "state": "registered" | "loading" | "initializing" | "loaded" | "unloading" | "failed" | "disabled" | "unloaded";
+  "source"?: {
+  "type": "workspace" | "package" | "local-path";
+  "name": string;
+  "entrypoint": string;
+  "status": "discovered" | "failed" | "disabled";
+  "pluginId"?: string;
+  "error"?: string;
+};
   "capabilities": Array<string>;
   "dependencies": Array<{
   "pluginId": string;
@@ -310,14 +348,6 @@ export type ExecutePluginOperationResponse = {
   "available": boolean;
   "reason"?: string;
 }>;
-  "source"?: {
-  "type": "workspace" | "package" | "local-path";
-  "name": string;
-  "entrypoint": string;
-  "status": "discovered" | "failed" | "disabled";
-  "pluginId"?: string;
-  "error"?: string;
-};
 };
   "operation": "load" | "unload" | "reload" | "disable" | "enable";
   "executedAt": string;
@@ -349,6 +379,9 @@ export type ExportPluginSettingsResponse = {
   "defaultValue"?: string | number | boolean | null | Array<unknown> | {
   [key: string]: unknown;
 };
+  "visibility"?: "public" | "admin" | "internal";
+  "mutable"?: boolean;
+  "secret"?: boolean;
   "status": "active" | "disabled";
   "createdAt": string;
   "updatedAt": string;
@@ -424,6 +457,8 @@ export type GetAuthenticatedUserResponse = {
   "data": {
   "id": string;
   "email": string;
+  "firstName": string;
+  "lastName": string;
   "displayName": string;
   "status": "active" | "suspended";
   "createdAt": string;
@@ -441,6 +476,9 @@ export type GetInstallationStatusResponse = {
   "installed": boolean;
   "installedAt"?: string;
   "adminUserId"?: string;
+  "envFilePresent": boolean;
+  "dbConfigured": boolean;
+  "envFilePath": string;
 };
   "meta"?: {
   "pluginId"?: "core-pack";
@@ -459,6 +497,14 @@ export type GetInstalledPluginResponse = {
   "version": string;
   "requiresCore": string;
   "state": "registered" | "loading" | "initializing" | "loaded" | "unloading" | "failed" | "disabled" | "unloaded";
+  "source"?: {
+  "type": "workspace" | "package" | "local-path";
+  "name": string;
+  "entrypoint": string;
+  "status": "discovered" | "failed" | "disabled";
+  "pluginId"?: string;
+  "error"?: string;
+};
   "capabilities": Array<string>;
   "dependencies": Array<{
   "pluginId": string;
@@ -495,14 +541,6 @@ export type GetInstalledPluginResponse = {
   "available": boolean;
   "reason"?: string;
 }>;
-  "source"?: {
-  "type": "workspace" | "package" | "local-path";
-  "name": string;
-  "entrypoint": string;
-  "status": "discovered" | "failed" | "disabled";
-  "pluginId"?: string;
-  "error"?: string;
-};
 };
   "meta"?: {
   "pluginId"?: "kernel";
@@ -607,6 +645,14 @@ export type GetRoleByIdResponse = {
   "description"?: string;
   "ownerPluginId"?: string;
   "permissions"?: Array<string>;
+  "policyRules"?: Array<{
+  "effect": "allow" | "deny";
+  "permissionPattern": string;
+  "conditions": Array<"resource_id_required" | "resource_id_equals_subject">;
+  "sourcePluginId": string;
+  "createdAt": string;
+  "updatedAt": string;
+}>;
   "status": "active" | "disabled";
   "createdAt": string;
   "updatedAt": string;
@@ -638,6 +684,9 @@ export type GetSettingDefinitionByKeyResponse = {
   "defaultValue"?: string | number | boolean | null | Array<unknown> | {
   [key: string]: unknown;
 };
+  "visibility"?: "public" | "admin" | "internal";
+  "mutable"?: boolean;
+  "secret"?: boolean;
   "status": "active" | "disabled";
   "createdAt": string;
   "updatedAt": string;
@@ -667,6 +716,22 @@ export type GetSettingSecretMetadataResponse = {
 };
   "meta"?: {
   [key: string]: unknown;
+};
+};
+
+export type GetSettingsObservabilityRequest = void;
+
+export type GetSettingsObservabilityResponse = {
+  "data": {
+  "reads": number;
+  "writes": number;
+  "denies": number;
+  "errors": number;
+  "pluginAuth": {
+  "successes": number;
+  "failures": number;
+  "replays": number;
+};
 };
 };
 
@@ -702,6 +767,8 @@ export type GetUserByIdResponse = {
   "data": {
   "id": string;
   "email": string;
+  "firstName": string;
+  "lastName": string;
   "displayName": string;
   "status": "active" | "suspended";
   "createdAt": string;
@@ -777,6 +844,14 @@ export type ListInstalledPluginsResponse = {
   "version": string;
   "requiresCore": string;
   "state": "registered" | "loading" | "initializing" | "loaded" | "unloading" | "failed" | "disabled" | "unloaded";
+  "source"?: {
+  "type": "workspace" | "package" | "local-path";
+  "name": string;
+  "entrypoint": string;
+  "status": "discovered" | "failed" | "disabled";
+  "pluginId"?: string;
+  "error"?: string;
+};
   "capabilities": Array<string>;
   "dependencies": Array<{
   "pluginId": string;
@@ -813,14 +888,6 @@ export type ListInstalledPluginsResponse = {
   "available": boolean;
   "reason"?: string;
 }>;
-  "source"?: {
-  "type": "workspace" | "package" | "local-path";
-  "name": string;
-  "entrypoint": string;
-  "status": "discovered" | "failed" | "disabled";
-  "pluginId"?: string;
-  "error"?: string;
-};
 }>;
   "meta"?: {
   "pluginId"?: "kernel";
@@ -918,9 +985,6 @@ export type ListPluginEventsRequest = {
   path: {
   "pluginId": string;
 };
-  query: {
-  "limit"?: number;
-};
 };
 
 export type ListPluginEventsResponse = {
@@ -999,6 +1063,14 @@ export type ListRolesResponse = {
   "description"?: string;
   "ownerPluginId"?: string;
   "permissions"?: Array<string>;
+  "policyRules"?: Array<{
+  "effect": "allow" | "deny";
+  "permissionPattern": string;
+  "conditions": Array<"resource_id_required" | "resource_id_equals_subject">;
+  "sourcePluginId": string;
+  "createdAt": string;
+  "updatedAt": string;
+}>;
   "status": "active" | "disabled";
   "createdAt": string;
   "updatedAt": string;
@@ -1032,6 +1104,9 @@ export type ListSettingDefinitionsResponse = {
   "defaultValue"?: string | number | boolean | null | Array<unknown> | {
   [key: string]: unknown;
 };
+  "visibility"?: "public" | "admin" | "internal";
+  "mutable"?: boolean;
+  "secret"?: boolean;
   "status": "active" | "disabled";
   "createdAt": string;
   "updatedAt": string;
@@ -1091,6 +1166,8 @@ export type ListUsersResponse = {
   "data": Array<{
   "id": string;
   "email": string;
+  "firstName": string;
+  "lastName": string;
   "displayName": string;
   "status": "active" | "suspended";
   "createdAt": string;
@@ -1114,13 +1191,14 @@ export type LoginWithPasswordRequest = {
 export type LoginWithPasswordResponse = {
   "data": {
   "accessToken": string;
-  "refreshToken": string;
   "tokenType": "Bearer";
   "expiresAt": string;
   "refreshExpiresAt": string;
   "user": {
   "id": string;
   "email": string;
+  "firstName": string;
+  "lastName": string;
   "displayName": string;
   "status": "active" | "suspended";
   "createdAt": string;
@@ -1273,6 +1351,57 @@ export type RotateApiKeyResponse = {
 };
 };
 
+export type UpdateAuthenticatedUserProfileRequest = {
+  body: {
+  "displayName": string;
+};
+};
+
+export type UpdateAuthenticatedUserProfileResponse = {
+  "data": {
+  "id": string;
+  "email": string;
+  "firstName": string;
+  "lastName": string;
+  "displayName": string;
+  "status": "active" | "suspended";
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+};
+};
+
+export type UpdatePermissionRequest = {
+  path: {
+  "id": string;
+};
+  body: {
+  "displayName": string;
+  "description"?: string;
+};
+};
+
+export type UpdatePermissionResponse = {
+  "data": {
+  "id": string;
+  "key": string;
+  "displayName": string;
+  "description"?: string;
+  "sourcePluginId": string;
+  "status": "active" | "disabled";
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
 export type UpdatePermissionStatusRequest = {
   path: {
   "id": string;
@@ -1289,6 +1418,45 @@ export type UpdatePermissionStatusResponse = {
   "displayName": string;
   "description"?: string;
   "sourcePluginId": string;
+  "status": "active" | "disabled";
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type UpdateRoleRequest = {
+  path: {
+  "id": string;
+};
+  body: {
+  "name": string;
+  "description"?: string;
+  "permissions"?: Array<string>;
+};
+};
+
+export type UpdateRoleResponse = {
+  "data": {
+  "id": string;
+  "code": string;
+  "name": string;
+  "description"?: string;
+  "ownerPluginId"?: string;
+  "permissions"?: Array<string>;
+  "policyRules"?: Array<{
+  "effect": "allow" | "deny";
+  "permissionPattern": string;
+  "conditions": Array<"resource_id_required" | "resource_id_equals_subject">;
+  "sourcePluginId": string;
+  "createdAt": string;
+  "updatedAt": string;
+}>;
   "status": "active" | "disabled";
   "createdAt": string;
   "updatedAt": string;
@@ -1349,7 +1517,43 @@ export type UpdateRoleStatusResponse = {
   "description"?: string;
   "ownerPluginId"?: string;
   "permissions"?: Array<string>;
+  "policyRules"?: Array<{
+  "effect": "allow" | "deny";
+  "permissionPattern": string;
+  "conditions": Array<"resource_id_required" | "resource_id_equals_subject">;
+  "sourcePluginId": string;
+  "createdAt": string;
+  "updatedAt": string;
+}>;
   "status": "active" | "disabled";
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type UpdateUserProfileRequest = {
+  path: {
+  "id": string;
+};
+  body: {
+  "displayName": string;
+};
+};
+
+export type UpdateUserProfileResponse = {
+  "data": {
+  "id": string;
+  "email": string;
+  "firstName": string;
+  "lastName": string;
+  "displayName": string;
+  "status": "active" | "suspended";
   "createdAt": string;
   "updatedAt": string;
 };
@@ -1374,6 +1578,8 @@ export type UpdateUserStatusResponse = {
   "data": {
   "id": string;
   "email": string;
+  "firstName": string;
+  "lastName": string;
   "displayName": string;
   "status": "active" | "suspended";
   "createdAt": string;
@@ -1392,6 +1598,10 @@ export type UpsertSettingDefinitionRequest = {
   "key": string;
   "category"?: string;
   "description"?: string;
+  "status"?: "active" | "disabled";
+  "visibility"?: "public" | "admin" | "internal";
+  "mutable"?: boolean;
+  "secret"?: boolean;
   "schema"?: string | number | boolean | null | Array<unknown> | {
   [key: string]: unknown;
 };
@@ -1414,6 +1624,9 @@ export type UpsertSettingDefinitionResponse = {
   "defaultValue"?: string | number | boolean | null | Array<unknown> | {
   [key: string]: unknown;
 };
+  "visibility"?: "public" | "admin" | "internal";
+  "mutable"?: boolean;
+  "secret"?: boolean;
   "status": "active" | "disabled";
   "createdAt": string;
   "updatedAt": string;

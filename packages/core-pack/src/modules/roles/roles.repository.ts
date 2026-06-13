@@ -4,6 +4,8 @@ import type { CacheService } from "../cache/cache.service.js";
 import {
   CreateRoleInputSchema,
   type CreateRoleInput,
+  type UpdateRoleInput,
+  UpdateRoleInputSchema,
   type UpdateRoleStatusInput,
   UpdateRoleStatusInputSchema
 } from "./dto/roles.input.dto.js";
@@ -111,6 +113,25 @@ export class RolesRepository {
         updatedAt: new Date().toISOString()
       }
     );
+
+    if (!updated) return null;
+    await this.cache?.invalidate(CACHE_NAMESPACE);
+    return this.parseRoleRecord(updated);
+  }
+
+  async updateDetails(id: string, input: UpdateRoleInput): Promise<RoleRecord | null> {
+    const parsedInput = UpdateRoleInputSchema.parse(input);
+    const patch: Partial<RoleRecord> = {
+      name: parsedInput.name,
+      updatedAt: new Date().toISOString()
+    };
+    if (parsedInput.description?.trim()) {
+      patch.description = parsedInput.description;
+    } else {
+      patch.description = undefined;
+    }
+
+    const updated = await this.repository().updateOne({ filter: { id: id.trim() } }, patch);
 
     if (!updated) return null;
     await this.cache?.invalidate(CACHE_NAMESPACE);

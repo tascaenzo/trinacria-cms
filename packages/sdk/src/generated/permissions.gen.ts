@@ -2,12 +2,13 @@
 // Auto-generated from OpenAPI. Do not edit by hand.
 
 import type { CmsSdkClientCore, SdkRequestOverrides } from "../runtime/types.js";
-import type { CreatePermissionRequest, CreatePermissionResponse, GetPermissionByIdRequest, GetPermissionByIdResponse, ListPermissionsRequest, ListPermissionsResponse, UpdatePermissionStatusRequest, UpdatePermissionStatusResponse } from "./types.gen.js";
+import type { CreatePermissionRequest, CreatePermissionResponse, GetPermissionByIdRequest, GetPermissionByIdResponse, ListPermissionsRequest, ListPermissionsResponse, UpdatePermissionRequest, UpdatePermissionResponse, UpdatePermissionStatusRequest, UpdatePermissionStatusResponse } from "./types.gen.js";
 
 export interface PermissionsApi {
   createPermission(input: CreatePermissionRequest, options?: SdkRequestOverrides): Promise<CreatePermissionResponse>;
   getPermissionById(input: GetPermissionByIdRequest, options?: SdkRequestOverrides): Promise<GetPermissionByIdResponse>;
   listPermissions(input: ListPermissionsRequest, options?: SdkRequestOverrides): Promise<ListPermissionsResponse>;
+  updatePermission(input: UpdatePermissionRequest, options?: SdkRequestOverrides): Promise<UpdatePermissionResponse>;
   updatePermissionStatus(input: UpdatePermissionStatusRequest, options?: SdkRequestOverrides): Promise<UpdatePermissionStatusResponse>;
 }
 
@@ -42,6 +43,17 @@ export function createPermissionsApi(client: CmsSdkClientCore): PermissionsApi {
         pathParams: undefined,
         query: input.query,
         body: undefined,
+        headers: options?.headers,
+        credentials: options?.credentials,
+        signal: options?.signal,
+      }),
+    updatePermission: async (input, options) =>
+      client.request({
+        method: "PATCH",
+        path: "/v1/permissions/:id",
+        pathParams: input.path,
+        query: undefined,
+        body: input.body,
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,

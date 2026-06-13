@@ -1,4 +1,8 @@
-import type { CreateRoleInput, UpdateRoleStatusInput } from "./dto/roles.input.dto.js";
+import type {
+  CreateRoleInput,
+  UpdateRoleInput,
+  UpdateRoleStatusInput
+} from "./dto/roles.input.dto.js";
 import { type RoleRecord } from "./roles.schemas.js";
 import { RoleGrantsRepository } from "./grants/role-grants.repository.js";
 import { RolesRepository } from "./roles.repository.js";
@@ -49,6 +53,25 @@ export class RolesService {
 
   async activateRole(id: string): Promise<RoleRecord | null> {
     return this.setRoleStatus(id, { status: "active" });
+  }
+
+  async updateRole(id: string, input: UpdateRoleInput): Promise<RoleRecord | null> {
+    const updated = await this.repository.updateDetails(id, input);
+    if (!updated) return null;
+
+    if (input.permissions) {
+      await this.grants.deleteByRoleCode(updated.code);
+      for (const permissionKey of input.permissions) {
+        await this.grants.upsert({
+          roleCode: updated.code,
+          permissionKey,
+          sourcePluginId: CORE_PACK_PLUGIN_ID
+        });
+      }
+    }
+
+    const refreshed = await this.repository.findById(updated.id);
+    return refreshed ? this.hydrateRolePermissions(refreshed) : null;
   }
 
   private setRoleStatus(id: string, input: UpdateRoleStatusInput): Promise<RoleRecord | null> {

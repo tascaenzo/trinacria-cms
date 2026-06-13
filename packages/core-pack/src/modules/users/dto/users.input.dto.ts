@@ -28,6 +28,15 @@ export const UpdateUserStatusInputSchema = s.object(
 
 export type UpdateUserStatusInput = Infer<typeof UpdateUserStatusInputSchema>;
 
+export const UpdateUserProfileInputSchema = s.object(
+  {
+    displayName: s.string({ trim: true, minLength: 1, maxLength: 120 })
+  },
+  { strict: true }
+);
+
+export type UpdateUserProfileInput = Infer<typeof UpdateUserProfileInputSchema>;
+
 /**
  * DTO schema for list-users query parameters.
  */

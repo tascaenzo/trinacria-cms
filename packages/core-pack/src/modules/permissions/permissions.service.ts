@@ -1,5 +1,6 @@
 import type {
   CreatePermissionInput,
+  UpdatePermissionInput,
   UpdatePermissionStatusInput
 } from "./dto/permissions.input.dto.js";
 import { type PermissionRecord } from "./permissions.schemas.js";
@@ -39,6 +40,13 @@ export class PermissionsService {
 
   async activatePermission(id: string): Promise<PermissionRecord | null> {
     return this.setPermissionStatus(id, { status: "active" });
+  }
+
+  async updatePermission(
+    id: string,
+    input: UpdatePermissionInput
+  ): Promise<PermissionRecord | null> {
+    return this.repository.updateDetails(id, input);
   }
 
   private setPermissionStatus(

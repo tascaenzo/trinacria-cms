@@ -1,4 +1,8 @@
-import type { CreateUserInput, UpdateUserStatusInput } from "./dto/users.input.dto.js";
+import type {
+  CreateUserInput,
+  UpdateUserProfileInput,
+  UpdateUserStatusInput
+} from "./dto/users.input.dto.js";
 import type { UserRecord } from "./users.schemas.js";
 import { UsersRepository } from "./users.repository.js";
 
@@ -33,6 +37,10 @@ export class UsersService {
 
   async activateUser(id: string): Promise<UserRecord | null> {
     return this.setUserStatus(id, { status: "active" });
+  }
+
+  async updateUserProfile(id: string, input: UpdateUserProfileInput): Promise<UserRecord | null> {
+    return this.repository.updateProfile(id, input);
   }
 
   private setUserStatus(id: string, input: UpdateUserStatusInput): Promise<UserRecord | null> {

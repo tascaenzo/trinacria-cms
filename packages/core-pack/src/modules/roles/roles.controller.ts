@@ -16,6 +16,7 @@ import {
   ListRolesResponseSchema,
   RoleResponseSchema,
   RolesErrorResponseSchema,
+  UpdateRoleInputSchema,
   UpdateRoleStatusInputSchema
 } from "./dto/index.js";
 import type { RolesService } from "./roles.service.js";
@@ -113,6 +114,29 @@ export class RolesController extends HttpController {
           }
         }
       })
+      .patch("/v1/roles/:id", this.updateRole, {
+        middlewares: [this.adminAuthMiddleware],
+        docs: {
+          summary: "Update role",
+          tags: [CORE_PACK_OPENAPI_TAGS.ROLES],
+          operationId: "updateRole",
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            schema: toOpenApiSchema(UpdateRoleInputSchema)
+          },
+          responses: {
+            200: {
+              description: "Role updated",
+              schema: toOpenApiSchema(RoleResponseSchema)
+            },
+            404: {
+              description: "Role not found",
+              schema: toOpenApiSchema(RolesErrorResponseSchema)
+            }
+          }
+        }
+      })
       .patch("/v1/roles/:id/status", this.updateRoleStatus, {
         middlewares: [this.adminAuthMiddleware],
         docs: {
@@ -177,6 +201,24 @@ export class RolesController extends HttpController {
       const payload = CreateRoleInputSchema.parse(ctx.body);
       const created = await this.roles.createRole(payload);
       return responder.success(created);
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private updateRole = async (ctx: HttpContext) => {
+    const id = ctx.params.id;
+    if (!id) {
+      return responder.invalidRequest("Missing role id");
+    }
+
+    try {
+      const payload = UpdateRoleInputSchema.parse(ctx.body);
+      const updated = await this.roles.updateRole(id, payload);
+      if (!updated) {
+        return responder.notFound(`Role "${id}" not found`);
+      }
+      return responder.success(updated);
     } catch (error) {
       return responder.fromError(error);
     }

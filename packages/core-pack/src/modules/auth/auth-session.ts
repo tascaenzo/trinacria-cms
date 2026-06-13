@@ -17,24 +17,30 @@ export async function readJwtCookieConfig(
 ): Promise<JwtCookieConfig> {
   const fallback = envFallback ?? readJwtCookieConfigFromEnv();
 
-  const accessCookieName = await config.getString("core-pack:auth:jwt_cookie_access_name", {
-    fallback: fallback.accessCookieName
-  }) ?? fallback.accessCookieName;
-  const refreshCookieName = await config.getString("core-pack:auth:jwt_cookie_refresh_name", {
-    fallback: fallback.refreshCookieName
-  }) ?? fallback.refreshCookieName;
-  const path = await config.getString("core-pack:auth:jwt_cookie_path", {
-    fallback: fallback.path
-  }) ?? fallback.path;
-  const domainRaw = await config.getString("core-pack:auth:jwt_cookie_domain", {
-    fallback: fallback.domain ?? ""
-  }) ?? "";
-  const sameSiteRaw = await config.getString("core-pack:auth:jwt_cookie_same_site", {
-    fallback: fallback.sameSite
-  }) ?? fallback.sameSite;
-  const secure = await config.getBoolean("core-pack:auth:jwt_cookie_secure", {
-    fallback: fallback.secure
-  }) ?? fallback.secure;
+  const accessCookieName =
+    (await config.getString("core-pack:auth:jwt_cookie_access_name", {
+      fallback: fallback.accessCookieName
+    })) ?? fallback.accessCookieName;
+  const refreshCookieName =
+    (await config.getString("core-pack:auth:jwt_cookie_refresh_name", {
+      fallback: fallback.refreshCookieName
+    })) ?? fallback.refreshCookieName;
+  const path =
+    (await config.getString("core-pack:auth:jwt_cookie_path", {
+      fallback: fallback.path
+    })) ?? fallback.path;
+  const domainRaw =
+    (await config.getString("core-pack:auth:jwt_cookie_domain", {
+      fallback: fallback.domain ?? ""
+    })) ?? "";
+  const sameSiteRaw =
+    (await config.getString("core-pack:auth:jwt_cookie_same_site", {
+      fallback: fallback.sameSite
+    })) ?? fallback.sameSite;
+  const secure =
+    (await config.getBoolean("core-pack:auth:jwt_cookie_secure", {
+      fallback: fallback.secure
+    })) ?? fallback.secure;
 
   return {
     accessCookieName,
@@ -50,6 +56,7 @@ export function readJwtCookieConfigFromEnv(): JwtCookieConfig {
   const sameSiteRaw = process.env.CMS_JWT_COOKIE_SAME_SITE?.trim().toLowerCase();
   const sameSite: JwtCookieConfig["sameSite"] =
     sameSiteRaw === "strict" ? "Strict" : sameSiteRaw === "none" ? "None" : "Lax";
+  const defaultSecure = sameSite === "None" || isProductionLikeNodeEnv();
 
   return {
     accessCookieName: process.env.CMS_JWT_ACCESS_COOKIE_NAME?.trim() || "cms_access_token",
@@ -57,7 +64,7 @@ export function readJwtCookieConfigFromEnv(): JwtCookieConfig {
     path: process.env.CMS_JWT_COOKIE_PATH?.trim() || "/",
     domain: process.env.CMS_JWT_COOKIE_DOMAIN?.trim() || undefined,
     sameSite,
-    secure: readBooleanEnv("CMS_JWT_COOKIE_SECURE", true)
+    secure: readBooleanEnv("CMS_JWT_COOKIE_SECURE", defaultSecure)
   };
 }
 
@@ -111,6 +118,14 @@ export function extractAccessTokenFromCookie(
   return value?.trim() || null;
 }
 
+export function extractRefreshTokenFromCookie(
+  ctx: Pick<HttpContext, "req">,
+  config: JwtCookieConfig
+): string | null {
+  const value = getCookieValue(ctx, config.refreshCookieName);
+  return value?.trim() || null;
+}
+
 function secondsUntil(isoDateTime: string): number {
   const expiresAt = Number(new Date(isoDateTime));
   if (!Number.isFinite(expiresAt)) {
@@ -128,7 +143,15 @@ function readBooleanEnv(name: string, defaultValue: boolean): boolean {
   return defaultValue;
 }
 
-function normalizeSameSite(value: string, fallback: JwtCookieConfig["sameSite"]): JwtCookieConfig["sameSite"] {
+function isProductionLikeNodeEnv(): boolean {
+  const nodeEnv = process.env.NODE_ENV?.trim().toLowerCase();
+  return nodeEnv === "production" || nodeEnv === "staging";
+}
+
+function normalizeSameSite(
+  value: string,
+  fallback: JwtCookieConfig["sameSite"]
+): JwtCookieConfig["sameSite"] {
   const raw = value.trim().toLowerCase();
   if (raw === "strict") return "Strict";
   if (raw === "none") return "None";

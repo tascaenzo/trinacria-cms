@@ -2,12 +2,13 @@
 // Auto-generated from OpenAPI. Do not edit by hand.
 
 import type { CmsSdkClientCore, SdkRequestOverrides } from "../runtime/types.js";
-import type { ExportPluginSettingsRequest, ExportPluginSettingsResponse, GetSettingDefinitionByKeyRequest, GetSettingDefinitionByKeyResponse, GetSettingSecretMetadataRequest, GetSettingSecretMetadataResponse, GetSettingValueByKeyRequest, GetSettingValueByKeyResponse, ListSettingDefinitionsRequest, ListSettingDefinitionsResponse, RevealSettingSecretRequest, RevealSettingSecretResponse, UpsertSettingDefinitionRequest, UpsertSettingDefinitionResponse, UpsertSettingSecretRequest, UpsertSettingSecretResponse, UpsertSettingValueRequest, UpsertSettingValueResponse } from "./types.gen.js";
+import type { ExportPluginSettingsRequest, ExportPluginSettingsResponse, GetSettingDefinitionByKeyRequest, GetSettingDefinitionByKeyResponse, GetSettingSecretMetadataRequest, GetSettingSecretMetadataResponse, GetSettingsObservabilityRequest, GetSettingsObservabilityResponse, GetSettingValueByKeyRequest, GetSettingValueByKeyResponse, ListSettingDefinitionsRequest, ListSettingDefinitionsResponse, RevealSettingSecretRequest, RevealSettingSecretResponse, UpsertSettingDefinitionRequest, UpsertSettingDefinitionResponse, UpsertSettingSecretRequest, UpsertSettingSecretResponse, UpsertSettingValueRequest, UpsertSettingValueResponse } from "./types.gen.js";
 
 export interface SettingsApi {
   exportPluginSettings(input: ExportPluginSettingsRequest, options?: SdkRequestOverrides): Promise<ExportPluginSettingsResponse>;
   getSettingDefinitionByKey(input: GetSettingDefinitionByKeyRequest, options?: SdkRequestOverrides): Promise<GetSettingDefinitionByKeyResponse>;
   getSettingSecretMetadata(input: GetSettingSecretMetadataRequest, options?: SdkRequestOverrides): Promise<GetSettingSecretMetadataResponse>;
+  getSettingsObservability(options?: SdkRequestOverrides): Promise<GetSettingsObservabilityResponse>;
   getSettingValueByKey(input: GetSettingValueByKeyRequest, options?: SdkRequestOverrides): Promise<GetSettingValueByKeyResponse>;
   listSettingDefinitions(input: ListSettingDefinitionsRequest, options?: SdkRequestOverrides): Promise<ListSettingDefinitionsResponse>;
   revealSettingSecret(input: RevealSettingSecretRequest, options?: SdkRequestOverrides): Promise<RevealSettingSecretResponse>;
@@ -45,6 +46,17 @@ export function createSettingsApi(client: CmsSdkClientCore): SettingsApi {
         method: "GET",
         path: "/v1/settings/secrets/:key",
         pathParams: input.path,
+        query: undefined,
+        body: undefined,
+        headers: options?.headers,
+        credentials: options?.credentials,
+        signal: options?.signal,
+      }),
+    getSettingsObservability: async (options) =>
+      client.request({
+        method: "GET",
+        path: "/v1/settings/observability",
+        pathParams: undefined,
         query: undefined,
         body: undefined,
         headers: options?.headers,
