@@ -216,7 +216,8 @@ const adminRouteSchema = s.object(
         "invalid_required_permission"
       )
       .optional(),
-    componentRef: s.string({ trim: true, minLength: 1, maxLength: 180 }).optional()
+    componentRef: s.string({ trim: true, minLength: 1, maxLength: 180 }).optional(),
+    order: s.number({ int: true }).optional()
   },
   { strict: true }
 );

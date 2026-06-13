@@ -6,6 +6,7 @@ import {
   CORE_PACK_PERMISSION_DEFINITIONS,
   CORE_PACK_PERMISSION_KEY_LIST
 } from "./core-pack.security.js";
+import { CORE_PACK_ADMIN_MANIFEST } from "./core-pack-admin.manifest.js";
 import { CORE_PACK_SETTING_DEFINITION_SEEDS } from "../modules/settings/settings.bootstrap.js";
 
 /**
@@ -29,6 +30,7 @@ export const CORE_PACK_MANIFEST: PluginManifest = {
     mutable: true,
     visibility: "admin" as const
   })),
+  admin: CORE_PACK_ADMIN_MANIFEST,
   security: {
     permissions: [...CORE_PACK_PERMISSION_DEFINITIONS],
     roles: [

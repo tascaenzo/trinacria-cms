@@ -13,6 +13,9 @@ export default defineConfig({
       "@trinacria-cms/admin-kernel": fileURLToPath(
         new URL("../../packages/admin-kernel/src/index.ts", import.meta.url)
       ),
+      "@trinacria-cms/core-pack/admin-manifest": fileURLToPath(
+        new URL("../../packages/core-pack/src/plugin/core-pack-admin.manifest.ts", import.meta.url)
+      ),
       "@trinacria-cms/trinacria-ui": fileURLToPath(
         new URL("../../packages/trinacria-ui/src/index.ts", import.meta.url)
       ),

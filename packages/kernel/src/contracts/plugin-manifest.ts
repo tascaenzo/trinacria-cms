@@ -173,6 +173,7 @@ export interface PluginManifestAdminRoute {
   label: string;
   requiredPermission?: string;
   componentRef?: string;
+  order?: number;
 }
 
 export interface PluginManifestAdminResource {

@@ -3,4 +3,8 @@ export * from "./contracts.js";
 export * from "./init.js";
 export * from "./lib/i18n.js";
 export * from "./module.js";
+export * from "./runtime/admin-endpoint-policy.js";
+export * from "./runtime/admin-extension-manifest.js";
+export * from "./runtime/admin-manifest-sanitizer.js";
+export * from "./runtime/plugin-admin-manifest-adapter.js";
 export * from "./runtime/admin-route-runtime.js";

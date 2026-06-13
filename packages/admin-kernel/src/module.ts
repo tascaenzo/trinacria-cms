@@ -1,3 +1,4 @@
+import type { AdminExtensionManifest } from "./contracts.js";
 import type { I18nBundle } from "./lib/i18n.js";
 import type { RenderableAdminContribution } from "./runtime/admin-route-runtime.js";
 
@@ -7,7 +8,8 @@ import type { RenderableAdminContribution } from "./runtime/admin-route-runtime.
  */
 export interface BackofficeModule {
   id: string;
-  contributions: readonly RenderableAdminContribution[];
+  contributions?: readonly RenderableAdminContribution[];
+  manifests?: readonly AdminExtensionManifest[];
   i18n?: readonly I18nBundle[];
 }
 

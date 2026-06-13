@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./admin-manifest": {
+      "types": "./dist/plugin/core-pack-admin.manifest.d.ts",
+      "import": "./dist/plugin/core-pack-admin.manifest.js"
     }
   },
   "scripts": {

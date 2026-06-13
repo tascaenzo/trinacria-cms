@@ -7,6 +7,9 @@
     "resolveJsonModule": true,
     "paths": {
       "@trinacria-cms/admin-kernel": ["../../packages/admin-kernel/src/index.ts"],
+      "@trinacria-cms/core-pack/admin-manifest": [
+        "../../packages/core-pack/src/plugin/core-pack-admin.manifest.ts"
+      ],
       "@trinacria-cms/trinacria-ui": ["../../packages/trinacria-ui/src/index.ts"],
       "@trinacria-cms/sdk": ["../../packages/sdk/src/index.ts"]
     },
