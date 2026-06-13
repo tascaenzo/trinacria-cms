@@ -327,22 +327,27 @@ Regole:
 
 ```ts
 export interface PluginAdminDeclaration {
-  navigation?: readonly AdminNavigationDeclaration[];
-  routes?: readonly AdminRouteDeclaration[];
-  resources?: readonly AdminResourceDeclaration[];
-  widgets?: readonly AdminWidgetDeclaration[];
-  settingsSections?: readonly AdminSettingsSectionDeclaration[];
+  pages?: readonly AdminRouteDefinition[];
+  navigation?: readonly AdminNavigationItem[];
+  resources?: readonly AdminResourceDefinition[];
+  dashboard?: {
+    widgets?: readonly AdminDashboardWidgetDefinition[];
+  };
+  settings?: {
+    sections?: readonly AdminSettingsSectionDefinition[];
+  };
 }
 ```
 
 Regole:
 
-- ogni contribution ha `id`, `ownerPluginId`, `label`, `requiredPermission`
+- il blocco `admin` produce un `AdminExtensionManifest` serializzabile
+- ogni superficie ha `id`, `pluginId`, label/title e guards capability quando necessarie
 - route assolute duplicate sono collisioni bloccanti
 - resource ID duplicati sono collisioni bloccanti
 - label duplicate non sono bloccanti
-- admin-kernel monta contribution solo se capability/permission sono soddisfatte
-- UI custom resta nel plugin o in un package admin del plugin
+- admin-kernel monta superfici solo se runtime plugin, capability e permission sono soddisfatti
+- UI custom React resta un escape hatch locale e non passa dal manifest JSON runtime
 
 ## Runtime definition
 

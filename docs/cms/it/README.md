@@ -31,6 +31,7 @@ Glossario terminologico unico: [GLOSSARY.md](../GLOSSARY.md)
 17. [0016 - M5 Runtime plugin foundation](./0016-m5-runtime-plugin-foundation.md)
 18. [0017 - Cache e indurimento autenticazione](./0017-cache-e-indurimento-autenticazione.md)
 19. [0018 - Milestone settings runtime hardening](./0018-settings-runtime-hardening.md)
+20. [0019 - Admin manifest e backoffice declarative](./0019-admin-manifest-e-backoffice-declarative.md)
 
 ## Cosa trovi in questo manuale
 

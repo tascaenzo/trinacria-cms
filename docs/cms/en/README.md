@@ -30,6 +30,7 @@ Unified terminology glossary: [GLOSSARY.md](../GLOSSARY.md)
 16. [0015 - Plugin operations and troubleshooting](./0015-plugin-operations-and-troubleshooting.md)
 17. [0016 - M5 Plugin runtime foundation](./0016-m5-plugin-runtime-foundation.md)
 18. [0017 - Cache system and authentication hardening](./0017-cache-and-auth-hardening.md)
+19. [0018 - Admin manifest and declarative backoffice](./0018-admin-manifest-and-declarative-backoffice.md)
 
 ## What this manual includes
 

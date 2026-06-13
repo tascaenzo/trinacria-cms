@@ -394,20 +394,26 @@ dal runtime al caricamento del plugin e rimosse all'unload.
 
 ```ts
 export interface PluginManifestAdmin {
-  navigation?: readonly PluginManifestAdminNavigation[];
-  routes?: readonly PluginManifestAdminRoute[];
-  resources?: readonly PluginManifestAdminResource[];
-  widgets?: readonly PluginManifestAdminWidget[];
-  settingsSections?: readonly PluginManifestAdminSettingsSection[];
+  pages?: readonly AdminRouteDefinition[];
+  navigation?: readonly AdminNavigationItem[];
+  resources?: readonly AdminResourceDefinition[];
+  dashboard?: {
+    widgets?: readonly AdminDashboardWidgetDefinition[];
+  };
+  settings?: {
+    sections?: readonly AdminSettingsSectionDefinition[];
+  };
 }
 ```
 
 Regole:
 
 - `id` e locale al plugin.
-- `path`, `routeBase`, `apiBase` iniziano con `/`.
-- `requiredPermission`, quando presente, deve appartenere al plugin.
-- l'admin-kernel usera queste dichiarazioni per montare UI e risorse.
+- `path` e gli endpoint dichiarativi iniziano con `/`.
+- gli endpoint admin runtime devono restare in namespace sicuri, per default `/admin`.
+- i guards capability/permission, quando presenti, devono appartenere al plugin.
+- l'admin-kernel usa queste dichiarazioni per costruire `AdminExtensionManifest` e renderer dichiarativi.
+- UI React custom non serializzabile resta fuori dal manifest runtime.
 
 ## Security declaration
 
@@ -459,12 +465,27 @@ export const manifest: PluginManifest = {
     emits: [{ name: "post-published", visibility: "public", version: 1 }]
   },
   admin: {
-    routes: [
+    pages: [
       {
         id: "posts",
         path: "/blog/posts",
-        label: "Posts",
-        requiredPermission: "blog-pack:posts:read"
+        pluginId: "blog-pack",
+        mode: "declarative",
+        kind: "resource",
+        title: "Posts",
+        data: {
+          endpoint: { method: "GET", path: "/admin/blog/posts" },
+          valuePath: "data.items"
+        },
+        guards: [{ capability: "blog-pack:posts:read" }]
+      }
+    ],
+    navigation: [
+      {
+        id: "nav-posts",
+        routeId: "posts",
+        title: "Posts",
+        group: "Content"
       }
     ]
   },
@@ -488,11 +509,11 @@ Il sistema di cache e disponibile come servizio DI in core-pack.
 import { CORE_TOKENS } from "@trinacria-cms/kernel";
 
 // Token per l'adapter cache (livello kernel)
-CORE_TOKENS.CACHE_ADAPTER
+CORE_TOKENS.CACHE_ADAPTER;
 // Alias: CORE_PACK_CACHE_ADAPTER_TOKEN (da @trinacria-cms/core-pack, retrocompatibile)
 
 // Token per il servizio cache (da @trinacria-cms/core-pack)
-CORE_PACK_CACHE_SERVICE_TOKEN
+CORE_PACK_CACHE_SERVICE_TOKEN;
 ```
 
 ### CacheService API
@@ -501,10 +522,20 @@ CORE_PACK_CACHE_SERVICE_TOKEN
 class CacheService {
   get<T>(namespace: string, key: string): Promise<T | undefined>;
   set<T>(namespace: string, key: string, value: T, ttlSeconds?: number): Promise<void>;
-  getOrCompute<T>(namespace: string, key: string, loader: () => Promise<T>, ttlSeconds?: number): Promise<T>;
+  getOrCompute<T>(
+    namespace: string,
+    key: string,
+    loader: () => Promise<T>,
+    ttlSeconds?: number
+  ): Promise<T>;
   invalidate(namespace: string, key?: string): Promise<void>;
   clear(): Promise<void>;
-  wrap<T>(namespace: string, key: string, loader: () => Promise<T>, ttlSeconds?: number): () => Promise<T>;
+  wrap<T>(
+    namespace: string,
+    key: string,
+    loader: () => Promise<T>,
+    ttlSeconds?: number
+  ): () => Promise<T>;
 }
 ```
 

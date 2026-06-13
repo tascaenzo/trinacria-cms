@@ -36,7 +36,7 @@ Guida sviluppatore M5:
 | `configuration-registry.md`           | configuration registry: contract, secret lifecycle, audit         | `low-level` |
 | `namespace-governance.md`             | namespace, alias, reserved names, ownership e collision policy    | `low-level` |
 | `plugin-event-bus.md`                 | event bus opzionale, subscription policy e delivery               | `low-level` |
-| `admin-contribution-resource.md`      | route, navigation, resource registry, UI custom                   | `low-level` |
+| `admin-contribution-resource.md`      | admin manifest, renderer dichiarativo, endpoint policy            | `low-level` |
 | `installation-bootstrap.md`           | setup iniziale, admin user, core-pack provisioning                | `low-level` |
 | `plugin-packaging-discovery.md`       | package shape, manifest location, compatibility, discovery        | `low-level` |
 | `observability-operations.md`         | health, event log, diagnostics, runtime status                    | `low-level` |
@@ -76,7 +76,7 @@ architetturale.
 12. [`plugin-event-bus.md`](./plugin-event-bus.md)
     - definisce comunicazione inter-plugin opzionale tramite eventi
 13. [`admin-contribution-resource.md`](./admin-contribution-resource.md)
-    - definisce navigation, route, resource, widget e UI custom
+    - definisce manifest admin, renderer dichiarativo, registry e policy endpoint
 14. [`installation-bootstrap.md`](./installation-bootstrap.md)
     - definisce primo setup, admin user e provisioning baseline
 15. [`plugin-packaging-discovery.md`](./plugin-packaging-discovery.md)
@@ -93,17 +93,17 @@ architetturale.
 L'ordine di implementazione non coincide perfettamente con l'ordine di lettura:
 prima vanno messi in piedi i contratti che bloccano gli altri moduli.
 
-| Step | Area                   | Specifiche principali                                                 | Output implementativo atteso                                   |
-| ---- | ---------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------- |
-| 1    | Contratti fondativi    | `core-boundaries.md`, `plugin-contract.md`, `namespace-governance.md` | manifest target, namespace validator, collision policy         |
-| 2    | Runtime plugin         | `plugin-runtime.md`, `plugin-packaging-discovery.md`                  | state machine, operations API, discovery locale/configurata    |
-| 3    | Security baseline      | `security-core.md`                                                    | permission parser, roles/grants/policy provisioning completo   |
-| 4    | Mongo storage core     | `plugin-entity-mongo.md`                                              | entity registry, collection naming, index sync, repository API |
-| 5    | Configuration registry | `settings-core.md`, `configuration-registry.md`                       | settings registry, secret storage, reveal/rotate policy        |
-| 6    | Event bus              | `plugin-event-bus.md`, `observability-operations.md`                  | event declaration, publish/subscribe, audit events             |
-| 7    | Admin extensibility    | `admin-contribution-resource.md`, `security-core.md`                  | route/resource/widget registry capability-aware                |
-| 8    | Bootstrap piattaforma  | `installation-bootstrap.md`, `security-core.md`, `settings-core.md`   | primo setup idempotente, admin user, baseline config           |
-| 9    | API/SDK hardening      | `sdk-api-contract.md`, tutte le specifiche con endpoint               | OpenAPI/SDK coerenti con i nuovi contratti                     |
+| Step | Area                   | Specifiche principali                                                 | Output implementativo atteso                                     |
+| ---- | ---------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| 1    | Contratti fondativi    | `core-boundaries.md`, `plugin-contract.md`, `namespace-governance.md` | manifest target, namespace validator, collision policy           |
+| 2    | Runtime plugin         | `plugin-runtime.md`, `plugin-packaging-discovery.md`                  | state machine, operations API, discovery locale/configurata      |
+| 3    | Security baseline      | `security-core.md`                                                    | permission parser, roles/grants/policy provisioning completo     |
+| 4    | Mongo storage core     | `plugin-entity-mongo.md`                                              | entity registry, collection naming, index sync, repository API   |
+| 5    | Configuration registry | `settings-core.md`, `configuration-registry.md`                       | settings registry, secret storage, reveal/rotate policy          |
+| 6    | Event bus              | `plugin-event-bus.md`, `observability-operations.md`                  | event declaration, publish/subscribe, audit events               |
+| 7    | Admin extensibility    | `admin-contribution-resource.md`, `security-core.md`                  | manifest admin, renderer dichiarativo, registry capability-aware |
+| 8    | Bootstrap piattaforma  | `installation-bootstrap.md`, `security-core.md`, `settings-core.md`   | primo setup idempotente, admin user, baseline config             |
+| 9    | API/SDK hardening      | `sdk-api-contract.md`, tutte le specifiche con endpoint               | OpenAPI/SDK coerenti con i nuovi contratti                       |
 
 ## Dipendenze tra specifiche
 
