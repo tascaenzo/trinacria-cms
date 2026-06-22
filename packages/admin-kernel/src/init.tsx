@@ -2,10 +2,15 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BackofficeApp } from "./backoffice-app.js";
 import type { BackofficeModule } from "./module.js";
+import {
+  configureBackofficeNavigation,
+  migrateLegacyHashNavigation
+} from "./runtime/backoffice-navigation-state.js";
 import { configureBackofficeSdk } from "./runtime/cms-sdk.js";
 
 export interface MountBackofficeOptions {
   apiBaseUrl?: string;
+  basePath?: string;
   modules?: readonly BackofficeModule[];
 }
 
@@ -17,6 +22,10 @@ export function mountBackoffice(container: Element, options: MountBackofficeOpti
   configureBackofficeSdk({
     baseUrl: options.apiBaseUrl
   });
+  configureBackofficeNavigation({
+    basePath: options.basePath
+  });
+  migrateLegacyHashNavigation();
 
   const root = ReactDOM.createRoot(container);
   root.render(

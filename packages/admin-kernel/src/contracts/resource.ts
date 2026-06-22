@@ -5,10 +5,27 @@ export interface AdminResourceFieldDefinition {
   key: string;
   label: string;
   labelKey?: string;
-  kind?: "text" | "status" | "datetime" | "json" | "secret";
+  kind?: "text" | "status" | "datetime" | "json" | "secret" | "tags";
   primary?: boolean;
   table?: boolean;
   form?: boolean;
+}
+
+export interface AdminResourceDetailSectionDefinition {
+  id: string;
+  title: string;
+  titleKey?: string;
+  fields?: readonly string[];
+}
+
+export interface AdminResourceDetailDefinition {
+  title?: string;
+  titleKey?: string;
+  titleField?: string;
+  subtitleField?: string;
+  fields?: readonly string[];
+  sections?: readonly AdminResourceDetailSectionDefinition[];
+  showJson?: boolean;
 }
 
 /**
@@ -33,6 +50,7 @@ export interface AdminResourceDefinition {
     delete?: string;
   };
   fields?: readonly AdminResourceFieldDefinition[];
+  detail?: AdminResourceDetailDefinition | false;
   actions?: readonly AdminActionDefinition[];
   guards?: readonly AdminAccessGuard[];
 }

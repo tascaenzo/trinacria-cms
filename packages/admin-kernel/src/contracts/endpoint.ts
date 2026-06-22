@@ -5,8 +5,13 @@ export interface AdminEndpointBinding {
   path: string;
 }
 
+export interface AdminEndpointPolicyHint {
+  allowedPathPrefixes?: readonly string[];
+}
+
 export interface AdminJsonDataBinding {
   endpoint?: AdminEndpointBinding;
   valuePath?: string;
   schema?: unknown;
+  policy?: AdminEndpointPolicyHint;
 }

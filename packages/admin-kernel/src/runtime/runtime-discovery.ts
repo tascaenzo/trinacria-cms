@@ -1,10 +1,13 @@
 import type {
   AdminAccessGuard,
+  AdminActionDefinition,
   AdminExtensionManifest,
+  AdminJsonDataBinding,
   AdminNavigationItem,
   AdminResourceDefinition,
   AdminRouteDefinition,
   AdminRuntimePluginInfo,
+  AdminSettingsSectionKind,
   AdminSettingsSectionDefinition,
   AdminDashboardWidgetDefinition
 } from "../contracts.js";
@@ -160,8 +163,15 @@ function toAdminSettingsSection(entry: ContributionSnapshot): AdminSettingsSecti
     id: readString(declaration.id) ?? entry.key,
     pluginId: entry.pluginId,
     mode: "declarative",
-    kind: "panel",
+    kind: readSettingsSectionKind(declaration.kind) ?? "panel",
+    componentRef: readString(declaration.componentRef),
     title: readString(declaration.label) ?? readString(declaration.title) ?? entry.key,
+    summary: readString(declaration.summary),
+    category: readString(declaration.category) ?? readString(declaration.namespace),
+    settingKeys: readStringArray(declaration.settingKeys),
+    data: readDataBinding(declaration.data),
+    actions: readActions(declaration.actions),
+    order: readNumber(declaration.order),
     guards: toGuards(entry.pluginId, declaration.requiredPermission)
   };
 }
@@ -193,6 +203,37 @@ function readString(value: unknown): string | undefined {
 
 function readNumber(value: unknown): number | undefined {
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function readStringArray(value: unknown): readonly string[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const strings = value.filter(
+    (entry): entry is string => typeof entry === "string" && entry.trim().length > 0
+  );
+  return strings.length > 0 ? strings.map((entry) => entry.trim()) : undefined;
+}
+
+function readSettingsSectionKind(value: unknown): AdminSettingsSectionKind | undefined {
+  if (value === "form" || value === "panel" || value === "custom") {
+    return value;
+  }
+
+  return undefined;
+}
+
+function readDataBinding(value: unknown): AdminJsonDataBinding | undefined {
+  return isRecord(value) ? (value as AdminJsonDataBinding) : undefined;
+}
+
+function readActions(value: unknown): readonly AdminActionDefinition[] | undefined {
+  return Array.isArray(value) ? (value as readonly AdminActionDefinition[]) : undefined;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
 }
 
 function formatPluginDisplayName(pluginId: string): string {

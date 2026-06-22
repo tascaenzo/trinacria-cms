@@ -1,7 +1,6 @@
 import { useActionState, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   AdminShell,
-  Badge,
   Card,
   DropdownMenu,
   DropdownMenuItem,
@@ -32,12 +31,18 @@ import {
 } from "./lib/auth-i18n.js";
 import { I18nProvider, createTranslate, type I18nBundle } from "./lib/i18n.js";
 import { getSdkErrorDetails, toDisplayError, type SdkErrorDetails } from "./lib/sdk-errors.js";
+import { formatUserName } from "./lib/user-formatting.js";
 import { AuthScreenLayout } from "./components/auth-screen-layout.js";
 import type { BackofficeModule } from "./module.js";
 import { readRequiredString } from "./runtime/action-state.js";
 import { normalizeSafeAdminExtensionManifests } from "./runtime/admin-extension-manifest.js";
 import { buildAdminRegistry } from "./runtime/admin-route-runtime.js";
 import { clearBackofficeSession, persistBackofficeSession } from "./runtime/auth-session.js";
+import {
+  getBackofficeNavigationEventName,
+  readBackofficeNavigationState,
+  writeBackofficeNavigationState
+} from "./runtime/backoffice-navigation-state.js";
 import { cms } from "./runtime/cms-sdk.js";
 import { loadRuntimeDiscovery } from "./runtime/runtime-discovery.js";
 import { InstallationDatabaseGuidePage } from "./pages/installation-database-guide-page.js";
@@ -79,7 +84,9 @@ function createIdleFormActionState<T>(): FormActionState<T> {
  */
 export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
   const [locale, setLocale] = useState<SupportedLocale>(() => readBackofficeLocale());
-  const [activeRouteId, setActiveRouteId] = useState<string>(readHashRoute() ?? "dashboard");
+  const [activeRouteId, setActiveRouteId] = useState<string>(
+    readBackofficeNavigationState().routeId ?? "dashboard"
+  );
   const [runtimePlugins, setRuntimePlugins] = useState<readonly AdminRuntimePluginInfo[]>([]);
   const [runtimeManifests, setRuntimeManifests] = useState<readonly AdminExtensionManifest[]>([]);
   const [userPermissionKeys, setUserPermissionKeys] = useState<readonly string[]>([]);
@@ -129,12 +136,17 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
   }, [locale]);
 
   useEffect(() => {
-    function handleHashChange() {
-      setActiveRouteId(readHashRoute() ?? "dashboard");
+    function handleNavigationChange() {
+      setActiveRouteId(readBackofficeNavigationState().routeId ?? "dashboard");
     }
 
-    window.addEventListener("hashchange", handleHashChange);
-    return () => window.removeEventListener("hashchange", handleHashChange);
+    const navigationEventName = getBackofficeNavigationEventName();
+    window.addEventListener(navigationEventName, handleNavigationChange);
+    window.addEventListener("popstate", handleNavigationChange);
+    return () => {
+      window.removeEventListener(navigationEventName, handleNavigationChange);
+      window.removeEventListener("popstate", handleNavigationChange);
+    };
   }, []);
 
   const completeLogin = useCallback((response: LoginWithPasswordResponse["data"]) => {
@@ -549,7 +561,7 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
     );
   }
 
-  const displayName = authUser.displayName;
+  const userName = formatUserName(authUser);
   const hasSettingsRoute = registry.routes.some((route) => route.id === "settings");
   const hasApiKeysRoute = registry.routes.some((route) => route.id === "api-keys");
 
@@ -594,7 +606,7 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-semibold text-[color:var(--color-ink)]">
-                  {displayName}
+                  {userName}
                 </span>
                 <span className="block truncate text-xs text-[color:var(--color-ink-subtle)]">
                   {authRoleLabel ?? t("backoffice.user.role_loading")}
@@ -609,7 +621,7 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
         >
           <DropdownMenuLabel>
             <span className="block truncate text-sm font-semibold normal-case tracking-normal text-[color:var(--color-ink)]">
-              {displayName}
+              {userName}
             </span>
             <span className="block truncate pt-1 text-xs font-normal normal-case tracking-normal text-[color:var(--color-ink-subtle)]">
               {authRoleLabel ?? t("backoffice.user.role_loading")}
@@ -668,24 +680,12 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
         </Card>
       ) : null}
       {shouldRenderContent ? content : null}
-      {customContributions.length > 0 ? (
-        <div className="mt-4">
-          <Badge>{t("backoffice.shell.custom_modules_enabled")}</Badge>
-        </div>
-      ) : null}
     </AdminShell>
   );
 }
 
-function readHashRoute(): string | null {
-  const hash = window.location.hash.replace(/^#/, "").trim();
-  return hash ? hash : null;
-}
-
 function navigateTo(routeId: string, setActiveRouteId: (routeId: string) => void) {
-  if (window.location.hash !== `#${routeId}`) {
-    window.location.hash = routeId;
-  }
+  writeBackofficeNavigationState(routeId);
   setActiveRouteId(routeId);
 }
 

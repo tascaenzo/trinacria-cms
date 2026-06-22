@@ -20,6 +20,7 @@ import { JsonPreviewAction } from "../components/json-preview-action.js";
 import { formatDateTime } from "../lib/formatting.js";
 import { useI18n } from "../lib/i18n.js";
 import { toDisplayError } from "../lib/sdk-errors.js";
+import { formatUserName } from "../lib/user-formatting.js";
 import { cms } from "../runtime/cms-sdk.js";
 import { translateStatusLabel } from "../lib/ui-translations.js";
 import {
@@ -65,14 +66,16 @@ export function ProfilePage() {
     void refresh();
   }, [refresh]);
 
-  const initials = useMemo(() => getInitials(user?.displayName ?? user?.email ?? ""), [user]);
+  const userName = useMemo(() => formatUserName(user), [user]);
+  const initials = useMemo(() => getInitials(userName), [userName]);
   const primaryRole = roles[0]?.roleCode ?? null;
   const [profileState, submitProfile, isProfilePending] = useActionState(
     async (_previousState: AsyncActionState, formData: FormData) => {
       try {
         const response = await cms.auth.updateAuthenticatedUserProfile({
           body: {
-            displayName: readRequiredString(formData, "displayName")
+            firstName: readRequiredString(formData, "firstName"),
+            lastName: readRequiredString(formData, "lastName")
           }
         });
         setUser(response.data);
@@ -156,7 +159,7 @@ export function ProfilePage() {
                     </div>
                     <div className="min-w-0">
                       <h2 className="truncate text-2xl font-semibold tracking-[-0.04em] text-[color:var(--color-ink)]">
-                        {user.displayName}
+                        {userName}
                       </h2>
                       <p className="mt-1 truncate text-sm text-[color:var(--color-ink-muted)]">
                         {user.email}
@@ -243,8 +246,12 @@ export function ProfilePage() {
                 </div>
                 <dl className="grid gap-3 md:grid-cols-2">
                   <ProfileDetail
-                    label={t("common.form.display_name", "Display name")}
-                    value={user.displayName}
+                    label={t("common.form.first_name", "First name")}
+                    value={user.firstName}
+                  />
+                  <ProfileDetail
+                    label={t("common.form.last_name", "Last name")}
+                    value={user.lastName}
                   />
                   <ProfileDetail label={t("profile.details.email", "Email")} value={user.email} />
                   <ProfileDetail
@@ -277,7 +284,7 @@ export function ProfilePage() {
             onClose={() => setIsProfileDialogOpen(false)}
             closeVariant="icon"
             closeLabel={t("common.actions.close", "Close")}
-            title={t("profile.edit.title", "Edit display name")}
+            title={t("profile.edit.title", "Edit profile")}
             description={t(
               "profile.edit.description",
               "Update the name shown in the backoffice shell."
@@ -294,10 +301,18 @@ export function ProfilePage() {
               ) : null}
               {profileState.error ? <ErrorBanner message={profileState.error} /> : null}
               <Input
-                label={t("common.form.display_name")}
-                name="displayName"
-                defaultValue={user.displayName}
-                autoComplete="name"
+                label={t("common.form.first_name", "First name")}
+                name="firstName"
+                defaultValue={user.firstName}
+                autoComplete="given-name"
+                required
+              />
+              <Input
+                label={t("common.form.last_name", "Last name")}
+                name="lastName"
+                defaultValue={user.lastName}
+                autoComplete="family-name"
+                required
               />
               <div className="flex justify-end gap-2">
                 <Button
@@ -372,7 +387,6 @@ export function ProfilePage() {
               </div>
             </form>
           </Dialog>
-
         </>
       ) : null}
     </div>

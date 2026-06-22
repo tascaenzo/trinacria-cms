@@ -25,6 +25,9 @@ export function formatFieldPreview(field: AdminResourceFieldDefinition): string 
   if (field.kind === "json") {
     return "{...}";
   }
+  if (field.kind === "tags") {
+    return "tag-1";
+  }
   if (field.kind === "secret") {
     return "••••••";
   }
@@ -32,17 +35,22 @@ export function formatFieldPreview(field: AdminResourceFieldDefinition): string 
 }
 
 export function getRecordKey(record: unknown, index: number): string {
+  return getRecordIdentity(record) ?? String(index);
+}
+
+export function getRecordIdentity(record: unknown): string | undefined {
   if (isObject(record)) {
     const id = record.id ?? record.key ?? record.slug;
     if (typeof id === "string" || typeof id === "number") {
       return String(id);
     }
   }
-  return String(index);
+  return undefined;
 }
 
 export function humanizeKey(key: string): string {
   return key
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
     .replace(/[._-]+/g, " ")
     .replace(/\s+/g, " ")
     .trim()

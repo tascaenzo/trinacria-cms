@@ -280,8 +280,7 @@ function translateActions(
     .map((action) => ({
       ...action,
       pluginId: action.pluginId ?? ownerPluginId,
-      title: action.titleKey ? t(action.titleKey, action.title) : action.title,
-      summary: action.summaryKey ? t(action.summaryKey, action.summary) : action.summary
+      title: action.titleKey ? t(action.titleKey, action.title) : action.title
     }))
     .sort((left, right) => (left.order ?? 0) - (right.order ?? 0));
 }
@@ -310,8 +309,9 @@ export function buildAdminRegistry(
       title: route.titleKey ? t(route.titleKey, route.title) : route.title,
       summary: route.summaryKey ? t(route.summaryKey, route.summary) : route.summary
     }));
-  const uniqueRoutes = dedupeByLast(routes, (route) => route.id)
-    .sort((left, right) => (left.order ?? 0) - (right.order ?? 0));
+  const uniqueRoutes = dedupeByLast(routes, (route) => route.id).sort(
+    (left, right) => (left.order ?? 0) - (right.order ?? 0)
+  );
 
   const routeIds = new Set(uniqueRoutes.map((route) => route.id));
 
@@ -328,6 +328,19 @@ export function buildAdminRegistry(
         ...field,
         label: field.labelKey ? t(field.labelKey, field.label) : field.label
       })),
+      detail:
+        resource.detail && typeof resource.detail === "object"
+          ? {
+              ...resource.detail,
+              title: resource.detail.titleKey
+                ? t(resource.detail.titleKey, resource.detail.title)
+                : resource.detail.title,
+              sections: resource.detail.sections?.map((section) => ({
+                ...section,
+                title: section.titleKey ? t(section.titleKey, section.title) : section.title
+              }))
+            }
+          : resource.detail,
       actions: translateActions(
         resource.actions,
         resource.pluginId,
@@ -337,8 +350,9 @@ export function buildAdminRegistry(
         t
       )
     }));
-  const uniqueResources = dedupeByLast(resources, (resource) => resource.id)
-    .sort((left, right) => (left.order ?? 0) - (right.order ?? 0));
+  const uniqueResources = dedupeByLast(resources, (resource) => resource.id).sort(
+    (left, right) => (left.order ?? 0) - (right.order ?? 0)
+  );
 
   const navigation = contributions
     .flatMap((contribution) => contribution.navigation)
@@ -350,8 +364,9 @@ export function buildAdminRegistry(
       title: item.titleKey ? t(item.titleKey, item.title) : item.title,
       group: item.groupKey ? t(item.groupKey, item.group) : item.group
     }));
-  const uniqueNavigation = dedupeByLast(navigation, (item) => item.id)
-    .sort((left, right) => (left.order ?? 0) - (right.order ?? 0));
+  const uniqueNavigation = dedupeByLast(navigation, (item) => item.id).sort(
+    (left, right) => (left.order ?? 0) - (right.order ?? 0)
+  );
 
   return {
     routes: uniqueRoutes,
@@ -359,40 +374,38 @@ export function buildAdminRegistry(
     resources: uniqueResources,
     widgets: dedupeByLast(
       contributions
-      .flatMap((contribution) => contribution.widgets ?? [])
-      .filter((widget) =>
-        isContributionSurfaceVisible(widget, runtimePlugins, capabilityIndex, permissionIndex)
-      )
-      .map((widget) => ({
-        ...widget,
-        title: widget.titleKey ? t(widget.titleKey, widget.title) : widget.title,
-        summary: widget.summaryKey ? t(widget.summaryKey, widget.summary) : widget.summary
-      })),
+        .flatMap((contribution) => contribution.widgets ?? [])
+        .filter((widget) =>
+          isContributionSurfaceVisible(widget, runtimePlugins, capabilityIndex, permissionIndex)
+        )
+        .map((widget) => ({
+          ...widget,
+          title: widget.titleKey ? t(widget.titleKey, widget.title) : widget.title,
+          summary: widget.summaryKey ? t(widget.summaryKey, widget.summary) : widget.summary
+        })),
       (widget) => `${widget.pluginId}:${widget.id}`
-    )
-      .sort((left, right) => (left.order ?? 0) - (right.order ?? 0)),
+    ).sort((left, right) => (left.order ?? 0) - (right.order ?? 0)),
     settings: dedupeByLast(
       contributions
-      .flatMap((contribution) => contribution.settings ?? [])
-      .filter((section) =>
-        isContributionSurfaceVisible(section, runtimePlugins, capabilityIndex, permissionIndex)
-      )
-      .map((section) => ({
-        ...section,
-        title: section.titleKey ? t(section.titleKey, section.title) : section.title,
-        summary: section.summaryKey ? t(section.summaryKey, section.summary) : section.summary,
-        actions: translateActions(
-          section.actions,
-          section.pluginId,
-          runtimePlugins,
-          capabilityIndex,
-          permissionIndex,
-          t
+        .flatMap((contribution) => contribution.settings ?? [])
+        .filter((section) =>
+          isContributionSurfaceVisible(section, runtimePlugins, capabilityIndex, permissionIndex)
         )
-      })),
+        .map((section) => ({
+          ...section,
+          title: section.titleKey ? t(section.titleKey, section.title) : section.title,
+          summary: section.summaryKey ? t(section.summaryKey, section.summary) : section.summary,
+          actions: translateActions(
+            section.actions,
+            section.pluginId,
+            runtimePlugins,
+            capabilityIndex,
+            permissionIndex,
+            t
+          )
+        })),
       (section) => `${section.pluginId}:${section.id}`
-    )
-      .sort((left, right) => (left.order ?? 0) - (right.order ?? 0))
+    ).sort((left, right) => (left.order ?? 0) - (right.order ?? 0))
   };
 }
 

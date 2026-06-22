@@ -9,6 +9,7 @@ import {
   resolveDeclarativeActionPathParams,
   renderDeclarativeAdminPage
 } from "../src/declarative/index.js";
+import { DeclarativeResourceTable } from "../src/declarative/index.js";
 import type { AdminPageRenderContext } from "../src/runtime/admin-route-runtime.js";
 
 const baseContext: AdminPageRenderContext = {
@@ -40,7 +41,6 @@ const baseContext: AdminPageRenderContext = {
           id: "create",
           intent: "create",
           title: "Create product",
-          summary: "Create a catalog product",
           endpoint: { method: "POST", path: "/admin/products" },
           input: {
             schema: {
@@ -60,18 +60,63 @@ const baseContext: AdminPageRenderContext = {
   t: (key, fallback) => fallback ?? key
 };
 
-test("renderDeclarativeAdminPage renders a resource schema table from manifest metadata", () => {
+test("renderDeclarativeAdminPage renders a resource table from manifest metadata", () => {
   const markup = renderToStaticMarkup(
     createElement(Fragment, null, renderDeclarativeAdminPage(baseContext))
   );
 
-  assert.match(markup, /Products schema/);
+  assert.doesNotMatch(markup, /Products schema/);
+  assert.match(markup, /Products/);
   assert.match(markup, /Name/);
   assert.match(markup, /Status/);
   assert.match(markup, /Sample Name/);
-  assert.match(markup, /Create product/);
-  assert.match(markup, /Prepare/);
-  assert.match(markup, /POST \/admin\/products/);
+  assert.match(markup, /Filters/);
+  assert.match(markup, /Actions/);
+  assert.doesNotMatch(markup, /Create product/);
+});
+
+test("DeclarativeResourceTable renders array fields as compact tags", () => {
+  const markup = renderToStaticMarkup(
+    createElement(DeclarativeResourceTable, {
+      resource: {
+        id: "roles-resource",
+        pluginId: "core-pack",
+        entityName: "roles",
+        title: "Roles",
+        fields: [
+          { key: "name", label: "Name", primary: true, table: true },
+          { key: "permissions", label: "Permissions", kind: "tags", table: true }
+        ]
+      },
+      dataState: {
+        status: "success",
+        data: {
+          data: [
+            {
+              id: "role-1",
+              name: "Admin",
+              permissions: [
+                "core-pack:users:read",
+                "core-pack:users:write",
+                "core-pack:roles:read",
+                "core-pack:roles:write"
+              ]
+            }
+          ]
+        },
+        refetch: () => {}
+      },
+      binding: { valuePath: "data" },
+      t: (key, fallback) => fallback ?? key
+    })
+  );
+
+  assert.match(markup, /core-pack:users:read/);
+  assert.match(markup, /core-pack:users:write/);
+  assert.match(markup, /core-pack:roles:read/);
+  assert.match(markup, /\+1/);
+  assert.match(markup, /Show all tags/);
+  assert.doesNotMatch(markup, /\[&quot;core-pack:users:read/);
 });
 
 test("DeclarativeSettingsSectionPanel renders readonly fields inferred from JSON schema", () => {

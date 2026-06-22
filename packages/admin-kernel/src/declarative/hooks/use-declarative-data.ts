@@ -18,7 +18,7 @@ export function useDeclarativeData(
       return;
     }
 
-    const policyResult = validateAdminEndpointBinding(endpoint, "data");
+    const policyResult = validateAdminEndpointBinding(endpoint, "data", binding?.policy);
     if (!policyResult.ok) {
       setState({
         status: "error",
@@ -28,8 +28,7 @@ export function useDeclarativeData(
     }
 
     let isMounted = true;
-    const controller =
-      typeof AbortController !== "undefined" ? new AbortController() : undefined;
+    const controller = typeof AbortController !== "undefined" ? new AbortController() : undefined;
 
     setState({ status: "loading" });
     cms
@@ -53,7 +52,12 @@ export function useDeclarativeData(
       isMounted = false;
       controller?.abort();
     };
-  }, [endpoint?.method, endpoint?.path, reloadToken]);
+  }, [
+    binding?.policy?.allowedPathPrefixes?.join("|"),
+    endpoint?.method,
+    endpoint?.path,
+    reloadToken
+  ]);
 
   return {
     ...state,

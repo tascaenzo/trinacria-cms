@@ -1,4 +1,10 @@
-import type { AdminAccessGuard, AdminExtensionManifest } from "../contracts.js";
+import type {
+  AdminAccessGuard,
+  AdminActionDefinition,
+  AdminExtensionManifest,
+  AdminJsonDataBinding,
+  AdminSettingsSectionKind
+} from "../contracts.js";
 import type { BackofficeModule } from "../module.js";
 
 interface PluginAdminRouteDeclaration {
@@ -36,8 +42,16 @@ interface PluginAdminWidgetDeclaration {
 interface PluginAdminSettingsSectionDeclaration {
   id: string;
   label: string;
-  namespace: string;
+  namespace?: string;
   requiredPermission?: string;
+  kind?: AdminSettingsSectionKind;
+  componentRef?: string;
+  summary?: string;
+  category?: string;
+  settingKeys?: readonly string[];
+  data?: unknown;
+  actions?: readonly unknown[];
+  order?: number;
 }
 
 export interface PluginAdminManifestDeclaration {
@@ -116,8 +130,15 @@ export function createAdminExtensionManifestFromPluginAdmin(
           id: section.id,
           pluginId: input.pluginId,
           mode: "declarative" as const,
-          kind: "panel" as const,
+          kind: section.kind ?? ("panel" as const),
+          componentRef: section.componentRef,
           title: section.label,
+          summary: section.summary,
+          category: section.category ?? section.namespace,
+          settingKeys: section.settingKeys,
+          data: toAdminJsonDataBinding(section.data),
+          actions: toAdminActions(section.actions),
+          order: section.order,
           guards: toGuards(input.pluginId, section.requiredPermission)
         }))
       }
@@ -130,4 +151,18 @@ function toGuards(
   requiredPermission: string | undefined
 ): readonly AdminAccessGuard[] | undefined {
   return requiredPermission ? [{ pluginId, permissionKey: requiredPermission }] : undefined;
+}
+
+function toAdminJsonDataBinding(value: unknown): AdminJsonDataBinding | undefined {
+  return isRecord(value) ? (value as AdminJsonDataBinding) : undefined;
+}
+
+function toAdminActions(
+  value: readonly unknown[] | undefined
+): readonly AdminActionDefinition[] | undefined {
+  return value ? (value as readonly AdminActionDefinition[]) : undefined;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
 }

@@ -30,11 +30,6 @@ export function DeclarativeActionsPanel({
                     {action.intent}
                   </Badge>
                 </div>
-                {action.summary ? (
-                  <p className="mt-1 text-sm leading-6 text-[color:var(--color-ink-muted)]">
-                    {action.summary}
-                  </p>
-                ) : null}
               </div>
               <Button type="button" variant="secondary" onClick={() => onPrepare(action)}>
                 Prepare

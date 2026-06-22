@@ -1,25 +1,39 @@
 import { createDashboardRender } from "../pages/dashboard-page.js";
 import type { ReactNode } from "react";
-import { ApiKeysPage } from "../pages/api-keys-page.js";
 import { PluginContributionsPage } from "../pages/plugin-contributions-page.js";
 import { PluginsPage } from "../pages/plugins-page.js";
-import { PermissionsPage } from "../pages/permissions-page.js";
 import { ProfilePage } from "../pages/profile-page.js";
-import { RolesPage } from "../pages/roles-page.js";
 import { SettingsPage } from "../pages/settings-page.js";
-import { UsersPage } from "../pages/users-page.js";
 import type {
   AdminExtensionManifest,
   AdminNavigationItem,
   AdminResourceDefinition,
-  AdminRouteDefinition
+  AdminRouteDefinition,
+  AdminSettingsSectionDefinition
 } from "../contracts.js";
+import { renderDeclarativeAdminPage } from "../declarative/components/declarative-page.js";
 import { normalizeSafeAdminExtensionManifests } from "../runtime/admin-extension-manifest.js";
 import type {
   AdminPageRenderContext,
   RenderableAdminContribution,
   RenderableAdminRoute
 } from "../runtime/admin-route-runtime.js";
+
+const CORE_PACK_READONLY_PERMISSION_KEYS = [
+  "core-pack:plugins:read",
+  "core-pack:users:read",
+  "core-pack:users:write",
+  "core-pack:roles:read",
+  "core-pack:roles:write",
+  "core-pack:permissions:read",
+  "core-pack:permissions:write",
+  "core-pack:api_keys:read",
+  "core-pack:api_keys:write",
+  "core-pack:settings:read",
+  "core-pack:settings:write",
+  "core-pack:settings.secrets:read",
+  "core-pack:settings.secrets:write"
+] as const;
 
 const OFFICIAL_CORE_ROUTE_META: Record<
   string,
@@ -40,28 +54,61 @@ const OFFICIAL_CORE_ROUTE_META: Record<
     render: () => <PluginContributionsPage />
   },
   users: {
+    mode: "declarative",
     kind: "resource",
     guards: [{ pluginId: "core-pack", capability: "users.read" }],
     titleKey: "official.route.users.title",
     summary: "User registry, account lifecycle, and operator tooling.",
     summaryKey: "official.route.users.summary",
-    render: () => <UsersPage />
+    data: {
+      endpoint: {
+        method: "GET",
+        path: "/v1/users"
+      },
+      valuePath: "data",
+      policy: {
+        allowedPathPrefixes: ["/admin", "/v1"]
+      }
+    },
+    render: renderDeclarativeAdminPage
   },
   roles: {
+    mode: "declarative",
     kind: "resource",
     guards: [{ pluginId: "core-pack", capability: "roles.read" }],
     titleKey: "official.route.roles.title",
     summary: "Role catalog, embedded grants, and policy rule management.",
     summaryKey: "official.route.roles.summary",
-    render: () => <RolesPage />
+    data: {
+      endpoint: {
+        method: "GET",
+        path: "/v1/roles"
+      },
+      valuePath: "data",
+      policy: {
+        allowedPathPrefixes: ["/admin", "/v1"]
+      }
+    },
+    render: renderDeclarativeAdminPage
   },
   permissions: {
+    mode: "declarative",
     kind: "resource",
     guards: [{ pluginId: "core-pack", capability: "permissions.read" }],
     titleKey: "official.route.permissions.title",
     summary: "Canonical permission keys and plugin-contributed permission registry.",
     summaryKey: "official.route.permissions.summary",
-    render: () => <PermissionsPage />
+    data: {
+      endpoint: {
+        method: "GET",
+        path: "/v1/permissions"
+      },
+      valuePath: "data",
+      policy: {
+        allowedPathPrefixes: ["/admin", "/v1"]
+      }
+    },
+    render: renderDeclarativeAdminPage
   },
   settings: {
     guards: [{ pluginId: "core-pack", capability: "settings.read" }],
@@ -85,12 +132,23 @@ const OFFICIAL_CORE_ROUTE_META: Record<
     )
   },
   "api-keys": {
+    mode: "declarative",
     kind: "resource",
     guards: [{ pluginId: "core-pack", capability: "api_keys.read" }],
     titleKey: "official.route.api_keys.title",
     summary: "Machine identities for integrations, jobs, and external backoffices.",
     summaryKey: "official.route.api_keys.summary",
-    render: () => <ApiKeysPage />
+    data: {
+      endpoint: {
+        method: "GET",
+        path: "/v1/api-keys"
+      },
+      valuePath: "data",
+      policy: {
+        allowedPathPrefixes: ["/admin", "/v1"]
+      }
+    },
+    render: renderDeclarativeAdminPage
   }
 };
 
@@ -110,56 +168,49 @@ const OFFICIAL_CORE_NAV_META: Record<string, Partial<AdminNavigationItem>> = {
     titleKey: "official.nav.plugins.title",
     icon: "plug",
     group: "Core",
-    groupKey: "official.nav.group.core",
-    badge: "OPS"
+    groupKey: "official.nav.group.core"
   },
   "nav-plugin-contributions": {
     guards: [{ pluginId: "core-pack", capability: "plugins.read" }],
     titleKey: "official.nav.plugin_contributions.title",
     icon: "puzzle",
     group: "Core",
-    groupKey: "official.nav.group.core",
-    badge: "M4"
+    groupKey: "official.nav.group.core"
   },
   "nav-users": {
     guards: [{ pluginId: "core-pack", capability: "users.read" }],
     titleKey: "official.nav.users.title",
     icon: "users",
     group: "Identity",
-    groupKey: "official.nav.group.identity",
-    badge: "IAM"
+    groupKey: "official.nav.group.identity"
   },
   "nav-roles": {
     guards: [{ pluginId: "core-pack", capability: "roles.read" }],
     titleKey: "official.nav.roles.title",
     icon: "shield-check",
     group: "Identity",
-    groupKey: "official.nav.group.identity",
-    badge: "IAM"
+    groupKey: "official.nav.group.identity"
   },
   "nav-permissions": {
     guards: [{ pluginId: "core-pack", capability: "permissions.read" }],
     titleKey: "official.nav.permissions.title",
     icon: "folder-cog",
     group: "Identity",
-    groupKey: "official.nav.group.identity",
-    badge: "IAM"
+    groupKey: "official.nav.group.identity"
   },
   "nav-settings": {
     guards: [{ pluginId: "core-pack", capability: "settings.read" }],
     titleKey: "official.nav.settings.title",
     icon: "settings-2",
     group: "Configuration",
-    groupKey: "official.nav.group.configuration",
-    badge: "CFG"
+    groupKey: "official.nav.group.configuration"
   },
   "nav-api-keys": {
     guards: [{ pluginId: "core-pack", capability: "api_keys.read" }],
     titleKey: "official.nav.api_keys.title",
     icon: "key-round",
     group: "Configuration",
-    groupKey: "official.nav.group.configuration",
-    badge: "SEC"
+    groupKey: "official.nav.group.configuration"
   }
 };
 
@@ -175,17 +226,76 @@ const OFFICIAL_CORE_RESOURCE_META: Record<string, Partial<AdminResourceDefinitio
       create: "users.write",
       update: "users.write"
     },
+    actions: [
+      {
+        id: "create-user",
+        intent: "create",
+        title: "Create user",
+        titleKey: "users.actions.create",
+        endpoint: { method: "POST", path: "/v1/users" },
+        policy: { allowedPathPrefixes: ["/admin", "/v1"] },
+        guards: [{ pluginId: "core-pack", capability: "users.write" }],
+        input: {
+          schema: {
+            type: "object",
+            properties: {
+              email: { type: "string", labelKey: "auth.login.email_label" },
+              firstName: { type: "string", labelKey: "common.form.first_name" },
+              lastName: { type: "string", labelKey: "common.form.last_name" }
+            },
+            required: ["email", "firstName", "lastName"]
+          }
+        }
+      },
+      {
+        id: "update-user-profile",
+        intent: "update",
+        title: "Edit",
+        titleKey: "common.actions.edit",
+        endpoint: { method: "PATCH", path: "/v1/users/:id" },
+        policy: { allowedPathPrefixes: ["/admin", "/v1"] },
+        guards: [{ pluginId: "core-pack", capability: "users.write" }],
+        input: {
+          schema: {
+            type: "object",
+            properties: {
+              firstName: { type: "string", labelKey: "common.form.first_name" },
+              lastName: { type: "string", labelKey: "common.form.last_name" },
+              status: {
+                type: "string",
+                enum: ["active", "suspended"],
+                labelKey: "common.table.status"
+              }
+            },
+            required: ["firstName", "lastName", "status"]
+          }
+        }
+      }
+    ],
     fields: [
       {
-        key: "displayName",
-        label: "Display name",
-        labelKey: "common.form.display_name",
+        key: "firstName",
+        label: "First name",
+        labelKey: "common.form.first_name",
         primary: true,
         table: true,
         form: true
       },
+      {
+        key: "lastName",
+        label: "Last name",
+        labelKey: "common.form.last_name",
+        table: true,
+        form: true
+      },
       { key: "email", label: "Email", labelKey: "auth.login.email_label", table: true, form: true },
-      { key: "status", label: "Status", labelKey: "common.table.status", kind: "status", table: true },
+      {
+        key: "status",
+        label: "Status",
+        labelKey: "common.table.status",
+        kind: "status",
+        table: true
+      },
       {
         key: "updatedAt",
         label: "Updated",
@@ -206,6 +316,72 @@ const OFFICIAL_CORE_RESOURCE_META: Record<string, Partial<AdminResourceDefinitio
       create: "roles.write",
       update: "roles.write"
     },
+    actions: [
+      {
+        id: "create-role",
+        intent: "create",
+        title: "Create role",
+        titleKey: "roles.actions.create",
+        endpoint: { method: "POST", path: "/v1/roles" },
+        policy: { allowedPathPrefixes: ["/admin", "/v1"] },
+        guards: [{ pluginId: "core-pack", capability: "roles.write" }],
+        input: {
+          schema: {
+            type: "object",
+            properties: {
+              code: { type: "string" },
+              name: { type: "string" },
+              description: { type: "string" },
+              permissions: {
+                type: "array",
+                items: { type: "string" },
+                "x-options": {
+                  endpoint: { method: "GET", path: "/v1/permissions" },
+                  valuePath: "data",
+                  valueField: "key",
+                  labelField: "key",
+                  descriptionField: "displayName",
+                  metaField: "status"
+                }
+              }
+            },
+            required: ["code", "name"]
+          }
+        }
+      },
+      {
+        id: "update-role",
+        intent: "update",
+        title: "Edit",
+        titleKey: "common.actions.edit",
+        endpoint: { method: "PATCH", path: "/v1/roles/:id" },
+        policy: { allowedPathPrefixes: ["/admin", "/v1"] },
+        guards: [{ pluginId: "core-pack", capability: "roles.write" }],
+        input: {
+          schema: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              description: { type: "string" },
+              status: { type: "string", enum: ["active", "disabled"] },
+              permissions: {
+                type: "array",
+                items: { type: "string" },
+                "x-options": {
+                  endpoint: { method: "GET", path: "/v1/permissions" },
+                  valuePath: "data",
+                  valueField: "key",
+                  labelField: "key",
+                  descriptionField: "displayName",
+                  metaField: "status"
+                }
+              }
+            },
+            required: ["name"]
+          }
+        }
+      }
+    ],
     fields: [
       {
         key: "name",
@@ -220,11 +396,17 @@ const OFFICIAL_CORE_RESOURCE_META: Record<string, Partial<AdminResourceDefinitio
         key: "permissions",
         label: "Permissions",
         labelKey: "roles.table.permissions",
-        kind: "json",
+        kind: "tags",
         table: true,
         form: true
       },
-      { key: "status", label: "Status", labelKey: "common.table.status", kind: "status", table: true }
+      {
+        key: "status",
+        label: "Status",
+        labelKey: "common.table.status",
+        kind: "status",
+        table: true
+      }
     ]
   },
   "core-pack:permissions": {
@@ -238,6 +420,55 @@ const OFFICIAL_CORE_RESOURCE_META: Record<string, Partial<AdminResourceDefinitio
       create: "permissions.write",
       update: "permissions.write"
     },
+    actions: [
+      {
+        id: "create-permission",
+        intent: "create",
+        title: "Create permission",
+        titleKey: "permissions.actions.create",
+        endpoint: { method: "POST", path: "/v1/permissions" },
+        policy: { allowedPathPrefixes: ["/admin", "/v1"] },
+        guards: [{ pluginId: "core-pack", capability: "permissions.write" }],
+        input: {
+          schema: {
+            type: "object",
+            properties: {
+              key: { type: "string" },
+              displayName: { type: "string" },
+              description: { type: "string" }
+            },
+            required: ["key", "displayName"]
+          }
+        }
+      },
+      {
+        id: "update-permission",
+        intent: "update",
+        title: "Edit",
+        titleKey: "common.actions.edit",
+        endpoint: { method: "PATCH", path: "/v1/permissions/:id" },
+        policy: { allowedPathPrefixes: ["/admin", "/v1"] },
+        guards: [{ pluginId: "core-pack", capability: "permissions.write" }],
+        recordGuards: [
+          {
+            field: "key",
+            operator: "notIn",
+            values: CORE_PACK_READONLY_PERMISSION_KEYS
+          }
+        ],
+        input: {
+          schema: {
+            type: "object",
+            properties: {
+              displayName: { type: "string" },
+              description: { type: "string" },
+              status: { type: "string", enum: ["active", "disabled"] }
+            },
+            required: ["displayName"]
+          }
+        }
+      }
+    ],
     fields: [
       {
         key: "displayName",
@@ -249,7 +480,13 @@ const OFFICIAL_CORE_RESOURCE_META: Record<string, Partial<AdminResourceDefinitio
       },
       { key: "key", label: "Key", labelKey: "common.form.key", table: true, form: true },
       { key: "sourcePluginId", label: "Source", labelKey: "permissions.table.source", table: true },
-      { key: "status", label: "Status", labelKey: "common.table.status", kind: "status", table: true }
+      {
+        key: "status",
+        label: "Status",
+        labelKey: "common.table.status",
+        kind: "status",
+        table: true
+      }
     ]
   },
   "core-pack:api-keys": {
@@ -263,6 +500,69 @@ const OFFICIAL_CORE_RESOURCE_META: Record<string, Partial<AdminResourceDefinitio
       create: "api_keys.write",
       update: "api_keys.write"
     },
+    actions: [
+      {
+        id: "create-api-key",
+        intent: "create",
+        title: "Create API key",
+        titleKey: "api_keys.actions.issue",
+        endpoint: { method: "POST", path: "/v1/api-keys" },
+        policy: { allowedPathPrefixes: ["/admin", "/v1"] },
+        guards: [{ pluginId: "core-pack", capability: "api_keys.write" }],
+        input: {
+          schema: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              description: { type: "string" },
+              kind: { type: "string" },
+              roleCodes: { type: "array", items: { type: "string" } },
+              permissionKeys: { type: "array", items: { type: "string" } },
+              expiresAt: { type: "string" }
+            },
+            required: ["name"]
+          }
+        }
+      },
+      {
+        id: "rotate-api-key",
+        intent: "update",
+        title: "Rotate",
+        titleKey: "common.actions.rotate",
+        endpoint: { method: "POST", path: "/v1/api-keys/:id/rotate" },
+        policy: { allowedPathPrefixes: ["/admin", "/v1"] },
+        guards: [{ pluginId: "core-pack", capability: "api_keys.write" }],
+        input: {
+          schema: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              description: { type: "string" },
+              roleCodes: { type: "array", items: { type: "string" } },
+              permissionKeys: { type: "array", items: { type: "string" } },
+              expiresAt: { type: "string" }
+            }
+          }
+        }
+      },
+      {
+        id: "revoke-api-key",
+        intent: "delete",
+        title: "Revoke",
+        titleKey: "common.actions.revoke",
+        endpoint: { method: "POST", path: "/v1/api-keys/:id/revoke" },
+        policy: { allowedPathPrefixes: ["/admin", "/v1"] },
+        guards: [{ pluginId: "core-pack", capability: "api_keys.write" }],
+        input: {
+          schema: {
+            type: "object",
+            properties: {
+              reason: { type: "string" }
+            }
+          }
+        }
+      }
+    ],
     fields: [
       {
         key: "name",
@@ -274,8 +574,67 @@ const OFFICIAL_CORE_RESOURCE_META: Record<string, Partial<AdminResourceDefinitio
       },
       { key: "keyPrefix", label: "Key", labelKey: "common.table.key", table: true },
       { key: "kind", label: "Kind", labelKey: "api_keys.table.kind", table: true, form: true },
-      { key: "status", label: "Status", labelKey: "common.table.status", kind: "status", table: true }
+      {
+        key: "status",
+        label: "Status",
+        labelKey: "common.table.status",
+        kind: "status",
+        table: true
+      }
     ]
+  }
+};
+
+const OFFICIAL_CORE_SETTINGS_SECTION_META: Record<
+  string,
+  Partial<AdminSettingsSectionDefinition>
+> = {
+  "core-pack:core-pack-general-settings": {
+    titleKey: "settings.section.general.title",
+    summary: "Site identity and localization settings used across the backoffice.",
+    summaryKey: "settings.section.general.summary",
+    order: 10,
+    settingKeys: [
+      "core-pack:site:name",
+      "core-pack:site:url",
+      "core-pack:cms:locale",
+      "core-pack:cms:timezone"
+    ]
+  },
+  "core-pack:core-pack-branding-settings": {
+    titleKey: "settings.section.branding.title",
+    summary: "Backoffice-facing brand text and logo references.",
+    summaryKey: "settings.section.branding.summary",
+    order: 20,
+    settingKeys: ["core-pack:branding:tagline", "core-pack:branding:logo_url"]
+  },
+  "core-pack:core-pack-auth-settings": {
+    titleKey: "settings.section.auth.title",
+    summary: "Session, login lockout, cookie, and plugin-auth timing settings.",
+    summaryKey: "settings.section.auth.summary",
+    order: 30,
+    category: "auth"
+  },
+  "core-pack:core-pack-security-settings": {
+    titleKey: "settings.section.security.title",
+    summary: "Secret handling and encryption policy settings.",
+    summaryKey: "settings.section.security.summary",
+    order: 40,
+    category: "security"
+  },
+  "core-pack:core-pack-cache-settings": {
+    titleKey: "settings.section.cache.title",
+    summary: "Cache adapter and Redis runtime settings.",
+    summaryKey: "settings.section.cache.summary",
+    order: 50,
+    category: "cache"
+  },
+  "core-pack:core-pack-settings-catalog": {
+    titleKey: "settings.section.catalog.title",
+    summary: "Raw owner-aware settings definitions and resolved values.",
+    summaryKey: "settings.section.catalog.summary",
+    order: 900,
+    category: "settings"
   }
 };
 
@@ -330,7 +689,6 @@ export function createOfficialAdminContributions(input: {
             icon: "layout-dashboard",
             group: "Core",
             groupKey: "official.nav.group.core",
-            badge: "SYS",
             order: 0
           }
         ]
@@ -363,7 +721,7 @@ export function withOfficialAdminRouteRenderers(
     navigation: contribution.navigation.map((item) => enrichNavigationItem(item)),
     resources: contribution.resources?.map((resource) => enrichResource(resource)),
     widgets: contribution.widgets,
-    settings: contribution.settings
+    settings: contribution.settings?.map((section) => enrichSettingsSection(section))
   }));
 }
 
@@ -399,5 +757,14 @@ function enrichResource(resource: AdminResourceDefinition): AdminResourceDefinit
   return {
     ...resource,
     ...OFFICIAL_CORE_RESOURCE_META[`${resource.pluginId}:${resource.entityName}`]
+  };
+}
+
+function enrichSettingsSection(
+  section: AdminSettingsSectionDefinition
+): AdminSettingsSectionDefinition {
+  return {
+    ...section,
+    ...OFFICIAL_CORE_SETTINGS_SECTION_META[`${section.pluginId}:${section.id}`]
   };
 }

@@ -51,7 +51,23 @@ test("loadRuntimeDiscovery maps backend plugin contributions to admin manifests"
               ],
               resources: [],
               widgets: [],
-              settingsSections: []
+              settingsSections: [
+                {
+                  pluginId: "blog-pack",
+                  key: "seo-settings",
+                  declaration: {
+                    id: "seo-settings",
+                    label: "SEO",
+                    summary: "SEO controls",
+                    kind: "custom",
+                    componentRef: "blog-pack.seo-settings",
+                    namespace: "seo",
+                    settingKeys: ["blog-pack:seo:title"],
+                    order: 40,
+                    requiredPermission: "blog-pack:settings:read"
+                  }
+                }
+              ]
             }
           }
         })
@@ -70,5 +86,19 @@ test("loadRuntimeDiscovery maps backend plugin contributions to admin manifests"
   assert.equal(discovery.manifests[0].admin?.navigation?.[0].routeId, "posts");
   assert.deepEqual(discovery.manifests[0].admin?.pages?.[0].guards, [
     { pluginId: "blog-pack", permissionKey: "blog-pack:posts:read" }
+  ]);
+  assert.equal(discovery.manifests[0].admin?.settings?.sections?.[0].kind, "custom");
+  assert.equal(
+    discovery.manifests[0].admin?.settings?.sections?.[0].componentRef,
+    "blog-pack.seo-settings"
+  );
+  assert.equal(discovery.manifests[0].admin?.settings?.sections?.[0].summary, "SEO controls");
+  assert.equal(discovery.manifests[0].admin?.settings?.sections?.[0].category, "seo");
+  assert.deepEqual(discovery.manifests[0].admin?.settings?.sections?.[0].settingKeys, [
+    "blog-pack:seo:title"
+  ]);
+  assert.equal(discovery.manifests[0].admin?.settings?.sections?.[0].order, 40);
+  assert.deepEqual(discovery.manifests[0].admin?.settings?.sections?.[0].guards, [
+    { pluginId: "blog-pack", permissionKey: "blog-pack:settings:read" }
   ]);
 });

@@ -13,10 +13,13 @@ export interface AdminSettingsSectionDefinition {
   pluginId: string;
   mode?: AdminContributionMode;
   kind?: AdminSettingsSectionKind;
+  componentRef?: string;
   title: string;
   titleKey?: string;
   summary?: string;
   summaryKey?: string;
+  category?: string;
+  settingKeys?: readonly string[];
   data?: AdminJsonDataBinding;
   actions?: readonly AdminActionDefinition[];
   order?: number;

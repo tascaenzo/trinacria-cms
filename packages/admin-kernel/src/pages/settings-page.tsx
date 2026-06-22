@@ -1,4 +1,4 @@
-import { useActionState, useCallback, useEffect, useState } from "react";
+import { useActionState, useCallback, useEffect, useMemo, useState } from "react";
 import {
   Badge,
   Button,
@@ -14,15 +14,15 @@ import {
   DataTableTable,
   Dialog,
   FilterBar,
+  Icon,
   InfoCard,
   Input,
   PropertyItem,
   PropertyList,
+  Select,
   Textarea
 } from "@trinacria-cms/trinacria-ui";
-import { DeclarativeSettingsSectionPanel } from "../declarative/index.js";
 import type {
-  GetSettingSecretMetadataResponse,
   GetSettingValueByKeyResponse,
   ListSettingDefinitionsResponse
 } from "@trinacria-cms/sdk";
@@ -35,7 +35,6 @@ import {
   MobileRecordField,
   MobileRecordList
 } from "../components/mobile-records.js";
-import { JsonPreviewAction } from "../components/json-preview-action.js";
 import { ErrorBanner, EmptyState } from "../components/resource-feedback.js";
 import { formatDateTime } from "../lib/formatting.js";
 import {
@@ -43,14 +42,19 @@ import {
   createIdleAsyncActionState,
   readOptionalString
 } from "../runtime/action-state.js";
+import {
+  writeBackofficeNavigationState,
+  getBackofficeRouteStateParam,
+  getBackofficeNavigationEventName
+} from "../runtime/backoffice-navigation-state.js";
 import { cms } from "../runtime/cms-sdk.js";
 import { getSdkErrorDetails, toDisplayError } from "../lib/sdk-errors.js";
 import { useI18n } from "../lib/i18n.js";
-import { translateSettingSource, translateStatusLabel } from "../lib/ui-translations.js";
+import { translateStatusLabel } from "../lib/ui-translations.js";
 
 type SettingDefinitionRecord = ListSettingDefinitionsResponse["data"][number];
 type SettingValueRecord = GetSettingValueByKeyResponse["data"] | null;
-type SettingSecretMetadataRecord = GetSettingSecretMetadataResponse["data"] | null;
+type SettingJsonValue = string | number | boolean | null | unknown[] | { [key: string]: unknown };
 type CmsOverviewField = "siteName" | "siteUrl" | "locale" | "timezone";
 type CmsOverviewItem = {
   field: CmsOverviewField;
@@ -58,15 +62,6 @@ type CmsOverviewItem = {
   value: string | null;
   status: "resolved" | "missing" | "error";
 };
-type PreparedSettingValueRequest = {
-  ownerPluginId: string;
-  path: string;
-  body: {
-    value: unknown;
-    updatedBy: string;
-  };
-};
-
 export interface SettingsPageProps {
   sectionContext?: Omit<AdminSettingsSectionRenderContext, "section">;
   settings?: readonly RenderableAdminSettingsSection[];
@@ -154,14 +149,23 @@ function stringifySettingValue(value: unknown): string {
   return "";
 }
 
-function toEditableJson(value: unknown): string {
+function toEditableSettingInput(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
   return JSON.stringify(value ?? null, null, 2);
 }
 
-/**
- * SettingsPage keeps reads explicit while moving the filter flow to a React 19
- * action-based form instead of manual submit bookkeeping.
- */
+function getSectionIcon(sectionId: string) {
+  const normalizedId = sectionId.toLowerCase();
+  if (normalizedId.includes("general")) return "globe";
+  if (normalizedId.includes("branding")) return "sparkles";
+  if (normalizedId.includes("auth")) return "lock-keyhole";
+  if (normalizedId.includes("security")) return "shield-check";
+  if (normalizedId.includes("cache")) return "hard-drive";
+  if (normalizedId.includes("catalog")) return "database";
+  return "settings-2";
+}
+
 export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProps = {}) {
   const { t } = useI18n();
   const [records, setRecords] = useState<readonly SettingDefinitionRecord[]>([]);
@@ -170,18 +174,21 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
   const [valueRecord, setValueRecord] = useState<SettingValueRecord>(null);
   const [error, setError] = useState<string | null>(null);
   const [valueError, setValueError] = useState<string | null>(null);
-  const [secretMetadata, setSecretMetadata] = useState<SettingSecretMetadataRecord>(null);
-  const [secretError, setSecretError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isValueLoading, setIsValueLoading] = useState(false);
-  const [isSecretLoading, setIsSecretLoading] = useState(false);
-  const [isInspectOpen, setIsInspectOpen] = useState(true);
-  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
+  const [isInspectOpen] = useState(true);
+
+  const [activeSectionId, setActiveSectionId] = useState<string | null>(() => {
+    return getBackofficeRouteStateParam("section") ?? settings[0]?.id ?? null;
+  });
+
   const [overviewItems, setOverviewItems] = useState<readonly CmsOverviewItem[]>([]);
   const [isOverviewLoading, setIsOverviewLoading] = useState(true);
   const [draftValueJson, setDraftValueJson] = useState("null");
-  const [draftError, setDraftError] = useState<string | null>(null);
-  const [preparedRequest, setPreparedRequest] = useState<PreparedSettingValueRequest | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
   const refresh = useCallback(async (nextOwnerPluginId = "") => {
     setIsLoading(true);
     setError(null);
@@ -205,6 +212,37 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
   useEffect(() => {
     void refresh("");
   }, [refresh]);
+
+  useEffect(() => {
+    function handleNavigationChange() {
+      const section = getBackofficeRouteStateParam("section");
+      if (section) {
+        setActiveSectionId(section);
+      }
+    }
+
+    const navigationEventName = getBackofficeNavigationEventName();
+    window.addEventListener(navigationEventName, handleNavigationChange);
+    window.addEventListener("popstate", handleNavigationChange);
+    return () => {
+      window.removeEventListener(navigationEventName, handleNavigationChange);
+      window.removeEventListener("popstate", handleNavigationChange);
+    };
+  }, []);
+
+  const handleSelectSection = (sectionId: string) => {
+    setActiveSectionId(sectionId);
+    const section = settings.find((entry) => entry.id === sectionId);
+    const firstRecord = section ? filterRecordsForSettingsSection(records, section)[0] : undefined;
+    if (firstRecord) {
+      void inspectRecord(firstRecord);
+    } else {
+      setSelectedRecord(null);
+    }
+    const params = new URLSearchParams();
+    params.set("section", sectionId);
+    writeBackofficeNavigationState("settings", params);
+  };
 
   useEffect(() => {
     let isCancelled = false;
@@ -272,55 +310,33 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
   );
 
   async function inspectRecord(record: SettingDefinitionRecord) {
-    setSelectedRecord(record);
-    setIsInspectOpen(true);
-    setIsValueLoading(true);
-    setIsSecretLoading(true);
-    setValueError(null);
-    setSecretError(null);
-    setPreparedRequest(null);
-    setDraftError(null);
-    try {
-      const [valueResult, secretResult] = await Promise.allSettled([
-        cms.settings.getSettingValueByKey({ path: { key: record.key } }),
-        cms.settings.getSettingSecretMetadata({ path: { key: record.key } })
-      ]);
+    const recordSection = settings.find((section) =>
+      filterRecordsForSettingsSection(records, section).some((entry) => entry.id === record.id)
+    );
+    if (recordSection) {
+      setActiveSectionId(recordSection.id);
+    }
 
-      if (valueResult.status === "fulfilled") {
-        setValueRecord(valueResult.value.data);
+    setSelectedRecord(record);
+    setIsValueLoading(true);
+    setValueError(null);
+    setSaveError(null);
+    setSaveMessage(null);
+    try {
+      const response = await cms.settings.getSettingValueByKey({ path: { key: record.key } });
+      setValueRecord(response.data);
+      setValueError(null);
+    } catch (currentError) {
+      const details = getSdkErrorDetails(currentError);
+      if (details.status === 404) {
+        setValueRecord(null);
         setValueError(null);
       } else {
-        const details = getSdkErrorDetails(valueResult.reason);
-        if (details.status === 404) {
-          setValueRecord(null);
-          setValueError(null);
-        } else {
-          setValueRecord(null);
-          setValueError(details.message ?? t("settings.inspect.value_unavailable"));
-        }
+        setValueRecord(null);
+        setValueError(details.message ?? t("settings.inspect.value_unavailable"));
       }
-
-      if (secretResult.status === "fulfilled") {
-        setSecretMetadata(secretResult.value.data);
-        setSecretError(null);
-      } else {
-        const details = getSdkErrorDetails(secretResult.reason);
-        if (details.status === 404) {
-          setSecretMetadata(null);
-          setSecretError(null);
-        } else {
-          setSecretMetadata(null);
-          setSecretError(details.message ?? t("settings.inspect.secret_unavailable"));
-        }
-      }
-    } catch (currentError) {
-      setValueRecord(null);
-      setSecretMetadata(null);
-      setValueError(toDisplayError(currentError));
-      setSecretError(null);
     } finally {
       setIsValueLoading(false);
-      setIsSecretLoading(false);
     }
   }
 
@@ -329,47 +345,62 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
 
     const baseValue =
       valueRecord?.value ?? selectedRecord.defaultValue ?? selectedRecord.schema ?? null;
-    setDraftValueJson(toEditableJson(baseValue));
-    setDraftError(null);
-    setPreparedRequest(null);
+    setDraftValueJson(toEditableSettingInput(baseValue));
+    setSaveError(null);
+    setSaveMessage(null);
   }, [selectedRecord, valueRecord]);
 
-  useEffect(() => {
-    if (selectedSectionId || settings.length === 0) {
-      return;
-    }
-
-    setSelectedSectionId(settings[0].id);
-  }, [selectedSectionId, settings]);
-
-  function prepareValueWriteHandoff() {
+  async function saveSettingValue() {
     if (!selectedRecord) return;
+    if (selectedRecord.secret || !selectedRecord.mutable) return;
 
     try {
-      const parsed = JSON.parse(draftValueJson);
-      setPreparedRequest({
-        ownerPluginId: selectedRecord.ownerPluginId,
-        path: `/v1/settings/values/${selectedRecord.key}`,
+      const parsed = parseSettingFormValue(selectedRecord, draftValueJson);
+      setIsSaving(true);
+      setSaveError(null);
+      setSaveMessage(null);
+      await cms.settings.upsertSettingValue({
+        path: { key: selectedRecord.key },
         body: {
           value: parsed,
-          updatedBy: "backoffice:prepared-handoff"
+          updatedBy: "backoffice"
         }
       });
-      setDraftError(null);
-    } catch {
-      setPreparedRequest(null);
-      setDraftError(t("settings.write_flow.invalid_json"));
+      setSaveMessage(t("settings.form.saved", "Impostazione salvata."));
+      await inspectRecord(selectedRecord);
+      void refresh(ownerPluginId);
+    } catch (currentError) {
+      setSaveError(toDisplayError(currentError));
+    } finally {
+      setIsSaving(false);
     }
   }
 
   function closeSettingsWorkspace() {
-    setIsInspectOpen(false);
-    window.location.hash = "#dashboard";
+    setSelectedRecord(null);
+    writeBackofficeNavigationState("dashboard");
   }
 
   const activeDefinitionsCount = records.filter((record) => record.status === "active").length;
   const ownerPluginsCount = new Set(records.map((record) => record.ownerPluginId)).size;
-  const selectedSection = settings.find((section) => section.id === selectedSectionId) ?? null;
+
+  const selectedSection = useMemo(() => {
+    const sectionId = activeSectionId ?? settings[0]?.id ?? null;
+    return settings.find((section) => section.id === sectionId) ?? null;
+  }, [activeSectionId, settings]);
+
+  const selectedSectionRecords = useMemo(
+    () => (selectedSection ? filterRecordsForSettingsSection(records, selectedSection) : []),
+    [records, selectedSection]
+  );
+
+  useEffect(() => {
+    if (selectedRecord || selectedSectionRecords.length === 0) {
+      return;
+    }
+
+    void inspectRecord(selectedSectionRecords[0]);
+  }, [selectedRecord, selectedSectionRecords]);
 
   function renderOverviewValue(item: CmsOverviewItem): string {
     if (item.status === "resolved" && item.value) return item.value;
@@ -388,6 +419,168 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
       case "timezone":
         return t("settings.overview.timezone");
     }
+  }
+
+  function renderSettingsNavigation() {
+    if (settings.length === 0) {
+      return <EmptyState text={t("settings.overview.not_configured")} />;
+    }
+
+    return (
+      <div className="grid gap-1">
+        {settings.map((section) => {
+          const isSelected = section.id === selectedSection?.id;
+          const sectionRecords = filterRecordsForSettingsSection(records, section);
+          const iconName = getSectionIcon(section.id);
+
+          return (
+            <div key={`${section.pluginId}:${section.id}`} className="grid gap-1">
+              <button
+                type="button"
+                onClick={() => handleSelectSection(section.id)}
+                className={`flex h-11 w-full items-center gap-3 rounded-lg border px-3 text-left transition ${
+                  isSelected
+                    ? "border-[color:var(--color-border-strong)] bg-white text-[color:var(--color-ink)]"
+                    : "border-transparent text-[color:var(--color-ink-muted)] hover:border-[color:var(--color-border)] hover:bg-white hover:text-[color:var(--color-ink)]"
+                }`}
+              >
+                <Icon name={iconName} className="h-4 w-4 shrink-0 opacity-75" />
+                <span className="min-w-0 flex-1 truncate text-sm font-semibold">
+                  {section.title}
+                </span>
+                <span className="flex shrink-0 items-center gap-2">
+                  <Badge>{sectionRecords.length}</Badge>
+                  <Icon
+                    name={isSelected ? "chevron-down" : "chevron-right"}
+                    className="h-4 w-4 opacity-70"
+                  />
+                </span>
+              </button>
+
+              {isSelected ? (
+                <div className="ml-7 grid gap-1 border-l border-[color:var(--color-border)] pl-3">
+                  {sectionRecords.length > 0 ? (
+                    sectionRecords.map((record) => {
+                      const isRecordSelected = record.id === selectedRecord?.id;
+
+                      return (
+                        <button
+                          key={record.id}
+                          type="button"
+                          onClick={() => void inspectRecord(record)}
+                          className={`flex h-9 items-center gap-2 rounded-md border px-3 text-left text-xs transition ${
+                            isRecordSelected
+                              ? "border-[color:var(--color-border-strong)] bg-white text-[color:var(--color-ink)]"
+                              : "border-transparent text-[color:var(--color-ink-muted)] hover:border-[color:var(--color-border)] hover:bg-white hover:text-[color:var(--color-ink)]"
+                          }`}
+                        >
+                          <span className="min-w-0 flex-1 truncate font-medium">
+                            {formatSettingNavLabel(record)}
+                          </span>
+                          <span className="shrink-0 rounded-full border border-[color:var(--color-border)] px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] opacity-75">
+                            {translateStatusLabel(record.status, t)}
+                          </span>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className="rounded-md border border-dashed border-[color:var(--color-border)] px-3 py-2 text-xs text-[color:var(--color-ink-muted)]">
+                      {t("settings.module.no_settings")}
+                    </div>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  function renderSettingValueField(record: SettingDefinitionRecord) {
+    const enumOptions = getSettingEnumOptions(record.schema);
+    const valueKind = getSettingValueKind(record);
+    const isDisabled = record.secret || !record.mutable || isSaving;
+    const label = formatSettingFormLabel(record);
+
+    if (record.secret) {
+      return (
+        <Input
+          label={label}
+          value={t("settings.form.secret_placeholder", "Valore secret protetto")}
+          readOnly
+          disabled
+        />
+      );
+    }
+
+    if (enumOptions.length > 0) {
+      return (
+        <Select
+          label={label}
+          value={draftValueJson}
+          disabled={isDisabled}
+          onChange={(event) => {
+            setDraftValueJson(event.currentTarget.value);
+            setSaveError(null);
+            setSaveMessage(null);
+          }}
+        >
+          {enumOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </Select>
+      );
+    }
+
+    if (valueKind === "boolean") {
+      return (
+        <Select
+          label={label}
+          value={draftValueJson === "true" ? "true" : "false"}
+          disabled={isDisabled}
+          onChange={(event) => {
+            setDraftValueJson(event.currentTarget.value);
+            setSaveError(null);
+            setSaveMessage(null);
+          }}
+        >
+          <option value="true">{t("common.boolean.true", "Si")}</option>
+          <option value="false">{t("common.boolean.false", "No")}</option>
+        </Select>
+      );
+    }
+
+    if (valueKind === "json") {
+      return (
+        <Textarea
+          label={label}
+          value={draftValueJson}
+          readOnly={isDisabled}
+          onChange={(event) => {
+            setDraftValueJson(event.target.value);
+            setSaveError(null);
+            setSaveMessage(null);
+          }}
+        />
+      );
+    }
+
+    return (
+      <Input
+        label={label}
+        type={valueKind === "number" ? "number" : "text"}
+        value={draftValueJson}
+        readOnly={isDisabled}
+        onChange={(event) => {
+          setDraftValueJson(event.currentTarget.value);
+          setSaveError(null);
+          setSaveMessage(null);
+        }}
+      />
+    );
   }
 
   return (
@@ -552,275 +745,132 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
       >
         {isLoading ? <EmptyState text={t("settings.empty.loading_definitions")} /> : null}
         {!isLoading && !selectedRecord ? (
-          <div className="grid h-full min-h-0 bg-[color:var(--color-panel-soft)] lg:grid-cols-[320px_minmax(0,1fr)]">
-            <aside className="min-h-0 overflow-auto border-b border-[color:var(--color-border)] bg-[color:var(--color-panel)] p-4 lg:border-b-0 lg:border-r">
+          <div className="grid h-full min-h-0 bg-white lg:grid-cols-[360px_minmax(0,1fr)]">
+            <aside className="min-h-0 overflow-auto border-b border-[color:var(--color-border)] bg-white p-4 lg:border-b-0 lg:border-r">
               <div className="mb-4">
                 <p className="text-xs font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
                   {t("official.route.settings.title", "Impostazioni")}
                 </p>
                 <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink-muted)]">
-                  {settings.length} {t("settings.overview.active_definitions").toLowerCase()}
+                  {selectedSectionRecords.length}{" "}
+                  {t("settings.overview.active_definitions").toLowerCase()}
                 </p>
               </div>
-              {settings.length > 0 ? (
-                <div className="grid gap-1">
-                  {settings.map((section) => {
-                    const isSelected = section.id === selectedSectionId;
-
-                    return (
-                      <button
-                        key={`${section.pluginId}:${section.id}`}
-                        type="button"
-                        onClick={() => setSelectedSectionId(section.id)}
-                        className={`w-full rounded-lg border px-3 py-3 text-left transition ${
-                          isSelected
-                            ? "border-[color:var(--color-border-strong)] bg-[color:var(--color-interactive-selected)] text-[color:var(--color-interactive-selected-ink)]"
-                            : "border-transparent text-[color:var(--color-ink-muted)] hover:border-[color:var(--color-border)] hover:bg-[color:var(--color-interactive-hover)] hover:text-[color:var(--color-ink)]"
-                        }`}
-                      >
-                        <span className="block truncate text-sm font-semibold">{section.title}</span>
-                        {section.summary ? (
-                          <span className="mt-1 block truncate text-xs opacity-75">
-                            {section.summary}
-                          </span>
-                        ) : null}
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : (
-                <EmptyState text={t("settings.overview.not_configured")} />
-              )}
+              {renderSettingsNavigation()}
             </aside>
-            <section className="min-h-0 overflow-auto p-4 sm:p-6">
+            <section className="min-h-0 overflow-auto bg-white p-4 sm:p-6">
               {selectedSection ? (
                 selectedSection.render && sectionContext ? (
                   <>{selectedSection.render({ ...sectionContext, section: selectedSection })}</>
                 ) : (
-                  <DeclarativeSettingsSectionPanel section={selectedSection} />
+                  <div className="flex min-h-full items-center justify-center rounded-xl border border-dashed border-[color:var(--color-border-strong)] bg-white p-8">
+                    <EmptyState
+                      text={t(
+                        "settings.form.select_setting",
+                        "Seleziona una impostazione dal menu."
+                      )}
+                    />
+                  </div>
                 )
               ) : (
-                <div className="flex min-h-full items-center justify-center rounded-xl border border-dashed border-[color:var(--color-border-strong)] bg-[color:var(--color-panel)] p-8">
+                <div className="flex min-h-full items-center justify-center rounded-xl border border-dashed border-[color:var(--color-border-strong)] bg-white p-8">
                   <EmptyState text={t("settings.overview.not_configured")} />
                 </div>
               )}
             </section>
           </div>
         ) : null}
-        {selectedRecord ? (
-          <div className="grid h-full min-h-0 bg-[color:var(--color-panel-soft)] lg:grid-cols-[320px_minmax(0,1fr)]">
-            <aside className="min-h-0 overflow-auto border-b border-[color:var(--color-border)] bg-[color:var(--color-panel)] p-4 lg:border-b-0 lg:border-r">
-              <div className="mb-4">
-                <p className="text-xs font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
-                  {t("settings.title")}
-                </p>
-                <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink-muted)]">
-                  {settings.length} {t("settings.overview.active_definitions").toLowerCase()}
-                </p>
+
+        {!isLoading && selectedRecord ? (
+          <div className="grid h-full min-h-0 bg-white lg:grid-cols-[360px_minmax(0,1fr)]">
+            <aside className="min-h-0 overflow-auto border-b border-[color:var(--color-border)] bg-white p-4 lg:border-b-0 lg:border-r">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
+                    {t("settings.title")}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink-muted)]">
+                    {records.length} {t("settings.overview.active_definitions").toLowerCase()}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeSettingsWorkspace}
+                  className="rounded-lg border border-[color:var(--color-border)] p-1.5 hover:bg-[color:var(--color-interactive-hover)] text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)] transition-colors"
+                  title={t("common.actions.close")}
+                >
+                  <Icon name="x" className="h-4 w-4" />
+                </button>
               </div>
 
-              <div className="grid gap-1">
-                {([] as readonly SettingDefinitionRecord[]).map((record) => {
-                  const isSelected = record.id === selectedRecord.id;
-
-                  return (
-                    <button
-                      key={record.id}
-                      type="button"
-                      onClick={() => void inspectRecord(record)}
-                      className={`w-full rounded-lg border px-3 py-3 text-left transition ${
-                        isSelected
-                          ? "border-[color:var(--color-border-strong)] bg-[color:var(--color-interactive-selected)] text-[color:var(--color-interactive-selected-ink)]"
-                          : "border-transparent text-[color:var(--color-ink-muted)] hover:border-[color:var(--color-border)] hover:bg-[color:var(--color-interactive-hover)] hover:text-[color:var(--color-ink)]"
-                      }`}
-                    >
-                      <span className="block truncate text-sm font-semibold">{record.key}</span>
-                      <span className="mt-1 flex items-center justify-between gap-2">
-                        <span className="truncate text-xs opacity-75">
-                          {record.category ?? t("settings.uncategorized")}
-                        </span>
-                        <span className="shrink-0 rounded-full border border-[color:var(--color-border)] px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] opacity-75">
-                          {translateStatusLabel(record.status, t)}
-                        </span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+              {renderSettingsNavigation()}
             </aside>
 
-            <section className="min-h-0 overflow-auto p-4 sm:p-6">
-              <div className="mx-auto grid max-w-7xl gap-5">
-                <div className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel)] p-5 shadow-[var(--shadow-sm)]">
-                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <section className="min-h-0 overflow-auto bg-white p-4 sm:p-6">
+              <div className="mx-auto grid max-w-3xl gap-4">
+                <div className="rounded-xl border border-[color:var(--color-border)] bg-white p-5 shadow-[var(--shadow-sm)]">
+                  <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
-                      <div className="mb-3 flex flex-wrap items-center gap-2">
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
                         <Badge tone={selectedRecord.status === "active" ? "success" : "warning"}>
                           {translateStatusLabel(selectedRecord.status, t)}
                         </Badge>
                         <Badge>{selectedRecord.ownerPluginId}</Badge>
                       </div>
-                      <h3 className="truncate text-xl font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-                        {selectedRecord.key}
+                      <h3 className="truncate text-lg font-semibold text-[color:var(--color-ink)]">
+                        {formatSettingFormLabel(selectedRecord)}
                       </h3>
-                      <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink-muted)]">
-                        {selectedRecord.category ?? t("settings.uncategorized")}
+                      <p className="mt-1 truncate text-xs text-[color:var(--color-ink-muted)]">
+                        {selectedRecord.key}
                       </p>
                     </div>
-                    <PropertyList columns={2} className="md:min-w-[360px]">
-                      <PropertyItem
-                        label={t("settings.inspect.category")}
-                        value={selectedRecord.category ?? t("settings.uncategorized")}
-                      />
-                      <PropertyItem
-                        label={t("common.table.updated")}
-                        value={formatDateTime(selectedRecord.updatedAt)}
-                      />
-                    </PropertyList>
-                  </div>
-                </div>
-
-                <div className="grid gap-5 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-                  <div className="grid content-start gap-4">
-                    <JsonPreviewAction
-                      title={t("settings.inspect.definition_json")}
-                      payloadTitle={t("settings.inspect.definition_json")}
-                      value={selectedRecord}
-                    />
-
-                    {isSecretLoading ? (
-                      <EmptyState text={t("settings.inspect.loading_secret")} />
-                    ) : null}
-                    {secretError ? <ErrorBanner message={secretError} /> : null}
-                    {secretMetadata ? (
-                      <>
-                        <InfoCard>
-                          <PropertyList columns={1}>
-                            <PropertyItem
-                              label={t("settings.inspect.secret_algorithm")}
-                              value={secretMetadata.algorithm}
-                            />
-                            <PropertyItem
-                              label={t("settings.inspect.secret_key_version")}
-                              value={secretMetadata.keyVersion}
-                            />
-                            <PropertyItem
-                              label={t("settings.inspect.secret_masked")}
-                              value={secretMetadata.maskedValue}
-                            />
-                          </PropertyList>
-                        </InfoCard>
-                        <JsonPreviewAction
-                          title={t("settings.inspect.secret_metadata_json")}
-                          payloadTitle={t("settings.inspect.secret_metadata_json")}
-                          value={secretMetadata}
-                        />
-                      </>
-                    ) : null}
-                    {!isSecretLoading && !secretError && !secretMetadata ? (
-                      <EmptyState text={t("settings.inspect.no_secret_metadata")} />
-                    ) : null}
+                    <p className="shrink-0 text-xs text-[color:var(--color-ink-muted)]">
+                      {formatDateTime(valueRecord?.updatedAt ?? selectedRecord.updatedAt)}
+                    </p>
                   </div>
 
-                  <div className="grid content-start gap-4">
-                    {isValueLoading ? <EmptyState text={t("settings.empty.loading_value")} /> : null}
+                  <form
+                    className="grid gap-4"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      void saveSettingValue();
+                    }}
+                  >
+                    {isValueLoading ? (
+                      <EmptyState text={t("settings.empty.loading_value")} />
+                    ) : null}
                     {valueError ? <ErrorBanner message={valueError} /> : null}
-                    {valueRecord ? (
-                      <>
-                        <InfoCard>
-                          <PropertyList columns={1}>
-                            <PropertyItem
-                              label={t("settings.inspect.source")}
-                              value={translateSettingSource(valueRecord.source, t)}
-                            />
-                            <PropertyItem
-                              label={t("common.table.owner")}
-                              value={valueRecord.ownerPluginId}
-                            />
-                            <PropertyItem
-                              label={t("common.table.updated")}
-                              value={formatDateTime(valueRecord.updatedAt)}
-                            />
-                          </PropertyList>
-                        </InfoCard>
-                        <JsonPreviewAction
-                          title={t("settings.inspect.resolved_value_json")}
-                          payloadTitle={t("settings.inspect.resolved_value_json")}
-                          value={valueRecord.value}
-                        />
-                      </>
+                    {renderSettingValueField(selectedRecord)}
+                    {selectedRecord.secret ? (
+                      <p className="text-xs text-[color:var(--color-ink-muted)]">
+                        {t(
+                          "settings.form.secret_readonly",
+                          "I valori secret si aggiornano da un flusso dedicato."
+                        )}
+                      </p>
                     ) : null}
-                    {!isValueLoading && !valueError && !valueRecord ? (
-                      <EmptyState text={t("settings.inspect.no_resolved_value")} />
+                    {!selectedRecord.mutable ? (
+                      <p className="text-xs text-[color:var(--color-ink-muted)]">
+                        {t("settings.form.readonly", "Questa impostazione e in sola lettura.")}
+                      </p>
                     ) : null}
-
-                    <div className="grid gap-4 rounded-xl border border-dashed border-[color:var(--color-border-strong)] bg-[color:var(--color-panel)] p-4 shadow-[var(--shadow-sm)]">
-                      <div>
-                        <p className="text-sm font-medium text-[color:var(--color-ink)]">
-                          {t("settings.write_flow.title")}
-                        </p>
-                        <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink-muted)]">
-                          {t("settings.write_flow.summary")}
-                        </p>
-                      </div>
-                      <PropertyList columns={3}>
-                        <PropertyItem
-                          label={t("settings.write_flow.method")}
-                          value="PUT"
-                          className="bg-[color:var(--color-surface)]"
-                        />
-                        <PropertyItem
-                          label={t("settings.write_flow.owner")}
-                          value={selectedRecord.ownerPluginId}
-                          className="bg-[color:var(--color-surface)]"
-                        />
-                        <PropertyItem
-                          label={t("settings.write_flow.mode")}
-                          value={t("settings.write_flow.mode_value")}
-                          className="bg-[color:var(--color-surface)]"
-                        />
-                      </PropertyList>
-                      <Textarea
-                        label={t("settings.write_flow.draft_label")}
-                        hint={t("settings.write_flow.draft_hint")}
-                        value={draftValueJson}
-                        onChange={(event) => {
-                          setDraftValueJson(event.target.value);
-                          setDraftError(null);
-                          setPreparedRequest(null);
-                        }}
-                      />
-                      {draftError ? <ErrorBanner message={draftError} /> : null}
-                      <div className="flex flex-wrap gap-3">
-                        <Button type="button" onClick={prepareValueWriteHandoff}>
-                          {t("settings.write_flow.prepare")}
-                        </Button>
-                      </div>
-                      {preparedRequest ? (
-                        <div className="grid gap-4">
-                          <InfoCard className="bg-[color:var(--color-surface)]" tone="default">
-                            <PropertyList columns={1}>
-                              <PropertyItem
-                                label={t("settings.write_flow.endpoint")}
-                                value={preparedRequest.path}
-                                className="bg-[color:var(--color-surface)]"
-                              />
-                              <PropertyItem
-                                label={t("settings.write_flow.headers")}
-                                value={t("settings.write_flow.headers_value")}
-                                className="bg-[color:var(--color-surface)]"
-                              />
-                            </PropertyList>
-                          </InfoCard>
-                          <JsonPreviewAction
-                            title={t("settings.write_flow.body_title")}
-                            payloadTitle={t("settings.write_flow.body_title")}
-                            value={preparedRequest.body}
-                          />
-                        </div>
-                      ) : null}
+                    {saveError ? <ErrorBanner message={saveError} /> : null}
+                    {saveMessage ? (
+                      <p className="text-sm font-medium text-[color:var(--color-success-ink)]">
+                        {saveMessage}
+                      </p>
+                    ) : null}
+                    <div className="flex justify-end">
+                      <Button
+                        type="submit"
+                        disabled={isSaving || selectedRecord.secret || !selectedRecord.mutable}
+                      >
+                        {isSaving
+                          ? t("common.actions.saving", "Salvataggio...")
+                          : t("common.actions.save", "Salva")}
+                      </Button>
                     </div>
-                  </div>
+                  </form>
                 </div>
               </div>
             </section>
@@ -829,4 +879,101 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
       </Dialog>
     </div>
   );
+}
+
+function filterRecordsForSettingsSection(
+  records: readonly SettingDefinitionRecord[],
+  section: RenderableAdminSettingsSection
+): readonly SettingDefinitionRecord[] {
+  if (section.id.endsWith("settings-catalog")) {
+    return records;
+  }
+
+  const explicitKeys = new Set(
+    (section.settingKeys ?? []).map((key) => key.trim().toLowerCase()).filter(Boolean)
+  );
+  if (explicitKeys.size > 0) {
+    return records.filter((record) => explicitKeys.has(record.key.trim().toLowerCase()));
+  }
+
+  const category = section.category?.trim().toLowerCase();
+  if (category) {
+    return records.filter((record) => record.category?.trim().toLowerCase() === category);
+  }
+
+  return [];
+}
+
+function formatSettingNavLabel(record: SettingDefinitionRecord): string {
+  const parts = record.key.split(":");
+  return parts[parts.length - 1]?.replace(/[-_]/g, " ") || record.key;
+}
+
+function formatSettingFormLabel(record: SettingDefinitionRecord): string {
+  const label = formatSettingNavLabel(record);
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+function getSettingValueKind(
+  record: SettingDefinitionRecord
+): "string" | "number" | "boolean" | "json" {
+  const schemaType = readSchemaType(record.schema);
+  if (schemaType === "string" || schemaType === "number" || schemaType === "boolean") {
+    return schemaType;
+  }
+  if (schemaType === "integer") {
+    return "number";
+  }
+  if (schemaType === "array" || schemaType === "object") {
+    return "json";
+  }
+
+  const sample = record.defaultValue;
+  if (typeof sample === "number") return "number";
+  if (typeof sample === "boolean") return "boolean";
+  if (Array.isArray(sample) || (sample && typeof sample === "object")) return "json";
+  return "string";
+}
+
+function readSchemaType(value: unknown): string | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+  const type = (value as { type?: unknown }).type;
+  return typeof type === "string" ? type : undefined;
+}
+
+function getSettingEnumOptions(value: unknown): readonly string[] {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return [];
+  }
+
+  const enumValues = (value as { enum?: unknown }).enum;
+  if (!Array.isArray(enumValues)) {
+    return [];
+  }
+
+  return enumValues
+    .filter((entry): entry is string | number | boolean =>
+      ["string", "number", "boolean"].includes(typeof entry)
+    )
+    .map((entry) => String(entry));
+}
+
+function parseSettingFormValue(record: SettingDefinitionRecord, value: string): SettingJsonValue {
+  const valueKind = getSettingValueKind(record);
+  if (valueKind === "number") {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) {
+      throw new Error("Il valore deve essere numerico.");
+    }
+    return parsed;
+  }
+  if (valueKind === "boolean") {
+    return value === "true";
+  }
+  if (valueKind === "json") {
+    return JSON.parse(value) as SettingJsonValue;
+  }
+  return value;
 }

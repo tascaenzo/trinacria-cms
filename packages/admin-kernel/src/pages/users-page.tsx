@@ -2,7 +2,6 @@ import { useActionState, useCallback, useEffect, useRef, useState } from "react"
 import {
   Badge,
   Button,
-  Card,
   DataTable,
   DataTableBody,
   DataTableCell,
@@ -13,14 +12,15 @@ import {
   DataTableRow,
   DataTableTable,
   Dialog,
+  DropdownMenu,
+  DropdownMenuItem,
+  IconButton,
   FeedbackBanner,
-  InfoCard,
   Input,
   Select
 } from "@trinacria-cms/trinacria-ui";
 import type {
   ListRolesResponse,
-  ListUserEffectivePermissionsResponse,
   ListUserRolesResponse,
   ListUsersResponse
 } from "@trinacria-cms/sdk";
@@ -29,7 +29,6 @@ import {
   MobileRecordField,
   MobileRecordList
 } from "../components/mobile-records.js";
-import { JsonPreviewAction } from "../components/json-preview-action.js";
 import { ErrorBanner, EmptyState } from "../components/resource-feedback.js";
 import { formatDateTime } from "../lib/formatting.js";
 import {
@@ -42,11 +41,11 @@ import { cms } from "../runtime/cms-sdk.js";
 import { toDisplayError } from "../lib/sdk-errors.js";
 import { useI18n } from "../lib/i18n.js";
 import { translateStatusLabel } from "../lib/ui-translations.js";
+import { formatUserName } from "../lib/user-formatting.js";
 
 type UserRecord = ListUsersResponse["data"][number];
 type RoleRecord = ListRolesResponse["data"][number];
 type UserRoleAssignment = ListUserRolesResponse["data"][number];
-type UserPermissionKey = ListUserEffectivePermissionsResponse["data"][number];
 
 /**
  * UsersPage now uses React 19 actions for modal submission and optimistic
@@ -63,9 +62,6 @@ export function UsersPage() {
   const [isManageOpen, setIsManageOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
   const [selectedUserRoles, setSelectedUserRoles] = useState<readonly UserRoleAssignment[]>([]);
-  const [selectedUserPermissions, setSelectedUserPermissions] = useState<
-    readonly UserPermissionKey[]
-  >([]);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const createFormRef = useRef<HTMLFormElement>(null);
@@ -99,8 +95,7 @@ export function UsersPage() {
           body: {
             email: readRequiredString(formData, "email"),
             firstName: readRequiredString(formData, "firstName"),
-            lastName: readRequiredString(formData, "lastName"),
-            displayName: readRequiredString(formData, "displayName")
+            lastName: readRequiredString(formData, "lastName")
           }
         });
         await refresh();
@@ -126,7 +121,9 @@ export function UsersPage() {
         const response = await cms.users.updateUserProfile({
           path: { id: selectedUser.id },
           body: {
-            displayName: readRequiredString(formData, "displayName")
+            firstName: readRequiredString(formData, "firstName"),
+            lastName: readRequiredString(formData, "lastName"),
+            status: readRequiredString(formData, "status") as UserRecord["status"]
           }
         });
         setSelectedUser(response.data);
@@ -207,14 +204,12 @@ export function UsersPage() {
     setIsDetailLoading(true);
     setDetailError(null);
     try {
-      const [userResponse, roleAssignments, effectivePermissions] = await Promise.all([
+      const [userResponse, roleAssignments] = await Promise.all([
         cms.users.getUserById({ path: { id: userId } }),
-        cms.security.listUserRoles({ path: { id: userId } }),
-        cms.security.listUserEffectivePermissions({ path: { id: userId } })
+        cms.security.listUserRoles({ path: { id: userId } })
       ]);
       setSelectedUser(userResponse.data);
       setSelectedUserRoles(roleAssignments.data);
-      setSelectedUserPermissions(effectivePermissions.data);
     } catch (currentError) {
       setDetailError(toDisplayError(currentError));
     } finally {
@@ -231,10 +226,6 @@ export function UsersPage() {
         path: { id: selectedUser.id, roleCode }
       });
       setSelectedUserRoles(response.data);
-      const permissions = await cms.security.listUserEffectivePermissions({
-        path: { id: selectedUser.id }
-      });
-      setSelectedUserPermissions(permissions.data);
     } catch (currentError) {
       setDetailError(toDisplayError(currentError));
     } finally {
@@ -250,110 +241,125 @@ export function UsersPage() {
   return (
     <div className="grid gap-4">
       <div className="flex flex-wrap justify-end gap-2">
-        <Button variant="secondary" onClick={() => void refresh()}>
-          {t("common.actions.refresh")}
-        </Button>
-        <Button onClick={() => setIsCreateOpen(true)}>{t("users.actions.create")}</Button>
+        <IconButton
+          icon="filter"
+          label={t("common.actions.filters")}
+          variant="secondary"
+          disabled
+        />
+        <DropdownMenu
+          trigger={<Button variant="secondary">{t("common.actions.menu")}</Button>}
+          contentClassName="min-w-[240px]"
+        >
+          <DropdownMenuItem
+            icon="refresh-cw"
+            title={t("common.actions.refresh")}
+            onClick={() => void refresh()}
+          />
+          <DropdownMenuItem
+            icon="plus"
+            title={t("users.actions.create")}
+            onClick={() => setIsCreateOpen(true)}
+          />
+        </DropdownMenu>
       </div>
 
-      <Card eyebrow={t("users.eyebrow")} title={t("users.title")}>
-        {error ? <ErrorBanner message={error} /> : null}
-        {isLoading ? <EmptyState text={t("users.empty.loading")} /> : null}
-        {!isLoading ? (
-          <>
-            <MobileRecordList>
-              {optimisticRecords.map((record) => (
-                <MobileRecordCard
-                  key={record.id}
-                  title={record.displayName}
-                  subtitle={record.email}
-                  badges={
-                    <Badge tone={record.status === "active" ? "success" : "warning"}>
-                      {translateStatusLabel(record.status, t)}
-                    </Badge>
-                  }
-                  actions={
-                    <div className="grid gap-2">
-                      <Button
-                        variant="secondary"
-                        className="w-full"
-                        onClick={() => void openManageUser(record)}
-                      >
-                        {t("users.actions.manage")}
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        className="w-full"
-                        disabled={actionId === record.id}
-                        onClick={() => toggleStatus(record)}
-                      >
-                        {actionId === record.id
-                          ? t("common.actions.updating")
-                          : record.status === "active"
-                            ? t("users.actions.suspend")
-                            : t("common.actions.activate")}
-                      </Button>
-                    </div>
-                  }
-                >
-                  <MobileRecordField
-                    label={t("common.table.updated")}
-                    value={formatDateTime(record.updatedAt)}
-                  />
-                </MobileRecordCard>
-              ))}
-            </MobileRecordList>
+      {error ? <ErrorBanner message={error} /> : null}
+      {isLoading ? <EmptyState text={t("users.empty.loading")} /> : null}
+      {!isLoading ? (
+        <>
+          <MobileRecordList>
+            {optimisticRecords.map((record) => (
+              <MobileRecordCard
+                key={record.id}
+                title={formatUserName(record)}
+                subtitle={record.email}
+                badges={
+                  <Badge tone={record.status === "active" ? "success" : "warning"}>
+                    {translateStatusLabel(record.status, t)}
+                  </Badge>
+                }
+                actions={
+                  <div className="grid gap-2">
+                    <Button
+                      variant="secondary"
+                      className="w-full"
+                      onClick={() => void openManageUser(record)}
+                    >
+                      {t("users.actions.manage")}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      className="w-full"
+                      disabled={actionId === record.id}
+                      onClick={() => toggleStatus(record)}
+                    >
+                      {actionId === record.id
+                        ? t("common.actions.updating")
+                        : record.status === "active"
+                          ? t("users.actions.suspend")
+                          : t("common.actions.activate")}
+                    </Button>
+                  </div>
+                }
+              >
+                <MobileRecordField
+                  label={t("common.table.updated")}
+                  value={formatDateTime(record.updatedAt)}
+                />
+              </MobileRecordCard>
+            ))}
+          </MobileRecordList>
 
-            <DataTable>
-              <DataTableTable>
-                <DataTableHead>
-                  <DataTableHeaderRow>
-                    <DataTableHeadCell>{t("users.table.user")}</DataTableHeadCell>
-                    <DataTableHeadCell>{t("common.table.status")}</DataTableHeadCell>
-                    <DataTableHeadCell>{t("common.table.updated")}</DataTableHeadCell>
-                    <DataTableHeadCell>{t("common.table.action")}</DataTableHeadCell>
-                  </DataTableHeaderRow>
-                </DataTableHead>
-                <DataTableBody>
-                  {optimisticRecords.map((record) => (
-                    <DataTableRow key={record.id}>
-                      <DataTablePrimaryCell meta={record.email}>
-                        {record.displayName}
-                      </DataTablePrimaryCell>
-                      <DataTableCell>
-                        <Badge tone={record.status === "active" ? "success" : "warning"}>
-                          {translateStatusLabel(record.status, t)}
-                        </Badge>
-                      </DataTableCell>
-                      <DataTableCell className="text-[color:var(--color-ink-muted)]">
-                        {formatDateTime(record.updatedAt)}
-                      </DataTableCell>
-                      <DataTableCell>
-                        <div className="flex flex-wrap gap-2">
-                          <Button variant="secondary" onClick={() => void openManageUser(record)}>
-                            {t("users.actions.manage")}
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            disabled={actionId === record.id}
-                            onClick={() => toggleStatus(record)}
-                          >
-                            {actionId === record.id
-                              ? t("common.actions.updating")
-                              : record.status === "active"
-                                ? t("users.actions.suspend")
-                                : t("common.actions.activate")}
-                          </Button>
-                        </div>
-                      </DataTableCell>
-                    </DataTableRow>
-                  ))}
-                </DataTableBody>
-              </DataTableTable>
-            </DataTable>
-          </>
-        ) : null}
-      </Card>
+          <DataTable>
+            <DataTableTable>
+              <DataTableHead>
+                <DataTableHeaderRow>
+                  <DataTableHeadCell>{t("users.table.user")}</DataTableHeadCell>
+                  <DataTableHeadCell>{t("common.table.status")}</DataTableHeadCell>
+                  <DataTableHeadCell>{t("common.table.updated")}</DataTableHeadCell>
+                  <DataTableHeadCell>{t("common.table.action")}</DataTableHeadCell>
+                </DataTableHeaderRow>
+              </DataTableHead>
+              <DataTableBody>
+                {optimisticRecords.map((record) => (
+                  <DataTableRow key={record.id}>
+                    <DataTablePrimaryCell meta={record.email}>
+                      {formatUserName(record)}
+                    </DataTablePrimaryCell>
+                    <DataTableCell>
+                      <Badge tone={record.status === "active" ? "success" : "warning"}>
+                        {translateStatusLabel(record.status, t)}
+                      </Badge>
+                    </DataTableCell>
+                    <DataTableCell className="text-[color:var(--color-ink-muted)]">
+                      {formatDateTime(record.updatedAt)}
+                    </DataTableCell>
+                    <DataTableCell>
+                      <div className="flex flex-wrap gap-2">
+                        <Button variant="secondary" onClick={() => void openManageUser(record)}>
+                          {t("users.actions.manage")}
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          disabled={actionId === record.id}
+                          onClick={() => toggleStatus(record)}
+                        >
+                          {actionId === record.id
+                            ? t("common.actions.updating")
+                            : record.status === "active"
+                              ? t("users.actions.suspend")
+                              : t("common.actions.activate")}
+                        </Button>
+                      </div>
+                    </DataTableCell>
+                  </DataTableRow>
+                ))}
+              </DataTableBody>
+            </DataTableTable>
+          </DataTable>
+        </>
+      ) : null}
 
       <Dialog
         open={isCreateOpen}
@@ -383,14 +389,13 @@ export function UsersPage() {
           <Input label={t("auth.login.email_label")} type="email" name="email" required />
           <Input label={t("common.form.first_name")} name="firstName" required />
           <Input label={t("common.form.last_name")} name="lastName" required />
-          <Input label={t("users.form.display_name")} name="displayName" required />
           {createState.error ? <ErrorBanner message={createState.error} /> : null}
         </form>
       </Dialog>
 
       <Dialog
         open={isManageOpen}
-        title={selectedUser?.displayName ?? t("users.dialog.manage.title")}
+        title={selectedUser ? formatUserName(selectedUser) : t("users.dialog.manage.title")}
         description={selectedUser?.email}
         eyebrow={t("users.dialog.manage.eyebrow")}
         closeLabel={t("common.actions.close")}
@@ -400,31 +405,56 @@ export function UsersPage() {
         onClose={() => setIsManageOpen(false)}
       >
         {selectedUser ? (
-          <div className="grid gap-5">
+          <div className="grid gap-6">
             {detailError ? <ErrorBanner message={detailError} /> : null}
             {isDetailLoading ? <EmptyState text={t("users.empty.loading_detail")} /> : null}
 
-            <InfoCard eyebrow={t("users.detail.profile")}>
+            <section className="grid gap-3">
+              <header>
+                <h3 className="text-sm font-semibold text-[color:var(--color-ink)]">
+                  {t("users.detail.profile")}
+                </h3>
+              </header>
               <form action={submitProfile} className="grid gap-4">
                 {profileState.ok ? (
                   <FeedbackBanner tone="success" message={t("users.feedback.profile_updated")} />
                 ) : null}
                 {profileState.error ? <ErrorBanner message={profileState.error} /> : null}
                 <Input
-                  label={t("common.form.display_name")}
-                  name="displayName"
-                  defaultValue={selectedUser.displayName}
+                  label={t("common.form.first_name")}
+                  name="firstName"
+                  defaultValue={selectedUser.firstName}
                   required
                 />
+                <Input
+                  label={t("common.form.last_name")}
+                  name="lastName"
+                  defaultValue={selectedUser.lastName}
+                  required
+                />
+                <Select
+                  label={t("common.table.status")}
+                  name="status"
+                  defaultValue={selectedUser.status}
+                  required
+                >
+                  <option value="active">{t("common.status.active")}</option>
+                  <option value="suspended">{t("common.status.suspended")}</option>
+                </Select>
                 <div className="flex justify-end">
                   <Button type="submit" disabled={isProfilePending}>
                     {isProfilePending ? t("common.actions.updating") : t("common.actions.update")}
                   </Button>
                 </div>
               </form>
-            </InfoCard>
+            </section>
 
-            <InfoCard eyebrow={t("users.detail.roles")}>
+            <section className="grid gap-3 border-t border-[color:var(--color-border)] pt-5">
+              <header>
+                <h3 className="text-sm font-semibold text-[color:var(--color-ink)]">
+                  {t("users.detail.roles")}
+                </h3>
+              </header>
               <div className="grid gap-4">
                 <form action={submitAssignRole} className="grid gap-3 sm:grid-cols-[1fr_auto]">
                   <Select
@@ -485,13 +515,7 @@ export function UsersPage() {
                   )}
                 </div>
               </div>
-            </InfoCard>
-
-            <JsonPreviewAction
-              title={t("users.detail.effective_permissions")}
-              payloadTitle={t("users.detail.effective_permissions")}
-              value={selectedUserPermissions}
-            />
+            </section>
           </div>
         ) : null}
       </Dialog>

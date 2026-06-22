@@ -1,4 +1,4 @@
-import type { AdminEndpointBinding } from "../contracts.js";
+import type { AdminEndpointBinding, AdminEndpointPolicyHint } from "../contracts.js";
 
 export type DeclarativeDataState =
   | { status: "idle"; data?: undefined; error?: undefined }
@@ -21,9 +21,15 @@ export type DeclarativeAction = {
   pluginId?: string;
   intent: string;
   title: string;
-  summary?: string;
   endpoint: AdminEndpointBinding;
   input?: { schema?: unknown; valuePath?: string };
+  policy?: AdminEndpointPolicyHint;
+  recordGuards?: readonly {
+    field: string;
+    operator: "equals" | "notEquals" | "in" | "notIn";
+    value?: string | number | boolean | null;
+    values?: readonly (string | number | boolean | null)[];
+  }[];
 };
 
 export type DeclarativeActionContext = {
