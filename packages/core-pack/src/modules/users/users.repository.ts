@@ -24,13 +24,10 @@ export class UsersRepository {
     const parsedInput = CreateUserInputSchema.parse(input);
 
     const now = new Date().toISOString();
-    const displayName =
-      parsedInput.displayName || `${parsedInput.firstName} ${parsedInput.lastName}`.trim();
     const record = {
       email: parsedInput.email,
       firstName: parsedInput.firstName,
       lastName: parsedInput.lastName,
-      displayName: displayName || "Unknown User",
       status: "active" as const,
       createdAt: now,
       updatedAt: now
@@ -83,13 +80,21 @@ export class UsersRepository {
 
   async updateProfile(id: string, input: UpdateUserProfileInput): Promise<UserRecord | null> {
     const parsedInput = UpdateUserProfileInputSchema.parse(input);
-    const updated = await this.repository().updateOne(
-      { filter: { id: id.trim() } },
-      {
-        displayName: parsedInput.displayName,
-        updatedAt: new Date().toISOString()
-      }
-    );
+    const changes: {
+      firstName: string;
+      lastName: string;
+      status?: UpdateUserProfileInput["status"];
+      updatedAt: string;
+    } = {
+      firstName: parsedInput.firstName,
+      lastName: parsedInput.lastName,
+      updatedAt: new Date().toISOString()
+    };
+    if (parsedInput.status) {
+      changes.status = parsedInput.status;
+    }
+
+    const updated = await this.repository().updateOne({ filter: { id: id.trim() } }, changes);
 
     if (!updated) return null;
     return this.parseUserRecord(updated);
@@ -110,12 +115,8 @@ export class UsersRepository {
     if ("roleAssignments" in normalized) {
       delete normalized.roleAssignments;
     }
-    const displayName =
-      typeof normalized.displayName === "string" ? normalized.displayName.trim() : "";
-    if (!displayName) {
-      const fn = typeof normalized.firstName === "string" ? normalized.firstName.trim() : "";
-      const ln = typeof normalized.lastName === "string" ? normalized.lastName.trim() : "";
-      normalized.displayName = `${fn} ${ln}`.trim() || "Unknown User";
+    if ("displayName" in normalized) {
+      delete normalized.displayName;
     }
 
     return UserRecordSchema.parse(normalized);

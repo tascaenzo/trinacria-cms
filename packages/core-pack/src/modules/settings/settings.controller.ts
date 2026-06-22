@@ -31,6 +31,7 @@ import {
 } from "./dto/index.js";
 import { readOptionalJsonField } from "./_shared/settings-http-mapping.js";
 import { parseJsonValue } from "./_shared/settings-json.js";
+import { getOwnerPluginIdFromSettingKey } from "./_shared/settings-key.js";
 import { getAuthenticatedPluginId } from "./auth/plugin-auth.middleware.js";
 import { SettingsPluginAuthService } from "./auth/plugin-auth.service.js";
 import {
@@ -45,6 +46,8 @@ const SignedPluginAuthDescription =
   "Requires signed plugin caller headers: x-cms-plugin-id, x-cms-plugin-ts, x-cms-plugin-nonce, x-cms-plugin-signature.";
 const AdminOrSignedPluginReadDescription =
   "Requires either an admin bearer token or signed plugin caller headers. Masked secret metadata remains owner-scoped for plugin callers.";
+const AdminOrSignedPluginWriteDescription =
+  "Requires either an admin bearer token or signed plugin caller headers. Admin writes are executed against the owner inferred from the setting key.";
 
 const SettingsListQueryParameters = [
   {
@@ -204,13 +207,13 @@ export class SettingsController extends HttpController {
         }
       })
       .put("/v1/settings/values/:key", this.upsertValue, {
-        middlewares: [this.pluginAuthMiddleware],
+        middlewares: [this.readAccessMiddleware],
         docs: {
           summary: "Create or update setting value",
-          description: SignedPluginAuthDescription,
+          description: AdminOrSignedPluginWriteDescription,
           tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
           operationId: "upsertSettingValue",
-          security: [{ pluginCallerAuth: [] }],
+          security: [{ bearerAuth: [] }, { pluginCallerAuth: [] }],
           requestBody: {
             required: true,
             schema: UpsertSettingValueBodyOpenApiSchema
@@ -424,7 +427,10 @@ export class SettingsController extends HttpController {
       const definition =
         getSettingsAccessMode(ctx) === "admin"
           ? await this.settings.getDefinitionByKey(params.key)
-          : await this.settings.getDefinitionByKeyForPlugin(getAuthenticatedPluginId(ctx), params.key);
+          : await this.settings.getDefinitionByKeyForPlugin(
+              getAuthenticatedPluginId(ctx),
+              params.key
+            );
       if (!definition) {
         return responder.notFound(`Setting definition "${params.key}" not found`);
       }
@@ -467,7 +473,10 @@ export class SettingsController extends HttpController {
       const value =
         getSettingsAccessMode(ctx) === "admin"
           ? await this.settings.getResolvedValueByKey(params.key)
-          : await this.settings.getResolvedValueForPlugin(getAuthenticatedPluginId(ctx), params.key);
+          : await this.settings.getResolvedValueForPlugin(
+              getAuthenticatedPluginId(ctx),
+              params.key
+            );
       if (!value) {
         return responder.notFound(`Setting value "${params.key}" not found`);
       }
@@ -484,8 +493,11 @@ export class SettingsController extends HttpController {
     }
 
     try {
-      const requesterPluginId = getAuthenticatedPluginId(ctx);
       const params = SettingKeyParamSchema.parse({ key });
+      const requesterPluginId =
+        getSettingsAccessMode(ctx) === "admin"
+          ? getOwnerPluginIdFromSettingKey(params.key)
+          : getAuthenticatedPluginId(ctx);
       const payload = UpsertSettingValueInputSchema.parse(ctx.body);
       const rawValue =
         ctx.body && typeof ctx.body === "object" && !Array.isArray(ctx.body)

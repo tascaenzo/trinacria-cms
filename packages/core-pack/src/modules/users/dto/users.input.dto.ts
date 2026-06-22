@@ -8,8 +8,7 @@ export const CreateUserInputSchema = s.object(
   {
     email: s.string({ trim: true, toLowerCase: true, email: true }),
     firstName: s.string({ trim: true, minLength: 1, maxLength: 60 }),
-    lastName: s.string({ trim: true, minLength: 1, maxLength: 60 }),
-    displayName: s.string({ trim: true, minLength: 1, maxLength: 120 })
+    lastName: s.string({ trim: true, minLength: 1, maxLength: 60 })
   },
   { strict: true }
 );
@@ -30,7 +29,9 @@ export type UpdateUserStatusInput = Infer<typeof UpdateUserStatusInputSchema>;
 
 export const UpdateUserProfileInputSchema = s.object(
   {
-    displayName: s.string({ trim: true, minLength: 1, maxLength: 120 })
+    firstName: s.string({ trim: true, minLength: 1, maxLength: 60 }),
+    lastName: s.string({ trim: true, minLength: 1, maxLength: 60 }),
+    status: UserStatusSchema.optional()
   },
   { strict: true }
 );

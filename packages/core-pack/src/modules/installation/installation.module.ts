@@ -19,7 +19,7 @@ import { CorePackUsersModule } from "../users/users.module.js";
 import { USERS_REPOSITORY_TOKEN } from "../users/users.tokens.js";
 import { InstallationController } from "./installation.controller.js";
 import { InstallationStateRepository } from "./installation-state.repository.js";
-import { INSTALLATION_STATE_ENTITY, LOCAL_CREDENTIALS_ENTITY } from "./installation.schemas.js";
+import { LOCAL_CREDENTIALS_ENTITY } from "./installation.schemas.js";
 import { InstallationService } from "./installation.service.js";
 import { LocalCredentialsRepository } from "./local-credentials.repository.js";
 import { PasswordHashingService } from "./password-hashing.service.js";
@@ -34,7 +34,7 @@ import {
 
 /**
  * Installation module wiring:
- * - entity registration for installation state and credentials
+ * - entity registration for local credentials (installation state stored in settings collection)
  * - first-run bootstrap service
  * - HTTP endpoints under `/v1/install/*`
  */
@@ -45,7 +45,6 @@ export const CorePackInstallationModule = defineModule({
     factoryProvider(
       CORE_PACK_INSTALLATION_ENTITY_REGISTRATION_TOKEN,
       (registry) => {
-        (registry as EntityRegistry).register(INSTALLATION_STATE_ENTITY);
         (registry as EntityRegistry).register(LOCAL_CREDENTIALS_ENTITY);
         return true;
       },

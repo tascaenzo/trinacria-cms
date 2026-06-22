@@ -16,7 +16,8 @@ test("Settings access middleware authenticates admin bearer reads", async () => 
         return {
           id: "user-admin",
           email: "admin@example.com",
-          displayName: "Admin",
+          firstName: "Admin",
+          lastName: "User",
           roleCodes: ["admin"],
           status: "active",
           createdAt: "2026-04-06T10:00:00.000Z",

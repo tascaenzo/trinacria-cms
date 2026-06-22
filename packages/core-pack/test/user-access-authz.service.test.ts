@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { AuthorizationRequest, DbAdapter, DbQuery, DbRepository, NamespaceContext } from "@trinacria-cms/kernel";
+import type {
+  AuthorizationRequest,
+  DbAdapter,
+  DbQuery,
+  DbRepository,
+  NamespaceContext
+} from "@trinacria-cms/kernel";
 import { PermissionsRepository } from "../src/modules/permissions/permissions.repository.js";
 import { RoleGrantsRepository } from "../src/modules/roles/grants/role-grants.repository.js";
 import { RolesRepository } from "../src/modules/roles/roles.repository.js";
@@ -32,8 +38,7 @@ test("UserAccessService resolves effective permissions from user role assignment
   const user = await usersService.createUser({
     email: "access@example.com",
     firstName: "Access",
-    lastName: "User",
-    displayName: "Access User"
+    lastName: "User"
   });
 
   await permissions.upsertOwnedPermission({
@@ -82,8 +87,7 @@ test("CorePackAuthzService evaluates and asserts permissions", async () => {
   const user = await usersService.createUser({
     email: "authz@example.com",
     firstName: "Authz",
-    lastName: "User",
-    displayName: "Authz User"
+    lastName: "User"
   });
 
   await permissions.upsertOwnedPermission({
@@ -146,8 +150,7 @@ test("CorePackAuthzService supports wildcard allow and deny precedence", async (
   const user = await usersService.createUser({
     email: "wildcard@example.com",
     firstName: "Wildcard",
-    lastName: "User",
-    displayName: "Wildcard User"
+    lastName: "User"
   });
 
   await roles.upsertOwnedRole({
@@ -208,8 +211,7 @@ test("CorePackAuthzService evaluates conditional policy rules", async () => {
   const user = await usersService.createUser({
     email: "conditions@example.com",
     firstName: "Condition",
-    lastName: "User",
-    displayName: "Condition User"
+    lastName: "User"
   });
 
   await roles.upsertOwnedRole({

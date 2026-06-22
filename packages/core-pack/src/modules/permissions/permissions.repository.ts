@@ -126,6 +126,9 @@ export class PermissionsRepository {
       displayName: parsedInput.displayName,
       updatedAt: new Date().toISOString()
     };
+    if (parsedInput.status) {
+      patch.status = parsedInput.status;
+    }
     if (parsedInput.description?.trim()) {
       patch.description = parsedInput.description;
     } else {

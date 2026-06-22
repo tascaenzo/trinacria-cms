@@ -11,6 +11,7 @@ export const PasswordAlgorithmSchema = s.literal("scrypt-v1");
 export const InstallationStateRecordSchema = s.object(
   {
     id: s.string({ trim: true, minLength: 1 }),
+    kind: s.literal("install_state"),
     key: s.literal(INSTALLATION_STATE_KEY),
     installed: s.boolean(),
     installedAt: s.dateTimeString().optional(),
@@ -41,16 +42,6 @@ export const LocalCredentialRecordSchema = s.object(
 );
 
 export type LocalCredentialRecord = Infer<typeof LocalCredentialRecordSchema>;
-
-export const INSTALLATION_STATE_ENTITY = defineEntity({
-  entityName: "installation_state",
-  schema: InstallationStateRecordSchema,
-  indexes: [
-    { fields: { id: 1 }, unique: true, name: "installation_state_id_unique" },
-    { fields: { key: 1 }, unique: true, name: "installation_state_key_unique" },
-    { fields: { installed: 1 }, name: "installation_state_installed_idx" }
-  ] as const
-});
 
 export const LOCAL_CREDENTIALS_ENTITY = defineEntity({
   entityName: "local_credentials",

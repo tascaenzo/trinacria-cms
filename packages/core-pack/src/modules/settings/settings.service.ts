@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { assertRequesterOwnsSettingKey, getOwnerPluginIdFromSettingKey } from "./_shared/settings-key.js";
 import {
   cloneJsonValue,
@@ -18,8 +17,6 @@ import {
   type UpsertSettingSecretRecordInput
 } from "./secrets/settings-secrets.repository.js";
 import { SettingsSecretsCryptoService } from "./secrets/settings-secrets-crypto.service.js";
-import { SettingsAuditRepository } from "./audit/settings-audit.repository.js";
-import type { SettingAuditAction } from "./schemas/settings-audit.schemas.js";
 import {
   SettingsAccessError,
   createSettingsOwnerAccessError
@@ -102,8 +99,7 @@ export class SettingsService {
     private readonly definitions: SettingsDefinitionsRepository,
     private readonly values: SettingsValuesRepository,
     private readonly secrets: SettingsSecretsRepository,
-    private readonly crypto: SettingsSecretsCryptoService,
-    private readonly audit?: SettingsAuditRepository
+    private readonly crypto: SettingsSecretsCryptoService
   ) {}
 
   async upsertDefinition(input: {
@@ -138,18 +134,6 @@ export class SettingsService {
         secret: input.secret,
         status: input.status
       } satisfies UpsertSettingDefinitionRecordInput);
-
-      await this.emitAudit({
-        key: input.key,
-        action: "definition_upsert",
-        actor: input.requesterPluginId,
-        oldHash: existing ? this.hashJson(existing.defaultValue) : undefined,
-        newMetadata: {
-          description: input.description,
-          category: input.category,
-          hadDefault: input.defaultValue !== undefined
-        }
-      });
 
       this.metrics.writes += 1;
       return this.toDefinition(record);
@@ -211,16 +195,6 @@ export class SettingsService {
         value: parsedValue,
         updatedBy: input.updatedBy
       } satisfies UpsertSettingValueRecordInput);
-
-      await this.emitAudit({
-        key: input.key,
-        action: "value_upsert",
-        actor: input.updatedBy || input.requesterPluginId,
-        oldHash: existing ? this.hashJson(existing.value) : undefined,
-        newMetadata: {
-          hadValue: true
-        }
-      });
 
       this.metrics.writes += 1;
       return this.toSettingValue(record);
@@ -366,16 +340,6 @@ export class SettingsService {
         keyVersion: encrypted.keyVersion,
         updatedBy: input.updatedBy
       } satisfies UpsertSettingSecretRecordInput);
-
-      await this.emitAudit({
-        key: input.key,
-        action: "secret_upsert",
-        actor: input.updatedBy || input.requesterPluginId,
-        oldHash: existing ? this.hashJson({ keyVersion: existing.keyVersion }) : undefined,
-        newMetadata: {
-          hadValue: true
-        }
-      });
 
       this.metrics.writes += 1;
       return this.toSecretMetadata(record);
@@ -535,25 +499,6 @@ export class SettingsService {
       createdAt: record.createdAt,
       updatedAt: record.updatedAt
     };
-  }
-
-  private async emitAudit(input: {
-    key: string;
-    action: SettingAuditAction;
-    actor?: string;
-    oldHash?: string;
-    newMetadata?: { description?: string; category?: string; hadDefault?: boolean; hadValue?: boolean };
-  }): Promise<void> {
-    if (!this.audit) return;
-    try {
-      await this.audit.record(input);
-    } catch {
-      // Audit failures should not break the primary operation.
-    }
-  }
-
-  private hashJson(value: unknown): string {
-    return createHash("sha256").update(JSON.stringify(value)).digest("hex").slice(0, 16);
   }
 
   private toSecretMetadata(record: {

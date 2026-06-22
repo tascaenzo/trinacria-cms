@@ -111,8 +111,7 @@ test("JwtAuthService forbids non-admin token on admin-required auth", async () =
   const user = await runtime.users.create({
     email: "operator@example.com",
     firstName: "Operator",
-    lastName: "User",
-    displayName: "Operator User"
+    lastName: "User"
   });
   const password = await runtime.passwordHashing.hashPassword("AnotherStrongPass123!");
   await runtime.localCredentials.upsert({
@@ -293,21 +292,23 @@ test("AuthController updates the authenticated user profile", async () => {
   assert.ok(route, "Expected auth profile update route to be registered");
 
   const ctx = createHttpContext(
-    { displayName: "Admin Renamed" },
+    { firstName: "Admin", lastName: "Renamed" },
     { authorization: `Bearer ${session.accessToken}` }
   );
   const middlewareResult = await route!.middlewares?.[0]?.(ctx, async () => route!.handler(ctx));
   const response = middlewareResult as {
     status?: number;
-    body?: { data?: { displayName?: string } };
-    data?: { displayName?: string };
+    body?: { data?: { firstName?: string; lastName?: string } };
+    data?: { firstName?: string; lastName?: string };
   };
 
   assert.equal(response.status ?? 200, 200);
-  assert.equal((response.body ?? response).data?.displayName, "Admin Renamed");
+  assert.equal((response.body ?? response).data?.firstName, "Admin");
+  assert.equal((response.body ?? response).data?.lastName, "Renamed");
 
   const authenticated = await runtime.auth.authenticateBearerToken(session.accessToken);
-  assert.equal(authenticated.displayName, "Admin Renamed");
+  assert.equal(authenticated.firstName, "Admin");
+  assert.equal(authenticated.lastName, "Renamed");
 });
 
 test("AuthController changes the authenticated user password", async () => {

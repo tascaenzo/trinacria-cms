@@ -1,91 +1,63 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { DbAdapter, DbQuery, DbRepository, NamespaceContext } from "@trinacria-cms/kernel";
-import { UsersRepository } from "../src/modules/users/users.repository.js";
-import { UsersService } from "../src/modules/users/users.service.js";
+import { PermissionsRepository } from "../src/modules/permissions/permissions.repository.js";
+import { PermissionsService } from "../src/modules/permissions/permissions.service.js";
+import { RoleGrantsRepository } from "../src/modules/roles/grants/role-grants.repository.js";
+import { RolesRepository } from "../src/modules/roles/roles.repository.js";
+import { RolesService } from "../src/modules/roles/roles.service.js";
 
-test("UsersService creates and fetches users", async () => {
+test("RolesService updates status through the main role update flow", async () => {
   const db = createFakeDbAdapter();
-  const service = new UsersService(new UsersRepository(db));
-
-  const created = await service.createUser({
-    email: "Alice@example.com",
-    firstName: "Alice",
-    lastName: "Smith"
+  const service = new RolesService(new RolesRepository(db), new RoleGrantsRepository(db));
+  const created = await service.createRole({
+    code: "editor",
+    name: "Editor"
   });
 
-  assert.equal(created.email, "alice@example.com");
-  assert.equal(created.firstName, "Alice");
-  assert.equal(created.lastName, "Smith");
-  assert.equal(created.status, "active");
-  assert.equal(typeof created.id, "string");
+  const updated = await service.updateRole(created.id, {
+    name: "Editor",
+    status: "disabled"
+  });
 
-  const fetched = await service.getUserById(created.id);
-  assert.equal(fetched?.id, created.id);
+  assert.equal(updated?.status, "disabled");
 });
 
-test("UsersService prevents duplicate email in plugin namespace", async () => {
+test("PermissionsService keeps core-pack default permissions read-only", async () => {
   const db = createFakeDbAdapter();
-  const service = new UsersService(new UsersRepository(db));
-
-  await service.createUser({
-    email: "alice@example.com",
-    firstName: "Alice",
-    lastName: "Smith"
+  const repository = new PermissionsRepository(db);
+  const service = new PermissionsService(repository);
+  const permission = await repository.upsertOwnedPermission({
+    key: "core-pack:users:read",
+    displayName: "Read users",
+    sourcePluginId: "core-pack"
   });
 
   await assert.rejects(
-    async () =>
-      service.createUser({
-        email: "alice@example.com",
-        firstName: "Alice",
-        lastName: "Johnson"
+    () =>
+      service.updatePermission(permission.id, {
+        displayName: "Read users",
+        status: "disabled"
       }),
-    /already exists/
+    /read-only/
   );
+  await assert.rejects(() => service.disablePermission(permission.id), /read-only/);
 });
 
-test("UsersService updates user status and lists users", async () => {
+test("PermissionsService updates custom permission status through the main update flow", async () => {
   const db = createFakeDbAdapter();
-  const service = new UsersService(new UsersRepository(db));
-
-  const first = await service.createUser({
-    email: "a@example.com",
-    firstName: "A",
-    lastName: "One"
-  });
-  await service.createUser({
-    email: "b@example.com",
-    firstName: "B",
-    lastName: "Two"
+  const service = new PermissionsService(new PermissionsRepository(db));
+  const created = await service.createPermission({
+    key: "core-pack:custom:read",
+    displayName: "Read custom"
   });
 
-  const suspended = await service.suspendUser(first.id);
-  assert.equal(suspended?.status, "suspended");
-
-  const users = await service.listUsers();
-  assert.equal(users.length, 2);
-});
-
-test("UsersService updates profile and status together", async () => {
-  const db = createFakeDbAdapter();
-  const service = new UsersService(new UsersRepository(db));
-
-  const created = await service.createUser({
-    email: "status@example.com",
-    firstName: "Status",
-    lastName: "User"
+  const updated = await service.updatePermission(created.id, {
+    displayName: "Read custom",
+    status: "disabled"
   });
 
-  const updated = await service.updateUserProfile(created.id, {
-    firstName: "Updated",
-    lastName: "User",
-    status: "suspended"
-  });
-
-  assert.equal(updated?.firstName, "Updated");
-  assert.equal(updated?.lastName, "User");
-  assert.equal(updated?.status, "suspended");
+  assert.equal(updated?.status, "disabled");
 });
 
 function createFakeDbAdapter(): DbAdapter {

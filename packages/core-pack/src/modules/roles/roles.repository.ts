@@ -125,6 +125,9 @@ export class RolesRepository {
       name: parsedInput.name,
       updatedAt: new Date().toISOString()
     };
+    if (parsedInput.status) {
+      patch.status = parsedInput.status;
+    }
     if (parsedInput.description?.trim()) {
       patch.description = parsedInput.description;
     } else {

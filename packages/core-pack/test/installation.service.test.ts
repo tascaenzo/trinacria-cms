@@ -47,7 +47,6 @@ test("InstallationService bootstraps admin user and local credentials", async ()
   assert.equal(result.adminUser.email, "admin@example.com");
   assert.equal(result.adminUser.firstName, "CMS");
   assert.equal(result.adminUser.lastName, "Admin");
-  assert.equal(result.adminUser.displayName, "CMS Admin");
   assert.equal(result.status.adminUserId, result.adminUser.id);
 
   const state = await runtime.installationState.get();
@@ -69,6 +68,9 @@ test("InstallationService bootstraps admin user and local credentials", async ()
 
   const roles = await runtime.userAccess.listUserRoles(result.adminUser.id);
   assert.ok(roles.some((item) => item.roleCode === "admin"));
+
+  const provisionedRoles = await runtime.roles.list();
+  assert.deepEqual(provisionedRoles.map((role) => role.code).sort(), ["admin", "editor", "viewer"]);
 });
 
 test("InstallationService blocks bootstrap when installation is already completed", async () => {
@@ -120,6 +122,7 @@ interface InstallationRuntime {
   service: InstallationService;
   installationState: InstallationStateRepository;
   localCredentials: LocalCredentialsRepository;
+  roles: RolesRepository;
   userAccess: UserAccessService;
   passwordHashing: PasswordHashingService;
 }
@@ -169,6 +172,7 @@ function createInstallationRuntime(): InstallationRuntime {
     ),
     installationState,
     localCredentials,
+    roles,
     userAccess,
     passwordHashing
   };

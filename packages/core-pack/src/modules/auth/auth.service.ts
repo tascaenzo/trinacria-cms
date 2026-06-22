@@ -225,7 +225,7 @@ export class JwtAuthService {
 
   async updateAuthenticatedUserProfile(
     userId: string,
-    input: { displayName: string }
+    input: { firstName: string; lastName: string }
   ): Promise<UserRecord> {
     const updated = await this.users.updateProfile(userId, input);
     if (!updated) {

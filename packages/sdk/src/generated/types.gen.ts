@@ -56,7 +56,6 @@ export type BootstrapInstallationResponse = {
   "email": string;
   "firstName": string;
   "lastName": string;
-  "displayName": string;
   "status": "active" | "suspended";
   "createdAt": string;
   "updatedAt": string;
@@ -80,7 +79,6 @@ export type ChangeAuthenticatedUserPasswordResponse = {
   "email": string;
   "firstName": string;
   "lastName": string;
-  "displayName": string;
   "status": "active" | "suspended";
   "createdAt": string;
   "updatedAt": string;
@@ -238,7 +236,6 @@ export type CreateUserRequest = {
   "email": string;
   "firstName": string;
   "lastName": string;
-  "displayName": string;
 };
 };
 
@@ -248,7 +245,6 @@ export type CreateUserResponse = {
   "email": string;
   "firstName": string;
   "lastName": string;
-  "displayName": string;
   "status": "active" | "suspended";
   "createdAt": string;
   "updatedAt": string;
@@ -459,7 +455,6 @@ export type GetAuthenticatedUserResponse = {
   "email": string;
   "firstName": string;
   "lastName": string;
-  "displayName": string;
   "status": "active" | "suspended";
   "createdAt": string;
   "updatedAt": string;
@@ -769,7 +764,6 @@ export type GetUserByIdResponse = {
   "email": string;
   "firstName": string;
   "lastName": string;
-  "displayName": string;
   "status": "active" | "suspended";
   "createdAt": string;
   "updatedAt": string;
@@ -1168,7 +1162,6 @@ export type ListUsersResponse = {
   "email": string;
   "firstName": string;
   "lastName": string;
-  "displayName": string;
   "status": "active" | "suspended";
   "createdAt": string;
   "updatedAt": string;
@@ -1199,7 +1192,6 @@ export type LoginWithPasswordResponse = {
   "email": string;
   "firstName": string;
   "lastName": string;
-  "displayName": string;
   "status": "active" | "suspended";
   "createdAt": string;
   "updatedAt": string;
@@ -1353,7 +1345,8 @@ export type RotateApiKeyResponse = {
 
 export type UpdateAuthenticatedUserProfileRequest = {
   body: {
-  "displayName": string;
+  "firstName": string;
+  "lastName": string;
 };
 };
 
@@ -1363,7 +1356,6 @@ export type UpdateAuthenticatedUserProfileResponse = {
   "email": string;
   "firstName": string;
   "lastName": string;
-  "displayName": string;
   "status": "active" | "suspended";
   "createdAt": string;
   "updatedAt": string;
@@ -1380,6 +1372,7 @@ export type UpdatePermissionRequest = {
   body: {
   "displayName": string;
   "description"?: string;
+  "status"?: "active" | "disabled";
 };
 };
 
@@ -1437,6 +1430,7 @@ export type UpdateRoleRequest = {
   body: {
   "name": string;
   "description"?: string;
+  "status"?: "active" | "disabled";
   "permissions"?: Array<string>;
 };
 };
@@ -1542,7 +1536,9 @@ export type UpdateUserProfileRequest = {
   "id": string;
 };
   body: {
-  "displayName": string;
+  "firstName": string;
+  "lastName": string;
+  "status"?: "active" | "suspended";
 };
 };
 
@@ -1552,7 +1548,6 @@ export type UpdateUserProfileResponse = {
   "email": string;
   "firstName": string;
   "lastName": string;
-  "displayName": string;
   "status": "active" | "suspended";
   "createdAt": string;
   "updatedAt": string;
@@ -1580,7 +1575,6 @@ export type UpdateUserStatusResponse = {
   "email": string;
   "firstName": string;
   "lastName": string;
-  "displayName": string;
   "status": "active" | "suspended";
   "createdAt": string;
   "updatedAt": string;

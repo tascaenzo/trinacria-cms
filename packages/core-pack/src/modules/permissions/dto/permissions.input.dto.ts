@@ -32,7 +32,8 @@ export type CreatePermissionInput = Infer<typeof CreatePermissionInputSchema>;
 export const UpdatePermissionInputSchema = s.object(
   {
     displayName: s.string({ trim: true, minLength: 1, maxLength: 120 }),
-    description: s.string({ trim: true, maxLength: 500 }).optional()
+    description: s.string({ trim: true, maxLength: 500 }).optional(),
+    status: PermissionStatusSchema.optional()
   },
   { strict: true }
 );

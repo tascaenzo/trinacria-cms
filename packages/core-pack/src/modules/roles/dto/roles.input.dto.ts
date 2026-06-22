@@ -45,6 +45,7 @@ export const UpdateRoleInputSchema = s.object(
   {
     name: s.string({ trim: true, minLength: 1, maxLength: 120 }),
     description: s.string({ trim: true, maxLength: 500 }).optional(),
+    status: RoleStatusSchema.optional(),
     permissions: s
       .array(
         s

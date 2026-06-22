@@ -886,7 +886,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/v1/system/capabilities": {
@@ -967,7 +972,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/v1/system/plugin-contributions": {
@@ -1277,7 +1287,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/v1/system/plugins/sources": {
@@ -1365,7 +1380,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/v1/system/plugins/{pluginId}": {
@@ -1683,6 +1703,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "pluginId",
@@ -2035,6 +2060,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "pluginId",
@@ -2205,6 +2235,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "pluginId",
@@ -2273,11 +2308,6 @@
                               "minLength": 1,
                               "maxLength": 60
                             },
-                            "displayName": {
-                              "type": "string",
-                              "minLength": 1,
-                              "maxLength": 120
-                            },
                             "status": {
                               "type": "string",
                               "enum": [
@@ -2299,7 +2329,6 @@
                             "email",
                             "firstName",
                             "lastName",
-                            "displayName",
                             "status",
                             "createdAt",
                             "updatedAt"
@@ -2446,11 +2475,6 @@
                           "minLength": 1,
                           "maxLength": 60
                         },
-                        "displayName": {
-                          "type": "string",
-                          "minLength": 1,
-                          "maxLength": 120
-                        },
                         "status": {
                           "type": "string",
                           "enum": [
@@ -2472,7 +2496,6 @@
                         "email",
                         "firstName",
                         "lastName",
-                        "displayName",
                         "status",
                         "createdAt",
                         "updatedAt"
@@ -2586,11 +2609,6 @@
                           "minLength": 1,
                           "maxLength": 60
                         },
-                        "displayName": {
-                          "type": "string",
-                          "minLength": 1,
-                          "maxLength": 120
-                        },
                         "status": {
                           "type": "string",
                           "enum": [
@@ -2612,7 +2630,6 @@
                         "email",
                         "firstName",
                         "lastName",
-                        "displayName",
                         "status",
                         "createdAt",
                         "updatedAt"
@@ -2697,14 +2714,20 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "displayName": {
+                  "firstName": {
                     "type": "string",
                     "minLength": 1,
-                    "maxLength": 120
+                    "maxLength": 60
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
                   }
                 },
                 "required": [
-                  "displayName"
+                  "firstName",
+                  "lastName"
                 ],
                 "additionalProperties": false
               }
@@ -2749,11 +2772,6 @@
                           "minLength": 1,
                           "maxLength": 60
                         },
-                        "displayName": {
-                          "type": "string",
-                          "minLength": 1,
-                          "maxLength": 120
-                        },
                         "status": {
                           "type": "string",
                           "enum": [
@@ -2775,7 +2793,6 @@
                         "email",
                         "firstName",
                         "lastName",
-                        "displayName",
                         "status",
                         "createdAt",
                         "updatedAt"
@@ -3015,11 +3032,6 @@
                             "minLength": 1,
                             "maxLength": 60
                           },
-                          "displayName": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 120
-                          },
                           "status": {
                             "type": "string",
                             "enum": [
@@ -3041,7 +3053,6 @@
                           "email",
                           "firstName",
                           "lastName",
-                          "displayName",
                           "status",
                           "createdAt",
                           "updatedAt"
@@ -3141,11 +3152,6 @@
                           "minLength": 1,
                           "maxLength": 60
                         },
-                        "displayName": {
-                          "type": "string",
-                          "minLength": 1,
-                          "maxLength": 120
-                        },
                         "status": {
                           "type": "string",
                           "enum": [
@@ -3167,7 +3173,6 @@
                         "email",
                         "firstName",
                         "lastName",
-                        "displayName",
                         "status",
                         "createdAt",
                         "updatedAt"
@@ -3283,18 +3288,12 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 60
-                  },
-                  "displayName": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 120
                   }
                 },
                 "required": [
                   "email",
                   "firstName",
-                  "lastName",
-                  "displayName"
+                  "lastName"
                 ],
                 "additionalProperties": false
               }
@@ -3339,11 +3338,6 @@
                           "minLength": 1,
                           "maxLength": 60
                         },
-                        "displayName": {
-                          "type": "string",
-                          "minLength": 1,
-                          "maxLength": 120
-                        },
                         "status": {
                           "type": "string",
                           "enum": [
@@ -3365,7 +3359,6 @@
                         "email",
                         "firstName",
                         "lastName",
-                        "displayName",
                         "status",
                         "createdAt",
                         "updatedAt"
@@ -3507,11 +3500,6 @@
                           "minLength": 1,
                           "maxLength": 60
                         },
-                        "displayName": {
-                          "type": "string",
-                          "minLength": 1,
-                          "maxLength": 120
-                        },
                         "status": {
                           "type": "string",
                           "enum": [
@@ -3533,7 +3521,6 @@
                         "email",
                         "firstName",
                         "lastName",
-                        "displayName",
                         "status",
                         "createdAt",
                         "updatedAt"
@@ -3646,14 +3633,27 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "displayName": {
+                  "firstName": {
                     "type": "string",
                     "minLength": 1,
-                    "maxLength": 120
+                    "maxLength": 60
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "active",
+                      "suspended"
+                    ]
                   }
                 },
                 "required": [
-                  "displayName"
+                  "firstName",
+                  "lastName"
                 ],
                 "additionalProperties": false
               }
@@ -3698,11 +3698,6 @@
                           "minLength": 1,
                           "maxLength": 60
                         },
-                        "displayName": {
-                          "type": "string",
-                          "minLength": 1,
-                          "maxLength": 120
-                        },
                         "status": {
                           "type": "string",
                           "enum": [
@@ -3724,7 +3719,6 @@
                         "email",
                         "firstName",
                         "lastName",
-                        "displayName",
                         "status",
                         "createdAt",
                         "updatedAt"
@@ -4768,6 +4762,13 @@
                     "type": "string",
                     "maxLength": 500
                   },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "active",
+                      "disabled"
+                    ]
+                  },
                   "permissions": {
                     "type": "array",
                     "items": {
@@ -5701,6 +5702,13 @@
                   "description": {
                     "type": "string",
                     "maxLength": 500
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "active",
+                      "disabled"
+                    ]
                   }
                 },
                 "required": [
@@ -11486,11 +11494,6 @@
                               "minLength": 1,
                               "maxLength": 60
                             },
-                            "displayName": {
-                              "type": "string",
-                              "minLength": 1,
-                              "maxLength": 120
-                            },
                             "status": {
                               "type": "string",
                               "enum": [
@@ -11512,7 +11515,6 @@
                             "email",
                             "firstName",
                             "lastName",
-                            "displayName",
                             "status",
                             "createdAt",
                             "updatedAt"

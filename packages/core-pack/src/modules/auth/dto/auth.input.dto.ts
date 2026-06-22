@@ -15,7 +15,8 @@ export type LoginWithPasswordInput = Infer<typeof LoginWithPasswordInputSchema>;
 
 export const UpdateAuthenticatedUserProfileInputSchema = s.object(
   {
-    displayName: s.string({ trim: true, minLength: 1, maxLength: 120 })
+    firstName: s.string({ trim: true, minLength: 1, maxLength: 60 }),
+    lastName: s.string({ trim: true, minLength: 1, maxLength: 60 })
   },
   { strict: true }
 );

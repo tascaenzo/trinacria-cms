@@ -15,7 +15,20 @@ const PluginIdSchema = s.string({ trim: true, toLowerCase: true, minLength: 1 })
 
 export const SettingDefinitionStatusSchema = s.enum(["active", "disabled"] as const);
 export const SettingVisibilitySchema = s.enum(["public", "admin", "internal"] as const);
-export const SettingRecordKindSchema = s.enum(["definition", "value", "secret"] as const);
+export const SettingRecordKindSchema = s.enum([
+  "definition",
+  "value",
+  "secret",
+  "install_state",
+  "blacklist",
+  "login_attempt"
+] as const);
+const SettingStorageKeySchema = s.string({
+  trim: true,
+  toLowerCase: true,
+  minLength: 1,
+  maxLength: 220
+});
 
 /**
  * Schema that accepts any JSON-compatible value (object, array, primitive, null).
@@ -44,8 +57,8 @@ export function jsonValue<T extends JsonValue = JsonValue>(): Schema<T> {
 }
 
 /**
- * Unified settings record shape stored in a single collection.
- * `kind` discriminates definition/value/secret logical views.
+ * Unified settings storage shape.
+ * `kind` discriminates public settings views and core-pack internal records.
  *
  * JSON sub-objects (schema, defaultValue, value) are stored directly as
  * native MongoDB documents rather than serialized strings.
@@ -54,8 +67,8 @@ export const SettingRecordSchema = s.object(
   {
     id: s.string({ trim: true, minLength: 1 }),
     kind: SettingRecordKindSchema,
-    key: SettingKeySchema,
-    ownerPluginId: PluginIdSchema,
+    key: SettingStorageKeySchema,
+    ownerPluginId: PluginIdSchema.optional(),
 
     // Definition-specific fields.
     category: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
@@ -77,11 +90,27 @@ export const SettingRecordSchema = s.object(
     algorithm: s.literal("aes-256-gcm").optional(),
     keyVersion: s.string({ trim: true, minLength: 1, maxLength: 32 }).optional(),
 
+    // Installation-state fields.
+    installed: s.boolean().optional(),
+    installedAt: s.dateTimeString().optional(),
+    adminUserId: s.string({ trim: true, minLength: 1 }).optional(),
+
+    // Auth token blacklist fields.
+    sub: s.string({ trim: true, minLength: 1 }).optional(),
+    iat: s.number().optional(),
+    tokenKind: s.enum(["access", "refresh"] as const).optional(),
+    expiresAt: s.dateTimeString().optional(),
+
+    // Login-attempt fields.
+    email: s.string({ trim: true, toLowerCase: true }).optional(),
+    count: s.number().optional(),
+    lockoutUntil: s.dateTimeString().nullable().optional(),
+
     // Shared fields.
     status: SettingDefinitionStatusSchema.optional(),
     updatedBy: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
     createdAt: s.dateTimeString(),
-    updatedAt: s.dateTimeString()
+    updatedAt: s.dateTimeString().optional()
   },
   { strict: true }
 );

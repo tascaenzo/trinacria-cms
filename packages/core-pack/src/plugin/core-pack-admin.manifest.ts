@@ -148,8 +148,38 @@ export const CORE_PACK_ADMIN_MANIFEST: PluginManifestAdmin = {
   ],
   settingsSections: [
     {
-      id: "core-pack-settings",
-      label: "Core Pack",
+      id: "core-pack-general-settings",
+      label: "General",
+      namespace: "site",
+      requiredPermission: CORE_PACK_PERMISSION_KEYS.SETTINGS_READ
+    },
+    {
+      id: "core-pack-branding-settings",
+      label: "Branding",
+      namespace: "branding",
+      requiredPermission: CORE_PACK_PERMISSION_KEYS.SETTINGS_READ
+    },
+    {
+      id: "core-pack-auth-settings",
+      label: "Authentication",
+      namespace: "auth",
+      requiredPermission: CORE_PACK_PERMISSION_KEYS.SETTINGS_READ
+    },
+    {
+      id: "core-pack-security-settings",
+      label: "Security",
+      namespace: "security",
+      requiredPermission: CORE_PACK_PERMISSION_KEYS.SETTINGS_READ
+    },
+    {
+      id: "core-pack-cache-settings",
+      label: "Cache",
+      namespace: "cache",
+      requiredPermission: CORE_PACK_PERMISSION_KEYS.SETTINGS_READ
+    },
+    {
+      id: "core-pack-settings-catalog",
+      label: "Technical catalog",
       namespace: "settings",
       requiredPermission: CORE_PACK_PERMISSION_KEYS.SETTINGS_READ
     }

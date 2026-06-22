@@ -1,8 +1,17 @@
 import { s } from "@trinacria/schema";
 import { createSchema, type Schema } from "@trinacria/schema/dist/core/index.js";
 import type { JsonValue } from "../../contracts/plugin-manifest.js";
-import { isValidPluginId, isValidNamespaceSegment, isReservedNamespaceSegment, buildContributionKey, findContributionCollisions } from "../plugin-namespace/plugin-namespace.js";
-import { isValidPermissionKey, isPermissionOwnedByPlugin } from "../plugin-namespace/permission-key.js";
+import {
+  isValidPluginId,
+  isValidNamespaceSegment,
+  isReservedNamespaceSegment,
+  buildContributionKey,
+  findContributionCollisions
+} from "../plugin-namespace/plugin-namespace.js";
+import {
+  isValidPermissionKey,
+  isPermissionOwnedByPlugin
+} from "../plugin-namespace/permission-key.js";
 
 const namespaceSegmentSchema = s
   .string({ trim: true, toLowerCase: true, minLength: 1, maxLength: 80 })
@@ -75,7 +84,12 @@ function jsonValueSchema<T = unknown>(): Schema<T> {
   return createSchema<T>(
     "json",
     (input) => {
-      if (input === null || typeof input === "string" || typeof input === "number" || typeof input === "boolean") {
+      if (
+        input === null ||
+        typeof input === "string" ||
+        typeof input === "number" ||
+        typeof input === "boolean"
+      ) {
         return input as T;
       }
       if (Array.isArray(input)) {
@@ -116,7 +130,10 @@ export const settingSchema = s.object(
     description: s.string({ trim: true, maxLength: 500 }).optional(),
     schema: jsonValueSchema<JsonValue>().optional(),
     defaultValue: jsonValueSchema<JsonValue>().optional(),
-    status: s.enum(["active", "disabled"] as const).optional().default("active"),
+    status: s
+      .enum(["active", "disabled"] as const)
+      .optional()
+      .default("active"),
     secret: s.boolean().optional().default(false),
     mutable: s.boolean().optional().default(true),
     visibility: settingV2VisibilitySchema.optional().default("public")
@@ -261,7 +278,7 @@ const adminSettingsSectionSchema = s.object(
   {
     id: namespaceSegmentSchema,
     label: s.string({ trim: true, minLength: 1, maxLength: 120 }),
-    namespace: namespaceSegmentSchema,
+    namespace: namespaceSegmentSchema.optional(),
     requiredPermission: s
       .string({ trim: true, toLowerCase: true, minLength: 3, maxLength: 220 })
       .refine(
@@ -269,7 +286,19 @@ const adminSettingsSectionSchema = s.object(
         "requiredPermission must be '<pluginId>:<resource>:<action>'",
         "invalid_required_permission"
       )
-      .optional()
+      .optional(),
+    kind: s.enum(["form", "panel", "custom"] as const).optional(),
+    componentRef: s.string({ trim: true, minLength: 1, maxLength: 180 }).optional(),
+    summary: s.string({ trim: true, minLength: 1, maxLength: 500 }).optional(),
+    category: namespaceSegmentSchema.optional(),
+    settingKeys: s
+      .array(s.string({ trim: true, minLength: 1, maxLength: 220 }), {
+        unique: (key) => key
+      })
+      .optional(),
+    data: jsonValueSchema().optional(),
+    actions: s.array(jsonValueSchema()).optional(),
+    order: s.number().optional()
   },
   { strict: true }
 );
@@ -322,7 +351,10 @@ export function createContributionRefines(manifestId: string) {
       const keys = (manifest.settings ?? []).map((setting) => setting.key);
       return findContributionCollisions("setting", keys).length === 0;
     },
-    eventCollision: (manifest: { id: string; events?: { emits?: readonly { name: string }[] } }) => {
+    eventCollision: (manifest: {
+      id: string;
+      events?: { emits?: readonly { name: string }[] };
+    }) => {
       const keys = (manifest.events?.emits ?? []).map((event) =>
         buildContributionKey(manifest.id, event.name)
       );

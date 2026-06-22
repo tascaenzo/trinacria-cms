@@ -121,10 +121,38 @@ export const CORE_PACK_PERMISSION_KEY_LIST: readonly CorePackPermissionKey[] = O
 );
 
 /**
- * Default admin role metadata exported for consistency across integrations.
+ * Default role metadata exported for consistency across integrations.
  */
 export const CORE_PACK_ADMIN_ROLE = Object.freeze({
   code: "admin",
   name: "Administrator",
   description: "Default full-access role provided by core-pack"
 });
+
+export const CORE_PACK_EDITOR_ROLE = Object.freeze({
+  code: "editor",
+  name: "Editor",
+  description: "Default editorial role intended for content management grants"
+});
+
+export const CORE_PACK_VIEWER_ROLE = Object.freeze({
+  code: "viewer",
+  name: "Viewer",
+  description: "Default read-only role for backoffice visibility"
+});
+
+export const CORE_PACK_DEFAULT_ROLES = Object.freeze([
+  CORE_PACK_ADMIN_ROLE,
+  CORE_PACK_EDITOR_ROLE,
+  CORE_PACK_VIEWER_ROLE
+]);
+
+export const CORE_PACK_READONLY_PERMISSION_KEY_LIST: readonly CorePackPermissionKey[] =
+  Object.freeze([
+    CORE_PACK_PERMISSION_KEYS.PLUGINS_READ,
+    CORE_PACK_PERMISSION_KEYS.USERS_READ,
+    CORE_PACK_PERMISSION_KEYS.ROLES_READ,
+    CORE_PACK_PERMISSION_KEYS.PERMISSIONS_READ,
+    CORE_PACK_PERMISSION_KEYS.API_KEYS_READ,
+    CORE_PACK_PERMISSION_KEYS.SETTINGS_READ
+  ]);
