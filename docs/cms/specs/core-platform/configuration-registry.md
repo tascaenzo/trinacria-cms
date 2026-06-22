@@ -196,23 +196,18 @@ export interface RotateSecretRequestDto {
 
 ## Storage Mongo
 
-Il registry possiede 4 collezioni:
+Il registry usa una collezione unificata:
 
-| Collection                       | Unique index                  | Owner     |
-| -------------------------------- | ----------------------------- | --------- |
-| `cms_core_settings_definitions`  | `{ canonicalKey: 1 }`         | core-pack |
-| `cms_core_settings_values`       | `{ canonicalKey: 1 }`         | core-pack |
-| `cms_core_settings_secrets`      | `{ canonicalKey: 1 }`         | core-pack |
-| `cms_core_settings_audit_events` | `{ canonicalKey: 1, at: -1 }` | core-pack |
+| Collection            | Unique index          | Owner     |
+| --------------------- | --------------------- | --------- |
+| `core-pack__settings` | `{ kind: 1, key: 1 }` | core-pack |
 
 Index secondari:
 
-| Collection                       | Index                          | Motivo            |
-| -------------------------------- | ------------------------------ | ----------------- |
-| `cms_core_settings_definitions`  | `{ ownerPluginId: 1 }`         | lookup per plugin |
-| `cms_core_settings_values`       | `{ ownerPluginId: 1 }`         | lookup per plugin |
-| `cms_core_settings_secrets`      | `{ ownerPluginId: 1 }`         | lookup per plugin |
-| `cms_core_settings_audit_events` | `{ actorType: 1, actorId: 1 }` | lookup per attore |
+| Collection            | Index                           | Motivo            |
+| --------------------- | ------------------------------- | ----------------- |
+| `core-pack__settings` | `{ ownerPluginId: 1, kind: 1 }` | lookup per plugin |
+| `core-pack__settings` | `{ key: 1 }`                    | lookup per chiave |
 
 ### Canonical key
 

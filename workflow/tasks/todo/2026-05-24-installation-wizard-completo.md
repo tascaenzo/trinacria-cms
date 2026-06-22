@@ -19,13 +19,13 @@ e chiede il riavvio prima di procedere.
 
 ### In scope
 
-- Setup mode: app si avvia senza MongoDB, serve solo /v1/install/*
+- Setup mode: app si avvia senza MongoDB, serve solo /v1/install/\*
 - Guida setup `.env` se `MONGO_URI` o `MONGO_HOST` non configurati
 - Riavvio richiesto dopo setup `.env`
 - Frontend multi-step (2 step: Sito → Admin + Review)
 - Salvataggio settings sito (siteName, tagline, locale, timezone) in installazione
 - Creazione admin (firstName, lastName, email, password)
-- `UserRecord`: aggiungere `firstName` e `lastName`, displayName calcolato
+- `UserRecord`: usare `firstName` e `lastName` come campi separati
 - Traduzioni EN/IT
 - Audit eventi per ogni fase
 - Bootstrap backend semplificato: nessun test connessione o scrittura `.env`
@@ -65,7 +65,7 @@ e chiede il riavvio prima di procedere.
    a. Nessun test connessione MongoDB (gia connesso all'avvio)
    b. Nessuna scrittura .env (gia presente)
    c. Provisioning baseline security (ruoli, permessi)
-   d. Creazione admin user (firstName + lastName → displayName)
+   d. Creazione admin user con firstName e lastName separati
    e. Hashing password e salvataggio credenziali locali
    f. Assegnazione ruolo admin
    g. Salvataggio settings sito
@@ -127,6 +127,7 @@ async bootstrap(input: InstallBootstrapInput): Promise<InstallationBootstrapResu
 ### 3. Rimozione test-connection endpoint
 
 Rimuovere:
+
 - `POST /v1/install/test-connection` dal controller
 - `testMongoConnection` dal service
 - `TestConnectionInputSchema` dal DTO input
@@ -139,17 +140,20 @@ Rimuovere `mongoHost`, `mongoPort`, `mongoDatabase`, `mongoUsername`,
 solo dati sito e admin:
 
 ```ts
-export const InstallBootstrapInputSchema = s.object({
-  firstName: s.string({ trim: true, minLength: 1, maxLength: 60 }),
-  lastName: s.string({ trim: true, minLength: 1, maxLength: 60 }),
-  email: s.string({ trim: true, toLowerCase: true, email: true }),
-  password: s.string({ minLength: 10, maxLength: 200 }),
-  confirmPassword: s.string({ minLength: 10, maxLength: 200 }),
-  siteName: s.string({ trim: true, minLength: 1, maxLength: 120 }),
-  siteTagline: s.string({ trim: true, maxLength: 160 }).optional(),
-  locale: s.string({ trim: true, pattern: LOCALE_PATTERN }).optional(),
-  timezone: s.string({ trim: true, minLength: 3, maxLength: 120 }).optional()
-}, { strict: true });
+export const InstallBootstrapInputSchema = s.object(
+  {
+    firstName: s.string({ trim: true, minLength: 1, maxLength: 60 }),
+    lastName: s.string({ trim: true, minLength: 1, maxLength: 60 }),
+    email: s.string({ trim: true, toLowerCase: true, email: true }),
+    password: s.string({ minLength: 10, maxLength: 200 }),
+    confirmPassword: s.string({ minLength: 10, maxLength: 200 }),
+    siteName: s.string({ trim: true, minLength: 1, maxLength: 120 }),
+    siteTagline: s.string({ trim: true, maxLength: 160 }).optional(),
+    locale: s.string({ trim: true, pattern: LOCALE_PATTERN }).optional(),
+    timezone: s.string({ trim: true, minLength: 3, maxLength: 120 }).optional()
+  },
+  { strict: true }
+);
 ```
 
 ### 5. Response DTO — envWritten sempre true
@@ -208,6 +212,7 @@ const STEPS: Step[] = ["site", "admin", "review"];
 ### 7. i18n
 
 Rimuovere:
+
 - `auth.installation.step_db`, `auth.installation.step_db_hint`
 - `auth.installation.mongo_*_label`, `auth.installation.mongo_*_default`
 - `auth.installation.test_connection`, `auth.installation.testing_connection`
@@ -216,22 +221,26 @@ Rimuovere:
 - `auth.installation.error.env_write_failed`
 
 Aggiornare:
+
 - `auth.installation.form_summary`: "Completa i due passaggi..." / "Complete the two steps..."
 - `auth.installation.hero_body`: rimuovere "database" dalla descrizione
 
 Aggiungere alla guida DB:
+
 - `auth.installation.db_guide_restart_hint`: messaggio che chiede di riavviare
 - `auth.installation.db_guide_restart_button`: "Ho configurato il file, riavvia"
 
 ### 8. Database guide page — miglioramenti
 
 Aggiungere alla `InstallationDatabaseGuidePage`:
+
 - Pulsante "Riavvia l'app" o messaggio chiaro che l'app deve essere riavviata
 - Opzionale: polling dello status per rilevare quando il DB diventa disponibile
 
 ### 9. Route nel backoffice
 
 La route nel `BackofficeApp` rimane invariata:
+
 ```
 if envFilePresent && dbConfigured → InstallationBootstrapPage (2 step)
 else → InstallationDatabaseGuidePage

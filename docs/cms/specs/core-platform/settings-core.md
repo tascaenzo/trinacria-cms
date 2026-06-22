@@ -124,12 +124,9 @@ export interface RotateSecretRequestDto {
 
 Collections:
 
-| Collection                       | Unique index                  |
-| -------------------------------- | ----------------------------- |
-| `cms_core_settings_definitions`  | `{ canonicalKey: 1 }`         |
-| `cms_core_settings_values`       | `{ canonicalKey: 1 }`         |
-| `cms_core_settings_secrets`      | `{ canonicalKey: 1 }`         |
-| `cms_core_settings_audit_events` | `{ canonicalKey: 1, at: -1 }` |
+| Collection            | Unique index          | Record kinds                                                |
+| --------------------- | --------------------- | ----------------------------------------------------------- |
+| `core-pack__settings` | `{ kind: 1, key: 1 }` | `definition`, `value`, `secret`, internal core-pack records |
 
 Canonical key:
 
