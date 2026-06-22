@@ -11,8 +11,8 @@ test("JsonView renders an inspectable JSON tree with toolbar actions", () => {
 
   assert.match(markup, /Payload/);
   assert.match(markup, /Copy JSON/);
-  assert.match(markup, /Expand all/);
-  assert.match(markup, /Collapse all/);
+  assert.match(markup, /Collapse JSON/);
+  assert.doesNotMatch(markup, /Expand JSON/);
   assert.match(markup, /&quot;ok&quot;/);
   assert.match(markup, /true/);
   assert.match(markup, /&quot;nested&quot;/);

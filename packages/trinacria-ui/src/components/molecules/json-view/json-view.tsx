@@ -55,6 +55,21 @@ function getExpandablePaths(value: unknown, path = "$"): JsonPath[] {
   ];
 }
 
+function getPathDepth(path: JsonPath) {
+  if (path === "$") {
+    return 0;
+  }
+  return path.split(".").length + (path.match(/\[/g)?.length ?? 0) - 1;
+}
+
+function isPathExpanded(
+  path: JsonPath,
+  expandedState: ExpandedState,
+  defaultExpandedDepth: number
+) {
+  return expandedState[path] ?? getPathDepth(path) < defaultExpandedDepth;
+}
+
 function stringifyJson(value: unknown) {
   const seen = new WeakSet<object>();
   const json = JSON.stringify(
@@ -236,12 +251,12 @@ function JsonKey({ isArrayIndex, label }: { isArrayIndex: boolean; label: string
  */
 export function JsonView({
   className,
-  collapseAllLabel = "Collapse all",
+  collapseAllLabel = "Collapse JSON",
   copiedLabel = "Copied",
   copyErrorLabel = "Copy failed",
   copyLabel = "Copy JSON",
   defaultExpandedDepth = 2,
-  expandAllLabel = "Expand all",
+  expandAllLabel = "Expand JSON",
   showToolbar = true,
   title,
   value,
@@ -254,9 +269,7 @@ export function JsonView({
 
   function togglePath(path: JsonPath) {
     setExpandedState((current) => {
-      const isExpanded =
-        current[path] ??
-        path.split(".").length + (path.match(/\[/g)?.length ?? 0) - 1 < defaultExpandedDepth;
+      const isExpanded = isPathExpanded(path, current, defaultExpandedDepth);
       return { ...current, [path]: !isExpanded };
     });
   }
@@ -266,6 +279,10 @@ export function JsonView({
       Object.fromEntries(expandablePaths.map((path) => [path, expanded])) as ExpandedState
     );
   }
+
+  const allExpanded =
+    expandablePaths.length > 0 &&
+    expandablePaths.every((path) => isPathExpanded(path, expandedState, defaultExpandedDepth));
 
   function handleCopy() {
     void copyToClipboard(serialized)
@@ -291,18 +308,9 @@ export function JsonView({
                 variant="ghost"
                 size="sm"
                 disabled={expandablePaths.length === 0}
-                onClick={() => setAllExpanded(true)}
+                onClick={() => setAllExpanded(!allExpanded)}
               >
-                {expandAllLabel}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                disabled={expandablePaths.length === 0}
-                onClick={() => setAllExpanded(false)}
-              >
-                {collapseAllLabel}
+                {allExpanded ? collapseAllLabel : expandAllLabel}
               </Button>
               <Button type="button" variant="secondary" size="sm" onClick={handleCopy}>
                 <Icon name="copy" className="h-3.5 w-3.5" />

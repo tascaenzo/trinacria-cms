@@ -20,7 +20,13 @@ export function ResourceTable({
   return (
     <>
       {mobile}
-      <div className={cn("hidden overflow-x-auto md:block", className)} {...props}>
+      <div
+        className={cn(
+          "hidden overflow-x-auto rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] shadow-[var(--shadow-surface)] md:block",
+          className
+        )}
+        {...props}
+      >
         {hasContent ? children : empty}
       </div>
     </>
@@ -29,7 +35,10 @@ export function ResourceTable({
 
 export function ResourceTableElement({ children, className, ...props }: ResourceTableElementProps) {
   return (
-    <table className={cn("min-w-full text-sm", className)} {...props}>
+    <table
+      className={cn("min-w-full border-separate border-spacing-0 text-sm", className)}
+      {...props}
+    >
       {children}
     </table>
   );
@@ -43,7 +52,7 @@ export function ResourceTableHeaderRow({
   return (
     <tr
       className={cn(
-        "border-b border-[color:var(--color-border)] text-left text-[color:var(--color-ink-subtle)]",
+        "bg-[color:var(--color-surface)] text-left text-[color:var(--color-ink-subtle)] shadow-[inset_0_-1px_0_var(--color-border)]",
         className
       )}
       {...props}
@@ -59,7 +68,13 @@ export function ResourceTableHeadCell({
   ...props
 }: ResourceTableHeadCellProps) {
   return (
-    <th className={cn("px-4 py-3 font-medium", className)} {...props}>
+    <th
+      className={cn(
+        "px-4 py-3 text-xs font-medium leading-5 text-[color:var(--color-ink-subtle)]",
+        className
+      )}
+      {...props}
+    >
       {children}
     </th>
   );
@@ -72,7 +87,10 @@ export function ResourceTableRow({
 }: PropsWithChildren<HTMLAttributes<HTMLTableRowElement>>) {
   return (
     <tr
-      className={cn("border-b border-[color:var(--color-border)] last:border-b-0", className)}
+      className={cn(
+        "group transition-colors [&>td]:border-b [&>td]:border-[color:var(--color-border)] last:[&>td]:border-b-0 hover:bg-[color:var(--color-panel-soft)]/70 focus-within:bg-[color:var(--color-panel-soft)]",
+        className
+      )}
       {...props}
     >
       {children}
@@ -82,7 +100,10 @@ export function ResourceTableRow({
 
 export function ResourceTableCell({ children, className, ...props }: ResourceTableCellProps) {
   return (
-    <td className={cn("px-4 py-4", className)} {...props}>
+    <td
+      className={cn("px-4 py-4 align-top leading-6 text-[color:var(--color-ink)]", className)}
+      {...props}
+    >
       {children}
     </td>
   );
@@ -96,8 +117,8 @@ export function ResourceTablePrimaryCell({
 }: ResourceTableCellProps & { meta?: ReactNode }) {
   return (
     <ResourceTableCell className={className} {...props}>
-      <div>
-        <p className="font-medium text-[color:var(--color-ink)]">{children}</p>
+      <div className="min-w-0">
+        <p className="break-words font-medium text-[color:var(--color-ink)]">{children}</p>
         {meta ? <BodyText className="mt-1">{meta}</BodyText> : null}
       </div>
     </ResourceTableCell>
