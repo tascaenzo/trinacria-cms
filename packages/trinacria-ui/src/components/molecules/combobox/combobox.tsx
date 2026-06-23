@@ -7,6 +7,7 @@ import {
 } from "../../atoms/form-control/form-control.js";
 import { Icon } from "../../atoms/icon/icon.js";
 import { OverlaySurface } from "../../primitives/overlay-surface/overlay-surface.js";
+import { useControllableState } from "../../../hooks/use-controllable-state.js";
 import { cn } from "../../../utils/class-names.js";
 import type { ComboboxOption, ComboboxProps } from "./combobox.types.js";
 
@@ -20,26 +21,6 @@ function sanitizeIdPart(value: string) {
 
 function optionDomId(controlId: string, option: ComboboxOption, index: number) {
   return `${controlId}-option-${index}-${sanitizeIdPart(option.value)}`;
-}
-
-function useControllableValue(
-  value: string | undefined,
-  defaultValue: string | undefined,
-  onValueChange: ((value: string) => void) | undefined
-) {
-  const [internalValue, setInternalValue] = useState(defaultValue ?? "");
-  const isControlled = value !== undefined;
-  const resolvedValue = isControlled ? value : internalValue;
-
-  function setValue(nextValue: string) {
-    if (!isControlled) {
-      setInternalValue(nextValue);
-    }
-
-    onValueChange?.(nextValue);
-  }
-
-  return [resolvedValue, setValue] as const;
 }
 
 export function Combobox({
@@ -68,9 +49,9 @@ export function Combobox({
     hint,
     hintId: ids.hintId
   });
-  const [selectedValue, setSelectedValue] = useControllableValue(
+  const [selectedValue, setSelectedValue] = useControllableState(
     value,
-    defaultValue,
+    defaultValue ?? "",
     onValueChange
   );
   const [isOpen, setIsOpen] = useState(false);

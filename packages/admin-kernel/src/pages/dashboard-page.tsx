@@ -1,11 +1,4 @@
-import {
-  Badge,
-  Card,
-  Icon,
-  InfoCard,
-  StatCard,
-  type IconName
-} from "@trinacria-cms/trinacria-ui";
+import { Badge, Card, Icon, InfoCard, StatCard, type IconName } from "@trinacria-cms/trinacria-ui";
 import { JsonPreviewAction } from "../components/json-preview-action.js";
 import { DeclarativeDashboardWidgetPanel } from "../declarative/index.js";
 import { useI18n } from "../lib/i18n.js";
@@ -75,7 +68,7 @@ export function DashboardPage({
   return (
     <div className="grid auto-rows-min gap-4">
       <section className="grid gap-4 md:grid-cols-3">
-        <WorkspaceTile
+        <SetupTile
           complete={isHealthy}
           icon={isHealthy ? "circle-check-big" : "triangle-alert"}
           title={t("dashboard.setup.runtime_health", "Runtime health")}
@@ -86,7 +79,7 @@ export function DashboardPage({
             isHealthy ? "Ready" : "Review"
           )}
         />
-        <WorkspaceTile
+        <SetupTile
           complete={pluginCount > 0}
           icon="plug"
           title={t("dashboard.setup.plugins", "Plugin catalog")}
@@ -97,7 +90,7 @@ export function DashboardPage({
             pluginCount > 0 ? "Ready" : "Review"
           )}
         />
-        <WorkspaceTile
+        <SetupTile
           complete={visibleResourceCount > 0}
           icon="database"
           title={t("dashboard.setup.resources", "Admin resources")}
@@ -148,39 +141,22 @@ export function DashboardPage({
             <ConfigurationRow
               icon="users"
               title={t("dashboard.configure.operators", "Operators and roles")}
-              text={t("dashboard.configure.operators_text", "Create users, roles, and permission grants.")}
-            />
-            <ConfigurationRow
-              icon="key-round"
-              title={t("dashboard.configure.api_keys", "API keys")}
-              text={t("dashboard.configure.api_keys_text", "Issue service and integration credentials.")}
+              text={t(
+                "dashboard.configure.operators_text",
+                "Create users, roles, and permission grants."
+              )}
             />
             <ConfigurationRow
               icon="settings-2"
               title={t("dashboard.configure.settings", "Store settings")}
-              text={t("dashboard.configure.settings_text", "Review site, locale, secrets, and runtime definitions.")}
+              text={t(
+                "dashboard.configure.settings_text",
+                "Review site, locale, secrets, and runtime definitions."
+              )}
             />
           </div>
         </Card>
 
-        <Card
-          eyebrow={t("dashboard.pages.eyebrow", "Workspace")}
-          title={t("dashboard.pages.title", "Admin pages")}
-          className="min-h-[360px] p-0"
-        >
-          <div className="divide-y divide-[color:var(--color-border)]">
-            {pages.length > 0 ? (
-              pages.map((page) => <PageRouteRow key={page.id} page={page} />)
-            ) : (
-              <p className="p-5 text-sm leading-6 text-[color:var(--color-ink-muted)]">
-                {t("dashboard.pages.empty", "No admin pages are visible for the current runtime.")}
-              </p>
-            )}
-          </div>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-[1fr]">
         <Card
           eyebrow={t("dashboard.resources.eyebrow")}
           title={t("dashboard.resources.title")}
@@ -302,7 +278,7 @@ function ActivityRow({ title, text }: { title: string; text: string }) {
   return <InfoCard title={title} description={text} className="bg-[color:var(--color-surface)]" />;
 }
 
-function WorkspaceTile({
+function SetupTile({
   complete,
   icon,
   stateLabel,
@@ -343,15 +319,7 @@ function WorkspaceTile({
   );
 }
 
-function ConfigurationRow({
-  icon,
-  text,
-  title
-}: {
-  icon: IconName;
-  text: string;
-  title: string;
-}) {
+function ConfigurationRow({ icon, text, title }: { icon: IconName; text: string; title: string }) {
   return (
     <div className="flex items-start gap-4 p-5">
       <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] text-[color:var(--color-ink-muted)]">
@@ -364,49 +332,6 @@ function ConfigurationRow({
       <Icon name="chevron-right" className="mt-2 text-[color:var(--color-ink-subtle)]" />
     </div>
   );
-}
-
-function PageRouteRow({ page }: { page: AdminDashboardPageLink }) {
-  const { t } = useI18n();
-
-  return (
-    <a
-      href={`#${page.id}`}
-      className="group flex items-start justify-between gap-4 p-5 transition hover:bg-[color:var(--color-interactive-hover)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[color:var(--color-focus)]"
-    >
-      <div className="flex min-w-0 items-start gap-4">
-        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] text-[color:var(--color-ink-muted)] transition group-hover:border-[color:var(--color-border-strong)] group-hover:text-[color:var(--color-ink)]">
-          <Icon name={getRouteIcon(page.kind)} className="h-5 w-5" />
-        </span>
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-semibold text-[color:var(--color-ink)]">{page.title}</p>
-            <Badge tone="neutral">{page.pluginId}</Badge>
-          </div>
-          {page.summary ? (
-            <p className="mt-1 line-clamp-2 text-sm leading-6 text-[color:var(--color-ink-muted)]">
-              {page.summary}
-            </p>
-          ) : null}
-        </div>
-      </div>
-      <span className="mt-2 inline-flex shrink-0 items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)] transition group-hover:text-[color:var(--color-ink)]">
-        {t("dashboard.pages.open", "Open")}
-        <Icon name="arrow-right" className="h-4 w-4" />
-      </span>
-    </a>
-  );
-}
-
-function getRouteIcon(kind: AdminRouteDefinition["kind"] | undefined): IconName {
-  switch (kind) {
-    case "dashboard":
-      return "layout-dashboard";
-    case "resource":
-      return "database";
-    default:
-      return "folder-open";
-  }
 }
 
 function ResourceRow({ resource }: { resource: AdminResourceDefinition }) {
@@ -428,8 +353,12 @@ function ResourceRow({ resource }: { resource: AdminResourceDefinition }) {
         ) : null}
       </div>
       <div className="flex shrink-0 flex-wrap justify-end gap-2">
-        <Badge tone="neutral">{tableFieldCount} {t("dashboard.resources.table_fields", "Table fields")}</Badge>
-        <Badge tone="neutral">{formFieldCount} {t("dashboard.resources.form_fields", "Form fields")}</Badge>
+        <Badge tone="neutral">
+          {tableFieldCount} {t("dashboard.resources.table_fields", "Table fields")}
+        </Badge>
+        <Badge tone="neutral">
+          {formFieldCount} {t("dashboard.resources.form_fields", "Form fields")}
+        </Badge>
       </div>
     </div>
   );

@@ -9,22 +9,6 @@ import { CORE_PACK_PERMISSION_KEYS } from "./core-pack.security.js";
 export const CORE_PACK_ADMIN_MANIFEST: PluginManifestAdmin = {
   routes: [
     {
-      id: "plugins",
-      path: "/plugins",
-      label: "Plugins",
-      requiredPermission: CORE_PACK_PERMISSION_KEYS.PLUGINS_READ,
-      componentRef: "core-pack.plugins",
-      order: 5
-    },
-    {
-      id: "plugin-contributions",
-      path: "/plugin-contributions",
-      label: "Plugin contributions",
-      requiredPermission: CORE_PACK_PERMISSION_KEYS.PLUGINS_READ,
-      componentRef: "core-pack.plugin-contributions",
-      order: 6
-    },
-    {
       id: "users",
       path: "/users",
       label: "Users",
@@ -55,31 +39,9 @@ export const CORE_PACK_ADMIN_MANIFEST: PluginManifestAdmin = {
       requiredPermission: CORE_PACK_PERMISSION_KEYS.SETTINGS_READ,
       componentRef: "core-pack.settings",
       order: 40
-    },
-    {
-      id: "api-keys",
-      path: "/api-keys",
-      label: "API Keys",
-      requiredPermission: CORE_PACK_PERMISSION_KEYS.API_KEYS_READ,
-      componentRef: "core-pack.api-keys",
-      order: 50
     }
   ],
   navigation: [
-    {
-      id: "nav-plugins",
-      path: "/plugins",
-      label: "Plugins",
-      requiredPermission: CORE_PACK_PERMISSION_KEYS.PLUGINS_READ,
-      order: 5
-    },
-    {
-      id: "nav-plugin-contributions",
-      path: "/plugin-contributions",
-      label: "Contributions",
-      requiredPermission: CORE_PACK_PERMISSION_KEYS.PLUGINS_READ,
-      order: 6
-    },
     {
       id: "nav-users",
       path: "/users",
@@ -107,13 +69,6 @@ export const CORE_PACK_ADMIN_MANIFEST: PluginManifestAdmin = {
       label: "Settings",
       requiredPermission: CORE_PACK_PERMISSION_KEYS.SETTINGS_READ,
       order: 40
-    },
-    {
-      id: "nav-api-keys",
-      path: "/api-keys",
-      label: "API Keys",
-      requiredPermission: CORE_PACK_PERMISSION_KEYS.API_KEYS_READ,
-      order: 50
     }
   ],
   resources: [
@@ -137,13 +92,6 @@ export const CORE_PACK_ADMIN_MANIFEST: PluginManifestAdmin = {
       routeBase: "/permissions",
       apiBase: "/v1/permissions",
       requiredPermission: CORE_PACK_PERMISSION_KEYS.PERMISSIONS_READ
-    },
-    {
-      id: "api-keys",
-      label: "API Keys",
-      routeBase: "/api-keys",
-      apiBase: "/v1/api-keys",
-      requiredPermission: CORE_PACK_PERMISSION_KEYS.API_KEYS_READ
     }
   ],
   settingsSections: [

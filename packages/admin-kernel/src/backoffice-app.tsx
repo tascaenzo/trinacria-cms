@@ -1,25 +1,10 @@
 import { useActionState, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import {
-  AdminShell,
-  Card,
-  DropdownMenu,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  Icon,
-  SearchField
-} from "@trinacria-cms/trinacria-ui";
-import type { AdminExtensionManifest, AdminRuntimePluginInfo } from "./contracts.js";
+import { AdminShell, Card, SearchField } from "@trinacria-cms/trinacria-ui";
 import type {
   GetAuthenticatedUserResponse,
-  GetKernelHealthResponse,
   GetInstallationStatusResponse,
   LoginWithPasswordResponse
 } from "@trinacria-cms/sdk";
-import {
-  createOfficialAdminContributions,
-  withOfficialAdminRouteRenderers
-} from "./contributions/official-admin-contributions.js";
 import {
   getLocalizedInstallationError,
   getLocalizedLoginError,
@@ -30,27 +15,23 @@ import {
   type SupportedLocale
 } from "./lib/auth-i18n.js";
 import { I18nProvider, createTranslate, type I18nBundle } from "./lib/i18n.js";
-import { getSdkErrorDetails, toDisplayError, type SdkErrorDetails } from "./lib/sdk-errors.js";
+import { getSdkErrorDetails, type SdkErrorDetails } from "./lib/sdk-errors.js";
 import { formatUserName } from "./lib/user-formatting.js";
 import { AuthScreenLayout } from "./components/auth-screen-layout.js";
 import type { BackofficeModule } from "./module.js";
 import { readRequiredString } from "./runtime/action-state.js";
-import { normalizeSafeAdminExtensionManifests } from "./runtime/admin-extension-manifest.js";
-import { buildAdminRegistry } from "./runtime/admin-route-runtime.js";
 import { clearBackofficeSession, persistBackofficeSession } from "./runtime/auth-session.js";
-import {
-  getBackofficeNavigationEventName,
-  readBackofficeNavigationState,
-  writeBackofficeNavigationState
-} from "./runtime/backoffice-navigation-state.js";
 import { cms } from "./runtime/cms-sdk.js";
-import { loadRuntimeDiscovery } from "./runtime/runtime-discovery.js";
 import { InstallationDatabaseGuidePage } from "./pages/installation-database-guide-page.js";
 import { InstallationBootstrapPage } from "./pages/installation-bootstrap-page.js";
 import { LoginPage } from "./pages/login-page.js";
+import { BackofficeShellStatus } from "./backoffice-app/backoffice-shell-status.js";
+import { BackofficeUserMenu } from "./backoffice-app/backoffice-user-menu.js";
+import { useBackofficeRouteState } from "./backoffice-app/use-backoffice-route-state.js";
+import { useBackofficeShellRuntime } from "./backoffice-app/use-backoffice-shell-runtime.js";
+import { useAuthenticatedRoleLabel } from "./backoffice-app/use-authenticated-role-label.js";
 
 type AuthenticatedUser = GetAuthenticatedUserResponse["data"];
-type HealthSnapshot = GetKernelHealthResponse;
 type InstallationStatus = GetInstallationStatusResponse["data"] & {
   envFilePresent?: boolean;
   dbConfigured?: boolean;
@@ -64,7 +45,7 @@ type FormActionState<T> = {
 type LoginActionState = FormActionState<LoginWithPasswordResponse["data"]>;
 type InstallationActionState = FormActionState<LoginWithPasswordResponse["data"]>;
 
-const USER_MENU_NAVIGATION_IDS = ["nav-settings", "nav-api-keys"] as const;
+const USER_MENU_NAVIGATION_IDS = ["nav-settings"] as const;
 
 export interface BackofficeAppProps {
   modules?: readonly BackofficeModule[];
@@ -84,20 +65,11 @@ function createIdleFormActionState<T>(): FormActionState<T> {
  */
 export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
   const [locale, setLocale] = useState<SupportedLocale>(() => readBackofficeLocale());
-  const [activeRouteId, setActiveRouteId] = useState<string>(
-    readBackofficeNavigationState().routeId ?? "dashboard"
-  );
-  const [runtimePlugins, setRuntimePlugins] = useState<readonly AdminRuntimePluginInfo[]>([]);
-  const [runtimeManifests, setRuntimeManifests] = useState<readonly AdminExtensionManifest[]>([]);
-  const [userPermissionKeys, setUserPermissionKeys] = useState<readonly string[]>([]);
-  const [health, setHealth] = useState<HealthSnapshot | null>(null);
+  const [activeRouteId, navigateTo] = useBackofficeRouteState();
   const [authUser, setAuthUser] = useState<AuthenticatedUser | null>(null);
-  const [authRoleLabel, setAuthRoleLabel] = useState<string | null>(null);
   const [installationStatus, setInstallationStatus] = useState<InstallationStatus | null>(null);
   const [bootstrapError, setBootstrapError] = useState<SdkErrorDetails | null>(null);
-  const [shellError, setShellError] = useState<string | null>(null);
   const [isBootstrappingApp, setIsBootstrappingApp] = useState(true);
-  const [isShellLoading, setIsShellLoading] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const translationBundles = useMemo<readonly I18nBundle[]>(
     () => [officialI18nBundle, ...modules.flatMap((module) => module.i18n ?? [])],
@@ -110,6 +82,14 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
   const handleLocaleChange = useCallback((nextLocale: string) => {
     setLocale(normalizeLocale(nextLocale));
   }, []);
+  const authRoleLabel = useAuthenticatedRoleLabel(authUser, t);
+  const { capabilityIndex, isShellLoading, registry, runtimePlugins, shellError } =
+    useBackofficeShellRuntime({
+      authUser,
+      installationInstalled: Boolean(installationStatus?.installed),
+      modules,
+      t
+    });
 
   useEffect(() => {
     if (authUser) {
@@ -135,27 +115,13 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
     persistBackofficeLocale(locale);
   }, [locale]);
 
-  useEffect(() => {
-    function handleNavigationChange() {
-      setActiveRouteId(readBackofficeNavigationState().routeId ?? "dashboard");
-    }
-
-    const navigationEventName = getBackofficeNavigationEventName();
-    window.addEventListener(navigationEventName, handleNavigationChange);
-    window.addEventListener("popstate", handleNavigationChange);
-    return () => {
-      window.removeEventListener(navigationEventName, handleNavigationChange);
-      window.removeEventListener("popstate", handleNavigationChange);
-    };
-  }, []);
-
   const completeLogin = useCallback((response: LoginWithPasswordResponse["data"]) => {
     persistBackofficeSession({
       expiresAt: response.expiresAt
     });
     setAuthUser(response.user);
-    navigateTo("dashboard", setActiveRouteId);
-  }, []);
+    navigateTo("dashboard");
+  }, [navigateTo]);
 
   const [loginState, submitLogin, isLoggingIn] = useActionState<LoginActionState, FormData>(
     async (_previousState, formData) => {
@@ -301,162 +267,15 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
   }, []);
 
   useEffect(() => {
-    if (!installationStatus?.installed || !authUser) {
-      setRuntimePlugins([]);
-      setRuntimeManifests([]);
-      setUserPermissionKeys([]);
-      setHealth(null);
-      setShellError(null);
-      setAuthRoleLabel(null);
-      return;
-    }
-
-    const authenticatedUser = authUser;
-    let isMounted = true;
-
-    async function loadShellData() {
-      setIsShellLoading(true);
-      setShellError(null);
-      const [discoveryResult, healthResult, permissionsResult] = await Promise.allSettled([
-        loadRuntimeDiscovery(),
-        cms.kernelHealth.getKernelHealth(),
-        cms.security.listUserEffectivePermissions({ path: { id: authenticatedUser.id } })
-      ]);
-
-      if (!isMounted) {
-        return;
-      }
-
-      const blockingErrors: string[] = [];
-
-      if (discoveryResult.status === "fulfilled") {
-        setRuntimePlugins(discoveryResult.value.plugins);
-        setRuntimeManifests(discoveryResult.value.manifests);
-      } else {
-        setRuntimePlugins([]);
-        setRuntimeManifests([]);
-        blockingErrors.push(toDisplayError(discoveryResult.reason));
-      }
-
-      if (healthResult.status === "fulfilled") {
-        setHealth(healthResult.value);
-      } else {
-        setHealth(null);
-        blockingErrors.push(toDisplayError(healthResult.reason));
-      }
-
-      if (permissionsResult.status === "fulfilled") {
-        setUserPermissionKeys(permissionsResult.value.data);
-      } else {
-        setUserPermissionKeys([]);
-      }
-
-      if (blockingErrors.length > 0) {
-        setShellError(blockingErrors.join(" "));
-      }
-
-      setIsShellLoading(false);
-    }
-
-    void loadShellData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [authUser, installationStatus?.installed]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadAuthenticatedUserRole() {
-      if (!authUser) {
-        setAuthRoleLabel(null);
-        return;
-      }
-
-      try {
-        const response = await cms.security.listUserRoles({
-          path: { id: authUser.id }
-        });
-        if (!isMounted) {
-          return;
-        }
-        const primaryRole = response.data[0]?.roleCode ?? null;
-        setAuthRoleLabel(
-          primaryRole ? formatRoleLabel(primaryRole) : t("backoffice.user.role_fallback")
-        );
-      } catch {
-        if (isMounted) {
-          setAuthRoleLabel(t("backoffice.user.role_fallback"));
-        }
-      }
-    }
-
-    void loadAuthenticatedUserRole();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [authUser, t]);
-
-  const customContributions = useMemo(
-    () =>
-      withOfficialAdminRouteRenderers(
-        modules.flatMap((module) => [
-          ...(module.contributions ?? []),
-          ...normalizeSafeAdminExtensionManifests(module.manifests ?? [])
-        ])
-      ),
-    [modules]
-  );
-
-  const runtimeContributions = useMemo(
-    () => withOfficialAdminRouteRenderers(normalizeSafeAdminExtensionManifests(runtimeManifests)),
-    [runtimeManifests]
-  );
-
-  const registry = useMemo(() => {
-    return buildAdminRegistry(
-      [
-        ...createOfficialAdminContributions({
-          pluginCount: runtimePlugins.length,
-          capabilityCount: runtimePlugins.reduce(
-            (total, plugin) => total + plugin.capabilities.length,
-            0
-          ),
-          systemStateLabel: health?.status ?? "unknown"
-        }),
-        ...customContributions,
-        ...runtimeContributions
-      ],
-      runtimePlugins,
-      t,
-      userPermissionKeys
-    );
-  }, [
-    customContributions,
-    health?.status,
-    runtimeContributions,
-    runtimePlugins,
-    t,
-    userPermissionKeys
-  ]);
-
-  useEffect(() => {
     const fallbackRouteId = registry.routes[0]?.id;
     if (
       fallbackRouteId &&
       activeRouteId !== fallbackRouteId &&
       !registry.routes.some((route) => route.id === activeRouteId)
     ) {
-      navigateTo(fallbackRouteId, setActiveRouteId);
+      navigateTo(fallbackRouteId);
     }
-  }, [activeRouteId, registry.routes]);
-
-  const capabilityIndex = useMemo(
-    () => new Map(runtimePlugins.map((plugin) => [plugin.pluginId, new Set(plugin.capabilities)])),
-    [runtimePlugins]
-  );
+  }, [activeRouteId, navigateTo, registry.routes]);
 
   const activeRoute =
     registry.routes.find((route) => route.id === activeRouteId) ?? registry.routes[0] ?? null;
@@ -472,9 +291,8 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
   function handleLogout() {
     clearBackofficeSession();
     setAuthUser(null);
-    setAuthRoleLabel(null);
     setIsUserMenuOpen(false);
-    navigateTo("dashboard", setActiveRouteId);
+    navigateTo("dashboard");
   }
 
   function renderWithI18n(node: ReactNode) {
@@ -563,7 +381,6 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
 
   const userName = formatUserName(authUser);
   const hasSettingsRoute = registry.routes.some((route) => route.id === "settings");
-  const hasApiKeysRoute = registry.routes.some((route) => route.id === "api-keys");
 
   const content = activeRoute
     ? activeRoute.render({
@@ -584,76 +401,21 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
       activeRouteId={activeRoute?.id ?? ""}
       navigation={registry.navigation}
       hiddenNavigationIds={USER_MENU_NAVIGATION_IDS}
-      onNavigate={(routeId) => navigateTo(routeId, setActiveRouteId)}
+      onNavigate={navigateTo}
       title={activeRoute?.title ?? t("backoffice.shell.title")}
       subtitle={activeRoute?.summary ?? t("backoffice.shell.subtitle")}
       hideHeader
       sidebarFooter={
-        <DropdownMenu
-          open={isUserMenuOpen}
+        <BackofficeUserMenu
+          isOpen={isUserMenuOpen}
+          roleLabel={authRoleLabel}
+          settingsRouteAvailable={hasSettingsRoute}
+          userName={userName}
+          onLogout={handleLogout}
+          onNavigate={navigateTo}
           onOpenChange={setIsUserMenuOpen}
-          side="top"
-          align="end"
-          className="w-full"
-          contentClassName="w-full min-w-0"
-          trigger={
-            <button
-              type="button"
-              className="flex w-full min-w-0 items-center gap-3 rounded-md px-2.5 py-2 text-left transition hover:bg-[color:var(--color-interactive-hover)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-focus)]"
-            >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-action-primary-bg)] text-[color:var(--color-action-primary-ink)]">
-                <Icon name="user-round" className="h-4 w-4" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold text-[color:var(--color-ink)]">
-                  {userName}
-                </span>
-                <span className="block truncate text-xs text-[color:var(--color-ink-subtle)]">
-                  {authRoleLabel ?? t("backoffice.user.role_loading")}
-                </span>
-              </span>
-              <Icon
-                name="chevron-down"
-                className={`h-4 w-4 shrink-0 text-[color:var(--color-ink-subtle)] transition ${isUserMenuOpen ? "rotate-180" : ""}`}
-              />
-            </button>
-          }
-        >
-          <DropdownMenuLabel>
-            <span className="block truncate text-sm font-semibold normal-case tracking-normal text-[color:var(--color-ink)]">
-              {userName}
-            </span>
-            <span className="block truncate pt-1 text-xs font-normal normal-case tracking-normal text-[color:var(--color-ink-subtle)]">
-              {authRoleLabel ?? t("backoffice.user.role_loading")}
-            </span>
-          </DropdownMenuLabel>
-          <DropdownMenuItem
-            icon="user-round"
-            title={t("backoffice.user.menu.profile")}
-            onClick={() => navigateTo("profile", setActiveRouteId)}
-          />
-          {hasSettingsRoute ? (
-            <DropdownMenuItem
-              icon="settings-2"
-              title={t("backoffice.user.menu.settings")}
-              onClick={() => navigateTo("settings", setActiveRouteId)}
-            />
-          ) : null}
-          {hasApiKeysRoute ? (
-            <DropdownMenuItem
-              icon="key-round"
-              title={t("backoffice.user.menu.api_keys")}
-              onClick={() => navigateTo("api-keys", setActiveRouteId)}
-            />
-          ) : null}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            icon="log-out"
-            title={t("backoffice.user.menu.logout")}
-            tone="danger"
-            onClick={handleLogout}
-          />
-        </DropdownMenu>
+          t={t}
+        />
       }
       headerActions={
         <div className="hidden md:flex md:w-[320px] lg:w-[360px]">
@@ -661,39 +423,10 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
         </div>
       }
     >
-      {shellError && shouldShowShellDiscoveryState ? (
-        <Card
-          eyebrow={t("auth.installation.eyebrow")}
-          title={t("backoffice.shell.discovery_error_title")}
-        >
-          <p className="text-sm leading-7 text-[color:var(--color-ink-muted)]">{shellError}</p>
-        </Card>
-      ) : null}
-      {isShellLoading && !shellError && shouldShowShellDiscoveryState ? (
-        <Card
-          eyebrow={t("auth.installation.eyebrow")}
-          title={t("backoffice.shell.loading_discovery_title")}
-        >
-          <p className="text-sm leading-7 text-[color:var(--color-ink-muted)]">
-            {t("backoffice.shell.loading_discovery_body")}
-          </p>
-        </Card>
+      {shouldShowShellDiscoveryState ? (
+        <BackofficeShellStatus error={shellError} isLoading={isShellLoading} t={t} />
       ) : null}
       {shouldRenderContent ? content : null}
     </AdminShell>
   );
-}
-
-function navigateTo(routeId: string, setActiveRouteId: (routeId: string) => void) {
-  writeBackofficeNavigationState(routeId);
-  setActiveRouteId(routeId);
-}
-
-function formatRoleLabel(roleCode: string): string {
-  return roleCode
-    .trim()
-    .split(/[-_]+/g)
-    .filter(Boolean)
-    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
-    .join(" ");
 }

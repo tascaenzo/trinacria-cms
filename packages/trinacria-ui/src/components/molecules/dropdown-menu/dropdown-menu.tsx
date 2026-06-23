@@ -19,6 +19,7 @@ import { createPortal } from "react-dom";
 import { OverlaySurface } from "../../primitives/overlay-surface/overlay-surface.js";
 import { BodyText } from "../../primitives/text/text.js";
 import { Icon } from "../../atoms/icon/icon.js";
+import { useControllableState } from "../../../hooks/use-controllable-state.js";
 import { cn } from "../../../utils/class-names.js";
 import type {
   DropdownMenuItemProps,
@@ -53,25 +54,6 @@ function composeRefs<T>(...refs: Array<Ref<T> | undefined>) {
   };
 }
 
-function useControllableOpen(
-  open: boolean | undefined,
-  defaultOpen: boolean | undefined,
-  onOpenChange: ((open: boolean) => void) | undefined
-) {
-  const [internalOpen, setInternalOpen] = useState(defaultOpen ?? false);
-  const isControlled = open !== undefined;
-  const resolvedOpen = isControlled ? open : internalOpen;
-
-  function setOpen(nextOpen: boolean) {
-    if (!isControlled) {
-      setInternalOpen(nextOpen);
-    }
-    onOpenChange?.(nextOpen);
-  }
-
-  return [resolvedOpen, setOpen] as const;
-}
-
 export function DropdownMenu({
   align = "end",
   children,
@@ -84,7 +66,7 @@ export function DropdownMenu({
   trigger,
   ...props
 }: PropsWithChildren<DropdownMenuProps>) {
-  const [isOpen, setIsOpen] = useControllableOpen(open, defaultOpen, onOpenChange);
+  const [isOpen, setIsOpen] = useControllableState(open, defaultOpen ?? false, onOpenChange);
   const shouldMatchTriggerWidth =
     typeof contentClassName === "string" && contentClassName.split(/\s+/).includes("w-full");
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -174,7 +156,7 @@ export function DropdownMenu({
 
       setMenuStyle({
         ...(shouldMatchTriggerWidth ? { width: triggerRect.width } : undefined),
-        minWidth: Math.max(220, triggerRect.width),
+        minWidth: shouldMatchTriggerWidth ? Math.max(220, triggerRect.width) : 220,
         ...(side === "bottom"
           ? { top: triggerRect.bottom + 8 }
           : { bottom: window.innerHeight - triggerRect.top + 8 }),

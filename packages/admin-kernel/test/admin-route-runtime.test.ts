@@ -341,7 +341,7 @@ test("official core-pack navigation uses registered shell icon names", () => {
     installed: true,
     version: "0.1.0",
     state: "loaded",
-    capabilities: ["plugins.read"]
+    capabilities: ["users.read", "roles.read"]
   };
 
   const contribution = withOfficialAdminRouteRenderers([
@@ -350,30 +350,30 @@ test("official core-pack navigation uses registered shell icon names", () => {
       displayName: "Core Pack",
       routes: [
         {
-          id: "plugins",
-          path: "/plugins",
+          id: "users",
+          path: "/users",
           pluginId: "core-pack",
-          title: "Plugins",
+          title: "Users",
           render: () => null
         },
         {
-          id: "plugin-contributions",
-          path: "/plugin-contributions",
+          id: "roles",
+          path: "/roles",
           pluginId: "core-pack",
-          title: "Plugin contributions",
+          title: "Roles",
           render: () => null
         }
       ],
       navigation: [
         {
-          id: "nav-plugins",
-          routeId: "plugins",
-          title: "Plugins"
+          id: "nav-users",
+          routeId: "users",
+          title: "Users"
         },
         {
-          id: "nav-plugin-contributions",
-          routeId: "plugin-contributions",
-          title: "Plugin contributions"
+          id: "nav-roles",
+          routeId: "roles",
+          title: "Roles"
         }
       ]
     }
@@ -384,8 +384,8 @@ test("official core-pack navigation uses registered shell icon names", () => {
   assert.deepEqual(
     registry.navigation.map((item) => [item.id, item.icon]),
     [
-      ["nav-plugins", "plug"],
-      ["nav-plugin-contributions", "puzzle"]
+      ["nav-users", "users"],
+      ["nav-roles", "shield-check"]
     ]
   );
 });

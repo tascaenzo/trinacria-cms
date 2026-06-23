@@ -93,3 +93,43 @@ test("DropdownMenu keeps full-width portal content tied to trigger width", async
     restoreDom();
   }
 });
+
+test("DropdownMenu does not force trigger width for regular portal content", async () => {
+  const restoreDom = installDom();
+  const triggerRef = React.createRef<HTMLButtonElement>();
+
+  try {
+    const view = await renderClient(
+      <DropdownMenu contentClassName="w-56" trigger={<button ref={triggerRef}>Open</button>}>
+        <DropdownMenuItem>Profile</DropdownMenuItem>
+      </DropdownMenu>
+    );
+
+    triggerRef.current!.getBoundingClientRect = () =>
+      ({
+        bottom: 90,
+        height: 40,
+        left: 24,
+        right: 344,
+        top: 50,
+        width: 320,
+        x: 24,
+        y: 50,
+        toJSON: () => ({})
+      }) as DOMRect;
+
+    await React.act(async () => {
+      triggerRef.current?.click();
+      await new Promise((resolve) => window.setTimeout(resolve, 0));
+    });
+
+    const menu = document.body.querySelector<HTMLElement>('[role="menu"]');
+    assert.ok(menu?.parentElement);
+    assert.equal(menu.parentElement.style.width, "");
+    assert.equal(menu.parentElement.style.minWidth, "220px");
+
+    await view.unmount();
+  } finally {
+    restoreDom();
+  }
+});

@@ -214,10 +214,12 @@ export function Dialog({
         </header>
         <div
           className={cn(
-            "min-h-0 overflow-auto px-4 py-4 sm:px-6 sm:py-5",
-            variant === "modal" && width !== "fullscreen" && "flex-1",
+            "min-h-0 overflow-auto",
+            variant === "modal" &&
+              width !== "fullscreen" &&
+              "flex-1 px-4 py-4 sm:px-6 sm:py-5",
             variant === "modal" && width === "fullscreen" && "min-h-0 flex-1 p-0",
-            variant === "drawer" && "min-h-0 flex-1"
+            variant === "drawer" && "min-h-0 flex-1 px-4 py-4 sm:px-6 sm:py-5"
           )}
         >
           {children}

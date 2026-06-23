@@ -6,9 +6,13 @@ import type {
   AdminShellProps,
   AdminShellStatusBadge
 } from "./admin-shell.types.js";
+import {
+  readCollapsedGroups,
+  readSidebarState,
+  writeCollapsedGroups,
+  writeSidebarState
+} from "./admin-shell.storage.js";
 
-const SIDEBAR_STORAGE_KEY = "trinacria-cms:admin-sidebar-collapsed";
-const SIDEBAR_GROUPS_STORAGE_KEY = "trinacria-cms:admin-sidebar-collapsed-groups";
 const EMPTY_HIDDEN_NAVIGATION_IDS: readonly string[] = [];
 
 /**
@@ -23,43 +27,6 @@ function badgeToneClass(tone: AdminShellStatusBadge["tone"]): string {
     return "border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-bg)] text-[color:var(--color-warning-ink)]";
   }
   return "border-[color:var(--color-border)] bg-[color:var(--color-panel)] text-[color:var(--color-ink-muted)]";
-}
-
-function readSidebarState(): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  try {
-    return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true";
-  } catch {
-    return false;
-  }
-}
-
-function readCollapsedGroups(): Record<string, boolean> {
-  if (typeof window === "undefined") {
-    return {};
-  }
-
-  try {
-    const value = window.localStorage.getItem(SIDEBAR_GROUPS_STORAGE_KEY);
-    if (!value) {
-      return {};
-    }
-    const parsed = JSON.parse(value);
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      return {};
-    }
-    return Object.fromEntries(
-      Object.entries(parsed).filter((entry): entry is [string, boolean] => {
-        const [key, collapsed] = entry;
-        return typeof key === "string" && typeof collapsed === "boolean";
-      })
-    );
-  } catch {
-    return {};
-  }
 }
 
 function toNavigationGroupId(group: string): string {
@@ -94,25 +61,14 @@ export function AdminShell({
   );
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(isSidebarCollapsed));
-    } catch {
-      // Ignore storage failures: the shell can still operate without persistence.
-    }
+    writeSidebarState(isSidebarCollapsed);
   }, [isSidebarCollapsed]);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(SIDEBAR_GROUPS_STORAGE_KEY, JSON.stringify(collapsedGroups));
-    } catch {
-      // Ignore storage failures: group collapse is a progressive enhancement.
-    }
+    writeCollapsedGroups(collapsedGroups);
   }, [collapsedGroups]);
 
-  const hiddenNavigationIdSet = useMemo(
-    () => new Set(hiddenNavigationIds),
-    [hiddenNavigationIds]
-  );
+  const hiddenNavigationIdSet = useMemo(() => new Set(hiddenNavigationIds), [hiddenNavigationIds]);
 
   const groups = useMemo(() => {
     const map = new Map<string, AdminShellNavigationItem[]>();
@@ -121,7 +77,7 @@ export function AdminShell({
       if (hiddenNavigationIdSet.has(item.id)) {
         continue;
       }
-      const key = item.group ?? "Workspace";
+      const key = item.group ?? "";
       const list = map.get(key);
       if (list) {
         list.push(item);
@@ -195,27 +151,32 @@ export function AdminShell({
           <div className="min-h-0 flex-1 overflow-y-auto px-2 py-3">
             <nav className="space-y-5">
               {groups.map(([group, items], groupIndex) => {
-                const groupId = `admin-shell-nav-group-${groupIndex}-${toNavigationGroupId(group)}`;
-                const isGroupCollapsed = Boolean(collapsedGroups[group]) && !isSidebarCollapsed;
+                const groupId = group
+                  ? `admin-shell-nav-group-${groupIndex}-${toNavigationGroupId(group)}`
+                  : undefined;
+                const isGroupCollapsed =
+                  Boolean(group && collapsedGroups[group]) && !isSidebarCollapsed;
 
                 return (
                   <section key={group} className="space-y-1">
-                    <button
-                      type="button"
-                      aria-expanded={!isGroupCollapsed}
-                      aria-controls={groupId}
-                      onClick={() => toggleGroup(group)}
-                      className={cn(
-                        "flex w-full items-center justify-between gap-2 rounded-md px-2 pb-1 pt-1 text-left text-[11px] font-medium uppercase tracking-[0.14em] text-(--color-ink-subtle) transition hover:bg-(--color-interactive-hover) hover:text-(--color-ink-muted)",
-                        isSidebarCollapsed && "lg:hidden"
-                      )}
-                    >
-                      <span className="truncate">{group}</span>
-                      <Icon
-                        name={isGroupCollapsed ? "chevron-right" : "chevron-down"}
-                        className="h-3.5 w-3.5"
-                      />
-                    </button>
+                    {group ? (
+                      <button
+                        type="button"
+                        aria-expanded={!isGroupCollapsed}
+                        aria-controls={groupId}
+                        onClick={() => toggleGroup(group)}
+                        className={cn(
+                          "flex w-full items-center justify-between gap-2 rounded-md px-2 pb-1 pt-1 text-left text-[11px] font-medium uppercase tracking-[0.14em] text-(--color-ink-subtle) transition hover:bg-(--color-interactive-hover) hover:text-(--color-ink-muted)",
+                          isSidebarCollapsed && "lg:hidden"
+                        )}
+                      >
+                        <span className="truncate">{group}</span>
+                        <Icon
+                          name={isGroupCollapsed ? "chevron-right" : "chevron-down"}
+                          className="h-3.5 w-3.5"
+                        />
+                      </button>
+                    ) : null}
                     <div id={groupId} className={cn("space-y-1", isGroupCollapsed && "hidden")}>
                       {items.map((item) => {
                         const isActive = item.routeId === activeRouteId;
@@ -318,10 +279,14 @@ export function AdminShell({
                   name="chevron-right"
                   className="hidden h-3.5 w-3.5 text-(--color-ink-subtle) md:inline"
                 />
-                <span className="hidden truncate text-(--color-ink-muted) md:inline">
-                  {activeNavigation?.group ?? "Workspace"}
-                </span>
-                <span className="hidden text-(--color-ink-subtle) md:inline">/</span>
+                {activeNavigation?.group ? (
+                  <>
+                    <span className="hidden truncate text-(--color-ink-muted) md:inline">
+                      {activeNavigation.group}
+                    </span>
+                    <span className="hidden text-(--color-ink-subtle) md:inline">/</span>
+                  </>
+                ) : null}
                 <span className="truncate font-medium text-(--color-ink)">
                   {activeNavigation?.title ?? title}
                 </span>
@@ -352,11 +317,13 @@ export function AdminShell({
                 <div className="rounded-xl border border-(--color-border) bg-(--color-panel) px-4 py-4 shadow-(--shadow-sm) sm:px-5">
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2 text-xs text-(--color-ink-subtle) md:hidden">
-                        <span>Trinacria CMS</span>
-                        <Icon name="chevron-right" className="h-3.5 w-3.5" />
-                        <span className="truncate">{activeNavigation?.group ?? "Workspace"}</span>
-                      </div>
+                      {activeNavigation?.group ? (
+                        <div className="flex items-center gap-2 text-xs text-(--color-ink-subtle) md:hidden">
+                          <span>Trinacria CMS</span>
+                          <Icon name="chevron-right" className="h-3.5 w-3.5" />
+                          <span className="truncate">{activeNavigation.group}</span>
+                        </div>
+                      ) : null}
                       <h1 className="mt-1 truncate text-2xl font-semibold tracking-[-0.03em] text-(--color-ink) md:mt-0">
                         {title}
                       </h1>
