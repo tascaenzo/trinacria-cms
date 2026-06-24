@@ -1,7 +1,5 @@
-import { randomBytes } from "node:crypto";
 import { readFileSync, existsSync, writeFileSync, chmodSync } from "node:fs";
 import { join } from "node:path";
-import mongoose from "mongoose";
 import type { PluginSecurityProvisioner } from "@trinacria-cms/kernel";
 import { CORE_PACK_ADMIN_ROLE } from "../../plugin/core-pack.security.js";
 import { CORE_PACK_MANIFEST } from "../../plugin/core-pack.manifest.js";

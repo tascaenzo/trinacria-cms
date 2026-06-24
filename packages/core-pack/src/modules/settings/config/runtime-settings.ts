@@ -29,4 +29,3 @@ export async function readCorePackSettingValue(
   }
   return undefined;
 }
-

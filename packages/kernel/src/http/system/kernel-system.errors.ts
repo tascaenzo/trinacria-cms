@@ -7,7 +7,10 @@ import {
   PluginRuntimeError,
   PluginStateTransitionError
 } from "../../errors/plugin-errors.js";
-import type { KernelInstalledPluginSnapshot, KernelPluginEventSnapshot } from "../../runtime/system/kernel-system-service.js";
+import type {
+  KernelInstalledPluginSnapshot,
+  KernelPluginEventSnapshot
+} from "../../runtime/system/kernel-system-service.js";
 import { toApiErrorResponse } from "../api-http-utils.js";
 
 export function fromPluginOperationError(

@@ -38,25 +38,25 @@ jobs:
           cache: "npm"
 
       - name: Install
-        run: npm install
+        run: npm ci
+
+      - name: Format
+        run: npm run format
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
 
       - name: Build
         run: npm run build
 
-      - name: Typecheck packages
-        run: |
-          npm run typecheck -w @trinacria-cms/kernel
-          npm run typecheck -w @trinacria-cms/core-pack
-
-      - name: Lint and format check
-        run: |
-          npm run lint
-          npm run format
+      - name: SDK generated check
+        run: npm run sdk:check
 
       - name: Unit tests
-        run: |
-          npm run test -w @trinacria-cms/kernel
-          npm run test -w @trinacria-cms/core-pack
+        run: npm run test
 
       - name: Integration tests
         run: npm run test:integration

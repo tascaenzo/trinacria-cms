@@ -358,7 +358,8 @@ export class JwtAuthService {
       })) ?? 15;
     const strictSecret =
       (await this.config.getBoolean("core-pack:auth:strict_jwt_secret_required", {
-        fallback: false
+        envVar: "CMS_STRICT_JWT_SECRET_REQUIRED",
+        fallback: process.env.NODE_ENV === "production" || process.env.NODE_ENV === "staging"
       })) ?? false;
     const jwtSecret = readJwtSecretFromEnv(strictSecret);
     const value = {

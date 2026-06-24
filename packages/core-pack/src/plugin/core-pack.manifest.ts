@@ -1,4 +1,9 @@
 import type { PluginManifest } from "@trinacria-cms/kernel/contracts";
+import {
+  defineGrant,
+  definePluginManifest,
+  defineSecurity
+} from "@trinacria-cms/kernel/plugin-api";
 import { CORE_PACK_PLUGIN_ID } from "./core-pack.constants.js";
 import {
   CORE_PACK_ADMIN_ROLE,
@@ -14,7 +19,7 @@ import { CORE_PACK_SETTING_DEFINITION_SEEDS } from "../modules/settings/settings
 /**
  * Official baseline plugin manifest for Trinacria CMS core-pack.
  */
-export const CORE_PACK_MANIFEST: PluginManifest = {
+export const CORE_PACK_MANIFEST: PluginManifest = definePluginManifest({
   id: CORE_PACK_PLUGIN_ID,
   displayName: "Core Pack",
   description:
@@ -34,22 +39,22 @@ export const CORE_PACK_MANIFEST: PluginManifest = {
     visibility: "admin" as const
   })),
   admin: CORE_PACK_ADMIN_MANIFEST,
-  security: {
+  security: defineSecurity({
     permissions: [...CORE_PACK_PERMISSION_DEFINITIONS],
     roles: CORE_PACK_DEFAULT_ROLES.map((role) => ({ ...role })),
     grants: [
-      {
+      defineGrant({
         roleCode: CORE_PACK_ADMIN_ROLE.code,
         permissionKeys: [...CORE_PACK_PERMISSION_KEY_LIST]
-      },
-      {
+      }),
+      defineGrant({
         roleCode: "editor",
         permissionKeys: [...CORE_PACK_READONLY_PERMISSION_KEY_LIST]
-      },
-      {
+      }),
+      defineGrant({
         roleCode: "viewer",
         permissionKeys: [...CORE_PACK_READONLY_PERMISSION_KEY_LIST]
-      }
+      })
     ]
-  }
-};
+  })
+});

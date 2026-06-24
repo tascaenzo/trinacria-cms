@@ -1,10 +1,7 @@
 import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import type { CacheService } from "../cache/cache.service.js";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
-import {
-  LoginAttemptRecordSchema,
-  type LoginAttemptRecord
-} from "./auth-login-attempt.schemas.js";
+import { LoginAttemptRecordSchema, type LoginAttemptRecord } from "./auth-login-attempt.schemas.js";
 
 const SETTINGS_ENTITY_NAME = "settings";
 const LOGIN_ATTEMPT_KIND = "login_attempt";
@@ -45,7 +42,11 @@ export class AuthLoginAttemptRepository {
     return found;
   }
 
-  async increment(email: string, maxAttempts: number, lockoutMinutes: number): Promise<LoginAttemptState> {
+  async increment(
+    email: string,
+    maxAttempts: number,
+    lockoutMinutes: number
+  ): Promise<LoginAttemptState> {
     await this.maybeCleanupExpired();
     const key = email.trim().toLowerCase();
     const existing = await this.findByEmail(key);
@@ -69,7 +70,10 @@ export class AuthLoginAttemptRepository {
         createdAt: now,
         updatedAt: now
       });
-      const state = { count: record.count as number, lockoutUntil: lockoutUntil ? new Date(lockoutUntil).getTime() : 0 };
+      const state = {
+        count: record.count as number,
+        lockoutUntil: lockoutUntil ? new Date(lockoutUntil).getTime() : 0
+      };
       await this.cache?.set(CACHE_NAMESPACE, key, record);
       return state;
     }

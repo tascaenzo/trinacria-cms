@@ -21,9 +21,7 @@ export const InstallBootstrapInputSchema = s.object(
     // Site settings
     siteName: s.string({ trim: true, minLength: 1, maxLength: 120 }),
     siteTagline: s.string({ trim: true, maxLength: 160 }).optional(),
-    locale: s
-      .string({ trim: true, pattern: LOCALE_PATTERN })
-      .optional(),
+    locale: s.string({ trim: true, pattern: LOCALE_PATTERN }).optional(),
     timezone: s.string({ trim: true, minLength: 3, maxLength: 120 }).optional()
   },
   { strict: true }

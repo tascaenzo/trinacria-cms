@@ -88,55 +88,6 @@ export type ChangeAuthenticatedUserPasswordResponse = {
 };
 };
 
-export type CreateApiKeyRequest = {
-  body: {
-  "name": string;
-  "description"?: string;
-  "kind"?: "publishable" | "secret" | "service";
-  "roleCodes"?: Array<string>;
-  "permissionKeys"?: Array<string>;
-  "policyRules"?: Array<{
-  "effect": "allow" | "deny";
-  "permissionPattern": string;
-  "conditions": Array<"resource_id_required" | "resource_id_equals_subject">;
-}>;
-  "expiresAt"?: string;
-};
-};
-
-export type CreateApiKeyResponse = {
-  "data": {
-  "record": {
-  "id": string;
-  "keyPrefix": string;
-  "secretPreview": string;
-  "name": string;
-  "description"?: string;
-  "kind": "publishable" | "secret" | "service";
-  "status": "active" | "revoked";
-  "roleCodes": Array<string>;
-  "permissionKeys": Array<string>;
-  "policyRules": Array<{
-  "effect": "allow" | "deny";
-  "permissionPattern": string;
-  "conditions": Array<"resource_id_required" | "resource_id_equals_subject">;
-}>;
-  "createdAt": string;
-  "updatedAt": string;
-  "lastUsedAt"?: string;
-  "expiresAt"?: string;
-  "revokedAt"?: string;
-};
-  "apiKey": string;
-};
-  "meta"?: {
-  "pluginId"?: "core-pack";
-  "count"?: number;
-  "limit"?: number;
-  "offset"?: number;
-};
-};
-
 export type CreatePermissionRequest = {
   body: {
   "key": string;
@@ -411,42 +362,6 @@ export type ExportPluginSettingsResponse = {
 };
 };
 
-export type GetApiKeyByIdRequest = {
-  path: {
-  "id": string;
-};
-};
-
-export type GetApiKeyByIdResponse = {
-  "data": {
-  "id": string;
-  "keyPrefix": string;
-  "secretPreview": string;
-  "name": string;
-  "description"?: string;
-  "kind": "publishable" | "secret" | "service";
-  "status": "active" | "revoked";
-  "roleCodes": Array<string>;
-  "permissionKeys": Array<string>;
-  "policyRules": Array<{
-  "effect": "allow" | "deny";
-  "permissionPattern": string;
-  "conditions": Array<"resource_id_required" | "resource_id_equals_subject">;
-}>;
-  "createdAt": string;
-  "updatedAt": string;
-  "lastUsedAt"?: string;
-  "expiresAt"?: string;
-  "revokedAt"?: string;
-};
-  "meta"?: {
-  "pluginId"?: "core-pack";
-  "count"?: number;
-  "limit"?: number;
-  "offset"?: number;
-};
-};
-
 export type GetAuthenticatedUserRequest = void;
 
 export type GetAuthenticatedUserResponse = {
@@ -714,6 +629,71 @@ export type GetSettingSecretMetadataResponse = {
 };
 };
 
+export type GetSettingsGroupByIdRequest = {
+  path: {
+  "groupId": string;
+};
+};
+
+export type GetSettingsGroupByIdResponse = {
+  "data": {
+  "id": string;
+  "label": string;
+  "ownerPluginIds": Array<string>;
+  "values": {
+  [key: string]: string | number | boolean | null | Array<unknown> | {
+  [key: string]: unknown;
+};
+};
+  "fields": Array<{
+  "fieldId": string;
+  "key": string;
+  "ownerPluginId": string;
+  "domain": string;
+  "name": string;
+  "definition": {
+  "id": string;
+  "key": string;
+  "ownerPluginId": string;
+  "category"?: string;
+  "description"?: string;
+  "schema"?: string | number | boolean | null | Array<unknown> | {
+  [key: string]: unknown;
+};
+  "defaultValue"?: string | number | boolean | null | Array<unknown> | {
+  [key: string]: unknown;
+};
+  "visibility"?: "public" | "admin" | "internal";
+  "mutable"?: boolean;
+  "secret"?: boolean;
+  "status": "active" | "disabled";
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "value"?: string | number | boolean | null | Array<unknown> | {
+  [key: string]: unknown;
+};
+  "source"?: "value" | "default";
+  "version"?: number;
+  "updatedAt"?: string;
+  "secretMetadata"?: {
+  "id": string;
+  "key": string;
+  "ownerPluginId": string;
+  "algorithm": "aes-256-gcm";
+  "keyVersion": string;
+  "maskedValue": string;
+  "updatedBy"?: string;
+  "createdAt": string;
+  "updatedAt": string;
+};
+}>;
+};
+  "meta"?: {
+  [key: string]: unknown;
+};
+};
+
 export type GetSettingsObservabilityRequest = void;
 
 export type GetSettingsObservabilityResponse = {
@@ -768,45 +748,6 @@ export type GetUserByIdResponse = {
   "createdAt": string;
   "updatedAt": string;
 };
-  "meta"?: {
-  "pluginId"?: "core-pack";
-  "count"?: number;
-  "limit"?: number;
-  "offset"?: number;
-};
-};
-
-export type ListApiKeysRequest = {
-  query: {
-  "kind"?: "publishable" | "secret" | "service";
-  "status"?: "active" | "revoked";
-  "limit"?: number;
-  "offset"?: number;
-};
-};
-
-export type ListApiKeysResponse = {
-  "data": Array<{
-  "id": string;
-  "keyPrefix": string;
-  "secretPreview": string;
-  "name": string;
-  "description"?: string;
-  "kind": "publishable" | "secret" | "service";
-  "status": "active" | "revoked";
-  "roleCodes": Array<string>;
-  "permissionKeys": Array<string>;
-  "policyRules": Array<{
-  "effect": "allow" | "deny";
-  "permissionPattern": string;
-  "conditions": Array<"resource_id_required" | "resource_id_equals_subject">;
-}>;
-  "createdAt": string;
-  "updatedAt": string;
-  "lastUsedAt"?: string;
-  "expiresAt"?: string;
-  "revokedAt"?: string;
-}>;
   "meta"?: {
   "pluginId"?: "core-pack";
   "count"?: number;
@@ -1110,6 +1051,22 @@ export type ListSettingDefinitionsResponse = {
 };
 };
 
+export type ListSettingsGroupsRequest = void;
+
+export type ListSettingsGroupsResponse = {
+  "data": Array<{
+  "id": string;
+  "label": string;
+  "ownerPluginIds": Array<string>;
+  "definitionCount": number;
+  "editableCount": number;
+  "secretCount": number;
+}>;
+  "meta"?: {
+  [key: string]: unknown;
+};
+};
+
 export type ListUserEffectivePermissionsRequest = {
   path: {
   "id": string;
@@ -1250,96 +1207,6 @@ export type RevealSettingSecretResponse = {
 };
   "meta"?: {
   [key: string]: unknown;
-};
-};
-
-export type RevokeApiKeyRequest = {
-  path: {
-  "id": string;
-};
-  body: {
-  "reason"?: string;
-};
-};
-
-export type RevokeApiKeyResponse = {
-  "data": {
-  "id": string;
-  "keyPrefix": string;
-  "secretPreview": string;
-  "name": string;
-  "description"?: string;
-  "kind": "publishable" | "secret" | "service";
-  "status": "active" | "revoked";
-  "roleCodes": Array<string>;
-  "permissionKeys": Array<string>;
-  "policyRules": Array<{
-  "effect": "allow" | "deny";
-  "permissionPattern": string;
-  "conditions": Array<"resource_id_required" | "resource_id_equals_subject">;
-}>;
-  "createdAt": string;
-  "updatedAt": string;
-  "lastUsedAt"?: string;
-  "expiresAt"?: string;
-  "revokedAt"?: string;
-};
-  "meta"?: {
-  "pluginId"?: "core-pack";
-  "count"?: number;
-  "limit"?: number;
-  "offset"?: number;
-};
-};
-
-export type RotateApiKeyRequest = {
-  path: {
-  "id": string;
-};
-  body: {
-  "name"?: string;
-  "description"?: string;
-  "roleCodes"?: Array<string>;
-  "permissionKeys"?: Array<string>;
-  "policyRules"?: Array<{
-  "effect": "allow" | "deny";
-  "permissionPattern": string;
-  "conditions": Array<"resource_id_required" | "resource_id_equals_subject">;
-}>;
-  "expiresAt"?: string;
-};
-};
-
-export type RotateApiKeyResponse = {
-  "data": {
-  "record": {
-  "id": string;
-  "keyPrefix": string;
-  "secretPreview": string;
-  "name": string;
-  "description"?: string;
-  "kind": "publishable" | "secret" | "service";
-  "status": "active" | "revoked";
-  "roleCodes": Array<string>;
-  "permissionKeys": Array<string>;
-  "policyRules": Array<{
-  "effect": "allow" | "deny";
-  "permissionPattern": string;
-  "conditions": Array<"resource_id_required" | "resource_id_equals_subject">;
-}>;
-  "createdAt": string;
-  "updatedAt": string;
-  "lastUsedAt"?: string;
-  "expiresAt"?: string;
-  "revokedAt"?: string;
-};
-  "apiKey": string;
-};
-  "meta"?: {
-  "pluginId"?: "core-pack";
-  "count"?: number;
-  "limit"?: number;
-  "offset"?: number;
 };
 };
 
@@ -1651,6 +1518,93 @@ export type UpsertSettingSecretResponse = {
   "updatedBy"?: string;
   "createdAt": string;
   "updatedAt": string;
+};
+  "meta"?: {
+  [key: string]: unknown;
+};
+};
+
+export type UpsertSettingsGroupValuesRequest = {
+  path: {
+  "groupId": string;
+};
+  body: {
+  "values": {
+  [key: string]: string | number | boolean | null | Array<unknown> | {
+  [key: string]: unknown;
+};
+};
+  "updatedBy"?: string;
+};
+};
+
+export type UpsertSettingsGroupValuesResponse = {
+  "data": {
+  "group": {
+  "id": string;
+  "label": string;
+  "ownerPluginIds": Array<string>;
+  "values": {
+  [key: string]: string | number | boolean | null | Array<unknown> | {
+  [key: string]: unknown;
+};
+};
+  "fields": Array<{
+  "fieldId": string;
+  "key": string;
+  "ownerPluginId": string;
+  "domain": string;
+  "name": string;
+  "definition": {
+  "id": string;
+  "key": string;
+  "ownerPluginId": string;
+  "category"?: string;
+  "description"?: string;
+  "schema"?: string | number | boolean | null | Array<unknown> | {
+  [key: string]: unknown;
+};
+  "defaultValue"?: string | number | boolean | null | Array<unknown> | {
+  [key: string]: unknown;
+};
+  "visibility"?: "public" | "admin" | "internal";
+  "mutable"?: boolean;
+  "secret"?: boolean;
+  "status": "active" | "disabled";
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "value"?: string | number | boolean | null | Array<unknown> | {
+  [key: string]: unknown;
+};
+  "source"?: "value" | "default";
+  "version"?: number;
+  "updatedAt"?: string;
+  "secretMetadata"?: {
+  "id": string;
+  "key": string;
+  "ownerPluginId": string;
+  "algorithm": "aes-256-gcm";
+  "keyVersion": string;
+  "maskedValue": string;
+  "updatedBy"?: string;
+  "createdAt": string;
+  "updatedAt": string;
+};
+}>;
+};
+  "updated": Array<{
+  "id": string;
+  "key": string;
+  "ownerPluginId": string;
+  "value": string | number | boolean | null | Array<unknown> | {
+  [key: string]: unknown;
+};
+  "version": number;
+  "updatedBy"?: string;
+  "createdAt": string;
+  "updatedAt": string;
+}>;
 };
   "meta"?: {
   [key: string]: unknown;

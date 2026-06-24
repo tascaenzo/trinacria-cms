@@ -1,13 +1,28 @@
 import {
   EVENT_BUS_TOKEN,
   createInMemoryPluginRuntimeStore,
-  cors,
   startCmsApp,
   type CmsStarterHandle,
-  type HttpMiddleware,
   type KernelPluginDefinition
 } from "@trinacria-cms/kernel";
 import { createCorePackMongoGlobalProviders, createCorePackPlugin } from "@trinacria-cms/core-pack";
+import {
+  applyProductionSecurityDefaults,
+  assertProductionSecurityConfig,
+  createHttpMiddlewares,
+  createPlaygroundSecurityConfig,
+  loadSecretFileEnvironment,
+  type PlaygroundSecurityConfig
+} from "./playground-hardening.js";
+import {
+  createObservabilityMiddlewares,
+  createPlaygroundObservabilityConfig,
+  createPlaygroundObservabilityModule,
+  JsonStructuredLogger,
+  PlaygroundMetricsRecorder,
+  type PlaygroundObservabilityConfig,
+  type StructuredLogger
+} from "./playground-observability.js";
 
 export interface PlaygroundCmsApp {
   handle: CmsStarterHandle;
@@ -17,9 +32,20 @@ export interface PlaygroundCmsApp {
   installationMode: boolean;
   smokeMode: boolean;
   smokeStandalone: boolean;
+  security: PlaygroundSecurityConfig;
+  observability: PlaygroundObservabilityConfig;
+  logger: StructuredLogger;
 }
 
 export async function createPlaygroundCmsApp(): Promise<PlaygroundCmsApp> {
+  loadSecretFileEnvironment();
+  const security = createPlaygroundSecurityConfig();
+  const observability = createPlaygroundObservabilityConfig();
+  const logger = new JsonStructuredLogger(observability);
+  const metrics = new PlaygroundMetricsRecorder();
+  applyProductionSecurityDefaults(security);
+  assertProductionSecurityConfig(security);
+
   const mongoUri = resolveMongoUri();
   const host = process.env.HTTP_HOST ?? "0.0.0.0";
   const port = Number(process.env.HTTP_PORT ?? process.env.PORT ?? "3000");
@@ -32,13 +58,22 @@ export async function createPlaygroundCmsApp(): Promise<PlaygroundCmsApp> {
     http: {
       host,
       port,
-      middlewares: createHttpMiddlewares(),
-      openApi: {
-        enabled: true,
-        title: "Trinacria CMS Playground API",
-        version: "1.0.0"
-      }
+      middlewares: [
+        ...createObservabilityMiddlewares({ config: observability, logger, metrics }),
+        ...createHttpMiddlewares(security)
+      ],
+      openApi: security.openApiEnabled
+        ? {
+            enabled: true,
+            title: "Trinacria CMS Playground API",
+            version: "1.0.0"
+          }
+        : undefined
     },
+    swaggerUi: {
+      enabled: security.docsEnabled
+    },
+    modules: [createPlaygroundObservabilityModule({ config: observability, logger, metrics })],
     globalProviders: createGlobalProviders({ mongoUri, installationMode, smokeStandalone }),
     plugins: createPlaygroundPlugins(smokeStandalone),
     pluginRuntimeStore: installationMode ? createInMemoryPluginRuntimeStore() : undefined,
@@ -53,7 +88,10 @@ export async function createPlaygroundCmsApp(): Promise<PlaygroundCmsApp> {
     mongoUri,
     installationMode,
     smokeMode,
-    smokeStandalone
+    smokeStandalone,
+    security,
+    observability,
+    logger
   };
 }
 
@@ -79,38 +117,13 @@ function createGlobalProviders({
   });
 }
 
-function createPlaygroundPlugins(
-  smokeStandalone: boolean
-): readonly KernelPluginDefinition[] {
+function createPlaygroundPlugins(smokeStandalone: boolean): readonly KernelPluginDefinition[] {
   const smokePlugins = createPlaygroundEventSmokePlugins();
   return smokeStandalone ? smokePlugins : [createCorePackPlugin(), ...smokePlugins];
 }
 
 function isCmsInstalled(): boolean {
   return process.env.CMS_INSTALLED?.trim().toLowerCase() === "true";
-}
-
-function createHttpMiddlewares(): HttpMiddleware[] {
-  const corsOrigins = readCsvEnv("HTTP_CORS_ORIGINS");
-  if (corsOrigins.length === 0) {
-    return [];
-  }
-
-  return [
-    cors({
-      origin: corsOrigins.includes("*") ? "*" : corsOrigins,
-      credentials: true
-    })
-  ];
-}
-
-function readCsvEnv(name: string): string[] {
-  return (
-    process.env[name]
-      ?.split(",")
-      .map((value) => value.trim())
-      .filter(Boolean) ?? []
-  );
 }
 
 function createPlaygroundEventSmokePlugins(): readonly KernelPluginDefinition[] {

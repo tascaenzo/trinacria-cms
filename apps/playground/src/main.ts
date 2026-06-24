@@ -1,10 +1,12 @@
 import { createPlaygroundCmsApp } from "./playground-app.js";
 import { loadPlaygroundEnv } from "./playground-env.js";
+import { registerProcessErrorReporting } from "./playground-observability.js";
 
 loadPlaygroundEnv();
 
 createPlaygroundCmsApp()
   .then((app) => {
+    registerProcessErrorReporting(app.logger);
     registerShutdown(app.handle.shutdown);
     logStartup(app);
   })
@@ -24,16 +26,49 @@ function registerShutdown(shutdownApp: () => Promise<void>): void {
 }
 
 function logStartup(app: Awaited<ReturnType<typeof createPlaygroundCmsApp>>): void {
-  console.log(`[playground] HTTP server ready on http://${app.host}:${app.port}`);
-  console.log(`[playground] Mongo URI: ${app.mongoUri}`);
+  app.logger.info("playground.started", {
+    url: `http://${app.host}:${app.port}`,
+    mongo: sanitizeMongoUri(app.mongoUri)
+  });
   if (app.installationMode) {
-    console.log("[playground] Installation mode active (CMS_INSTALLED not set to true)");
+    app.logger.warn("playground.installation_mode", {
+      reason: "CMS_INSTALLED not set to true"
+    });
   }
   if (app.smokeMode) {
-    console.log(
-      `[playground] Event smoke mode enabled${app.smokeStandalone ? " (standalone)" : ""}`
-    );
+    app.logger.info("playground.event_smoke_enabled", {
+      standalone: app.smokeStandalone
+    });
   }
-  console.log(`[playground] OpenAPI JSON available at http://${app.host}:${app.port}/openapi.json`);
-  console.log(`[playground] Swagger UI available at http://${app.host}:${app.port}/docs`);
+  app.logger.info("playground.security_profile", {
+    profile: app.security.production ? "production" : "development",
+    openApiEnabled: app.security.openApiEnabled,
+    docsEnabled: app.security.docsEnabled,
+    observabilityEnabled: app.observability.enabled,
+    metricsEnabled: app.observability.metricsEnabled,
+    checklistEnabled: app.observability.checklistEnabled
+  });
+  if (app.security.openApiEnabled) {
+    app.logger.info("playground.openapi_available", {
+      url: `http://${app.host}:${app.port}/openapi.json`
+    });
+  }
+  if (app.security.docsEnabled) {
+    app.logger.info("playground.swagger_available", {
+      url: `http://${app.host}:${app.port}/docs`
+    });
+  }
+}
+
+function sanitizeMongoUri(uri: string): Record<string, string> {
+  try {
+    const parsed = new URL(uri);
+    return {
+      protocol: parsed.protocol.replace(":", ""),
+      host: parsed.host,
+      database: parsed.pathname.replace(/^\//, "")
+    };
+  } catch {
+    return { value: "<invalid-or-redacted>" };
+  }
 }

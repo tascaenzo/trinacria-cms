@@ -82,6 +82,38 @@ export const SettingKeyParamSchema = s.object(
 
 export type SettingKeyParam = Infer<typeof SettingKeyParamSchema>;
 
+const SettingsGroupIdSchema = s.string({
+  trim: true,
+  toLowerCase: true,
+  minLength: 1,
+  maxLength: 120
+});
+
+/**
+ * DTO schema for reading a settings group id from route params.
+ */
+export const SettingsGroupParamSchema = s.object(
+  {
+    groupId: SettingsGroupIdSchema
+  },
+  { strict: true }
+);
+
+export type SettingsGroupParam = Infer<typeof SettingsGroupParamSchema>;
+
+/**
+ * DTO schema for patching grouped non-secret settings.
+ */
+export const UpsertSettingsGroupValuesInputSchema = s.object(
+  {
+    updatedBy: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional()
+  },
+  // Keep non-strict to allow free-form `values` field validated in service layer.
+  { strict: false }
+);
+
+export type UpsertSettingsGroupValuesInput = Infer<typeof UpsertSettingsGroupValuesInputSchema>;
+
 /**
  * DTO schema for exporting plugin settings snapshot.
  */
@@ -145,6 +177,22 @@ export const UpsertSettingValueBodyOpenApiSchema: Record<string, unknown> = {
   required: ["value"],
   properties: {
     value: JsonValueOpenApiSchema,
+    updatedBy: { type: "string" }
+  }
+};
+
+/**
+ * Explicit OpenAPI schema for grouped settings value patch requests.
+ */
+export const UpsertSettingsGroupValuesBodyOpenApiSchema: Record<string, unknown> = {
+  type: "object",
+  additionalProperties: false,
+  required: ["values"],
+  properties: {
+    values: {
+      type: "object",
+      additionalProperties: JsonValueOpenApiSchema
+    },
     updatedBy: { type: "string" }
   }
 };

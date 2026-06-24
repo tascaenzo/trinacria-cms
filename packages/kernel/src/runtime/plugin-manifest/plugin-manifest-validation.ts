@@ -1,6 +1,4 @@
-import type {
-  PluginManifest
-} from "../../contracts/plugin-manifest.js";
+import type { PluginManifest } from "../../contracts/plugin-manifest.js";
 import { ValidationError, formatValidationError, s, type Infer } from "@trinacria/schema";
 import { PluginCompatibilityError, PluginManifestError } from "../../errors/plugin-errors.js";
 import { isValidVersion, isValidVersionRange, satisfiesVersion } from "./semver.js";

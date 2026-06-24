@@ -17,7 +17,10 @@ import {
   PluginRuntimeError,
   PluginStateTransitionError
 } from "../../errors/plugin-errors.js";
-import { describeAvailableOperations, toRuntimeDiagnostic } from "../plugin-runtime/plugin-runtime-operations.js";
+import {
+  describeAvailableOperations,
+  toRuntimeDiagnostic
+} from "../plugin-runtime/plugin-runtime-operations.js";
 
 export interface KernelInstalledPluginDependencySnapshot {
   pluginId: string;

@@ -6,7 +6,12 @@ import type {
 } from "../../contracts/plugin-discovery.js";
 import type { KernelPluginDefinition } from "../../contracts/plugin-runtime.js";
 import { PluginManifestError } from "../../errors/plugin-errors.js";
-import { resolveEntrypoint, defaultImporter, normalizeDiscoveredPlugin, errorToMessage } from "./plugin-source-normalization.js";
+import {
+  resolveEntrypoint,
+  defaultImporter,
+  normalizeDiscoveredPlugin,
+  errorToMessage
+} from "./plugin-source-normalization.js";
 
 export interface ConfiguredPluginDiscoveryServiceOptions {
   importer?: (entrypoint: string, source: PluginDiscoverySource) => Promise<unknown>;

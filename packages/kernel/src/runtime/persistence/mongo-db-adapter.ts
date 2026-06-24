@@ -1,4 +1,9 @@
-import type { DbAdapter, DbQuery, DbRepository, DbTransaction } from "../../contracts/db-adapter.js";
+import type {
+  DbAdapter,
+  DbQuery,
+  DbRepository,
+  DbTransaction
+} from "../../contracts/db-adapter.js";
 import type { NamespaceContext } from "../../contracts/namespace-context.js";
 import { buildNamespaceKey } from "../../contracts/namespace-context.js";
 import { DbAdapterError } from "../../errors/db-errors.js";

@@ -5,7 +5,6 @@ import {
   isPermissionOwnedByPlugin,
   isPermissionPatternOwnedByPlugin
 } from "../plugin-namespace/permission-key.js";
-import { isValidNamespaceSegment } from "../plugin-namespace/plugin-namespace.js";
 
 export const securityPermissionSchema = s.object(
   {
@@ -126,7 +125,7 @@ export const securitySectionSchema = s.object(
   { strict: true }
 );
 
-export function createSecurityRefines(manifestId: string) {
+export function createSecurityRefines(_manifestId: string) {
   return {
     permissionOwnership: (manifest: {
       id: string;

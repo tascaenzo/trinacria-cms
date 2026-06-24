@@ -18,6 +18,10 @@
       "types": "./dist/errors/index.d.ts",
       "import": "./dist/errors/index.js"
     },
+    "./plugin-api": {
+      "types": "./dist/plugin-api/index.d.ts",
+      "import": "./dist/plugin-api/index.js"
+    },
     "./runtime": {
       "types": "./dist/runtime/index.d.ts",
       "import": "./dist/runtime/index.js"

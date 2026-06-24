@@ -25,10 +25,15 @@ export class AuthBlacklistRepository {
     private readonly cache?: CacheService
   ) {}
 
-  async add(sub: string, iat: number, tokenKind: "access" | "refresh", expiresAt: string): Promise<void> {
+  async add(
+    sub: string,
+    iat: number,
+    tokenKind: "access" | "refresh",
+    expiresAt: string
+  ): Promise<void> {
     await this.maybeCleanupExpired();
     const key = `${sub.trim()}:${iat}`;
-    const record = await this.repository().insertOne({
+    await this.repository().insertOne({
       kind: BLACKLIST_KIND,
       key,
       sub: sub.trim(),
@@ -51,7 +56,10 @@ export class AuthBlacklistRepository {
     });
     const blacklisted = found !== null;
     if (blacklisted) {
-      const ttl = Math.max(1, Math.floor((new Date(found.expiresAt).getTime() - Date.now()) / 1000));
+      const ttl = Math.max(
+        1,
+        Math.floor((new Date(found.expiresAt).getTime() - Date.now()) / 1000)
+      );
       await this.cache?.set(CACHE_NAMESPACE, key, true, ttl);
     }
     return blacklisted;

@@ -57,7 +57,8 @@ export const CorePackSettingsModule = defineModule({
     ]),
     factoryProvider(
       SETTINGS_SECRETS_CRYPTO_SERVICE_TOKEN,
-      async (config) => SettingsSecretsCryptoService.createFromConfig(config, process.env.CMS_SETTINGS_MASTER_KEY),
+      async (config) =>
+        SettingsSecretsCryptoService.createFromConfig(config, process.env.CMS_SETTINGS_MASTER_KEY),
       [RUNTIME_CONFIG_SERVICE_TOKEN]
     ),
     factoryProvider(

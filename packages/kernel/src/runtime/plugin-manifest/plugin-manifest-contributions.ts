@@ -339,7 +339,7 @@ export const adminSchema = s.object(
   { strict: true }
 );
 
-export function createContributionRefines(manifestId: string) {
+export function createContributionRefines(_manifestId: string) {
   return {
     entityCollision: (manifest: { id: string; entities?: readonly { name: string }[] }) => {
       const keys = (manifest.entities ?? []).map((entity) =>

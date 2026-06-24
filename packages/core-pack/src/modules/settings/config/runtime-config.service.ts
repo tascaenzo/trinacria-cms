@@ -63,11 +63,12 @@ export class RuntimeConfigService {
       }
     }
 
-    const fromEnv = opts?.envVar ? this.readFromEnv(opts.envVar) : undefined;
-    if (fromEnv !== undefined && typeof fromEnv === "string") {
+    const envVar = opts?.envVar;
+    const fromEnv = envVar ? this.readFromEnv(envVar) : undefined;
+    if (envVar && fromEnv !== undefined && typeof fromEnv === "string") {
       const trimmed = fromEnv.trim();
       if (trimmed) {
-        this.warnEnvFallback(key, opts?.envVar!);
+        this.warnEnvFallback(key, envVar);
         this.setCache(key, trimmed);
         return trimmed;
       }
@@ -92,9 +93,15 @@ export class RuntimeConfigService {
       return clamped;
     }
 
-    const fromEnv = opts?.envVar ? this.readFromEnv(opts.envVar) : undefined;
-    if (fromEnv !== undefined && typeof fromEnv === "number" && Number.isFinite(fromEnv)) {
-      this.warnEnvFallback(key, opts?.envVar!);
+    const envVar = opts?.envVar;
+    const fromEnv = envVar ? this.readFromEnv(envVar) : undefined;
+    if (
+      envVar &&
+      fromEnv !== undefined &&
+      typeof fromEnv === "number" &&
+      Number.isFinite(fromEnv)
+    ) {
+      this.warnEnvFallback(key, envVar);
       const clamped = this.clampNumber(Math.floor(fromEnv), opts?.min, opts?.max);
       this.setCache(key, clamped);
       return clamped;
@@ -109,7 +116,10 @@ export class RuntimeConfigService {
     return undefined;
   }
 
-  async getBoolean(key: string, opts?: RuntimeConfigGetBooleanOptions): Promise<boolean | undefined> {
+  async getBoolean(
+    key: string,
+    opts?: RuntimeConfigGetBooleanOptions
+  ): Promise<boolean | undefined> {
     const cached = this.getFromCache<boolean>(key);
     if (cached !== undefined) return cached;
 
@@ -119,9 +129,10 @@ export class RuntimeConfigService {
       return fromDb;
     }
 
-    const fromEnv = opts?.envVar ? this.readFromEnv(opts.envVar) : undefined;
-    if (fromEnv !== undefined && typeof fromEnv === "boolean") {
-      this.warnEnvFallback(key, opts?.envVar!);
+    const envVar = opts?.envVar;
+    const fromEnv = envVar ? this.readFromEnv(envVar) : undefined;
+    if (envVar && fromEnv !== undefined && typeof fromEnv === "boolean") {
+      this.warnEnvFallback(key, envVar);
       this.setCache(key, fromEnv);
       return fromEnv;
     }
@@ -134,7 +145,10 @@ export class RuntimeConfigService {
     return undefined;
   }
 
-  async getJson<T = unknown>(key: string, opts?: RuntimeConfigGetJsonOptions<T>): Promise<T | undefined> {
+  async getJson<T = unknown>(
+    key: string,
+    opts?: RuntimeConfigGetJsonOptions<T>
+  ): Promise<T | undefined> {
     const cached = this.getFromCache<T>(key);
     if (cached !== undefined) return cached;
 
@@ -144,9 +158,10 @@ export class RuntimeConfigService {
       return fromDb as T;
     }
 
-    const fromEnv = opts?.envVar ? this.readFromEnv(opts.envVar) : undefined;
-    if (fromEnv !== undefined) {
-      this.warnEnvFallback(key, opts?.envVar!);
+    const envVar = opts?.envVar;
+    const fromEnv = envVar ? this.readFromEnv(envVar) : undefined;
+    if (envVar && fromEnv !== undefined) {
+      this.warnEnvFallback(key, envVar);
       this.setCache(key, fromEnv as T);
       return fromEnv as T;
     }

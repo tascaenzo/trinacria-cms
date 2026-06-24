@@ -40,7 +40,12 @@ import {
  */
 export const CorePackInstallationModule = defineModule({
   name: "CorePackInstallationModule",
-  imports: [CorePackUsersModule, CorePackSecurityModule, CorePackSettingsModule, CorePackCacheModule],
+  imports: [
+    CorePackUsersModule,
+    CorePackSecurityModule,
+    CorePackSettingsModule,
+    CorePackCacheModule
+  ],
   providers: [
     factoryProvider(
       CORE_PACK_INSTALLATION_ENTITY_REGISTRATION_TOKEN,

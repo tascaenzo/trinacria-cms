@@ -1,6 +1,7 @@
 import { TrinacriaApp } from "@trinacria/core";
 import { createEventsPlugin } from "@trinacria/events";
 import { createHttpPlugin } from "@trinacria/http";
+import type { ModuleDefinition } from "@trinacria/core";
 import type { CmsStarterHandle, CmsStarterOptions } from "../contracts/cms-starter.js";
 import type {
   PluginDiscoveryService,
@@ -18,6 +19,7 @@ export {
   type PluginBootstrapOptions,
   type PluginBootstrapResult
 } from "./cms-starter/plugin-bootstrap.js";
+export { createCmsStarterKernelModule } from "./cms-starter/starter-module.js";
 
 /**
  * Starts a minimal CMS app with HTTP plugin, runtime token wiring, optional modules,
@@ -27,6 +29,12 @@ export async function startCmsApp(options: CmsStarterOptions): Promise<CmsStarte
   const app = new TrinacriaApp();
   const swaggerUi = resolveSwaggerUiConfig(options);
   let pluginSourceSnapshots: readonly PluginSourceSnapshot[] = [];
+  const kernelModule = createCmsStarterKernelModule({
+    app,
+    options,
+    swaggerUi,
+    pluginSourceSnapshots: () => pluginSourceSnapshots
+  });
 
   app.use(
     createHttpPlugin({
@@ -41,19 +49,12 @@ export async function startCmsApp(options: CmsStarterOptions): Promise<CmsStarte
     app.use(createEventsPlugin());
   }
 
-  await app.registerModule(
-    createCmsStarterKernelModule({
-      app,
-      options,
-      swaggerUi,
-      pluginSourceSnapshots: () => pluginSourceSnapshots
-    })
-  );
+  await app.registerModule(kernelModule);
 
   for (const provider of options.globalProviders ?? []) {
     app.registerGlobalProvider(provider);
   }
-  await registerAppModules(app, options.modules ?? []);
+  await registerAppModules(app, withKernelModuleImports(options.modules ?? [], kernelModule));
   await app.start();
 
   const runtime = await app.resolve<PluginRuntime>(CORE_TOKENS.PLUGIN_RUNTIME);
@@ -76,4 +77,14 @@ export async function startCmsApp(options: CmsStarterOptions): Promise<CmsStarte
       await app.shutdown();
     }
   };
+}
+
+function withKernelModuleImports(
+  modules: readonly ModuleDefinition[],
+  kernelModule: ModuleDefinition
+): readonly ModuleDefinition[] {
+  return modules.map((module) => ({
+    ...module,
+    imports: [kernelModule, ...(module.imports ?? [])]
+  }));
 }
