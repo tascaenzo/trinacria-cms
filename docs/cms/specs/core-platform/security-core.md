@@ -15,7 +15,7 @@ plugin-to-core signed.
 
 Il kernel definisce i contratti e i punti di integrazione. `core-pack`
 implementa la baseline ufficiale: utenti, ruoli, permission, grants, policy
-rules, API keys e provisioning security dichiarato dai plugin.
+rules, signed plugin calls e provisioning security dichiarato dai plugin.
 
 ## Responsabilita
 
@@ -28,7 +28,6 @@ rules, API keys e provisioning security dichiarato dai plugin.
 | Roles                   | `@trinacria-cms/core-pack` | Ruoli baseline e plugin-owned                |
 | Permission provisioning | `@trinacria-cms/core-pack` | Sync manifest security                       |
 | Policy rules            | `@trinacria-cms/core-pack` | Allow/deny, wildcard, condizioni             |
-| API keys                | `@trinacria-cms/core-pack` | Identita macchina                            |
 | Plugin signed calls     | `@trinacria-cms/core-pack` | Autenticazione plugin owner per secret/write |
 | Backoffice visibility   | `packages/admin-kernel`    | Rendering capability-aware                   |
 
@@ -104,7 +103,7 @@ export interface RolePolicyRuleDocument {
 
 ```ts
 export interface AuthzSubject {
-  type: "user" | "api_key" | "plugin";
+  type: "user" | "plugin";
   id: string;
   roleCodes?: readonly string[];
   pluginId?: string;

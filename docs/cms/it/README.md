@@ -23,7 +23,7 @@ Glossario terminologico unico: [GLOSSARY.md](../GLOSSARY.md)
 9. [0008 - Testing, operazioni e governance tecnica](./0008-testing-operazioni-studio.md)
 10. [0009 - Modelli teorici, strutture dati e logiche formali](./0009-modelli-teorici-strutture-dati.md)
 11. [0010 - Atlante codice: mappe file -> responsabilita -> flussi](./0010-atlante-codice-e-flussi.md)
-12. [0011 - SDK ufficiale, discovery runtime e API key](./0011-sdk-api-keys-discovery.md)
+12. [0011 - SDK ufficiale, discovery runtime e integrazioni plugin](./0011-sdk-api-keys-discovery.md)
 13. [0012 - Schema Mongo operativo](./0012-schema-db-mongo-operativo.md)
 14. [0013 - Settings: sicurezza e ownership operativa](./0013-settings-sicurezza-e-ownership-operativa.md)
 15. [0014 - Settings end-to-end](./0014-settings-end-to-end.md)
@@ -40,7 +40,7 @@ Glossario terminologico unico: [GLOSSARY.md](../GLOSSARY.md)
 - Spiegazione modulo per modulo di service esportati, controller ed endpoint HTTP esposti.
 - Descrizione del formato standard delle response (`data`, `error`, `meta`) e di come viene generato dal kernel.
 - Descrizione del modello SDK ufficiale pubblicabile, dell'overlay generato in monorepo e della discovery runtime (`/v1/system/*`).
-- Documentazione del modello API key come identita macchina di primo livello, integrata con ruoli, permessi e policy rules.
+- Documentazione del modello signed plugin caller per integrazioni macchina e operazioni sensibili owner-scoped.
 - Esempi di codice presi dalle implementazioni reali con connessione diretta ai file.
 - Analisi teorica dei modelli che stanno dietro le scelte implementative.
 - Linee guida su tradeoff, anti-pattern, test strategy e operativita.

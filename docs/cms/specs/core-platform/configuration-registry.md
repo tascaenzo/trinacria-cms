@@ -248,7 +248,7 @@ precedente non viene rimossa.
 | ----------- | -------------------- | --------- | --------------------------------------------- |
 | `public`    | admin, plugin        | owner     | site name, locale, feature flag non sensibili |
 | `protected` | admin, owner, policy | owner     | config condivisa tra plugin, limiti, integraz |
-| `secret`    | solo owner/policy    | owner     | API key, webhook secret, OAuth secret, token  |
+| `secret`    | solo owner/policy    | owner     | webhook secret, OAuth secret, token           |
 
 ### Regole
 
@@ -259,8 +259,8 @@ precedente non viene rimossa.
 4. Le chiamate plugin-to-core per reveal o scrittura sensibile devono essere
    signed.
 5. Ogni reveal, write, rotation e failed access genera audit.
-6. Il backoffice mostra metadata e valore mascherato. Non diventa owner
-   implicito dei secret.
+6. Il backoffice mostra form raggruppati per valori non-secret, metadata e
+   valore mascherato. Non diventa owner implicito dei secret.
 
 ## Eventi
 

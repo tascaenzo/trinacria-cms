@@ -23,7 +23,7 @@ The project keeps a strict separation between:
 - `apps/playground`: thin backend playground for kernel + core-pack integration
 - `apps/backoffice`: thin Vite host for the shared admin runtime
 - `packages/kernel`: CMS runtime contracts, plugin orchestration, namespace governance, Mongo-first storage core
-- `packages/core-pack`: official baseline plugin pack: auth, users, roles, permissions, API keys, settings, installation
+- `packages/core-pack`: official baseline plugin pack: auth, users, roles, permissions, settings, installation
 - `packages/sdk`: zero-dependency HTTP client generated from the OpenAPI snapshot
 - `packages/admin-kernel`: shared backoffice application runtime, pages, route registry, SDK wiring
 - `packages/trinacria-ui`: reusable React design system and backoffice presentation components
@@ -47,9 +47,16 @@ plugin security policy support.
 Official baseline plugin pack loaded by the kernel runtime. It starts as the default CMS feature set and evolves incrementally.
 
 It should stay focused on platform-level CMS capabilities: installation, auth,
-users, roles, permissions, settings, API keys, and security provisioning.
+users, roles, permissions, settings, and security provisioning.
 Application domains such as editorial or commerce should live in separate
 plugins.
+
+### Developer plugin API
+
+Plugin-facing helpers live in `@trinacria-cms/kernel/plugin-api`. Use them to
+build manifests, admin contributions, security declarations, settings
+definitions, response envelopes, and schema-like contracts. `core-pack` keeps
+compatibility re-exports and owns the signed settings request helpers.
 
 ## Development workflow
 
@@ -114,6 +121,47 @@ npm run test -w @trinacria-cms/kernel
 npm run test -w @trinacria-cms/core-pack
 npm run test:integration
 ```
+
+## Production Hardening
+
+The backend app applies a stricter security profile when `NODE_ENV=production`
+or `NODE_ENV=staging`:
+
+- global `securityHeaders`, `rateLimit`, and `requestTimeout` middleware are enabled
+- `HTTP_CORS_ORIGINS` is required and cannot contain `*`
+- cookie-authenticated mutating requests are rejected unless `Origin`/`Referer`
+  matches `CMS_CSRF_TRUSTED_ORIGINS`, `HTTP_CORS_ORIGINS`, or the configured public origins
+- `/openapi.json` and `/docs` are disabled by default
+- `CMS_STRICT_JWT_SECRET_REQUIRED` is forced to `true`
+- `CMS_JWT_SECRET` must be a strong non-placeholder value, or loaded from
+  `CMS_JWT_SECRET_FILE` for Docker/Kubernetes-style secret mounts
+
+Production secret values should be injected by the runtime platform or a secret
+manager, not committed to `.env`.
+
+## Observability
+
+The backend host exposes a minimal production observability surface:
+
+- structured JSON logs by default (`LOG_FORMAT=json`)
+- request ids emitted as `x-request-id`
+- request/error metrics at `GET /metrics`
+- readiness at `GET /ready`
+- operational checklist at `GET /ops/checklist`
+
+`/metrics` and `/ops/checklist` can be protected with
+`OBSERVABILITY_TOKEN`; send it as `Authorization: Bearer <token>`.
+`/ready` stays suitable for infrastructure readiness probes.
+
+The checklist covers:
+
+- `/health`
+- database connectivity
+- plugin runtime state and required dependencies
+- auth module readiness
+- backoffice contribution registry
+- login manual verification state
+- settings registry
 
 ## Smoke Baseline
 

@@ -81,34 +81,39 @@ Riferimento decisionale: `0013 - Settings: sicurezza e ownership operativa`.
 
 Matrice sintetica:
 
-| Operazione                    | Admin bearer | Plugin signed owner | Plugin signed non-owner |
-| ----------------------------- | ------------ | ------------------- | ----------------------- |
-| List/get definitions          | si           | si                  | si                      |
-| Get resolved value            | si           | si                  | si                      |
-| Get masked secret metadata    | si           | si                  | no                      |
-| Write definition/value/secret | no diretto   | si                  | no                      |
-| Reveal secret                 | no           | si                  | no                      |
-| Export plugin snapshot        | no diretto   | si                  | no                      |
+| Operazione                      | Admin bearer | Plugin signed owner | Plugin signed non-owner |
+| ------------------------------- | ------------ | ------------------- | ----------------------- |
+| List/get definitions            | si           | si                  | si                      |
+| Get grouped settings forms      | si           | si                  | si                      |
+| Patch grouped valori non-secret | si           | si                  | no                      |
+| Get resolved value              | si           | si                  | si                      |
+| Get masked secret metadata      | si           | si                  | no                      |
+| Write definition/secret         | no           | si                  | no                      |
+| Reveal secret                   | no           | si                  | no                      |
+| Export plugin snapshot          | no           | si                  | no                      |
 
 Conseguenza operativa:
 
-- il backoffice non scrive direttamente;
-- il plugin owner resta il soggetto che firma;
-- il backoffice puo solo ispezionare e preparare handoff coerenti.
+- il backoffice puo salvare setting attivi, mutabili e non-secret tramite form raggruppati autenticati come admin;
+- definitions, secrets, reveal plaintext ed export snapshot restano operazioni owner-scoped;
+- le chiavi runtime tecniche del core restano disponibili al backend ma sono nascoste dal workspace principale dei settings.
 
 ## 4. Endpoint HTTP
 
-| Metodo | Endpoint                           | Auth                                    | Note                                     |
-| ------ | ---------------------------------- | --------------------------------------- | ---------------------------------------- |
-| `GET`  | `/v1/settings/definitions`         | bearer admin oppure plugin signed       | catalogo definizioni                     |
-| `GET`  | `/v1/settings/definitions/:key`    | bearer admin oppure plugin signed       | dettaglio definizione                    |
-| `POST` | `/v1/settings/definitions`         | plugin signed owner                     | upsert definition                        |
-| `GET`  | `/v1/settings/values/:key`         | bearer admin oppure plugin signed       | valore risolto                           |
-| `PUT`  | `/v1/settings/values/:key`         | plugin signed owner                     | upsert valore non-secret                 |
-| `GET`  | `/v1/settings/secrets/:key`        | bearer admin oppure plugin signed owner | metadata mascherati                      |
-| `PUT`  | `/v1/settings/secrets/:key`        | plugin signed owner                     | upsert secret cifrato                    |
-| `POST` | `/v1/settings/secrets/:key/reveal` | plugin signed owner                     | plaintext owner-only                     |
-| `GET`  | `/v1/settings/export/:pluginId`    | plugin signed owner                     | snapshot namespace con secret mascherati |
+| Metodo  | Endpoint                           | Auth                                    | Note                                     |
+| ------- | ---------------------------------- | --------------------------------------- | ---------------------------------------- |
+| `GET`   | `/v1/settings/definitions`         | bearer admin oppure plugin signed       | catalogo definizioni                     |
+| `GET`   | `/v1/settings/definitions/:key`    | bearer admin oppure plugin signed       | dettaglio definizione                    |
+| `POST`  | `/v1/settings/definitions`         | plugin signed owner                     | upsert definition                        |
+| `GET`   | `/v1/settings/groups`              | bearer admin oppure plugin signed       | form impostazioni raggruppati            |
+| `GET`   | `/v1/settings/groups/:groupId`     | bearer admin oppure plugin signed       | form impostazioni risolto                |
+| `PATCH` | `/v1/settings/groups/:groupId`     | bearer admin oppure plugin signed owner | patch valori non-secret raggruppati      |
+| `GET`   | `/v1/settings/values/:key`         | bearer admin oppure plugin signed       | valore risolto                           |
+| `PUT`   | `/v1/settings/values/:key`         | bearer admin oppure plugin signed owner | upsert valore non-secret                 |
+| `GET`   | `/v1/settings/secrets/:key`        | bearer admin oppure plugin signed owner | metadata mascherati                      |
+| `PUT`   | `/v1/settings/secrets/:key`        | plugin signed owner                     | upsert secret cifrato                    |
+| `POST`  | `/v1/settings/secrets/:key/reveal` | plugin signed owner                     | plaintext owner-only                     |
+| `GET`   | `/v1/settings/export/:pluginId`    | plugin signed owner                     | snapshot namespace con secret mascherati |
 
 Errori attesi:
 
@@ -204,6 +209,9 @@ Questa response non deve mai essere esposta dal backoffice admin generico.
 
 Metodi principali del namespace `cms.settings`:
 
+- `listSettingsGroups`
+- `getSettingsGroupById`
+- `upsertSettingsGroupValues`
 - `listSettingDefinitions`
 - `getSettingDefinitionByKey`
 - `getSettingValueByKey`
@@ -224,7 +232,22 @@ const response = await cms.settings.getSettingValueByKey({
 console.log(response.data.value);
 ```
 
-Esempio scrittura owner-signed:
+Esempio scrittura form raggruppato:
+
+```ts
+await cms.settings.upsertSettingsGroupValues({
+  path: { groupId: "core-pack-general-settings" },
+  body: {
+    values: {
+      "core-pack:site:name": "Trinacria Editorial",
+      "core-pack:site:url": "https://cms.example.com"
+    },
+    updatedBy: "backoffice"
+  }
+});
+```
+
+Esempio scrittura low-level owner-signed:
 
 ```ts
 await cms.settings.upsertSettingValue(
@@ -256,19 +279,19 @@ Nota:
 La pagina `settings` del backoffice ora supporta:
 
 - filtro per plugin owner;
-- explorer definitions;
 - overview CMS con site name, public URL, locale e timezone;
-- inspector con definition JSON, resolved value JSON e masked secret metadata;
-- handoff owner-signed per valori non-secret.
+- workspace modale con form raggruppati;
+- barra di salvataggio fissa in basso per setting attivi, mutabili e non-secret;
+- chiavi core tecniche nascoste, incluse auth lockout, cookie JWT, cache e policy cifratura.
 
-Il flusso di handoff:
+Il flusso operativo:
 
-1. l'operatore ispeziona un setting;
-2. modifica il JSON candidato nel dialog;
-3. il backoffice prepara endpoint, headers richiesti e body;
-4. il plugin owner prende in carico il payload e firma la richiesta reale.
+1. l'operatore apre una sezione settings come Generale, Branding o Funzionalita;
+2. modifica i campi visibili;
+3. il backoffice valida e salva i valori non-secret;
+4. le impostazioni runtime tecniche restano gestite da configurazione backend, variabili ambiente o tooling plugin dedicato.
 
-Il browser admin non invia direttamente la write.
+Il browser admin non rivela e non scrive plaintext secret.
 
 ## 10. Bootstrap catalogo core-pack
 
@@ -292,11 +315,13 @@ Questo serve a:
 
 Checklist rapida:
 
-1. `GET /v1/settings/definitions` per verificare che la definition esista e sia `active`.
-2. `GET /v1/settings/values/:key` per capire se il valore arriva da `value` o `default`.
-3. `GET /v1/settings/secrets/:key` per verificare presenza del secret, `keyVersion` e ultimo update.
-4. Se una write fallisce con `403`, controllare il namespace della chiave rispetto a `x-cms-plugin-id`.
-5. Se una write fallisce con `401`, controllare skew temporale, nonce, secret del plugin e firma.
+1. `GET /v1/settings/groups` per verificare i gruppi esposti agli operatori.
+2. `GET /v1/settings/groups/:groupId` per ispezionare i campi risolti di un gruppo.
+3. `GET /v1/settings/definitions` per verificare che una definition low-level esista e sia `active`.
+4. `GET /v1/settings/values/:key` per capire se il valore arriva da `value` o `default`.
+5. `GET /v1/settings/secrets/:key` per verificare presenza del secret, `keyVersion` e ultimo update.
+6. Se una write signed owner fallisce con `403`, controllare il namespace della chiave rispetto a `x-cms-plugin-id`.
+7. Se una write signed owner fallisce con `401`, controllare skew temporale, nonce, secret del plugin e firma.
 
 ## 12. File chiave
 
@@ -306,4 +331,5 @@ Checklist rapida:
 - `packages/core-pack/src/modules/settings/auth/*`
 - `packages/sdk/openapi/trinacria-cms.openapi.json`
 - `packages/sdk/src/generated/settings.gen.ts`
-- `packages/admin-kernel/src/pages/settings-page.tsx`
+- `packages/admin-kernel/src/pages/settings/settings-page.tsx`
+- `packages/admin-kernel/src/pages/settings/settings-page.utils.ts`

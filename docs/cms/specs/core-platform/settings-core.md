@@ -5,7 +5,7 @@
 - Milestone: `M4.0 - Core Platform Specifications`
 - Stato: `draft`
 - Scope: low-level specification
-- Ultimo aggiornamento: `2026-05-22`
+- Ultimo aggiornamento: `2026-06-24`
 
 ## Decisione
 
@@ -16,13 +16,13 @@ visibility, schema, audit e policy di accesso.
 
 ## Responsabilita
 
-| Area               | Owner                      | Responsabilita                      |
-| ------------------ | -------------------------- | ----------------------------------- |
-| Registry contract  | `@trinacria-cms/core-pack` | Definizioni, valori, secret         |
-| Signed plugin auth | `@trinacria-cms/core-pack` | Autenticazione owner plugin         |
-| Encryption service | `@trinacria-cms/core-pack` | AES/KMS provider futuro             |
-| Namespace policy   | `@trinacria-cms/kernel`    | Collisioni e canonical key          |
-| Backoffice broker  | `packages/admin-kernel`    | Metadata, masking, azioni operative |
+| Area               | Owner                      | Responsabilita                                         |
+| ------------------ | -------------------------- | ------------------------------------------------------ |
+| Registry contract  | `@trinacria-cms/core-pack` | Definizioni, valori, secret                            |
+| Signed plugin auth | `@trinacria-cms/core-pack` | Autenticazione owner plugin                            |
+| Encryption service | `@trinacria-cms/core-pack` | AES/KMS provider futuro                                |
+| Namespace policy   | `@trinacria-cms/kernel`    | Collisioni e canonical key                             |
+| Backoffice forms   | `packages/admin-kernel`    | Form raggruppati, masking, azioni operative non-secret |
 
 ## Modello dati
 
@@ -89,13 +89,16 @@ export interface SettingsActor {
 
 ## API HTTP target
 
-| Method | Path                                         | Auth          | Permission                 |
-| ------ | -------------------------------------------- | ------------- | -------------------------- |
-| `GET`  | `/v1/settings/definitions`                   | admin bearer  | `core-pack:settings:read`  |
-| `GET`  | `/v1/settings/values`                        | admin bearer  | `core-pack:settings:read`  |
-| `PUT`  | `/v1/settings/values/{canonicalKey}`         | admin bearer  | `core-pack:settings:write` |
-| `POST` | `/v1/settings/secrets/{canonicalKey}/reveal` | plugin signed | owner/policy               |
-| `POST` | `/v1/settings/secrets/{canonicalKey}/rotate` | plugin signed | owner/policy               |
+| Method  | Path                                         | Auth          | Permission                 |
+| ------- | -------------------------------------------- | ------------- | -------------------------- |
+| `GET`   | `/v1/settings/definitions`                   | admin bearer  | `core-pack:settings:read`  |
+| `GET`   | `/v1/settings/groups`                        | admin bearer  | `core-pack:settings:read`  |
+| `GET`   | `/v1/settings/groups/{groupId}`              | admin bearer  | `core-pack:settings:read`  |
+| `PATCH` | `/v1/settings/groups/{groupId}`              | admin bearer  | `core-pack:settings:write` |
+| `GET`   | `/v1/settings/values`                        | admin bearer  | `core-pack:settings:read`  |
+| `PUT`   | `/v1/settings/values/{canonicalKey}`         | admin bearer  | `core-pack:settings:write` |
+| `POST`  | `/v1/settings/secrets/{canonicalKey}/reveal` | plugin signed | owner/policy               |
+| `POST`  | `/v1/settings/secrets/{canonicalKey}/rotate` | plugin signed | owner/policy               |
 
 ## DTO request/response
 
@@ -131,7 +134,7 @@ Collections:
 Canonical key:
 
 ```text
-<ownerPluginId>.<namespace>.<key>
+<ownerPluginId>:<namespace>:<key>
 ```
 
 ## Security e permission
@@ -142,7 +145,7 @@ Canonical key:
 | ----------- | -------------------- | --------- | ----------------- | --------------------------------------------- |
 | `public`    | admin, plugin        | owner     | N/A               | site name, locale, feature flag non sensibili |
 | `protected` | admin, owner, policy | owner     | N/A               | config condivisa tra plugin, limiti, integraz |
-| `secret`    | solo owner/policy    | owner     | solo owner/policy | API key, webhook secret, OAuth secret, token  |
+| `secret`    | solo owner/policy    | owner     | solo owner/policy | webhook secret, OAuth secret, token           |
 
 ### Regole
 
@@ -151,8 +154,9 @@ Canonical key:
 3. Un plugin non puo leggere configurazioni `protected` o `secret` di altri plugin senza capability/policy.
 4. Le chiamate plugin-to-core per reveal o scrittura sensibile devono essere signed.
 5. Ogni reveal, write, rotation e failed access genera audit.
-6. Il backoffice mostra metadata e valore mascherato. Non diventa owner implicito dei secret.
+6. Il backoffice mostra form raggruppati per valori operativi non-secret, metadata e valore mascherato. Non diventa owner implicito dei secret.
 7. Le API admin usano bearer token con permission `core-pack:settings:read` / `core-pack:settings:write`.
+8. Le impostazioni tecniche core (`auth`, `cache`, `security`, `settings`) restano configurabili dal runtime/API ma sono escluse dal workspace principale del backoffice.
 
 ### Audit
 
@@ -223,6 +227,6 @@ orphaned o inactive per evitare perdita dati.
 
 ## Gap rispetto al codice attuale
 
-- Settings, secrets e signed access esistono gia in `core-pack`.
-- Serve riallineare naming `settings` -> configuration registry nelle API/docs.
+- Settings, secrets, signed access e grouped settings API esistono in `core-pack`.
+- Il backoffice usa form raggruppati per operatori e nasconde le chiavi tecniche core.
 - Serve audit trasversale via event bus.

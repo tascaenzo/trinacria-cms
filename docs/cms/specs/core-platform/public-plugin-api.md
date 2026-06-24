@@ -5,7 +5,7 @@
 - Milestone: `M4.0 - Core Platform Specifications`
 - Stato: `draft`
 - Scope: developer-facing API reference
-- Ultimo aggiornamento: `2026-05-21`
+- Ultimo aggiornamento: `2026-06-24`
 
 ## Scopo
 
@@ -40,13 +40,35 @@ import {
   buildSettingKey,
   validatePluginManifest
 } from "@trinacria-cms/kernel";
+import {
+  defineAdmin,
+  defineAdminResource,
+  defineAdminRoute,
+  defineAdminSettingsSection,
+  defineBooleanSetting,
+  definePluginManifest,
+  defineSecurity,
+  defineStringSetting,
+  errorEnvelope,
+  successEnvelope
+} from "@trinacria-cms/kernel/plugin-api";
 import { CORE_TOKENS } from "@trinacria-cms/kernel";
 // CORE_TOKENS.CACHE_ADAPTER — token DI per l'adapter cache
 ```
 
 Per integrazione con il configuration registry (chiamate plugin-to-core
-signed), il plugin puo accedere al servizio `SettingsRegistry` di
-`@trinacria-cms/core-pack` tramite DI.
+signed), gli helper di firma sono specifici di `core-pack`:
+
+```ts
+import { createSignedPluginRequest } from "@trinacria-cms/core-pack/plugin-api";
+```
+
+Regola di import:
+
+- helper generici per manifest, admin, security, settings, eventi e HTTP envelope:
+  `@trinacria-cms/kernel/plugin-api`;
+- helper legati al protocollo signed settings di `core-pack`:
+  `@trinacria-cms/core-pack/plugin-api`.
 
 Vedere specifiche:
 
@@ -286,36 +308,53 @@ Regole:
 
 ```ts
 export interface PluginManifestSetting {
-  namespace: string;
   key: string;
-  type: "string" | "number" | "boolean" | "json" | "secret";
-  visibility: "public" | "protected" | "secret";
-  required?: boolean;
+  category: string;
   description?: string;
-  schema?: Record<string, unknown>;
-  defaultValueJson?: string;
+  schema?: JsonValue;
+  defaultValue?: JsonValue;
+  status?: "active" | "deprecated" | "disabled";
+  secret?: boolean;
+  mutable?: boolean;
+  visibility?: "public" | "admin" | "internal";
 }
 ```
 
 Regole:
 
 - chiave canonica: `<pluginId>:<namespace>:<key>`.
-- `secret` richiede storage cifrato nel configuration registry.
-- `defaultValueJson` e serializzato JSON, non valore JavaScript libero.
+- `category` guida raggruppamento, backoffice e API grouped settings.
+- `secret: true` richiede storage cifrato nel configuration registry.
+- `defaultValue` e un valore JSON-compatible nativo, non una stringa JSON.
+
+Helper consigliati:
+
+```ts
+defineStringSetting({
+  pluginId: "blog-pack",
+  domain: "editorial",
+  name: "default_status",
+  category: "editorial",
+  defaultValue: "draft",
+  maxLength: 40
+});
+```
 
 ### Accesso runtime alle configurazioni
 
 Un plugin puo leggere e scrivere le proprie configurazioni tramite signed call
-al `SettingsRegistry` di core-pack:
+alle API settings di core-pack:
 
 ```ts
-// Chiamata plugin-to-core signed (futura)
-const registry: SettingsRegistry = context.app.get(SETTINGS_REGISTRY_TOKEN);
-
-const result = await registry.get("blog-pack:editorial:default-status", {
-  type: "plugin",
-  id: "blog-pack",
-  pluginId: "blog-pack"
+const request = createSignedPluginRequest({
+  pluginId: "blog-pack",
+  secret: process.env.BLOG_PACK_SETTINGS_SECRET!,
+  method: "PUT",
+  path: "/v1/settings/values/blog-pack:editorial:default_status",
+  body: {
+    value: "review",
+    updatedBy: "blog-pack"
+  }
 });
 ```
 
