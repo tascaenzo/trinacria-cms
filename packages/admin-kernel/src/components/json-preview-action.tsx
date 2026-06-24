@@ -56,7 +56,13 @@ export function JsonPreviewAction({
           onClick={() => setOpen(true)}
         />
       ) : (
-        <Button className={className} type="button" size={size} variant={variant} onClick={() => setOpen(true)}>
+        <Button
+          className={className}
+          type="button"
+          size={size}
+          variant={variant}
+          onClick={() => setOpen(true)}
+        >
           <Icon name="file-json" className="h-3.5 w-3.5" />
           {triggerLabel}
         </Button>

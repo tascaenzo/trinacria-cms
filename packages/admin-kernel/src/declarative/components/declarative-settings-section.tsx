@@ -36,7 +36,9 @@ export function DeclarativeSettingsSectionPanel({
       {section.kind === "form" || formFields.length > 0 ? (
         <FormSection
           title={section.title}
-          description={section.summary ?? "Settings form generated from the plugin manifest schema."}
+          description={
+            section.summary ?? "Settings form generated from the plugin manifest schema."
+          }
         >
           <div className="grid gap-4">
             {formFields.length > 0 ? (
@@ -63,9 +65,12 @@ export function DeclarativeSettingsSectionPanel({
       >
         <div className="grid gap-4">
           <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
-            Declarative settings sections are generated from plugin metadata. A plugin can still expose a React renderer when the JSON contract is not expressive enough.
+            Declarative settings sections are generated from plugin metadata. A plugin can still
+            expose a React renderer when the JSON contract is not expressive enough.
           </p>
-          {section.data ? <DeclarativeDataBinding binding={section.data} dataState={dataState} /> : null}
+          {section.data ? (
+            <DeclarativeDataBinding binding={section.data} dataState={dataState} />
+          ) : null}
         </div>
       </Card>
       {section.actions?.length ? (

@@ -10,7 +10,10 @@ export function getDisplayFields(
   return visible.length > 0 ? visible : fields;
 }
 
-export function extractRecordList(data: unknown, valuePath: string | undefined): readonly unknown[] {
+export function extractRecordList(
+  data: unknown,
+  valuePath: string | undefined
+): readonly unknown[] {
   const value = readObjectPath(data, valuePath);
   if (Array.isArray(value)) {
     return value;

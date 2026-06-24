@@ -41,6 +41,8 @@ import { translateStatusLabel } from "../../lib/ui-translations.js";
 import {
   filterRecordsForSettingsSection,
   formatSettingFormLabel,
+  isVisibleSettingDefinition,
+  isVisibleSettingsSection,
   parseSettingFormValue,
   type SettingDefinitionRecord
 } from "./settings-page.utils.js";
@@ -75,7 +77,8 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
     refresh,
     submitFilter
   } = useSettingsDefinitions();
-  const { isOverviewLoading, overviewItems } = useSettingsOverview(records);
+  const visibleRecords = useMemo(() => records.filter(isVisibleSettingDefinition), [records]);
+  const { isOverviewLoading, overviewItems } = useSettingsOverview(visibleRecords);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -157,11 +160,16 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
     writeBackofficeNavigationState("dashboard");
   }
 
-  const activeDefinitionsCount = records.filter((record) => record.status === "active").length;
-  const ownerPluginsCount = new Set(records.map((record) => record.ownerPluginId)).size;
+  const activeDefinitionsCount = visibleRecords.filter(
+    (record) => record.status === "active"
+  ).length;
+  const ownerPluginsCount = new Set(visibleRecords.map((record) => record.ownerPluginId)).size;
 
   const operationalSettings = useMemo(
-    () => settings.filter((section) => !section.id.endsWith("settings-catalog")),
+    () =>
+      settings.filter(
+        (section) => !section.id.endsWith("settings-catalog") && isVisibleSettingsSection(section)
+      ),
     [settings]
   );
 
@@ -175,15 +183,17 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
   }, [activeSectionId, operationalSettings]);
 
   const selectedSectionRecords = useMemo(
-    () => (selectedSection ? filterRecordsForSettingsSection(records, selectedSection) : []),
-    [records, selectedSection]
+    () => (selectedSection ? filterRecordsForSettingsSection(visibleRecords, selectedSection) : []),
+    [selectedSection, visibleRecords]
   );
   const { isSectionValuesLoading, sectionDraftValues, sectionValueErrors, setSectionDraftValues } =
     useSettingsSectionDrafts(selectedSectionRecords, t);
 
   function openRecordSection(record: SettingDefinitionRecord) {
     const recordSection = operationalSettings.find((section) =>
-      filterRecordsForSettingsSection(records, section).some((entry) => entry.id === record.id)
+      filterRecordsForSettingsSection(visibleRecords, section).some(
+        (entry) => entry.id === record.id
+      )
     );
     if (recordSection) {
       handleSelectSection(recordSection.id);
@@ -252,7 +262,7 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
         {!isLoading ? (
           <>
             <MobileRecordList>
-              {records.map((record) => (
+              {visibleRecords.map((record) => (
                 <MobileRecordCard
                   key={record.id}
                   title={record.key}
@@ -288,7 +298,7 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
                   </DataTableHeaderRow>
                 </DataTableHead>
                 <DataTableBody>
-                  {records.map((record) => (
+                  {visibleRecords.map((record) => (
                     <DataTableRow key={record.id}>
                       <DataTablePrimaryCell meta={record.category ?? t("settings.uncategorized")}>
                         {record.key}
@@ -380,7 +390,7 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
           <div className="grid h-full min-h-0 bg-white lg:grid-cols-[360px_minmax(0,1fr)]">
             <SettingsWorkspaceSidebar
               onSelectSection={handleSelectSection}
-              records={records}
+              records={visibleRecords}
               sections={operationalSettings}
               selectedSection={selectedSection}
               t={t}

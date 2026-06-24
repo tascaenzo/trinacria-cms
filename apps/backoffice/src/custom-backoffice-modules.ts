@@ -1,7 +1,4 @@
-import {
-  definePluginBackofficeModule,
-  type BackofficeModule
-} from "@trinacria-cms/admin-kernel";
+import { definePluginBackofficeModule, type BackofficeModule } from "@trinacria-cms/admin-kernel";
 import { CORE_PACK_ADMIN_MANIFEST } from "@trinacria-cms/core-pack/admin-manifest";
 
 /**

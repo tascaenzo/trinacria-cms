@@ -115,13 +115,16 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
     persistBackofficeLocale(locale);
   }, [locale]);
 
-  const completeLogin = useCallback((response: LoginWithPasswordResponse["data"]) => {
-    persistBackofficeSession({
-      expiresAt: response.expiresAt
-    });
-    setAuthUser(response.user);
-    navigateTo("dashboard");
-  }, [navigateTo]);
+  const completeLogin = useCallback(
+    (response: LoginWithPasswordResponse["data"]) => {
+      persistBackofficeSession({
+        expiresAt: response.expiresAt
+      });
+      setAuthUser(response.user);
+      navigateTo("dashboard");
+    },
+    [navigateTo]
+  );
 
   const [loginState, submitLogin, isLoggingIn] = useActionState<LoginActionState, FormData>(
     async (_previousState, formData) => {

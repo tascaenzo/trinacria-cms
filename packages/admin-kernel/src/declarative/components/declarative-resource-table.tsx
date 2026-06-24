@@ -89,7 +89,9 @@ export function DeclarativeResourceTable({
                   <MobileRecordCard
                     key={getRecordKey(record, index)}
                     title={readDeclarativeFieldValue(record, primaryField)}
-                    subtitle={secondaryField ? readDeclarativeFieldValue(record, secondaryField) : undefined}
+                    subtitle={
+                      secondaryField ? readDeclarativeFieldValue(record, secondaryField) : undefined
+                    }
                     badges={
                       statusField ? (
                         <Badge tone={readDeclarativeStatusTone(record, statusField)}>
@@ -186,7 +188,11 @@ export function DeclarativeResourceTable({
                       return (
                         <DataTablePrimaryCell
                           key={field.key}
-                          meta={secondaryField ? readDeclarativeFieldValue(record, secondaryField) : field.key}
+                          meta={
+                            secondaryField
+                              ? readDeclarativeFieldValue(record, secondaryField)
+                              : field.key
+                          }
                         >
                           {readDeclarativeFieldValue(record, field)}
                         </DataTablePrimaryCell>

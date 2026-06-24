@@ -23,32 +23,11 @@ export const OFFICIAL_CORE_SETTINGS_SECTION_META: Record<
     order: 20,
     settingKeys: ["core-pack:branding:tagline", "core-pack:branding:logo_url"]
   },
-  "core-pack:core-pack-auth-settings": {
-    titleKey: "settings.section.auth.title",
-    summary: "Session, login lockout, cookie, and plugin-auth timing settings.",
-    summaryKey: "settings.section.auth.summary",
+  "core-pack:core-pack-feature-settings": {
+    titleKey: "settings.section.features.title",
+    summary: "Feature flags exposed for operator-level rollout control.",
+    summaryKey: "settings.section.features.summary",
     order: 30,
-    category: "auth"
-  },
-  "core-pack:core-pack-security-settings": {
-    titleKey: "settings.section.security.title",
-    summary: "Secret handling and encryption policy settings.",
-    summaryKey: "settings.section.security.summary",
-    order: 40,
-    category: "security"
-  },
-  "core-pack:core-pack-cache-settings": {
-    titleKey: "settings.section.cache.title",
-    summary: "Cache adapter and Redis runtime settings.",
-    summaryKey: "settings.section.cache.summary",
-    order: 50,
-    category: "cache"
-  },
-  "core-pack:core-pack-settings-catalog": {
-    titleKey: "settings.section.catalog.title",
-    summary: "Raw owner-aware settings definitions and resolved values.",
-    summaryKey: "settings.section.catalog.summary",
-    order: 900,
-    category: "settings"
+    category: "features"
   }
 };

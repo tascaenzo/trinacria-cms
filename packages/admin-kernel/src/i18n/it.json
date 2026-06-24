@@ -434,6 +434,8 @@
   "settings.section.general.summary": "Identita sito e localizzazione usate nel backoffice.",
   "settings.section.branding.title": "Branding",
   "settings.section.branding.summary": "Testi e riferimenti visuali del backoffice.",
+  "settings.section.features.title": "Funzionalita",
+  "settings.section.features.summary": "Feature flag utili da controllare nel backoffice.",
   "settings.section.auth.title": "Autenticazione",
   "settings.section.auth.summary": "Sessione, login, cookie e autenticazione plugin.",
   "settings.section.security.title": "Sicurezza",

@@ -45,7 +45,8 @@ export function inferFormFields(schema: unknown): readonly DeclarativeField[] {
   return Object.entries(properties).map(([key, definition]) => {
     const typedDefinition = isObject(definition) ? definition : {};
     const type = typeof typedDefinition.type === "string" ? typedDefinition.type : "string";
-    const title = typeof typedDefinition.title === "string" ? typedDefinition.title : humanizeKey(key);
+    const title =
+      typeof typedDefinition.title === "string" ? typedDefinition.title : humanizeKey(key);
 
     return {
       key,

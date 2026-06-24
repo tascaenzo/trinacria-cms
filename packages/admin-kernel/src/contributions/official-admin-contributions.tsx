@@ -8,7 +8,10 @@ import type {
   AdminSettingsSectionDefinition
 } from "../contracts.js";
 import { normalizeSafeAdminExtensionManifests } from "../runtime/admin-extension-manifest.js";
-import type { RenderableAdminContribution, RenderableAdminRoute } from "../runtime/admin-route-runtime.js";
+import type {
+  RenderableAdminContribution,
+  RenderableAdminRoute
+} from "../runtime/admin-route-runtime.js";
 import { OFFICIAL_CORE_NAV_META } from "./core-navigation-contribution-meta.js";
 import {
   OFFICIAL_CORE_COMPONENT_ROUTE_META,

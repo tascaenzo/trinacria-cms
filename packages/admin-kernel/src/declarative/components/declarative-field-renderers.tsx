@@ -11,11 +11,7 @@ const TABLE_TAG_PREVIEW_LIMIT = 3;
 
 type ResourceField = NonNullable<AdminResourceDefinition["fields"]>[number];
 
-export function formatDeclarativeFieldValue(
-  record: unknown,
-  field: ResourceField,
-  t: TranslateFn
-) {
+export function formatDeclarativeFieldValue(record: unknown, field: ResourceField, t: TranslateFn) {
   if (!record) {
     return formatFieldPreview(field);
   }
@@ -73,7 +69,10 @@ export function readDeclarativeStatusLabel(
   return translateStatusLabel(typeof value === "string" ? value : String(value ?? ""), t);
 }
 
-export function readDeclarativeStatusTone(record: unknown, field: ResourceField): "success" | "warning" {
+export function readDeclarativeStatusTone(
+  record: unknown,
+  field: ResourceField
+): "success" | "warning" {
   if (!record) {
     return "success";
   }

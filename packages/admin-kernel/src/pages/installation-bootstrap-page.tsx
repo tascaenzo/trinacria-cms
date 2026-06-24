@@ -31,7 +31,7 @@ const LOCALE_OPTIONS = [
   { value: "it-IT", label: "Italiano" },
   { value: "fr-FR", label: "Français" },
   { value: "de-DE", label: "Deutsch" },
-  { value: "es-ES", label: "Español" },
+  { value: "es-ES", label: "Español" }
 ];
 
 const TIMEZONE_OPTIONS = [
@@ -47,7 +47,7 @@ const TIMEZONE_OPTIONS = [
   { value: "America/Los_Angeles", label: "America/Los_Angeles" },
   { value: "Asia/Tokyo", label: "Asia/Tokyo" },
   { value: "Asia/Shanghai", label: "Asia/Shanghai" },
-  { value: "Asia/Kolkata", label: "Asia/Kolkata" },
+  { value: "Asia/Kolkata", label: "Asia/Kolkata" }
 ];
 
 function getStepIndex(step: Step): number {
@@ -167,7 +167,9 @@ export function InstallationBootstrapPage({
           return (
             <span key={step} className="flex items-center gap-2">
               {i > 0 && (
-                <span className={`h-px w-4 ${isDone ? "bg-[color:var(--color-accent)]" : "bg-[color:var(--color-border)]"}`} />
+                <span
+                  className={`h-px w-4 ${isDone ? "bg-[color:var(--color-accent)]" : "bg-[color:var(--color-border)]"}`}
+                />
               )}
               <span
                 className={
@@ -178,9 +180,8 @@ export function InstallationBootstrapPage({
                       : undefined
                 }
               >
-                {isDone ? "✓" : i + 1}
-                {" "}
-                <span className="hidden sm:inline">{t(`auth.installation.step_${step}` as any)}</span>
+                {isDone ? "✓" : i + 1}{" "}
+                <span className="hidden sm:inline">{t(`auth.installation.step_${step}`)}</span>
               </span>
             </span>
           );
@@ -293,14 +294,20 @@ export function InstallationBootstrapPage({
             {t("auth.installation.step_site")}
           </p>
           <p className="mt-1">{values.siteName}</p>
-          {values.siteTagline && <p className="text-[color:var(--color-ink-muted)]">{values.siteTagline}</p>}
-          <p className="text-[color:var(--color-ink-muted)]">{values.locale} — {values.timezone}</p>
+          {values.siteTagline && (
+            <p className="text-[color:var(--color-ink-muted)]">{values.siteTagline}</p>
+          )}
+          <p className="text-[color:var(--color-ink-muted)]">
+            {values.locale} — {values.timezone}
+          </p>
         </div>
         <div>
           <p className="text-xs font-semibold text-[color:var(--color-ink-muted)] uppercase tracking-wide">
             {t("auth.installation.step_admin")}
           </p>
-          <p className="mt-1">{values.firstName} {values.lastName}</p>
+          <p className="mt-1">
+            {values.firstName} {values.lastName}
+          </p>
           <p className="text-[color:var(--color-ink-muted)]">{values.email}</p>
         </div>
       </div>

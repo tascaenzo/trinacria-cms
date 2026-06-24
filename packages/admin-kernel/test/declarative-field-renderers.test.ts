@@ -31,6 +31,9 @@ test("readDeclarativeFieldValue formats tag fields for compact previews", () => 
     kind: "tags"
   };
 
-  assert.equal(readDeclarativeFieldValue({ permissions: ["users.read", "roles.write"] }, field), "users.read, roles.write");
+  assert.equal(
+    readDeclarativeFieldValue({ permissions: ["users.read", "roles.write"] }, field),
+    "users.read, roles.write"
+  );
   assert.equal(readDeclarativeFieldValue({ permissions: [] }, field), "-");
 });

@@ -7,7 +7,10 @@ import {
 
 test("validateAdminEndpointBinding allows only relative admin GET data endpoints", () => {
   assert.equal(validateAdminEndpointBinding({ path: "/admin/products" }, "data").ok, true);
-  assert.equal(validateAdminEndpointBinding({ path: "/admin/products", method: "POST" }, "data").ok, false);
+  assert.equal(
+    validateAdminEndpointBinding({ path: "/admin/products", method: "POST" }, "data").ok,
+    false
+  );
   assert.equal(validateAdminEndpointBinding({ path: "https://evil.test/admin" }, "data").ok, false);
   assert.equal(validateAdminEndpointBinding({ path: "//evil.test/admin" }, "data").ok, false);
   assert.equal(validateAdminEndpointBinding({ path: "/public/products" }, "data").ok, false);

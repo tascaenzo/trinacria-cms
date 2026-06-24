@@ -15,14 +15,14 @@ export function DeclarativeDashboardWidgetPanel({
   const value =
     dataState.status === "success"
       ? formatCellValue(readObjectPath(dataState.data, widget.data?.valuePath))
-      : widget.data?.valuePath ?? "-";
+      : (widget.data?.valuePath ?? "-");
 
   if (widget.kind === "metric" || widget.kind === "status") {
     return (
       <StatCard
         label={widget.title}
         value={dataState.status === "loading" ? "..." : value}
-        description={dataState.status === "error" ? dataState.error : widget.summary ?? endpoint}
+        description={dataState.status === "error" ? dataState.error : (widget.summary ?? endpoint)}
         tone="neutral"
         icon={widget.kind === "status" ? "circle-check-big" : "sparkles"}
       />
@@ -36,7 +36,9 @@ export function DeclarativeDashboardWidgetPanel({
           <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
             {widget.summary ?? "Declarative dashboard widget generated from plugin metadata."}
           </p>
-          {widget.data ? <DeclarativeDataBinding binding={widget.data} dataState={dataState} /> : null}
+          {widget.data ? (
+            <DeclarativeDataBinding binding={widget.data} dataState={dataState} />
+          ) : null}
         </div>
       </Card>
     );

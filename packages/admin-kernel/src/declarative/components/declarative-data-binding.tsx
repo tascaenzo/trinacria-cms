@@ -14,7 +14,9 @@ export function DeclarativeDataBinding({
   return (
     <div className="grid gap-4">
       <KeyValuePanel>
-        {binding.endpoint ? <KeyValueItem label="Endpoint" value={formatEndpoint(binding.endpoint)} /> : null}
+        {binding.endpoint ? (
+          <KeyValueItem label="Endpoint" value={formatEndpoint(binding.endpoint)} />
+        ) : null}
         {binding.valuePath ? <KeyValueItem label="Value path" value={binding.valuePath} /> : null}
         {dataState ? <KeyValueItem label="Data state" value={dataState.status} /> : null}
       </KeyValuePanel>

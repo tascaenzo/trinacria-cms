@@ -12,24 +12,55 @@ export type SettingJsonValue =
 export type SettingDraftValues = Record<string, string>;
 export type SettingValueErrors = Record<string, string>;
 
+const CORE_PACK_VISIBLE_SETTING_CATEGORIES = new Set([
+  "site",
+  "internationalization",
+  "branding",
+  "features"
+]);
+
+const CORE_PACK_HIDDEN_SETTINGS_SECTION_IDS = new Set([
+  "core-pack-auth-settings",
+  "core-pack-security-settings",
+  "core-pack-cache-settings",
+  "core-pack-settings-catalog"
+]);
+
+export function isVisibleSettingsSection(section: RenderableAdminSettingsSection): boolean {
+  return !(
+    section.pluginId === "core-pack" && CORE_PACK_HIDDEN_SETTINGS_SECTION_IDS.has(section.id)
+  );
+}
+
+export function isVisibleSettingDefinition(record: SettingDefinitionRecord): boolean {
+  if (record.ownerPluginId !== "core-pack") {
+    return true;
+  }
+
+  const category = record.category?.trim().toLowerCase();
+  return Boolean(category && CORE_PACK_VISIBLE_SETTING_CATEGORIES.has(category));
+}
+
 export function filterRecordsForSettingsSection(
   records: readonly SettingDefinitionRecord[],
   section: RenderableAdminSettingsSection
 ): readonly SettingDefinitionRecord[] {
+  const visibleRecords = records.filter(isVisibleSettingDefinition);
+
   if (section.id.endsWith("settings-catalog")) {
-    return records;
+    return visibleRecords;
   }
 
   const explicitKeys = new Set(
     (section.settingKeys ?? []).map((key) => key.trim().toLowerCase()).filter(Boolean)
   );
   if (explicitKeys.size > 0) {
-    return records.filter((record) => explicitKeys.has(record.key.trim().toLowerCase()));
+    return visibleRecords.filter((record) => explicitKeys.has(record.key.trim().toLowerCase()));
   }
 
   const category = section.category?.trim().toLowerCase();
   if (category) {
-    return records.filter((record) => record.category?.trim().toLowerCase() === category);
+    return visibleRecords.filter((record) => record.category?.trim().toLowerCase() === category);
   }
 
   return [];
@@ -56,7 +87,7 @@ export function groupSettingRecordsForForm(
 ): Array<{ title: string; records: SettingDefinitionRecord[] }> {
   const groups = new Map<string, SettingDefinitionRecord[]>();
 
-  for (const record of records) {
+  for (const record of records.filter(isVisibleSettingDefinition)) {
     const title = getSettingFormGroupTitle(record);
     groups.set(title, [...(groups.get(title) ?? []), record]);
   }
@@ -74,6 +105,7 @@ export function getSettingFormGroupTitle(record: SettingDefinitionRecord): strin
   if (category === "site") return "Site details";
   if (category === "internationalization") return "Localization";
   if (category === "branding") return "Brand identity";
+  if (category === "features") return "Feature flags";
   if (category === "security") return "Secrets and encryption";
   if (key.includes(":login_")) return "Login protection";
   if (key.includes(":jwt_cookie_")) return "Cookies";

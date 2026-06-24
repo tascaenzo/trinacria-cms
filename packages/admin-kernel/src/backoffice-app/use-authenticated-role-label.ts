@@ -25,7 +25,9 @@ export function useAuthenticatedRoleLabel(authUser: AuthenticatedUser | null, t:
           return;
         }
         const primaryRole = response.data[0]?.roleCode ?? null;
-        setRoleLabel(primaryRole ? formatRoleLabel(primaryRole) : t("backoffice.user.role_fallback"));
+        setRoleLabel(
+          primaryRole ? formatRoleLabel(primaryRole) : t("backoffice.user.role_fallback")
+        );
       } catch {
         if (isMounted) {
           setRoleLabel(t("backoffice.user.role_fallback"));

@@ -112,7 +112,7 @@ test("createActionBodyFromFields parses draft values by field kind", () => {
     enabled: true,
     count: "12",
     tags: ["alpha"],
-    payload: "{\"ok\":true}",
+    payload: '{"ok":true}',
     optional: ""
   });
 

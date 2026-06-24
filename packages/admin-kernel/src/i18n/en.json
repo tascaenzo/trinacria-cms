@@ -434,6 +434,8 @@
   "settings.section.general.summary": "Site identity and localization used across the backoffice.",
   "settings.section.branding.title": "Branding",
   "settings.section.branding.summary": "Backoffice-facing brand text and visual references.",
+  "settings.section.features.title": "Features",
+  "settings.section.features.summary": "Feature flags useful enough to control from the backoffice.",
   "settings.section.auth.title": "Authentication",
   "settings.section.auth.summary": "Session, login, cookie, and plugin authentication settings.",
   "settings.section.security.title": "Security",
