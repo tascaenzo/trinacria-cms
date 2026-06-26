@@ -1,22 +1,10 @@
 import { useActionState, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import {
-  AdminShell,
-  Badge,
-  Card,
-  DropdownMenu,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  Icon,
-  SearchField
-} from "@trinacria-cms/trinacria-ui";
-import type { AdminRuntimePluginInfo } from "./contracts.js";
+import { AdminShell, Card, SearchField } from "@trinacria-cms/trinacria-ui";
 import type {
   GetAuthenticatedUserResponse,
   GetInstallationStatusResponse,
   LoginWithPasswordResponse
 } from "@trinacria-cms/sdk";
-import { createOfficialAdminContributions } from "./contributions/official-admin-contributions.js";
 import {
   getLocalizedInstallationError,
   getLocalizedLoginError,
@@ -27,25 +15,21 @@ import {
   type SupportedLocale
 } from "./lib/auth-i18n.js";
 import { I18nProvider, createTranslate, type I18nBundle } from "./lib/i18n.js";
-import { getSdkErrorDetails, toDisplayError, type SdkErrorDetails } from "./lib/sdk-errors.js";
+import { getSdkErrorDetails, type SdkErrorDetails } from "./lib/sdk-errors.js";
+import { formatUserName } from "./lib/user-formatting.js";
 import { AuthScreenLayout } from "./components/auth-screen-layout.js";
-import { translateStatusLabel, translateSystemStateLabel } from "./lib/ui-translations.js";
 import type { BackofficeModule } from "./module.js";
 import { readRequiredString } from "./runtime/action-state.js";
-import { buildAdminRegistry } from "./runtime/admin-route-runtime.js";
 import { clearBackofficeSession, persistBackofficeSession } from "./runtime/auth-session.js";
 import { cms } from "./runtime/cms-sdk.js";
-import { loadRuntimePluginInfo } from "./runtime/runtime-discovery.js";
 import { InstallationDatabaseGuidePage } from "./pages/installation-database-guide-page.js";
 import { InstallationBootstrapPage } from "./pages/installation-bootstrap-page.js";
 import { LoginPage } from "./pages/login-page.js";
-
-interface HealthSnapshot {
-  status: string;
-  runtime: {
-    totalPlugins: number;
-  };
-}
+import { BackofficeShellStatus } from "./backoffice-app/backoffice-shell-status.js";
+import { BackofficeUserMenu } from "./backoffice-app/backoffice-user-menu.js";
+import { useBackofficeRouteState } from "./backoffice-app/use-backoffice-route-state.js";
+import { useBackofficeShellRuntime } from "./backoffice-app/use-backoffice-shell-runtime.js";
+import { useAuthenticatedRoleLabel } from "./backoffice-app/use-authenticated-role-label.js";
 
 type AuthenticatedUser = GetAuthenticatedUserResponse["data"];
 type InstallationStatus = GetInstallationStatusResponse["data"] & {
@@ -59,6 +43,9 @@ type FormActionState<T> = {
   data: T | null;
 };
 type LoginActionState = FormActionState<LoginWithPasswordResponse["data"]>;
+type InstallationActionState = FormActionState<LoginWithPasswordResponse["data"]>;
+
+const USER_MENU_NAVIGATION_IDS = ["nav-settings"] as const;
 
 export interface BackofficeAppProps {
   modules?: readonly BackofficeModule[];
@@ -78,16 +65,11 @@ function createIdleFormActionState<T>(): FormActionState<T> {
  */
 export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
   const [locale, setLocale] = useState<SupportedLocale>(() => readBackofficeLocale());
-  const [activeRouteId, setActiveRouteId] = useState<string>(readHashRoute() ?? "dashboard");
-  const [runtimePlugins, setRuntimePlugins] = useState<readonly AdminRuntimePluginInfo[]>([]);
-  const [health, setHealth] = useState<HealthSnapshot | null>(null);
+  const [activeRouteId, navigateTo] = useBackofficeRouteState();
   const [authUser, setAuthUser] = useState<AuthenticatedUser | null>(null);
-  const [authRoleLabel, setAuthRoleLabel] = useState<string | null>(null);
   const [installationStatus, setInstallationStatus] = useState<InstallationStatus | null>(null);
   const [bootstrapError, setBootstrapError] = useState<SdkErrorDetails | null>(null);
-  const [shellError, setShellError] = useState<string | null>(null);
   const [isBootstrappingApp, setIsBootstrappingApp] = useState(true);
-  const [isShellLoading, setIsShellLoading] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const translationBundles = useMemo<readonly I18nBundle[]>(
     () => [officialI18nBundle, ...modules.flatMap((module) => module.i18n ?? [])],
@@ -100,6 +82,14 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
   const handleLocaleChange = useCallback((nextLocale: string) => {
     setLocale(normalizeLocale(nextLocale));
   }, []);
+  const authRoleLabel = useAuthenticatedRoleLabel(authUser, t);
+  const { capabilityIndex, isShellLoading, registry, runtimePlugins, shellError } =
+    useBackofficeShellRuntime({
+      authUser,
+      installationInstalled: Boolean(installationStatus?.installed),
+      modules,
+      t
+    });
 
   useEffect(() => {
     if (authUser) {
@@ -108,29 +98,33 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
   }, [authUser]);
 
   useEffect(() => {
+    function handleAuthenticatedUserUpdate(event: Event) {
+      const nextUser = (event as CustomEvent<AuthenticatedUser>).detail;
+      if (nextUser?.id) {
+        setAuthUser(nextUser);
+      }
+    }
+
+    window.addEventListener("trinacria-cms:auth-user-updated", handleAuthenticatedUserUpdate);
+    return () =>
+      window.removeEventListener("trinacria-cms:auth-user-updated", handleAuthenticatedUserUpdate);
+  }, []);
+
+  useEffect(() => {
     document.documentElement.lang = locale;
     persistBackofficeLocale(locale);
   }, [locale]);
 
-  useEffect(() => {
-    function handleHashChange() {
-      setActiveRouteId(readHashRoute() ?? "dashboard");
-    }
-
-    window.addEventListener("hashchange", handleHashChange);
-    return () => window.removeEventListener("hashchange", handleHashChange);
-  }, []);
-
-  const completeLogin = useCallback((response: LoginWithPasswordResponse["data"]) => {
-    persistBackofficeSession({
-      accessToken: response.accessToken,
-      refreshToken: response.refreshToken,
-      expiresAt: response.expiresAt,
-      refreshExpiresAt: response.refreshExpiresAt
-    });
-    setAuthUser(response.user);
-    navigateTo("dashboard", setActiveRouteId);
-  }, []);
+  const completeLogin = useCallback(
+    (response: LoginWithPasswordResponse["data"]) => {
+      persistBackofficeSession({
+        expiresAt: response.expiresAt
+      });
+      setAuthUser(response.user);
+      navigateTo("dashboard");
+    },
+    [navigateTo]
+  );
 
   const [loginState, submitLogin, isLoggingIn] = useActionState<LoginActionState, FormData>(
     async (_previousState, formData) => {
@@ -159,7 +153,7 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
   );
 
   const [installationActionState, submitInstallation, isInstalling] = useActionState<
-    LoginActionState,
+    InstallationActionState,
     FormData
   >(async (_previousState, formData) => {
     try {
@@ -176,7 +170,7 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
           siteName: readRequiredString(formData, "siteName"),
           siteTagline: formData.get("siteTagline")?.toString() || undefined,
           locale: formData.get("locale")?.toString() || undefined,
-          timezone: formData.get("timezone")?.toString() || undefined,
+          timezone: formData.get("timezone")?.toString() || undefined
         }
       });
 
@@ -276,118 +270,21 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
   }, []);
 
   useEffect(() => {
-    if (!installationStatus?.installed || !authUser) {
-      setRuntimePlugins([]);
-      setHealth(null);
-      setShellError(null);
-      setAuthRoleLabel(null);
-      return;
+    const fallbackRouteId = registry.routes[0]?.id;
+    if (
+      fallbackRouteId &&
+      activeRouteId !== fallbackRouteId &&
+      !registry.routes.some((route) => route.id === activeRouteId)
+    ) {
+      navigateTo(fallbackRouteId);
     }
-
-    let isMounted = true;
-
-    async function loadShellData() {
-      setIsShellLoading(true);
-      setShellError(null);
-      try {
-        const [plugins, healthSnapshot] = await Promise.all([
-          loadRuntimePluginInfo(),
-          cms.kernelHealth.getKernelHealth() as Promise<HealthSnapshot>
-        ]);
-        if (!isMounted) {
-          return;
-        }
-        setRuntimePlugins(plugins);
-        setHealth(healthSnapshot);
-      } catch (currentError) {
-        if (!isMounted) {
-          return;
-        }
-        setShellError(toDisplayError(currentError));
-      } finally {
-        if (isMounted) {
-          setIsShellLoading(false);
-        }
-      }
-    }
-
-    void loadShellData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [authUser, installationStatus?.installed]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadAuthenticatedUserRole() {
-      if (!authUser) {
-        setAuthRoleLabel(null);
-        return;
-      }
-
-      try {
-        const response = await cms.security.listUserRoles({
-          path: { id: authUser.id }
-        });
-        if (!isMounted) {
-          return;
-        }
-        const primaryRole = response.data[0]?.roleCode ?? null;
-        setAuthRoleLabel(
-          primaryRole ? formatRoleLabel(primaryRole) : t("backoffice.user.role_fallback")
-        );
-      } catch {
-        if (isMounted) {
-          setAuthRoleLabel(t("backoffice.user.role_fallback"));
-        }
-      }
-    }
-
-    void loadAuthenticatedUserRole();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [authUser, t]);
-
-  const customContributions = useMemo(
-    () => modules.flatMap((module) => module.contributions),
-    [modules]
-  );
-
-  const registry = useMemo(() => {
-    return buildAdminRegistry(
-      [
-        ...createOfficialAdminContributions({
-          pluginCount: runtimePlugins.length,
-          capabilityCount: runtimePlugins.reduce(
-            (total, plugin) => total + plugin.capabilities.length,
-            0
-          ),
-          systemStateLabel: health?.status ?? "unknown"
-        }),
-        ...customContributions
-      ],
-      runtimePlugins,
-      t
-    );
-  }, [customContributions, health?.status, runtimePlugins, t]);
-
-  useEffect(() => {
-    if (!registry.routes.some((route) => route.id === activeRouteId) && registry.routes[0]) {
-      navigateTo(registry.routes[0].id, setActiveRouteId);
-    }
-  }, [activeRouteId, registry.routes]);
-
-  const capabilityIndex = useMemo(
-    () => new Map(runtimePlugins.map((plugin) => [plugin.pluginId, new Set(plugin.capabilities)])),
-    [runtimePlugins]
-  );
+  }, [activeRouteId, navigateTo, registry.routes]);
 
   const activeRoute =
     registry.routes.find((route) => route.id === activeRouteId) ?? registry.routes[0] ?? null;
+  const isProfileRoute = activeRoute?.id === "profile";
+  const shouldShowShellDiscoveryState = !isProfileRoute;
+  const shouldRenderContent = isProfileRoute || (!isShellLoading && !shellError);
   const loginErrorMessage =
     getLocalizedLoginError(loginState.error, t) ?? getLocalizedLoginError(bootstrapError, t);
   const installationErrorMessage =
@@ -397,9 +294,8 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
   function handleLogout() {
     clearBackofficeSession();
     setAuthUser(null);
-    setAuthRoleLabel(null);
     setIsUserMenuOpen(false);
-    navigateTo("dashboard", setActiveRouteId);
+    navigateTo("dashboard");
   }
 
   function renderWithI18n(node: ReactNode) {
@@ -455,7 +351,8 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
   }
 
   if (installationStatus && !installationStatus.installed) {
-    const requiresDatabaseGuide = !installationStatus.envFilePresent || !installationStatus.dbConfigured;
+    const requiresDatabaseGuide =
+      !installationStatus.envFilePresent || !installationStatus.dbConfigured;
     if (requiresDatabaseGuide) {
       return renderWithI18n(
         <InstallationDatabaseGuidePage envFilePath={installationStatus.envFilePath ?? ".env"} />
@@ -485,14 +382,18 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
     );
   }
 
-  const displayName = authUser.displayName;
+  const userName = formatUserName(authUser);
+  const hasSettingsRoute = registry.routes.some((route) => route.id === "settings");
 
   const content = activeRoute
     ? activeRoute.render({
         route: activeRoute,
+        routes: registry.routes,
         runtimePlugins,
         capabilityIndex,
         resources: registry.resources,
+        settings: registry.settings,
+        widgets: registry.widgets,
         locale,
         t
       })
@@ -502,144 +403,33 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
     <AdminShell
       activeRouteId={activeRoute?.id ?? ""}
       navigation={registry.navigation}
-      onNavigate={(routeId) => navigateTo(routeId, setActiveRouteId)}
+      hiddenNavigationIds={USER_MENU_NAVIGATION_IDS}
+      onNavigate={navigateTo}
       title={activeRoute?.title ?? t("backoffice.shell.title")}
       subtitle={activeRoute?.summary ?? t("backoffice.shell.subtitle")}
+      hideHeader
       sidebarFooter={
-        <DropdownMenu
-          open={isUserMenuOpen}
+        <BackofficeUserMenu
+          isOpen={isUserMenuOpen}
+          roleLabel={authRoleLabel}
+          settingsRouteAvailable={hasSettingsRoute}
+          userName={userName}
+          onLogout={handleLogout}
+          onNavigate={navigateTo}
           onOpenChange={setIsUserMenuOpen}
-          side="top"
-          align="end"
-          trigger={
-            <button
-              type="button"
-              className="flex w-full items-center gap-3 rounded-sm px-2.5 py-2 text-left transition hover:bg-[color:var(--color-interactive-hover)]"
-            >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-action-primary-bg)] text-[color:var(--color-action-primary-ink)]">
-                <Icon name="user-round" className="h-4 w-4" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold text-[color:var(--color-ink)]">
-                  {displayName}
-                </span>
-                <span className="block truncate text-xs text-[color:var(--color-ink-subtle)]">
-                  {authRoleLabel ?? t("backoffice.user.role_loading")}
-                </span>
-              </span>
-              <Icon
-                name="chevron-down"
-                className={`h-4 w-4 shrink-0 text-[color:var(--color-ink-subtle)] transition ${isUserMenuOpen ? "rotate-180" : ""}`}
-              />
-            </button>
-          }
-        >
-          <DropdownMenuLabel>
-            <span className="block truncate text-sm font-semibold normal-case tracking-normal text-[color:var(--color-ink)]">
-              {displayName}
-            </span>
-            <span className="block truncate pt-1 text-xs font-normal normal-case tracking-normal text-[color:var(--color-ink-subtle)]">
-              {authRoleLabel ?? t("backoffice.user.role_loading")}
-            </span>
-          </DropdownMenuLabel>
-          <DropdownMenuItem
-            icon="user-round"
-            title={t("backoffice.user.menu.profile")}
-            onClick={() => navigateTo("settings", setActiveRouteId)}
-          />
-          <DropdownMenuItem
-            icon="settings-2"
-            title={t("backoffice.user.menu.settings")}
-            onClick={() => navigateTo("settings", setActiveRouteId)}
-          />
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            icon="log-out"
-            title={t("backoffice.user.menu.logout")}
-            tone="danger"
-            onClick={handleLogout}
-          />
-        </DropdownMenu>
+          t={t}
+        />
       }
       headerActions={
         <div className="hidden md:flex md:w-[320px] lg:w-[360px]">
           <SearchField placeholder={t("backoffice.shell.search_placeholder")} />
         </div>
       }
-      statusBadges={[
-        {
-          label: t("backoffice.shell.stats.runtime"),
-          value: translateSystemStateLabel(
-            health?.status ?? (isShellLoading ? "loading" : "unknown"),
-            t
-          ),
-          tone: health?.status === "ok" ? "success" : health ? "warning" : "default"
-        },
-        {
-          label: t("backoffice.shell.stats.plugins"),
-          value: String(health?.runtime.totalPlugins ?? runtimePlugins.length),
-          tone: "default"
-        },
-        {
-          label: t("backoffice.shell.stats.visible_routes"),
-          value: String(registry.routes.length),
-          tone: "default"
-        },
-        {
-          label: t("backoffice.shell.stats.resources"),
-          value: String(registry.resources.length),
-          tone: "default"
-        },
-        {
-          label: t("backoffice.shell.stats.session"),
-          value: translateStatusLabel(authUser.status, t),
-          tone: authUser.status === "active" ? "success" : "warning"
-        }
-      ]}
     >
-      {shellError ? (
-        <Card
-          eyebrow={t("auth.installation.eyebrow")}
-          title={t("backoffice.shell.discovery_error_title")}
-        >
-          <p className="text-sm leading-7 text-[color:var(--color-ink-muted)]">{shellError}</p>
-        </Card>
+      {shouldShowShellDiscoveryState ? (
+        <BackofficeShellStatus error={shellError} isLoading={isShellLoading} t={t} />
       ) : null}
-      {isShellLoading && !shellError ? (
-        <Card
-          eyebrow={t("auth.installation.eyebrow")}
-          title={t("backoffice.shell.loading_discovery_title")}
-        >
-          <p className="text-sm leading-7 text-[color:var(--color-ink-muted)]">
-            {t("backoffice.shell.loading_discovery_body")}
-          </p>
-        </Card>
-      ) : null}
-      {!isShellLoading && !shellError ? content : null}
-      {customContributions.length > 0 ? (
-        <div className="mt-4">
-          <Badge>{t("backoffice.shell.custom_modules_enabled")}</Badge>
-        </div>
-      ) : null}
+      {shouldRenderContent ? content : null}
     </AdminShell>
   );
-}
-
-function readHashRoute(): string | null {
-  const hash = window.location.hash.replace(/^#/, "").trim();
-  return hash ? hash : null;
-}
-
-function navigateTo(routeId: string, setActiveRouteId: (routeId: string) => void) {
-  window.location.hash = routeId;
-  setActiveRouteId(routeId);
-}
-
-function formatRoleLabel(roleCode: string): string {
-  return roleCode
-    .trim()
-    .split(/[-_]+/g)
-    .filter(Boolean)
-    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
-    .join(" ");
 }

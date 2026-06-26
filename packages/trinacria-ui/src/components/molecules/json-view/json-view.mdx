@@ -5,6 +5,8 @@ import * as Stories from "./json-view.stories";
 
 # JsonView
 
-`JsonView` fornisce un pannello di ispezione grezzo per payload runtime, debug e configurazioni.
+`JsonView` fornisce un albero JSON ispezionabile per payload runtime, debug e configurazioni.
+Supporta espansione/collasso dei nodi e copia del payload formattato. Nei flussi admin
+preferire `JsonViewDialog` o un trigger dedicato, evitando viste JSON inline nelle pagine.
 
 <Canvas of={Stories.Payload} />

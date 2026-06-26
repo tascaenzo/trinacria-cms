@@ -84,13 +84,15 @@ export class SettingsSecretsCryptoService {
     config: RuntimeConfigService,
     masterKey?: string
   ): Promise<SettingsSecretsCryptoService> {
-    const keyVersion = await config.getString("core-pack:settings:master_key_version", {
-      envVar: "CMS_SETTINGS_MASTER_KEY_VERSION",
-      fallback: "v1"
-    }) ?? "v1";
-    const strictRequired = await config.getBoolean("core-pack:settings:strict_master_key_required", {
-      fallback: false
-    }) ?? false;
+    const keyVersion =
+      (await config.getString("core-pack:settings:master_key_version", {
+        envVar: "CMS_SETTINGS_MASTER_KEY_VERSION",
+        fallback: "v1"
+      })) ?? "v1";
+    const strictRequired =
+      (await config.getBoolean("core-pack:settings:strict_master_key_required", {
+        fallback: false
+      })) ?? false;
     return new SettingsSecretsCryptoService({
       masterKey: masterKey ?? process.env.CMS_SETTINGS_MASTER_KEY,
       keyVersion,

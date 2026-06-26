@@ -21,6 +21,7 @@ L'installazione e un flusso in 2 step (Sito + Admin) che invia i dati a
 raggiungibile (connesso all'avvio via dotenv).
 
 L'app puo avviarsi in **setup mode** (senza MongoDB) se:
+
 - Il file `.env` non esiste
 - Le variabili `MONGO_*` non sono configurate
 - La connessione MongoDB fallisce all'avvio
@@ -110,17 +111,17 @@ export interface InstallationStateDocument {
 ```ts
 export interface InstallBootstrapInput {
   // Admin account
-  firstName: string;          // 1-60 chars
-  lastName: string;           // 1-60 chars
-  email: string;              // email validata
-  password: string;           // 10-200 chars
-  confirmPassword: string;    // deve matchare password
+  firstName: string; // 1-60 chars
+  lastName: string; // 1-60 chars
+  email: string; // email validata
+  password: string; // 10-200 chars
+  confirmPassword: string; // deve matchare password
 
   // Site settings
-  siteName: string;           // 1-120 chars
-  siteTagline?: string;       // max 160 chars
-  locale?: string;            // pattern: "^[a-z]{2}(-[A-Z]{2})?$"
-  timezone?: string;          // IANA timezone, 3-120 chars
+  siteName: string; // 1-120 chars
+  siteTagline?: string; // max 160 chars
+  locale?: string; // pattern: "^[a-z]{2}(-[A-Z]{2})?$"
+  timezone?: string; // IANA timezone, 3-120 chars
 }
 ```
 
@@ -140,7 +141,6 @@ export interface UserRecord {
   id: string;
   firstName: string;
   lastName: string;
-  displayName: string;        // calcolato: "${firstName} ${lastName}"
   email: string;
   status: "active" | "suspended";
   createdAt: string;
@@ -150,10 +150,10 @@ export interface UserRecord {
 
 ## API HTTP
 
-| Method | Path                    | Auth  | Setup Mode |
-| ------ | ----------------------- | ----- | ---------- |
-| `GET`  | `/v1/install/status`    | none  | pubblico   |
-| `POST` | `/v1/install/bootstrap` | none  | pubblico   |
+| Method | Path                    | Auth | Setup Mode |
+| ------ | ----------------------- | ---- | ---------- |
+| `GET`  | `/v1/install/status`    | none | pubblico   |
+| `POST` | `/v1/install/bootstrap` | none | pubblico   |
 
 `GET /v1/install/status` ritorna anche `dbConnected` in setup mode.
 
@@ -161,22 +161,20 @@ export interface UserRecord {
 
 Collections:
 
-- `core-pack__installation_state`
+- `core-pack__settings` (`kind: "install_state"` for installation state)
 - `core-pack__local_credentials`
 - `core-pack__users`
 - `core-pack__user_roles`
 - `core-pack__roles`
 - `core-pack__permissions`
-- `core-pack__settings_definitions`
-- `core-pack__settings_values`
 
 Indici:
 
-| Collection                       | Index            | Unique |
-| -------------------------------- | ---------------- | ------ |
-| `core-pack__installation_state`  | `{ id: 1 }`      | yes    |
-| `core-pack__local_credentials`   | `{ userId: 1 }`  | yes    |
-| `core-pack__users`               | `{ email: 1 }`   | yes    |
+| Collection                     | Index                 | Unique |
+| ------------------------------ | --------------------- | ------ |
+| `core-pack__settings`          | `{ kind: 1, key: 1 }` | yes    |
+| `core-pack__local_credentials` | `{ userId: 1 }`       | yes    |
+| `core-pack__users`             | `{ email: 1 }`        | yes    |
 
 ## Security e permission
 
@@ -200,12 +198,12 @@ Indici:
 
 ## Errori
 
-| Code                          | HTTP | Quando                          |
-| ----------------------------- | ---- | ------------------------------- |
-| `installation_already_done`   | 409  | installazione gia chiusa        |
-| `installation_input_invalid`  | 400  | input non valido                |
-| `installation_failed`         | 500  | bootstrap fallito               |
-| `password_mismatch`           | 400  | password e confirmPassword non coincidono |
+| Code                         | HTTP | Quando                                    |
+| ---------------------------- | ---- | ----------------------------------------- |
+| `installation_already_done`  | 409  | installazione gia chiusa                  |
+| `installation_input_invalid` | 400  | input non valido                          |
+| `installation_failed`        | 500  | bootstrap fallito                         |
+| `password_mismatch`          | 400  | password e confirmPassword non coincidono |
 
 ## Lifecycle
 
@@ -213,7 +211,7 @@ Indici:
 2. Se env non configurato → guida .env → riavvio
 3. GET /v1/install/status → verifica stato
 4. POST /v1/install/bootstrap con dati sito + admin
-5. Creazione admin user (firstName + lastName → displayName)
+5. Creazione admin user con firstName e lastName separati
 6. Creazione ruoli/permission baseline
 7. Salvataggio settings sito
 8. Mark installed
@@ -239,6 +237,6 @@ Indici:
 - [ ] .env non viene scritto dal wizard (gia presente)
 - [ ] Dopo installazione, app funziona senza riavvio
 - [ ] Al riavvio successivo, legge .env e parte normalmente
-- [ ] `displayName` calcolato da firstName + lastName
+- [ ] Nome e cognome admin persistiti come campi separati
 - [ ] Settings sito persistiti e leggibili
 - [ ] Installazione non ripetibile (409)

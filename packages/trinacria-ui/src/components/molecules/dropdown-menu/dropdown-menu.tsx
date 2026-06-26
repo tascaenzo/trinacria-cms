@@ -4,18 +4,22 @@ import {
   isValidElement,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type MouseEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type PropsWithChildren,
   type ReactElement,
   type Ref
 } from "react";
+import { createPortal } from "react-dom";
 import { OverlaySurface } from "../../primitives/overlay-surface/overlay-surface.js";
 import { BodyText } from "../../primitives/text/text.js";
 import { Icon } from "../../atoms/icon/icon.js";
+import { useControllableState } from "../../../hooks/use-controllable-state.js";
 import { cn } from "../../../utils/class-names.js";
 import type {
   DropdownMenuItemProps,
@@ -50,29 +54,11 @@ function composeRefs<T>(...refs: Array<Ref<T> | undefined>) {
   };
 }
 
-function useControllableOpen(
-  open: boolean | undefined,
-  defaultOpen: boolean | undefined,
-  onOpenChange: ((open: boolean) => void) | undefined
-) {
-  const [internalOpen, setInternalOpen] = useState(defaultOpen ?? false);
-  const isControlled = open !== undefined;
-  const resolvedOpen = isControlled ? open : internalOpen;
-
-  function setOpen(nextOpen: boolean) {
-    if (!isControlled) {
-      setInternalOpen(nextOpen);
-    }
-    onOpenChange?.(nextOpen);
-  }
-
-  return [resolvedOpen, setOpen] as const;
-}
-
 export function DropdownMenu({
   align = "end",
   children,
   className,
+  contentClassName,
   defaultOpen,
   onOpenChange,
   open,
@@ -80,10 +66,13 @@ export function DropdownMenu({
   trigger,
   ...props
 }: PropsWithChildren<DropdownMenuProps>) {
-  const [isOpen, setIsOpen] = useControllableOpen(open, defaultOpen, onOpenChange);
+  const [isOpen, setIsOpen] = useControllableState(open, defaultOpen ?? false, onOpenChange);
+  const shouldMatchTriggerWidth =
+    typeof contentClassName === "string" && contentClassName.split(/\s+/).includes("w-full");
   const rootRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const [menuStyle, setMenuStyle] = useState<CSSProperties | undefined>();
 
   function getEnabledItems() {
     if (!menuRef.current) {
@@ -131,7 +120,7 @@ export function DropdownMenu({
         return;
       }
 
-      if (!rootRef.current?.contains(target)) {
+      if (!rootRef.current?.contains(target) && !menuRef.current?.contains(target)) {
         setIsOpen(false);
       }
     }
@@ -152,17 +141,40 @@ export function DropdownMenu({
     };
   }, [isOpen, setIsOpen]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isOpen) {
+      setMenuStyle(undefined);
       return;
     }
 
-    const frame = window.requestAnimationFrame(() => {
-      focusFirstItem();
-    });
+    function updatePosition() {
+      const triggerRect = triggerRef.current?.getBoundingClientRect();
 
-    return () => window.cancelAnimationFrame(frame);
-  }, [isOpen]);
+      if (!triggerRect) {
+        return;
+      }
+
+      setMenuStyle({
+        ...(shouldMatchTriggerWidth ? { width: triggerRect.width } : undefined),
+        minWidth: shouldMatchTriggerWidth ? Math.max(220, triggerRect.width) : 220,
+        ...(side === "bottom"
+          ? { top: triggerRect.bottom + 8 }
+          : { bottom: window.innerHeight - triggerRect.top + 8 }),
+        ...(align === "start"
+          ? { left: triggerRect.left }
+          : { right: window.innerWidth - triggerRect.right })
+      });
+    }
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [align, isOpen, shouldMatchTriggerWidth, side]);
 
   function handleMenuKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
     const items = getEnabledItems();
@@ -215,28 +227,35 @@ export function DropdownMenu({
         focusFirstItem={focusFirstItem}
         focusLastItem={focusLastItem}
       />
-      {isOpen ? (
-        <DropdownMenuContext.Provider value={contextValue}>
-          <OverlaySurface
-            className={cn(
-              "absolute z-40 min-w-[220px] p-2",
-              side === "bottom" ? "top-full mt-2" : "bottom-full mb-2",
-              align === "start" ? "left-0" : "right-0"
-            )}
-          >
-            <div
-              ref={menuRef}
-              role="menu"
-              className="grid gap-1 outline-none"
-              onKeyDown={handleMenuKeyDown}
-            >
-              {children}
-            </div>
-          </OverlaySurface>
-        </DropdownMenuContext.Provider>
-      ) : null}
+      {isOpen
+        ? renderMenuPortal(
+            <DropdownMenuContext.Provider value={contextValue}>
+              <OverlaySurface
+                className={cn("fixed z-50 min-w-[220px] p-2", contentClassName)}
+                style={menuStyle}
+              >
+                <div
+                  ref={menuRef}
+                  role="menu"
+                  className="grid gap-1 outline-none"
+                  onKeyDown={handleMenuKeyDown}
+                >
+                  {children}
+                </div>
+              </OverlaySurface>
+            </DropdownMenuContext.Provider>
+          )
+        : null}
     </div>
   );
+}
+
+function renderMenuPortal(menu: ReactElement) {
+  if (typeof document === "undefined") {
+    return menu;
+  }
+
+  return createPortal(menu, document.body);
 }
 
 function DropdownTrigger({

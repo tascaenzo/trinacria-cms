@@ -10,6 +10,7 @@ Official baseline plugin pack for Trinacria CMS.
 - plugin security provisioning (`permissions/roles/grants` from plugin manifest)
 - advanced authz policies (`allow`/`deny`, wildcard patterns, conditions)
 - settings definitions/values/secrets (encrypted secrets + masked export)
+- grouped settings APIs for operator-facing forms
 
 `core-pack` should remain the platform baseline. Domain functionality such as
 editorial, commerce, media, SEO, booking, or analytics should be implemented as
@@ -42,11 +43,31 @@ Environment variables:
 - `CMS_SETTINGS_MASTER_KEY`: master key for AES-256-GCM encryption at rest
 - `CMS_SETTINGS_MASTER_KEY_VERSION`: key version persisted with ciphertext metadata
 
+Operator-facing settings should use grouped non-secret endpoints:
+
+- `GET /v1/settings/groups`
+- `GET /v1/settings/groups/:groupId`
+- `PATCH /v1/settings/groups/:groupId`
+
+Low-level technical definitions such as auth lockout, JWT cookie names, cache
+adapter configuration, and encryption policy remain available to the runtime but
+are intentionally hidden from the main backoffice settings workspace.
+
 Implementation note:
 
 - key resolution is abstracted behind `PluginAuthKeyProvider`
 - default implementation: `EnvPluginAuthKeyProvider`
 - you can replace it with Vault/KMS/SecretManager provider via DI token `CORE_PACK_SETTINGS_PLUGIN_AUTH_KEY_PROVIDER`
+
+## Plugin API compatibility
+
+The public helper API for plugin authors now belongs to
+`@trinacria-cms/kernel/plugin-api`. `core-pack` still re-exports those helpers
+from `@trinacria-cms/core-pack/plugin-api` for compatibility.
+
+Use the kernel package for generic manifest/admin/security/settings helpers. Use
+`@trinacria-cms/core-pack/plugin-api` only when you need the core-pack-specific
+signed settings request helpers such as `createSignedPluginRequest`.
 
 ## Scripts
 

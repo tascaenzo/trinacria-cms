@@ -14,9 +14,11 @@ export function createCmsSdkClientCore(options: CmsSdkClientOptions): CmsSdkClie
   const transport: SdkTransport = options.transport ?? createFetchTransport(options.fetch);
   const baseUrl = normalizeBaseUrl(options.baseUrl);
   const apiKeyHeaderName = (options.apiKeyHeaderName ?? "x-api-key").trim().toLowerCase();
+  const requestTimeoutMs = options.requestTimeoutMs ?? 30_000;
 
   return {
     async request<TData = unknown>(request: SdkOperationRequest): Promise<TData> {
+      const timeout = createRequestTimeout(request.signal, requestTimeoutMs);
       const url = buildUrl(baseUrl, request.path, request.pathParams, request.query);
       const defaultHeaders = (await options.getDefaultHeaders?.()) ?? {};
       const accessToken = await options.getAccessToken?.();
@@ -42,27 +44,50 @@ export function createCmsSdkClientCore(options: CmsSdkClientOptions): CmsSdkClie
         }
       }
 
-      const response = await transport.request<TData>({
-        url,
-        method: request.method,
-        headers,
-        body,
-        credentials: request.credentials ?? options.credentials,
-        signal: request.signal
-      });
-
-      if (response.status < 200 || response.status >= 300) {
-        throw new CmsSdkHttpError({
-          status: response.status,
-          data: response.data,
-          headers: response.headers,
+      try {
+        const response = await transport.request<TData>({
+          url,
           method: request.method,
-          url
+          headers,
+          body,
+          credentials: request.credentials ?? options.credentials,
+          signal: timeout.signal
         });
-      }
 
-      return response.data;
+        if (response.status < 200 || response.status >= 300) {
+          throw new CmsSdkHttpError({
+            status: response.status,
+            data: response.data,
+            headers: response.headers,
+            method: request.method,
+            url
+          });
+        }
+
+        return response.data;
+      } finally {
+        timeout.clear();
+      }
     }
+  };
+}
+
+function createRequestTimeout(
+  signal: unknown,
+  timeoutMs: number
+): { signal: unknown; clear: () => void } {
+  if (signal || timeoutMs <= 0 || typeof AbortController === "undefined") {
+    return { signal, clear: () => undefined };
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    controller.abort(new Error(`SDK request timed out after ${timeoutMs}ms`));
+  }, timeoutMs);
+
+  return {
+    signal: controller.signal,
+    clear: () => clearTimeout(timeoutId)
   };
 }
 

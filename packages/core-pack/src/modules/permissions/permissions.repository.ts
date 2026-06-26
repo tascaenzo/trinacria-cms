@@ -9,6 +9,8 @@ import type { CacheService } from "../cache/cache.service.js";
 import {
   CreatePermissionInputSchema,
   type CreatePermissionInput,
+  type UpdatePermissionInput,
+  UpdatePermissionInputSchema,
   type UpdatePermissionStatusInput,
   UpdatePermissionStatusInputSchema
 } from "./dto/permissions.input.dto.js";
@@ -109,6 +111,31 @@ export class PermissionsRepository {
         updatedAt: new Date().toISOString()
       }
     );
+
+    if (!updated) return null;
+    await this.cache?.invalidate(CACHE_NAMESPACE, existing.key);
+    return this.parsePermissionRecord(updated);
+  }
+
+  async updateDetails(id: string, input: UpdatePermissionInput): Promise<PermissionRecord | null> {
+    const parsedInput = UpdatePermissionInputSchema.parse(input);
+    const existing = await this.findById(id);
+    if (!existing) return null;
+
+    const patch: Partial<PermissionRecord> = {
+      displayName: parsedInput.displayName,
+      updatedAt: new Date().toISOString()
+    };
+    if (parsedInput.status) {
+      patch.status = parsedInput.status;
+    }
+    if (parsedInput.description?.trim()) {
+      patch.description = parsedInput.description;
+    } else {
+      patch.description = undefined;
+    }
+
+    const updated = await this.repository().updateOne({ filter: { id: id.trim() } }, patch);
 
     if (!updated) return null;
     await this.cache?.invalidate(CACHE_NAMESPACE, existing.key);

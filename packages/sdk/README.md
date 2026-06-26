@@ -17,7 +17,7 @@ kernel and the official `core-pack`.
 Current built-in official catalog:
 
 - `kernel`: `kernelHealth`, `system`
-- `core-pack`: `auth`, `installation`, `users`, `roles`, `permissions`, `settings`, `security`, `apiKeys`
+- `core-pack`: `auth`, `installation`, `users`, `roles`, `permissions`, `settings`, `security`
 
 You can inspect this static catalog at runtime through:
 
@@ -201,7 +201,6 @@ You can keep one shared client instance per app and reuse:
 - `cms.permissions`
 - `cms.settings`
 - `cms.security`
-- `cms.apiKeys`
 - custom generated groups, when present
 
 ## Runtime discovery
@@ -240,53 +239,25 @@ const canManageSettings = hasCapability(capabilities.data, "core-pack", "setting
 
 ## Authentication modes
 
-The SDK runtime can work with three common models:
+The SDK runtime can work with these common models:
 
 - browser cookies through `credentials: "include"`
 - bearer JWT through `getAccessToken()` or per-request headers
-- API keys through `apiKey` or `getApiKey()`
 
-Example with API key:
+## Settings groups
 
-```ts
-import { createCmsSdkClient } from "@trinacria-cms/sdk";
+`core-pack` exposes grouped settings APIs for operator-facing forms. These are
+the preferred APIs for backoffice screens because they hide low-level runtime
+keys and return coherent groups instead of raw key/value rows.
 
-const cms = createCmsSdkClient({
-  baseUrl: "http://127.0.0.1:3000",
-  apiKey: "cms_sk_lookup_secret"
-});
+Current SDK methods:
 
-const health = await cms.kernelHealth.getKernelHealth();
-```
+- `cms.settings.listSettingsGroups()`
+- `cms.settings.getSettingsGroupById({ path: { groupId } })`
+- `cms.settings.upsertSettingsGroupValues({ path: { groupId }, body })`
 
-Default API key header:
-
-- `x-api-key`
-
-If needed, you can override it with `apiKeyHeaderName`.
-
-## API keys and machine access
-
-`core-pack` exposes API-key management APIs intended for server-to-server and
-integration scenarios.
-
-Current endpoints:
-
-- `GET /v1/api-keys`
-- `GET /v1/api-keys/{id}`
-- `POST /v1/api-keys`
-- `POST /v1/api-keys/{id}/rotate`
-- `POST /v1/api-keys/{id}/revoke`
-
-The SDK exposes them through `cms.apiKeys.*`.
-
-Typical lifecycle:
-
-1. an admin session creates or rotates a key
-2. the raw secret is shown once
-3. a backend integration stores that secret securely
-4. the integration calls the CMS using `x-api-key`
-5. the CMS resolves roles, permissions, and policy rules attached to that key
+Low-level definition/value/secret methods still exist for plugin tooling,
+diagnostics, and owner-signed operations.
 
 ## Backoffice consumer
 

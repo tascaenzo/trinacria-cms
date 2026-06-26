@@ -29,7 +29,7 @@ queste decisioni o aggiornare esplicitamente la milestone.
 
 Il kernel non deve conoscere utenti, ruoli, settings concreti o API business. Il
 core-pack usa i contratti del kernel per implementare auth, utenti, ruoli,
-permessi, settings, API keys e provisioning baseline.
+permessi, settings, signed plugin calls e provisioning baseline.
 
 ### 2. La piattaforma e plugin-first
 

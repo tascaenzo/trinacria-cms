@@ -2,16 +2,29 @@
 // Auto-generated from OpenAPI. Do not edit by hand.
 
 import type { CmsSdkClientCore, SdkRequestOverrides } from "../runtime/types.js";
-import type { GetAuthenticatedUserRequest, GetAuthenticatedUserResponse, LoginWithPasswordRequest, LoginWithPasswordResponse, LogoutSessionRequest, LogoutSessionResponse } from "./types.gen.js";
+import type { ChangeAuthenticatedUserPasswordRequest, ChangeAuthenticatedUserPasswordResponse, GetAuthenticatedUserRequest, GetAuthenticatedUserResponse, LoginWithPasswordRequest, LoginWithPasswordResponse, LogoutSessionRequest, LogoutSessionResponse, UpdateAuthenticatedUserProfileRequest, UpdateAuthenticatedUserProfileResponse } from "./types.gen.js";
 
 export interface AuthApi {
+  changeAuthenticatedUserPassword(input: ChangeAuthenticatedUserPasswordRequest, options?: SdkRequestOverrides): Promise<ChangeAuthenticatedUserPasswordResponse>;
   getAuthenticatedUser(options?: SdkRequestOverrides): Promise<GetAuthenticatedUserResponse>;
   loginWithPassword(input: LoginWithPasswordRequest, options?: SdkRequestOverrides): Promise<LoginWithPasswordResponse>;
   logoutSession(options?: SdkRequestOverrides): Promise<LogoutSessionResponse>;
+  updateAuthenticatedUserProfile(input: UpdateAuthenticatedUserProfileRequest, options?: SdkRequestOverrides): Promise<UpdateAuthenticatedUserProfileResponse>;
 }
 
 export function createAuthApi(client: CmsSdkClientCore): AuthApi {
   return {
+    changeAuthenticatedUserPassword: async (input, options) =>
+      client.request({
+        method: "PATCH",
+        path: "/v1/auth/me/password",
+        pathParams: undefined,
+        query: undefined,
+        body: input.body,
+        headers: options?.headers,
+        credentials: options?.credentials,
+        signal: options?.signal,
+      }),
     getAuthenticatedUser: async (options) =>
       client.request({
         method: "GET",
@@ -41,6 +54,17 @@ export function createAuthApi(client: CmsSdkClientCore): AuthApi {
         pathParams: undefined,
         query: undefined,
         body: undefined,
+        headers: options?.headers,
+        credentials: options?.credentials,
+        signal: options?.signal,
+      }),
+    updateAuthenticatedUserProfile: async (input, options) =>
+      client.request({
+        method: "PATCH",
+        path: "/v1/auth/me",
+        pathParams: undefined,
+        query: undefined,
+        body: input.body,
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,

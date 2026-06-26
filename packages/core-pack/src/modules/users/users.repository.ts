@@ -4,6 +4,8 @@ import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import {
   CreateUserInputSchema,
   type CreateUserInput,
+  type UpdateUserProfileInput,
+  UpdateUserProfileInputSchema,
   type UpdateUserStatusInput,
   UpdateUserStatusInputSchema
 } from "./dto/users.input.dto.js";
@@ -22,14 +24,10 @@ export class UsersRepository {
     const parsedInput = CreateUserInputSchema.parse(input);
 
     const now = new Date().toISOString();
-    const displayName =
-      parsedInput.displayName ||
-      `${parsedInput.firstName} ${parsedInput.lastName}`.trim();
     const record = {
       email: parsedInput.email,
       firstName: parsedInput.firstName,
       lastName: parsedInput.lastName,
-      displayName: displayName || "Unknown User",
       status: "active" as const,
       createdAt: now,
       updatedAt: now
@@ -80,6 +78,28 @@ export class UsersRepository {
     return this.parseUserRecord(updated);
   }
 
+  async updateProfile(id: string, input: UpdateUserProfileInput): Promise<UserRecord | null> {
+    const parsedInput = UpdateUserProfileInputSchema.parse(input);
+    const changes: {
+      firstName: string;
+      lastName: string;
+      status?: UpdateUserProfileInput["status"];
+      updatedAt: string;
+    } = {
+      firstName: parsedInput.firstName,
+      lastName: parsedInput.lastName,
+      updatedAt: new Date().toISOString()
+    };
+    if (parsedInput.status) {
+      changes.status = parsedInput.status;
+    }
+
+    const updated = await this.repository().updateOne({ filter: { id: id.trim() } }, changes);
+
+    if (!updated) return null;
+    return this.parseUserRecord(updated);
+  }
+
   private repository() {
     this.scope = this.scope ?? createPluginDbScope(this.db, CORE_PACK_PLUGIN_ID);
     return this.scope.repository<UserRecord>(USERS_ENTITY_NAME);
@@ -95,18 +115,10 @@ export class UsersRepository {
     if ("roleAssignments" in normalized) {
       delete normalized.roleAssignments;
     }
-    const displayName =
-      typeof normalized.displayName === "string" ? normalized.displayName.trim() : "";
-    if (!displayName) {
-      const fn =
-        typeof normalized.firstName === "string" ? normalized.firstName.trim() : "";
-      const ln =
-        typeof normalized.lastName === "string" ? normalized.lastName.trim() : "";
-      normalized.displayName = `${fn} ${ln}`.trim() || "Unknown User";
+    if ("displayName" in normalized) {
+      delete normalized.displayName;
     }
 
     return UserRecordSchema.parse(normalized);
   }
 }
-
-

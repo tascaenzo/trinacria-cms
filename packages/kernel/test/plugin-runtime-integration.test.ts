@@ -3,7 +3,11 @@ import test from "node:test";
 import { InMemoryPluginRuntime } from "../src/runtime/plugin-runtime/in-memory-plugin-runtime.js";
 import { InMemoryPluginRuntimeStore } from "../src/runtime/persistence/plugin-runtime-store.js";
 import type { ApplicationContext, ModuleDefinition } from "@trinacria/core";
-import { PluginLifecycleError, PluginManifestError, PluginStateTransitionError } from "../src/errors/index.js";
+import {
+  PluginLifecycleError,
+  PluginManifestError,
+  PluginStateTransitionError
+} from "../src/errors/index.js";
 
 test("register then load exposes contributions in describeContributions", async () => {
   const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0" });
@@ -223,12 +227,10 @@ test("events track lifecycle across persistence boundaries", async () => {
   await runtime.unregister("blog-pack");
 
   assert.equal(events.length, 4);
-  assert.deepEqual(events.map((e) => e.action), [
-    "register",
-    "load",
-    "unload",
-    "unregister"
-  ]);
+  assert.deepEqual(
+    events.map((e) => e.action),
+    ["register", "load", "unload", "unregister"]
+  );
   assert.ok(events.every((e) => e.success));
 });
 
@@ -257,8 +259,7 @@ function createFakeApp(): ApplicationContext & {
     async resolve() {
       throw new Error("not implemented in test");
     },
-    registerGlobalProvider() {
-    },
+    registerGlobalProvider() {},
     getProvidersByKind() {
       return [];
     },
@@ -271,7 +272,6 @@ function createFakeApp(): ApplicationContext & {
     describeGraph() {
       return { modules: [], providerKinds: {} };
     },
-    async shutdown() {
-    }
+    async shutdown() {}
   };
 }

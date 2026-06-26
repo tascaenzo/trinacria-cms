@@ -120,9 +120,9 @@ Appartengono a `core-pack`:
 - ruoli
 - permessi
 - policy authorization
-- API keys
 - settings base
 - secrets/settings isolation
+- signed plugin caller authentication for owner-scoped operations
 - provisioning security dichiarato dai plugin
 - endpoint amministrativi per la baseline piattaforma
 
@@ -254,7 +254,6 @@ Esempi:
 - utenti
 - ruoli
 - permessi
-- API keys
 - settings base
 - provisioning permission dichiarate da plugin
 

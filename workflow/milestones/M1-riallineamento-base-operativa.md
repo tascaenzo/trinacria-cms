@@ -20,7 +20,7 @@ Ripristinare una baseline coerente di sviluppo, con repository, contratti API e 
 ## Dipendenze
 
 - disponibilita di Mongo locale per i test runtime
-- decisione sul contratto definitivo utenti: scelta effettuata su `displayName`
+- decisione sul contratto definitivo utenti: scelta effettuata su `firstName` e `lastName` separati
 
 ## Criterio di chiusura
 

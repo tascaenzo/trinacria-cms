@@ -34,10 +34,10 @@ senza toccare `"roles"`).
 
 ### 1.2 Adapter predefiniti
 
-| Adapter | File | Persistenza | Condiviso tra repliche |
-|---------|------|-------------|------------------------|
-| `MemoryCacheAdapter` | `cache/adapters/memory-cache-adapter.ts` | `Map` in-process | No |
-| `RedisCacheAdapter` | `cache/adapters/redis-cache-adapter.ts` | Redis (ioredis) | Si |
+| Adapter              | File                                     | Persistenza      | Condiviso tra repliche |
+| -------------------- | ---------------------------------------- | ---------------- | ---------------------- |
+| `MemoryCacheAdapter` | `cache/adapters/memory-cache-adapter.ts` | `Map` in-process | No                     |
+| `RedisCacheAdapter`  | `cache/adapters/redis-cache-adapter.ts`  | Redis (ioredis)  | Si                     |
 
 `MemoryCacheAdapter` usa una `Map<string, CacheEntry>`. Il TTL viene
 controllato ad ogni `get()` — le entry scadute vengono cancellate
@@ -59,20 +59,20 @@ class CacheService {
   constructor(private readonly adapter: CacheAdapter) {}
 
   // Operazioni raw
-  get<T>(namespace, key): Promise<T | undefined>
-  set<T>(namespace, key, value, ttlSeconds?): Promise<void>
+  get<T>(namespace, key): Promise<T | undefined>;
+  set<T>(namespace, key, value, ttlSeconds?): Promise<void>;
 
   // Lettura con popolamento automatico in caso di miss
-  getOrCompute<T>(namespace, key, loader, ttlSeconds?): Promise<T>
+  getOrCompute<T>(namespace, key, loader, ttlSeconds?): Promise<T>;
 
   // Invalida una singola chiave o l'intero namespace
-  invalidate(namespace, key?): Promise<void>
+  invalidate(namespace, key?): Promise<void>;
 
   // Svuota tutto
-  clear(): Promise<void>
+  clear(): Promise<void>;
 
   // Restituisce una closure che auto-cachea la funzione loader
-  wrap<T>(namespace, key, loader, ttlSeconds?): () => Promise<T>
+  wrap<T>(namespace, key, loader, ttlSeconds?): () => Promise<T>;
 }
 ```
 
@@ -105,10 +105,10 @@ import { CORE_TOKENS, type CacheAdapter } from "@trinacria-cms/kernel";
 import { CORE_PACK_CACHE_SERVICE_TOKEN } from "@trinacria-cms/core-pack";
 
 // Token adapter (livello kernel)
-CORE_TOKENS.CACHE_ADAPTER
+CORE_TOKENS.CACHE_ADAPTER;
 
 // Token servizio (livello core-pack)
-CORE_PACK_CACHE_SERVICE_TOKEN
+CORE_PACK_CACHE_SERVICE_TOKEN;
 ```
 
 `CORE_PACK_CACHE_ADAPTER_TOKEN` e un alias di `CORE_TOKENS.CACHE_ADAPTER`
@@ -178,11 +178,10 @@ funziona lo stesso.
 import { classProvider } from "@trinacria-cms/kernel";
 import { CORE_PACK_CACHE_SERVICE_TOKEN } from "@trinacria-cms/core-pack";
 
-classProvider(
-  MY_REPOSITORY_TOKEN,
-  MyRepository,
-  [CORE_TOKENS.DB_ADAPTER, CORE_PACK_CACHE_SERVICE_TOKEN]
-)
+classProvider(MY_REPOSITORY_TOKEN, MyRepository, [
+  CORE_TOKENS.DB_ADAPTER,
+  CORE_PACK_CACHE_SERVICE_TOKEN
+]);
 ```
 
 Costruttore del tuo repository:
@@ -191,7 +190,7 @@ Costruttore del tuo repository:
 export class MyRepository {
   constructor(
     private readonly db: DbAdapter,
-    private readonly cache?: CacheService  // opzionale
+    private readonly cache?: CacheService // opzionale
   ) {}
 }
 ```
@@ -217,11 +216,11 @@ async update(id: string, data: Partial<Widget>): Promise<Widget> {
 
 ### 3.3 Scegliere la strategia di invalidazione
 
-| Pattern di scrittura | Invalidazione | Quando usarlo |
-|---|---|---|
-| Singolo record con chiave nota | `invalidate(ns, key)` | Le scritture identificano la chiave cached esatta |
-| Multipli record interessati | `invalidate(ns)` | Scritture batch, o quando molte chiavi possono essere stale |
-| Dati che cambiano a runtime | Imposta `ttlSeconds` in `getOrCompute` | Non affidarti mai alla sola invalidazione manuale |
+| Pattern di scrittura           | Invalidazione                          | Quando usarlo                                               |
+| ------------------------------ | -------------------------------------- | ----------------------------------------------------------- |
+| Singolo record con chiave nota | `invalidate(ns, key)`                  | Le scritture identificano la chiave cached esatta           |
+| Multipli record interessati    | `invalidate(ns)`                       | Scritture batch, o quando molte chiavi possono essere stale |
+| Dati che cambiano a runtime    | Imposta `ttlSeconds` in `getOrCompute` | Non affidarti mai alla sola invalidazione manuale           |
 
 ### 3.4 Fonti di import
 
@@ -250,11 +249,21 @@ import { setCustomCacheAdapter } from "@trinacria-cms/core-pack";
 import type { CacheAdapter } from "@trinacria-cms/kernel";
 
 class MyClusterAdapter implements CacheAdapter {
-  async get<T>(namespace: string, key: string): Promise<T | undefined> { /* ... */ }
-  async set<T>(namespace: string, key: string, value: T, ttlSeconds?: number): Promise<void> { /* ... */ }
-  async del(namespace: string, key: string): Promise<void> { /* ... */ }
-  async delNamespace(namespace: string): Promise<void> { /* ... */ }
-  async clear(): Promise<void> { /* ... */ }
+  async get<T>(namespace: string, key: string): Promise<T | undefined> {
+    /* ... */
+  }
+  async set<T>(namespace: string, key: string, value: T, ttlSeconds?: number): Promise<void> {
+    /* ... */
+  }
+  async del(namespace: string, key: string): Promise<void> {
+    /* ... */
+  }
+  async delNamespace(namespace: string): Promise<void> {
+    /* ... */
+  }
+  async clear(): Promise<void> {
+    /* ... */
+  }
 }
 
 // Chiama prima che il modulo cache venga inizializzato
@@ -272,12 +281,12 @@ priorita sia su Redis che su Memory.
 
 Ogni JWT e identificato univocamente dalla coppia `sub` (user ID) e `iat`
 (issued-at timestamp). Revocare un token salva questa coppia nella
-collezione `blacklisted_tokens`:
+collezione `settings` di core-pack con `kind: "blacklist"`:
 
 ```
-Collection: blacklisted_tokens
-Document:   { sub, iat, kind ("access"|"refresh"), expiresAt, createdAt }
-Indexes:    unique su id, compound unique su (sub, iat), index su expiresAt
+Collection: settings
+Document:   { kind: "blacklist", key: "{sub}:{iat}", sub, iat, tokenKind, expiresAt, createdAt }
+Indexes:    unique su id, compound unique su (kind, key)
 ```
 
 - `revokeBearerToken(token)` decodifica il JWT (senza verificare la firma —
@@ -295,13 +304,13 @@ invalida altri token (accesso o refresh) per lo stesso utente.
 
 ### 5.2 Protezione brute-force
 
-I tentativi di login falliti sono tracciati nella collezione
-`login_attempts`:
+I tentativi di login falliti sono tracciati nella collezione `settings` di
+core-pack con `kind: "login_attempt"`:
 
 ```
-Collection: login_attempts
-Document:   { email, count, lockoutUntil?, createdAt, updatedAt }
-Indexes:    unique su id, unique su email
+Collection: settings
+Document:   { kind: "login_attempt", key: normalizedEmail, email, count, lockoutUntil?, createdAt, updatedAt }
+Indexes:    unique su id, compound unique su (kind, key)
 ```
 
 Flusso in `loginWithPassword(email, password)`:
@@ -314,15 +323,15 @@ Flusso in `loginWithPassword(email, password)`:
    chiama `increment(email)`. Quando `count >= maxAttempts` (default 5),
    `lockoutUntil` viene impostato a `now + lockoutMinutes` (default 15). In
    caso di **successo**: `reset(email)` cancella il record.
-3. Il record `login_attempts` e un semplice contatore con semantica upsert.
-   L'indice unico su `email` previene duplicati.
+3. Il record `login_attempt` e un semplice contatore con semantica upsert.
+   L'indice unico su `(kind, key)` previene duplicati.
 
 Configurazione (via env var, tutte con default sensati):
 
-| Variabile | Default | Descrizione |
-|---|---|---|
-| `CMS_LOGIN_MAX_ATTEMPTS` | `5` | Tentativi falliti prima del blocco |
-| `CMS_LOGIN_LOCKOUT_MINUTES` | `15` | Durata del blocco |
+| Variabile                   | Default | Descrizione                        |
+| --------------------------- | ------- | ---------------------------------- |
+| `CMS_LOGIN_MAX_ATTEMPTS`    | `5`     | Tentativi falliti prima del blocco |
+| `CMS_LOGIN_LOCKOUT_MINUTES` | `15`    | Durata del blocco                  |
 
 ### 5.3 Come influenzano lo sviluppatore di plugin
 
@@ -331,7 +340,7 @@ Configurazione (via env var, tutte con default sensati):
   venga eseguito.
 - Se il tuo plugin fornisce un meccanismo di autenticazione personalizzato,
   dovresti implementare protezioni simili.
-- Le collezioni `blacklisted_tokens` e `login_attempts` sono gestite
+- I record `blacklist` e `login_attempt` in `settings` sono gestiti
   interamente da core-pack. Non scriverci direttamente.
 
 ## 6. Configurazione
@@ -351,13 +360,13 @@ Esempio URL Redis: `redis://:password@host:6379`
 
 ### 6.2 Variabili d'ambiente
 
-| Variabile | Default | Descrizione |
-|---|---|---|
-| `CMS_JWT_SECRET` | `"trinacria-cms-dev-secret-change-me"` | Chiave firma JWT (solo dev) |
-| `CMS_JWT_ACCESS_TTL_SECONDS` | `86400` (24h) | Durata token accesso |
-| `CMS_JWT_REFRESH_TTL_SECONDS` | `2592000` (30g) | Durata token refresh |
-| `CMS_LOGIN_MAX_ATTEMPTS` | `5` | Soglia brute-force |
-| `CMS_LOGIN_LOCKOUT_MINUTES` | `15` | Durata blocco |
+| Variabile                     | Default                                | Descrizione                 |
+| ----------------------------- | -------------------------------------- | --------------------------- |
+| `CMS_JWT_SECRET`              | `"trinacria-cms-dev-secret-change-me"` | Chiave firma JWT (solo dev) |
+| `CMS_JWT_ACCESS_TTL_SECONDS`  | `86400` (24h)                          | Durata token accesso        |
+| `CMS_JWT_REFRESH_TTL_SECONDS` | `2592000` (30g)                        | Durata token refresh        |
+| `CMS_LOGIN_MAX_ATTEMPTS`      | `5`                                    | Soglia brute-force          |
+| `CMS_LOGIN_LOCKOUT_MINUTES`   | `15`                                   | Durata blocco               |
 
 ## 7. Test con la cache
 

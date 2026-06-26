@@ -1,16 +1,9 @@
 export interface StoredBackofficeSession {
-  accessToken?: string;
-  refreshToken?: string;
   expiresAt?: string;
-  refreshExpiresAt?: string;
 }
 
 const STORAGE_KEY = "trinacria-cms.backoffice.session";
 
-/**
- * Session storage is used only as a bearer-token fallback. The primary auth
- * model for the backoffice remains cookie-based through the local dev proxy.
- */
 export function readStoredBackofficeSession(): StoredBackofficeSession {
   if (typeof window === "undefined") {
     return {};
@@ -22,8 +15,13 @@ export function readStoredBackofficeSession(): StoredBackofficeSession {
   }
 
   try {
-    const parsed = JSON.parse(raw) as StoredBackofficeSession;
-    return typeof parsed === "object" && parsed ? parsed : {};
+    const parsed = JSON.parse(raw) as StoredBackofficeSession & { accessToken?: unknown };
+    if (!parsed || typeof parsed !== "object") {
+      return {};
+    }
+    return {
+      expiresAt: typeof parsed.expiresAt === "string" ? parsed.expiresAt : undefined
+    };
   } catch {
     return {};
   }
@@ -33,7 +31,12 @@ export function persistBackofficeSession(session: StoredBackofficeSession): void
   if (typeof window === "undefined") {
     return;
   }
-  window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+  window.sessionStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({
+      expiresAt: session.expiresAt
+    })
+  );
 }
 
 export function clearBackofficeSession(): void {
@@ -44,5 +47,5 @@ export function clearBackofficeSession(): void {
 }
 
 export function getStoredAccessToken(): string | undefined {
-  return readStoredBackofficeSession().accessToken;
+  return undefined;
 }

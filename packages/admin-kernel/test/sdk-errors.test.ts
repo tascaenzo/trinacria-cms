@@ -55,7 +55,9 @@ test("getSdkErrorDetails handles nullish input", () => {
 test("getSdkErrorDetails extracts details from envelope", () => {
   const error = new CmsSdkHttpError({
     status: 400,
-    data: { error: { code: "validation_error", message: "Invalid input", details: { field: "email" } } },
+    data: {
+      error: { code: "validation_error", message: "Invalid input", details: { field: "email" } }
+    },
     headers: {},
     method: "POST",
     url: "/v1/settings/values"

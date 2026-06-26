@@ -148,6 +148,83 @@ test("SettingsService enforces definition policies for value and secret writes",
   );
 });
 
+test("SettingsService exposes and patches grouped non-secret settings", async () => {
+  const service = createSettingsService();
+
+  await service.upsertDefinition({
+    requesterPluginId: "core-pack",
+    key: "core-pack:auth:jwt_access_ttl_seconds",
+    category: "auth",
+    defaultValue: 900,
+    status: "active"
+  });
+  await service.upsertDefinition({
+    requesterPluginId: "core-pack",
+    key: "core-pack:auth:jwt_refresh_ttl_seconds",
+    category: "auth",
+    defaultValue: 604800,
+    status: "active"
+  });
+  await service.upsertDefinition({
+    requesterPluginId: "core-pack",
+    key: "core-pack:settings:master_key",
+    category: "auth",
+    secret: true,
+    status: "active"
+  });
+
+  const groups = await service.listGroups({ ownerPluginId: "core-pack" });
+  assert.deepEqual(groups, [
+    {
+      id: "auth",
+      label: "Auth",
+      ownerPluginIds: ["core-pack"],
+      definitionCount: 3,
+      editableCount: 2,
+      secretCount: 1
+    }
+  ]);
+
+  const initial = await service.getGroupById("auth", { ownerPluginId: "core-pack" });
+  assert.ok(initial);
+  assert.deepEqual(initial?.values, {
+    "auth.jwt_access_ttl_seconds": 900,
+    "auth.jwt_refresh_ttl_seconds": 604800
+  });
+  assert.equal(initial?.fields.length, 3);
+  assert.equal(
+    initial?.fields.find((field) => field.fieldId === "settings.master_key")?.definition.secret,
+    true
+  );
+
+  const result = await service.upsertGroupValues({
+    requesterPluginId: "core-pack",
+    groupId: "auth",
+    values: {
+      "auth.jwt_access_ttl_seconds": 1200,
+      "auth.jwt_refresh_ttl_seconds": 1209600
+    }
+  });
+
+  assert.equal(result.updated.length, 2);
+  assert.deepEqual(result.group.values, {
+    "auth.jwt_access_ttl_seconds": 1200,
+    "auth.jwt_refresh_ttl_seconds": 1209600
+  });
+
+  await assert.rejects(
+    () =>
+      service.upsertGroupValues({
+        requesterPluginId: "core-pack",
+        groupId: "auth",
+        values: {
+          "settings.master_key": "plain-secret"
+        }
+      }),
+    /secret and cannot be written via group endpoint/
+  );
+});
+
 async function assertSettingsAccessError(
   action: () => Promise<unknown>,
   expectedCode: string

@@ -209,10 +209,7 @@ export class RolePolicyRulesRepository {
     };
   }
 
-  private toRecord(
-    roleCode: string,
-    rule: EmbeddedRolePolicyRule
-  ): RolePolicyRuleRecord {
+  private toRecord(roleCode: string, rule: EmbeddedRolePolicyRule): RolePolicyRuleRecord {
     return RolePolicyRuleRecordSchema.parse({
       id: this.buildRuleId(roleCode, rule),
       roleCode,
@@ -263,7 +260,9 @@ export class RolePolicyRulesRepository {
     const record = (value ?? {}) as Record<string, unknown>;
     return {
       id: String(record.id ?? ""),
-      code: String(record.code ?? "").trim().toLowerCase(),
+      code: String(record.code ?? "")
+        .trim()
+        .toLowerCase(),
       policyRules: Array.isArray(record.policyRules)
         ? (record.policyRules as EmbeddedRolePolicyRule[])
         : []

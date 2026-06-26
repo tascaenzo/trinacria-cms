@@ -9,12 +9,23 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./plugin-api": {
+      "types": "./dist/plugin-api/index.d.ts",
+      "import": "./dist/plugin-api/index.js"
+    },
+    "./admin-manifest": {
+      "types": "./dist/plugin/core-pack-admin.manifest.d.ts",
+      "import": "./dist/plugin/core-pack-admin.manifest.js"
     }
   },
   "scripts": {
+    "prebuild": "npm run build -w @trinacria-cms/kernel",
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
+    "pretypecheck": "npm run build -w @trinacria-cms/kernel",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "pretest": "npm run build -w @trinacria-cms/kernel",
     "test": "node --import tsx --test test/**/*.test.ts",
     "lint": "echo \"No lint config yet\""
   },

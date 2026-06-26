@@ -5,7 +5,8 @@ import {
   TrinacriaApp,
   valueProvider
 } from "@trinacria/core";
-import { httpProvider } from "@trinacria/http";
+import { httpProvider, response, type HttpMiddleware } from "@trinacria/http";
+import { apiError } from "../../contracts/api-contract.js";
 import type { CmsStarterOptions, CmsSwaggerUiConfig } from "../../contracts/cms-starter.js";
 import type { KernelAdminRouteGuard } from "../../contracts/kernel-admin-route-guard.js";
 import type { PluginSourceSnapshot } from "../../contracts/plugin-discovery.js";
@@ -37,7 +38,7 @@ const CMS_STARTER_SWAGGER_CONFIG_TOKEN = createToken<CmsSwaggerUiConfig>(
 const CMS_STARTER_SWAGGER_CONTROLLER = createToken<CmsSwaggerController>(
   "CMS_STARTER_SWAGGER_CONTROLLER"
 );
-const CMS_STARTER_KERNEL_ADMIN_ROUTE_GUARD = createToken<KernelAdminRouteGuard | null>(
+const CMS_STARTER_KERNEL_ADMIN_ROUTE_GUARD = createToken<KernelAdminRouteGuard>(
   "CMS_STARTER_KERNEL_ADMIN_ROUTE_GUARD"
 );
 
@@ -158,13 +159,11 @@ function createHealthProviders(
         }),
       [CORE_TOKENS.PLUGIN_RUNTIME]
     ),
-    factoryProvider(CMS_STARTER_KERNEL_ADMIN_ROUTE_GUARD, async () => {
-      if (!app.hasToken(CORE_TOKENS.KERNEL_ADMIN_ROUTE_GUARD)) {
-        return null;
-      }
-
-      return app.resolve<KernelAdminRouteGuard>(CORE_TOKENS.KERNEL_ADMIN_ROUTE_GUARD);
-    }, []),
+    factoryProvider(
+      CMS_STARTER_KERNEL_ADMIN_ROUTE_GUARD,
+      () => createLazyKernelAdminRouteGuard(app),
+      []
+    ),
     httpProvider(KERNEL_SYSTEM_HTTP_CONTROLLER, KernelSystemHttpController, [
       CORE_TOKENS.KERNEL_SYSTEM_SERVICE,
       CMS_STARTER_KERNEL_ADMIN_ROUTE_GUARD
@@ -245,3 +244,43 @@ function hasSecurityDeclarations(manifest: {
     (manifest.settings?.length ?? 0) > 0
   );
 }
+
+/**
+ * Plugin modules are registered after the kernel HTTP controllers. Resolve the
+ * concrete admin guard per request so runtime-loaded auth plugins can provide it.
+ */
+function createLazyKernelAdminRouteGuard(app: TrinacriaApp): KernelAdminRouteGuard {
+  return {
+    middleware: async (ctx, next) => {
+      const guard = await resolveKernelAdminRouteGuard(app);
+      if (!guard) {
+        return denyMissingAdminRouteGuard(ctx, next);
+      }
+
+      return guard.middleware(ctx, next);
+    },
+    security: [{ bearerAuth: [] }]
+  };
+}
+
+async function resolveKernelAdminRouteGuard(
+  app: TrinacriaApp
+): Promise<KernelAdminRouteGuard | null> {
+  if (!app.hasToken(CORE_TOKENS.KERNEL_ADMIN_ROUTE_GUARD)) {
+    return null;
+  }
+
+  return app.resolve<KernelAdminRouteGuard>(CORE_TOKENS.KERNEL_ADMIN_ROUTE_GUARD);
+}
+
+const denyMissingAdminRouteGuard: HttpMiddleware = async () => {
+  return response(
+    apiError(
+      "admin_route_guard_required",
+      "Kernel system endpoints require an admin route guard provider",
+      undefined,
+      { pluginId: "kernel" }
+    ),
+    { status: 403 }
+  );
+};

@@ -304,7 +304,12 @@ test("validatePluginManifest accepts M4 declarative contribution blocks", () => 
         {
           id: "editorial",
           label: "Editorial",
-          namespace: "editorial"
+          namespace: "editorial",
+          kind: "custom",
+          componentRef: "blog-pack.editorial-settings",
+          summary: "Editorial defaults",
+          settingKeys: ["blog-pack:editorial:default-status"],
+          order: 20
         }
       ]
     },
@@ -323,6 +328,11 @@ test("validatePluginManifest accepts M4 declarative contribution blocks", () => 
   assert.equal(manifest.settings?.[0]?.key, "blog-pack:editorial:default-status");
   assert.equal(manifest.events?.emits?.[0]?.delivery, "async");
   assert.equal(manifest.admin?.routes?.[0]?.path, "/blog/posts");
+  assert.equal(manifest.admin?.settingsSections?.[0]?.kind, "custom");
+  assert.equal(manifest.admin?.settingsSections?.[0]?.componentRef, "blog-pack.editorial-settings");
+  assert.deepEqual(manifest.admin?.settingsSections?.[0]?.settingKeys, [
+    "blog-pack:editorial:default-status"
+  ]);
 });
 
 test("validatePluginManifest rejects reserved plugin ids and setting keys", () => {

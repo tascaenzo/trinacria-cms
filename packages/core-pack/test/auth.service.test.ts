@@ -111,8 +111,7 @@ test("JwtAuthService forbids non-admin token on admin-required auth", async () =
   const user = await runtime.users.create({
     email: "operator@example.com",
     firstName: "Operator",
-    lastName: "User",
-    displayName: "Operator User"
+    lastName: "User"
   });
   const password = await runtime.passwordHashing.hashPassword("AnotherStrongPass123!");
   await runtime.localCredentials.upsert({
@@ -129,7 +128,8 @@ test("JwtAuthService forbids non-admin token on admin-required auth", async () =
 
   await assert.rejects(
     async () => runtime.auth.authenticateBearerToken(session.accessToken),
-    (error: unknown) => error instanceof JwtAuthError && error.code === "auth_forbidden_admin_required"
+    (error: unknown) =>
+      error instanceof JwtAuthError && error.code === "auth_forbidden_admin_required"
   );
 });
 
@@ -172,6 +172,200 @@ test("AuthController login route returns 401 for invalid credentials", async () 
       pluginId: "core-pack"
     }
   });
+});
+
+test("AuthController login sets httpOnly cookies without exposing refresh token in body", async () => {
+  const runtime = createRuntime();
+
+  await runtime.installation.bootstrap({
+    email: "admin@example.com",
+    firstName: "Admin",
+    lastName: "User",
+    password: "StrongPassword123!",
+    confirmPassword: "StrongPassword123!",
+    siteName: "Test Site"
+  });
+
+  const controller = new AuthController(runtime.auth);
+  const route = controller
+    .routes()
+    .find((candidate) => candidate.method === "POST" && candidate.path === "/v1/auth/login");
+
+  assert.ok(route, "Expected auth login route to be registered");
+
+  const result = await route!.handler(
+    createHttpContext({
+      email: "admin@example.com",
+      password: "StrongPassword123!"
+    })
+  );
+
+  const response = result as {
+    status?: number;
+    body?: { data?: Record<string, unknown> };
+    headers?: Record<string, unknown>;
+  };
+
+  assert.equal(response.status ?? 200, 200);
+  assert.equal(typeof response.body?.data?.accessToken, "string");
+  assert.equal("refreshToken" in (response.body?.data ?? {}), false);
+
+  const setCookie = response.headers?.["set-cookie"];
+  assert.ok(Array.isArray(setCookie));
+  assert.equal(setCookie.length, 2);
+  assert.ok(setCookie.every((header) => String(header).includes("HttpOnly")));
+  assert.ok(setCookie.some((header) => String(header).startsWith("cms_access_token=")));
+  assert.ok(setCookie.some((header) => String(header).startsWith("cms_refresh_token=")));
+});
+
+test("AuthController logout clears cookies and revokes refresh cookie token", async () => {
+  const runtime = createRuntime();
+
+  await runtime.installation.bootstrap({
+    email: "admin@example.com",
+    firstName: "Admin",
+    lastName: "User",
+    password: "StrongPassword123!",
+    confirmPassword: "StrongPassword123!",
+    siteName: "Test Site"
+  });
+
+  const session = await runtime.auth.loginWithPassword({
+    email: "admin@example.com",
+    password: "StrongPassword123!"
+  });
+
+  const controller = new AuthController(runtime.auth);
+  const route = controller
+    .routes()
+    .find((candidate) => candidate.method === "POST" && candidate.path === "/v1/auth/logout");
+
+  assert.ok(route, "Expected auth logout route to be registered");
+
+  const result = await route!.handler(
+    createHttpContext(null, {
+      cookie: `cms_refresh_token=${session.refreshToken}`
+    })
+  );
+
+  const response = result as {
+    status?: number;
+    body?: { data?: { revoked?: boolean } };
+    headers?: Record<string, unknown>;
+  };
+
+  assert.equal(response.status ?? 200, 200);
+  assert.equal(response.body?.data?.revoked, true);
+
+  const setCookie = response.headers?.["set-cookie"];
+  assert.ok(Array.isArray(setCookie));
+  assert.ok(setCookie.every((header) => String(header).includes("Max-Age=0")));
+
+  await assert.rejects(
+    async () => runtime.auth.authenticateRefreshToken(session.refreshToken),
+    (error: unknown) => error instanceof JwtAuthError && error.code === "auth_token_revoked"
+  );
+});
+
+test("AuthController updates the authenticated user profile", async () => {
+  const runtime = createRuntime();
+
+  await runtime.installation.bootstrap({
+    email: "admin@example.com",
+    firstName: "Admin",
+    lastName: "User",
+    password: "StrongPassword123!",
+    confirmPassword: "StrongPassword123!",
+    siteName: "Test Site"
+  });
+
+  const session = await runtime.auth.loginWithPassword({
+    email: "admin@example.com",
+    password: "StrongPassword123!"
+  });
+
+  const controller = new AuthController(runtime.auth);
+  const route = controller
+    .routes()
+    .find((candidate) => candidate.method === "PATCH" && candidate.path === "/v1/auth/me");
+
+  assert.ok(route, "Expected auth profile update route to be registered");
+
+  const ctx = createHttpContext(
+    { firstName: "Admin", lastName: "Renamed" },
+    { authorization: `Bearer ${session.accessToken}` }
+  );
+  const middlewareResult = await route!.middlewares?.[0]?.(ctx, async () => route!.handler(ctx));
+  const response = middlewareResult as {
+    status?: number;
+    body?: { data?: { firstName?: string; lastName?: string } };
+    data?: { firstName?: string; lastName?: string };
+  };
+
+  assert.equal(response.status ?? 200, 200);
+  assert.equal((response.body ?? response).data?.firstName, "Admin");
+  assert.equal((response.body ?? response).data?.lastName, "Renamed");
+
+  const authenticated = await runtime.auth.authenticateBearerToken(session.accessToken);
+  assert.equal(authenticated.firstName, "Admin");
+  assert.equal(authenticated.lastName, "Renamed");
+});
+
+test("AuthController changes the authenticated user password", async () => {
+  const runtime = createRuntime();
+
+  await runtime.installation.bootstrap({
+    email: "admin@example.com",
+    firstName: "Admin",
+    lastName: "User",
+    password: "StrongPassword123!",
+    confirmPassword: "StrongPassword123!",
+    siteName: "Test Site"
+  });
+
+  const session = await runtime.auth.loginWithPassword({
+    email: "admin@example.com",
+    password: "StrongPassword123!"
+  });
+
+  const controller = new AuthController(runtime.auth);
+  const route = controller
+    .routes()
+    .find((candidate) => candidate.method === "PATCH" && candidate.path === "/v1/auth/me/password");
+
+  assert.ok(route, "Expected auth password update route to be registered");
+
+  const ctx = createHttpContext(
+    {
+      currentPassword: "StrongPassword123!",
+      newPassword: "NewStrongPassword123!"
+    },
+    { authorization: `Bearer ${session.accessToken}` }
+  );
+  const middlewareResult = await route!.middlewares?.[0]?.(ctx, async () => route!.handler(ctx));
+  const response = middlewareResult as {
+    status?: number;
+    body?: { data?: { email?: string } };
+    data?: { email?: string };
+  };
+
+  assert.equal(response.status ?? 200, 200);
+  assert.equal((response.body ?? response).data?.email, "admin@example.com");
+
+  await assert.rejects(
+    async () =>
+      runtime.auth.loginWithPassword({
+        email: "admin@example.com",
+        password: "StrongPassword123!"
+      }),
+    (error: unknown) => error instanceof JwtAuthError && error.code === "auth_invalid_credentials"
+  );
+
+  const nextSession = await runtime.auth.loginWithPassword({
+    email: "admin@example.com",
+    password: "NewStrongPassword123!"
+  });
+  assert.equal(nextSession.user.email, "admin@example.com");
 });
 
 interface Runtime {
@@ -345,11 +539,11 @@ function applySort<TData extends Record<string, unknown>>(
   });
 }
 
-function createHttpContext(body: unknown): HttpContext {
+function createHttpContext(body: unknown, headers: Record<string, string> = {}): HttpContext {
   const abortController = new AbortController();
 
   return {
-    req: { headers: {} } as HttpContext["req"],
+    req: { headers } as HttpContext["req"],
     res: {} as HttpContext["res"],
     params: {},
     query: {},

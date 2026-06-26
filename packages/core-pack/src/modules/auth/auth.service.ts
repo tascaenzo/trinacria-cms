@@ -72,13 +72,21 @@ export class JwtAuthService {
 
     const user = await this.users.findByEmail(email);
     if (!user || user.status !== "active") {
-      await this.recordFailedAttempt(email, authConfig.maxLoginAttempts, authConfig.loginLockoutMinutes);
+      await this.recordFailedAttempt(
+        email,
+        authConfig.maxLoginAttempts,
+        authConfig.loginLockoutMinutes
+      );
       throw new JwtAuthError("auth_invalid_credentials", "Invalid credentials");
     }
 
     const credentials = await this.localCredentials.findByUserId(user.id);
     if (!credentials) {
-      await this.recordFailedAttempt(email, authConfig.maxLoginAttempts, authConfig.loginLockoutMinutes);
+      await this.recordFailedAttempt(
+        email,
+        authConfig.maxLoginAttempts,
+        authConfig.loginLockoutMinutes
+      );
       throw new JwtAuthError("auth_invalid_credentials", "Invalid credentials");
     }
 
@@ -88,7 +96,11 @@ export class JwtAuthService {
       passwordSalt: credentials.passwordSalt
     });
     if (!matches) {
-      await this.recordFailedAttempt(email, authConfig.maxLoginAttempts, authConfig.loginLockoutMinutes);
+      await this.recordFailedAttempt(
+        email,
+        authConfig.maxLoginAttempts,
+        authConfig.loginLockoutMinutes
+      );
       throw new JwtAuthError("auth_invalid_credentials", "Invalid credentials");
     }
 
@@ -211,6 +223,51 @@ export class JwtAuthService {
     return user;
   }
 
+  async updateAuthenticatedUserProfile(
+    userId: string,
+    input: { firstName: string; lastName: string }
+  ): Promise<UserRecord> {
+    const updated = await this.users.updateProfile(userId, input);
+    if (!updated) {
+      throw new JwtAuthError("auth_invalid_user", "Authenticated user no longer exists");
+    }
+    return updated;
+  }
+
+  async changeAuthenticatedUserPassword(
+    userId: string,
+    input: { currentPassword: string; newPassword: string }
+  ): Promise<UserRecord> {
+    const user = await this.users.findById(userId);
+    if (!user || user.status !== "active") {
+      throw new JwtAuthError("auth_invalid_user", "Authenticated user is not active");
+    }
+
+    const credentials = await this.localCredentials.findByUserId(user.id);
+    if (!credentials) {
+      throw new JwtAuthError("auth_invalid_credentials", "Invalid credentials");
+    }
+
+    const matches = await this.passwordHashing.verifyPassword(input.currentPassword, {
+      algorithm: credentials.algorithm,
+      passwordHash: credentials.passwordHash,
+      passwordSalt: credentials.passwordSalt
+    });
+    if (!matches) {
+      throw new JwtAuthError("auth_invalid_credentials", "Invalid credentials");
+    }
+
+    const nextPassword = await this.passwordHashing.hashPassword(input.newPassword);
+    await this.localCredentials.upsert({
+      userId: user.id,
+      algorithm: nextPassword.algorithm,
+      passwordHash: nextPassword.passwordHash,
+      passwordSalt: nextPassword.passwordSalt
+    });
+
+    return user;
+  }
+
   async getJwtCookieConfig(): Promise<JwtCookieConfig> {
     const nowMs = Date.now();
     if (this.cookieConfigCache && nowMs - this.cookieConfigCache.loadedAtMs < 30_000) {
@@ -275,29 +332,35 @@ export class JwtAuthService {
       return this.authSettingsCache;
     }
 
-    const accessTtlSeconds = await this.config.getNumber("core-pack:auth:jwt_access_ttl_seconds", {
-      envVar: "CMS_JWT_ACCESS_TTL_SECONDS",
-      fallback: 24 * 60 * 60,
-      min: 60
-    }) ?? 24 * 60 * 60;
-    const refreshTtlSeconds = await this.config.getNumber("core-pack:auth:jwt_refresh_ttl_seconds", {
-      envVar: "CMS_JWT_REFRESH_TTL_SECONDS",
-      fallback: 30 * 24 * 60 * 60,
-      min: 300
-    }) ?? 30 * 24 * 60 * 60;
-    const maxLoginAttempts = await this.config.getNumber("core-pack:auth:login_max_attempts", {
-      envVar: "CMS_LOGIN_MAX_ATTEMPTS",
-      fallback: 5,
-      min: 1
-    }) ?? 5;
-    const loginLockoutMinutes = await this.config.getNumber("core-pack:auth:login_lockout_minutes", {
-      envVar: "CMS_LOGIN_LOCKOUT_MINUTES",
-      fallback: 15,
-      min: 1
-    }) ?? 15;
-    const strictSecret = await this.config.getBoolean("core-pack:auth:strict_jwt_secret_required", {
-      fallback: false
-    }) ?? false;
+    const accessTtlSeconds =
+      (await this.config.getNumber("core-pack:auth:jwt_access_ttl_seconds", {
+        envVar: "CMS_JWT_ACCESS_TTL_SECONDS",
+        fallback: 24 * 60 * 60,
+        min: 60
+      })) ?? 24 * 60 * 60;
+    const refreshTtlSeconds =
+      (await this.config.getNumber("core-pack:auth:jwt_refresh_ttl_seconds", {
+        envVar: "CMS_JWT_REFRESH_TTL_SECONDS",
+        fallback: 30 * 24 * 60 * 60,
+        min: 300
+      })) ?? 30 * 24 * 60 * 60;
+    const maxLoginAttempts =
+      (await this.config.getNumber("core-pack:auth:login_max_attempts", {
+        envVar: "CMS_LOGIN_MAX_ATTEMPTS",
+        fallback: 5,
+        min: 1
+      })) ?? 5;
+    const loginLockoutMinutes =
+      (await this.config.getNumber("core-pack:auth:login_lockout_minutes", {
+        envVar: "CMS_LOGIN_LOCKOUT_MINUTES",
+        fallback: 15,
+        min: 1
+      })) ?? 15;
+    const strictSecret =
+      (await this.config.getBoolean("core-pack:auth:strict_jwt_secret_required", {
+        envVar: "CMS_STRICT_JWT_SECRET_REQUIRED",
+        fallback: process.env.NODE_ENV === "production" || process.env.NODE_ENV === "staging"
+      })) ?? false;
     const jwtSecret = readJwtSecretFromEnv(strictSecret);
     const value = {
       loadedAtMs: nowMs,

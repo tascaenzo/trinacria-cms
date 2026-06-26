@@ -94,7 +94,12 @@ export class SettingsPluginAuthService {
         );
       }
 
-      this.assertNonceNotReplayed(pluginId, nonce, now + config.maxSkewSeconds, config.nonceCacheMaxEntries);
+      this.assertNonceNotReplayed(
+        pluginId,
+        nonce,
+        now + config.maxSkewSeconds,
+        config.nonceCacheMaxEntries
+      );
 
       const request = toNodeRequest(ctx.req);
       const isValid = secrets.some((secret) => {
@@ -172,17 +177,19 @@ export class SettingsPluginAuthService {
         nonceCacheMaxEntries: 10_000
       };
     }
-    const maxSkewSeconds = await this.config.getNumber("core-pack:plugin_auth:max_skew_seconds", {
-      envVar: "CMS_PLUGIN_AUTH_MAX_SKEW_SECONDS",
-      fallback: this.envMaxSkewSeconds,
-      min: 30,
-      max: 3600
-    }) ?? this.envMaxSkewSeconds;
-    const nonceCacheMaxEntries = await this.config.getNumber("core-pack:plugin_auth:nonce_cache_max_entries", {
-      fallback: 10_000,
-      min: 100,
-      max: 200_000
-    }) ?? 10_000;
+    const maxSkewSeconds =
+      (await this.config.getNumber("core-pack:plugin_auth:max_skew_seconds", {
+        envVar: "CMS_PLUGIN_AUTH_MAX_SKEW_SECONDS",
+        fallback: this.envMaxSkewSeconds,
+        min: 30,
+        max: 3600
+      })) ?? this.envMaxSkewSeconds;
+    const nonceCacheMaxEntries =
+      (await this.config.getNumber("core-pack:plugin_auth:nonce_cache_max_entries", {
+        fallback: 10_000,
+        min: 100,
+        max: 200_000
+      })) ?? 10_000;
     return { maxSkewSeconds, nonceCacheMaxEntries };
   }
 
@@ -236,4 +243,3 @@ function toNodeRequest(value: unknown): {
 
   return { method, url, headers };
 }
-

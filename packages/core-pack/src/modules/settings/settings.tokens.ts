@@ -1,6 +1,5 @@
 import { createCapabilityToken, createToken } from "@trinacria-cms/kernel";
 import type { RuntimeConfigService } from "./config/runtime-config.service.js";
-import type { SettingsAuditRepository } from "./audit/settings-audit.repository.js";
 import { SettingsController } from "./settings.controller.js";
 import { SettingsDefinitionsRepository } from "./definitions/settings-definitions.repository.js";
 import type { PluginAuthKeyProvider } from "./auth/plugin-auth-key-provider.js";
@@ -38,12 +37,4 @@ export const SETTINGS_CONTROLLER_TOKEN = createToken<SettingsController>(
 
 export const RUNTIME_CONFIG_SERVICE_TOKEN = createToken<RuntimeConfigService>(
   "CORE_PACK_RUNTIME_CONFIG_SERVICE"
-);
-
-export const SETTINGS_AUDIT_REPOSITORY_TOKEN = createToken<SettingsAuditRepository>(
-  "CORE_PACK_SETTINGS_AUDIT_REPOSITORY"
-);
-
-export const SETTINGS_AUDIT_ENTITY_REGISTRATION_TOKEN = createToken<boolean>(
-  "CORE_PACK_SETTINGS_AUDIT_ENTITY_REGISTRATION"
 );

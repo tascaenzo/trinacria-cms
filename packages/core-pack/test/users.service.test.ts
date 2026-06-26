@@ -11,12 +11,12 @@ test("UsersService creates and fetches users", async () => {
   const created = await service.createUser({
     email: "Alice@example.com",
     firstName: "Alice",
-    lastName: "Smith",
-    displayName: "Alice Smith"
+    lastName: "Smith"
   });
 
   assert.equal(created.email, "alice@example.com");
-  assert.equal(created.displayName, "Alice Smith");
+  assert.equal(created.firstName, "Alice");
+  assert.equal(created.lastName, "Smith");
   assert.equal(created.status, "active");
   assert.equal(typeof created.id, "string");
 
@@ -31,8 +31,7 @@ test("UsersService prevents duplicate email in plugin namespace", async () => {
   await service.createUser({
     email: "alice@example.com",
     firstName: "Alice",
-    lastName: "Smith",
-    displayName: "Alice Smith"
+    lastName: "Smith"
   });
 
   await assert.rejects(
@@ -40,8 +39,7 @@ test("UsersService prevents duplicate email in plugin namespace", async () => {
       service.createUser({
         email: "alice@example.com",
         firstName: "Alice",
-        lastName: "Johnson",
-        displayName: "Alice Johnson"
+        lastName: "Johnson"
       }),
     /already exists/
   );
@@ -54,14 +52,12 @@ test("UsersService updates user status and lists users", async () => {
   const first = await service.createUser({
     email: "a@example.com",
     firstName: "A",
-    lastName: "One",
-    displayName: "A One"
+    lastName: "One"
   });
   await service.createUser({
     email: "b@example.com",
     firstName: "B",
-    lastName: "Two",
-    displayName: "B Two"
+    lastName: "Two"
   });
 
   const suspended = await service.suspendUser(first.id);
@@ -69,6 +65,27 @@ test("UsersService updates user status and lists users", async () => {
 
   const users = await service.listUsers();
   assert.equal(users.length, 2);
+});
+
+test("UsersService updates profile and status together", async () => {
+  const db = createFakeDbAdapter();
+  const service = new UsersService(new UsersRepository(db));
+
+  const created = await service.createUser({
+    email: "status@example.com",
+    firstName: "Status",
+    lastName: "User"
+  });
+
+  const updated = await service.updateUserProfile(created.id, {
+    firstName: "Updated",
+    lastName: "User",
+    status: "suspended"
+  });
+
+  assert.equal(updated?.firstName, "Updated");
+  assert.equal(updated?.lastName, "User");
+  assert.equal(updated?.status, "suspended");
 });
 
 function createFakeDbAdapter(): DbAdapter {

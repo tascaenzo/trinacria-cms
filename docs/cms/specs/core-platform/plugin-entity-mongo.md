@@ -27,7 +27,7 @@ Mongo-first. Nuove API non devono promettere portabilita SQL/NoSQL generica.
 | Namespace policy  | `kernel`     | collection naming e ownership       |
 | Index sync        | `kernel`     | materializzazione indici dichiarati |
 | Repository domain | plugin owner | query e logica dominio              |
-| Core repositories | `core-pack`  | utenti, ruoli, settings, API keys   |
+| Core repositories | `core-pack`  | utenti, ruoli, settings             |
 
 ## Modello dati
 

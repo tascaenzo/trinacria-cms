@@ -5,7 +5,10 @@ import type {
   PluginRuntimeStore
 } from "../../contracts/plugin-runtime-store.js";
 import type { PluginManifest } from "../../contracts/plugin-manifest.js";
-import type { PluginRuntimeDiagnostic, PluginRuntimeRecord } from "../../contracts/plugin-runtime.js";
+import type {
+  PluginRuntimeDiagnostic,
+  PluginRuntimeRecord
+} from "../../contracts/plugin-runtime.js";
 import { DbAdapterError } from "../../errors/db-errors.js";
 import { CoreError } from "../../errors/core-error.js";
 import { defineEntity, type EntityRegistry } from "./entity-registry.js";
@@ -114,8 +117,7 @@ export class InMemoryPluginRuntimeStore implements PluginRuntimeStore {
 
   constructor(private readonly now: () => Date = () => new Date()) {}
 
-  async initialize(): Promise<void> {
-  }
+  async initialize(): Promise<void> {}
 
   async upsert(record: PluginRuntimeRecord): Promise<void> {
     const current = this.records.get(record.manifest.id);

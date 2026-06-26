@@ -6,7 +6,7 @@ import {
 } from "../api-http-utils.js";
 import { apiError } from "../../contracts/api-contract.js";
 import type { KernelAdminRouteGuard } from "../../contracts/kernel-admin-route-guard.js";
-import { HttpController, response, type HttpContext } from "@trinacria/http";
+import { HttpController, response, type HttpContext, type HttpMiddleware } from "@trinacria/http";
 import type { KernelSystemService } from "../../runtime/system/kernel-system-service.js";
 import {
   PluginDependencyError,
@@ -37,7 +37,7 @@ export class KernelSystemHttpController extends HttpController {
   }
 
   routes() {
-    const guardedMiddlewares = this.adminRouteGuard ? [this.adminRouteGuard.middleware] : [];
+    const guardedMiddlewares = [this.adminRouteGuard?.middleware ?? denyMissingAdminRouteGuard];
     const guardedSecurity = this.adminRouteGuard?.security;
 
     return this.router()
@@ -253,3 +253,15 @@ export class KernelSystemHttpController extends HttpController {
 function hasErrorDetails(error: unknown): error is { details?: Record<string, unknown> } {
   return Boolean(error && typeof error === "object" && "details" in error);
 }
+
+const denyMissingAdminRouteGuard: HttpMiddleware = async () => {
+  return response(
+    apiError(
+      "admin_route_guard_required",
+      "Kernel system endpoints require an admin route guard provider",
+      undefined,
+      { pluginId: "kernel" }
+    ),
+    { status: 403 }
+  );
+};

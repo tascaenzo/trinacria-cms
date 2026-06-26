@@ -27,13 +27,9 @@ import {
   SETTINGS_SECRETS_REPOSITORY_TOKEN,
   SETTINGS_SERVICE_TOKEN,
   SETTINGS_VALUES_REPOSITORY_TOKEN,
-  RUNTIME_CONFIG_SERVICE_TOKEN,
-  SETTINGS_AUDIT_REPOSITORY_TOKEN,
-  SETTINGS_AUDIT_ENTITY_REGISTRATION_TOKEN
+  RUNTIME_CONFIG_SERVICE_TOKEN
 } from "./settings.tokens.js";
 import { CorePackRuntimeConfigModule } from "./config/runtime-config.module.js";
-import { SettingsAuditRepository } from "./audit/settings-audit.repository.js";
-import { SETTINGS_AUDIT_ENTITY } from "./schemas/settings-audit.schemas.js";
 
 /**
  * Settings module wiring over a single unified settings collection.
@@ -60,19 +56,9 @@ export const CorePackSettingsModule = defineModule({
       CORE_TOKENS.DB_ADAPTER
     ]),
     factoryProvider(
-      SETTINGS_AUDIT_ENTITY_REGISTRATION_TOKEN,
-      (registry) => {
-        (registry as EntityRegistry).register(SETTINGS_AUDIT_ENTITY);
-        return true;
-      },
-      [CORE_TOKENS.ENTITY_REGISTRY]
-    ),
-    classProvider(SETTINGS_AUDIT_REPOSITORY_TOKEN, SettingsAuditRepository, [
-      CORE_TOKENS.DB_ADAPTER
-    ]),
-    factoryProvider(
       SETTINGS_SECRETS_CRYPTO_SERVICE_TOKEN,
-      async (config) => SettingsSecretsCryptoService.createFromConfig(config, process.env.CMS_SETTINGS_MASTER_KEY),
+      async (config) =>
+        SettingsSecretsCryptoService.createFromConfig(config, process.env.CMS_SETTINGS_MASTER_KEY),
       [RUNTIME_CONFIG_SERVICE_TOKEN]
     ),
     factoryProvider(
@@ -89,8 +75,7 @@ export const CorePackSettingsModule = defineModule({
       SETTINGS_DEFINITIONS_REPOSITORY_TOKEN,
       SETTINGS_VALUES_REPOSITORY_TOKEN,
       SETTINGS_SECRETS_REPOSITORY_TOKEN,
-      SETTINGS_SECRETS_CRYPTO_SERVICE_TOKEN,
-      SETTINGS_AUDIT_REPOSITORY_TOKEN
+      SETTINGS_SECRETS_CRYPTO_SERVICE_TOKEN
     ]),
     httpProvider(SETTINGS_CONTROLLER_TOKEN, SettingsController, [
       SETTINGS_SERVICE_TOKEN,
@@ -107,8 +92,6 @@ export const CorePackSettingsModule = defineModule({
     SETTINGS_SECRETS_CRYPTO_SERVICE_TOKEN,
     SETTINGS_PLUGIN_AUTH_KEY_PROVIDER_TOKEN,
     SETTINGS_PLUGIN_AUTH_SERVICE_TOKEN,
-    SETTINGS_SERVICE_TOKEN,
-    SETTINGS_AUDIT_REPOSITORY_TOKEN,
-    SETTINGS_AUDIT_ENTITY_REGISTRATION_TOKEN
+    SETTINGS_SERVICE_TOKEN
   ]
 });

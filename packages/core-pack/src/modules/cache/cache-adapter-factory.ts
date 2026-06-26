@@ -33,25 +33,30 @@ export async function createDefaultCacheAdapter(
 
   const redisUrl = await config.getString("core-pack:cache:redis_url");
   if (redisUrl) {
-    const prefix = await config.getString("core-pack:cache:redis_prefix", {
-      fallback: "trinacria"
-    }) ?? "trinacria";
-    const maxRetriesPerRequest = await config.getNumber("core-pack:cache:redis_max_retries_per_request", {
-      fallback: 3,
-      min: 0
-    }) ?? 3;
-    const retryMaxAttempts = await config.getNumber("core-pack:cache:redis_retry_max_attempts", {
-      fallback: 3,
-      min: 0
-    }) ?? 3;
-    const retryBaseMs = await config.getNumber("core-pack:cache:redis_retry_base_ms", {
-      fallback: 200,
-      min: 10
-    }) ?? 200;
-    const retryCapMs = await config.getNumber("core-pack:cache:redis_retry_cap_ms", {
-      fallback: 2000,
-      min: 50
-    }) ?? 2000;
+    const prefix =
+      (await config.getString("core-pack:cache:redis_prefix", {
+        fallback: "trinacria"
+      })) ?? "trinacria";
+    const maxRetriesPerRequest =
+      (await config.getNumber("core-pack:cache:redis_max_retries_per_request", {
+        fallback: 3,
+        min: 0
+      })) ?? 3;
+    const retryMaxAttempts =
+      (await config.getNumber("core-pack:cache:redis_retry_max_attempts", {
+        fallback: 3,
+        min: 0
+      })) ?? 3;
+    const retryBaseMs =
+      (await config.getNumber("core-pack:cache:redis_retry_base_ms", {
+        fallback: 200,
+        min: 10
+      })) ?? 200;
+    const retryCapMs =
+      (await config.getNumber("core-pack:cache:redis_retry_cap_ms", {
+        fallback: 2000,
+        min: 50
+      })) ?? 2000;
 
     const redis = new Redis(redisUrl, {
       lazyConnect: true,

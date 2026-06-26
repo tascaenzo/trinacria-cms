@@ -114,6 +114,77 @@ export const ResolvedSettingValueOpenApiSchema: Record<string, unknown> = {
   }
 };
 
+export const SettingsGroupSummaryOpenApiSchema: Record<string, unknown> = {
+  type: "object",
+  additionalProperties: false,
+  required: ["id", "label", "ownerPluginIds", "definitionCount", "editableCount", "secretCount"],
+  properties: {
+    id: { type: "string" },
+    label: { type: "string" },
+    ownerPluginIds: {
+      type: "array",
+      items: { type: "string" }
+    },
+    definitionCount: { type: "integer" },
+    editableCount: { type: "integer" },
+    secretCount: { type: "integer" }
+  }
+};
+
+export const SettingsGroupFieldOpenApiSchema: Record<string, unknown> = {
+  type: "object",
+  additionalProperties: false,
+  required: ["fieldId", "key", "ownerPluginId", "domain", "name", "definition"],
+  properties: {
+    fieldId: { type: "string" },
+    key: { type: "string" },
+    ownerPluginId: { type: "string" },
+    domain: { type: "string" },
+    name: { type: "string" },
+    definition: SettingDefinitionOpenApiSchema,
+    value: JsonValueOpenApiSchema,
+    source: { type: "string", enum: ["value", "default"] },
+    version: { type: "integer" },
+    updatedAt: { type: "string", format: "date-time" },
+    secretMetadata: SettingSecretMetadataOpenApiSchema
+  }
+};
+
+export const SettingsGroupSnapshotOpenApiSchema: Record<string, unknown> = {
+  type: "object",
+  additionalProperties: false,
+  required: ["id", "label", "ownerPluginIds", "values", "fields"],
+  properties: {
+    id: { type: "string" },
+    label: { type: "string" },
+    ownerPluginIds: {
+      type: "array",
+      items: { type: "string" }
+    },
+    values: {
+      type: "object",
+      additionalProperties: JsonValueOpenApiSchema
+    },
+    fields: {
+      type: "array",
+      items: SettingsGroupFieldOpenApiSchema
+    }
+  }
+};
+
+export const SettingsGroupUpdateResultOpenApiSchema: Record<string, unknown> = {
+  type: "object",
+  additionalProperties: false,
+  required: ["group", "updated"],
+  properties: {
+    group: SettingsGroupSnapshotOpenApiSchema,
+    updated: {
+      type: "array",
+      items: SettingValueOpenApiSchema
+    }
+  }
+};
+
 export const RevealedSettingSecretOpenApiSchema: Record<string, unknown> = {
   type: "object",
   additionalProperties: false,
@@ -158,12 +229,45 @@ export const ListSettingDefinitionsResponseOpenApiSchema: Record<string, unknown
   }
 };
 
+export const ListSettingsGroupsResponseOpenApiSchema: Record<string, unknown> = {
+  type: "object",
+  additionalProperties: false,
+  required: ["data"],
+  properties: {
+    data: {
+      type: "array",
+      items: SettingsGroupSummaryOpenApiSchema
+    },
+    meta: toOpenApiLooseMeta()
+  }
+};
+
 export const SettingDefinitionResponseOpenApiSchema: Record<string, unknown> = {
   type: "object",
   additionalProperties: false,
   required: ["data"],
   properties: {
     data: SettingDefinitionOpenApiSchema,
+    meta: toOpenApiLooseMeta()
+  }
+};
+
+export const SettingsGroupSnapshotResponseOpenApiSchema: Record<string, unknown> = {
+  type: "object",
+  additionalProperties: false,
+  required: ["data"],
+  properties: {
+    data: SettingsGroupSnapshotOpenApiSchema,
+    meta: toOpenApiLooseMeta()
+  }
+};
+
+export const SettingsGroupUpdateResultResponseOpenApiSchema: Record<string, unknown> = {
+  type: "object",
+  additionalProperties: false,
+  required: ["data"],
+  properties: {
+    data: SettingsGroupUpdateResultOpenApiSchema,
     meta: toOpenApiLooseMeta()
   }
 };

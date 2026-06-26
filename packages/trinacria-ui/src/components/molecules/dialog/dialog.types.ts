@@ -6,8 +6,10 @@ export interface DialogProps extends PropsWithChildren {
   description?: string;
   onClose: () => void;
   footer?: ReactNode;
-  width?: "md" | "lg" | "xl";
+  width?: "md" | "lg" | "xl" | "fullscreen";
   variant?: "modal" | "drawer";
   eyebrow?: string;
   closeLabel?: string;
+  closeShortcutLabel?: string;
+  closeVariant?: "button" | "icon";
 }

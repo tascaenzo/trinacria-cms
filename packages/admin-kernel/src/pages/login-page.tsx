@@ -12,8 +12,8 @@ export interface LoginPageProps {
 
 export function LoginPage({ action, isSubmitting, state }: LoginPageProps) {
   const { t } = useI18n();
-  const [email, setEmail] = useState("admin@example.com");
-  const [password, setPassword] = useState("admin123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   useEffect(() => {
     document.documentElement.classList.add("auth-page");

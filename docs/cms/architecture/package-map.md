@@ -118,9 +118,9 @@ Responsabilita:
 - ruoli
 - permessi
 - policy rules
-- API keys
 - settings definitions/values/secrets
 - security provisioning dai manifest plugin
+- signed plugin authentication for owner-scoped settings operations
 - servizi baseline necessari a ogni installazione
 
 Non deve contenere:

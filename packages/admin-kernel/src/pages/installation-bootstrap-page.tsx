@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { type FormEvent, useRef, useState } from "react";
 import { Button, Input, Select } from "@trinacria-cms/trinacria-ui";
 import { AuthScreenLayout } from "../components/auth-screen-layout.js";
 import { useI18n } from "../lib/i18n.js";
@@ -31,7 +31,7 @@ const LOCALE_OPTIONS = [
   { value: "it-IT", label: "Italiano" },
   { value: "fr-FR", label: "Français" },
   { value: "de-DE", label: "Deutsch" },
-  { value: "es-ES", label: "Español" },
+  { value: "es-ES", label: "Español" }
 ];
 
 const TIMEZONE_OPTIONS = [
@@ -47,7 +47,7 @@ const TIMEZONE_OPTIONS = [
   { value: "America/Los_Angeles", label: "America/Los_Angeles" },
   { value: "Asia/Tokyo", label: "Asia/Tokyo" },
   { value: "Asia/Shanghai", label: "Asia/Shanghai" },
-  { value: "Asia/Kolkata", label: "Asia/Kolkata" },
+  { value: "Asia/Kolkata", label: "Asia/Kolkata" }
 ];
 
 function getStepIndex(step: Step): number {
@@ -60,30 +60,86 @@ export function InstallationBootstrapPage({
   state
 }: InstallationBootstrapPageProps) {
   const { t } = useI18n();
+  const formRef = useRef<HTMLFormElement>(null);
   const [currentStep, setCurrentStep] = useState<Step>("site");
+  const [localError, setLocalError] = useState<string | null>(null);
   const [values, setValues] = useState<FormValues>({
-    siteName: "Trinacria CMS",
-    siteTagline: "Plugin-based editorial platform",
+    siteName: "",
+    siteTagline: "",
     locale: "en-US",
     timezone: "UTC",
-    firstName: "Admin",
-    lastName: "User",
-    email: "admin@example.com",
-    password: "admin12345!",
-    confirmPassword: "admin12345!"
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    confirmPassword: ""
   });
 
   const stepIndex = getStepIndex(currentStep);
   const isFirstStep = currentStep === "site";
   const isReviewStep = currentStep === "review";
 
+  function validateCurrentStep() {
+    if (!formRef.current?.reportValidity()) {
+      return false;
+    }
+    if (currentStep === "admin" && values.password !== values.confirmPassword) {
+      setLocalError(t("auth.installation.error.password_mismatch"));
+      return false;
+    }
+    setLocalError(null);
+    return true;
+  }
+
+  function validateAllSteps() {
+    if (
+      !values.siteName.trim() ||
+      !values.firstName.trim() ||
+      !values.lastName.trim() ||
+      !values.email.trim() ||
+      !values.password ||
+      !values.confirmPassword
+    ) {
+      setLocalError(t("auth.installation.error.required_fields"));
+      return false;
+    }
+    if (values.password !== values.confirmPassword) {
+      setLocalError(t("auth.installation.error.password_mismatch"));
+      return false;
+    }
+    setLocalError(null);
+    return true;
+  }
+
   function handleContinue() {
+    if (!validateCurrentStep()) {
+      return;
+    }
     if (currentStep === "admin") {
       setCurrentStep("review");
     } else {
       const nextIndex = getStepIndex(currentStep) + 1;
       setCurrentStep(STEPS[nextIndex]);
     }
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!validateAllSteps()) {
+      return;
+    }
+
+    const formData = new FormData();
+    formData.set("siteName", values.siteName.trim());
+    formData.set("siteTagline", values.siteTagline.trim());
+    formData.set("locale", values.locale);
+    formData.set("timezone", values.timezone);
+    formData.set("firstName", values.firstName.trim());
+    formData.set("lastName", values.lastName.trim());
+    formData.set("email", values.email.trim());
+    formData.set("password", values.password);
+    formData.set("confirmPassword", values.confirmPassword);
+    action(formData);
   }
 
   function handleBack() {
@@ -111,7 +167,9 @@ export function InstallationBootstrapPage({
           return (
             <span key={step} className="flex items-center gap-2">
               {i > 0 && (
-                <span className={`h-px w-4 ${isDone ? "bg-[color:var(--color-accent)]" : "bg-[color:var(--color-border)]"}`} />
+                <span
+                  className={`h-px w-4 ${isDone ? "bg-[color:var(--color-accent)]" : "bg-[color:var(--color-border)]"}`}
+                />
               )}
               <span
                 className={
@@ -122,9 +180,8 @@ export function InstallationBootstrapPage({
                       : undefined
                 }
               >
-                {isDone ? "✓" : i + 1}
-                {" "}
-                <span className="hidden sm:inline">{t(`auth.installation.step_${step}` as any)}</span>
+                {isDone ? "✓" : i + 1}{" "}
+                <span className="hidden sm:inline">{t(`auth.installation.step_${step}`)}</span>
               </span>
             </span>
           );
@@ -232,28 +289,25 @@ export function InstallationBootstrapPage({
   function renderReviewStep() {
     return (
       <div className="grid gap-3 text-sm">
-        <input type="hidden" name="siteName" value={values.siteName} />
-        <input type="hidden" name="siteTagline" value={values.siteTagline} />
-        <input type="hidden" name="locale" value={values.locale} />
-        <input type="hidden" name="timezone" value={values.timezone} />
-        <input type="hidden" name="firstName" value={values.firstName} />
-        <input type="hidden" name="lastName" value={values.lastName} />
-        <input type="hidden" name="email" value={values.email} />
-        <input type="hidden" name="password" value={values.password} />
-        <input type="hidden" name="confirmPassword" value={values.confirmPassword} />
         <div>
           <p className="text-xs font-semibold text-[color:var(--color-ink-muted)] uppercase tracking-wide">
             {t("auth.installation.step_site")}
           </p>
           <p className="mt-1">{values.siteName}</p>
-          {values.siteTagline && <p className="text-[color:var(--color-ink-muted)]">{values.siteTagline}</p>}
-          <p className="text-[color:var(--color-ink-muted)]">{values.locale} — {values.timezone}</p>
+          {values.siteTagline && (
+            <p className="text-[color:var(--color-ink-muted)]">{values.siteTagline}</p>
+          )}
+          <p className="text-[color:var(--color-ink-muted)]">
+            {values.locale} — {values.timezone}
+          </p>
         </div>
         <div>
           <p className="text-xs font-semibold text-[color:var(--color-ink-muted)] uppercase tracking-wide">
             {t("auth.installation.step_admin")}
           </p>
-          <p className="mt-1">{values.firstName} {values.lastName}</p>
+          <p className="mt-1">
+            {values.firstName} {values.lastName}
+          </p>
           <p className="text-[color:var(--color-ink-muted)]">{values.email}</p>
         </div>
       </div>
@@ -273,20 +327,20 @@ export function InstallationBootstrapPage({
       heroMetrics={[]}
       heroHighlights={[]}
     >
-      <form className="grid gap-5" action={action}>
+      <form ref={formRef} className="grid gap-5" onSubmit={handleSubmit}>
         {renderStepIndicator()}
 
         {currentStep === "site" && renderSiteStep()}
         {currentStep === "admin" && renderAdminStep()}
         {currentStep === "review" && renderReviewStep()}
 
-        {state.error ? (
+        {localError || state.error ? (
           <p
             role="alert"
             aria-live="polite"
             className="rounded-[var(--radius-control)] border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] px-4 py-3 text-sm text-[color:var(--color-danger-ink)]"
           >
-            {state.error}
+            {localError ?? state.error}
           </p>
         ) : null}
 

@@ -16,6 +16,7 @@ import {
   ListPermissionsResponseSchema,
   PermissionResponseSchema,
   PermissionsErrorResponseSchema,
+  UpdatePermissionInputSchema,
   UpdatePermissionStatusInputSchema
 } from "./dto/index.js";
 import type { PermissionsService } from "./permissions.service.js";
@@ -113,6 +114,29 @@ export class PermissionsController extends HttpController {
           }
         }
       })
+      .patch("/v1/permissions/:id", this.updatePermission, {
+        middlewares: [this.adminAuthMiddleware],
+        docs: {
+          summary: "Update permission",
+          tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
+          operationId: "updatePermission",
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            schema: toOpenApiSchema(UpdatePermissionInputSchema)
+          },
+          responses: {
+            200: {
+              description: "Permission updated",
+              schema: toOpenApiSchema(PermissionResponseSchema)
+            },
+            404: {
+              description: "Permission not found",
+              schema: toOpenApiSchema(PermissionsErrorResponseSchema)
+            }
+          }
+        }
+      })
       .patch("/v1/permissions/:id/status", this.updatePermissionStatus, {
         middlewares: [this.adminAuthMiddleware],
         docs: {
@@ -177,6 +201,24 @@ export class PermissionsController extends HttpController {
       const payload = CreatePermissionInputSchema.parse(ctx.body);
       const created = await this.permissions.createPermission(payload);
       return responder.success(created);
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private updatePermission = async (ctx: HttpContext) => {
+    const id = ctx.params.id;
+    if (!id) {
+      return responder.invalidRequest("Missing permission id");
+    }
+
+    try {
+      const payload = UpdatePermissionInputSchema.parse(ctx.body);
+      const updated = await this.permissions.updatePermission(id, payload);
+      if (!updated) {
+        return responder.notFound(`Permission "${id}" not found`);
+      }
+      return responder.success(updated);
     } catch (error) {
       return responder.fromError(error);
     }

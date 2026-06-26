@@ -27,6 +27,20 @@ export const CreatePermissionInputSchema = s.object(
 export type CreatePermissionInput = Infer<typeof CreatePermissionInputSchema>;
 
 /**
+ * DTO schema for updating editable permission metadata.
+ */
+export const UpdatePermissionInputSchema = s.object(
+  {
+    displayName: s.string({ trim: true, minLength: 1, maxLength: 120 }),
+    description: s.string({ trim: true, maxLength: 500 }).optional(),
+    status: PermissionStatusSchema.optional()
+  },
+  { strict: true }
+);
+
+export type UpdatePermissionInput = Infer<typeof UpdatePermissionInputSchema>;
+
+/**
  * DTO schema for updating the status of an existing permission.
  */
 export const UpdatePermissionStatusInputSchema = s.object(

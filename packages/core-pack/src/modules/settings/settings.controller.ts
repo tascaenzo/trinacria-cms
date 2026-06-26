@@ -15,15 +15,21 @@ import {
   ExportPluginSettingsParamSchema,
   ListSettingDefinitionsQuerySchema,
   ListSettingDefinitionsResponseOpenApiSchema,
+  ListSettingsGroupsResponseOpenApiSchema,
   ResolvedSettingValueResponseOpenApiSchema,
   RevealedSettingSecretResponseOpenApiSchema,
   SettingKeyParamSchema,
   SettingDefinitionResponseOpenApiSchema,
   SettingSecretMetadataResponseOpenApiSchema,
   SettingValueResponseOpenApiSchema,
+  SettingsGroupParamSchema,
+  SettingsGroupSnapshotResponseOpenApiSchema,
+  SettingsGroupUpdateResultResponseOpenApiSchema,
   SettingsErrorResponseSchema,
   UpsertSettingDefinitionBodyOpenApiSchema,
   UpsertSettingDefinitionInputSchema,
+  UpsertSettingsGroupValuesBodyOpenApiSchema,
+  UpsertSettingsGroupValuesInputSchema,
   UpsertSettingSecretBodyOpenApiSchema,
   UpsertSettingSecretInputSchema,
   UpsertSettingValueBodyOpenApiSchema,
@@ -31,6 +37,7 @@ import {
 } from "./dto/index.js";
 import { readOptionalJsonField } from "./_shared/settings-http-mapping.js";
 import { parseJsonValue } from "./_shared/settings-json.js";
+import { getOwnerPluginIdFromSettingKey } from "./_shared/settings-key.js";
 import { getAuthenticatedPluginId } from "./auth/plugin-auth.middleware.js";
 import { SettingsPluginAuthService } from "./auth/plugin-auth.service.js";
 import {
@@ -45,6 +52,8 @@ const SignedPluginAuthDescription =
   "Requires signed plugin caller headers: x-cms-plugin-id, x-cms-plugin-ts, x-cms-plugin-nonce, x-cms-plugin-signature.";
 const AdminOrSignedPluginReadDescription =
   "Requires either an admin bearer token or signed plugin caller headers. Masked secret metadata remains owner-scoped for plugin callers.";
+const AdminOrSignedPluginWriteDescription =
+  "Requires either an admin bearer token or signed plugin caller headers. Admin writes are executed against the owner inferred from the setting key.";
 
 const SettingsListQueryParameters = [
   {
@@ -70,6 +79,15 @@ const SettingsListQueryParameters = [
 const ExportPluginSettingsPathParameters = [
   {
     name: "pluginId",
+    in: "path",
+    required: true,
+    schema: { type: "string" }
+  }
+] as const;
+
+const SettingsGroupPathParameters = [
+  {
+    name: "groupId",
     in: "path",
     required: true,
     schema: { type: "string" }
@@ -106,6 +124,85 @@ export class SettingsController extends HttpController {
 
   routes() {
     return this.router()
+      .get("/v1/settings/groups", this.listGroups, {
+        middlewares: [this.readAccessMiddleware],
+        docs: {
+          summary: "List grouped settings forms",
+          description: AdminOrSignedPluginReadDescription,
+          tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
+          operationId: "listSettingsGroups",
+          security: [{ bearerAuth: [] }, { pluginCallerAuth: [] }],
+          parameters: [...SettingsListQueryParameters],
+          responses: {
+            200: {
+              description: "Settings groups list",
+              schema: ListSettingsGroupsResponseOpenApiSchema
+            },
+            401: {
+              description: "Admin or plugin authentication required",
+              schema: toOpenApiSchema(SettingsErrorResponseSchema)
+            }
+          }
+        }
+      })
+      .get("/v1/settings/groups/:groupId", this.getGroupById, {
+        middlewares: [this.readAccessMiddleware],
+        docs: {
+          summary: "Read a grouped settings form",
+          description: AdminOrSignedPluginReadDescription,
+          tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
+          operationId: "getSettingsGroupById",
+          security: [{ bearerAuth: [] }, { pluginCallerAuth: [] }],
+          parameters: [...SettingsGroupPathParameters],
+          responses: {
+            200: {
+              description: "Resolved settings group",
+              schema: SettingsGroupSnapshotResponseOpenApiSchema
+            },
+            401: {
+              description: "Admin or plugin authentication required",
+              schema: toOpenApiSchema(SettingsErrorResponseSchema)
+            },
+            404: {
+              description: "Settings group not found",
+              schema: toOpenApiSchema(SettingsErrorResponseSchema)
+            }
+          }
+        }
+      })
+      .patch("/v1/settings/groups/:groupId", this.upsertGroupValues, {
+        middlewares: [this.readAccessMiddleware],
+        docs: {
+          summary: "Patch grouped non-secret settings values",
+          description: AdminOrSignedPluginWriteDescription,
+          tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
+          operationId: "upsertSettingsGroupValues",
+          security: [{ bearerAuth: [] }, { pluginCallerAuth: [] }],
+          parameters: [...SettingsGroupPathParameters],
+          requestBody: {
+            required: true,
+            schema: UpsertSettingsGroupValuesBodyOpenApiSchema
+          },
+          responses: {
+            200: {
+              description: "Settings group values updated",
+              schema: SettingsGroupUpdateResultResponseOpenApiSchema
+            },
+            401: {
+              description: "Admin or plugin authentication required",
+              schema: toOpenApiSchema(SettingsErrorResponseSchema)
+            },
+            403: {
+              description: "Owner plugin required",
+              schema: toOpenApiSchema(SettingsErrorResponseSchema)
+            },
+            404: {
+              description: "Settings group not found",
+              schema: toOpenApiSchema(SettingsErrorResponseSchema)
+            }
+          }
+        }
+      })
       .get("/v1/settings/definitions", this.listDefinitions, {
         middlewares: [this.readAccessMiddleware],
         docs: {
@@ -204,13 +301,13 @@ export class SettingsController extends HttpController {
         }
       })
       .put("/v1/settings/values/:key", this.upsertValue, {
-        middlewares: [this.pluginAuthMiddleware],
+        middlewares: [this.readAccessMiddleware],
         docs: {
           summary: "Create or update setting value",
-          description: SignedPluginAuthDescription,
+          description: AdminOrSignedPluginWriteDescription,
           tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
           operationId: "upsertSettingValue",
-          security: [{ pluginCallerAuth: [] }],
+          security: [{ bearerAuth: [] }, { pluginCallerAuth: [] }],
           requestBody: {
             required: true,
             schema: UpsertSettingValueBodyOpenApiSchema
@@ -390,6 +487,80 @@ export class SettingsController extends HttpController {
       .build();
   }
 
+  private listGroups = async (ctx: HttpContext) => {
+    try {
+      const ownerPluginId = Array.isArray(ctx.query.ownerPluginId)
+        ? ctx.query.ownerPluginId[0]
+        : ctx.query.ownerPluginId;
+      const query = ListSettingDefinitionsQuerySchema.parse({
+        ownerPluginId,
+        limit: parseQueryNumber(ctx.query.limit),
+        offset: parseQueryNumber(ctx.query.offset)
+      });
+      const groups =
+        getSettingsAccessMode(ctx) === "admin"
+          ? await this.settings.listGroups({ ownerPluginId: query.ownerPluginId })
+          : await this.settings.listGroupsForPlugin(getAuthenticatedPluginId(ctx));
+      return responder.list(groups);
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private getGroupById = async (ctx: HttpContext) => {
+    const groupId = parsePathParam(ctx.params, "groupId");
+    if (!groupId) {
+      return responder.invalidRequest("Missing settings group id");
+    }
+
+    try {
+      const params = SettingsGroupParamSchema.parse({ groupId });
+      const group =
+        getSettingsAccessMode(ctx) === "admin"
+          ? await this.settings.getGroupById(params.groupId)
+          : await this.settings.getGroupForPlugin(getAuthenticatedPluginId(ctx), params.groupId);
+      if (!group) {
+        return responder.notFound(`Settings group "${params.groupId}" not found`);
+      }
+      return responder.success(group);
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private upsertGroupValues = async (ctx: HttpContext) => {
+    const groupId = parsePathParam(ctx.params, "groupId");
+    if (!groupId) {
+      return responder.invalidRequest("Missing settings group id");
+    }
+
+    try {
+      const params = SettingsGroupParamSchema.parse({ groupId });
+      const payload = UpsertSettingsGroupValuesInputSchema.parse(ctx.body);
+      const rawValues =
+        ctx.body && typeof ctx.body === "object" && !Array.isArray(ctx.body)
+          ? (ctx.body as Record<string, unknown>).values
+          : undefined;
+      if (!rawValues || typeof rawValues !== "object" || Array.isArray(rawValues)) {
+        return responder.invalidRequest("Missing values object");
+      }
+
+      const result = await this.settings.upsertGroupValues({
+        requesterPluginId:
+          getSettingsAccessMode(ctx) === "admin"
+            ? CORE_PACK_PLUGIN_ID
+            : getAuthenticatedPluginId(ctx),
+        groupId: params.groupId,
+        values: rawValues as Record<string, unknown>,
+        updatedBy: payload.updatedBy,
+        admin: getSettingsAccessMode(ctx) === "admin"
+      });
+      return responder.success(result);
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
   private listDefinitions = async (ctx: HttpContext) => {
     try {
       const ownerPluginId = Array.isArray(ctx.query.ownerPluginId)
@@ -424,7 +595,10 @@ export class SettingsController extends HttpController {
       const definition =
         getSettingsAccessMode(ctx) === "admin"
           ? await this.settings.getDefinitionByKey(params.key)
-          : await this.settings.getDefinitionByKeyForPlugin(getAuthenticatedPluginId(ctx), params.key);
+          : await this.settings.getDefinitionByKeyForPlugin(
+              getAuthenticatedPluginId(ctx),
+              params.key
+            );
       if (!definition) {
         return responder.notFound(`Setting definition "${params.key}" not found`);
       }
@@ -467,7 +641,10 @@ export class SettingsController extends HttpController {
       const value =
         getSettingsAccessMode(ctx) === "admin"
           ? await this.settings.getResolvedValueByKey(params.key)
-          : await this.settings.getResolvedValueForPlugin(getAuthenticatedPluginId(ctx), params.key);
+          : await this.settings.getResolvedValueForPlugin(
+              getAuthenticatedPluginId(ctx),
+              params.key
+            );
       if (!value) {
         return responder.notFound(`Setting value "${params.key}" not found`);
       }
@@ -484,8 +661,11 @@ export class SettingsController extends HttpController {
     }
 
     try {
-      const requesterPluginId = getAuthenticatedPluginId(ctx);
       const params = SettingKeyParamSchema.parse({ key });
+      const requesterPluginId =
+        getSettingsAccessMode(ctx) === "admin"
+          ? getOwnerPluginIdFromSettingKey(params.key)
+          : getAuthenticatedPluginId(ctx);
       const payload = UpsertSettingValueInputSchema.parse(ctx.body);
       const rawValue =
         ctx.body && typeof ctx.body === "object" && !Array.isArray(ctx.body)

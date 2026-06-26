@@ -1,4 +1,3 @@
-export * from "./audit/index.js";
 export * from "./auth/plugin-auth-key-provider.js";
 export * from "./auth/plugin-auth.js";
 export * from "./auth/plugin-auth.middleware.js";
@@ -8,7 +7,6 @@ export * from "./config/runtime-config.service.js";
 export * from "./config/runtime-settings.js";
 export * from "./definitions/settings-definitions.repository.js";
 export * from "./dto/index.js";
-export * from "./schemas/settings-audit.schemas.js";
 export * from "./schemas/settings.schemas.js";
 export * from "./secrets/settings-secrets-crypto.service.js";
 export * from "./secrets/settings-secrets.repository.js";

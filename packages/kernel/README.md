@@ -26,6 +26,7 @@ framework.
 ## Key exports
 
 - contracts: `plugin-manifest`, `plugin-runtime`, `plugin-runtime-store`, `plugin-security-provisioner`, `db-adapter`, `authz-service`
+- plugin API helpers: `definePluginManifest`, `defineSetting`, `defineAdmin`, `defineAdminRoute`, `defineAdminResource`, `defineAdminSettingsSection`, `successEnvelope`, `errorEnvelope`
 - runtime: `validatePluginManifest`, `assertPluginCompatibility`, `InMemoryPluginRuntime`, `PluginContributionRegistry`
 - runtime helpers: `isValidPermissionKey`, `parsePermissionKey`, `buildContributionKey`, `buildSettingKey`, `isValidPluginId`, `isValidNamespaceSegment`
 - pattern helpers: `isValidPermissionPattern`, `matchesPermissionPattern`
@@ -57,6 +58,11 @@ Kernel contracts are compatibility-critical. Breaking changes should be explicit
 
 Developer-facing plugin API reference:
 [`docs/cms/specs/core-platform/public-plugin-api.md`](../../docs/cms/specs/core-platform/public-plugin-api.md).
+
+New plugin code should import generic manifest/admin/security/settings helpers
+from `@trinacria-cms/kernel/plugin-api`. `@trinacria-cms/core-pack/plugin-api`
+re-exports those helpers and additionally exposes the core-pack-specific signed
+settings request utilities.
 
 M5 runtime implementation guide:
 [`docs/cms/specs/core-platform/m5-plugin-runtime-implementation.md`](../../docs/cms/specs/core-platform/m5-plugin-runtime-implementation.md).

@@ -1,7 +1,5 @@
-import { randomBytes } from "node:crypto";
 import { readFileSync, existsSync, writeFileSync, chmodSync } from "node:fs";
 import { join } from "node:path";
-import mongoose from "mongoose";
 import type { PluginSecurityProvisioner } from "@trinacria-cms/kernel";
 import { CORE_PACK_ADMIN_ROLE } from "../../plugin/core-pack.security.js";
 import { CORE_PACK_MANIFEST } from "../../plugin/core-pack.manifest.js";
@@ -180,12 +178,10 @@ export class InstallationService {
   private async upsertAdminUser(input: InstallBootstrapInput): Promise<UserRecord> {
     const existing = await this.users.findByEmail(input.email);
     if (!existing) {
-      const displayName = `${input.firstName} ${input.lastName}`.trim();
       return this.users.create({
         email: input.email,
         firstName: input.firstName,
-        lastName: input.lastName,
-        displayName: displayName || input.email
+        lastName: input.lastName
       });
     }
 
@@ -202,11 +198,14 @@ export class InstallationService {
     return reactivated;
   }
 
-  private toStatus(state: {
-    installed: boolean;
-    installedAt?: string;
-    adminUserId?: string;
-  }, envStatus: { envFilePresent: boolean; dbConfigured: boolean; envFilePath: string }): InstallationStatus {
+  private toStatus(
+    state: {
+      installed: boolean;
+      installedAt?: string;
+      adminUserId?: string;
+    },
+    envStatus: { envFilePresent: boolean; dbConfigured: boolean; envFilePath: string }
+  ): InstallationStatus {
     return {
       installed: state.installed,
       installedAt: state.installedAt,
@@ -269,8 +268,7 @@ function readInstallationEnvironmentStatus(): {
   const mongoDatabase = process.env.MONGO_DATABASE?.trim();
 
   const dbConfigured = Boolean(
-    (mongoUri && mongoUri.length > 0) ||
-      (mongoHost && mongoPort && mongoDatabase)
+    (mongoUri && mongoUri.length > 0) || (mongoHost && mongoPort && mongoDatabase)
   );
 
   return {

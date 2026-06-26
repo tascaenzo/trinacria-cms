@@ -27,6 +27,22 @@ export class AuthUsersRepository {
     });
   }
 
+  async updateProfile(
+    id: string,
+    input: { firstName: string; lastName: string }
+  ): Promise<UserRecord | null> {
+    const updated = await this.repository().updateOne(
+      { filter: { id: id.trim() } },
+      {
+        firstName: input.firstName.trim(),
+        lastName: input.lastName.trim(),
+        updatedAt: new Date().toISOString()
+      }
+    );
+
+    return updated ? this.parseUserRecord(updated) : null;
+  }
+
   private repository() {
     this.scope = this.scope ?? createPluginDbScope(this.db, CORE_PACK_PLUGIN_ID);
     return this.scope.repository<UserRecord>(USERS_ENTITY_NAME);
@@ -42,13 +58,8 @@ export class AuthUsersRepository {
     if ("roleAssignments" in normalized) {
       delete normalized.roleAssignments;
     }
-
-    const displayName =
-      typeof normalized.displayName === "string" ? normalized.displayName.trim() : "";
-    if (!displayName) {
-      const fn = typeof normalized.firstName === "string" ? normalized.firstName.trim() : "";
-      const ln = typeof normalized.lastName === "string" ? normalized.lastName.trim() : "";
-      normalized.displayName = `${fn} ${ln}`.trim() || "Unknown User";
+    if ("displayName" in normalized) {
+      delete normalized.displayName;
     }
 
     return UserRecordSchema.parse(normalized);

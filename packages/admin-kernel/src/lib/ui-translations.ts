@@ -46,19 +46,6 @@ export function translateToneLabel(
   }
 }
 
-export function translateApiKeyKind(kind: string, t: TranslateFn): string {
-  switch (kind) {
-    case "publishable":
-      return t("common.api_key_kind.publishable");
-    case "secret":
-      return t("common.api_key_kind.secret");
-    case "service":
-      return t("common.api_key_kind.service");
-    default:
-      return kind;
-  }
-}
-
 export function translateSettingSource(source: string, t: TranslateFn): string {
   switch (source) {
     case "value":

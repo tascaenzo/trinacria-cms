@@ -5,11 +5,9 @@ import { RuntimeConfigService } from "./runtime-config.service.js";
 export const CorePackRuntimeConfigModule = defineModule({
   name: "CorePackRuntimeConfigModule",
   providers: [
-    factoryProvider(
-      RUNTIME_CONFIG_SERVICE_TOKEN,
-      (db) => new RuntimeConfigService(db),
-      [CORE_TOKENS.DB_ADAPTER]
-    )
+    factoryProvider(RUNTIME_CONFIG_SERVICE_TOKEN, (db) => new RuntimeConfigService(db), [
+      CORE_TOKENS.DB_ADAPTER
+    ])
   ],
   exports: [RUNTIME_CONFIG_SERVICE_TOKEN]
 });

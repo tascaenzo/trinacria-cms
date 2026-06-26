@@ -1,8 +1,6 @@
 import {
-  apiError,
   createPluginApiResponder,
   HttpController,
-  response,
   toOpenApiSchema,
   type HttpContext
 } from "@trinacria-cms/kernel";
@@ -14,9 +12,7 @@ import {
   InstallationErrorResponseSchema,
   InstallationStatusResponseSchema
 } from "./dto/index.js";
-import {
-  type InstallationService
-} from "./installation.service.js";
+import { type InstallationService } from "./installation.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
 

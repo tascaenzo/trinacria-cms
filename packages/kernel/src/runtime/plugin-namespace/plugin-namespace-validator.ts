@@ -1,6 +1,15 @@
 import type { PluginManifest } from "../../contracts/plugin-manifest.js";
-import type { ContributionIndex, CollisionRule, NamespaceValidationResult, NamespaceValidator } from "./plugin-namespace.js";
-import { isReservedPluginId, isValidPluginId, DEFAULT_COLLISION_POLICY, isReservedNamespaceSegment, buildContributionKey } from "./plugin-namespace.js";
+import type {
+  ContributionIndex,
+  CollisionRule,
+  NamespaceValidationResult,
+  NamespaceValidator
+} from "./plugin-namespace.js";
+import {
+  isReservedPluginId,
+  isValidPluginId,
+  DEFAULT_COLLISION_POLICY
+} from "./plugin-namespace.js";
 
 function normalizeContributionKey(pluginId: string, localName: string): string {
   return `${pluginId.toLowerCase()}:${localName.toLowerCase()}`;

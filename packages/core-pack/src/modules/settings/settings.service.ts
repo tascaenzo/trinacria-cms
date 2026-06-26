@@ -1,10 +1,9 @@
-import { createHash } from "node:crypto";
-import { assertRequesterOwnsSettingKey, getOwnerPluginIdFromSettingKey } from "./_shared/settings-key.js";
 import {
-  cloneJsonValue,
-  parseJsonValue,
-  type JsonValue
-} from "./_shared/settings-json.js";
+  assertRequesterOwnsSettingKey,
+  getOwnerPluginIdFromSettingKey,
+  parseSettingKey
+} from "./_shared/settings-key.js";
+import { cloneJsonValue, parseJsonValue, type JsonValue } from "./_shared/settings-json.js";
 import {
   SettingsDefinitionsRepository,
   type UpsertSettingDefinitionRecordInput
@@ -18,12 +17,7 @@ import {
   type UpsertSettingSecretRecordInput
 } from "./secrets/settings-secrets.repository.js";
 import { SettingsSecretsCryptoService } from "./secrets/settings-secrets-crypto.service.js";
-import { SettingsAuditRepository } from "./audit/settings-audit.repository.js";
-import type { SettingAuditAction } from "./schemas/settings-audit.schemas.js";
-import {
-  SettingsAccessError,
-  createSettingsOwnerAccessError
-} from "./_shared/settings.errors.js";
+import { SettingsAccessError, createSettingsOwnerAccessError } from "./_shared/settings.errors.js";
 
 export interface SettingsDefinition {
   id: string;
@@ -87,6 +81,42 @@ export interface ExportedPluginSettings {
   secrets: readonly SettingSecretMetadata[];
 }
 
+export interface SettingsGroupSummary {
+  id: string;
+  label: string;
+  ownerPluginIds: readonly string[];
+  definitionCount: number;
+  editableCount: number;
+  secretCount: number;
+}
+
+export interface SettingsGroupField {
+  fieldId: string;
+  key: string;
+  ownerPluginId: string;
+  domain: string;
+  name: string;
+  definition: SettingsDefinition;
+  value?: JsonValue;
+  source?: "value" | "default";
+  version?: number;
+  updatedAt?: string;
+  secretMetadata?: SettingSecretMetadata;
+}
+
+export interface SettingsGroupSnapshot {
+  id: string;
+  label: string;
+  ownerPluginIds: readonly string[];
+  values: Record<string, JsonValue>;
+  fields: readonly SettingsGroupField[];
+}
+
+export interface SettingsGroupUpdateResult {
+  group: SettingsGroupSnapshot;
+  updated: readonly SettingValue[];
+}
+
 /**
  * Application service for settings definitions, values and encrypted secrets.
  */
@@ -102,8 +132,7 @@ export class SettingsService {
     private readonly definitions: SettingsDefinitionsRepository,
     private readonly values: SettingsValuesRepository,
     private readonly secrets: SettingsSecretsRepository,
-    private readonly crypto: SettingsSecretsCryptoService,
-    private readonly audit?: SettingsAuditRepository
+    private readonly crypto: SettingsSecretsCryptoService
   ) {}
 
   async upsertDefinition(input: {
@@ -121,15 +150,12 @@ export class SettingsService {
     try {
       assertRequesterOwnsSettingKey(input.requesterPluginId, input.key, "write definition");
 
-      const existing = await this.definitions.findByKey(input.key);
       const record = await this.definitions.upsert({
         key: input.key,
         ownerPluginId: getOwnerPluginIdFromSettingKey(input.key),
         category: input.category,
         description: input.description,
-        ...(input.schema !== undefined
-          ? { schema: parseJsonValue(input.schema) }
-          : {}),
+        ...(input.schema !== undefined ? { schema: parseJsonValue(input.schema) } : {}),
         ...(input.defaultValue !== undefined
           ? { defaultValue: parseJsonValue(input.defaultValue) }
           : {}),
@@ -138,18 +164,6 @@ export class SettingsService {
         secret: input.secret,
         status: input.status
       } satisfies UpsertSettingDefinitionRecordInput);
-
-      await this.emitAudit({
-        key: input.key,
-        action: "definition_upsert",
-        actor: input.requesterPluginId,
-        oldHash: existing ? this.hashJson(existing.defaultValue) : undefined,
-        newMetadata: {
-          description: input.description,
-          category: input.category,
-          hadDefault: input.defaultValue !== undefined
-        }
-      });
 
       this.metrics.writes += 1;
       return this.toDefinition(record);
@@ -196,7 +210,9 @@ export class SettingsService {
       const definition = await this.getActiveDefinitionForWrite(input.key, "write value");
       if (definition.secret) {
         this.metrics.denies += 1;
-        throw new Error(`Setting "${input.key}" is secret and cannot be written via value endpoint`);
+        throw new Error(
+          `Setting "${input.key}" is secret and cannot be written via value endpoint`
+        );
       }
       if (!definition.mutable) {
         this.metrics.denies += 1;
@@ -204,23 +220,12 @@ export class SettingsService {
       }
       const parsedValue = parseJsonValue(input.value);
 
-      const existing = await this.values.findByKey(input.key);
       const record = await this.values.upsert({
         key: input.key,
         ownerPluginId: getOwnerPluginIdFromSettingKey(input.key),
         value: parsedValue,
         updatedBy: input.updatedBy
       } satisfies UpsertSettingValueRecordInput);
-
-      await this.emitAudit({
-        key: input.key,
-        action: "value_upsert",
-        actor: input.updatedBy || input.requesterPluginId,
-        oldHash: existing ? this.hashJson(existing.value) : undefined,
-        newMetadata: {
-          hadValue: true
-        }
-      });
 
       this.metrics.writes += 1;
       return this.toSettingValue(record);
@@ -336,6 +341,111 @@ export class SettingsService {
     return definition;
   }
 
+  async listGroups(options?: { ownerPluginId?: string }): Promise<readonly SettingsGroupSummary[]> {
+    try {
+      const definitions = await this.listActiveDefinitions(options);
+      this.metrics.reads += 1;
+      return this.toGroupSummaries(definitions);
+    } catch (error) {
+      this.trackFailure(error);
+      throw error;
+    }
+  }
+
+  async listGroupsForPlugin(requesterPluginId: string): Promise<readonly SettingsGroupSummary[]> {
+    return this.listGroups({ ownerPluginId: requesterPluginId.trim().toLowerCase() });
+  }
+
+  async getGroupById(
+    groupId: string,
+    options?: { ownerPluginId?: string }
+  ): Promise<SettingsGroupSnapshot | null> {
+    try {
+      const normalizedGroupId = normalizeSettingsGroupId(groupId);
+      const definitions = (await this.listActiveDefinitions(options)).filter(
+        (definition) => getDefinitionGroupId(definition) === normalizedGroupId
+      );
+      if (definitions.length === 0) {
+        return null;
+      }
+
+      this.metrics.reads += 1;
+      return this.toGroupSnapshot(normalizedGroupId, definitions);
+    } catch (error) {
+      this.trackFailure(error);
+      throw error;
+    }
+  }
+
+  async getGroupForPlugin(
+    requesterPluginId: string,
+    groupId: string
+  ): Promise<SettingsGroupSnapshot | null> {
+    return this.getGroupById(groupId, { ownerPluginId: requesterPluginId.trim().toLowerCase() });
+  }
+
+  async upsertGroupValues(input: {
+    requesterPluginId: string;
+    groupId: string;
+    values: Record<string, unknown>;
+    updatedBy?: string;
+    admin?: boolean;
+  }): Promise<SettingsGroupUpdateResult> {
+    try {
+      const normalizedGroupId = normalizeSettingsGroupId(input.groupId);
+      const ownerFilter = input.admin ? undefined : input.requesterPluginId.trim().toLowerCase();
+      const definitions = (await this.listActiveDefinitions({ ownerPluginId: ownerFilter })).filter(
+        (definition) => getDefinitionGroupId(definition) === normalizedGroupId
+      );
+      if (definitions.length === 0) {
+        throw new Error(`Settings group "${normalizedGroupId}" not found`);
+      }
+
+      const writableFields = new Map<string, SettingsDefinition>();
+      for (const definition of definitions) {
+        writableFields.set(getDefinitionFieldId(definition), definition);
+      }
+
+      const updated: SettingValue[] = [];
+      for (const [fieldId, rawValue] of Object.entries(input.values)) {
+        const normalizedFieldId = normalizeSettingsFieldId(fieldId);
+        const definition = writableFields.get(normalizedFieldId);
+        if (!definition) {
+          throw new Error(`Unknown setting field "${fieldId}" for group "${normalizedGroupId}"`);
+        }
+        if (definition.secret) {
+          this.metrics.denies += 1;
+          throw new Error(
+            `Setting field "${normalizedFieldId}" is secret and cannot be written via group endpoint`
+          );
+        }
+        if (!definition.mutable) {
+          this.metrics.denies += 1;
+          throw new Error(`Setting field "${normalizedFieldId}" is immutable`);
+        }
+
+        updated.push(
+          await this.upsertValue({
+            requesterPluginId: input.admin ? definition.ownerPluginId : input.requesterPluginId,
+            key: definition.key,
+            value: rawValue,
+            updatedBy: input.updatedBy
+          })
+        );
+      }
+
+      const group = await this.getGroupById(normalizedGroupId, { ownerPluginId: ownerFilter });
+      if (!group) {
+        throw new Error(`Settings group "${normalizedGroupId}" disappeared during update`);
+      }
+
+      return { group, updated };
+    } catch (error) {
+      this.trackFailure(error);
+      throw error;
+    }
+  }
+
   async upsertSecret(input: {
     requesterPluginId: string;
     key: string;
@@ -354,7 +464,6 @@ export class SettingsService {
         throw new Error(`Setting "${input.key}" is immutable`);
       }
 
-      const existing = await this.secrets.findByKey(input.key);
       const encrypted = this.crypto.encrypt(input.plaintext);
       const record = await this.secrets.upsert({
         key: input.key,
@@ -366,16 +475,6 @@ export class SettingsService {
         keyVersion: encrypted.keyVersion,
         updatedBy: input.updatedBy
       } satisfies UpsertSettingSecretRecordInput);
-
-      await this.emitAudit({
-        key: input.key,
-        action: "secret_upsert",
-        actor: input.updatedBy || input.requesterPluginId,
-        oldHash: existing ? this.hashJson({ keyVersion: existing.keyVersion }) : undefined,
-        newMetadata: {
-          hadValue: true
-        }
-      });
 
       this.metrics.writes += 1;
       return this.toSecretMetadata(record);
@@ -479,6 +578,94 @@ export class SettingsService {
     return { ...this.metrics };
   }
 
+  private async listActiveDefinitions(options?: {
+    ownerPluginId?: string;
+  }): Promise<readonly SettingsDefinition[]> {
+    const definitions = await this.listDefinitions({
+      ownerPluginId: options?.ownerPluginId
+    });
+    return definitions.filter((definition) => definition.status === "active");
+  }
+
+  private toGroupSummaries(
+    definitions: readonly SettingsDefinition[]
+  ): readonly SettingsGroupSummary[] {
+    const groups = new Map<string, SettingsDefinition[]>();
+    for (const definition of definitions) {
+      const groupId = getDefinitionGroupId(definition);
+      groups.set(groupId, [...(groups.get(groupId) ?? []), definition]);
+    }
+
+    return [...groups.entries()]
+      .map(([groupId, groupDefinitions]) => ({
+        id: groupId,
+        label: toSettingsGroupLabel(groupId),
+        ownerPluginIds: uniqueSorted(
+          groupDefinitions.map((definition) => definition.ownerPluginId)
+        ),
+        definitionCount: groupDefinitions.length,
+        editableCount: groupDefinitions.filter(
+          (definition) => definition.mutable && !definition.secret
+        ).length,
+        secretCount: groupDefinitions.filter((definition) => definition.secret).length
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }
+
+  private async toGroupSnapshot(
+    groupId: string,
+    definitions: readonly SettingsDefinition[]
+  ): Promise<SettingsGroupSnapshot> {
+    const fields: SettingsGroupField[] = [];
+    const values: Record<string, JsonValue> = {};
+
+    for (const definition of [...definitions].sort((a, b) => a.key.localeCompare(b.key))) {
+      const parsed = parseSettingKey(definition.key);
+      if (!parsed) continue;
+      const fieldId = getDefinitionFieldId(definition);
+      const baseField = {
+        fieldId,
+        key: definition.key,
+        ownerPluginId: definition.ownerPluginId,
+        domain: parsed.domain,
+        name: parsed.name,
+        definition
+      };
+
+      if (definition.secret) {
+        const secretMetadata = await this.getSecretMetadataByKey(definition.key);
+        fields.push({
+          ...baseField,
+          ...(secretMetadata ? { secretMetadata } : {})
+        });
+        continue;
+      }
+
+      const resolved = await this.getResolvedValueByKey(definition.key);
+      if (!resolved) {
+        fields.push(baseField);
+        continue;
+      }
+
+      values[fieldId] = cloneJsonValue(resolved.value);
+      fields.push({
+        ...baseField,
+        value: cloneJsonValue(resolved.value),
+        source: resolved.source,
+        ...(resolved.version !== undefined ? { version: resolved.version } : {}),
+        updatedAt: resolved.updatedAt
+      });
+    }
+
+    return {
+      id: groupId,
+      label: toSettingsGroupLabel(groupId),
+      ownerPluginIds: uniqueSorted(definitions.map((definition) => definition.ownerPluginId)),
+      values,
+      fields
+    };
+  }
+
   private toDefinition(record: {
     id: string;
     key: string;
@@ -500,9 +687,7 @@ export class SettingsService {
       ownerPluginId: record.ownerPluginId,
       ...(record.category ? { category: record.category } : {}),
       ...(record.description ? { description: record.description } : {}),
-      ...(record.schema !== undefined
-        ? { schema: cloneJsonValue(record.schema) }
-        : {}),
+      ...(record.schema !== undefined ? { schema: cloneJsonValue(record.schema) } : {}),
       ...(record.defaultValue !== undefined
         ? { defaultValue: cloneJsonValue(record.defaultValue) }
         : {}),
@@ -535,25 +720,6 @@ export class SettingsService {
       createdAt: record.createdAt,
       updatedAt: record.updatedAt
     };
-  }
-
-  private async emitAudit(input: {
-    key: string;
-    action: SettingAuditAction;
-    actor?: string;
-    oldHash?: string;
-    newMetadata?: { description?: string; category?: string; hadDefault?: boolean; hadValue?: boolean };
-  }): Promise<void> {
-    if (!this.audit) return;
-    try {
-      await this.audit.record(input);
-    } catch {
-      // Audit failures should not break the primary operation.
-    }
-  }
-
-  private hashJson(value: unknown): string {
-    return createHash("sha256").update(JSON.stringify(value)).digest("hex").slice(0, 16);
   }
 
   private toSecretMetadata(record: {
@@ -597,4 +763,46 @@ export class SettingsService {
     }
     this.metrics.errors += 1;
   }
+}
+
+function getDefinitionGroupId(definition: SettingsDefinition): string {
+  return normalizeSettingsGroupId(
+    definition.category ?? parseSettingKey(definition.key)?.domain ?? "general"
+  );
+}
+
+function getDefinitionFieldId(definition: SettingsDefinition): string {
+  const parsed = parseSettingKey(definition.key);
+  if (!parsed) {
+    throw new Error(`Invalid setting key "${definition.key}"`);
+  }
+  return normalizeSettingsFieldId(`${parsed.domain}.${parsed.name}`);
+}
+
+function normalizeSettingsGroupId(value: string): string {
+  const normalized = value.trim().toLowerCase().replace(/\s+/g, "-");
+  if (!normalized) {
+    throw new Error("Settings group id is required");
+  }
+  return normalized;
+}
+
+function normalizeSettingsFieldId(value: string): string {
+  const normalized = value.trim().toLowerCase();
+  if (!normalized.includes(".")) {
+    throw new Error(`Invalid settings group field "${value}". Expected '<domain>.<name>'`);
+  }
+  return normalized;
+}
+
+function toSettingsGroupLabel(groupId: string): string {
+  return groupId
+    .split(/[._-]+/)
+    .filter(Boolean)
+    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+    .join(" ");
+}
+
+function uniqueSorted(values: readonly string[]): readonly string[] {
+  return [...new Set(values)].sort();
 }

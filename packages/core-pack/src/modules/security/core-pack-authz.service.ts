@@ -4,7 +4,6 @@ import type {
   AuthzService
 } from "@trinacria-cms/kernel";
 import { CoreError, matchesPermissionPattern } from "@trinacria-cms/kernel";
-import { ApiKeysService } from "./api-keys/api-keys.service.js";
 import { type AuthorizationRule } from "./authz-rules.js";
 import { UserAccessService } from "./user-access/user-access.service.js";
 
@@ -12,10 +11,7 @@ import { UserAccessService } from "./user-access/user-access.service.js";
  * Authz service implementation backed by user-role assignments and role grants.
  */
 export class CorePackAuthzService implements AuthzService {
-  constructor(
-    private readonly access: UserAccessService,
-    private readonly apiKeys?: ApiKeysService
-  ) {}
+  constructor(private readonly access: UserAccessService) {}
 
   async can(request: AuthorizationRequest): Promise<AuthorizationResult> {
     const permissionKey = this.toPermissionKey(request);
@@ -99,10 +95,6 @@ export class CorePackAuthzService implements AuthzService {
   }
 
   private async resolveRules(subjectId: string): Promise<readonly AuthorizationRule[]> {
-    if (this.apiKeys && this.apiKeys.isApiKeySubject(subjectId)) {
-      return this.apiKeys.resolveAuthorizationRules(this.apiKeys.toApiKeyId(subjectId));
-    }
-
     return this.access.resolveUserAuthorizationRules(subjectId);
   }
 }

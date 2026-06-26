@@ -7,12 +7,10 @@ import {
   type InstallationStateRecord
 } from "./installation.schemas.js";
 
-const INSTALLATION_STATE_ENTITY_NAME = "installation_state";
+const SETTINGS_ENTITY_NAME = "settings";
+const INSTALLATION_STATE_KIND = "install_state";
 const CACHE_NAMESPACE = "installation";
 
-/**
- * Persistence adapter for singleton installation state.
- */
 export class InstallationStateRepository {
   private scope?: PluginDbScope;
 
@@ -30,7 +28,7 @@ export class InstallationStateRepository {
 
   private async getFromDb(): Promise<InstallationStateRecord | null> {
     return this.repository().findOne({
-      filter: { key: INSTALLATION_STATE_KEY },
+      filter: { kind: INSTALLATION_STATE_KIND, key: INSTALLATION_STATE_KEY },
       parse: (value: unknown) => InstallationStateRecordSchema.parse(value)
     });
   }
@@ -41,6 +39,7 @@ export class InstallationStateRepository {
 
     const now = new Date().toISOString();
     const created = await this.repository().insertOne({
+      kind: INSTALLATION_STATE_KIND,
       key: INSTALLATION_STATE_KEY,
       installed: false,
       createdAt: now,
@@ -71,6 +70,6 @@ export class InstallationStateRepository {
 
   private repository() {
     this.scope = this.scope ?? createPluginDbScope(this.db, CORE_PACK_PLUGIN_ID);
-    return this.scope.repository<InstallationStateRecord>(INSTALLATION_STATE_ENTITY_NAME);
+    return this.scope.repository<InstallationStateRecord>(SETTINGS_ENTITY_NAME);
   }
 }

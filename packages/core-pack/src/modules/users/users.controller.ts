@@ -10,6 +10,7 @@ import {
   CreateUserInputSchema,
   ListUsersQuerySchema,
   ListUsersResponseSchema,
+  UpdateUserProfileInputSchema,
   UpdateUserStatusInputSchema,
   UserResponseSchema,
   UsersErrorResponseSchema
@@ -113,6 +114,29 @@ export class UsersController extends HttpController {
           }
         }
       })
+      .patch("/v1/users/:id", this.updateUserProfile, {
+        middlewares: [this.adminAuthMiddleware],
+        docs: {
+          summary: "Update user profile",
+          tags: [CORE_PACK_OPENAPI_TAGS.USERS],
+          operationId: "updateUserProfile",
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            schema: toOpenApiSchema(UpdateUserProfileInputSchema)
+          },
+          responses: {
+            200: {
+              description: "User updated",
+              schema: toOpenApiSchema(UserResponseSchema)
+            },
+            404: {
+              description: "User not found",
+              schema: toOpenApiSchema(UsersErrorResponseSchema)
+            }
+          }
+        }
+      })
       .patch("/v1/users/:id/status", this.updateUserStatus, {
         middlewares: [this.adminAuthMiddleware],
         docs: {
@@ -177,6 +201,24 @@ export class UsersController extends HttpController {
       const payload = CreateUserInputSchema.parse(ctx.body);
       const created = await this.users.createUser(payload);
       return responder.success(created);
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private updateUserProfile = async (ctx: HttpContext) => {
+    const id = ctx.params.id;
+    if (!id) {
+      return responder.invalidRequest("Missing user id");
+    }
+
+    try {
+      const payload = UpdateUserProfileInputSchema.parse(ctx.body);
+      const updated = await this.users.updateUserProfile(id, payload);
+      if (!updated) {
+        return responder.notFound(`User "${id}" not found`);
+      }
+      return responder.success(updated);
     } catch (error) {
       return responder.fromError(error);
     }

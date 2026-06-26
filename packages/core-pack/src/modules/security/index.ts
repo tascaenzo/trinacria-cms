@@ -1,6 +1,5 @@
 export * from "./dto/index.js";
 export * from "./authz-rules.js";
-export * from "./api-keys/index.js";
 export * from "./core-pack-authz.service.js";
 export * from "./role-policy-rules/role-policy-rules.controller.js";
 export * from "./role-policy-rules/role-policy-rules.repository.js";

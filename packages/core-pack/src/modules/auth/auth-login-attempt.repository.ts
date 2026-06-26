@@ -1,12 +1,11 @@
 import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
+import type { CacheService } from "../cache/cache.service.js";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
-import {
-  LoginAttemptRecordSchema,
-  type LoginAttemptRecord
-} from "./auth-login-attempt.schemas.js";
+import { LoginAttemptRecordSchema, type LoginAttemptRecord } from "./auth-login-attempt.schemas.js";
 
-const LOGIN_ATTEMPTS_ENTITY_NAME = "login_attempts";
 const SETTINGS_ENTITY_NAME = "settings";
+const LOGIN_ATTEMPT_KIND = "login_attempt";
+const CACHE_NAMESPACE = "login_attempt";
 const AUTH_CLEANUP_INTERVAL_KEY = "core-pack:auth:cleanup_interval_seconds";
 const DEFAULT_CLEANUP_INTERVAL_SECONDS = 300;
 const MIN_CLEANUP_INTERVAL_SECONDS = 30;
@@ -23,21 +22,34 @@ export class AuthLoginAttemptRepository {
   private cachedCleanupIntervalSeconds = DEFAULT_CLEANUP_INTERVAL_SECONDS;
   private cachedCleanupIntervalLoadedAtMs = 0;
 
-  constructor(private readonly db: DbAdapter) {}
+  constructor(
+    private readonly db: DbAdapter,
+    private readonly cache?: CacheService
+  ) {}
 
   async findByEmail(email: string): Promise<LoginAttemptRecord | null> {
     await this.maybeCleanupExpired();
-    const normalized = email.trim().toLowerCase();
-    return this.repository().findOne({
-      filter: { email: normalized },
+    const key = email.trim().toLowerCase();
+    const cached = await this.cache?.get<LoginAttemptRecord>(CACHE_NAMESPACE, key);
+    if (cached !== undefined) return cached;
+    const found = await this.repository().findOne({
+      filter: { kind: LOGIN_ATTEMPT_KIND, key },
       parse: (value: unknown) => LoginAttemptRecordSchema.parse(value)
     });
+    if (found) {
+      await this.cache?.set(CACHE_NAMESPACE, key, found);
+    }
+    return found;
   }
 
-  async increment(email: string, maxAttempts: number, lockoutMinutes: number): Promise<LoginAttemptState> {
+  async increment(
+    email: string,
+    maxAttempts: number,
+    lockoutMinutes: number
+  ): Promise<LoginAttemptState> {
     await this.maybeCleanupExpired();
-    const normalized = email.trim().toLowerCase();
-    const existing = await this.findByEmail(normalized);
+    const key = email.trim().toLowerCase();
+    const existing = await this.findByEmail(key);
     const now = new Date().toISOString();
 
     const count = (existing?.count ?? 0) + 1;
@@ -50,13 +62,20 @@ export class AuthLoginAttemptRepository {
 
     if (!existing) {
       const record = await this.repository().insertOne({
-        email: normalized,
+        kind: LOGIN_ATTEMPT_KIND,
+        key,
+        email: key,
         count,
         ...(lockoutUntil ? { lockoutUntil } : {}),
         createdAt: now,
         updatedAt: now
       });
-      return { count: record.count as number, lockoutUntil: lockoutUntil ? new Date(lockoutUntil).getTime() : 0 };
+      const state = {
+        count: record.count as number,
+        lockoutUntil: lockoutUntil ? new Date(lockoutUntil).getTime() : 0
+      };
+      await this.cache?.set(CACHE_NAMESPACE, key, record);
+      return state;
     }
 
     const updated = await this.repository().updateOne(
@@ -70,26 +89,32 @@ export class AuthLoginAttemptRepository {
     if (!updated) {
       throw new Error("Login attempt record disappeared during update");
     }
-    return { count, lockoutUntil: lockoutUntil ? new Date(lockoutUntil).getTime() : 0 };
+    const state = { count, lockoutUntil: lockoutUntil ? new Date(lockoutUntil).getTime() : 0 };
+    await this.cache?.set(CACHE_NAMESPACE, key, updated);
+    return state;
   }
 
   async reset(email: string): Promise<void> {
     await this.maybeCleanupExpired();
-    const normalized = email.trim().toLowerCase();
-    const existing = await this.findByEmail(normalized);
+    const key = email.trim().toLowerCase();
+    const existing = await this.findByEmail(key);
     if (existing) {
       await this.repository().deleteOne({ filter: { id: existing.id } });
     }
+    await this.cache?.invalidate(CACHE_NAMESPACE, key);
   }
 
   async cleanupExpired(): Promise<number> {
-    const all = await this.repository().findMany({});
+    const all = await this.repository().findMany({
+      filter: { kind: LOGIN_ATTEMPT_KIND }
+    });
     const now = new Date().toISOString();
     let removed = 0;
     for (const raw of all) {
       const record = LoginAttemptRecordSchema.parse(raw);
       if (record.lockoutUntil && record.lockoutUntil <= now) {
         await this.repository().deleteOne({ filter: { id: record.id } });
+        await this.cache?.invalidate(CACHE_NAMESPACE, record.key);
         removed++;
       }
     }
@@ -98,7 +123,7 @@ export class AuthLoginAttemptRepository {
 
   private repository() {
     this.scope = this.scope ?? createPluginDbScope(this.db, CORE_PACK_PLUGIN_ID);
-    return this.scope.repository<LoginAttemptRecord>(LOGIN_ATTEMPTS_ENTITY_NAME);
+    return this.scope.repository<LoginAttemptRecord>(SETTINGS_ENTITY_NAME);
   }
 
   private async maybeCleanupExpired(): Promise<void> {

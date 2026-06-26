@@ -173,6 +173,7 @@ export interface PluginManifestAdminRoute {
   label: string;
   requiredPermission?: string;
   componentRef?: string;
+  order?: number;
 }
 
 export interface PluginManifestAdminResource {
@@ -193,8 +194,16 @@ export interface PluginManifestAdminWidget {
 export interface PluginManifestAdminSettingsSection {
   id: string;
   label: string;
-  namespace: string;
+  namespace?: string;
   requiredPermission?: string;
+  kind?: "form" | "panel" | "custom";
+  componentRef?: string;
+  summary?: string;
+  category?: string;
+  settingKeys?: readonly string[];
+  data?: unknown;
+  actions?: readonly unknown[];
+  order?: number;
 }
 
 export interface PluginManifestAdmin {

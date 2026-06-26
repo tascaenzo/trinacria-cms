@@ -1,5 +1,4 @@
 import {
-  isValidPermissionPattern,
   type PluginManifest,
   type PluginManifestSetting,
   type PluginManifestSecurity,
@@ -9,7 +8,6 @@ import {
   type PluginManifestSecurityRole,
   type PluginSecurityProvisioner
 } from "@trinacria-cms/kernel";
-import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import { PermissionsRepository } from "../permissions/permissions.repository.js";
 import { RoleGrantsRepository } from "../roles/grants/role-grants.repository.js";
 import { RolesRepository } from "../roles/roles.repository.js";
@@ -200,7 +198,11 @@ export class CorePackSecurityProvisioningService implements PluginSecurityProvis
       new Set(rule.conditions.map((c) => c.trim().toLowerCase()).sort())
     );
 
-    for (let attempt = 0; attempt < CorePackSecurityProvisioningService.POLICY_UPDATE_MAX_RETRIES; attempt += 1) {
+    for (
+      let attempt = 0;
+      attempt < CorePackSecurityProvisioningService.POLICY_UPDATE_MAX_RETRIES;
+      attempt += 1
+    ) {
       const role = await this.roles.findRawById(roleId);
       if (!role) return;
       const roleRecord = role as Record<string, unknown>;
@@ -367,7 +369,11 @@ export class CorePackSecurityProvisioningService implements PluginSecurityProvis
     roleId: string,
     mutate: (existingRules: readonly EmbeddedRolePolicyRule[]) => EmbeddedRolePolicyRule[] | null
   ): Promise<void> {
-    for (let attempt = 0; attempt < CorePackSecurityProvisioningService.POLICY_UPDATE_MAX_RETRIES; attempt += 1) {
+    for (
+      let attempt = 0;
+      attempt < CorePackSecurityProvisioningService.POLICY_UPDATE_MAX_RETRIES;
+      attempt += 1
+    ) {
       const raw = await this.roles.findRawById(roleId);
       if (!raw) return;
       const role = raw as Record<string, unknown>;

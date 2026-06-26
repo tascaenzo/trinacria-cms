@@ -1,0 +1,44 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+  PLUGIN_AUTH_HEADERS,
+  buildPluginRequestSignature,
+  createSignedPluginRequest,
+  definePermissionKey,
+  successEnvelope
+} from "../src/plugin-api/index.js";
+
+test("core-pack plugin API keeps kernel helper re-exports available for compatibility", () => {
+  assert.equal(definePermissionKey("Blog-Pack", "Posts", "Read"), "blog-pack:posts:read");
+  assert.deepEqual(successEnvelope({ ok: true }), { data: { ok: true } });
+});
+
+test("core-pack plugin API creates signed plugin requests", () => {
+  const request = createSignedPluginRequest({
+    pluginId: "Blog-Pack",
+    secret: "test-secret",
+    method: "post",
+    path: "/v1/settings/",
+    body: { value: true },
+    timestamp: 1234,
+    nonce: "nonce-1",
+    headers: { "content-type": "application/json" }
+  });
+
+  assert.equal(request.method, "POST");
+  assert.equal(request.path, "/v1/settings");
+  assert.equal(request.headers[PLUGIN_AUTH_HEADERS.pluginId], "blog-pack");
+  assert.equal(request.headers["content-type"], "application/json");
+  assert.equal(
+    request.headers[PLUGIN_AUTH_HEADERS.signature],
+    buildPluginRequestSignature({
+      pluginId: "blog-pack",
+      secret: "test-secret",
+      method: "POST",
+      path: "/v1/settings",
+      timestamp: 1234,
+      nonce: "nonce-1",
+      body: { value: true }
+    })
+  );
+});

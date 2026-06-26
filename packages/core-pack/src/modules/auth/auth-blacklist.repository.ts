@@ -1,12 +1,14 @@
 import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
+import type { CacheService } from "../cache/cache.service.js";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import {
   BlacklistedTokenRecordSchema,
   type BlacklistedTokenRecord
 } from "./auth-blacklist.schemas.js";
 
-const BLACKLISTED_TOKENS_ENTITY_NAME = "blacklisted_tokens";
 const SETTINGS_ENTITY_NAME = "settings";
+const BLACKLIST_KIND = "blacklist";
+const CACHE_NAMESPACE = "blacklist";
 const AUTH_CLEANUP_INTERVAL_KEY = "core-pack:auth:cleanup_interval_seconds";
 const DEFAULT_CLEANUP_INTERVAL_SECONDS = 300;
 const MIN_CLEANUP_INTERVAL_SECONDS = 30;
@@ -18,35 +20,62 @@ export class AuthBlacklistRepository {
   private cachedCleanupIntervalSeconds = DEFAULT_CLEANUP_INTERVAL_SECONDS;
   private cachedCleanupIntervalLoadedAtMs = 0;
 
-  constructor(private readonly db: DbAdapter) {}
+  constructor(
+    private readonly db: DbAdapter,
+    private readonly cache?: CacheService
+  ) {}
 
-  async add(sub: string, iat: number, kind: "access" | "refresh", expiresAt: string): Promise<void> {
+  async add(
+    sub: string,
+    iat: number,
+    tokenKind: "access" | "refresh",
+    expiresAt: string
+  ): Promise<void> {
     await this.maybeCleanupExpired();
+    const key = `${sub.trim()}:${iat}`;
     await this.repository().insertOne({
+      kind: BLACKLIST_KIND,
+      key,
       sub: sub.trim(),
       iat,
-      kind,
+      tokenKind,
       expiresAt,
       createdAt: new Date().toISOString()
     });
+    const ttl = Math.max(1, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000));
+    await this.cache?.set(CACHE_NAMESPACE, key, true, ttl);
   }
 
   async isBlacklisted(sub: string, iat: number): Promise<boolean> {
     await this.maybeCleanupExpired();
+    const key = `${sub.trim()}:${iat}`;
+    const cached = await this.cache?.get<boolean>(CACHE_NAMESPACE, key);
+    if (cached !== undefined) return cached;
     const found = await this.repository().findOne({
-      filter: { sub: sub.trim(), iat }
+      filter: { kind: BLACKLIST_KIND, key }
     });
-    return found !== null;
+    const blacklisted = found !== null;
+    if (blacklisted) {
+      const ttl = Math.max(
+        1,
+        Math.floor((new Date(found.expiresAt).getTime() - Date.now()) / 1000)
+      );
+      await this.cache?.set(CACHE_NAMESPACE, key, true, ttl);
+    }
+    return blacklisted;
   }
 
   async cleanupExpired(): Promise<number> {
-    const all = await this.repository().findMany({});
+    const all = await this.repository().findMany({
+      filter: { kind: BLACKLIST_KIND }
+    });
     const now = new Date().toISOString();
     let removed = 0;
     for (const raw of all) {
       const record = BlacklistedTokenRecordSchema.parse(raw);
       if (record.expiresAt <= now) {
         await this.repository().deleteOne({ filter: { id: record.id } });
+        await this.cache?.invalidate(CACHE_NAMESPACE, record.key);
         removed++;
       }
     }
@@ -55,7 +84,7 @@ export class AuthBlacklistRepository {
 
   private repository() {
     this.scope = this.scope ?? createPluginDbScope(this.db, CORE_PACK_PLUGIN_ID);
-    return this.scope.repository<BlacklistedTokenRecord>(BLACKLISTED_TOKENS_ENTITY_NAME);
+    return this.scope.repository<BlacklistedTokenRecord>(SETTINGS_ENTITY_NAME);
   }
 
   private async maybeCleanupExpired(): Promise<void> {

@@ -23,13 +23,14 @@ Unified terminology glossary: [GLOSSARY.md](../GLOSSARY.md)
 9. [0008 - Testing, operations, and technical governance](./0008-testing-operations-study.md)
 10. [0009 - Theoretical models, data structures, formal logic](./0009-theoretical-models-data-structures.md)
 11. [0010 - Code atlas: file -> responsibility -> flow maps](./0010-code-atlas-and-flows.md)
-12. [0011 - Official SDK, runtime discovery, and API keys](./0011-sdk-api-keys-discovery.md)
+12. [0011 - Official SDK, runtime discovery, and plugin integrations](./0011-sdk-api-keys-discovery.md)
 13. [0012 - Operational Mongo schema](./0012-operational-mongo-schema.md)
 14. [0013 - Settings security and operational ownership](./0013-settings-security-and-operational-ownership.md)
 15. [0014 - Settings end-to-end](./0014-settings-end-to-end.md)
 16. [0015 - Plugin operations and troubleshooting](./0015-plugin-operations-and-troubleshooting.md)
 17. [0016 - M5 Plugin runtime foundation](./0016-m5-plugin-runtime-foundation.md)
 18. [0017 - Cache system and authentication hardening](./0017-cache-and-auth-hardening.md)
+19. [0018 - Admin manifest and declarative backoffice](./0018-admin-manifest-and-declarative-backoffice.md)
 
 ## What this manual includes
 
@@ -38,7 +39,7 @@ Unified terminology glossary: [GLOSSARY.md](../GLOSSARY.md)
 - Module-by-module explanation of exported services, controllers, and exposed HTTP endpoints.
 - A precise description of the standard response format (`data`, `error`, `meta`) and how the kernel generates it.
 - Documentation of the published official SDK model, the generated monorepo overlay, and runtime discovery (`/v1/system/*`).
-- Documentation of the API-key model as a first-class machine identity integrated with roles, permissions, and policy rules.
+- Documentation of the signed plugin-caller model for machine integrations and sensitive owner-scoped operations.
 - Practical examples extracted from implemented code.
 - Theoretical models behind architectural choices.
 - Guidelines for tradeoffs, anti-patterns, testing, and operations.

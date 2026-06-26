@@ -41,9 +41,9 @@ far funzionare il CMS:
 - utenti
 - ruoli
 - permessi
-- API keys
 - settings
 - configuration registry e secrets
+- signed plugin caller authentication
 - plugin runtime
 - lifecycle plugin
 - namespace storage
@@ -225,8 +225,8 @@ Responsabile delle funzionalita ufficiali minime:
 - roles
 - permissions
 - settings
-- API keys
 - security provisioning
+- signed plugin caller authentication
 
 Non deve diventare il contenitore di tutti i moduli applicativi.
 

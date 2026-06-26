@@ -42,6 +42,7 @@ export interface CmsSdkClientOptions {
   baseUrl: string;
   transport?: SdkTransport;
   fetch?: FetchLike;
+  requestTimeoutMs?: number;
   apiKey?: string;
   apiKeyHeaderName?: string;
   getAccessToken?: () => string | undefined | Promise<string | undefined>;

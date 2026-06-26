@@ -5,7 +5,7 @@
 - Milestone: `M4.0 - Core Platform Specifications`
 - Stato: `draft`
 - Scope: developer-facing API reference
-- Ultimo aggiornamento: `2026-05-21`
+- Ultimo aggiornamento: `2026-06-24`
 
 ## Scopo
 
@@ -40,13 +40,35 @@ import {
   buildSettingKey,
   validatePluginManifest
 } from "@trinacria-cms/kernel";
+import {
+  defineAdmin,
+  defineAdminResource,
+  defineAdminRoute,
+  defineAdminSettingsSection,
+  defineBooleanSetting,
+  definePluginManifest,
+  defineSecurity,
+  defineStringSetting,
+  errorEnvelope,
+  successEnvelope
+} from "@trinacria-cms/kernel/plugin-api";
 import { CORE_TOKENS } from "@trinacria-cms/kernel";
 // CORE_TOKENS.CACHE_ADAPTER — token DI per l'adapter cache
 ```
 
 Per integrazione con il configuration registry (chiamate plugin-to-core
-signed), il plugin puo accedere al servizio `SettingsRegistry` di
-`@trinacria-cms/core-pack` tramite DI.
+signed), gli helper di firma sono specifici di `core-pack`:
+
+```ts
+import { createSignedPluginRequest } from "@trinacria-cms/core-pack/plugin-api";
+```
+
+Regola di import:
+
+- helper generici per manifest, admin, security, settings, eventi e HTTP envelope:
+  `@trinacria-cms/kernel/plugin-api`;
+- helper legati al protocollo signed settings di `core-pack`:
+  `@trinacria-cms/core-pack/plugin-api`.
 
 Vedere specifiche:
 
@@ -286,36 +308,53 @@ Regole:
 
 ```ts
 export interface PluginManifestSetting {
-  namespace: string;
   key: string;
-  type: "string" | "number" | "boolean" | "json" | "secret";
-  visibility: "public" | "protected" | "secret";
-  required?: boolean;
+  category: string;
   description?: string;
-  schema?: Record<string, unknown>;
-  defaultValueJson?: string;
+  schema?: JsonValue;
+  defaultValue?: JsonValue;
+  status?: "active" | "deprecated" | "disabled";
+  secret?: boolean;
+  mutable?: boolean;
+  visibility?: "public" | "admin" | "internal";
 }
 ```
 
 Regole:
 
 - chiave canonica: `<pluginId>:<namespace>:<key>`.
-- `secret` richiede storage cifrato nel configuration registry.
-- `defaultValueJson` e serializzato JSON, non valore JavaScript libero.
+- `category` guida raggruppamento, backoffice e API grouped settings.
+- `secret: true` richiede storage cifrato nel configuration registry.
+- `defaultValue` e un valore JSON-compatible nativo, non una stringa JSON.
+
+Helper consigliati:
+
+```ts
+defineStringSetting({
+  pluginId: "blog-pack",
+  domain: "editorial",
+  name: "default_status",
+  category: "editorial",
+  defaultValue: "draft",
+  maxLength: 40
+});
+```
 
 ### Accesso runtime alle configurazioni
 
 Un plugin puo leggere e scrivere le proprie configurazioni tramite signed call
-al `SettingsRegistry` di core-pack:
+alle API settings di core-pack:
 
 ```ts
-// Chiamata plugin-to-core signed (futura)
-const registry: SettingsRegistry = context.app.get(SETTINGS_REGISTRY_TOKEN);
-
-const result = await registry.get("blog-pack:editorial:default-status", {
-  type: "plugin",
-  id: "blog-pack",
-  pluginId: "blog-pack"
+const request = createSignedPluginRequest({
+  pluginId: "blog-pack",
+  secret: process.env.BLOG_PACK_SETTINGS_SECRET!,
+  method: "PUT",
+  path: "/v1/settings/values/blog-pack:editorial:default_status",
+  body: {
+    value: "review",
+    updatedBy: "blog-pack"
+  }
 });
 ```
 
@@ -394,20 +433,26 @@ dal runtime al caricamento del plugin e rimosse all'unload.
 
 ```ts
 export interface PluginManifestAdmin {
-  navigation?: readonly PluginManifestAdminNavigation[];
-  routes?: readonly PluginManifestAdminRoute[];
-  resources?: readonly PluginManifestAdminResource[];
-  widgets?: readonly PluginManifestAdminWidget[];
-  settingsSections?: readonly PluginManifestAdminSettingsSection[];
+  pages?: readonly AdminRouteDefinition[];
+  navigation?: readonly AdminNavigationItem[];
+  resources?: readonly AdminResourceDefinition[];
+  dashboard?: {
+    widgets?: readonly AdminDashboardWidgetDefinition[];
+  };
+  settings?: {
+    sections?: readonly AdminSettingsSectionDefinition[];
+  };
 }
 ```
 
 Regole:
 
 - `id` e locale al plugin.
-- `path`, `routeBase`, `apiBase` iniziano con `/`.
-- `requiredPermission`, quando presente, deve appartenere al plugin.
-- l'admin-kernel usera queste dichiarazioni per montare UI e risorse.
+- `path` e gli endpoint dichiarativi iniziano con `/`.
+- gli endpoint admin runtime devono restare in namespace sicuri, per default `/admin`.
+- i guards capability/permission, quando presenti, devono appartenere al plugin.
+- l'admin-kernel usa queste dichiarazioni per costruire `AdminExtensionManifest` e renderer dichiarativi.
+- UI React custom non serializzabile resta fuori dal manifest runtime.
 
 ## Security declaration
 
@@ -459,12 +504,27 @@ export const manifest: PluginManifest = {
     emits: [{ name: "post-published", visibility: "public", version: 1 }]
   },
   admin: {
-    routes: [
+    pages: [
       {
         id: "posts",
         path: "/blog/posts",
-        label: "Posts",
-        requiredPermission: "blog-pack:posts:read"
+        pluginId: "blog-pack",
+        mode: "declarative",
+        kind: "resource",
+        title: "Posts",
+        data: {
+          endpoint: { method: "GET", path: "/admin/blog/posts" },
+          valuePath: "data.items"
+        },
+        guards: [{ capability: "blog-pack:posts:read" }]
+      }
+    ],
+    navigation: [
+      {
+        id: "nav-posts",
+        routeId: "posts",
+        title: "Posts",
+        group: "Content"
       }
     ]
   },
@@ -488,11 +548,11 @@ Il sistema di cache e disponibile come servizio DI in core-pack.
 import { CORE_TOKENS } from "@trinacria-cms/kernel";
 
 // Token per l'adapter cache (livello kernel)
-CORE_TOKENS.CACHE_ADAPTER
+CORE_TOKENS.CACHE_ADAPTER;
 // Alias: CORE_PACK_CACHE_ADAPTER_TOKEN (da @trinacria-cms/core-pack, retrocompatibile)
 
 // Token per il servizio cache (da @trinacria-cms/core-pack)
-CORE_PACK_CACHE_SERVICE_TOKEN
+CORE_PACK_CACHE_SERVICE_TOKEN;
 ```
 
 ### CacheService API
@@ -501,10 +561,20 @@ CORE_PACK_CACHE_SERVICE_TOKEN
 class CacheService {
   get<T>(namespace: string, key: string): Promise<T | undefined>;
   set<T>(namespace: string, key: string, value: T, ttlSeconds?: number): Promise<void>;
-  getOrCompute<T>(namespace: string, key: string, loader: () => Promise<T>, ttlSeconds?: number): Promise<T>;
+  getOrCompute<T>(
+    namespace: string,
+    key: string,
+    loader: () => Promise<T>,
+    ttlSeconds?: number
+  ): Promise<T>;
   invalidate(namespace: string, key?: string): Promise<void>;
   clear(): Promise<void>;
-  wrap<T>(namespace: string, key: string, loader: () => Promise<T>, ttlSeconds?: number): () => Promise<T>;
+  wrap<T>(
+    namespace: string,
+    key: string,
+    loader: () => Promise<T>,
+    ttlSeconds?: number
+  ): () => Promise<T>;
 }
 ```
 

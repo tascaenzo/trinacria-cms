@@ -6,6 +6,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent
 } from "react";
 import { Button } from "../../atoms/button/button.js";
+import { Icon } from "../../atoms/icon/icon.js";
 import { Eyebrow } from "../../primitives/eyebrow/eyebrow.js";
 import { OverlaySurface } from "../../primitives/overlay-surface/overlay-surface.js";
 import { BodyText } from "../../primitives/text/text.js";
@@ -33,6 +34,8 @@ export function Dialog({
   description,
   eyebrow,
   closeLabel = "Close",
+  closeShortcutLabel = "Esc",
+  closeVariant = "button",
   footer,
   onClose,
   open,
@@ -71,9 +74,11 @@ export function Dialog({
       const previousOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
       const frame = window.requestAnimationFrame(() => {
-        setIsActive(true);
-        const focusables = getFocusableElements(dialogRef.current);
-        (focusables[0] ?? closeButtonRef.current)?.focus();
+        window.requestAnimationFrame(() => {
+          setIsActive(true);
+          const focusables = getFocusableElements(dialogRef.current);
+          (focusables[0] ?? closeButtonRef.current)?.focus();
+        });
       });
       return () => {
         window.cancelAnimationFrame(frame);
@@ -82,13 +87,14 @@ export function Dialog({
     }
 
     setIsActive(false);
+    const exitDurationMs = variant === "drawer" ? 520 : 220;
     const timeout = window.setTimeout(() => {
       setShouldRender(false);
       previousFocusRef.current?.focus();
-    }, 220);
+    }, exitDurationMs);
 
     return () => window.clearTimeout(timeout);
-  }, [open]);
+  }, [open, variant]);
 
   function handleKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
     if (event.key !== "Tab") {
@@ -124,15 +130,18 @@ export function Dialog({
   return (
     <div
       className={cn(
-        "fixed inset-0 z-50 transition-all duration-200 ease-out",
-        variant === "modal" && "flex items-center justify-center px-4 py-6",
+        "fixed inset-0 z-50 transition-all",
+        variant === "modal" && "duration-200 ease-out",
+        variant === "drawer" && "duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+        variant === "modal" &&
+          "flex items-start justify-center px-3 py-3 sm:items-center sm:px-4 sm:py-6",
         variant === "drawer" && "flex items-stretch justify-end",
         isActive
           ? "bg-[color:var(--color-overlay)] backdrop-blur-[2px]"
           : "bg-transparent backdrop-blur-none"
       )}
     >
-      <div className="absolute inset-0" onClick={onClose} />
+      <div className="absolute inset-0" aria-hidden="true" onClick={onClose} />
       <OverlaySurface
         ref={dialogRef}
         variant={variant === "drawer" ? "drawer" : "modal"}
@@ -142,10 +151,17 @@ export function Dialog({
         aria-describedby={description ? descriptionId : undefined}
         onKeyDown={handleKeyDown}
         className={cn(
-          "relative z-10 w-full overflow-hidden transition-all duration-200 ease-out",
+          "relative z-10 w-full overflow-hidden transition-[opacity,transform] will-change-transform",
+          variant === "modal" && "duration-200 ease-out",
+          variant === "drawer" && "transform-gpu duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
           variant === "modal" && width === "md" && "max-w-2xl",
           variant === "modal" && width === "lg" && "max-w-4xl",
           variant === "modal" && width === "xl" && "max-w-6xl",
+          variant === "modal" &&
+            "flex max-h-[calc(100vh-1.5rem)] flex-col sm:max-h-[calc(100vh-3rem)]",
+          variant === "modal" &&
+            width === "fullscreen" &&
+            "flex h-[calc(100vh-2rem)] max-w-[calc(100vw-2rem)] flex-col",
           variant === "drawer" &&
             "ml-auto flex h-full max-w-[640px] flex-col rounded-none border-y-0 border-r-0",
           variant === "modal" &&
@@ -153,16 +169,16 @@ export function Dialog({
               ? "translate-y-0 scale-100 opacity-100"
               : "translate-y-4 scale-[0.985] opacity-0"),
           variant === "drawer" &&
-            (isActive ? "translate-x-0 opacity-100" : "translate-x-10 opacity-0")
+            (isActive ? "translate-x-0 opacity-100" : "translate-x-full opacity-0")
         )}
       >
-        <header className="flex items-start justify-between gap-4 border-b border-[color:var(--color-border)] px-6 py-5">
-          <div>
+        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4 sm:px-6 sm:py-5">
+          <div className="min-w-0">
             {eyebrow ? <Eyebrow className="tracking-[0.18em]">{eyebrow}</Eyebrow> : null}
             <h2
               id={titleId}
               className={cn(
-                "text-lg font-semibold text-[color:var(--color-ink)]",
+                "text-lg font-semibold leading-7 text-[color:var(--color-ink)]",
                 eyebrow ? "mt-2" : undefined
               )}
             >
@@ -174,15 +190,34 @@ export function Dialog({
               </BodyText>
             ) : null}
           </div>
-          <Button ref={closeButtonRef} variant="secondary" className="shrink-0" onClick={onClose}>
-            {closeLabel}
-          </Button>
+          {closeVariant === "icon" ? (
+            <div className="flex shrink-0 items-center gap-2">
+              <kbd className="hidden rounded border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] px-1.5 py-0.5 text-[10px] font-medium leading-none text-[color:var(--color-ink-subtle)] shadow-[var(--shadow-sm)] sm:inline-flex">
+                {closeShortcutLabel}
+              </kbd>
+              <button
+                ref={closeButtonRef}
+                type="button"
+                onClick={onClose}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[color:var(--color-ink-muted)] transition hover:bg-[color:var(--color-interactive-hover)] hover:text-[color:var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-focus)]"
+                aria-label={closeLabel}
+                title={closeLabel}
+              >
+                <Icon name="x" className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <Button ref={closeButtonRef} variant="secondary" className="shrink-0" onClick={onClose}>
+              {closeLabel}
+            </Button>
+          )}
         </header>
         <div
           className={cn(
-            "overflow-auto px-6 py-5",
-            variant === "modal" && "max-h-[70vh]",
-            variant === "drawer" && "min-h-0 flex-1"
+            "min-h-0 overflow-auto",
+            variant === "modal" && width !== "fullscreen" && "flex-1 px-4 py-4 sm:px-6 sm:py-5",
+            variant === "modal" && width === "fullscreen" && "min-h-0 flex-1 p-0",
+            variant === "drawer" && "min-h-0 flex-1 px-4 py-4 sm:px-6 sm:py-5"
           )}
         >
           {children}
@@ -190,7 +225,7 @@ export function Dialog({
         {footer ? (
           <footer
             className={cn(
-              "flex items-center justify-end gap-3 border-t border-[color:var(--color-border)] px-6 py-4",
+              "flex shrink-0 flex-wrap items-center justify-end gap-3 border-t border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4 sm:px-6",
               variant === "drawer" && "mt-auto"
             )}
           >
