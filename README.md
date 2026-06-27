@@ -82,6 +82,17 @@ docker compose up -d mongo
 npm run dev:playground
 ```
 
+MongoDB configuration:
+
+- `MONGO_URI` is the canonical CMS application connection string.
+- When `MONGO_URI` is set, the app ignores the split Mongo fallback values for
+  connection purposes.
+- `MONGO_ROOT_USERNAME`, `MONGO_ROOT_PASSWORD`, and `MONGO_DATABASE` are used by
+  the bundled `docker-compose.yml` to initialize the local Mongo container; keep
+  them aligned with `MONGO_URI` in local development.
+- `MONGO_HOST` and `MONGO_PORT` are optional fallback values for environments
+  that do not provide `MONGO_URI`.
+
 Run backoffice:
 
 ```bash

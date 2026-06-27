@@ -10,6 +10,11 @@ import type {
   PluginManifestEventSubscription,
   PluginManifestSetting
 } from "./plugin-manifest.js";
+export type {
+  PluginEventSubscriptionAuthorizationRequest,
+  PluginEventSubscriptionAuthorizer,
+  PluginAccessAuthorizationResult as PluginEventSubscriptionAuthorizationResult
+} from "./plugin-access-policy.js";
 import type { ApplicationContext, ModuleDefinition } from "@trinacria/core";
 import type { EventEnvelope } from "@trinacria/events";
 
@@ -52,6 +57,11 @@ export interface KernelPluginRuntimeContext {
   app: ApplicationContext;
   pluginId: string;
   manifest: PluginManifest;
+  events: PluginEventPublisher;
+}
+
+export interface PluginEventPublisher {
+  emit(eventName: string, payload: unknown): Promise<void>;
 }
 
 /**
@@ -82,6 +92,7 @@ export interface KernelPluginHooks {
 }
 
 export interface KernelPluginEventHandlerContext {
+  app: ApplicationContext;
   pluginId: string;
   eventName: string;
   handlerName: string;
@@ -256,4 +267,9 @@ export interface PluginRuntime {
   describeContributions(): PluginContributionCatalogSnapshot;
   /** Returns recent lifecycle events for diagnostics and audit. */
   events(options?: { pluginId?: string; limit?: number }): readonly PluginRuntimeEvent[];
+  /**
+   * Emits an event on behalf of a loaded plugin.
+   * Implementations must enforce manifest-declared event contracts.
+   */
+  emitPluginEvent(pluginId: string, eventName: string, payload: unknown): Promise<void>;
 }

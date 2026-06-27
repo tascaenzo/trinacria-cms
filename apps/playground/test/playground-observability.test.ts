@@ -23,7 +23,7 @@ test("observability config defaults to JSON logs and enabled metrics", () => {
   assert.equal(config.logFormat, "json");
 });
 
-test("observability middleware records successful requests", async () => {
+test("observability middleware records successful requests without access logs", async () => {
   const metrics = new PlaygroundMetricsRecorder();
   const logger = createMemoryLogger();
   const [requestIdMiddleware, requestLoggerMiddleware] = createObservabilityMiddlewares({
@@ -44,7 +44,7 @@ test("observability middleware records successful requests", async () => {
   assert.equal(snapshot.requestsTotal, 1);
   assert.equal(snapshot.byMethod.GET, 1);
   assert.equal(snapshot.byStatusClass["2xx"], 1);
-  assert.equal(logger.messages[0]?.message, "http.request");
+  assert.equal(logger.messages.length, 0);
 });
 
 test("observability middleware records and logs thrown errors", async () => {

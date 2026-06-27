@@ -7,6 +7,11 @@ import type { PluginDiscoveryService } from "../contracts/plugin-discovery.js";
 import type { PluginRuntime } from "../contracts/plugin-runtime.js";
 import type { PluginRuntimeStore } from "../contracts/plugin-runtime-store.js";
 import type { PluginSecurityProvisioner } from "../contracts/plugin-security-provisioner.js";
+import type {
+  SecureEventPayloadAuthorizer,
+  SecureEventPayloadStore
+} from "../contracts/secure-event-payloads.js";
+import type { PluginEventSubscriptionAuthorizer } from "../contracts/plugin-access-policy.js";
 import type { KernelSystemService } from "../runtime/system/kernel-system-service.js";
 import type { KernelHealthService } from "../runtime/system/kernel-health-service.js";
 import type { EntityRegistry } from "../runtime/persistence/entity-registry.js";
@@ -26,6 +31,15 @@ export const CORE_TOKENS = {
   AUTHZ_SERVICE: createToken<AuthzService>("CMS_CORE_AUTHZ_SERVICE"),
   PLUGIN_SECURITY_PROVISIONER: createToken<PluginSecurityProvisioner>(
     "CMS_CORE_PLUGIN_SECURITY_PROVISIONER"
+  ),
+  SECURE_EVENT_PAYLOAD_STORE: createToken<SecureEventPayloadStore>(
+    "CMS_CORE_SECURE_EVENT_PAYLOAD_STORE"
+  ),
+  SECURE_EVENT_PAYLOAD_AUTHORIZER: createToken<SecureEventPayloadAuthorizer>(
+    "CMS_CORE_SECURE_EVENT_PAYLOAD_AUTHORIZER"
+  ),
+  PLUGIN_EVENT_SUBSCRIPTION_AUTHORIZER: createToken<PluginEventSubscriptionAuthorizer>(
+    "CMS_CORE_PLUGIN_EVENT_SUBSCRIPTION_AUTHORIZER"
   ),
   KERNEL_HEALTH_SERVICE: createToken<KernelHealthService>("CMS_KERNEL_HEALTH_SERVICE"),
   KERNEL_SYSTEM_SERVICE: createToken<KernelSystemService>("CMS_KERNEL_SYSTEM_SERVICE"),

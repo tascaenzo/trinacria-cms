@@ -23,7 +23,13 @@ const namespaceSegmentSchema = s
 
 const publicPathSchema = s.string({ trim: true, minLength: 1, maxLength: 180, startsWith: "/" });
 
-const looseObjectSchema = s.object({}, { strict: false });
+const looseObjectSchema: Schema<Record<string, unknown>> = jsonValueSchema<
+  Record<string, unknown>
+>().refine(
+  (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value),
+  "Value must be a JSON object",
+  "invalid_json_object"
+);
 
 const entityIndexDirectionSchema = s.union([s.literal(1), s.literal(-1), s.literal("text")]);
 
@@ -164,11 +170,11 @@ const eventSubscriptionSchema = s.object(
           rest.length === 0 &&
           Boolean(pluginId) &&
           Boolean(eventName) &&
-          isValidPluginId(pluginId) &&
+          (pluginId === "*" || isValidPluginId(pluginId)) &&
           isValidNamespaceSegment(eventName)
         );
       },
-      "Subscribed eventName must be '<pluginId>:<eventName>'",
+      "Subscribed eventName must be '<pluginId>:<eventName>' or '*:<eventName>'",
       "invalid_subscribed_event_name"
     ),
     handler: s.string({ trim: true, minLength: 1, maxLength: 180 }),
@@ -372,7 +378,6 @@ export function createContributionRefines(_manifestId: string) {
       };
     }) => {
       const permissionRefs = [
-        ...(manifest.events?.subscribes ?? []).map((s) => s.requiredPermission),
         ...(manifest.admin?.navigation ?? []).map((item) => item.requiredPermission),
         ...(manifest.admin?.routes ?? []).map((route) => route.requiredPermission),
         ...(manifest.admin?.resources ?? []).map((resource) => resource.requiredPermission),

@@ -1,13 +1,17 @@
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import type { JsonValue } from "./_shared/settings-json.js";
+import { PLUGIN_ACCESS_GRANTS_SETTING_KEY } from "./plugin-access-policy.service.js";
 import type { SettingsDefinition, SettingsService } from "./settings.service.js";
 
 export interface CorePackSettingDefinitionSeed {
   key: string;
   category: string;
   description: string;
-  defaultValue: JsonValue;
+  defaultValue?: JsonValue;
   schema: JsonValue;
+  visibility?: "public" | "admin" | "internal";
+  mutable?: boolean;
+  secret?: boolean;
 }
 
 export const CORE_PACK_SETTING_DEFINITION_SEEDS: readonly CorePackSettingDefinitionSeed[] =
@@ -83,6 +87,119 @@ export const CORE_PACK_SETTING_DEFINITION_SEEDS: readonly CorePackSettingDefinit
       defaultValue: false,
       schema: {
         type: "boolean"
+      } as JsonValue
+    },
+    {
+      key: "core-pack:user_flows:public_registration_enabled",
+      category: "user_flows",
+      description:
+        "Allow public user registration APIs for external websites. Keep disabled for invite-only CMS access.",
+      defaultValue: false,
+      schema: {
+        type: "boolean"
+      } as JsonValue
+    },
+    {
+      key: "core-pack:user_flows:public_registration_default_status",
+      category: "user_flows",
+      description: "Default status assigned to users created by public registration APIs.",
+      defaultValue: "active",
+      schema: {
+        type: "string",
+        enum: ["active", "suspended"]
+      } as JsonValue
+    },
+    {
+      key: "core-pack:user_flows:public_registration_default_role",
+      category: "user_flows",
+      description:
+        "Optional role code assigned to users created through public registration. Leave empty to avoid automatic role assignment.",
+      defaultValue: "",
+      schema: {
+        type: "string",
+        maxLength: 80
+      } as JsonValue
+    },
+    {
+      key: "core-pack:user_flows:email_verification_required",
+      category: "user_flows",
+      description:
+        "Require newly registered or invited users to verify their email before full account activation.",
+      defaultValue: false,
+      schema: {
+        type: "boolean"
+      } as JsonValue
+    },
+    {
+      key: "core-pack:user_flows:email_verification_token_ttl_minutes",
+      category: "user_flows",
+      description: "Email verification link validity in minutes.",
+      defaultValue: 60 * 24,
+      schema: {
+        type: "number",
+        minimum: 5,
+        maximum: 60 * 24 * 14
+      } as JsonValue
+    },
+    {
+      key: "core-pack:user_flows:user_invites_enabled",
+      category: "user_flows",
+      description:
+        "Allow administrators to invite users through a notification flow instead of creating active users directly.",
+      defaultValue: true,
+      schema: {
+        type: "boolean"
+      } as JsonValue
+    },
+    {
+      key: "core-pack:user_flows:user_invite_token_ttl_minutes",
+      category: "user_flows",
+      description: "User invitation link validity in minutes.",
+      defaultValue: 60 * 24 * 7,
+      schema: {
+        type: "number",
+        minimum: 15,
+        maximum: 60 * 24 * 30
+      } as JsonValue
+    },
+    {
+      key: "core-pack:user_flows:password_reset_enabled",
+      category: "user_flows",
+      description: "Allow password reset APIs and outbound reset-password notifications.",
+      defaultValue: true,
+      schema: {
+        type: "boolean"
+      } as JsonValue
+    },
+    {
+      key: "core-pack:user_flows:password_reset_token_ttl_minutes",
+      category: "user_flows",
+      description: "Password reset link validity in minutes.",
+      defaultValue: 60,
+      schema: {
+        type: "number",
+        minimum: 5,
+        maximum: 60 * 24
+      } as JsonValue
+    },
+    {
+      key: "core-pack:user_flows:send_welcome_notification",
+      category: "user_flows",
+      description: "Emit a welcome notification when an account becomes active.",
+      defaultValue: false,
+      schema: {
+        type: "boolean"
+      } as JsonValue
+    },
+    {
+      key: "core-pack:user_flows:notification_locale",
+      category: "user_flows",
+      description:
+        "Default locale used for user lifecycle notifications when no user-specific locale is available.",
+      defaultValue: "it",
+      schema: {
+        type: "string",
+        pattern: "^[a-z]{2}(-[A-Z]{2})?$"
       } as JsonValue
     },
     {
@@ -270,6 +387,51 @@ export const CORE_PACK_SETTING_DEFINITION_SEEDS: readonly CorePackSettingDefinit
       } as JsonValue
     },
     {
+      key: PLUGIN_ACCESS_GRANTS_SETTING_KEY,
+      category: "security",
+      description:
+        "Admin-managed plugin permission center grants for sensitive event subscriptions and secure payload claims.",
+      defaultValue: [
+        {
+          producerPluginId: "core-pack",
+          consumerPluginId: "email-pack",
+          eventName: "core-pack:secure-event-payload-ready",
+          payloadType: "email-pack:send-email-request",
+          requiredPermission: "email-pack:email:send",
+          status: "approved",
+          reason: "Official transactional email delivery plugin"
+        }
+      ] as JsonValue,
+      schema: {
+        type: "array",
+        items: {
+          type: "object",
+          required: [
+            "producerPluginId",
+            "consumerPluginId",
+            "eventName",
+            "requiredPermission",
+            "status"
+          ],
+          properties: {
+            producerPluginId: { type: "string" },
+            consumerPluginId: { type: "string" },
+            eventName: { type: "string" },
+            payloadType: { type: "string" },
+            requiredPermission: { type: "string" },
+            status: {
+              type: "string",
+              enum: ["pending", "approved", "denied", "revoked"]
+            },
+            reason: { type: "string" },
+            approvedBy: { type: "string" },
+            approvedAt: { type: "string" },
+            updatedAt: { type: "string" }
+          }
+        }
+      } as JsonValue
+    },
+    {
       key: "core-pack:cache:redis_prefix",
       category: "cache",
       description: "Redis key prefix for cache entries.",
@@ -340,6 +502,9 @@ export async function provisionCorePackSettingDefinitions(
         description: definition.description,
         schema: definition.schema,
         defaultValue: definition.defaultValue,
+        visibility: definition.visibility,
+        mutable: definition.mutable,
+        secret: definition.secret,
         status: "active"
       })
     );

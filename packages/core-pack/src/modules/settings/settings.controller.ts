@@ -100,6 +100,7 @@ const SettingsGroupPathParameters = [
 export class SettingsController extends HttpController {
   private readonly readAccessMiddleware: HttpMiddleware;
   private readonly pluginAuthMiddleware: HttpMiddleware;
+  private readonly writeAccessMiddleware: HttpMiddleware;
   private readonly adminOnlyMiddleware: HttpMiddleware;
 
   constructor(
@@ -114,6 +115,10 @@ export class SettingsController extends HttpController {
     });
     this.pluginAuthMiddleware = createSettingsAccessMiddleware(auth, pluginAuth, {
       allowAdmin: false,
+      allowPlugin: true
+    });
+    this.writeAccessMiddleware = createSettingsAccessMiddleware(auth, pluginAuth, {
+      allowAdmin: true,
       allowPlugin: true
     });
     this.adminOnlyMiddleware = createSettingsAccessMiddleware(auth, pluginAuth, {
@@ -357,13 +362,13 @@ export class SettingsController extends HttpController {
         }
       })
       .put("/v1/settings/secrets/:key", this.upsertSecret, {
-        middlewares: [this.pluginAuthMiddleware],
+        middlewares: [this.writeAccessMiddleware],
         docs: {
           summary: "Create or update encrypted secret",
-          description: SignedPluginAuthDescription,
+          description: AdminOrSignedPluginWriteDescription,
           tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
           operationId: "upsertSettingSecret",
-          security: [{ pluginCallerAuth: [] }],
+          security: [{ bearerAuth: [] }, { pluginCallerAuth: [] }],
           requestBody: {
             required: true,
             schema: UpsertSettingSecretBodyOpenApiSchema
@@ -378,7 +383,7 @@ export class SettingsController extends HttpController {
               schema: toOpenApiSchema(SettingsErrorResponseSchema)
             },
             401: {
-              description: "Plugin caller authentication failed",
+              description: "Admin or plugin authentication required",
               schema: toOpenApiSchema(SettingsErrorResponseSchema)
             }
           }
@@ -715,9 +720,12 @@ export class SettingsController extends HttpController {
     }
 
     try {
-      const requesterPluginId = getAuthenticatedPluginId(ctx);
       const params = SettingKeyParamSchema.parse({ key });
       const payload = UpsertSettingSecretInputSchema.parse(ctx.body);
+      const requesterPluginId =
+        getSettingsAccessMode(ctx) === "admin"
+          ? getOwnerPluginIdFromSettingKey(params.key)
+          : getAuthenticatedPluginId(ctx);
       const secret = await this.settings.upsertSecret({
         requesterPluginId,
         key: params.key,

@@ -55,6 +55,10 @@ test("filterRecordsForSettingsSection supports explicit keys and category fallba
 test("core technical settings stay hidden from the main settings workspace", () => {
   const records = [
     setting({ key: "core-pack:site:name", category: "site" }),
+    setting({
+      key: "core-pack:user_flows:public_registration_enabled",
+      category: "user_flows"
+    }),
     setting({ key: "core-pack:auth:login_max_attempts", category: "auth" }),
     setting({ key: "core-pack:cache:redis_retry_delay", category: "cache" }),
     setting({
@@ -65,9 +69,10 @@ test("core technical settings stay hidden from the main settings workspace", () 
   ];
 
   assert.equal(isVisibleSettingDefinition(records[0]), true);
-  assert.equal(isVisibleSettingDefinition(records[1]), false);
+  assert.equal(isVisibleSettingDefinition(records[1]), true);
   assert.equal(isVisibleSettingDefinition(records[2]), false);
-  assert.equal(isVisibleSettingDefinition(records[3]), true);
+  assert.equal(isVisibleSettingDefinition(records[3]), false);
+  assert.equal(isVisibleSettingDefinition(records[4]), true);
   assert.equal(
     isVisibleSettingsSection({
       id: "core-pack-auth-settings",
@@ -78,7 +83,7 @@ test("core technical settings stay hidden from the main settings workspace", () 
 
   assert.deepEqual(
     groupSettingRecordsForForm(records).flatMap((group) => group.records),
-    [records[0], records[3]]
+    [records[0], records[1], records[4]]
   );
 });
 
@@ -86,6 +91,10 @@ test("groupSettingRecordsForForm assigns readable groups from visible category a
   const groups = groupSettingRecordsForForm([
     setting({ key: "core-pack:site:name", category: "site" }),
     setting({ key: "core-pack:features:editorial_workflow", category: "features" }),
+    setting({
+      key: "core-pack:user_flows:public_registration_enabled",
+      category: "user_flows"
+    }),
     setting({
       key: "commerce-pack:auth:public_checkout_mode",
       category: "auth",
@@ -95,7 +104,7 @@ test("groupSettingRecordsForForm assigns readable groups from visible category a
 
   assert.deepEqual(
     groups.map((group) => group.title),
-    ["Site details", "Feature flags", "Authentication"]
+    ["Site details", "Feature flags", "User lifecycle", "Authentication"]
   );
 });
 

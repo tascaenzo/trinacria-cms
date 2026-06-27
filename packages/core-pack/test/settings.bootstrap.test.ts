@@ -7,9 +7,14 @@ import {
   CORE_PACK_SETTING_DEFINITION_SEEDS,
   provisionCorePackSettingDefinitions
 } from "../src/modules/settings/settings.bootstrap.js";
+import {
+  PLUGIN_ACCESS_GRANTS_SETTING_KEY,
+  SettingsPluginAccessPolicyService
+} from "../src/modules/settings/plugin-access-policy.service.js";
 import { SettingsSecretsRepository } from "../src/modules/settings/secrets/settings-secrets.repository.js";
 import { SettingsService } from "../src/modules/settings/settings.service.js";
 import { SettingsValuesRepository } from "../src/modules/settings/values/settings-values.repository.js";
+import { CORE_PACK_MANIFEST } from "../src/plugin/core-pack.manifest.js";
 
 test("core-pack settings bootstrap provisions the canonical seed catalog", async () => {
   const service = createSettingsService();
@@ -27,10 +32,80 @@ test("core-pack settings bootstrap provisions the canonical seed catalog", async
   const siteName = await service.getResolvedValueByKey("core-pack:site:name");
   const timezone = await service.getResolvedValueByKey("core-pack:cms:timezone");
   const featureFlag = await service.getResolvedValueByKey("core-pack:features:editorial_workflow");
+  const pluginAccessGrants = await service.getResolvedValueByKey(PLUGIN_ACCESS_GRANTS_SETTING_KEY);
 
   assert.equal(siteName?.value, "Trinacria CMS");
   assert.equal(timezone?.value, "Europe/Rome");
   assert.equal(featureFlag?.value, false);
+  assert.ok(Array.isArray(pluginAccessGrants?.value));
+});
+
+test("core-pack manifest exposes the canonical settings catalog", () => {
+  assert.deepEqual(
+    (CORE_PACK_MANIFEST.settings ?? []).map((item) => item.key).sort(),
+    CORE_PACK_SETTING_DEFINITION_SEEDS.map((item) => item.key).sort()
+  );
+
+  const publicRegistration = (CORE_PACK_MANIFEST.settings ?? []).find(
+    (item) => item.key === "core-pack:user_flows:public_registration_enabled"
+  );
+  assert.equal(publicRegistration?.category, "user_flows");
+  assert.equal(publicRegistration?.defaultValue, false);
+});
+
+test("settings-backed plugin access policy authorizes official email grant and denies missing grants", async () => {
+  const service = createSettingsService();
+  await provisionCorePackSettingDefinitions(service);
+  const policy = new SettingsPluginAccessPolicyService(service);
+
+  const allowedSubscription = await policy.canSubscribe({
+    subscriberPluginId: "email-pack",
+    eventName: "core-pack:secure-event-payload-ready",
+    eventOwnerPluginId: "core-pack",
+    eventVisibility: "protected",
+    requiredPermission: "email-pack:email:send"
+  });
+  assert.equal(allowedSubscription.allowed, true);
+
+  const allowedClaim = await policy.canClaim({
+    payload: {
+      id: "payload-1",
+      producerPluginId: "core-pack",
+      eventName: "core-pack:secure-event-payload-ready",
+      payloadType: "email-pack:send-email-request",
+      schemaVersion: 1,
+      requiredPermission: "email-pack:email:send",
+      encryptedPayload: {
+        cipherText: "cipher",
+        iv: "iv",
+        authTag: "tag",
+        algorithm: "aes-256-gcm",
+        keyVersion: "v1"
+      },
+      status: "available",
+      maxClaims: 1,
+      claimCount: 0,
+      createdAt: new Date(0).toISOString(),
+      updatedAt: new Date(0).toISOString()
+    },
+    consumerPluginId: "email-pack",
+    eventName: "core-pack:secure-event-payload-ready",
+    requiredPermission: "email-pack:email:send",
+    decision: "allow"
+  });
+  assert.equal(allowedClaim.allowed, true);
+
+  const deniedSubscription = await policy.canSubscribe({
+    subscriberPluginId: "third-party-pack",
+    eventName: "core-pack:secure-event-payload-ready",
+    eventOwnerPluginId: "core-pack",
+    eventVisibility: "protected",
+    requiredPermission: "email-pack:email:send"
+  });
+  assert.deepEqual(deniedSubscription, {
+    allowed: false,
+    reason: "plugin_access_grant_missing"
+  });
 });
 
 function createSettingsService(): SettingsService {

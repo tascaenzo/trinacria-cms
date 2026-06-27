@@ -17,6 +17,7 @@ export * from "./plugin-namespace/permission-key.js";
 export * from "./persistence/entity-registry.js";
 export * from "./persistence/mongo-db-adapter.js";
 export * from "./persistence/plugin-runtime-store.js";
+export * from "./secure-payloads/index.js";
 export * from "./system/kernel-system-service.js";
 export * from "./system/kernel-health-service.js";
 export * from "./bridge/trinacria-module-bridge.js";

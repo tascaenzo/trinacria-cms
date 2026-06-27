@@ -29,5 +29,26 @@ export const OFFICIAL_CORE_SETTINGS_SECTION_META: Record<
     summaryKey: "settings.section.features.summary",
     order: 30,
     category: "features"
+  },
+  "core-pack:core-pack-user-flow-settings": {
+    titleKey: "settings.section.user_flows.title",
+    summary: "Registration, invitations, verification, and password recovery policies.",
+    summaryKey: "settings.section.user_flows.summary",
+    order: 40,
+    category: "user_flows"
+  },
+  "core-pack:core-pack-plugin-permissions-settings": {
+    titleKey: "settings.section.plugin_permissions.title",
+    summary: "Admin approvals for sensitive plugin event access and secure payload claims.",
+    summaryKey: "settings.section.plugin_permissions.summary",
+    order: 50,
+    settingKeys: ["core-pack:security:plugin_access_grants"]
+  },
+  "email-pack:email-pack-email-settings": {
+    titleKey: "settings.section.email.title",
+    summary: "Transactional email provider and SMTP delivery settings.",
+    summaryKey: "settings.section.email.summary",
+    order: 60,
+    category: "email"
   }
 };

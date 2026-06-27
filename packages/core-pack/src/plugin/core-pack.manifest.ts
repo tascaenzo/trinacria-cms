@@ -1,5 +1,7 @@
 import type { PluginManifest } from "@trinacria-cms/kernel/contracts";
 import {
+  defineEmittedEvent,
+  defineEvents,
   defineGrant,
   definePluginManifest,
   defineSecurity
@@ -34,10 +36,30 @@ export const CORE_PACK_MANIFEST: PluginManifest = definePluginManifest({
     ...(item.schema !== undefined ? { schema: item.schema } : {}),
     ...(item.defaultValue !== undefined ? { defaultValue: item.defaultValue } : {}),
     status: "active" as const,
-    secret: false,
-    mutable: true,
-    visibility: "admin" as const
+    secret: item.secret ?? false,
+    mutable: item.mutable ?? true,
+    visibility: item.visibility ?? ("admin" as const)
   })),
+  events: defineEvents({
+    emits: [
+      defineEmittedEvent({
+        name: "secure-event-payload-ready",
+        visibility: "public",
+        version: 1,
+        delivery: "async",
+        payloadSchema: {
+          type: "object",
+          required: ["securePayloadId", "payloadType", "schemaVersion"],
+          additionalProperties: false,
+          properties: {
+            securePayloadId: { type: "string" },
+            payloadType: { type: "string" },
+            schemaVersion: { type: "number" }
+          }
+        }
+      })
+    ]
+  }),
   admin: CORE_PACK_ADMIN_MANIFEST,
   security: defineSecurity({
     permissions: [...CORE_PACK_PERMISSION_DEFINITIONS],

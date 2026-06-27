@@ -163,9 +163,6 @@ const pluginManifestSchema = s
   .refine(
     (manifest) => {
       const permissionRefs = [
-        ...(manifest.events?.subscribes ?? []).map(
-          (subscription) => subscription.requiredPermission
-        ),
         ...(manifest.admin?.navigation ?? []).map((item) => item.requiredPermission),
         ...(manifest.admin?.routes ?? []).map((route) => route.requiredPermission),
         ...(manifest.admin?.resources ?? []).map((resource) => resource.requiredPermission),

@@ -111,7 +111,7 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
 
   async function saveSettingsSection() {
     const editableRecords = selectedSectionRecords.filter(
-      (record) => !record.secret && record.mutable && record.status === "active"
+      (record) => record.mutable && record.status === "active"
     );
     if (editableRecords.length === 0) return;
 
@@ -121,6 +121,13 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
       setSaveMessage(null);
 
       const updates = editableRecords.map((record) => {
+        if (record.secret) {
+          return {
+            record,
+            value: sectionDraftValues[record.key] ?? ""
+          };
+        }
+
         try {
           return {
             record,
@@ -136,15 +143,29 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
       });
 
       await Promise.all(
-        updates.map(({ record, value }) =>
-          cms.settings.upsertSettingValue({
+        updates.map(({ record, value }) => {
+          if (record.secret) {
+            const plaintext = String(value).trim();
+            if (!plaintext) {
+              return Promise.resolve();
+            }
+            return cms.settings.upsertSettingSecret({
+              path: { key: record.key },
+              body: {
+                plaintext,
+                updatedBy: "backoffice"
+              }
+            });
+          }
+
+          return cms.settings.upsertSettingValue({
             path: { key: record.key },
             body: {
               value,
               updatedBy: "backoffice"
             }
-          })
-        )
+          });
+        })
       );
 
       setSaveMessage(t("settings.form.saved", "Impostazioni salvate."));

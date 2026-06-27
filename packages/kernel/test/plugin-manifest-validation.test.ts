@@ -407,6 +407,25 @@ test("validatePluginManifest rejects admin permission references owned by anothe
   );
 });
 
+test("validatePluginManifest accepts foreign requiredPermission on event subscriptions", () => {
+  const manifest = validatePluginManifest({
+    id: "email-pack",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    events: {
+      subscribes: [
+        {
+          eventName: "core-pack:secure-event-payload-ready",
+          handler: "onPasswordResetEmailReady",
+          requiredPermission: "email-pack:email:send"
+        }
+      ]
+    }
+  });
+
+  assert.equal(manifest.events?.subscribes?.[0]?.requiredPermission, "email-pack:email:send");
+});
+
 test("validatePluginManifest accepts settings format", () => {
   const manifest = validatePluginManifest({
     id: "blog-pack",

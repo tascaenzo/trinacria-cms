@@ -24,14 +24,14 @@ export function InstallationDatabaseGuidePage({ envFilePath }: InstallationDatab
       <div className="grid gap-4 text-sm text-[color:var(--color-ink-muted)]">
         <p>{t("auth.installation.db_guide_step_1")}</p>
         <pre className="overflow-auto rounded-[var(--radius-control)] border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] p-3 text-xs text-[color:var(--color-ink)]">
-          {`MONGO_URI=mongodb://<host>:<port>/<database>
-# oppure
-MONGO_HOST=127.0.0.1
-MONGO_PORT=27017
-MONGO_DATABASE=trinacria_cms
-# opzionale se Mongo usa auth:
-MONGO_ROOT_USERNAME=<username>
-MONGO_ROOT_PASSWORD=<password>`}
+          {`MONGO_URI=mongodb://<user>:<password>@<host>:<port>/<database>?authSource=admin
+
+# Alternative fallback when MONGO_URI is not set:
+# MONGO_HOST=127.0.0.1
+# MONGO_PORT=27017
+# MONGO_DATABASE=trinacria_cms
+# MONGO_ROOT_USERNAME=<username>
+# MONGO_ROOT_PASSWORD=<password>`}
         </pre>
         <p>{t("auth.installation.db_guide_step_2")}</p>
         {envFilePath ? (

@@ -381,6 +381,21 @@ test("runtime binds manifest event subscriptions and dispatches plugin handlers"
   const received: Array<{ payload: unknown; envelope: EventEnvelope }> = [];
 
   await runtime.register({
+    id: "cms/plugin-users",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    events: {
+      emits: [
+        {
+          name: "user-created",
+          visibility: "public",
+          version: 1
+        }
+      ]
+    }
+  });
+
+  await runtime.register({
     manifest: {
       id: "cms/plugin-content",
       version: "1.0.0",
@@ -410,6 +425,229 @@ test("runtime binds manifest event subscriptions and dispatches plugin handlers"
   await runtime.unload("cms/plugin-content");
   await bus.emit("cms/plugin-users:user-created", { id: "u-2" });
   assert.equal(received.length, 1);
+});
+
+test("runtime emits only manifest-declared plugin events and validates payload schemas", async () => {
+  const { bus, app } = createFakeAppWithEventBus();
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0", app });
+  const emitted: unknown[] = [];
+  bus.on("cms/plugin-users:password-reset-requested", (payload) => {
+    emitted.push(payload);
+  });
+
+  await runtime.register({
+    id: "cms/plugin-users",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    events: {
+      emits: [
+        {
+          name: "password-reset-requested",
+          visibility: "protected",
+          version: 1,
+          payloadSchema: {
+            type: "object",
+            required: ["userId", "resetUrl"],
+            properties: {
+              userId: { type: "string" },
+              resetUrl: { type: "string" }
+            }
+          }
+        }
+      ]
+    }
+  });
+
+  await runtime.load("cms/plugin-users");
+  await runtime.emitPluginEvent("cms/plugin-users", "password-reset-requested", {
+    userId: "u-1",
+    resetUrl: "https://example.test/reset"
+  });
+
+  assert.deepEqual(emitted, [
+    {
+      userId: "u-1",
+      resetUrl: "https://example.test/reset"
+    }
+  ]);
+
+  await assert.rejects(
+    () =>
+      runtime.emitPluginEvent("cms/plugin-users", "password-reset-requested", { userId: "u-1" }),
+    /payloadSchema/
+  );
+  await assert.rejects(
+    () => runtime.emitPluginEvent("cms/plugin-users", "undeclared", {}),
+    /undeclared event/
+  );
+});
+
+test("runtime enforces event subscription visibility rules", async () => {
+  const { app } = createFakeAppWithEventBus();
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0", app });
+
+  await runtime.register({
+    id: "cms/plugin-users",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    events: {
+      emits: [
+        { name: "private-user-token-created", visibility: "private", version: 1 },
+        { name: "user-email-verification-requested", visibility: "protected", version: 1 }
+      ]
+    },
+    security: {
+      permissions: [
+        {
+          key: "cms/plugin-users:events:consume",
+          displayName: "Consume user lifecycle events"
+        }
+      ]
+    }
+  });
+
+  await runtime.register({
+    manifest: {
+      id: "cms/plugin-email",
+      version: "1.0.0",
+      requiresCore: "^0.1.0",
+      events: {
+        subscribes: [
+          {
+            eventName: "cms/plugin-users:private-user-token-created",
+            handler: "onPrivate"
+          }
+        ]
+      }
+    },
+    eventHandlers: {
+      async onPrivate() {}
+    }
+  });
+
+  await assert.rejects(() => runtime.load("cms/plugin-email"), /private event/);
+
+  await runtime.unregister("cms/plugin-email");
+  await runtime.register({
+    manifest: {
+      id: "cms/plugin-email",
+      version: "1.0.0",
+      requiresCore: "^0.1.0",
+      events: {
+        subscribes: [
+          {
+            eventName: "cms/plugin-users:user-email-verification-requested",
+            handler: "onVerificationRequested"
+          }
+        ]
+      }
+    },
+    eventHandlers: {
+      async onVerificationRequested() {}
+    }
+  });
+
+  await assert.rejects(() => runtime.load("cms/plugin-email"), /requiredPermission/);
+
+  await runtime.unregister("cms/plugin-email");
+  await runtime.register({
+    manifest: {
+      id: "cms/plugin-email",
+      version: "1.0.0",
+      requiresCore: "^0.1.0",
+      events: {
+        subscribes: [
+          {
+            eventName: "cms/plugin-users:user-email-verification-requested",
+            handler: "onVerificationRequested",
+            requiredPermission: "cms/plugin-users:events:consume"
+          }
+        ]
+      }
+    },
+    eventHandlers: {
+      async onVerificationRequested() {}
+    }
+  });
+
+  await runtime.load("cms/plugin-email");
+});
+
+test("runtime supports explicit authorization for protected event subscribers", async () => {
+  const { app } = createFakeAppWithEventBus();
+  const runtime = new InMemoryPluginRuntime({
+    coreVersion: "0.1.0",
+    app,
+    eventSubscriptionAuthorizer: {
+      canSubscribe(request) {
+        return {
+          allowed: request.subscriberPluginId === "cms/plugin-email",
+          reason: "subscriber_not_approved"
+        };
+      }
+    }
+  });
+
+  await runtime.register({
+    id: "cms/plugin-users",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    events: {
+      emits: [{ name: "secure-event-payload-ready", visibility: "protected", version: 1 }]
+    },
+    security: {
+      permissions: [
+        {
+          key: "cms/plugin-users:secure-payloads:claim",
+          displayName: "Claim user secure payloads"
+        }
+      ]
+    }
+  });
+
+  await runtime.register({
+    manifest: {
+      id: "cms/plugin-third-party",
+      version: "1.0.0",
+      requiresCore: "^0.1.0",
+      events: {
+        subscribes: [
+          {
+            eventName: "cms/plugin-users:secure-event-payload-ready",
+            handler: "onPasswordResetEmailReady",
+            requiredPermission: "cms/plugin-users:secure-payloads:claim"
+          }
+        ]
+      }
+    },
+    eventHandlers: {
+      async onPasswordResetEmailReady() {}
+    }
+  });
+
+  await assert.rejects(() => runtime.load("cms/plugin-third-party"), /not authorized/);
+
+  await runtime.register({
+    manifest: {
+      id: "cms/plugin-email",
+      version: "1.0.0",
+      requiresCore: "^0.1.0",
+      events: {
+        subscribes: [
+          {
+            eventName: "cms/plugin-users:secure-event-payload-ready",
+            handler: "onPasswordResetEmailReady",
+            requiredPermission: "cms/plugin-users:secure-payloads:claim"
+          }
+        ]
+      }
+    },
+    eventHandlers: {
+      async onPasswordResetEmailReady() {}
+    }
+  });
+
+  await runtime.load("cms/plugin-email");
 });
 
 test("load failure removes partial plugin contributions and records diagnostic context", async () => {

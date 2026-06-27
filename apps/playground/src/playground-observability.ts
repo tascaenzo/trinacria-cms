@@ -363,16 +363,7 @@ function createStructuredRequestLogger(input: {
     try {
       const result = await next();
       const statusCode = readStatusCode(result, ctx);
-      const durationMs = Date.now() - startedAt;
       input.metrics.recordRequest({ method, statusCode });
-      input.logger.info("http.request", {
-        requestId: requestIdValue,
-        method,
-        path,
-        statusCode,
-        durationMs,
-        ...(input.config.includeUserAgent ? { userAgent: readHeader(ctx, "user-agent") } : {})
-      });
       return result;
     } catch (error) {
       const durationMs = Date.now() - startedAt;

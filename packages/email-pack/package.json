@@ -1,0 +1,36 @@
+{
+  "name": "@trinacria-cms/email-pack",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./admin-manifest": {
+      "types": "./dist/plugin/email-pack-admin.manifest.d.ts",
+      "import": "./dist/plugin/email-pack-admin.manifest.js"
+    }
+  },
+  "scripts": {
+    "prebuild": "npm run build -w @trinacria-cms/kernel && npm run build -w @trinacria-cms/core-pack",
+    "build": "tsc -p tsconfig.json",
+    "pretypecheck": "npm run build -w @trinacria-cms/kernel && npm run build -w @trinacria-cms/core-pack",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "pretest": "npm run build -w @trinacria-cms/kernel && npm run build -w @trinacria-cms/core-pack",
+    "test": "node --import tsx --test test/**/*.test.ts",
+    "lint": "echo \"No lint config yet\""
+  },
+  "dependencies": {
+    "@trinacria-cms/core-pack": "0.1.0",
+    "@trinacria-cms/kernel": "0.1.0",
+    "nodemailer": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "@types/nodemailer": "^8.0.1"
+  }
+}

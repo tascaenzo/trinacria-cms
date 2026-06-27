@@ -6,10 +6,12 @@ import type {
   PluginContributionCatalogSnapshot,
   PluginRuntimeEvent,
   PluginRuntimeRetryPolicy,
+  PluginEventSubscriptionAuthorizer,
   PluginRuntime,
   PluginRuntimeRecord,
   PluginState
 } from "../../contracts/plugin-runtime.js";
+import type { PluginManifestEmittedEvent } from "../../contracts/plugin-manifest.js";
 import type { PluginRuntimeStore } from "../../contracts/plugin-runtime-store.js";
 import type { ApplicationContext } from "@trinacria/core";
 import { EVENT_BUS_TOKEN, type EventBus, type EventEnvelope } from "@trinacria/events";
@@ -48,6 +50,8 @@ import {
   loadPluginInternal,
   unloadPlugin
 } from "./plugin-runtime-lifecycle.js";
+import { isPermissionOwnedByPlugin } from "../plugin-namespace/permission-key.js";
+import { CORE_TOKENS } from "../../tokens/core-tokens.js";
 
 export { type PluginRuntimeLifecycleHooks, type TrinacriaModuleBridge };
 
@@ -59,6 +63,7 @@ export interface InMemoryPluginRuntimeOptions {
   onEvent?: (event: PluginRuntimeEvent) => void;
   runtimeStore?: PluginRuntimeStore;
   eventBufferSize?: number;
+  eventSubscriptionAuthorizer?: PluginEventSubscriptionAuthorizer;
 }
 
 export class InMemoryPluginRuntime implements PluginRuntime {
@@ -73,6 +78,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
   private readonly activeLoads = new Set<string>();
   private readonly retryPolicy?: PluginRuntimeRetryPolicy;
   private readonly eventsLog: PluginRuntimeEventLog;
+  private readonly eventSubscriptionAuthorizer?: PluginEventSubscriptionAuthorizer;
   private readonly pluginEventSubscriptions = new Map<string, readonly (() => void)[]>();
   private runtimeStoreInitialization?: Promise<void>;
   private runtimeStoreHydrated = false;
@@ -82,6 +88,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     this.app = options.app;
     this.lifecycleHooks = options.lifecycleHooks;
     this.retryPolicy = options.retryPolicy;
+    this.eventSubscriptionAuthorizer = options.eventSubscriptionAuthorizer;
     this.runtimeStore = options.runtimeStore ?? createInMemoryPluginRuntimeStore();
     this.eventsLog = new PluginRuntimeEventLog({
       bufferSize: options.eventBufferSize,
@@ -214,8 +221,11 @@ export class InMemoryPluginRuntime implements PluginRuntime {
             runtimeStore: this.runtimeStore,
             moduleBridge: this.moduleBridge,
             lifecycleHooks: this.lifecycleHooks,
-            app: this.app
+            app: this.app,
+            emitPluginEvent: (sourcePluginId, eventName, payload) =>
+              this.emitPluginEvent(sourcePluginId, eventName, payload)
           });
+          await this.assertPluginEventSubscriptionsReady(pluginId);
           await loadPluginInternal(ctx, pluginId, new Set<string>());
           await this.bindPluginEventSubscriptions(pluginId);
           await persistRecord(this.registry.records, this.runtimeStore, pluginId);
@@ -282,7 +292,9 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       runtimeStore: this.runtimeStore,
       moduleBridge: this.moduleBridge,
       lifecycleHooks: this.lifecycleHooks,
-      app: this.app
+      app: this.app,
+      emitPluginEvent: (sourcePluginId, eventName, payload) =>
+        this.emitPluginEvent(sourcePluginId, eventName, payload)
     });
 
     try {
@@ -503,6 +515,36 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     return this.eventsLog.list(options);
   }
 
+  async emitPluginEvent(pluginId: string, eventName: string, payload: unknown): Promise<void> {
+    await this.ensureRuntimeStoreInitialized();
+    const record = this.registry.getRecord(pluginId);
+    if (record.state !== "loaded") {
+      throw new PluginRuntimeError(
+        `Plugin "${pluginId}" cannot emit events while ${record.state}`,
+        {
+          pluginId
+        }
+      );
+    }
+
+    const event = resolveDeclaredEmittedEvent(
+      record.manifest.id,
+      record.manifest.events?.emits,
+      eventName
+    );
+    validateEventPayload(event, payload);
+
+    const bus = await this.resolveEventBus();
+    if (!bus) {
+      throw new PluginRuntimeError(
+        `Plugin "${pluginId}" cannot emit "${eventName}" because event bus is not available`,
+        { pluginId }
+      );
+    }
+
+    await bus.emit(buildCanonicalEventName(record.manifest.id, event.name), payload);
+  }
+
   describeDependencies(): PluginDependencyGraphSnapshot {
     return describePluginDependencyGraph(this.registry.records);
   }
@@ -518,7 +560,14 @@ export class InMemoryPluginRuntime implements PluginRuntime {
         { pluginId: manifest.id }
       );
     }
-    return { app: this.app, pluginId: manifest.id, manifest };
+    return {
+      app: this.app,
+      pluginId: manifest.id,
+      manifest,
+      events: {
+        emit: (eventName, payload) => this.emitPluginEvent(manifest.id, eventName, payload)
+      }
+    };
   }
 
   private markDisabled(pluginId: string, reason?: string, error?: unknown): void {
@@ -570,6 +619,10 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     const unsubs: Array<() => void> = [];
 
     for (const subscription of subscribedEvents) {
+      const eventNames = this.resolveSubscriptionEventNames(subscription.eventName);
+      for (const eventName of eventNames) {
+        await this.assertSubscriptionAllowed(pluginId, eventName, subscription.requiredPermission);
+      }
       const runtimeHandler = eventHandlers[subscription.handler];
       if (!runtimeHandler) {
         throw new PluginRuntimeError(
@@ -578,17 +631,54 @@ export class InMemoryPluginRuntime implements PluginRuntime {
         );
       }
 
-      const off = bus.on(subscription.eventName, async (payload, envelope) => {
-        await runtimeHandler(payload, envelope as EventEnvelope, {
-          pluginId,
-          eventName: subscription.eventName,
-          handlerName: subscription.handler
+      for (const eventName of eventNames) {
+        const off = bus.on(eventName, async (payload, envelope) => {
+          if (!this.app) {
+            throw new PluginRuntimeError(
+              `Plugin "${pluginId}" cannot handle event "${eventName}" without an ApplicationContext`,
+              { pluginId }
+            );
+          }
+          await runtimeHandler(payload, envelope as EventEnvelope, {
+            app: this.app,
+            pluginId,
+            eventName,
+            handlerName: subscription.handler
+          });
         });
-      });
-      unsubs.push(off);
+        unsubs.push(off);
+      }
     }
 
     this.pluginEventSubscriptions.set(pluginId, unsubs);
+  }
+
+  private async assertPluginEventSubscriptionsReady(pluginId: string): Promise<void> {
+    const definition = this.registry.getDefinition(pluginId);
+    const subscribedEvents = definition.manifest.events?.subscribes ?? [];
+    if (subscribedEvents.length === 0) return;
+
+    const bus = await this.resolveEventBus();
+    if (!bus) {
+      throw new PluginRuntimeError(
+        `Plugin "${pluginId}" declares event subscriptions but event bus is not available`,
+        { pluginId }
+      );
+    }
+
+    const eventHandlers = definition.eventHandlers ?? {};
+    for (const subscription of subscribedEvents) {
+      const eventNames = this.resolveSubscriptionEventNames(subscription.eventName);
+      for (const eventName of eventNames) {
+        await this.assertSubscriptionAllowed(pluginId, eventName, subscription.requiredPermission);
+      }
+      if (!eventHandlers[subscription.handler]) {
+        throw new PluginRuntimeError(
+          `Plugin "${pluginId}" is missing runtime handler "${subscription.handler}" for event "${subscription.eventName}"`,
+          { pluginId }
+        );
+      }
+    }
   }
 
   private unbindPluginEventSubscriptions(pluginId: string): void {
@@ -615,10 +705,126 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     return this.app.resolve<EventBus>(EVENT_BUS_TOKEN);
   }
 
+  private async assertSubscriptionAllowed(
+    subscriberPluginId: string,
+    eventName: string,
+    requiredPermission?: string
+  ): Promise<void> {
+    const event = this.resolveRegisteredEmittedEvent(eventName);
+    const ownerPluginId = readEventOwnerPluginId(eventName);
+    if (event.visibility === "private" && ownerPluginId !== subscriberPluginId) {
+      throw new PluginRuntimeError(
+        `Plugin "${subscriberPluginId}" cannot subscribe to private event "${eventName}"`,
+        { pluginId: subscriberPluginId }
+      );
+    }
+    if ((event.visibility === "protected" || event.visibility === "audit") && !requiredPermission) {
+      throw new PluginRuntimeError(
+        `Plugin "${subscriberPluginId}" must declare requiredPermission to subscribe to ${event.visibility} event "${eventName}"`,
+        { pluginId: subscriberPluginId }
+      );
+    }
+    if (event.visibility !== "protected" && event.visibility !== "audit") {
+      return;
+    }
+    const permission = requiredPermission?.trim().toLowerCase();
+    if (!permission || !isPermissionOwnedByPlugin(ownerPluginId, permission)) {
+      throw new PluginRuntimeError(
+        `Plugin "${subscriberPluginId}" must use an event-owner permission to subscribe to ${event.visibility} event "${eventName}"`,
+        { pluginId: subscriberPluginId }
+      );
+    }
+    if (!this.isPermissionDeclaredByPlugin(ownerPluginId, permission)) {
+      throw new PluginRuntimeError(
+        `Plugin "${subscriberPluginId}" references undeclared permission "${permission}" for event "${eventName}"`,
+        { pluginId: subscriberPluginId }
+      );
+    }
+    const authorizer = await this.resolveEventSubscriptionAuthorizer();
+    if (!authorizer) {
+      return;
+    }
+    const decision = await authorizer.canSubscribe({
+      subscriberPluginId,
+      eventName,
+      eventOwnerPluginId: ownerPluginId,
+      eventVisibility: event.visibility,
+      requiredPermission: permission
+    });
+    if (!decision.allowed) {
+      throw new PluginRuntimeError(
+        `Plugin "${subscriberPluginId}" is not authorized to subscribe to event "${eventName}"`,
+        { pluginId: subscriberPluginId, reason: decision.reason }
+      );
+    }
+  }
+
+  private async resolveEventSubscriptionAuthorizer(): Promise<PluginEventSubscriptionAuthorizer | null> {
+    if (this.eventSubscriptionAuthorizer) {
+      return this.eventSubscriptionAuthorizer;
+    }
+    if (!this.app?.hasToken?.(CORE_TOKENS.PLUGIN_EVENT_SUBSCRIPTION_AUTHORIZER)) {
+      return null;
+    }
+    return this.app.resolve<PluginEventSubscriptionAuthorizer>(
+      CORE_TOKENS.PLUGIN_EVENT_SUBSCRIPTION_AUTHORIZER
+    );
+  }
+
+  private resolveRegisteredEmittedEvent(eventName: string): PluginManifestEmittedEvent {
+    const ownerPluginId = readEventOwnerPluginId(eventName);
+    const owner = this.registry.records.get(ownerPluginId);
+    const event = owner?.manifest.events?.emits?.find(
+      (item) => buildCanonicalEventName(ownerPluginId, item.name) === eventName.trim().toLowerCase()
+    );
+    if (!event) {
+      throw new PluginRuntimeError(
+        `Subscribed event "${eventName}" is not declared by any registered plugin`,
+        {
+          pluginId: ownerPluginId
+        }
+      );
+    }
+    return event;
+  }
+
+  private resolveSubscriptionEventNames(eventName: string): readonly string[] {
+    const normalized = eventName.trim().toLowerCase();
+    if (!normalized.startsWith("*:")) {
+      return [normalized];
+    }
+
+    const localName = normalized.slice(2);
+    const matches: string[] = [];
+    for (const record of this.registry.records.values()) {
+      for (const event of record.manifest.events?.emits ?? []) {
+        if (event.name.trim().toLowerCase() === localName) {
+          matches.push(buildCanonicalEventName(record.manifest.id, event.name));
+        }
+      }
+    }
+
+    if (matches.length === 0) {
+      throw new PluginRuntimeError(
+        `Wildcard subscription "${eventName}" does not match any registered emitted event`
+      );
+    }
+    return matches;
+  }
+
   private resolveAttempts(_state: PluginState): number {
     const retryMax = this.retryPolicy?.maxAttempts ?? 0;
     const normalizedRetry = Number.isFinite(retryMax) ? Math.max(0, Math.floor(retryMax)) : 0;
     return 1 + normalizedRetry;
+  }
+
+  private isPermissionDeclaredByPlugin(pluginId: string, permissionKey: string): boolean {
+    const owner = this.registry.records.get(pluginId);
+    return Boolean(
+      owner?.manifest.security?.permissions?.some(
+        (permission) => permission.key.trim().toLowerCase() === permissionKey
+      )
+    );
   }
 
   private isRetryableLoadError(error: unknown): boolean {
@@ -641,4 +847,130 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       await hydrateFromRuntimeStore(this.registry.records, this.runtimeStore);
     }
   }
+}
+
+function resolveDeclaredEmittedEvent(
+  pluginId: string,
+  events: readonly PluginManifestEmittedEvent[] | undefined,
+  eventName: string
+): PluginManifestEmittedEvent {
+  const normalizedEventName = eventName.trim().toLowerCase();
+  const localName = normalizedEventName.startsWith(`${pluginId}:`)
+    ? normalizedEventName.slice(pluginId.length + 1)
+    : normalizedEventName;
+  const event = (events ?? []).find((item) => item.name.trim().toLowerCase() === localName);
+  if (!event) {
+    throw new PluginRuntimeError(
+      `Plugin "${pluginId}" cannot emit undeclared event "${eventName}"`,
+      { pluginId }
+    );
+  }
+  return event;
+}
+
+function buildCanonicalEventName(pluginId: string, eventName: string): string {
+  return `${pluginId.trim().toLowerCase()}:${eventName.trim().toLowerCase()}`;
+}
+
+function readEventOwnerPluginId(eventName: string): string {
+  const [ownerPluginId] = eventName.trim().toLowerCase().split(":");
+  if (!ownerPluginId) {
+    throw new PluginRuntimeError(`Invalid event name "${eventName}"`);
+  }
+  return ownerPluginId;
+}
+
+function validateEventPayload(event: PluginManifestEmittedEvent, payload: unknown): void {
+  if (!event.payloadSchema) return;
+  const result = validateJsonSchemaPayload(event.payloadSchema, payload);
+  if (result.valid) return;
+  throw new PluginRuntimeError(`Payload for event "${event.name}" does not match payloadSchema`, {
+    details: { reason: result.reason }
+  });
+}
+
+function validateJsonSchemaPayload(
+  schema: Record<string, unknown>,
+  value: unknown
+): { valid: true } | { valid: false; reason: string } {
+  const type = schema.type;
+  if (typeof type === "string") {
+    const typeResult = validateJsonSchemaType(type, value);
+    if (!typeResult.valid) return typeResult;
+  }
+
+  if (schema.enum !== undefined) {
+    if (!Array.isArray(schema.enum)) {
+      return { valid: false, reason: "schema enum must be an array" };
+    }
+    if (!schema.enum.includes(value)) {
+      return { valid: false, reason: "value is not in enum" };
+    }
+  }
+
+  if (type === "object" || schema.properties || schema.required) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      return { valid: false, reason: "value must be an object" };
+    }
+    const record = value as Record<string, unknown>;
+    const required = Array.isArray(schema.required) ? schema.required : [];
+    for (const key of required) {
+      if (typeof key === "string" && !(key in record)) {
+        return { valid: false, reason: `missing required property "${key}"` };
+      }
+    }
+
+    const properties = schema.properties;
+    if (properties && typeof properties === "object" && !Array.isArray(properties)) {
+      for (const [key, propertySchema] of Object.entries(properties)) {
+        if (!(key in record) || !propertySchema || typeof propertySchema !== "object") continue;
+        const result = validateJsonSchemaPayload(
+          propertySchema as Record<string, unknown>,
+          record[key]
+        );
+        if (!result.valid) {
+          return { valid: false, reason: `${key}: ${result.reason}` };
+        }
+      }
+    }
+  }
+
+  return { valid: true };
+}
+
+function validateJsonSchemaType(
+  type: string,
+  value: unknown
+): { valid: true } | { valid: false; reason: string } {
+  if (type === "object") {
+    return value && typeof value === "object" && !Array.isArray(value)
+      ? { valid: true }
+      : { valid: false, reason: "value must be an object" };
+  }
+  if (type === "array") {
+    return Array.isArray(value)
+      ? { valid: true }
+      : { valid: false, reason: "value must be an array" };
+  }
+  if (type === "string") {
+    return typeof value === "string"
+      ? { valid: true }
+      : { valid: false, reason: "value must be a string" };
+  }
+  if (type === "number" || type === "integer") {
+    return typeof value === "number" &&
+      Number.isFinite(value) &&
+      (type !== "integer" || Number.isInteger(value))
+      ? { valid: true }
+      : { valid: false, reason: `value must be a ${type}` };
+  }
+  if (type === "boolean") {
+    return typeof value === "boolean"
+      ? { valid: true }
+      : { valid: false, reason: "value must be a boolean" };
+  }
+  if (type === "null") {
+    return value === null ? { valid: true } : { valid: false, reason: "value must be null" };
+  }
+  return { valid: true };
 }

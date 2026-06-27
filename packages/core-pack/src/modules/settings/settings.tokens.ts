@@ -8,6 +8,7 @@ import { SettingsSecretsCryptoService } from "./secrets/settings-secrets-crypto.
 import { SettingsSecretsRepository } from "./secrets/settings-secrets.repository.js";
 import { SettingsService } from "./settings.service.js";
 import { SettingsValuesRepository } from "./values/settings-values.repository.js";
+import { SettingsPluginAccessPolicyService } from "./plugin-access-policy.service.js";
 
 export const SETTINGS_DEFINITIONS_REPOSITORY_TOKEN = createToken<SettingsDefinitionsRepository>(
   "CORE_PACK_SETTINGS_DEFINITIONS_REPOSITORY"
@@ -34,6 +35,8 @@ export const SETTINGS_ENTITY_REGISTRATION_TOKEN = createToken<boolean>(
 export const SETTINGS_CONTROLLER_TOKEN = createToken<SettingsController>(
   "CORE_PACK_SETTINGS_CONTROLLER"
 );
+export const SETTINGS_PLUGIN_ACCESS_POLICY_SERVICE_TOKEN =
+  createCapabilityToken<SettingsPluginAccessPolicyService>("settings.plugin-access-policy");
 
 export const RUNTIME_CONFIG_SERVICE_TOKEN = createToken<RuntimeConfigService>(
   "CORE_PACK_RUNTIME_CONFIG_SERVICE"

@@ -16,7 +16,9 @@ const CORE_PACK_VISIBLE_SETTING_CATEGORIES = new Set([
   "site",
   "internationalization",
   "branding",
-  "features"
+  "features",
+  "user_flows",
+  "email"
 ]);
 
 const CORE_PACK_HIDDEN_SETTINGS_SECTION_IDS = new Set([
@@ -105,6 +107,8 @@ export function getSettingFormGroupTitle(record: SettingDefinitionRecord): strin
   if (category === "site") return "Site details";
   if (category === "internationalization") return "Localization";
   if (category === "branding") return "Brand identity";
+  if (category === "email") return "Email delivery";
+  if (category === "user_flows") return "User lifecycle";
   if (category === "features") return "Feature flags";
   if (category === "security") return "Secrets and encryption";
   if (key.includes(":login_")) return "Login protection";

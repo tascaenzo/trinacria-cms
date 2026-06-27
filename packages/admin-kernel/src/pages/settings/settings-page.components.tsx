@@ -121,7 +121,7 @@ export function SettingsSectionForm({
 
   const groupedRecords = groupSettingRecordsForForm(editableRecords);
   const editableRecordsCount = editableRecords.filter(
-    (record) => !record.secret && record.mutable && record.status === "active"
+    (record) => record.mutable && record.status === "active"
   ).length;
 
   return (
@@ -216,7 +216,7 @@ function SettingValueField({
 }: SettingValueFieldProps) {
   const enumOptions = getSettingEnumOptions(record.schema);
   const valueKind = getSettingValueKind(record);
-  const isDisabled = record.secret || !record.mutable || isSaving;
+  const isDisabled = !record.mutable || isSaving;
   const label = formatSettingFormLabel(record);
 
   if (record.secret) {
@@ -225,9 +225,12 @@ function SettingValueField({
         label={label}
         hint={record.description}
         error={error}
-        value={t("settings.form.secret_placeholder", "Valore secret protetto")}
-        readOnly
-        disabled
+        type="password"
+        value={draftValue}
+        placeholder={t("settings.form.secret_placeholder", "Leave empty to keep current secret")}
+        autoComplete="new-password"
+        readOnly={isDisabled}
+        onChange={(event) => onChange(event.currentTarget.value)}
       />
     );
   }

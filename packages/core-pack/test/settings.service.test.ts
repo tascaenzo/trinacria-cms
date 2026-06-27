@@ -5,6 +5,7 @@ import { SettingsDefinitionsRepository } from "../src/modules/settings/definitio
 import { SettingsAccessError } from "../src/modules/settings/_shared/settings.errors.js";
 import { SettingsSecretsCryptoService } from "../src/modules/settings/secrets/settings-secrets-crypto.service.js";
 import { SettingsSecretsRepository } from "../src/modules/settings/secrets/settings-secrets.repository.js";
+import { provisionCorePackSettingDefinitions } from "../src/modules/settings/settings.bootstrap.js";
 import { SettingsService } from "../src/modules/settings/settings.service.js";
 import { SettingsValuesRepository } from "../src/modules/settings/values/settings-values.repository.js";
 
@@ -225,6 +226,36 @@ test("SettingsService exposes and patches grouped non-secret settings", async ()
   );
 });
 
+test("core-pack settings bootstrap provisions user lifecycle flow settings", async () => {
+  const service = createSettingsService();
+
+  await provisionCorePackSettingDefinitions(service);
+
+  const group = await service.getGroupById("user_flows", { ownerPluginId: "core-pack" });
+  assert.ok(group);
+  assert.equal(group?.label, "User Flows");
+  assert.equal(
+    group?.fields.some((field) => field.key === "core-pack:user_flows:public_registration_enabled"),
+    true
+  );
+  assert.equal(
+    group?.fields.some((field) => field.key === "core-pack:user_flows:user_invites_enabled"),
+    true
+  );
+  assert.equal(
+    group?.fields.some((field) => field.key === "core-pack:user_flows:password_reset_enabled"),
+    true
+  );
+  assert.equal(
+    group?.fields.some((field) => field.key === "core-pack:user_flows:email_verification_required"),
+    true
+  );
+  assert.deepEqual(group?.values["user_flows.public_registration_enabled"], false);
+  assert.deepEqual(group?.values["user_flows.user_invites_enabled"], true);
+  assert.deepEqual(group?.values["user_flows.password_reset_enabled"], true);
+  assert.deepEqual(group?.values["user_flows.notification_locale"], "it");
+});
+
 async function assertSettingsAccessError(
   action: () => Promise<unknown>,
   expectedCode: string
@@ -237,6 +268,10 @@ async function assertSettingsAccessError(
 }
 
 function createSettingsService(): SettingsService {
+  return createSettingsRuntime().service;
+}
+
+function createSettingsRuntime(): { service: SettingsService; db: DbAdapter } {
   const db = createFakeDbAdapter();
   const definitions = new SettingsDefinitionsRepository(db);
   const values = new SettingsValuesRepository(db);
@@ -246,7 +281,10 @@ function createSettingsService(): SettingsService {
     keyVersion: "test-v1"
   });
 
-  return new SettingsService(definitions, values, secrets, crypto);
+  return {
+    service: new SettingsService(definitions, values, secrets, crypto),
+    db
+  };
 }
 
 function createFakeDbAdapter(): DbAdapter {

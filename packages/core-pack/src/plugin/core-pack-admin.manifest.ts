@@ -119,6 +119,19 @@ export const CORE_PACK_ADMIN_MANIFEST: PluginManifestAdmin = defineAdmin({
       label: "Features",
       namespace: "features",
       requiredPermission: CORE_PACK_PERMISSION_KEYS.SETTINGS_READ
+    }),
+    defineAdminSettingsSection({
+      id: "core-pack-user-flow-settings",
+      label: "User flows",
+      namespace: "user_flows",
+      requiredPermission: CORE_PACK_PERMISSION_KEYS.SETTINGS_READ
+    }),
+    defineAdminSettingsSection({
+      id: "core-pack-plugin-permissions-settings",
+      label: "Plugin permissions",
+      namespace: "security",
+      settingKeys: ["core-pack:security:plugin_access_grants"],
+      requiredPermission: CORE_PACK_PERMISSION_KEYS.SETTINGS_READ
     })
   ]
 });

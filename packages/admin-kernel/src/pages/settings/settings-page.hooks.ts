@@ -214,6 +214,11 @@ export function useSettingsSectionDrafts(
 
       await Promise.all(
         selectedSectionRecords.map(async (record) => {
+          if (record.secret) {
+            nextDrafts[record.key] = "";
+            return;
+          }
+
           try {
             const response = await cms.settings.getSettingValueByKey({ path: { key: record.key } });
             nextDrafts[record.key] = toEditableSettingInput(

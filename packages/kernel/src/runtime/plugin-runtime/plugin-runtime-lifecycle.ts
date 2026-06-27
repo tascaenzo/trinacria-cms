@@ -37,6 +37,7 @@ export interface PluginRuntimeLifecycleContext {
   loadedContributions: PluginContributionRegistry;
   app?: ApplicationContext;
   runtimeStore: PluginRuntimeStore;
+  emitPluginEvent?: (pluginId: string, eventName: string, payload: unknown) => Promise<void>;
 }
 
 export interface LifecycleContextOptions {
@@ -48,6 +49,7 @@ export interface LifecycleContextOptions {
   moduleBridge?: TrinacriaModuleBridge;
   lifecycleHooks?: PluginRuntimeLifecycleHooks;
   app?: ApplicationContext;
+  emitPluginEvent?: (pluginId: string, eventName: string, payload: unknown) => Promise<void>;
 }
 
 export function createLifecycleContext(
@@ -61,7 +63,8 @@ export function createLifecycleContext(
     runtimeStore: options.runtimeStore,
     moduleBridge: options.moduleBridge,
     lifecycleHooks: options.lifecycleHooks,
-    app: options.app
+    app: options.app,
+    emitPluginEvent: options.emitPluginEvent
   };
 }
 
@@ -89,7 +92,8 @@ function getDefinition(
 
 function createContext(
   manifest: PluginRuntimeRecord["manifest"],
-  app: ApplicationContext | undefined
+  app: ApplicationContext | undefined,
+  emitPluginEvent: (eventName: string, payload: unknown) => Promise<void>
 ): KernelPluginRuntimeContext {
   if (!app) {
     throw new PluginRuntimeError(
@@ -97,7 +101,14 @@ function createContext(
       { pluginId: manifest.id }
     );
   }
-  return { app, pluginId: manifest.id, manifest };
+  return {
+    app,
+    pluginId: manifest.id,
+    manifest,
+    events: {
+      emit: emitPluginEvent
+    }
+  };
 }
 
 function errorToString(error: unknown): string {
@@ -229,7 +240,17 @@ export async function loadPluginInternal(
     Boolean(definition.onInit) ||
     Boolean(definition.onUnload) ||
     Boolean(ctx.lifecycleHooks?.onAfterLoad);
-  const context = needsRuntimeContext ? createContext(definition.manifest, ctx.app) : undefined;
+  const context = needsRuntimeContext
+    ? createContext(definition.manifest, ctx.app, async (eventName, payload) => {
+        if (!ctx.emitPluginEvent) {
+          throw new PluginRuntimeError(
+            `Plugin "${definition.manifest.id}" cannot emit "${eventName}" because the runtime publisher is not available`,
+            { pluginId: definition.manifest.id }
+          );
+        }
+        await ctx.emitPluginEvent(definition.manifest.id, eventName, payload);
+      })
+    : undefined;
   let phase: PluginLifecyclePhase = "load";
   let onLoadCompleted = false;
   let registeredModules: readonly ModuleDefinition[] = [];
@@ -329,7 +350,17 @@ export async function unloadPlugin(
 
   const definition = getDefinition(ctx.definitions, pluginId);
   const needsRuntimeContext = Boolean(definition.onUnload);
-  const context = needsRuntimeContext ? createContext(definition.manifest, ctx.app) : undefined;
+  const context = needsRuntimeContext
+    ? createContext(definition.manifest, ctx.app, async (eventName, payload) => {
+        if (!ctx.emitPluginEvent) {
+          throw new PluginRuntimeError(
+            `Plugin "${pluginId}" cannot emit "${eventName}" because the runtime publisher is not available`,
+            { pluginId }
+          );
+        }
+        await ctx.emitPluginEvent(pluginId, eventName, payload);
+      })
+    : undefined;
   const loadedModules = ctx.pluginModules.get(pluginId) ?? [];
 
   let phase: PluginLifecyclePhase = "unload";

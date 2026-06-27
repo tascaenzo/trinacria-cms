@@ -14,6 +14,11 @@ Default Mongo connection is aligned with `docker-compose.yml`:
 
 `mongodb://trinacria:trinacria@127.0.0.1:27017/trinacria_cms?authSource=admin`
 
+Set `MONGO_URI` for the CMS app connection. If it is present, it takes
+precedence over the split fallback values. The Docker Compose variables
+`MONGO_ROOT_USERNAME`, `MONGO_ROOT_PASSWORD`, and `MONGO_DATABASE` initialize
+the local Mongo container and should stay aligned with `MONGO_URI`.
+
 ## Endpoints
 
 - `GET /health`
