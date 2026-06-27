@@ -58,6 +58,9 @@ build manifests, admin contributions, security declarations, settings
 definitions, response envelopes, and schema-like contracts. `core-pack` keeps
 compatibility re-exports and owns the signed settings request helpers.
 
+Sensitive cross-plugin communication is documented in
+[docs/plugin-secure-events.md](/Users/enzo/Desktop/trinacria-cms/docs/plugin-secure-events.md).
+
 ## Development workflow
 
 Branch strategy:

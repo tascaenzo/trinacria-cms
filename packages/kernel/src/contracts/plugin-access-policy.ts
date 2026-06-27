@@ -2,8 +2,15 @@ import type { SecureEventPayloadRecord } from "./secure-event-payloads.js";
 import type { PluginManifestEmittedEvent } from "./plugin-manifest.js";
 
 export type PluginAccessGrantStatus = "pending" | "approved" | "denied" | "revoked";
+export type PluginAccessGrantType =
+  | "event-subscription"
+  | "secure-payload-claim"
+  | "setting"
+  | "api";
 
 export interface PluginAccessGrant {
+  id?: string;
+  accessType?: PluginAccessGrantType;
   producerPluginId: string;
   consumerPluginId: string;
   eventName: string;

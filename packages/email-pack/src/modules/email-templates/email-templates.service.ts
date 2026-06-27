@@ -13,12 +13,19 @@ export class EmailTemplatesService {
     return this.repository.seedDefaults(EMAIL_PACK_DEFAULT_EMAIL_TEMPLATES);
   }
 
-  async listTemplates(): Promise<readonly EmailTemplateRecord[]> {
-    return this.repository.list();
+  async listTemplates(options?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<readonly EmailTemplateRecord[]> {
+    return this.repository.list(options);
   }
 
   async getTemplate(key: string, locale = DEFAULT_LOCALE): Promise<EmailTemplateRecord | null> {
     return this.repository.findByKeyAndLocale(key, locale);
+  }
+
+  async upsertTemplate(input: Parameters<EmailTemplatesRepository["upsert"]>[0]) {
+    return this.repository.upsert(input);
   }
 
   async render(input: RenderEmailTemplateInput): Promise<RenderedEmailTemplate> {
@@ -32,6 +39,10 @@ export class EmailTemplatesService {
 
     if (!template || template.status !== "active") {
       throw new Error(`Active email template "${input.key}" not found for locale "${locale}"`);
+    }
+    const missingVariables = template.variables.filter((key) => input.variables[key] === undefined);
+    if (missingVariables.length > 0) {
+      throw new Error(`Missing email template variables: ${missingVariables.join(", ")}`);
     }
 
     return {

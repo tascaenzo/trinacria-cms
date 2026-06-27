@@ -23,11 +23,18 @@ import {
   AuthLogoutResponseSchema,
   AuthMeResponseSchema,
   AuthSessionResponseSchema,
+  AcceptUserInviteInputSchema,
   ChangeAuthenticatedUserPasswordInputSchema,
+  CompletePasswordResetInputSchema,
+  ConfirmEmailVerificationInputSchema,
   LoginWithPasswordInputSchema,
+  PublicRegistrationInputSchema,
+  RequestEmailVerificationInputSchema,
+  RequestPasswordResetInputSchema,
   UpdateAuthenticatedUserProfileInputSchema
 } from "./dto/index.js";
 import type { JwtAuthService } from "./auth.service.js";
+import type { AuthUserFlowsService } from "./auth-user-flows.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
 
@@ -37,7 +44,10 @@ const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
 export class AuthController extends HttpController {
   private readonly authMiddleware: HttpMiddleware;
 
-  constructor(private readonly auth: JwtAuthService) {
+  constructor(
+    private readonly auth: JwtAuthService,
+    private readonly flows: AuthUserFlowsService
+  ) {
     super();
     this.authMiddleware = createJwtAuthMiddleware(this.auth, {
       requireAdmin: false
@@ -64,6 +74,90 @@ export class AuthController extends HttpController {
               description: "Authentication failed",
               schema: toOpenApiSchema(AuthErrorResponseSchema)
             }
+          }
+        }
+      })
+      .post("/v1/auth/password-reset/request", this.requestPasswordReset, {
+        docs: {
+          summary: "Request password reset email",
+          tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
+          operationId: "requestPasswordReset",
+          requestBody: {
+            required: true,
+            schema: toOpenApiSchema(RequestPasswordResetInputSchema)
+          },
+          responses: {
+            200: { description: "Password reset request accepted" }
+          }
+        }
+      })
+      .post("/v1/auth/register", this.registerPublic, {
+        docs: {
+          summary: "Register public user",
+          tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
+          operationId: "registerPublicUser",
+          requestBody: {
+            required: true,
+            schema: toOpenApiSchema(PublicRegistrationInputSchema)
+          },
+          responses: {
+            200: { description: "Registration accepted" }
+          }
+        }
+      })
+      .post("/v1/auth/invite/accept", this.acceptUserInvite, {
+        docs: {
+          summary: "Accept user invite",
+          tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
+          operationId: "acceptUserInvite",
+          requestBody: {
+            required: true,
+            schema: toOpenApiSchema(AcceptUserInviteInputSchema)
+          },
+          responses: {
+            200: { description: "Invite accepted" }
+          }
+        }
+      })
+      .post("/v1/auth/password-reset/complete", this.completePasswordReset, {
+        docs: {
+          summary: "Complete password reset",
+          tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
+          operationId: "completePasswordReset",
+          requestBody: {
+            required: true,
+            schema: toOpenApiSchema(CompletePasswordResetInputSchema)
+          },
+          responses: {
+            200: { description: "Password reset completed" }
+          }
+        }
+      })
+      .post("/v1/auth/email-verification/request", this.requestEmailVerification, {
+        docs: {
+          summary: "Request email verification email",
+          tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
+          operationId: "requestEmailVerification",
+          requestBody: {
+            required: true,
+            schema: toOpenApiSchema(RequestEmailVerificationInputSchema)
+          },
+          responses: {
+            200: { description: "Email verification request accepted" }
+          }
+        }
+      })
+      .post("/v1/auth/email-verification/confirm", this.confirmEmailVerification, {
+        docs: {
+          summary: "Confirm email verification token",
+          tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
+          operationId: "confirmEmailVerification",
+          requestBody: {
+            required: true,
+            schema: toOpenApiSchema(ConfirmEmailVerificationInputSchema)
+          },
+          responses: {
+            200: { description: "Email verification completed" }
           }
         }
       })
@@ -177,6 +271,60 @@ export class AuthController extends HttpController {
   private me = async (ctx: HttpContext) => {
     try {
       return responder.success(getAuthenticatedUser(ctx));
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private requestPasswordReset = async (ctx: HttpContext) => {
+    try {
+      const payload = RequestPasswordResetInputSchema.parse(ctx.body);
+      return responder.success(await this.flows.requestPasswordReset(payload.email));
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private registerPublic = async (ctx: HttpContext) => {
+    try {
+      const payload = PublicRegistrationInputSchema.parse(ctx.body);
+      return responder.success(await this.flows.registerPublic(payload));
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private acceptUserInvite = async (ctx: HttpContext) => {
+    try {
+      const payload = AcceptUserInviteInputSchema.parse(ctx.body);
+      return responder.success(await this.flows.acceptUserInvite(payload));
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private completePasswordReset = async (ctx: HttpContext) => {
+    try {
+      const payload = CompletePasswordResetInputSchema.parse(ctx.body);
+      return responder.success(await this.flows.completePasswordReset(payload));
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private requestEmailVerification = async (ctx: HttpContext) => {
+    try {
+      const payload = RequestEmailVerificationInputSchema.parse(ctx.body);
+      return responder.success(await this.flows.requestEmailVerification(payload.email));
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private confirmEmailVerification = async (ctx: HttpContext) => {
+    try {
+      const payload = ConfirmEmailVerificationInputSchema.parse(ctx.body);
+      return responder.success(await this.flows.confirmEmailVerification(payload.token));
     } catch (error) {
       return responder.fromError(error);
     }

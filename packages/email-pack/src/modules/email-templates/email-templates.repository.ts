@@ -43,6 +43,31 @@ export class EmailTemplatesRepository {
     return EmailTemplateRecordSchema.parse(created);
   }
 
+  async upsert(input: UpsertEmailTemplateInput): Promise<EmailTemplateRecord> {
+    const existing = await this.findByKeyAndLocale(input.key, input.locale);
+    if (!existing) {
+      return this.create(input);
+    }
+    const updated = await this.repository().updateOne(
+      { filter: { id: existing.id } },
+      {
+        name: input.name.trim(),
+        ...(input.description?.trim() ? { description: input.description.trim() } : {}),
+        subject: input.subject.trim(),
+        textBody: input.textBody,
+        ...(input.htmlBody?.trim() ? { htmlBody: input.htmlBody } : {}),
+        variables: normalizeVariables(input.variables),
+        status: input.status ?? existing.status,
+        source: "custom",
+        updatedAt: new Date().toISOString()
+      }
+    );
+    if (!updated) {
+      throw new Error(`Email template "${input.key}" disappeared during update`);
+    }
+    return EmailTemplateRecordSchema.parse(updated);
+  }
+
   async findByKeyAndLocale(key: string, locale: string): Promise<EmailTemplateRecord | null> {
     return this.repository().findOne({
       filter: { key: normalizeTemplateKey(key), locale: normalizeLocale(locale) },

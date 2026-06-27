@@ -393,6 +393,18 @@ export const CORE_PACK_SETTING_DEFINITION_SEEDS: readonly CorePackSettingDefinit
         "Admin-managed plugin permission center grants for sensitive event subscriptions and secure payload claims.",
       defaultValue: [
         {
+          id: "event-subscription|core-pack|email-pack|core-pack:secure-event-payload-ready|*|email-pack:email:send",
+          accessType: "event-subscription",
+          producerPluginId: "core-pack",
+          consumerPluginId: "email-pack",
+          eventName: "core-pack:secure-event-payload-ready",
+          requiredPermission: "email-pack:email:send",
+          status: "approved",
+          reason: "Official transactional email delivery plugin"
+        },
+        {
+          id: "secure-payload-claim|core-pack|email-pack|core-pack:secure-event-payload-ready|email-pack:send-email-request|email-pack:email:send",
+          accessType: "secure-payload-claim",
           producerPluginId: "core-pack",
           consumerPluginId: "email-pack",
           eventName: "core-pack:secure-event-payload-ready",
@@ -414,6 +426,11 @@ export const CORE_PACK_SETTING_DEFINITION_SEEDS: readonly CorePackSettingDefinit
             "status"
           ],
           properties: {
+            id: { type: "string" },
+            accessType: {
+              type: "string",
+              enum: ["event-subscription", "secure-payload-claim", "setting", "api"]
+            },
             producerPluginId: { type: "string" },
             consumerPluginId: { type: "string" },
             eventName: { type: "string" },

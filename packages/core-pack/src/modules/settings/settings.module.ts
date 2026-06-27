@@ -7,6 +7,8 @@ import {
   type EntityRegistry
 } from "@trinacria-cms/kernel";
 import { CorePackAuthModule } from "../auth/auth.module.js";
+import { createJwtAuthMiddleware } from "../auth/auth.middleware.js";
+import type { JwtAuthService } from "../auth/auth.service.js";
 import { CORE_PACK_JWT_AUTH_SERVICE_TOKEN } from "../auth/auth.tokens.js";
 import { SettingsController } from "./settings.controller.js";
 import { SettingsDefinitionsRepository } from "./definitions/settings-definitions.repository.js";
@@ -88,6 +90,16 @@ export const CorePackSettingsModule = defineModule({
     factoryProvider(CORE_TOKENS.SECURE_EVENT_PAYLOAD_AUTHORIZER, (policy) => policy, [
       SETTINGS_PLUGIN_ACCESS_POLICY_SERVICE_TOKEN
     ]),
+    factoryProvider(
+      CORE_TOKENS.KERNEL_ADMIN_ROUTE_GUARD,
+      (auth) => ({
+        middleware: createJwtAuthMiddleware(auth as JwtAuthService, {
+          requireAdmin: true
+        }),
+        security: [{ bearerAuth: [] }]
+      }),
+      [CORE_PACK_JWT_AUTH_SERVICE_TOKEN]
+    ),
     httpProvider(SETTINGS_CONTROLLER_TOKEN, SettingsController, [
       SETTINGS_SERVICE_TOKEN,
       CORE_PACK_JWT_AUTH_SERVICE_TOKEN,
@@ -106,6 +118,7 @@ export const CorePackSettingsModule = defineModule({
     SETTINGS_PLUGIN_ACCESS_POLICY_SERVICE_TOKEN,
     CORE_TOKENS.PLUGIN_EVENT_SUBSCRIPTION_AUTHORIZER,
     CORE_TOKENS.SECURE_EVENT_PAYLOAD_AUTHORIZER,
+    CORE_TOKENS.KERNEL_ADMIN_ROUTE_GUARD,
     SETTINGS_SERVICE_TOKEN
   ]
 });

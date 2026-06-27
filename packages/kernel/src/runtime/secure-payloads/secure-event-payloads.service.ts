@@ -11,6 +11,8 @@ import { SecureEventPayloadCrypto } from "./secure-event-payloads.crypto.js";
 import { SecureEventPayloadsRepository } from "./secure-event-payloads.repository.js";
 
 const DEFAULT_MAX_CLAIMS = 1;
+const DEFAULT_TTL_MS = 15 * 60_000;
+const MAX_CLAIMS_LIMIT = 10;
 
 export class SecureEventPayloadError extends CoreError {
   constructor(code: string, message: string, details?: Record<string, unknown>) {
@@ -36,8 +38,8 @@ export class SecureEventPayloadsService implements SecureEventPayloadStore {
       schemaVersion: input.schemaVersion,
       requiredPermission: input.requiredPermission.trim().toLowerCase(),
       encryptedPayload: this.crypto.encrypt(JSON.stringify(input.payload)),
-      maxClaims: input.maxClaims ?? DEFAULT_MAX_CLAIMS,
-      ...(input.expiresAt ? { expiresAt: normalizeDate(input.expiresAt) } : {}),
+      maxClaims: normalizeMaxClaims(input.maxClaims),
+      expiresAt: normalizeDate(input.expiresAt ?? new Date(Date.now() + DEFAULT_TTL_MS)),
       ...(authorizedConsumerPluginIds.length > 0 ? { authorizedConsumerPluginIds } : {})
     });
   }
@@ -148,4 +150,11 @@ function normalizePluginId(value: string): string {
 
 function normalizePluginIds(values: readonly string[] | undefined): string[] {
   return Array.from(new Set((values ?? []).map(normalizePluginId).filter(Boolean)));
+}
+
+function normalizeMaxClaims(value: number | undefined): number {
+  const parsed = Number.isFinite(value)
+    ? Math.floor(value ?? DEFAULT_MAX_CLAIMS)
+    : DEFAULT_MAX_CLAIMS;
+  return Math.min(MAX_CLAIMS_LIMIT, Math.max(1, parsed));
 }

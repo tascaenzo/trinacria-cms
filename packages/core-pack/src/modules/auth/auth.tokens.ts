@@ -2,6 +2,8 @@ import { createToken } from "@trinacria-cms/kernel";
 import { AuthBlacklistRepository } from "./auth-blacklist.repository.js";
 import { AuthController } from "./auth.controller.js";
 import { AuthLoginAttemptRepository } from "./auth-login-attempt.repository.js";
+import { AuthFlowTokensRepository } from "./auth-flow-tokens.repository.js";
+import { AuthUserFlowsService } from "./auth-user-flows.service.js";
 import { AuthUsersRepository } from "./auth-users.repository.js";
 import { JwtAuthService } from "./auth.service.js";
 
@@ -22,3 +24,9 @@ export const CORE_PACK_AUTH_BLACKLIST_REPOSITORY_TOKEN = createToken<AuthBlackli
 );
 export const CORE_PACK_AUTH_LOGIN_ATTEMPT_REPOSITORY_TOKEN =
   createToken<AuthLoginAttemptRepository>("CORE_PACK_AUTH_LOGIN_ATTEMPT_REPOSITORY");
+export const CORE_PACK_AUTH_FLOW_TOKENS_REPOSITORY_TOKEN = createToken<AuthFlowTokensRepository>(
+  "CORE_PACK_AUTH_FLOW_TOKENS_REPOSITORY"
+);
+export const CORE_PACK_AUTH_USER_FLOWS_SERVICE_TOKEN = createToken<AuthUserFlowsService>(
+  "CORE_PACK_AUTH_USER_FLOWS_SERVICE"
+);

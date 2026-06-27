@@ -3,19 +3,25 @@ import {
   CORE_TOKENS,
   defineModule,
   factoryProvider,
-  type EntityRegistry
+  httpProvider,
+  type EntityRegistry,
+  type ModuleDefinition
 } from "@trinacria-cms/kernel";
+import { CorePackSettingsModule } from "@trinacria-cms/core-pack";
 import { EMAIL_TEMPLATES_ENTITY } from "./email-templates.schemas.js";
+import { EmailTemplatesController } from "./email-templates.controller.js";
 import { EmailTemplatesRepository } from "./email-templates.repository.js";
 import { EmailTemplatesService } from "./email-templates.service.js";
 import {
+  EMAIL_TEMPLATES_CONTROLLER_TOKEN,
   EMAIL_TEMPLATES_ENTITY_REGISTRATION_TOKEN,
   EMAIL_TEMPLATES_REPOSITORY_TOKEN,
   EMAIL_TEMPLATES_SERVICE_TOKEN
 } from "./email-templates.tokens.js";
 
-export const EmailPackEmailTemplatesModule = defineModule({
+export const EmailPackEmailTemplatesModule: ModuleDefinition = defineModule({
   name: "EmailPackEmailTemplatesModule",
+  imports: [CorePackSettingsModule],
   providers: [
     factoryProvider(
       EMAIL_TEMPLATES_ENTITY_REGISTRATION_TOKEN,
@@ -30,9 +36,14 @@ export const EmailPackEmailTemplatesModule = defineModule({
     ]),
     classProvider(EMAIL_TEMPLATES_SERVICE_TOKEN, EmailTemplatesService, [
       EMAIL_TEMPLATES_REPOSITORY_TOKEN
+    ]),
+    httpProvider(EMAIL_TEMPLATES_CONTROLLER_TOKEN, EmailTemplatesController, [
+      EMAIL_TEMPLATES_SERVICE_TOKEN,
+      CORE_TOKENS.KERNEL_ADMIN_ROUTE_GUARD
     ])
   ],
   exports: [
+    EMAIL_TEMPLATES_CONTROLLER_TOKEN,
     EMAIL_TEMPLATES_ENTITY_REGISTRATION_TOKEN,
     EMAIL_TEMPLATES_REPOSITORY_TOKEN,
     EMAIL_TEMPLATES_SERVICE_TOKEN

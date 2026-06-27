@@ -19,6 +19,8 @@ import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import { CORE_PACK_OPENAPI_TAGS } from "../openapi-tags.js";
 import { createJwtAuthMiddleware } from "../auth/auth.middleware.js";
 import type { JwtAuthService } from "../auth/auth.service.js";
+import { getAuthenticatedUser } from "../auth/auth.middleware.js";
+import type { AuthUserFlowsService } from "../auth/auth-user-flows.service.js";
 import type { UsersService } from "./users.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
@@ -46,7 +48,8 @@ export class UsersController extends HttpController {
 
   constructor(
     private readonly users: UsersService,
-    auth: JwtAuthService
+    auth: JwtAuthService,
+    private readonly flows: AuthUserFlowsService
   ) {
     super();
     this.adminAuthMiddleware = createJwtAuthMiddleware(auth, {
@@ -160,6 +163,18 @@ export class UsersController extends HttpController {
           }
         }
       })
+      .post("/v1/users/:id/invite", this.inviteUser, {
+        middlewares: [this.adminAuthMiddleware],
+        docs: {
+          summary: "Invite user by email",
+          tags: [CORE_PACK_OPENAPI_TAGS.USERS],
+          operationId: "inviteUser",
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: { description: "Invite accepted" }
+          }
+        }
+      })
       .build();
   }
 
@@ -240,6 +255,24 @@ export class UsersController extends HttpController {
         return responder.notFound(`User "${id}" not found`);
       }
       return responder.success(updated);
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private inviteUser = async (ctx: HttpContext) => {
+    const id = ctx.params.id;
+    if (!id) {
+      return responder.invalidRequest("Missing user id");
+    }
+
+    try {
+      const admin = getAuthenticatedUser(ctx);
+      const result = await this.flows.sendUserInvite({
+        userId: id,
+        inviterName: `${admin.firstName} ${admin.lastName}`.trim()
+      });
+      return responder.success(result);
     } catch (error) {
       return responder.fromError(error);
     }

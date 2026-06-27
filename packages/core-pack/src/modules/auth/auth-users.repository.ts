@@ -13,6 +13,24 @@ export class AuthUsersRepository {
 
   constructor(private readonly db: DbAdapter) {}
 
+  async create(input: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    status: "active" | "suspended";
+  }): Promise<UserRecord> {
+    const now = new Date().toISOString();
+    const created = await this.repository().insertOne({
+      email: input.email.trim().toLowerCase(),
+      firstName: input.firstName.trim(),
+      lastName: input.lastName.trim(),
+      status: input.status,
+      createdAt: now,
+      updatedAt: now
+    });
+    return this.parseUserRecord(created);
+  }
+
   async findById(id: string): Promise<UserRecord | null> {
     return this.repository().findOne({
       filter: { id: id.trim() },
@@ -40,6 +58,14 @@ export class AuthUsersRepository {
       }
     );
 
+    return updated ? this.parseUserRecord(updated) : null;
+  }
+
+  async updateStatus(id: string, status: "active" | "suspended"): Promise<UserRecord | null> {
+    const updated = await this.repository().updateOne(
+      { filter: { id: id.trim() } },
+      { status, updatedAt: new Date().toISOString() }
+    );
     return updated ? this.parseUserRecord(updated) : null;
   }
 

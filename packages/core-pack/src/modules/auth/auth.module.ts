@@ -7,22 +7,27 @@ import {
   httpProvider,
   type EntityRegistry
 } from "@trinacria-cms/kernel";
+import { EVENT_BUS_TOKEN } from "@trinacria/events";
 import { InstallationStateRepository } from "../installation/installation-state.repository.js";
 import { LOCAL_CREDENTIALS_ENTITY } from "../installation/installation.schemas.js";
 import { LocalCredentialsRepository } from "../installation/local-credentials.repository.js";
 import { PasswordHashingService } from "../installation/password-hashing.service.js";
 import { AuthBlacklistRepository } from "./auth-blacklist.repository.js";
 import { AuthController } from "./auth.controller.js";
+import { AUTH_FLOW_TOKENS_ENTITY } from "./auth-flow-tokens.schemas.js";
+import { AuthFlowTokensRepository } from "./auth-flow-tokens.repository.js";
 import { AuthLoginAttemptRepository } from "./auth-login-attempt.repository.js";
 import { AuthUsersRepository } from "./auth-users.repository.js";
 import { JwtAuthService } from "./auth.service.js";
-import { createJwtAuthMiddleware } from "./auth.middleware.js";
+import { AuthUserFlowsService } from "./auth-user-flows.service.js";
 import {
   CORE_PACK_AUTH_BLACKLIST_REPOSITORY_TOKEN,
   CORE_PACK_AUTH_CONTROLLER_TOKEN,
   CORE_PACK_AUTH_ENTITY_REGISTRATION_TOKEN,
+  CORE_PACK_AUTH_FLOW_TOKENS_REPOSITORY_TOKEN,
   CORE_PACK_AUTH_LOGIN_ATTEMPT_REPOSITORY_TOKEN,
   CORE_PACK_AUTH_USERS_REPOSITORY_TOKEN,
+  CORE_PACK_AUTH_USER_FLOWS_SERVICE_TOKEN,
   CORE_PACK_JWT_AUTH_SERVICE_TOKEN
 } from "./auth.tokens.js";
 import { CorePackRuntimeConfigModule } from "../settings/config/runtime-config.module.js";
@@ -53,6 +58,7 @@ export const CorePackAuthModule = defineModule({
       CORE_PACK_AUTH_ENTITY_REGISTRATION_TOKEN,
       (registry) => {
         (registry as EntityRegistry).register(LOCAL_CREDENTIALS_ENTITY);
+        (registry as EntityRegistry).register(AUTH_FLOW_TOKENS_ENTITY);
         return true;
       },
       [CORE_TOKENS.ENTITY_REGISTRY]
@@ -75,6 +81,9 @@ export const CorePackAuthModule = defineModule({
       CORE_TOKENS.DB_ADAPTER,
       CORE_PACK_CACHE_SERVICE_TOKEN
     ]),
+    classProvider(CORE_PACK_AUTH_FLOW_TOKENS_REPOSITORY_TOKEN, AuthFlowTokensRepository, [
+      CORE_TOKENS.DB_ADAPTER
+    ]),
     classProvider(CORE_PACK_JWT_AUTH_SERVICE_TOKEN, JwtAuthService, [
       CORE_PACK_AUTH_USERS_REPOSITORY_TOKEN,
       CORE_PACK_AUTH_LOCAL_CREDENTIALS_REPOSITORY_TOKEN,
@@ -85,25 +94,26 @@ export const CorePackAuthModule = defineModule({
       RUNTIME_CONFIG_SERVICE_TOKEN,
       CORE_TOKENS.DB_ADAPTER
     ]),
-    factoryProvider(
-      CORE_TOKENS.KERNEL_ADMIN_ROUTE_GUARD,
-      (auth) => ({
-        middleware: createJwtAuthMiddleware(auth as JwtAuthService, {
-          requireAdmin: true
-        }),
-        security: [{ bearerAuth: [] }]
-      }),
-      [CORE_PACK_JWT_AUTH_SERVICE_TOKEN]
-    ),
+    classProvider(CORE_PACK_AUTH_USER_FLOWS_SERVICE_TOKEN, AuthUserFlowsService, [
+      CORE_PACK_AUTH_USERS_REPOSITORY_TOKEN,
+      CORE_PACK_AUTH_LOCAL_CREDENTIALS_REPOSITORY_TOKEN,
+      CORE_PACK_AUTH_PASSWORD_HASHING_SERVICE_TOKEN,
+      CORE_PACK_AUTH_FLOW_TOKENS_REPOSITORY_TOKEN,
+      RUNTIME_CONFIG_SERVICE_TOKEN,
+      CORE_TOKENS.SECURE_EVENT_PAYLOAD_STORE,
+      EVENT_BUS_TOKEN
+    ]),
     httpProvider(CORE_PACK_AUTH_CONTROLLER_TOKEN, AuthController, [
-      CORE_PACK_JWT_AUTH_SERVICE_TOKEN
+      CORE_PACK_JWT_AUTH_SERVICE_TOKEN,
+      CORE_PACK_AUTH_USER_FLOWS_SERVICE_TOKEN
     ])
   ],
   exports: [
     CORE_PACK_AUTH_ENTITY_REGISTRATION_TOKEN,
     CORE_PACK_AUTH_USERS_REPOSITORY_TOKEN,
+    CORE_PACK_AUTH_FLOW_TOKENS_REPOSITORY_TOKEN,
+    CORE_PACK_AUTH_USER_FLOWS_SERVICE_TOKEN,
     CORE_PACK_JWT_AUTH_SERVICE_TOKEN,
-    CORE_TOKENS.KERNEL_ADMIN_ROUTE_GUARD,
     CORE_PACK_AUTH_CONTROLLER_TOKEN
   ]
 });
