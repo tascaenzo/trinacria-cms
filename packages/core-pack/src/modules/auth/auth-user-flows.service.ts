@@ -8,6 +8,13 @@ import { LocalCredentialsRepository } from "../installation/local-credentials.re
 import type { AuthUsersRepository } from "./auth-users.repository.js";
 import { AuthFlowTokensRepository } from "./auth-flow-tokens.repository.js";
 import type { AuthFlowTokenType } from "./auth-flow-tokens.schemas.js";
+import {
+  CORE_PACK_USER_CREATED_EVENT,
+  CORE_PACK_USER_INVITED_EVENT,
+  CORE_PACK_USER_INVITE_ACCEPTED_EVENT,
+  CORE_PACK_USER_STATUS_CHANGED_EVENT,
+  publishCorePackUserEvent
+} from "../users/users.events.js";
 
 const EMAIL_REQUEST_PAYLOAD_TYPE = "email-pack:send-email-request";
 const EMAIL_REQUEST_SCHEMA_VERSION = 1;
@@ -97,7 +104,16 @@ export class AuthUserFlowsService {
   async confirmEmailVerification(token: string): Promise<{ completed: true }> {
     const record = await this.consumeFlowToken(token, "email_verification");
     if (record.userId) {
-      await this.users.updateStatus(record.userId, "active");
+      const existing = await this.users.findById(record.userId);
+      const updated = await this.users.updateStatus(record.userId, "active");
+      if (existing && updated && existing.status !== updated.status) {
+        await publishCorePackUserEvent(this.events, CORE_PACK_USER_STATUS_CHANGED_EVENT, {
+          userId: updated.id,
+          previousStatus: existing.status,
+          status: updated.status,
+          reason: "email-verification"
+        });
+      }
     }
     return { completed: true };
   }
@@ -125,6 +141,11 @@ export class AuthUserFlowsService {
       lastName: input.lastName,
       status: requiresVerification ? "suspended" : "active"
     });
+    await publishCorePackUserEvent(this.events, CORE_PACK_USER_CREATED_EVENT, {
+      userId: user.id,
+      status: user.status,
+      source: "public-registration"
+    });
     const password = await this.passwordHashing.hashPassword(input.password);
     await this.localCredentials.upsert({
       userId: user.id,
@@ -141,6 +162,7 @@ export class AuthUserFlowsService {
   async sendUserInvite(input: {
     userId: string;
     inviterName?: string;
+    actorUserId?: string;
   }): Promise<{ accepted: true }> {
     if (!(await this.getBoolean("core-pack:user_flows:user_invites_enabled", true))) {
       throw new Error("User invites are disabled");
@@ -167,6 +189,10 @@ export class AuthUserFlowsService {
       },
       expiresAt: token.expiresAt
     });
+    await publishCorePackUserEvent(this.events, CORE_PACK_USER_INVITED_EVENT, {
+      userId: user.id,
+      ...(input.actorUserId ? { actorUserId: input.actorUserId } : {})
+    });
     return { accepted: true };
   }
 
@@ -182,7 +208,21 @@ export class AuthUserFlowsService {
       passwordHash: password.passwordHash,
       passwordSalt: password.passwordSalt
     });
-    await this.users.updateStatus(record.userId, "active");
+    const existing = await this.users.findById(record.userId);
+    const updated = await this.users.updateStatus(record.userId, "active");
+    if (updated) {
+      await publishCorePackUserEvent(this.events, CORE_PACK_USER_INVITE_ACCEPTED_EVENT, {
+        userId: updated.id
+      });
+      if (existing && existing.status !== updated.status) {
+        await publishCorePackUserEvent(this.events, CORE_PACK_USER_STATUS_CHANGED_EVENT, {
+          userId: updated.id,
+          previousStatus: existing.status,
+          status: updated.status,
+          reason: "invite-accepted"
+        });
+      }
+    }
     return { completed: true };
   }
 

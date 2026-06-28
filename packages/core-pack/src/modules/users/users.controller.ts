@@ -270,7 +270,8 @@ export class UsersController extends HttpController {
       const admin = getAuthenticatedUser(ctx);
       const result = await this.flows.sendUserInvite({
         userId: id,
-        inviterName: `${admin.firstName} ${admin.lastName}`.trim()
+        inviterName: `${admin.firstName} ${admin.lastName}`.trim(),
+        actorUserId: admin.id
       });
       return responder.success(result);
     } catch (error) {

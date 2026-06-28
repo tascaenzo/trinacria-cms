@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { DbAdapter, DbQuery, DbRepository, NamespaceContext } from "@trinacria-cms/kernel";
+import type { EventBus } from "@trinacria/events";
+import {
+  CORE_PACK_USER_CREATED_EVENT,
+  CORE_PACK_USER_PROFILE_UPDATED_EVENT,
+  CORE_PACK_USER_STATUS_CHANGED_EVENT
+} from "../src/modules/users/users.events.js";
 import { UsersRepository } from "../src/modules/users/users.repository.js";
 import { UsersService } from "../src/modules/users/users.service.js";
 
@@ -88,6 +94,51 @@ test("UsersService updates profile and status together", async () => {
   assert.equal(updated?.status, "suspended");
 });
 
+test("UsersService emits non-sensitive lifecycle events", async () => {
+  const db = createFakeDbAdapter();
+  const events = createRecordingEventBus();
+  const service = new UsersService(new UsersRepository(db), events.bus);
+
+  const created = await service.createUser({
+    email: "events@example.com",
+    firstName: "Events",
+    lastName: "User"
+  });
+  await service.updateUserProfile(created.id, {
+    firstName: "Updated",
+    lastName: "User",
+    status: "active"
+  });
+  await service.suspendUser(created.id);
+
+  assert.deepEqual(events.records, [
+    {
+      event: CORE_PACK_USER_CREATED_EVENT,
+      payload: {
+        userId: created.id,
+        status: "active",
+        source: "admin"
+      }
+    },
+    {
+      event: CORE_PACK_USER_PROFILE_UPDATED_EVENT,
+      payload: {
+        userId: created.id,
+        changedFields: ["firstName"]
+      }
+    },
+    {
+      event: CORE_PACK_USER_STATUS_CHANGED_EVENT,
+      payload: {
+        userId: created.id,
+        previousStatus: "active",
+        status: "suspended",
+        reason: "admin"
+      }
+    }
+  ]);
+});
+
 function createFakeDbAdapter(): DbAdapter {
   const buckets = new Map<string, Array<Record<string, unknown>>>();
   let sequence = 0;
@@ -158,6 +209,31 @@ function createFakeDbAdapter(): DbAdapter {
     },
     async healthCheck() {
       return { ok: true };
+    }
+  };
+}
+
+function createRecordingEventBus(): {
+  bus: EventBus;
+  records: Array<{ event: string; payload: unknown }>;
+} {
+  const records: Array<{ event: string; payload: unknown }> = [];
+  return {
+    records,
+    bus: {
+      async emit(event, payload) {
+        records.push({ event, payload });
+      },
+      on() {
+        return () => {};
+      },
+      once() {
+        return () => {};
+      },
+      off() {},
+      listenerCount() {
+        return 0;
+      }
     }
   };
 }

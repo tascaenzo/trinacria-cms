@@ -6,6 +6,7 @@ import {
   httpProvider,
   type EntityRegistry
 } from "@trinacria-cms/kernel";
+import { EVENT_BUS_TOKEN } from "@trinacria/events";
 import { CorePackAuthModule } from "../auth/auth.module.js";
 import { CORE_PACK_JWT_AUTH_SERVICE_TOKEN } from "../auth/auth.tokens.js";
 import { CORE_PACK_AUTH_USER_FLOWS_SERVICE_TOKEN } from "../auth/auth.tokens.js";
@@ -36,7 +37,7 @@ export const CorePackUsersModule = defineModule({
       [CORE_TOKENS.ENTITY_REGISTRY]
     ),
     classProvider(USERS_REPOSITORY_TOKEN, UsersRepository, [CORE_TOKENS.DB_ADAPTER]),
-    classProvider(USERS_SERVICE_TOKEN, UsersService, [USERS_REPOSITORY_TOKEN]),
+    classProvider(USERS_SERVICE_TOKEN, UsersService, [USERS_REPOSITORY_TOKEN, EVENT_BUS_TOKEN]),
     httpProvider(USERS_CONTROLLER_TOKEN, UsersController, [
       USERS_SERVICE_TOKEN,
       CORE_PACK_JWT_AUTH_SERVICE_TOKEN,

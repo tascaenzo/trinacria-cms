@@ -1,10 +1,16 @@
 import { readFileSync, existsSync, writeFileSync, chmodSync } from "node:fs";
 import { join } from "node:path";
 import type { PluginSecurityProvisioner } from "@trinacria-cms/kernel";
+import type { EventBus } from "@trinacria/events";
 import { CORE_PACK_ADMIN_ROLE } from "../../plugin/core-pack.security.js";
 import { CORE_PACK_MANIFEST } from "../../plugin/core-pack.manifest.js";
 import { UsersRepository } from "../users/users.repository.js";
 import type { UserRecord } from "../users/users.schemas.js";
+import {
+  CORE_PACK_USER_CREATED_EVENT,
+  CORE_PACK_USER_STATUS_CHANGED_EVENT,
+  publishCorePackUserEvent
+} from "../users/users.events.js";
 import { UserAccessService } from "../security/user-access/user-access.service.js";
 import { SettingsService } from "../settings/settings.service.js";
 import type { InstallBootstrapInput } from "./dto/installation.input.dto.js";
@@ -64,7 +70,8 @@ export class InstallationService {
     private readonly userAccess: UserAccessService,
     private readonly securityProvisioning: PluginSecurityProvisioner,
     private readonly passwordHashing: PasswordHashingService,
-    private readonly settings: SettingsService
+    private readonly settings: SettingsService,
+    private readonly events?: EventBus
   ) {}
 
   async getStatus(): Promise<InstallationStatus> {
@@ -178,11 +185,17 @@ export class InstallationService {
   private async upsertAdminUser(input: InstallBootstrapInput): Promise<UserRecord> {
     const existing = await this.users.findByEmail(input.email);
     if (!existing) {
-      return this.users.create({
+      const created = await this.users.create({
         email: input.email,
         firstName: input.firstName,
         lastName: input.lastName
       });
+      await publishCorePackUserEvent(this.events, CORE_PACK_USER_CREATED_EVENT, {
+        userId: created.id,
+        status: created.status,
+        source: "system"
+      });
+      return created;
     }
 
     if (existing.status === "active") {
@@ -195,6 +208,12 @@ export class InstallationService {
     if (!reactivated) {
       throw new Error(`User "${existing.id}" disappeared during activation`);
     }
+    await publishCorePackUserEvent(this.events, CORE_PACK_USER_STATUS_CHANGED_EVENT, {
+      userId: reactivated.id,
+      previousStatus: existing.status,
+      status: reactivated.status,
+      reason: "system"
+    });
     return reactivated;
   }
 

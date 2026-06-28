@@ -57,6 +57,89 @@ export const CORE_PACK_MANIFEST: PluginManifest = definePluginManifest({
             schemaVersion: { type: "number" }
           }
         }
+      }),
+      defineEmittedEvent({
+        name: "user-created",
+        visibility: "public",
+        version: 1,
+        delivery: "async",
+        payloadSchema: {
+          type: "object",
+          required: ["userId", "status", "source"],
+          additionalProperties: false,
+          properties: {
+            userId: { type: "string" },
+            status: { type: "string", enum: ["active", "suspended"] },
+            source: { type: "string", enum: ["admin", "public-registration", "system"] }
+          }
+        }
+      }),
+      defineEmittedEvent({
+        name: "user-profile-updated",
+        visibility: "public",
+        version: 1,
+        delivery: "async",
+        payloadSchema: {
+          type: "object",
+          required: ["userId", "changedFields"],
+          additionalProperties: false,
+          properties: {
+            userId: { type: "string" },
+            changedFields: {
+              type: "array",
+              items: { type: "string", enum: ["firstName", "lastName"] }
+            }
+          }
+        }
+      }),
+      defineEmittedEvent({
+        name: "user-status-changed",
+        visibility: "public",
+        version: 1,
+        delivery: "async",
+        payloadSchema: {
+          type: "object",
+          required: ["userId", "previousStatus", "status"],
+          additionalProperties: false,
+          properties: {
+            userId: { type: "string" },
+            previousStatus: { type: "string", enum: ["active", "suspended"] },
+            status: { type: "string", enum: ["active", "suspended"] },
+            reason: {
+              type: "string",
+              enum: ["admin", "email-verification", "invite-accepted", "system"]
+            }
+          }
+        }
+      }),
+      defineEmittedEvent({
+        name: "user-invited",
+        visibility: "public",
+        version: 1,
+        delivery: "async",
+        payloadSchema: {
+          type: "object",
+          required: ["userId"],
+          additionalProperties: false,
+          properties: {
+            userId: { type: "string" },
+            actorUserId: { type: "string" }
+          }
+        }
+      }),
+      defineEmittedEvent({
+        name: "user-invite-accepted",
+        visibility: "public",
+        version: 1,
+        delivery: "async",
+        payloadSchema: {
+          type: "object",
+          required: ["userId"],
+          additionalProperties: false,
+          properties: {
+            userId: { type: "string" }
+          }
+        }
       })
     ]
   }),

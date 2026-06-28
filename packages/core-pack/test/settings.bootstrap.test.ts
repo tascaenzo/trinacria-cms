@@ -53,6 +53,17 @@ test("core-pack manifest exposes the canonical settings catalog", () => {
   assert.equal(publicRegistration?.defaultValue, false);
 });
 
+test("core-pack manifest declares public user lifecycle events", () => {
+  assert.deepEqual((CORE_PACK_MANIFEST.events?.emits ?? []).map((event) => event.name).sort(), [
+    "secure-event-payload-ready",
+    "user-created",
+    "user-invite-accepted",
+    "user-invited",
+    "user-profile-updated",
+    "user-status-changed"
+  ]);
+});
+
 test("settings-backed plugin access policy authorizes official email grant and denies missing grants", async () => {
   const service = createSettingsService();
   await provisionCorePackSettingDefinitions(service);
