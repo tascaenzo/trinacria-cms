@@ -16,6 +16,21 @@ Official baseline plugin pack for Trinacria CMS.
 editorial, commerce, media, SEO, booking, or analytics should be implemented as
 separate plugins.
 
+## User lifecycle events
+
+`core-pack` emits public, non-sensitive user lifecycle events for plugin
+integrations and future workflow automation:
+
+- `core-pack:user-created`
+- `core-pack:user-profile-updated`
+- `core-pack:user-status-changed`
+- `core-pack:user-invited`
+- `core-pack:user-invite-accepted`
+
+The payloads contain only identifiers and state metadata. Sensitive links,
+tokens, credentials, and personal data must stay out of public events. See
+[`../../docs/plugin-user-events-and-email-flows.md`](../../docs/plugin-user-events-and-email-flows.md).
+
 ## Security model implemented
 
 - `permissions` are plugin-owned (`sourcePluginId`)

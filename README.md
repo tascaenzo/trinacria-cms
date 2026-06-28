@@ -60,6 +60,8 @@ compatibility re-exports and owns the signed settings request helpers.
 
 Sensitive cross-plugin communication is documented in
 [docs/plugin-secure-events.md](/Users/enzo/Desktop/trinacria-cms/docs/plugin-secure-events.md).
+User lifecycle events and email flows are documented in
+[docs/plugin-user-events-and-email-flows.md](/Users/enzo/Desktop/trinacria-cms/docs/plugin-user-events-and-email-flows.md).
 
 ## Development workflow
 
