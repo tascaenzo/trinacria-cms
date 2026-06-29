@@ -7,8 +7,8 @@ import {
   CORE_PACK_USER_PROFILE_UPDATED_EVENT,
   CORE_PACK_USER_STATUS_CHANGED_EVENT
 } from "../src/modules/users/users.events.js";
-import { UsersRepository } from "../src/modules/users/users.repository.js";
-import { UsersService } from "../src/modules/users/users.service.js";
+import { UsersRepository } from "../src/modules/users/repositories/users.repository.js";
+import { UsersService } from "../src/modules/users/services/users.service.js";
 
 test("UsersService creates and fetches users", async () => {
   const db = createFakeDbAdapter();

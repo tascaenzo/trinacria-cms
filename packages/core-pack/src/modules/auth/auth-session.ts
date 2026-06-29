@@ -1,6 +1,6 @@
 import { getCookieValue, serializeCookie, type HttpContext } from "@trinacria-cms/kernel";
 import type { RuntimeConfigService } from "../settings/config/runtime-config.service.js";
-import type { LoginResult } from "./auth.service.js";
+import type { LoginResult } from "./services/auth.service.js";
 
 export interface JwtCookieConfig {
   accessCookieName: string;

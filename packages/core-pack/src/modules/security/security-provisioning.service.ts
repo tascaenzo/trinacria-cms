@@ -16,7 +16,7 @@ import {
   type EmbeddedRolePolicyRule
 } from "../roles/roles.schemas.js";
 import { UserRolesRepository } from "./user-access/user-roles.repository.js";
-import { SettingsService } from "../settings/settings.service.js";
+import { SettingsService } from "../settings/services/settings.service.js";
 
 interface NormalizedSecurityManifest {
   permissions: readonly PluginManifestSecurityPermission[];

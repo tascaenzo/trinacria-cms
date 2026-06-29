@@ -20,15 +20,15 @@ import {
   SettingsService,
   SettingsValuesRepository
 } from "@trinacria-cms/core-pack";
-import { EmailConfigService } from "../src/modules/email/email-config.service.js";
+import { EmailConfigService } from "../src/modules/email/services/email-config.service.js";
 import {
   EMAIL_SEND_REQUEST_PAYLOAD_TYPE,
   EMAIL_SEND_REQUEST_SCHEMA_VERSION
 } from "../src/modules/email/email-request.types.js";
 import { EMAIL_PACK_EMAIL_DELIVERY_SERVICE_TOKEN } from "../src/modules/email/email.tokens.js";
 import { EMAIL_PACK_SETTING_DEFINITIONS } from "../src/modules/email/email-settings.js";
-import { EmailTemplatesRepository } from "../src/modules/email-templates/email-templates.repository.js";
-import { EmailTemplatesService } from "../src/modules/email-templates/email-templates.service.js";
+import { EmailTemplatesRepository } from "../src/modules/email-templates/repositories/email-templates.repository.js";
+import { EmailTemplatesService } from "../src/modules/email-templates/services/email-templates.service.js";
 import { EMAIL_TEMPLATES_SERVICE_TOKEN } from "../src/modules/email-templates/email-templates.tokens.js";
 import { EMAIL_PACK_MANIFEST } from "../src/plugin/email-pack.manifest.js";
 import { createEmailPackPlugin } from "../src/plugin/email-pack.plugin.js";

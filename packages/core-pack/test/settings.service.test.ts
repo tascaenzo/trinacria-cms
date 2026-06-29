@@ -6,7 +6,7 @@ import { SettingsAccessError } from "../src/modules/settings/_shared/settings.er
 import { SettingsSecretsCryptoService } from "../src/modules/settings/secrets/settings-secrets-crypto.service.js";
 import { SettingsSecretsRepository } from "../src/modules/settings/secrets/settings-secrets.repository.js";
 import { provisionCorePackSettingDefinitions } from "../src/modules/settings/settings.bootstrap.js";
-import { SettingsService } from "../src/modules/settings/settings.service.js";
+import { SettingsService } from "../src/modules/settings/services/settings.service.js";
 import { SettingsValuesRepository } from "../src/modules/settings/values/settings-values.repository.js";
 
 test("SettingsService resolves defaults and explicit values", async () => {

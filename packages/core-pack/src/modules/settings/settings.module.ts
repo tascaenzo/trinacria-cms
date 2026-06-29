@@ -8,7 +8,7 @@ import {
 } from "@trinacria-cms/kernel";
 import { CorePackAuthModule } from "../auth/auth.module.js";
 import { createJwtAuthMiddleware } from "../auth/auth.middleware.js";
-import type { JwtAuthService } from "../auth/auth.service.js";
+import type { JwtAuthService } from "../auth/services/auth.service.js";
 import { CORE_PACK_JWT_AUTH_SERVICE_TOKEN } from "../auth/auth.tokens.js";
 import { SettingsController } from "./settings.controller.js";
 import { SettingsDefinitionsRepository } from "./definitions/settings-definitions.repository.js";

@@ -19,8 +19,8 @@ import { SettingsDefinitionsRepository } from "../src/modules/settings/definitio
 import { SettingsValuesRepository } from "../src/modules/settings/values/settings-values.repository.js";
 import { SettingsSecretsRepository } from "../src/modules/settings/secrets/settings-secrets.repository.js";
 import { SettingsSecretsCryptoService } from "../src/modules/settings/secrets/settings-secrets-crypto.service.js";
-import { SettingsService } from "../src/modules/settings/settings.service.js";
-import { UsersRepository } from "../src/modules/users/users.repository.js";
+import { SettingsService } from "../src/modules/settings/services/settings.service.js";
+import { UsersRepository } from "../src/modules/users/repositories/users.repository.js";
 
 test("InstallationService reports not-installed status by default", async () => {
   const runtime = createInstallationRuntime();

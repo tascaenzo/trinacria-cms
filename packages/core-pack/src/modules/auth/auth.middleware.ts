@@ -8,7 +8,7 @@ import {
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import { UserRecordSchema, type UserRecord } from "../users/users.schemas.js";
 import { extractAccessTokenFromCookie, readJwtCookieConfigFromEnv } from "./auth-session.js";
-import { JwtAuthError, JwtAuthService } from "./auth.service.js";
+import { JwtAuthError, JwtAuthService } from "./services/auth.service.js";
 
 export const AUTHENTICATED_USER_STATE_KEY = "corePack.auth.authenticatedUser";
 

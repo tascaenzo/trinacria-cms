@@ -14,8 +14,8 @@ import { CorePackAuthzService } from "../src/modules/security/core-pack-authz.se
 import { RolePolicyRulesRepository } from "../src/modules/security/role-policy-rules/role-policy-rules.repository.js";
 import { UserAccessService } from "../src/modules/security/user-access/user-access.service.js";
 import { UserRolesRepository } from "../src/modules/security/user-access/user-roles.repository.js";
-import { UsersRepository } from "../src/modules/users/users.repository.js";
-import { UsersService } from "../src/modules/users/users.service.js";
+import { UsersRepository } from "../src/modules/users/repositories/users.repository.js";
+import { UsersService } from "../src/modules/users/services/users.service.js";
 
 test("UserAccessService resolves effective permissions from user role assignments", async () => {
   const db = createFakeDbAdapter();

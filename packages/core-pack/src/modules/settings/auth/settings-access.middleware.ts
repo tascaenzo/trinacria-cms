@@ -1,7 +1,7 @@
 import { apiError, response, type HttpContext, type HttpMiddleware } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import { AUTHENTICATED_USER_STATE_KEY, extractAuthToken } from "../../auth/auth.middleware.js";
-import { JwtAuthError, type JwtAuthService } from "../../auth/auth.service.js";
+import { JwtAuthError, type JwtAuthService } from "../../auth/services/auth.service.js";
 import { SETTINGS_AUTH_PLUGIN_ID_STATE_KEY } from "./plugin-auth.middleware.js";
 import { PLUGIN_AUTH_HEADERS } from "./plugin-auth.js";
 import { SettingsPluginAuthError, type SettingsPluginAuthService } from "./plugin-auth.service.js";

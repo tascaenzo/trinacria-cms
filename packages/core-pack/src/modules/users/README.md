@@ -25,5 +25,5 @@ When adding a new user event:
 3. Emit it from the service that owns the business transition.
 4. Keep the payload minimal and safe for third-party subscribers.
 
-The root files such as `users.service.ts` and `users.repository.ts` are compatibility re-exports.
-New internal imports should point directly to `services/`, `repositories/`, or `events/`.
+New imports should point directly to `services/`, `repositories/`, or `events/`. The module barrel
+in `index.ts` re-exports the public surface from those directories.

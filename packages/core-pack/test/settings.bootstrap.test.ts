@@ -10,9 +10,9 @@ import {
 import {
   PLUGIN_ACCESS_GRANTS_SETTING_KEY,
   SettingsPluginAccessPolicyService
-} from "../src/modules/settings/plugin-access-policy.service.js";
+} from "../src/modules/settings/plugin-access/plugin-access-policy.service.js";
 import { SettingsSecretsRepository } from "../src/modules/settings/secrets/settings-secrets.repository.js";
-import { SettingsService } from "../src/modules/settings/settings.service.js";
+import { SettingsService } from "../src/modules/settings/services/settings.service.js";
 import { SettingsValuesRepository } from "../src/modules/settings/values/settings-values.repository.js";
 import { CORE_PACK_MANIFEST } from "../src/plugin/core-pack.manifest.js";
 

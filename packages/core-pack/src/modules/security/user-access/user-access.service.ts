@@ -2,7 +2,7 @@ import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import { PermissionsRepository } from "../../permissions/permissions.repository.js";
 import { RoleGrantsRepository } from "../../roles/grants/role-grants.repository.js";
 import { RolesRepository } from "../../roles/roles.repository.js";
-import { UsersRepository } from "../../users/users.repository.js";
+import { UsersRepository } from "../../users/repositories/users.repository.js";
 import { RolePolicyRulesRepository } from "../role-policy-rules/role-policy-rules.repository.js";
 import { dedupeAuthorizationRules, type AuthorizationRule } from "../authz-rules.js";
 import { UserRolesRepository } from "./user-roles.repository.js";

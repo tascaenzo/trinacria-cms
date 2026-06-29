@@ -17,7 +17,7 @@ import { SettingsDefinitionsRepository } from "../src/modules/settings/definitio
 import { SettingsValuesRepository } from "../src/modules/settings/values/settings-values.repository.js";
 import { SettingsSecretsRepository } from "../src/modules/settings/secrets/settings-secrets.repository.js";
 import { SettingsSecretsCryptoService } from "../src/modules/settings/secrets/settings-secrets-crypto.service.js";
-import { SettingsService } from "../src/modules/settings/settings.service.js";
+import { SettingsService } from "../src/modules/settings/services/settings.service.js";
 import { CORE_PACK_MANIFEST } from "../src/plugin/core-pack.manifest.js";
 import { CORE_PACK_READONLY_PERMISSION_KEY_LIST } from "../src/plugin/core-pack.security.js";
 

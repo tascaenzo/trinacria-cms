@@ -18,10 +18,10 @@ import {
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import { CORE_PACK_OPENAPI_TAGS } from "../openapi-tags.js";
 import { createJwtAuthMiddleware } from "../auth/auth.middleware.js";
-import type { JwtAuthService } from "../auth/auth.service.js";
+import type { JwtAuthService } from "../auth/services/auth.service.js";
 import { getAuthenticatedUser } from "../auth/auth.middleware.js";
-import type { AuthUserFlowsService } from "../auth/auth-user-flows.service.js";
-import type { UsersService } from "./users.service.js";
+import type { AuthUserFlowsService } from "../auth/services/auth-user-flows.service.js";
+import type { UsersService } from "./services/users.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
 

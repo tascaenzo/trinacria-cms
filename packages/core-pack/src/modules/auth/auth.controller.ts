@@ -33,8 +33,8 @@ import {
   RequestPasswordResetInputSchema,
   UpdateAuthenticatedUserProfileInputSchema
 } from "./dto/index.js";
-import type { JwtAuthService } from "./auth.service.js";
-import type { AuthUserFlowsService } from "./auth-user-flows.service.js";
+import type { JwtAuthService } from "./services/auth.service.js";
+import type { AuthUserFlowsService } from "./services/auth-user-flows.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
 

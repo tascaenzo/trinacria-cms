@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { DbAdapter, DbQuery, DbRepository, NamespaceContext } from "@trinacria-cms/kernel";
-import { EmailTemplatesRepository } from "../src/modules/email-templates/email-templates.repository.js";
-import { EmailTemplatesService } from "../src/modules/email-templates/email-templates.service.js";
+import { EmailTemplatesRepository } from "../src/modules/email-templates/repositories/email-templates.repository.js";
+import { EmailTemplatesService } from "../src/modules/email-templates/services/email-templates.service.js";
 
 test("EmailTemplatesService seeds default templates idempotently", async () => {
   const service = createEmailTemplatesService();

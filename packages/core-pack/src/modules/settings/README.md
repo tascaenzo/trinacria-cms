@@ -23,5 +23,5 @@ The policy is wired into kernel tokens:
 This keeps authorization centralized while leaving each plugin responsible for declaring its own
 events, required permissions, and secure payload types.
 
-The root files such as `settings.service.ts` and `plugin-access-policy.service.ts` are compatibility
-re-exports. New internal imports should use `services/` and `plugin-access/`.
+New imports should use `services/` and `plugin-access/`. The module barrel in `index.ts` re-exports
+the public surface from those directories.
