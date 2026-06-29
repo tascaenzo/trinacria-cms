@@ -1,7 +1,7 @@
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import type { JsonValue } from "./_shared/settings-json.js";
-import { PLUGIN_ACCESS_GRANTS_SETTING_KEY } from "./plugin-access-policy.service.js";
-import type { SettingsDefinition, SettingsService } from "./settings.service.js";
+import { PLUGIN_ACCESS_GRANTS_SETTING_KEY } from "./plugin-access/plugin-access-policy.service.js";
+import type { SettingsDefinition, SettingsService } from "./services/settings.service.js";
 
 export interface CorePackSettingDefinitionSeed {
   key: string;

@@ -12,14 +12,14 @@ import { InstallationStateRepository } from "../installation/installation-state.
 import { LOCAL_CREDENTIALS_ENTITY } from "../installation/installation.schemas.js";
 import { LocalCredentialsRepository } from "../installation/local-credentials.repository.js";
 import { PasswordHashingService } from "../installation/password-hashing.service.js";
-import { AuthBlacklistRepository } from "./auth-blacklist.repository.js";
+import { AuthBlacklistRepository } from "./repositories/auth-blacklist.repository.js";
 import { AuthController } from "./auth.controller.js";
 import { AUTH_FLOW_TOKENS_ENTITY } from "./auth-flow-tokens.schemas.js";
-import { AuthFlowTokensRepository } from "./auth-flow-tokens.repository.js";
-import { AuthLoginAttemptRepository } from "./auth-login-attempt.repository.js";
-import { AuthUsersRepository } from "./auth-users.repository.js";
-import { JwtAuthService } from "./auth.service.js";
-import { AuthUserFlowsService } from "./auth-user-flows.service.js";
+import { AuthFlowTokensRepository } from "./repositories/auth-flow-tokens.repository.js";
+import { AuthLoginAttemptRepository } from "./repositories/auth-login-attempt.repository.js";
+import { AuthUsersRepository } from "./repositories/auth-users.repository.js";
+import { JwtAuthService } from "./services/auth.service.js";
+import { AuthUserFlowsService } from "./services/auth-user-flows.service.js";
 import {
   CORE_PACK_AUTH_BLACKLIST_REPOSITORY_TOKEN,
   CORE_PACK_AUTH_CONTROLLER_TOKEN,

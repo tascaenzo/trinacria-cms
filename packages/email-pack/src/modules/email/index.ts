@@ -1,9 +1,9 @@
-export { EmailConfigService } from "./email-config.service.js";
+export { EmailConfigService } from "./services/email-config.service.js";
 export {
   EmailDeliveryConfigurationError,
   EmailDeliveryDisabledError,
   EmailDeliveryService
-} from "./email-delivery.service.js";
+} from "./services/email-delivery.service.js";
 export { EmailPackModule } from "./email.module.js";
 export {
   EMAIL_PACK_EMAIL_CONFIG_SERVICE_TOKEN,

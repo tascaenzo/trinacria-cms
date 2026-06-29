@@ -44,7 +44,7 @@ import {
   createSettingsAccessMiddleware,
   getSettingsAccessMode
 } from "./auth/settings-access.middleware.js";
-import type { SettingsService } from "./settings.service.js";
+import type { SettingsService } from "./services/settings.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
 

@@ -17,9 +17,9 @@ import { SettingsPluginAuthService } from "./auth/plugin-auth.service.js";
 import { SettingsSecretsCryptoService } from "./secrets/settings-secrets-crypto.service.js";
 import { SettingsSecretsRepository } from "./secrets/settings-secrets.repository.js";
 import { SETTINGS_ENTITY } from "./schemas/settings.schemas.js";
-import { SettingsService } from "./settings.service.js";
+import { SettingsService } from "./services/settings.service.js";
 import { SettingsValuesRepository } from "./values/settings-values.repository.js";
-import { SettingsPluginAccessPolicyService } from "./plugin-access-policy.service.js";
+import { SettingsPluginAccessPolicyService } from "./plugin-access/plugin-access-policy.service.js";
 import {
   SETTINGS_CONTROLLER_TOKEN,
   SETTINGS_DEFINITIONS_REPOSITORY_TOKEN,

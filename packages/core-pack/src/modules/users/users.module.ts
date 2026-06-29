@@ -12,8 +12,8 @@ import { CORE_PACK_JWT_AUTH_SERVICE_TOKEN } from "../auth/auth.tokens.js";
 import { CORE_PACK_AUTH_USER_FLOWS_SERVICE_TOKEN } from "../auth/auth.tokens.js";
 import { UsersController } from "./users.controller.js";
 import { USERS_ENTITY } from "./users.schemas.js";
-import { UsersRepository } from "./users.repository.js";
-import { UsersService } from "./users.service.js";
+import { UsersRepository } from "./repositories/users.repository.js";
+import { UsersService } from "./services/users.service.js";
 import {
   USERS_CONTROLLER_TOKEN,
   USERS_ENTITY_REGISTRATION_TOKEN,

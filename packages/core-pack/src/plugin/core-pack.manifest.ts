@@ -17,6 +17,7 @@ import {
 } from "./core-pack.security.js";
 import { CORE_PACK_ADMIN_MANIFEST } from "./core-pack-admin.manifest.js";
 import { CORE_PACK_SETTING_DEFINITION_SEEDS } from "../modules/settings/settings.bootstrap.js";
+import { CORE_PACK_USER_EVENT_DEFINITIONS } from "../modules/users/events/user-events.catalog.js";
 
 /**
  * Official baseline plugin manifest for Trinacria CMS core-pack.
@@ -58,89 +59,7 @@ export const CORE_PACK_MANIFEST: PluginManifest = definePluginManifest({
           }
         }
       }),
-      defineEmittedEvent({
-        name: "user-created",
-        visibility: "public",
-        version: 1,
-        delivery: "async",
-        payloadSchema: {
-          type: "object",
-          required: ["userId", "status", "source"],
-          additionalProperties: false,
-          properties: {
-            userId: { type: "string" },
-            status: { type: "string", enum: ["active", "suspended"] },
-            source: { type: "string", enum: ["admin", "public-registration", "system"] }
-          }
-        }
-      }),
-      defineEmittedEvent({
-        name: "user-profile-updated",
-        visibility: "public",
-        version: 1,
-        delivery: "async",
-        payloadSchema: {
-          type: "object",
-          required: ["userId", "changedFields"],
-          additionalProperties: false,
-          properties: {
-            userId: { type: "string" },
-            changedFields: {
-              type: "array",
-              items: { type: "string", enum: ["firstName", "lastName"] }
-            }
-          }
-        }
-      }),
-      defineEmittedEvent({
-        name: "user-status-changed",
-        visibility: "public",
-        version: 1,
-        delivery: "async",
-        payloadSchema: {
-          type: "object",
-          required: ["userId", "previousStatus", "status"],
-          additionalProperties: false,
-          properties: {
-            userId: { type: "string" },
-            previousStatus: { type: "string", enum: ["active", "suspended"] },
-            status: { type: "string", enum: ["active", "suspended"] },
-            reason: {
-              type: "string",
-              enum: ["admin", "email-verification", "invite-accepted", "system"]
-            }
-          }
-        }
-      }),
-      defineEmittedEvent({
-        name: "user-invited",
-        visibility: "public",
-        version: 1,
-        delivery: "async",
-        payloadSchema: {
-          type: "object",
-          required: ["userId"],
-          additionalProperties: false,
-          properties: {
-            userId: { type: "string" },
-            actorUserId: { type: "string" }
-          }
-        }
-      }),
-      defineEmittedEvent({
-        name: "user-invite-accepted",
-        visibility: "public",
-        version: 1,
-        delivery: "async",
-        payloadSchema: {
-          type: "object",
-          required: ["userId"],
-          additionalProperties: false,
-          properties: {
-            userId: { type: "string" }
-          }
-        }
-      })
+      ...CORE_PACK_USER_EVENT_DEFINITIONS
     ]
   }),
   admin: CORE_PACK_ADMIN_MANIFEST,

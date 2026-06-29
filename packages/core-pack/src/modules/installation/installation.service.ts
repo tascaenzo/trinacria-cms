@@ -4,15 +4,11 @@ import type { PluginSecurityProvisioner } from "@trinacria-cms/kernel";
 import type { EventBus } from "@trinacria/events";
 import { CORE_PACK_ADMIN_ROLE } from "../../plugin/core-pack.security.js";
 import { CORE_PACK_MANIFEST } from "../../plugin/core-pack.manifest.js";
-import { UsersRepository } from "../users/users.repository.js";
+import { UsersRepository } from "../users/repositories/users.repository.js";
 import type { UserRecord } from "../users/users.schemas.js";
-import {
-  CORE_PACK_USER_CREATED_EVENT,
-  CORE_PACK_USER_STATUS_CHANGED_EVENT,
-  publishCorePackUserEvent
-} from "../users/users.events.js";
+import { UserLifecycleEventPublisher } from "../users/services/user-lifecycle-event-publisher.js";
 import { UserAccessService } from "../security/user-access/user-access.service.js";
-import { SettingsService } from "../settings/settings.service.js";
+import { SettingsService } from "../settings/services/settings.service.js";
 import type { InstallBootstrapInput } from "./dto/installation.input.dto.js";
 import { InstallationStateRepository } from "./installation-state.repository.js";
 import { LocalCredentialsRepository } from "./local-credentials.repository.js";
@@ -63,6 +59,8 @@ export class PasswordMismatchError extends Error {
  * MongoDB is expected to be pre-configured via .env at application startup.
  */
 export class InstallationService {
+  private readonly userEvents: UserLifecycleEventPublisher;
+
   constructor(
     private readonly installationState: InstallationStateRepository,
     private readonly localCredentials: LocalCredentialsRepository,
@@ -71,8 +69,10 @@ export class InstallationService {
     private readonly securityProvisioning: PluginSecurityProvisioner,
     private readonly passwordHashing: PasswordHashingService,
     private readonly settings: SettingsService,
-    private readonly events?: EventBus
-  ) {}
+    events?: EventBus
+  ) {
+    this.userEvents = new UserLifecycleEventPublisher(events);
+  }
 
   async getStatus(): Promise<InstallationStatus> {
     const envStatus = readInstallationEnvironmentStatus();
@@ -190,7 +190,7 @@ export class InstallationService {
         firstName: input.firstName,
         lastName: input.lastName
       });
-      await publishCorePackUserEvent(this.events, CORE_PACK_USER_CREATED_EVENT, {
+      await this.userEvents.userCreated({
         userId: created.id,
         status: created.status,
         source: "system"
@@ -208,7 +208,7 @@ export class InstallationService {
     if (!reactivated) {
       throw new Error(`User "${existing.id}" disappeared during activation`);
     }
-    await publishCorePackUserEvent(this.events, CORE_PACK_USER_STATUS_CHANGED_EVENT, {
+    await this.userEvents.userStatusChanged({
       userId: reactivated.id,
       previousStatus: existing.status,
       status: reactivated.status,

@@ -6,9 +6,9 @@ import type { PluginAuthKeyProvider } from "./auth/plugin-auth-key-provider.js";
 import { SettingsPluginAuthService } from "./auth/plugin-auth.service.js";
 import { SettingsSecretsCryptoService } from "./secrets/settings-secrets-crypto.service.js";
 import { SettingsSecretsRepository } from "./secrets/settings-secrets.repository.js";
-import { SettingsService } from "./settings.service.js";
+import { SettingsService } from "./services/settings.service.js";
 import { SettingsValuesRepository } from "./values/settings-values.repository.js";
-import { SettingsPluginAccessPolicyService } from "./plugin-access-policy.service.js";
+import { SettingsPluginAccessPolicyService } from "./plugin-access/plugin-access-policy.service.js";
 
 export const SETTINGS_DEFINITIONS_REPOSITORY_TOKEN = createToken<SettingsDefinitionsRepository>(
   "CORE_PACK_SETTINGS_DEFINITIONS_REPOSITORY"

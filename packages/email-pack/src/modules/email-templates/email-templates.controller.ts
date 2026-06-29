@@ -8,7 +8,7 @@ import {
 } from "@trinacria-cms/kernel";
 import { EMAIL_PACK_PLUGIN_ID } from "../../plugin/email-pack.constants.js";
 import { EmailTemplateRecordSchema } from "./email-templates.schemas.js";
-import type { EmailTemplatesService } from "./email-templates.service.js";
+import type { EmailTemplatesService } from "./services/email-templates.service.js";
 import {
   PreviewEmailTemplateInputSchema,
   UpsertEmailTemplateInputSchema

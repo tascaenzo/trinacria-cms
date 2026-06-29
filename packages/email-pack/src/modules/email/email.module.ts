@@ -6,8 +6,8 @@ import {
   SETTINGS_SERVICE_TOKEN
 } from "@trinacria-cms/core-pack";
 import { EmailPackEmailTemplatesModule } from "../email-templates/email-templates.module.js";
-import { EmailConfigService } from "./email-config.service.js";
-import { EmailDeliveryService } from "./email-delivery.service.js";
+import { EmailConfigService } from "./services/email-config.service.js";
+import { EmailDeliveryService } from "./services/email-delivery.service.js";
 import {
   EMAIL_PACK_EMAIL_CONFIG_SERVICE_TOKEN,
   EMAIL_PACK_EMAIL_DELIVERY_SERVICE_TOKEN

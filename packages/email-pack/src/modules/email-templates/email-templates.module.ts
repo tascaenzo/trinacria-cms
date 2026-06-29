@@ -10,8 +10,8 @@ import {
 import { CorePackSettingsModule } from "@trinacria-cms/core-pack";
 import { EMAIL_TEMPLATES_ENTITY } from "./email-templates.schemas.js";
 import { EmailTemplatesController } from "./email-templates.controller.js";
-import { EmailTemplatesRepository } from "./email-templates.repository.js";
-import { EmailTemplatesService } from "./email-templates.service.js";
+import { EmailTemplatesRepository } from "./repositories/email-templates.repository.js";
+import { EmailTemplatesService } from "./services/email-templates.service.js";
 import {
   EMAIL_TEMPLATES_CONTROLLER_TOKEN,
   EMAIL_TEMPLATES_ENTITY_REGISTRATION_TOKEN,

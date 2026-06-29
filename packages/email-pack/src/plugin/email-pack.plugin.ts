@@ -5,7 +5,7 @@ import type {
   SecureEventPayloadReadyEvent
 } from "@trinacria-cms/kernel/contracts";
 import { EmailPackModule } from "../modules/email/email.module.js";
-import type { EmailDeliveryService } from "../modules/email/email-delivery.service.js";
+import type { EmailDeliveryService } from "../modules/email/services/email-delivery.service.js";
 import {
   EMAIL_SEND_REQUEST_PAYLOAD_TYPE,
   EMAIL_SEND_REQUEST_SCHEMA_VERSION,
