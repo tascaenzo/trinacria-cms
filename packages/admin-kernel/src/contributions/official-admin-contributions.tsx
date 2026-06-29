@@ -1,5 +1,6 @@
 import { createDashboardRender } from "../pages/dashboard-page.js";
 import { ProfilePage } from "../pages/profile-page.js";
+import { EmailTemplateManager } from "../pages/settings/components/email-template-manager.js";
 import type {
   AdminExtensionManifest,
   AdminNavigationItem,
@@ -10,7 +11,8 @@ import type {
 import { normalizeSafeAdminExtensionManifests } from "../runtime/admin-extension-manifest.js";
 import type {
   RenderableAdminContribution,
-  RenderableAdminRoute
+  RenderableAdminRoute,
+  RenderableAdminSettingsSection
 } from "../runtime/admin-route-runtime.js";
 import { OFFICIAL_CORE_NAV_META } from "./core-navigation-contribution-meta.js";
 import {
@@ -144,7 +146,15 @@ function enrichResource(resource: AdminResourceDefinition): AdminResourceDefinit
 
 function enrichSettingsSection(
   section: AdminSettingsSectionDefinition
-): AdminSettingsSectionDefinition {
+): RenderableAdminSettingsSection {
+  if (`${section.pluginId}:${section.id}` === "email-pack:email-pack-email-template-settings") {
+    return {
+      ...section,
+      ...OFFICIAL_CORE_SETTINGS_SECTION_META[`${section.pluginId}:${section.id}`],
+      render: ({ t }) => <EmailTemplateManager t={t} />
+    };
+  }
+
   return {
     ...section,
     ...OFFICIAL_CORE_SETTINGS_SECTION_META[`${section.pluginId}:${section.id}`]

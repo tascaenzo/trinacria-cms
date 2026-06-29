@@ -1,6 +1,15 @@
 /* eslint-disable */
 // Auto-generated from OpenAPI. Do not edit by hand.
 
+export type AcceptUserInviteRequest = {
+  body: {
+  "token": string;
+  "password": string;
+};
+};
+
+export type AcceptUserInviteResponse = null;
+
 export type AssignUserRoleRequest = {
   path: {
   "id": string;
@@ -87,6 +96,23 @@ export type ChangeAuthenticatedUserPasswordResponse = {
   "pluginId"?: "core-pack";
 };
 };
+
+export type CompletePasswordResetRequest = {
+  body: {
+  "token": string;
+  "newPassword": string;
+};
+};
+
+export type CompletePasswordResetResponse = null;
+
+export type ConfirmEmailVerificationRequest = {
+  body: {
+  "token": string;
+};
+};
+
+export type ConfirmEmailVerificationResponse = null;
 
 export type CreatePermissionRequest = {
   body: {
@@ -756,6 +782,41 @@ export type GetUserByIdResponse = {
 };
 };
 
+export type InviteUserRequest = {
+  path: {
+  "id": string;
+};
+};
+
+export type InviteUserResponse = null;
+
+export type ListEmailTemplatesRequest = void;
+
+export type ListEmailTemplatesResponse = {
+  "data": Array<{
+  "id": string;
+  "key": string;
+  "locale": string;
+  "name": string;
+  "description"?: string;
+  "subject": string;
+  "textBody": string;
+  "htmlBody"?: string;
+  "variables": Array<string>;
+  "status": "active" | "draft" | "disabled";
+  "source": "seed" | "custom";
+  "createdAt": string;
+  "updatedAt": string;
+}>;
+  "meta": {
+  "pluginId": string;
+  "total"?: number;
+  "limit"?: number;
+  "offset"?: number;
+  [key: string]: unknown;
+};
+};
+
 export type ListInstalledCapabilitiesRequest = void;
 
 export type ListInstalledCapabilitiesResponse = {
@@ -1170,6 +1231,41 @@ export type LogoutSessionResponse = {
 };
 };
 
+export type PreviewEmailTemplateRequest = {
+  body: {
+  "key": string;
+  "locale"?: string;
+  "variables": {
+  [key: string]: string | number | boolean;
+};
+};
+};
+
+export type PreviewEmailTemplateResponse = {
+  "data": {
+  "templateKey": string;
+  "locale": string;
+  "subject": string;
+  "text": string;
+  "html"?: string;
+};
+  "meta": {
+  "pluginId": string;
+  [key: string]: unknown;
+};
+};
+
+export type RegisterPublicUserRequest = {
+  body: {
+  "email": string;
+  "firstName": string;
+  "lastName": string;
+  "password": string;
+};
+};
+
+export type RegisterPublicUserResponse = null;
+
 export type RemoveUserRoleRequest = {
   path: {
   "id": string;
@@ -1193,6 +1289,22 @@ export type RemoveUserRoleResponse = {
   "offset"?: number;
 };
 };
+
+export type RequestEmailVerificationRequest = {
+  body: {
+  "email": string;
+};
+};
+
+export type RequestEmailVerificationResponse = null;
+
+export type RequestPasswordResetRequest = {
+  body: {
+  "email": string;
+};
+};
+
+export type RequestPasswordResetResponse = null;
 
 export type RevealSettingSecretRequest = {
   path: {
@@ -1451,6 +1563,42 @@ export type UpdateUserStatusResponse = {
   "count"?: number;
   "limit"?: number;
   "offset"?: number;
+};
+};
+
+export type UpsertEmailTemplateRequest = {
+  body: {
+  "key": string;
+  "locale": string;
+  "name": string;
+  "description"?: string;
+  "subject": string;
+  "textBody": string;
+  "htmlBody"?: string;
+  "variables": Array<string>;
+  "status"?: "active" | "disabled";
+};
+};
+
+export type UpsertEmailTemplateResponse = {
+  "data": {
+  "id": string;
+  "key": string;
+  "locale": string;
+  "name": string;
+  "description"?: string;
+  "subject": string;
+  "textBody": string;
+  "htmlBody"?: string;
+  "variables": Array<string>;
+  "status": "active" | "draft" | "disabled";
+  "source": "seed" | "custom";
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "meta": {
+  "pluginId": string;
+  [key: string]: unknown;
 };
 };
 

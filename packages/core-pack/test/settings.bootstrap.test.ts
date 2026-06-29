@@ -119,6 +119,104 @@ test("settings-backed plugin access policy authorizes official email grant and d
   });
 });
 
+test("settings-backed plugin access policy supports explicit third-party workflow grants", async () => {
+  const service = createSettingsService();
+  await provisionCorePackSettingDefinitions(service);
+  await service.upsertValue({
+    requesterPluginId: "core-pack",
+    key: PLUGIN_ACCESS_GRANTS_SETTING_KEY,
+    value: [
+      {
+        accessType: "event-subscription",
+        producerPluginId: "core-pack",
+        consumerPluginId: "workflow-pack",
+        eventName: "core-pack:user-created",
+        requiredPermission: "workflow-pack:workflow:execute",
+        status: "approved"
+      },
+      {
+        accessType: "secure-payload-claim",
+        producerPluginId: "core-pack",
+        consumerPluginId: "workflow-pack",
+        eventName: "core-pack:secure-event-payload-ready",
+        payloadType: "email-pack:send-email-request",
+        requiredPermission: "workflow-pack:workflow:execute",
+        status: "approved"
+      }
+    ],
+    updatedBy: "test"
+  });
+
+  const policy = new SettingsPluginAccessPolicyService(service);
+  const publicWorkflowSubscription = await policy.canSubscribe({
+    subscriberPluginId: "workflow-pack",
+    eventName: "core-pack:user-created",
+    eventOwnerPluginId: "core-pack",
+    eventVisibility: "protected",
+    requiredPermission: "workflow-pack:workflow:execute"
+  });
+  assert.equal(publicWorkflowSubscription.allowed, true);
+
+  const secureWorkflowClaim = await policy.canClaim({
+    payload: {
+      id: "payload-workflow-1",
+      producerPluginId: "core-pack",
+      eventName: "core-pack:secure-event-payload-ready",
+      payloadType: "email-pack:send-email-request",
+      schemaVersion: 1,
+      requiredPermission: "workflow-pack:workflow:execute",
+      encryptedPayload: {
+        cipherText: "cipher",
+        iv: "iv",
+        authTag: "tag",
+        algorithm: "aes-256-gcm",
+        keyVersion: "v1"
+      },
+      status: "available",
+      maxClaims: 1,
+      claimCount: 0,
+      createdAt: new Date(0).toISOString(),
+      updatedAt: new Date(0).toISOString()
+    },
+    consumerPluginId: "workflow-pack",
+    eventName: "core-pack:secure-event-payload-ready",
+    requiredPermission: "workflow-pack:workflow:execute",
+    decision: "allow"
+  });
+  assert.equal(secureWorkflowClaim.allowed, true);
+
+  const missingPayloadGrant = await policy.canClaim({
+    payload: {
+      id: "payload-workflow-2",
+      producerPluginId: "core-pack",
+      eventName: "core-pack:secure-event-payload-ready",
+      payloadType: "core-pack:password-reset-secret",
+      schemaVersion: 1,
+      requiredPermission: "workflow-pack:workflow:execute",
+      encryptedPayload: {
+        cipherText: "cipher",
+        iv: "iv",
+        authTag: "tag",
+        algorithm: "aes-256-gcm",
+        keyVersion: "v1"
+      },
+      status: "available",
+      maxClaims: 1,
+      claimCount: 0,
+      createdAt: new Date(0).toISOString(),
+      updatedAt: new Date(0).toISOString()
+    },
+    consumerPluginId: "workflow-pack",
+    eventName: "core-pack:secure-event-payload-ready",
+    requiredPermission: "workflow-pack:workflow:execute",
+    decision: "allow"
+  });
+  assert.deepEqual(missingPayloadGrant, {
+    allowed: false,
+    reason: "plugin_access_grant_missing"
+  });
+});
+
 function createSettingsService(): SettingsService {
   const db = createFakeDbAdapter();
   const definitions = new SettingsDefinitionsRepository(db);

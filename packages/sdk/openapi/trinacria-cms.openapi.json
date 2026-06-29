@@ -2099,6 +2099,214 @@
         }
       }
     },
+    "/v1/auth/password-reset/request": {
+      "post": {
+        "operationId": "requestPasswordReset",
+        "summary": "Request password reset email",
+        "tags": ["Auth"],
+        "responses": {
+          "200": {
+            "description": "Password reset request accepted"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  }
+                },
+                "required": ["email"],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/register": {
+      "post": {
+        "operationId": "registerPublicUser",
+        "summary": "Register public user",
+        "tags": ["Auth"],
+        "responses": {
+          "200": {
+            "description": "Registration accepted"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "firstName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 12,
+                    "maxLength": 200
+                  }
+                },
+                "required": ["email", "firstName", "lastName", "password"],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/invite/accept": {
+      "post": {
+        "operationId": "acceptUserInvite",
+        "summary": "Accept user invite",
+        "tags": ["Auth"],
+        "responses": {
+          "200": {
+            "description": "Invite accepted"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "minLength": 20,
+                    "maxLength": 500
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 12,
+                    "maxLength": 200
+                  }
+                },
+                "required": ["token", "password"],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/password-reset/complete": {
+      "post": {
+        "operationId": "completePasswordReset",
+        "summary": "Complete password reset",
+        "tags": ["Auth"],
+        "responses": {
+          "200": {
+            "description": "Password reset completed"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "minLength": 20,
+                    "maxLength": 500
+                  },
+                  "newPassword": {
+                    "type": "string",
+                    "minLength": 12,
+                    "maxLength": 200
+                  }
+                },
+                "required": ["token", "newPassword"],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/email-verification/request": {
+      "post": {
+        "operationId": "requestEmailVerification",
+        "summary": "Request email verification email",
+        "tags": ["Auth"],
+        "responses": {
+          "200": {
+            "description": "Email verification request accepted"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  }
+                },
+                "required": ["email"],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/email-verification/confirm": {
+      "post": {
+        "operationId": "confirmEmailVerification",
+        "summary": "Confirm email verification token",
+        "tags": ["Auth"],
+        "responses": {
+          "200": {
+            "description": "Email verification completed"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "minLength": 20,
+                    "maxLength": 500
+                  }
+                },
+                "required": ["token"],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/auth/me": {
       "get": {
         "operationId": "getAuthenticatedUser",
@@ -3350,6 +3558,33 @@
             }
           }
         }
+      }
+    },
+    "/v1/users/{id}/invite": {
+      "post": {
+        "operationId": "inviteUser",
+        "summary": "Invite user by email",
+        "tags": ["Users"],
+        "responses": {
+          "200": {
+            "description": "Invite accepted"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
       }
     },
     "/v1/roles": {
@@ -7749,7 +7984,7 @@
             }
           },
           "401": {
-            "description": "Plugin caller authentication failed",
+            "description": "Admin or plugin authentication required",
             "content": {
               "application/json": {
                 "schema": {
@@ -7843,8 +8078,11 @@
             }
           }
         },
-        "description": "Requires signed plugin caller headers: x-cms-plugin-id, x-cms-plugin-ts, x-cms-plugin-nonce, x-cms-plugin-signature.",
+        "description": "Requires either an admin bearer token or signed plugin caller headers. Admin writes are executed against the owner inferred from the setting key.",
         "security": [
+          {
+            "bearerAuth": []
+          },
           {
             "pluginCallerAuth": []
           }
@@ -10195,6 +10433,420 @@
                   "confirmPassword",
                   "siteName"
                 ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/email/templates": {
+      "get": {
+        "operationId": "listEmailTemplates",
+        "summary": "List email templates",
+        "tags": ["Email"],
+        "responses": {
+          "200": {
+            "description": "Email templates list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["data", "meta"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "key": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 120
+                          },
+                          "locale": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 12
+                          },
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 120
+                          },
+                          "description": {
+                            "type": "string",
+                            "maxLength": 500
+                          },
+                          "subject": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 240
+                          },
+                          "textBody": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 20000
+                          },
+                          "htmlBody": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 40000
+                          },
+                          "variables": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 80
+                            },
+                            "uniqueItems": true
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": ["active", "draft", "disabled"]
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": ["seed", "custom"]
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "key",
+                          "locale",
+                          "name",
+                          "subject",
+                          "textBody",
+                          "variables",
+                          "status",
+                          "source",
+                          "createdAt",
+                          "updatedAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": ["pluginId"],
+                      "additionalProperties": true,
+                      "properties": {
+                        "pluginId": {
+                          "type": "string"
+                        },
+                        "total": {
+                          "type": "number"
+                        },
+                        "limit": {
+                          "type": "number"
+                        },
+                        "offset": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "upsertEmailTemplate",
+        "summary": "Upsert email template",
+        "tags": ["Email"],
+        "responses": {
+          "200": {
+            "description": "Email template",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["data", "meta"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "key": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 120
+                        },
+                        "locale": {
+                          "type": "string",
+                          "minLength": 2,
+                          "maxLength": 12
+                        },
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 120
+                        },
+                        "description": {
+                          "type": "string",
+                          "maxLength": 500
+                        },
+                        "subject": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 240
+                        },
+                        "textBody": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 20000
+                        },
+                        "htmlBody": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 40000
+                        },
+                        "variables": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 80
+                          },
+                          "uniqueItems": true
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["active", "draft", "disabled"]
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": ["seed", "custom"]
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "key",
+                        "locale",
+                        "name",
+                        "subject",
+                        "textBody",
+                        "variables",
+                        "status",
+                        "source",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": ["pluginId"],
+                      "additionalProperties": true,
+                      "properties": {
+                        "pluginId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "locale": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 20
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "subject": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 300
+                  },
+                  "textBody": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 20000
+                  },
+                  "htmlBody": {
+                    "type": "string",
+                    "maxLength": 50000
+                  },
+                  "variables": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    }
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["active", "disabled"]
+                  }
+                },
+                "required": ["key", "locale", "name", "subject", "textBody", "variables"],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/email/templates/preview": {
+      "post": {
+        "operationId": "previewEmailTemplate",
+        "summary": "Preview email template",
+        "tags": ["Email"],
+        "responses": {
+          "200": {
+            "description": "Rendered email preview",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["data", "meta"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": ["templateKey", "locale", "subject", "text"],
+                      "additionalProperties": false,
+                      "properties": {
+                        "templateKey": {
+                          "type": "string"
+                        },
+                        "locale": {
+                          "type": "string"
+                        },
+                        "subject": {
+                          "type": "string"
+                        },
+                        "text": {
+                          "type": "string"
+                        },
+                        "html": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": ["pluginId"],
+                      "additionalProperties": true,
+                      "properties": {
+                        "pluginId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "locale": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 20
+                  },
+                  "variables": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "additionalProperties": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "required": ["key", "variables"],
                 "additionalProperties": false
               }
             }

@@ -57,6 +57,52 @@ await securePayloads.claim({
 
 The vault enforces consumer id, event name, payload type, schema version, permission, TTL, claim count, and the admin grant.
 
+## Backoffice permission center
+
+Administrators manage grants from the Settings area, section **Plugin permissions**. The UI edits
+`core-pack:security:plugin_access_grants`, which is a normal settings value owned by `core-pack`.
+
+The permission center is intentionally modeled like an operating system permission prompt:
+
+- a plugin can declare or trigger a need for access;
+- missing grants are visible as pending requests;
+- an admin can approve, deny, or revoke access;
+- the kernel authorizer reads the grant before allowing subscriptions or secure payload claims.
+
+The grant key is granular. It includes producer plugin, consumer plugin, event name, payload type,
+required permission, and access type. This allows a third-party workflow plugin to receive public
+events without automatically gaining access to sensitive email payloads.
+
+## Email-pack as a consumer
+
+`email-pack` is the official transactional email consumer. It subscribes to:
+
+```text
+*:secure-event-payload-ready
+```
+
+but it only claims payloads with:
+
+```text
+payloadType = email-pack:send-email-request
+requiredPermission = email-pack:email:send
+```
+
+The claimed payload contains the email request, not the public event. This keeps reset links, invite
+links, and verification links out of the event bus while still allowing email delivery to stay
+decoupled from `core-pack`.
+
+## SDK and API
+
+The email template API is exposed through the generated SDK under `cms.email`:
+
+- `cms.email.listEmailTemplates()`
+- `cms.email.upsertEmailTemplate(...)`
+- `cms.email.previewEmailTemplate(...)`
+
+These APIs are guarded by the kernel admin route guard and are used by the backoffice email template
+settings section.
+
 ## Security defaults
 
 - Secure payloads get a default TTL when the producer does not provide one.

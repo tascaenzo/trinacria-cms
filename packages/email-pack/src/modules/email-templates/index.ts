@@ -1,4 +1,5 @@
 export * from "./email-template-defaults.js";
+export * from "./dto/email-templates.response.dto.js";
 export * from "./email-templates.module.js";
 export * from "./email-templates.controller.js";
 export * from "./repositories/email-templates.repository.js";

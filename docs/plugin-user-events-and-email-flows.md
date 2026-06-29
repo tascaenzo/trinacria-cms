@@ -62,6 +62,45 @@ The claimed payload contains the actual email request, including template key,
 recipient, locale, and template variables. That payload is protected by the
 kernel secure payload vault.
 
+## Email templates
+
+`email-pack` seeds neutral default templates when the plugin loads. Templates are stored in the
+database and can be managed from the backoffice Settings area, section **Email**.
+
+The current template API supports:
+
+- listing templates;
+- upserting subject, text, HTML, variables, locale, and status;
+- rendering a preview with sample variables.
+
+`core-pack` currently references these template keys:
+
+- `reset_password`
+- `email_verification`
+- `user_invite`
+- `generic_notification`
+
+Templates use simple `{{ variable }}` placeholders. The renderer validates that all variables
+declared by the template are present before producing an email.
+
+## Runtime settings
+
+User flow behavior is controlled by `core-pack:user_flows:*` settings:
+
+- public registration enabled/disabled;
+- email verification requirement;
+- password reset enabled/disabled;
+- invite expiration;
+- reset and verification token TTL.
+
+Email delivery behavior is controlled by `email-pack:email:*` settings:
+
+- provider: `disabled`, `console`, or `smtp`;
+- from address/name;
+- reply-to;
+- SMTP host, port, secure flag, username;
+- SMTP password stored through settings secrets.
+
 ## Subscribing from a plugin
 
 A third-party plugin declares event subscriptions in its manifest.

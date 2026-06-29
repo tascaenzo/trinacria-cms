@@ -8,6 +8,12 @@ export const EMAIL_PACK_ADMIN_MANIFEST = defineAdmin({
       label: "Email",
       namespace: "email",
       requiredPermission: EMAIL_PACK_PERMISSION_KEYS.SETTINGS_READ
+    }),
+    defineAdminSettingsSection({
+      id: "email-pack-email-template-settings",
+      label: "Email templates",
+      namespace: "email_templates",
+      requiredPermission: EMAIL_PACK_PERMISSION_KEYS.SETTINGS_READ
     })
   ]
 });

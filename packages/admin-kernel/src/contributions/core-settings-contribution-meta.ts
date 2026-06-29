@@ -50,5 +50,12 @@ export const OFFICIAL_CORE_SETTINGS_SECTION_META: Record<
     summaryKey: "settings.section.email.summary",
     order: 60,
     category: "email"
+  },
+  "email-pack:email-pack-email-template-settings": {
+    title: "Email templates",
+    titleKey: "settings.section.email_templates.title",
+    summary: "Transactional email subject, body, variables, and preview.",
+    summaryKey: "settings.section.email_templates.summary",
+    order: 70
   }
 };

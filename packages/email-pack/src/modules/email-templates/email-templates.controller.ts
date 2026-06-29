@@ -13,6 +13,11 @@ import {
   PreviewEmailTemplateInputSchema,
   UpsertEmailTemplateInputSchema
 } from "./dto/email-templates.input.dto.js";
+import {
+  EmailTemplateResponseOpenApiSchema,
+  ListEmailTemplatesResponseOpenApiSchema,
+  PreviewEmailTemplateResponseOpenApiSchema
+} from "./dto/email-templates.response.dto.js";
 
 const responder = createPluginApiResponder(EMAIL_PACK_PLUGIN_ID);
 
@@ -48,7 +53,10 @@ export class EmailTemplatesController extends HttpController {
             }
           ],
           responses: {
-            200: { description: "Email templates list" }
+            200: {
+              description: "Email templates list",
+              schema: ListEmailTemplatesResponseOpenApiSchema
+            }
           }
         }
       })
@@ -63,7 +71,7 @@ export class EmailTemplatesController extends HttpController {
           responses: {
             200: {
               description: "Email template",
-              schema: toOpenApiSchema(EmailTemplateRecordSchema)
+              schema: EmailTemplateResponseOpenApiSchema
             }
           }
         }
@@ -77,7 +85,10 @@ export class EmailTemplatesController extends HttpController {
           security: this.adminRouteGuard.security,
           requestBody: { required: true, schema: toOpenApiSchema(PreviewEmailTemplateInputSchema) },
           responses: {
-            200: { description: "Rendered email preview" }
+            200: {
+              description: "Rendered email preview",
+              schema: PreviewEmailTemplateResponseOpenApiSchema
+            }
           }
         }
       })
