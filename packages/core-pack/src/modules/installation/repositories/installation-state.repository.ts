@@ -1,11 +1,11 @@
 import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
-import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
-import type { CacheService } from "../cache/cache.service.js";
+import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
+import type { CacheService } from "../../cache/services/cache.service.js";
 import {
   INSTALLATION_STATE_KEY,
   InstallationStateRecordSchema,
   type InstallationStateRecord
-} from "./installation.schemas.js";
+} from "../installation.schemas.js";
 
 const SETTINGS_ENTITY_NAME = "settings";
 const INSTALLATION_STATE_KIND = "install_state";

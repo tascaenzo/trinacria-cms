@@ -70,6 +70,51 @@ export const OFFICIAL_CORE_RESOURCE_META: Record<string, Partial<AdminResourceDe
             required: ["firstName", "lastName", "status"]
           }
         }
+      },
+      {
+        id: "invite-user",
+        intent: "custom",
+        title: "Send invite",
+        titleKey: "users.actions.invite",
+        endpoint: { method: "POST", path: "/v1/users/:id/invite" },
+        policy: { allowedPathPrefixes: ["/admin", "/v1"] },
+        guards: [{ pluginId: "core-pack", capability: "users.write" }]
+      },
+      {
+        id: "request-password-reset",
+        intent: "custom",
+        title: "Send password reset",
+        titleKey: "users.actions.password_reset",
+        endpoint: { method: "POST", path: "/v1/auth/password-reset/request" },
+        policy: { allowedPathPrefixes: ["/admin", "/v1"] },
+        guards: [{ pluginId: "core-pack", capability: "users.write" }],
+        input: {
+          schema: {
+            type: "object",
+            properties: {
+              email: { type: "string", labelKey: "auth.login.email_label" }
+            },
+            required: ["email"]
+          }
+        }
+      },
+      {
+        id: "request-email-verification",
+        intent: "custom",
+        title: "Send email verification",
+        titleKey: "users.actions.email_verification",
+        endpoint: { method: "POST", path: "/v1/auth/email-verification/request" },
+        policy: { allowedPathPrefixes: ["/admin", "/v1"] },
+        guards: [{ pluginId: "core-pack", capability: "users.write" }],
+        input: {
+          schema: {
+            type: "object",
+            properties: {
+              email: { type: "string", labelKey: "auth.login.email_label" }
+            },
+            required: ["email"]
+          }
+        }
       }
     ],
     fields: [

@@ -12,7 +12,7 @@ import {
   InstallationErrorResponseSchema,
   InstallationStatusResponseSchema
 } from "./dto/index.js";
-import { type InstallationService } from "./installation.service.js";
+import { type InstallationService } from "./services/installation.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
 

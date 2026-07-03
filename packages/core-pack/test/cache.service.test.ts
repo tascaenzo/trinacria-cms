@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { MemoryCacheAdapter } from "../src/modules/cache/adapters/memory-cache-adapter.js";
-import { CacheService } from "../src/modules/cache/cache.service.js";
+import { CacheService } from "../src/modules/cache/services/cache.service.js";
 
 test("CacheService stores and retrieves values by namespace", async () => {
   const cache = new CacheService(new MemoryCacheAdapter());

@@ -1,5 +1,5 @@
 export type { CacheAdapter, CacheEntry } from "./adapters/cache-adapter.js";
-export { CacheService } from "./cache.service.js";
+export { CacheService } from "./services/cache.service.js";
 export { CorePackCacheModule } from "./cache.module.js";
 export { createDefaultCacheAdapter, setCustomCacheAdapter } from "./cache-adapter-factory.js";
 export { MemoryCacheAdapter } from "./adapters/memory-cache-adapter.js";

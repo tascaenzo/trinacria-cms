@@ -1,6 +1,6 @@
 import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
-import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
-import type { CacheService } from "../cache/cache.service.js";
+import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
+import type { CacheService } from "../../cache/services/cache.service.js";
 import {
   CreateRoleInputSchema,
   type CreateRoleInput,
@@ -8,8 +8,8 @@ import {
   UpdateRoleInputSchema,
   type UpdateRoleStatusInput,
   UpdateRoleStatusInputSchema
-} from "./dto/roles.input.dto.js";
-import { RoleRecordSchema, type RoleRecord } from "./roles.schemas.js";
+} from "../dto/roles.input.dto.js";
+import { RoleRecordSchema, type RoleRecord } from "../roles.schemas.js";
 
 const ROLES_ENTITY_NAME = "roles";
 const CACHE_NAMESPACE = "roles";

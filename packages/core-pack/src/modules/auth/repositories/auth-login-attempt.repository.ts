@@ -1,5 +1,5 @@
 import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
-import type { CacheService } from "../../cache/cache.service.js";
+import type { CacheService } from "../../cache/services/cache.service.js";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import {
   LoginAttemptRecordSchema,

@@ -8,10 +8,10 @@ import {
   type EntityRegistry
 } from "@trinacria-cms/kernel";
 import { EVENT_BUS_TOKEN } from "@trinacria/events";
-import { InstallationStateRepository } from "../installation/installation-state.repository.js";
+import { InstallationStateRepository } from "../installation/repositories/installation-state.repository.js";
 import { LOCAL_CREDENTIALS_ENTITY } from "../installation/installation.schemas.js";
-import { LocalCredentialsRepository } from "../installation/local-credentials.repository.js";
-import { PasswordHashingService } from "../installation/password-hashing.service.js";
+import { LocalCredentialsRepository } from "../installation/repositories/local-credentials.repository.js";
+import { PasswordHashingService } from "../installation/services/password-hashing.service.js";
 import { AuthBlacklistRepository } from "./repositories/auth-blacklist.repository.js";
 import { AuthController } from "./auth.controller.js";
 import { AUTH_FLOW_TOKENS_ENTITY } from "./auth-flow-tokens.schemas.js";

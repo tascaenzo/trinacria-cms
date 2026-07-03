@@ -1,6 +1,6 @@
 import { classProvider, CORE_TOKENS, defineModule, factoryProvider } from "@trinacria-cms/kernel";
 import { createDefaultCacheAdapter } from "./cache-adapter-factory.js";
-import { CacheService } from "./cache.service.js";
+import { CacheService } from "./services/cache.service.js";
 import { CORE_PACK_CACHE_ADAPTER_TOKEN, CORE_PACK_CACHE_SERVICE_TOKEN } from "./cache.tokens.js";
 import { CorePackRuntimeConfigModule } from "../settings/config/runtime-config.module.js";
 import { RUNTIME_CONFIG_SERVICE_TOKEN } from "../settings/settings.tokens.js";

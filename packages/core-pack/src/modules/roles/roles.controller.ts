@@ -19,7 +19,7 @@ import {
   UpdateRoleInputSchema,
   UpdateRoleStatusInputSchema
 } from "./dto/index.js";
-import type { RolesService } from "./roles.service.js";
+import type { RolesService } from "./services/roles.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
 

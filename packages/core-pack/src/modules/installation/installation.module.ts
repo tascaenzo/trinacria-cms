@@ -19,11 +19,11 @@ import { SETTINGS_SERVICE_TOKEN } from "../settings/settings.tokens.js";
 import { CorePackUsersModule } from "../users/users.module.js";
 import { USERS_REPOSITORY_TOKEN } from "../users/users.tokens.js";
 import { InstallationController } from "./installation.controller.js";
-import { InstallationStateRepository } from "./installation-state.repository.js";
+import { InstallationStateRepository } from "./repositories/installation-state.repository.js";
 import { LOCAL_CREDENTIALS_ENTITY } from "./installation.schemas.js";
-import { InstallationService } from "./installation.service.js";
-import { LocalCredentialsRepository } from "./local-credentials.repository.js";
-import { PasswordHashingService } from "./password-hashing.service.js";
+import { InstallationService } from "./services/installation.service.js";
+import { LocalCredentialsRepository } from "./repositories/local-credentials.repository.js";
+import { PasswordHashingService } from "./services/password-hashing.service.js";
 import {
   CORE_PACK_INSTALLATION_CONTROLLER_TOKEN,
   CORE_PACK_INSTALLATION_ENTITY_REGISTRATION_TOKEN,

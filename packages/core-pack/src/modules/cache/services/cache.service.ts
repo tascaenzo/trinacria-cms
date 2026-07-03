@@ -1,4 +1,4 @@
-import type { CacheAdapter } from "./adapters/cache-adapter.js";
+import type { CacheAdapter } from "../adapters/cache-adapter.js";
 
 /**
  * Namespace-aware cache service with automatic loading via getOrCompute.

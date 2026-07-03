@@ -7,10 +7,10 @@ import type {
   NamespaceContext,
   PluginManifest
 } from "@trinacria-cms/kernel";
-import { PermissionsRepository } from "../src/modules/permissions/permissions.repository.js";
+import { PermissionsRepository } from "../src/modules/permissions/repositories/permissions.repository.js";
 import { RoleGrantsRepository } from "../src/modules/roles/grants/role-grants.repository.js";
-import { RolesRepository } from "../src/modules/roles/roles.repository.js";
-import { CorePackSecurityProvisioningService } from "../src/modules/security/security-provisioning.service.js";
+import { RolesRepository } from "../src/modules/roles/repositories/roles.repository.js";
+import { CorePackSecurityProvisioningService } from "../src/modules/security/services/security-provisioning.service.js";
 import { RolePolicyRulesRepository } from "../src/modules/security/role-policy-rules/role-policy-rules.repository.js";
 import { UserRolesRepository } from "../src/modules/security/user-access/user-roles.repository.js";
 import { SettingsDefinitionsRepository } from "../src/modules/settings/definitions/settings-definitions.repository.js";

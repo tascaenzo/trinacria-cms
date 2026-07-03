@@ -1,9 +1,9 @@
 import { createToken } from "@trinacria-cms/kernel";
 import { InstallationController } from "./installation.controller.js";
-import { InstallationStateRepository } from "./installation-state.repository.js";
-import { InstallationService } from "./installation.service.js";
-import { LocalCredentialsRepository } from "./local-credentials.repository.js";
-import { PasswordHashingService } from "./password-hashing.service.js";
+import { InstallationStateRepository } from "./repositories/installation-state.repository.js";
+import { InstallationService } from "./services/installation.service.js";
+import { LocalCredentialsRepository } from "./repositories/local-credentials.repository.js";
+import { PasswordHashingService } from "./services/password-hashing.service.js";
 
 export const INSTALLATION_STATE_REPOSITORY_TOKEN = createToken<InstallationStateRepository>(
   "CORE_PACK_INSTALLATION_STATE_REPOSITORY"

@@ -1,5 +1,5 @@
 import { CORE_TOKENS, createToken } from "@trinacria-cms/kernel";
-import type { CacheService } from "./cache.service.js";
+import type { CacheService } from "./services/cache.service.js";
 
 export const CORE_PACK_CACHE_ADAPTER_TOKEN = CORE_TOKENS.CACHE_ADAPTER;
 

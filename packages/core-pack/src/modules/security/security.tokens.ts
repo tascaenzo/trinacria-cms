@@ -1,9 +1,9 @@
 import { createToken } from "@trinacria-cms/kernel";
-import { CorePackAuthzService } from "./core-pack-authz.service.js";
+import { CorePackAuthzService } from "./services/core-pack-authz.service.js";
 import { RolePolicyRulesController } from "./role-policy-rules/role-policy-rules.controller.js";
 import { RolePolicyRulesRepository } from "./role-policy-rules/role-policy-rules.repository.js";
 import { RolePolicyRulesService } from "./role-policy-rules/role-policy-rules.service.js";
-import { CorePackSecurityProvisioningService } from "./security-provisioning.service.js";
+import { CorePackSecurityProvisioningService } from "./services/security-provisioning.service.js";
 import { UserAccessController } from "./user-access/user-access.controller.js";
 import { UserAccessService } from "./user-access/user-access.service.js";
 import { UserRolesRepository } from "./user-access/user-roles.repository.js";

@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { DbAdapter, DbQuery, DbRepository, NamespaceContext } from "@trinacria-cms/kernel";
-import { PermissionsRepository } from "../src/modules/permissions/permissions.repository.js";
-import { PermissionsService } from "../src/modules/permissions/permissions.service.js";
+import { PermissionsRepository } from "../src/modules/permissions/repositories/permissions.repository.js";
+import { PermissionsService } from "../src/modules/permissions/services/permissions.service.js";
 import { RoleGrantsRepository } from "../src/modules/roles/grants/role-grants.repository.js";
-import { RolesRepository } from "../src/modules/roles/roles.repository.js";
-import { RolesService } from "../src/modules/roles/roles.service.js";
+import { RolesRepository } from "../src/modules/roles/repositories/roles.repository.js";
+import { RolesService } from "../src/modules/roles/services/roles.service.js";
 
 test("RolesService updates status through the main role update flow", async () => {
   const db = createFakeDbAdapter();

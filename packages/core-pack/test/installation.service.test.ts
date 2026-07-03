@@ -1,17 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { DbAdapter, DbQuery, DbRepository, NamespaceContext } from "@trinacria-cms/kernel";
-import { LocalCredentialsRepository } from "../src/modules/installation/local-credentials.repository.js";
+import { LocalCredentialsRepository } from "../src/modules/installation/repositories/local-credentials.repository.js";
 import {
   InstallationAlreadyCompletedError,
   InstallationService
-} from "../src/modules/installation/installation.service.js";
-import { InstallationStateRepository } from "../src/modules/installation/installation-state.repository.js";
-import { PasswordHashingService } from "../src/modules/installation/password-hashing.service.js";
-import { PermissionsRepository } from "../src/modules/permissions/permissions.repository.js";
+} from "../src/modules/installation/services/installation.service.js";
+import { InstallationStateRepository } from "../src/modules/installation/repositories/installation-state.repository.js";
+import { PasswordHashingService } from "../src/modules/installation/services/password-hashing.service.js";
+import { PermissionsRepository } from "../src/modules/permissions/repositories/permissions.repository.js";
 import { RoleGrantsRepository } from "../src/modules/roles/grants/role-grants.repository.js";
-import { RolesRepository } from "../src/modules/roles/roles.repository.js";
-import { CorePackSecurityProvisioningService } from "../src/modules/security/security-provisioning.service.js";
+import { RolesRepository } from "../src/modules/roles/repositories/roles.repository.js";
+import { CorePackSecurityProvisioningService } from "../src/modules/security/services/security-provisioning.service.js";
 import { RolePolicyRulesRepository } from "../src/modules/security/role-policy-rules/role-policy-rules.repository.js";
 import { UserAccessService } from "../src/modules/security/user-access/user-access.service.js";
 import { UserRolesRepository } from "../src/modules/security/user-access/user-roles.repository.js";

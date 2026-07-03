@@ -2,16 +2,16 @@ import { readFileSync, existsSync, writeFileSync, chmodSync } from "node:fs";
 import { join } from "node:path";
 import type { PluginSecurityProvisioner } from "@trinacria-cms/kernel";
 import type { EventBus } from "@trinacria/events";
-import { CORE_PACK_ADMIN_ROLE } from "../../plugin/core-pack.security.js";
-import { CORE_PACK_MANIFEST } from "../../plugin/core-pack.manifest.js";
-import { UsersRepository } from "../users/repositories/users.repository.js";
-import type { UserRecord } from "../users/users.schemas.js";
-import { UserLifecycleEventPublisher } from "../users/services/user-lifecycle-event-publisher.js";
-import { UserAccessService } from "../security/user-access/user-access.service.js";
-import { SettingsService } from "../settings/services/settings.service.js";
-import type { InstallBootstrapInput } from "./dto/installation.input.dto.js";
-import { InstallationStateRepository } from "./installation-state.repository.js";
-import { LocalCredentialsRepository } from "./local-credentials.repository.js";
+import { CORE_PACK_MANIFEST } from "../../../plugin/core-pack.manifest.js";
+import { CORE_PACK_ADMIN_ROLE } from "../../../plugin/core-pack.security.js";
+import { SettingsService } from "../../settings/services/settings.service.js";
+import { UserAccessService } from "../../security/user-access/user-access.service.js";
+import { UserLifecycleEventPublisher } from "../../users/services/user-lifecycle-event-publisher.js";
+import { UsersRepository } from "../../users/repositories/users.repository.js";
+import type { UserRecord } from "../../users/users.schemas.js";
+import type { InstallBootstrapInput } from "../dto/installation.input.dto.js";
+import { InstallationStateRepository } from "../repositories/installation-state.repository.js";
+import { LocalCredentialsRepository } from "../repositories/local-credentials.repository.js";
 import { PasswordHashingService } from "./password-hashing.service.js";
 
 export interface InstallationStatus {

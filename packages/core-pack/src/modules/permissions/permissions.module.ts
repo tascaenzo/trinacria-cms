@@ -12,8 +12,8 @@ import { CORE_PACK_CACHE_SERVICE_TOKEN } from "../cache/cache.tokens.js";
 import { CorePackCacheModule } from "../cache/cache.module.js";
 import { PermissionsController } from "./permissions.controller.js";
 import { PERMISSIONS_ENTITY } from "./permissions.schemas.js";
-import { PermissionsRepository } from "./permissions.repository.js";
-import { PermissionsService } from "./permissions.service.js";
+import { PermissionsRepository } from "./repositories/permissions.repository.js";
+import { PermissionsService } from "./services/permissions.service.js";
 import {
   PERMISSIONS_CONTROLLER_TOKEN,
   PERMISSIONS_ENTITY_REGISTRATION_TOKEN,

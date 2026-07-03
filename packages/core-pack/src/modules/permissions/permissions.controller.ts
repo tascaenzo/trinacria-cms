@@ -19,7 +19,7 @@ import {
   UpdatePermissionInputSchema,
   UpdatePermissionStatusInputSchema
 } from "./dto/index.js";
-import type { PermissionsService } from "./permissions.service.js";
+import type { PermissionsService } from "./services/permissions.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
 
