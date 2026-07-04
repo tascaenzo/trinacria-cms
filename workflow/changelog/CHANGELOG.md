@@ -3,6 +3,21 @@
 Tutte le milestone significative sono documentate qui.
 Il formato si ispira a [Keep a Changelog](https://keepachangelog.com/).
 
+## [M6] Production Readiness — aperta
+
+### Avvio
+
+- Creato il task `2026-07-04-production-readiness-e2e.md` per portare il progetto verso una
+  readiness verificabile con smoke E2E, checklist deploy e hardening finale.
+
+### Consolidato
+
+- Backoffice plugin UI disaccoppiata tramite renderer registry e `componentRef`.
+- Flussi auth/email consolidati con test su secure payload, reset password, registrazione pubblica
+  e verifica email.
+
+---
+
 ## [M4] Core Platform Foundation — completata
 
 ### Checklist iniziale
