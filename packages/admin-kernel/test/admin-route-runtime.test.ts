@@ -731,6 +731,68 @@ test("buildAdminRegistry includes visible dashboard widgets and settings section
   assert.equal(registry.settings[0].title, "t:Catalog settings");
 });
 
+test("buildAdminRegistry resolves settings section renderers from component refs", () => {
+  const plugin: AdminRuntimePluginInfo = {
+    pluginId: "email-pack",
+    installed: true,
+    version: "1.0.0",
+    state: "loaded",
+    capabilities: []
+  };
+
+  const contribution: RenderableAdminContribution = {
+    pluginId: "email-pack",
+    displayName: "Email",
+    routes: [],
+    navigation: [],
+    settings: [
+      {
+        id: "email-pack-email-template-settings",
+        pluginId: "email-pack",
+        kind: "custom",
+        componentRef: "email-pack:email-template-manager",
+        title: "Email templates"
+      }
+    ]
+  };
+
+  const registry = buildAdminRegistry([contribution], [plugin], identityTranslate);
+
+  assert.equal(registry.settings.length, 1);
+  assert.equal(typeof registry.settings[0].render, "function");
+});
+
+test("buildAdminRegistry resolves dashboard widget renderers from component refs", () => {
+  const plugin: AdminRuntimePluginInfo = {
+    pluginId: "email-pack",
+    installed: true,
+    version: "1.0.0",
+    state: "loaded",
+    capabilities: []
+  };
+
+  const contribution: RenderableAdminContribution = {
+    pluginId: "email-pack",
+    displayName: "Email",
+    routes: [],
+    navigation: [],
+    widgets: [
+      {
+        id: "email-pack-delivery-status",
+        pluginId: "email-pack",
+        kind: "custom",
+        componentRef: "email-pack:delivery-status-widget",
+        title: "Email delivery"
+      }
+    ]
+  };
+
+  const registry = buildAdminRegistry([contribution], [plugin], identityTranslate);
+
+  assert.equal(registry.widgets.length, 1);
+  assert.equal(typeof registry.widgets[0].render, "function");
+});
+
 test("buildAdminRegistry filters dashboard widgets and settings sections by guards", () => {
   const plugin: AdminRuntimePluginInfo = {
     pluginId: "catalog-pack",

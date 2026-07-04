@@ -1,96 +1,138 @@
-import { useMemo, useState } from "react";
-import { Badge, Button, Input, Select } from "@trinacria-cms/trinacria-ui";
+import { useEffect, useMemo, useState } from "react";
+import { Badge } from "@trinacria-cms/trinacria-ui";
 import { ErrorBanner, EmptyState } from "../../../components/resource-feedback.js";
 import type { TranslateFn } from "../../../lib/i18n.js";
 import { toDisplayError } from "../../../lib/sdk-errors.js";
 import { cms } from "../../../runtime/cms-sdk.js";
-import type { SettingDefinitionRecord } from "../settings-page.utils.js";
+import type { AdminSettingsSectionRenderContext } from "../../../runtime/admin-route-runtime.js";
+import { toEditableSettingInput } from "../settings-page.utils.js";
 import {
   getPluginGrantId,
   parsePluginAccessGrantDrafts,
   type PluginAccessGrantDraft
 } from "../utils/plugin-permission-grants.js";
 
+const PLUGIN_ACCESS_GRANTS_SETTING_KEY = "core-pack:security:plugin_access_grants";
+
 interface PluginPermissionCenterProps {
   draftValue: string;
   isSaving: boolean;
   onChange: (value: string) => void;
-  record: SettingDefinitionRecord;
+  settingKey: string;
   t: TranslateFn;
+}
+
+export function PluginPermissionCenterSection({
+  section,
+  t
+}: AdminSettingsSectionRenderContext) {
+  const settingKey = section.settingKeys?.[0] ?? PLUGIN_ACCESS_GRANTS_SETTING_KEY;
+  const [draftValue, setDraftValue] = useState("[]");
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadGrantSetting() {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const response = await cms.settings.getSettingValueByKey({ path: { key: settingKey } });
+        if (isCancelled) return;
+        setDraftValue(toEditableSettingInput(response.data?.value ?? []));
+      } catch (currentError) {
+        if (isCancelled) return;
+        setDraftValue("[]");
+        setError(toDisplayError(currentError));
+      } finally {
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadGrantSetting();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [settingKey]);
+
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <EmptyState text={t("settings.empty.loading_value", "Caricamento valore...")} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-0 overflow-auto px-6 py-4 sm:px-8 sm:py-6">
+      <div className="mx-auto grid max-w-4xl gap-6">
+        <div className="border-b border-[color:var(--color-border)] pb-5">
+          <h3 className="text-xl font-semibold text-[color:var(--color-ink)]">{section.title}</h3>
+          {section.summary ? (
+            <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink-muted)]">
+              {section.summary}
+            </p>
+          ) : null}
+        </div>
+        {error ? <ErrorBanner message={error} /> : null}
+        <PluginPermissionCenter
+          draftValue={draftValue}
+          isSaving={false}
+          onChange={setDraftValue}
+          settingKey={settingKey}
+          t={t}
+        />
+      </div>
+    </div>
+  );
 }
 
 export function PluginPermissionCenter({
   draftValue,
   isSaving,
   onChange,
-  record,
+  settingKey,
   t
 }: PluginPermissionCenterProps) {
   const [localError, setLocalError] = useState<string | null>(null);
   const [localMessage, setLocalMessage] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<PluginAccessGrantDraft["status"] | "all">("all");
-  const [query, setQuery] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
   const grants = useMemo(() => parsePluginAccessGrantDrafts(draftValue), [draftValue]);
-  const filteredGrants = useMemo(
-    () =>
-      grants.filter((grant) => {
-        if (statusFilter !== "all" && grant.status !== statusFilter) return false;
-        const normalizedQuery = query.trim().toLowerCase();
-        if (!normalizedQuery) return true;
-        return [
-          grant.producerPluginId,
-          grant.consumerPluginId,
-          grant.eventName,
-          grant.payloadType,
-          grant.accessType,
-          grant.requiredPermission,
-          grant.reason
-        ]
-          .filter(Boolean)
-          .some((value) => value!.toLowerCase().includes(normalizedQuery));
-      }),
-    [grants, query, statusFilter]
-  );
-  const statusCounts = useMemo(
-    () =>
-      grants.reduce(
-        (accumulator, grant) => ({
-          ...accumulator,
-          [grant.status]: accumulator[grant.status] + 1
-        }),
-        { pending: 0, approved: 0, denied: 0, revoked: 0 }
-      ),
-    [grants]
-  );
 
   async function updateGrant(
     grant: PluginAccessGrantDraft,
-    status: PluginAccessGrantDraft["status"]
+    status: Extract<PluginAccessGrantDraft["status"], "approved" | "denied">
   ) {
     const now = new Date().toISOString();
     const next = grants.map((item) =>
       getPluginGrantId(item) === getPluginGrantId(grant)
-        ? {
+        ? toJsonGrantDraft({
             ...item,
             id: getPluginGrantId(item),
             status,
-            approvedBy: status === "approved" ? "backoffice" : item.approvedBy,
-            approvedAt: status === "approved" ? now : item.approvedAt,
+            ...(status === "approved" ? { approvedBy: "backoffice", approvedAt: now } : {}),
             updatedAt: now
-          }
-        : item
+          })
+        : toJsonGrantDraft(item)
     );
     onChange(JSON.stringify(next, null, 2));
     try {
+      setIsUpdating(true);
       setLocalError(null);
       setLocalMessage(null);
       await cms.settings.upsertSettingValue({
-        path: { key: record.key },
+        path: { key: settingKey },
         body: { value: next, updatedBy: "backoffice" }
       });
       setLocalMessage(t("settings.plugin_permissions.saved", "Permissione aggiornata."));
     } catch (error) {
       setLocalError(toDisplayError(error));
+    } finally {
+      setIsUpdating(false);
     }
   }
 
@@ -103,7 +145,7 @@ export function PluginPermissionCenter({
         <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
           {t(
             "settings.plugin_permissions.access_requests_summary",
-            "Approva o revoca accessi a eventi sensibili e payload sicuri."
+            "Abilita o disabilita l'accesso dei plugin a eventi sensibili e payload sicuri."
           )}
         </p>
       </div>
@@ -117,119 +159,86 @@ export function PluginPermissionCenter({
         />
       ) : (
         <div className="grid gap-3">
-          <div className="grid gap-3 rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface-subtle)] p-3 md:grid-cols-[1fr_220px]">
-            <Input
-              label={t("common.actions.search", "Cerca")}
-              value={query}
-              onChange={(event) => setQuery(event.currentTarget.value)}
-            />
-            <Select
-              label={t("common.table.status", "Stato")}
-              value={statusFilter}
-              onChange={(event) =>
-                setStatusFilter(
-                  event.currentTarget.value as PluginAccessGrantDraft["status"] | "all"
-                )
-              }
-            >
-              <option value="all">{t("common.filters.all", "Tutti")}</option>
-              <option value="pending">
-                {t("common.status.pending", "pending")} ({statusCounts.pending})
-              </option>
-              <option value="approved">
-                {t("common.status.approved", "approved")} ({statusCounts.approved})
-              </option>
-              <option value="denied">
-                {t("common.status.denied", "denied")} ({statusCounts.denied})
-              </option>
-              <option value="revoked">
-                {t("common.status.revoked", "revoked")} ({statusCounts.revoked})
-              </option>
-            </Select>
-          </div>
-
-          {filteredGrants.length === 0 ? (
-            <EmptyState
-              text={t(
-                "settings.plugin_permissions.no_matches",
-                "Nessuna richiesta corrisponde ai filtri."
-              )}
-            />
-          ) : (
-            <div className="overflow-hidden rounded-lg border border-[color:var(--color-border)]">
-              <div className="grid bg-[color:var(--color-surface-subtle)] px-4 py-2 text-xs font-semibold uppercase text-[color:var(--color-ink-muted)] md:grid-cols-[1fr_1fr_1fr_auto]">
-                <span>{t("settings.plugin_permissions.consumer", "Consumer")}</span>
-                <span>{t("settings.plugin_permissions.access", "Accesso")}</span>
-                <span>{t("common.table.status", "Stato")}</span>
-                <span>{t("common.table.action", "Azione")}</span>
-              </div>
-              {filteredGrants.map((grant) => (
-                <div
-                  key={getPluginGrantId(grant)}
-                  className="grid gap-3 border-t border-[color:var(--color-border)] px-4 py-3 text-sm md:grid-cols-[1fr_1fr_1fr_auto] md:items-center"
-                >
-                  <div>
-                    <p className="font-semibold text-[color:var(--color-ink)]">
-                      {grant.producerPluginId} {"->"} {grant.consumerPluginId}
-                    </p>
-                    <p className="text-xs text-[color:var(--color-ink-muted)]">{grant.eventName}</p>
+          {grants.map((grant) => {
+            const isApproved = grant.status === "approved";
+            return (
+              <article
+                key={getPluginGrantId(grant)}
+                className="grid gap-4 rounded-lg border border-[color:var(--color-border)] bg-white p-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
+              >
+                <div className="grid min-w-0 gap-2">
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <span className="font-semibold text-[color:var(--color-ink)]">
+                      {grant.consumerPluginId}
+                    </span>
+                    <span className="text-[color:var(--color-ink-muted)]">richiede accesso a</span>
+                    <span className="font-semibold text-[color:var(--color-ink)]">
+                      {grant.producerPluginId}
+                    </span>
                   </div>
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-[color:var(--color-ink)]">
-                      {grant.payloadType ?? grant.accessType ?? "event"}
+                  <div className="grid gap-1 text-sm">
+                    <p className="break-all font-mono text-xs text-[color:var(--color-ink-muted)]">
+                      {grant.eventName}
                     </p>
-                    <p className="truncate text-xs text-[color:var(--color-ink-muted)]">
-                      {grant.requiredPermission}
-                    </p>
-                  </div>
-                  <div>
-                    <Badge tone={readGrantStatusTone(grant.status)}>{grant.status}</Badge>
-                    {grant.reason ? (
-                      <p className="mt-1 text-xs text-[color:var(--color-ink-muted)]">
-                        {grant.reason}
+                    {grant.requiredPermission ? (
+                      <p className="break-all font-mono text-xs text-[color:var(--color-ink-muted)]">
+                        {grant.requiredPermission}
                       </p>
                     ) : null}
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      disabled={isSaving || grant.status === "approved"}
-                      onClick={() => void updateGrant(grant, "approved")}
-                    >
-                      {t("common.actions.approve", "Approva")}
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="secondary"
-                      disabled={isSaving || grant.status === "denied"}
-                      onClick={() => void updateGrant(grant, "denied")}
-                    >
-                      {t("common.actions.deny", "Nega")}
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="secondary"
-                      disabled={isSaving || grant.status === "revoked"}
-                      onClick={() => void updateGrant(grant, "revoked")}
-                    >
-                      {t("common.actions.revoke", "Revoca")}
-                    </Button>
-                  </div>
+                  {grant.reason ? (
+                    <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
+                      {grant.reason}
+                    </p>
+                  ) : null}
                 </div>
-              ))}
-            </div>
-          )}
+                <div className="flex items-center gap-3 justify-self-start md:justify-self-end">
+                  <Badge tone={isApproved ? "success" : "neutral"}>
+                    {isApproved
+                      ? t("settings.plugin_permissions.enabled", "Abilitato")
+                      : t("settings.plugin_permissions.disabled", "Disabilitato")}
+                  </Badge>
+                  <label className="relative inline-flex cursor-pointer items-center">
+                    <input
+                      checked={isApproved}
+                      className="peer sr-only"
+                      disabled={isSaving || isUpdating}
+                      role="switch"
+                      type="checkbox"
+                      aria-label={`${grant.consumerPluginId} ${grant.eventName}`}
+                      onChange={(event) =>
+                        void updateGrant(
+                          grant,
+                          event.currentTarget.checked ? "approved" : "denied"
+                        )
+                      }
+                    />
+                    <span className="h-7 w-12 rounded-full bg-[color:var(--color-interactive-soft)] transition peer-checked:bg-[color:var(--color-action-primary-bg)] peer-focus:ring-2 peer-focus:ring-[color:var(--color-overlay-soft)] peer-disabled:opacity-60" />
+                    <span className="pointer-events-none absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition peer-checked:translate-x-5" />
+                  </label>
+                </div>
+              </article>
+            );
+          })}
         </div>
       )}
     </section>
   );
 }
 
-function readGrantStatusTone(status: PluginAccessGrantDraft["status"]) {
-  if (status === "approved") return "success";
-  if (status === "pending") return "warning";
-  return "neutral";
+function toJsonGrantDraft(grant: PluginAccessGrantDraft): PluginAccessGrantDraft {
+  return {
+    producerPluginId: grant.producerPluginId,
+    consumerPluginId: grant.consumerPluginId,
+    eventName: grant.eventName,
+    requiredPermission: grant.requiredPermission,
+    status: grant.status,
+    ...(grant.id ? { id: grant.id } : {}),
+    ...(grant.accessType ? { accessType: grant.accessType } : {}),
+    ...(grant.payloadType ? { payloadType: grant.payloadType } : {}),
+    ...(grant.reason ? { reason: grant.reason } : {}),
+    ...(grant.approvedBy ? { approvedBy: grant.approvedBy } : {}),
+    ...(grant.approvedAt ? { approvedAt: grant.approvedAt } : {}),
+    ...(grant.updatedAt ? { updatedAt: grant.updatedAt } : {})
+  };
 }

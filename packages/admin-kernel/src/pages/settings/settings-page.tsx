@@ -13,9 +13,7 @@ import {
   DataTableRow,
   DataTableTable,
   Dialog,
-  FilterBar,
   InfoCard,
-  Input,
   PropertyItem,
   PropertyList
 } from "@trinacria-cms/trinacria-ui";
@@ -69,13 +67,9 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
 
   const {
     error,
-    filterState,
-    isFilterPending,
     isLoading,
-    ownerPluginId,
     records,
-    refresh,
-    submitFilter
+    refresh
   } = useSettingsDefinitions();
   const visibleRecords = useMemo(() => records.filter(isVisibleSettingDefinition), [records]);
   const { isOverviewLoading, overviewItems } = useSettingsOverview(visibleRecords);
@@ -169,7 +163,7 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
       );
 
       setSaveMessage(t("settings.form.saved", "Impostazioni salvate."));
-      void refresh(ownerPluginId);
+      void refresh();
     } catch (currentError) {
       setSaveError(toDisplayError(currentError));
     } finally {
@@ -249,34 +243,13 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
   return (
     <div className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
       <Card eyebrow={t("settings.eyebrow")} title={t("settings.title")}>
-        <div className="mb-5 border-b border-[color:var(--color-border)] pb-4">
-          <FilterBar
-            key={ownerPluginId}
-            action={submitFilter}
-            summary={t("settings.summary")}
-            actions={
-              <>
-                <div className="self-end">
-                  <Button type="submit" variant="secondary" disabled={isFilterPending}>
-                    {t("common.actions.apply_filter")}
-                  </Button>
-                </div>
-                <div className="self-end">
-                  <Button type="button" onClick={() => void refresh()}>
-                    {t("common.actions.refresh")}
-                  </Button>
-                </div>
-              </>
-            }
-          >
-            <Input
-              label={t("settings.filter.owner_plugin")}
-              name="ownerPluginId"
-              defaultValue={ownerPluginId}
-              hint={t("settings.filter.owner_plugin_hint")}
-            />
-          </FilterBar>
-          {filterState.error ? <ErrorBanner message={filterState.error} /> : null}
+        <div className="mb-5 flex flex-wrap items-start justify-between gap-4 border-b border-[color:var(--color-border)] pb-4">
+          <p className="max-w-2xl text-sm leading-6 text-[color:var(--color-ink-muted)]">
+            {t("settings.summary")}
+          </p>
+          <Button type="button" variant="secondary" onClick={() => void refresh()}>
+            {t("common.actions.refresh")}
+          </Button>
         </div>
         {error ? <ErrorBanner message={error} /> : null}
         {isLoading ? <EmptyState text={t("settings.empty.loading_definitions")} /> : null}

@@ -50,7 +50,18 @@ test("loadRuntimeDiscovery maps backend plugin contributions to admin manifests"
                 }
               ],
               resources: [],
-              widgets: [],
+              widgets: [
+                {
+                  pluginId: "blog-pack",
+                  key: "health-widget",
+                  declaration: {
+                    id: "health-widget",
+                    label: "Blog health",
+                    componentRef: "blog-pack.health-widget",
+                    requiredPermission: "blog-pack:settings:read"
+                  }
+                }
+              ],
               settingsSections: [
                 {
                   pluginId: "blog-pack",
@@ -84,6 +95,14 @@ test("loadRuntimeDiscovery maps backend plugin contributions to admin manifests"
   assert.equal(discovery.manifests[0].admin?.pages?.[0].componentRef, "blog-pack.posts");
   assert.equal(discovery.manifests[0].admin?.pages?.[0].order, 30);
   assert.equal(discovery.manifests[0].admin?.navigation?.[0].routeId, "posts");
+  assert.equal(discovery.manifests[0].admin?.dashboard?.widgets?.[0].kind, "custom");
+  assert.equal(
+    discovery.manifests[0].admin?.dashboard?.widgets?.[0].componentRef,
+    "blog-pack.health-widget"
+  );
+  assert.deepEqual(discovery.manifests[0].admin?.dashboard?.widgets?.[0].guards, [
+    { pluginId: "blog-pack", permissionKey: "blog-pack:settings:read" }
+  ]);
   assert.deepEqual(discovery.manifests[0].admin?.pages?.[0].guards, [
     { pluginId: "blog-pack", permissionKey: "blog-pack:posts:read" }
   ]);

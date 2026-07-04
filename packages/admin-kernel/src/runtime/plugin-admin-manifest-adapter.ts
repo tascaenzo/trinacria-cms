@@ -120,7 +120,8 @@ export function createAdminExtensionManifestFromPluginAdmin(
           id: widget.id,
           pluginId: input.pluginId,
           mode: "declarative" as const,
-          kind: "card" as const,
+          kind: widget.componentRef ? ("custom" as const) : ("card" as const),
+          componentRef: widget.componentRef,
           title: widget.label,
           guards: toGuards(input.pluginId, widget.requiredPermission)
         }))

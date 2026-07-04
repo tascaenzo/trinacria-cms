@@ -12,6 +12,10 @@ import type {
 } from "../contracts.js";
 import type { ReactNode } from "react";
 import type { Locale, TranslateFn } from "../lib/i18n.js";
+import {
+  resolveAdminDashboardWidgetRenderer,
+  resolveAdminSettingsSectionRenderer
+} from "./admin-renderers.js";
 
 /**
  * Page render context carries the minimum runtime state every screen needs in
@@ -381,7 +385,8 @@ export function buildAdminRegistry(
         .map((widget) => ({
           ...widget,
           title: widget.titleKey ? t(widget.titleKey, widget.title) : widget.title,
-          summary: widget.summaryKey ? t(widget.summaryKey, widget.summary) : widget.summary
+          summary: widget.summaryKey ? t(widget.summaryKey, widget.summary) : widget.summary,
+          render: widget.render ?? resolveAdminDashboardWidgetRenderer(widget.componentRef)
         })),
       (widget) => `${widget.pluginId}:${widget.id}`
     ).sort((left, right) => (left.order ?? 0) - (right.order ?? 0)),
@@ -395,6 +400,7 @@ export function buildAdminRegistry(
           ...section,
           title: section.titleKey ? t(section.titleKey, section.title) : section.title,
           summary: section.summaryKey ? t(section.summaryKey, section.summary) : section.summary,
+          render: section.render ?? resolveAdminSettingsSectionRenderer(section.componentRef),
           actions: translateActions(
             section.actions,
             section.pluginId,

@@ -151,7 +151,8 @@ function toAdminWidget(entry: ContributionSnapshot): AdminDashboardWidgetDefinit
     id: readString(declaration.id) ?? entry.key,
     pluginId: entry.pluginId,
     mode: "declarative",
-    kind: "card",
+    kind: readString(declaration.componentRef) ? "custom" : "card",
+    componentRef: readString(declaration.componentRef),
     title: readString(declaration.label) ?? readString(declaration.title) ?? entry.key,
     guards: toGuards(entry.pluginId, declaration.requiredPermission)
   };

@@ -21,6 +21,8 @@ const CORE_PACK_VISIBLE_SETTING_CATEGORIES = new Set([
   "email"
 ]);
 
+const CORE_PACK_VISIBLE_SETTING_KEYS = new Set(["core-pack:security:plugin_access_grants"]);
+
 const CORE_PACK_HIDDEN_SETTINGS_SECTION_IDS = new Set([
   "core-pack-auth-settings",
   "core-pack-security-settings",
@@ -36,6 +38,11 @@ export function isVisibleSettingsSection(section: RenderableAdminSettingsSection
 
 export function isVisibleSettingDefinition(record: SettingDefinitionRecord): boolean {
   if (record.ownerPluginId !== "core-pack") {
+    return true;
+  }
+
+  const key = record.key.trim().toLowerCase();
+  if (CORE_PACK_VISIBLE_SETTING_KEYS.has(key)) {
     return true;
   }
 

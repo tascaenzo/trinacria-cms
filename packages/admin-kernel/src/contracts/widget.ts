@@ -9,6 +9,7 @@ export interface AdminDashboardWidgetDefinition {
   pluginId: string;
   mode?: AdminContributionMode;
   kind?: AdminDashboardWidgetKind;
+  componentRef?: string;
   title: string;
   titleKey?: string;
   summary?: string;

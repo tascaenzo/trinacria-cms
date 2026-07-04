@@ -62,6 +62,11 @@ test("core technical settings stay hidden from the main settings workspace", () 
     setting({ key: "core-pack:auth:login_max_attempts", category: "auth" }),
     setting({ key: "core-pack:cache:redis_retry_delay", category: "cache" }),
     setting({
+      key: "core-pack:security:plugin_access_grants",
+      category: "security",
+      schema: { type: "array" }
+    }),
+    setting({
       key: "commerce-pack:auth:public_checkout_mode",
       category: "auth",
       ownerPluginId: "commerce-pack"
@@ -73,6 +78,7 @@ test("core technical settings stay hidden from the main settings workspace", () 
   assert.equal(isVisibleSettingDefinition(records[2]), false);
   assert.equal(isVisibleSettingDefinition(records[3]), false);
   assert.equal(isVisibleSettingDefinition(records[4]), true);
+  assert.equal(isVisibleSettingDefinition(records[5]), true);
   assert.equal(
     isVisibleSettingsSection({
       id: "core-pack-auth-settings",
@@ -83,8 +89,24 @@ test("core technical settings stay hidden from the main settings workspace", () 
 
   assert.deepEqual(
     groupSettingRecordsForForm(records).flatMap((group) => group.records),
-    [records[0], records[1], records[4]]
+    [records[0], records[1], records[4], records[5]]
   );
+});
+
+test("plugin permission center setting is visible through its explicit settings section", () => {
+  const record = setting({
+    key: "core-pack:security:plugin_access_grants",
+    category: "security",
+    schema: { type: "array" }
+  });
+  const section = {
+    id: "core-pack-plugin-permissions-settings",
+    pluginId: "core-pack",
+    settingKeys: ["core-pack:security:plugin_access_grants"]
+  } as RenderableAdminSettingsSection;
+
+  assert.equal(isVisibleSettingDefinition(record), true);
+  assert.deepEqual(filterRecordsForSettingsSection([record], section), [record]);
 });
 
 test("groupSettingRecordsForForm assigns readable groups from visible category and keys", () => {

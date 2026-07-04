@@ -1,6 +1,8 @@
 # Settings Page
 
-The settings page renders manifest-driven settings sections and the core plugin permission center.
+The settings page renders manifest-driven settings sections. Generic sections use the shared form;
+advanced sections declare a `componentRef` in their plugin manifest and are resolved by the admin
+renderer registry.
 
 ## Structure
 
@@ -11,11 +13,15 @@ The settings page renders manifest-driven settings sections and the core plugin 
 - `utils/` contains parsing and transformation helpers used by focused components.
 - `settings-page.utils.ts` contains generic settings form helpers.
 
-## Permission Center
+## Custom Renderers
 
-The permission center edits the `core-pack:security:plugin_access_grants` setting. It is displayed
-inside the security settings section but isolated in `components/plugin-permission-center.tsx` so the
-generic settings form stays small.
+Custom settings UI is selected by `componentRef`, not by hardcoded checks inside the settings page.
+Renderer lookup is centralized in `runtime/admin-renderers.tsx`.
 
-When adding another advanced settings widget, keep the generic form generic and place custom UI in
-`components/` with parsing helpers in `utils/`.
+The permission center edits the `core-pack:security:plugin_access_grants` setting through the
+`core-pack:plugin-permission-center` renderer. The email template editor uses the
+`email-pack:email-template-manager` renderer.
+
+When adding another advanced settings surface, keep the generic form generic, declare
+`kind: "custom"` and `componentRef` in the plugin manifest, and register the renderer in the admin
+renderer registry.

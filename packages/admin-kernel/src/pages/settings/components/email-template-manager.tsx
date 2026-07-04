@@ -2,15 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Badge,
   Button,
-  DataTable,
-  DataTableBody,
-  DataTableCell,
-  DataTableHead,
-  DataTableHeadCell,
-  DataTableHeaderRow,
-  DataTablePrimaryCell,
-  DataTableRow,
-  DataTableTable,
   Input,
   Select,
   Textarea
@@ -22,6 +13,7 @@ import { cms } from "../../../runtime/cms-sdk.js";
 
 type EmailTemplateRecord = Awaited<ReturnType<typeof cms.email.listEmailTemplates>>["data"][number];
 type EmailTemplateStatus = "active" | "disabled";
+type EmailPreviewMode = "html" | "text";
 
 interface EmailTemplateDraft {
   key: string;
@@ -51,6 +43,7 @@ export function EmailTemplateManager({ t }: { t: TranslateFn }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
+  const [previewMode, setPreviewMode] = useState<EmailPreviewMode>("html");
 
   useEffect(() => {
     void loadTemplates();
@@ -139,6 +132,19 @@ export function EmailTemplateManager({ t }: { t: TranslateFn }) {
     setPreview(null);
   }
 
+  const variableNames = useMemo(() => (draft ? parseVariables(draft.variablesText) : []), [draft]);
+  const localPreview = useMemo(
+    () =>
+      draft
+        ? renderDraftPreview(draft, createPreviewVariables(parseVariables(draft.variablesText)))
+        : null,
+    [draft]
+  );
+  const previewDocument = useMemo(
+    () => createPreviewDocument(localPreview?.html, localPreview?.text ?? ""),
+    [localPreview]
+  );
+
   if (isLoading) {
     return <EmptyState text={t("settings.email_templates.loading", "Caricamento template...")} />;
   }
@@ -190,142 +196,230 @@ export function EmailTemplateManager({ t }: { t: TranslateFn }) {
         </div>
       </aside>
 
-      <div className="min-h-0 overflow-auto px-6 py-5 sm:px-8">
-        <div className="mx-auto grid max-w-5xl gap-5">
-          <div className="border-b border-[color:var(--color-border)] pb-4">
-            <h3 className="text-xl font-semibold text-[color:var(--color-ink)]">{draft.name}</h3>
+      <div className="min-h-0 overflow-auto px-5 py-5 sm:px-7">
+        <div className="mx-auto grid max-w-7xl gap-5">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[color:var(--color-border)] pb-4">
+            <div className="min-w-0">
+              <p className="text-xs font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
+                {t("settings.email_templates.editor_title", "Editor template")}
+              </p>
+              <h3 className="mt-1 truncate text-xl font-semibold text-[color:var(--color-ink)]">
+                {draft.name}
+              </h3>
+              <p className="mt-1 truncate text-sm text-[color:var(--color-ink-muted)]">
+                {draft.key} · {draft.locale}
+              </p>
+            </div>
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button type="button" variant="secondary" onClick={() => void loadTemplates()}>
+                {t("common.actions.refresh", "Aggiorna")}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={isPreviewing || isSaving}
+                onClick={() => void previewTemplate()}
+              >
+                {isPreviewing
+                  ? t("settings.email_templates.previewing", "Preview...")
+                  : t("settings.email_templates.validate_saved", "Valida salvato")}
+              </Button>
+              <Button type="button" disabled={isSaving} onClick={() => void saveTemplate()}>
+                {isSaving
+                  ? t("common.actions.saving", "Salvataggio...")
+                  : t("common.actions.save", "Salva")}
+              </Button>
+            </div>
           </div>
 
           {error ? <ErrorBanner message={error} /> : null}
           {message ? (
             <p className="text-sm font-medium text-[color:var(--color-success-ink)]">{message}</p>
           ) : null}
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Input
-              label={t("settings.email_templates.key", "Chiave")}
-              value={draft.key}
-              readOnly
-              onChange={() => undefined}
-            />
-            <Input
-              label={t("settings.email_templates.locale", "Locale")}
-              value={draft.locale}
-              readOnly={isSaving}
-              onChange={(event) => updateDraft({ locale: event.currentTarget.value })}
-            />
-            <Input
-              label={t("settings.email_templates.name", "Nome")}
-              value={draft.name}
-              readOnly={isSaving}
-              onChange={(event) => updateDraft({ name: event.currentTarget.value })}
-            />
-            <Select
-              label={t("common.table.status", "Stato")}
-              value={draft.status}
-              disabled={isSaving}
-              onChange={(event) =>
-                updateDraft({ status: event.currentTarget.value as EmailTemplateStatus })
-              }
-            >
-              <option value="active">{t("common.status.active", "active")}</option>
-              <option value="disabled">{t("common.status.disabled", "disabled")}</option>
-            </Select>
-            <div className="md:col-span-2">
-              <Input
-                label={t("settings.email_templates.description", "Descrizione")}
-                value={draft.description}
-                readOnly={isSaving}
-                onChange={(event) => updateDraft({ description: event.currentTarget.value })}
-              />
-            </div>
-            <div className="md:col-span-2">
-              <Input
-                label={t("settings.email_templates.subject", "Oggetto")}
-                value={draft.subject}
-                readOnly={isSaving}
-                onChange={(event) => updateDraft({ subject: event.currentTarget.value })}
-              />
-            </div>
-            <Textarea
-              label={t("settings.email_templates.text_body", "Testo")}
-              value={draft.textBody}
-              readOnly={isSaving}
-              onChange={(event) => updateDraft({ textBody: event.currentTarget.value })}
-            />
-            <Textarea
-              label={t("settings.email_templates.html_body", "HTML")}
-              value={draft.htmlBody}
-              readOnly={isSaving}
-              onChange={(event) => updateDraft({ htmlBody: event.currentTarget.value })}
-            />
-            <div className="md:col-span-2">
-              <Input
-                label={t("settings.email_templates.variables", "Variabili")}
-                hint={t(
-                  "settings.email_templates.variables_hint",
-                  "Lista separata da virgole usata per preview e validazione."
-                )}
-                value={draft.variablesText}
-                readOnly={isSaving}
-                onChange={(event) => updateDraft({ variablesText: event.currentTarget.value })}
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-wrap justify-end gap-2 border-t border-[color:var(--color-border)] pt-4">
-            <Button type="button" variant="secondary" onClick={() => void loadTemplates()}>
-              {t("common.actions.refresh", "Aggiorna")}
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={isPreviewing || isSaving}
-              onClick={() => void previewTemplate()}
-            >
-              {isPreviewing
-                ? t("settings.email_templates.previewing", "Preview...")
-                : t("common.actions.preview", "Preview")}
-            </Button>
-            <Button type="button" disabled={isSaving} onClick={() => void saveTemplate()}>
-              {isSaving
-                ? t("common.actions.saving", "Salvataggio...")
-                : t("common.actions.save", "Salva")}
-            </Button>
-          </div>
-
           {preview ? (
-            <DataTable>
-              <DataTableTable>
-                <DataTableHead>
-                  <DataTableHeaderRow>
-                    <DataTableHeadCell>
-                      {t("settings.email_templates.preview_field", "Campo")}
-                    </DataTableHeadCell>
-                    <DataTableHeadCell>
-                      {t("settings.email_templates.preview_value", "Valore")}
-                    </DataTableHeadCell>
-                  </DataTableHeaderRow>
-                </DataTableHead>
-                <DataTableBody>
-                  <DataTableRow>
-                    <DataTablePrimaryCell>subject</DataTablePrimaryCell>
-                    <DataTableCell>{preview.subject}</DataTableCell>
-                  </DataTableRow>
-                  <DataTableRow>
-                    <DataTablePrimaryCell>text</DataTablePrimaryCell>
-                    <DataTableCell className="whitespace-pre-wrap">{preview.text}</DataTableCell>
-                  </DataTableRow>
-                  {preview.html ? (
-                    <DataTableRow>
-                      <DataTablePrimaryCell>html</DataTablePrimaryCell>
-                      <DataTableCell className="whitespace-pre-wrap">{preview.html}</DataTableCell>
-                    </DataTableRow>
-                  ) : null}
-                </DataTableBody>
-              </DataTableTable>
-            </DataTable>
+            <p className="text-sm text-[color:var(--color-success-ink)]">
+              {t(
+                "settings.email_templates.server_preview_ok",
+                "Validazione backend completata: il template salvato renderizza correttamente."
+              )}
+            </p>
           ) : null}
+
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(420px,0.85fr)]">
+            <div className="grid content-start gap-5">
+              <section className="grid gap-4 rounded-lg border border-[color:var(--color-border)] bg-white p-4">
+                <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_180px]">
+                  <Input
+                    label={t("settings.email_templates.name", "Nome template")}
+                    value={draft.name}
+                    readOnly={isSaving}
+                    onChange={(event) => updateDraft({ name: event.currentTarget.value })}
+                  />
+                  <Select
+                    label={t("common.table.status", "Stato")}
+                    value={draft.status}
+                    disabled={isSaving}
+                    onChange={(event) =>
+                      updateDraft({ status: event.currentTarget.value as EmailTemplateStatus })
+                    }
+                  >
+                    <option value="active">{t("common.status.active", "active")}</option>
+                    <option value="disabled">{t("common.status.disabled", "disabled")}</option>
+                  </Select>
+                </div>
+                <Input
+                  label={t("settings.email_templates.subject", "Oggetto email")}
+                  value={draft.subject}
+                  readOnly={isSaving}
+                  onChange={(event) => updateDraft({ subject: event.currentTarget.value })}
+                />
+              </section>
+
+              <section className="grid gap-4 rounded-lg border border-[color:var(--color-border)] bg-white p-4">
+                <div>
+                  <p className="text-sm font-semibold text-[color:var(--color-ink)]">
+                    {t("settings.email_templates.content_title", "Contenuto")}
+                  </p>
+                  <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
+                    {t(
+                      "settings.email_templates.content_hint",
+                      "Scrivi la versione testuale. Usa HTML avanzato solo quando serve controllare markup e stile."
+                    )}
+                  </p>
+                </div>
+                <Textarea
+                  label={t("settings.email_templates.text_body", "Testo email")}
+                  rows={12}
+                  value={draft.textBody}
+                  readOnly={isSaving}
+                  className="font-mono text-sm leading-6"
+                  onChange={(event) => updateDraft({ textBody: event.currentTarget.value })}
+                />
+
+                {variableNames.length ? (
+                  <div className="grid gap-2 border-t border-[color:var(--color-border)] pt-3">
+                    <span className="text-xs font-medium uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)]">
+                      {t("settings.email_templates.available_variables", "Variabili disponibili")}
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {variableNames.map((variable) => (
+                        <code
+                          key={variable}
+                          className="rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-2 py-1 text-xs text-[color:var(--color-ink-muted)]"
+                        >
+                          {`{{${variable}}}`}
+                        </code>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                <details className="rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-surface)]">
+                  <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-[color:var(--color-ink)]">
+                    {t("settings.email_templates.advanced_html", "HTML avanzato")}
+                  </summary>
+                  <div className="grid gap-3 border-t border-[color:var(--color-border)] bg-white p-4">
+                    <Textarea
+                      label={t("settings.email_templates.html_body", "HTML")}
+                      hint={t(
+                        "settings.email_templates.html_hint",
+                        "Puoi inserire markup, classi CSS, tag <style> e stili inline. La preview HTML usa questo draft."
+                      )}
+                      rows={14}
+                      value={draft.htmlBody}
+                      readOnly={isSaving}
+                      className="font-mono text-sm leading-6"
+                      onChange={(event) => updateDraft({ htmlBody: event.currentTarget.value })}
+                    />
+                  </div>
+                </details>
+              </section>
+
+              <details className="rounded-lg border border-[color:var(--color-border)] bg-white">
+                <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-[color:var(--color-ink)]">
+                  {t("settings.email_templates.template_settings", "Impostazioni template")}
+                </summary>
+                <div className="grid gap-4 border-t border-[color:var(--color-border)] p-4 md:grid-cols-2">
+                  <Input
+                    label={t("settings.email_templates.key", "Chiave")}
+                    value={draft.key}
+                    readOnly
+                    onChange={() => undefined}
+                  />
+                  <Input
+                    label={t("settings.email_templates.locale", "Locale")}
+                    value={draft.locale}
+                    readOnly={isSaving}
+                    onChange={(event) => updateDraft({ locale: event.currentTarget.value })}
+                  />
+                  <div className="md:col-span-2">
+                    <Input
+                      label={t("settings.email_templates.description", "Descrizione")}
+                      value={draft.description}
+                      readOnly={isSaving}
+                      onChange={(event) => updateDraft({ description: event.currentTarget.value })}
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Input
+                      label={t("settings.email_templates.variables", "Variabili")}
+                      hint={t(
+                        "settings.email_templates.variables_hint",
+                        "Lista separata da virgole usata per preview e validazione."
+                      )}
+                      value={draft.variablesText}
+                      readOnly={isSaving}
+                      onChange={(event) => updateDraft({ variablesText: event.currentTarget.value })}
+                    />
+                  </div>
+                </div>
+              </details>
+            </div>
+
+            <aside className="min-h-0 xl:sticky xl:top-5 xl:self-start">
+              <section className="overflow-hidden rounded-lg border border-[color:var(--color-border)] bg-white">
+                <div className="grid gap-3 border-b border-[color:var(--color-border)] px-4 py-3">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)]">
+                      {t("settings.email_templates.preview_title", "Anteprima mail")}
+                    </p>
+                    <p className="mt-1 break-words text-sm font-semibold text-[color:var(--color-ink)]">
+                      {localPreview?.subject}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      type="button"
+                      variant={previewMode === "html" ? "primary" : "secondary"}
+                      onClick={() => setPreviewMode("html")}
+                    >
+                      HTML
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={previewMode === "text" ? "primary" : "secondary"}
+                      onClick={() => setPreviewMode("text")}
+                    >
+                      {t("settings.email_templates.text_body", "Testo")}
+                    </Button>
+                  </div>
+                </div>
+                {previewMode === "html" ? (
+                  <iframe
+                    title={t("settings.email_templates.preview_title", "Anteprima mail")}
+                    sandbox=""
+                    srcDoc={previewDocument}
+                    className="h-[640px] w-full bg-white"
+                  />
+                ) : (
+                  <pre className="min-h-[520px] whitespace-pre-wrap break-words p-5 text-sm leading-6 text-[color:var(--color-ink)]">
+                    {localPreview?.text}
+                  </pre>
+                )}
+              </section>
+            </aside>
+          </div>
+
         </div>
       </div>
     </section>
@@ -357,9 +451,70 @@ function createPreviewVariables(variables: readonly string[]): Record<string, st
   return Object.fromEntries(
     variables.map((key) => [
       key,
-      key.toLowerCase().includes("url") ? "https://example.test/link" : key
+      key.toLowerCase().includes("url")
+        ? "https://example.test/link"
+        : key.toLowerCase().includes("name")
+          ? "Mario Rossi"
+          : key.toLowerCase().includes("site")
+            ? "Trinacria CMS"
+            : key.toLowerCase().includes("expires")
+              ? "31/12/2026 18:00"
+              : key
     ])
   );
+}
+
+function renderDraftPreview(
+  draft: EmailTemplateDraft,
+  variables: Record<string, string>
+): EmailTemplatePreview {
+  return {
+    subject: renderTemplateString(draft.subject, variables),
+    text: renderTemplateString(draft.textBody, variables),
+    ...(draft.htmlBody.trim() ? { html: renderTemplateString(draft.htmlBody, variables) } : {})
+  };
+}
+
+function renderTemplateString(template: string, variables: Record<string, string>): string {
+  return template.replace(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g, (_match, key: string) => {
+    return variables[key] ?? `{{${key}}}`;
+  });
+}
+
+function createPreviewDocument(htmlBody: string | undefined, textBody: string): string {
+  const body = htmlBody?.trim()
+    ? htmlBody
+    : `<pre style="margin:0;white-space:pre-wrap;font:inherit;">${escapeHtml(textBody)}</pre>`;
+  return [
+    "<!doctype html>",
+    '<html lang="it">',
+    "<head>",
+    '<meta charset="utf-8" />',
+    '<meta name="viewport" content="width=device-width, initial-scale=1" />',
+    "<style>",
+    "body{margin:0;background:#f3f4f6;color:#111827;font-family:Inter,Arial,sans-serif;line-height:1.5;}",
+    ".email-shell{max-width:680px;margin:0 auto;padding:32px 20px;}",
+    ".email-content{background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;padding:28px;}",
+    "a{color:#2563eb;}",
+    "img{max-width:100%;height:auto;}",
+    "</style>",
+    "</head>",
+    "<body>",
+    '<main class="email-shell"><div class="email-content">',
+    body,
+    "</div></main>",
+    "</body>",
+    "</html>"
+  ].join("");
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 function upsertTemplateRecord(

@@ -129,6 +129,8 @@ export const CORE_PACK_ADMIN_MANIFEST: PluginManifestAdmin = defineAdmin({
     defineAdminSettingsSection({
       id: "core-pack-plugin-permissions-settings",
       label: "Plugin permissions",
+      kind: "custom",
+      componentRef: "core-pack:plugin-permission-center",
       namespace: "security",
       settingKeys: ["core-pack:security:plugin_access_grants"],
       requiredPermission: CORE_PACK_PERMISSION_KEYS.SETTINGS_READ

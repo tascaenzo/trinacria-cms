@@ -16,7 +16,6 @@ import {
   type SettingDraftValues,
   type SettingValueErrors
 } from "./settings-page.utils.js";
-import { PluginPermissionCenter } from "./components/plugin-permission-center.js";
 
 interface SettingsWorkspaceSidebarProps {
   records: readonly SettingDefinitionRecord[];
@@ -124,9 +123,6 @@ export function SettingsSectionForm({
   const editableRecordsCount = editableRecords.filter(
     (record) => record.mutable && record.status === "active"
   ).length;
-  const pluginAccessRecord = editableRecords.find(
-    (record) => record.key === "core-pack:security:plugin_access_grants"
-  );
 
   return (
     <form
@@ -154,19 +150,6 @@ export function SettingsSectionForm({
             <EmptyState text={t("settings.module.no_settings")} />
           ) : null}
 
-          {!isLoading && pluginAccessRecord ? (
-            <PluginPermissionCenter
-              draftValue={
-                draftValues[pluginAccessRecord.key] ??
-                toEditableSettingInput(pluginAccessRecord.defaultValue ?? [])
-              }
-              isSaving={isSaving}
-              onChange={(value) => onDraftValueChange(pluginAccessRecord.key, value)}
-              record={pluginAccessRecord}
-              t={t}
-            />
-          ) : null}
-
           {!isLoading
             ? groupedRecords.map((group) => (
                 <section key={group.title} className="grid gap-4">
@@ -176,26 +159,24 @@ export function SettingsSectionForm({
                     </h4>
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
-                    {group.records
-                      .filter((record) => record.key !== "core-pack:security:plugin_access_grants")
-                      .map((record) => (
-                        <div
-                          key={record.id}
-                          className={getSettingValueKind(record) === "json" ? "md:col-span-2" : ""}
-                        >
-                          <SettingValueField
-                            draftValue={
-                              draftValues[record.key] ??
-                              toEditableSettingInput(record.defaultValue ?? null)
-                            }
-                            error={valueErrors[record.key]}
-                            isSaving={isSaving}
-                            onChange={(value) => onDraftValueChange(record.key, value)}
-                            record={record}
-                            t={t}
-                          />
-                        </div>
-                      ))}
+                    {group.records.map((record) => (
+                      <div
+                        key={record.id}
+                        className={getSettingValueKind(record) === "json" ? "md:col-span-2" : ""}
+                      >
+                        <SettingValueField
+                          draftValue={
+                            draftValues[record.key] ??
+                            toEditableSettingInput(record.defaultValue ?? null)
+                          }
+                          error={valueErrors[record.key]}
+                          isSaving={isSaving}
+                          onChange={(value) => onDraftValueChange(record.key, value)}
+                          record={record}
+                          t={t}
+                        />
+                      </div>
+                    ))}
                   </div>
                 </section>
               ))

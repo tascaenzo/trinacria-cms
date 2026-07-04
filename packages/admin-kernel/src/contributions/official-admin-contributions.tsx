@@ -1,6 +1,5 @@
 import { createDashboardRender } from "../pages/dashboard-page.js";
 import { ProfilePage } from "../pages/profile-page.js";
-import { EmailTemplateManager } from "../pages/settings/components/email-template-manager.js";
 import type {
   AdminExtensionManifest,
   AdminNavigationItem,
@@ -147,14 +146,6 @@ function enrichResource(resource: AdminResourceDefinition): AdminResourceDefinit
 function enrichSettingsSection(
   section: AdminSettingsSectionDefinition
 ): RenderableAdminSettingsSection {
-  if (`${section.pluginId}:${section.id}` === "email-pack:email-pack-email-template-settings") {
-    return {
-      ...section,
-      ...OFFICIAL_CORE_SETTINGS_SECTION_META[`${section.pluginId}:${section.id}`],
-      render: ({ t }) => <EmailTemplateManager t={t} />
-    };
-  }
-
   return {
     ...section,
     ...OFFICIAL_CORE_SETTINGS_SECTION_META[`${section.pluginId}:${section.id}`]
