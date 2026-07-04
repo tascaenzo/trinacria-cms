@@ -133,11 +133,15 @@ export class AuthUserFlowsService {
       "core-pack:user_flows:email_verification_required",
       false
     );
+    const defaultStatus = await this.getUserStatus(
+      "core-pack:user_flows:public_registration_default_status",
+      "active"
+    );
     const user = await this.users.create({
       email: input.email,
       firstName: input.firstName,
       lastName: input.lastName,
-      status: requiresVerification ? "suspended" : "active"
+      status: requiresVerification ? "suspended" : defaultStatus
     });
     await this.userEvents.userCreated({
       userId: user.id,
@@ -304,6 +308,14 @@ export class AuthUserFlowsService {
 
   private async getBoolean(key: string, fallback: boolean): Promise<boolean> {
     return (await this.config.getBoolean(key, { fallback })) ?? fallback;
+  }
+
+  private async getUserStatus(
+    key: string,
+    fallback: "active" | "suspended"
+  ): Promise<"active" | "suspended"> {
+    const value = await this.getString(key, fallback);
+    return value === "suspended" ? "suspended" : "active";
   }
 }
 

@@ -7,10 +7,17 @@ import {
   type HttpContext,
   type NamespaceContext
 } from "@trinacria-cms/kernel";
+import {
+  SecureEventPayloadCrypto,
+  SecureEventPayloadsRepository,
+  SecureEventPayloadsService
+} from "@trinacria-cms/kernel/runtime";
 import { AuthController } from "../src/modules/auth/auth.controller.js";
+import { AuthFlowTokensRepository } from "../src/modules/auth/repositories/auth-flow-tokens.repository.js";
 import { AuthBlacklistRepository } from "../src/modules/auth/repositories/auth-blacklist.repository.js";
 import { AuthLoginAttemptRepository } from "../src/modules/auth/repositories/auth-login-attempt.repository.js";
 import { AuthUsersRepository } from "../src/modules/auth/repositories/auth-users.repository.js";
+import { AuthUserFlowsService } from "../src/modules/auth/services/auth-user-flows.service.js";
 import { JwtAuthError, JwtAuthService } from "../src/modules/auth/services/auth.service.js";
 import { LocalCredentialsRepository } from "../src/modules/installation/repositories/local-credentials.repository.js";
 import { InstallationService } from "../src/modules/installation/services/installation.service.js";
@@ -29,6 +36,7 @@ import { SettingsSecretsRepository } from "../src/modules/settings/secrets/setti
 import { RuntimeConfigService } from "../src/modules/settings/config/runtime-config.service.js";
 import { SettingsSecretsCryptoService } from "../src/modules/settings/secrets/settings-secrets-crypto.service.js";
 import { SettingsService } from "../src/modules/settings/services/settings.service.js";
+import { CORE_PACK_SETTING_DEFINITION_SEEDS } from "../src/modules/settings/settings.bootstrap.js";
 import { UsersRepository } from "../src/modules/users/repositories/users.repository.js";
 
 test("JwtAuthService logs in admin and validates JWT token", async () => {
@@ -145,7 +153,7 @@ test("AuthController login route returns 401 for invalid credentials", async () 
     siteName: "Test Site"
   });
 
-  const controller = new AuthController(runtime.auth);
+  const controller = new AuthController(runtime.auth, runtime.flows);
   const route = controller
     .routes()
     .find((candidate) => candidate.method === "POST" && candidate.path === "/v1/auth/login");
@@ -186,7 +194,7 @@ test("AuthController login sets httpOnly cookies without exposing refresh token 
     siteName: "Test Site"
   });
 
-  const controller = new AuthController(runtime.auth);
+  const controller = new AuthController(runtime.auth, runtime.flows);
   const route = controller
     .routes()
     .find((candidate) => candidate.method === "POST" && candidate.path === "/v1/auth/login");
@@ -235,7 +243,7 @@ test("AuthController logout clears cookies and revokes refresh cookie token", as
     password: "StrongPassword123!"
   });
 
-  const controller = new AuthController(runtime.auth);
+  const controller = new AuthController(runtime.auth, runtime.flows);
   const route = controller
     .routes()
     .find((candidate) => candidate.method === "POST" && candidate.path === "/v1/auth/logout");
@@ -284,7 +292,7 @@ test("AuthController updates the authenticated user profile", async () => {
     password: "StrongPassword123!"
   });
 
-  const controller = new AuthController(runtime.auth);
+  const controller = new AuthController(runtime.auth, runtime.flows);
   const route = controller
     .routes()
     .find((candidate) => candidate.method === "PATCH" && candidate.path === "/v1/auth/me");
@@ -328,7 +336,7 @@ test("AuthController changes the authenticated user password", async () => {
     password: "StrongPassword123!"
   });
 
-  const controller = new AuthController(runtime.auth);
+  const controller = new AuthController(runtime.auth, runtime.flows);
   const route = controller
     .routes()
     .find((candidate) => candidate.method === "PATCH" && candidate.path === "/v1/auth/me/password");
@@ -368,12 +376,130 @@ test("AuthController changes the authenticated user password", async () => {
   assert.equal(nextSession.user.email, "admin@example.com");
 });
 
+test("AuthUserFlowsService requests password reset through secure email payloads", async () => {
+  const runtime = createRuntime();
+  await seedCoreSettings(runtime.settings);
+
+  await runtime.installation.bootstrap({
+    email: "admin@example.com",
+    firstName: "Admin",
+    lastName: "User",
+    password: "StrongPassword123!",
+    confirmPassword: "StrongPassword123!",
+    siteName: "Test Site"
+  });
+
+  const result = await runtime.flows.requestPasswordReset("admin@example.com");
+
+  assert.deepEqual(result, { accepted: true });
+  assert.equal(runtime.emittedEvents.length, 1);
+  assert.equal(runtime.emittedEvents[0]?.eventName, "core-pack:secure-event-payload-ready");
+  assert.equal(
+    typeof (runtime.emittedEvents[0]?.payload as { securePayloadId?: unknown }).securePayloadId,
+    "string"
+  );
+  assert.equal(
+    JSON.stringify(runtime.emittedEvents[0]?.payload).includes("reset-password?token="),
+    false
+  );
+
+  const claim = await runtime.securePayloads.claim<{
+    to: string;
+    templateKey: string;
+    variables: { resetUrl: string };
+  }>({
+    payloadId: (runtime.emittedEvents[0]?.payload as { securePayloadId: string }).securePayloadId,
+    consumerPluginId: "email-pack",
+    eventName: "core-pack:secure-event-payload-ready",
+    payloadType: "email-pack:send-email-request",
+    schemaVersion: 1,
+    requiredPermission: "email-pack:email:send"
+  });
+
+  assert.equal(claim.payload.to, "admin@example.com");
+  assert.equal(claim.payload.templateKey, "reset_password");
+  assert.match(claim.payload.variables.resetUrl, /\/reset-password\?token=/);
+});
+
+test("AuthUserFlowsService registers public users and sends verification email when required", async () => {
+  const runtime = createRuntime();
+  await seedCoreSettings(runtime.settings);
+  await runtime.settings.upsertValue({
+    requesterPluginId: "core-pack",
+    key: "core-pack:user_flows:public_registration_enabled",
+    value: true
+  });
+  await runtime.settings.upsertValue({
+    requesterPluginId: "core-pack",
+    key: "core-pack:user_flows:email_verification_required",
+    value: true
+  });
+
+  const result = await runtime.flows.registerPublic({
+    email: "reader@example.com",
+    firstName: "Reader",
+    lastName: "User",
+    password: "ReaderStrongPass123!"
+  });
+
+  assert.deepEqual(result, { accepted: true });
+  const user = await runtime.users.findByEmail("reader@example.com");
+  assert.equal(user?.status, "suspended");
+  assert.ok(user?.id);
+  assert.ok(await runtime.localCredentials.findByUserId(user.id));
+  assert.equal(
+    runtime.emittedEvents.some((event) => event.eventName === "core-pack:user-created"),
+    true
+  );
+  assert.equal(
+    runtime.emittedEvents.some(
+      (event) => event.eventName === "core-pack:secure-event-payload-ready"
+    ),
+    true
+  );
+});
+
+test("AuthUserFlowsService honors public registration default status", async () => {
+  const runtime = createRuntime();
+  await seedCoreSettings(runtime.settings);
+  await runtime.settings.upsertValue({
+    requesterPluginId: "core-pack",
+    key: "core-pack:user_flows:public_registration_enabled",
+    value: true
+  });
+  await runtime.settings.upsertValue({
+    requesterPluginId: "core-pack",
+    key: "core-pack:user_flows:public_registration_default_status",
+    value: "suspended"
+  });
+
+  await runtime.flows.registerPublic({
+    email: "pending@example.com",
+    firstName: "Pending",
+    lastName: "User",
+    password: "PendingStrongPass123!"
+  });
+
+  const user = await runtime.users.findByEmail("pending@example.com");
+  assert.equal(user?.status, "suspended");
+  assert.equal(
+    runtime.emittedEvents.some(
+      (event) => event.eventName === "core-pack:secure-event-payload-ready"
+    ),
+    false
+  );
+});
+
 interface Runtime {
   auth: JwtAuthService;
+  flows: AuthUserFlowsService;
   installation: InstallationService;
   users: UsersRepository;
   localCredentials: LocalCredentialsRepository;
   passwordHashing: PasswordHashingService;
+  settings: SettingsService;
+  securePayloads: SecureEventPayloadsService;
+  emittedEvents: Array<{ eventName: string; payload: unknown }>;
 }
 
 function createRuntime(): Runtime {
@@ -408,6 +534,17 @@ function createRuntime(): Runtime {
   const installationState = new InstallationStateRepository(db);
   const localCredentials = new LocalCredentialsRepository(db);
   const passwordHashing = new PasswordHashingService();
+  const authUsers = new AuthUsersRepository(db);
+  const securePayloads = new SecureEventPayloadsService(
+    new SecureEventPayloadsRepository(db),
+    new SecureEventPayloadCrypto({ masterKey: "core-pack-auth-flow-test-key" })
+  );
+  const emittedEvents: Array<{ eventName: string; payload: unknown }> = [];
+  const events = {
+    async emit(eventName: string, payload: unknown) {
+      emittedEvents.push({ eventName, payload });
+    }
+  };
   const installation = new InstallationService(
     installationState,
     localCredentials,
@@ -424,7 +561,7 @@ function createRuntime(): Runtime {
   });
 
   const auth = new JwtAuthService(
-    new AuthUsersRepository(db),
+    authUsers,
     localCredentials,
     installationState,
     passwordHashing,
@@ -433,14 +570,44 @@ function createRuntime(): Runtime {
     config,
     db
   );
+  const flows = new AuthUserFlowsService(
+    authUsers,
+    localCredentials,
+    passwordHashing,
+    new AuthFlowTokensRepository(db),
+    config,
+    securePayloads,
+    events as never
+  );
 
   return {
     auth,
+    flows,
     installation,
     users,
     localCredentials,
-    passwordHashing
+    passwordHashing,
+    settings,
+    securePayloads,
+    emittedEvents
   };
+}
+
+async function seedCoreSettings(settings: SettingsService): Promise<void> {
+  for (const definition of CORE_PACK_SETTING_DEFINITION_SEEDS) {
+    await settings.upsertDefinition({
+      requesterPluginId: "core-pack",
+      key: definition.key,
+      category: definition.category,
+      description: definition.description,
+      schema: definition.schema,
+      defaultValue: definition.defaultValue,
+      visibility: definition.visibility ?? "admin",
+      mutable: definition.mutable ?? true,
+      secret: definition.secret ?? false,
+      status: "active"
+    });
+  }
 }
 
 function createFakeDbAdapter(): DbAdapter {
