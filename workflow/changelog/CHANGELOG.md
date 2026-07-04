@@ -15,6 +15,10 @@ Il formato si ispira a [Keep a Changelog](https://keepachangelog.com/).
 - Backoffice plugin UI disaccoppiata tramite renderer registry e `componentRef`.
 - Flussi auth/email consolidati con test su secure payload, reset password, registrazione pubblica
   e verifica email.
+- Runbook deploy production aggiunta con `.env`, Mongo, reverse proxy, CORS/CSRF, JWT, backup,
+  restore e observability token.
+- Checklist hardening security aggiunta per eventi sensibili, replay protection, permission
+  escalation, CSRF e secret leakage.
 
 ---
 

@@ -155,6 +155,11 @@ or `NODE_ENV=staging`:
 Production secret values should be injected by the runtime platform or a secret
 manager, not committed to `.env`.
 
+Full deployment runbook and hardening checklist:
+
+- [docs/cms/it/0020-runbook-deploy-production.md](/Users/enzo/Desktop/trinacria-cms/docs/cms/it/0020-runbook-deploy-production.md)
+- [docs/cms/it/0021-checklist-hardening-security.md](/Users/enzo/Desktop/trinacria-cms/docs/cms/it/0021-checklist-hardening-security.md)
+
 ## Observability
 
 The backend host exposes a minimal production observability surface:

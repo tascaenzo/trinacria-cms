@@ -32,6 +32,8 @@ Glossario terminologico unico: [GLOSSARY.md](../GLOSSARY.md)
 18. [0017 - Cache e indurimento autenticazione](./0017-cache-e-indurimento-autenticazione.md)
 19. [0018 - Milestone settings runtime hardening](./0018-settings-runtime-hardening.md)
 20. [0019 - Admin manifest e backoffice declarative](./0019-admin-manifest-e-backoffice-declarative.md)
+21. [0020 - Runbook deploy production](./0020-runbook-deploy-production.md)
+22. [0021 - Checklist hardening security](./0021-checklist-hardening-security.md)
 
 ## Cosa trovi in questo manuale
 
