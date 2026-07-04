@@ -151,6 +151,38 @@ test("KernelSystemService exposes plugin contribution catalog", async () => {
   assert.equal(catalog.admin.routes[0]?.declaration.path, "/blog/posts");
 });
 
+test("KernelSystemService exposes loaded plugin admin extension manifests", async () => {
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0" });
+  await runtime.register({
+    id: "blog-pack",
+    displayName: "Blog Pack",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    admin: {
+      routes: [{ id: "posts", path: "/blog/posts", label: "Posts" }],
+      widgets: [{ id: "health", label: "Health", componentRef: "blog-pack:health" }]
+    }
+  });
+  await runtime.register({
+    id: "draft-pack",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    admin: {
+      routes: [{ id: "drafts", path: "/drafts", label: "Drafts" }]
+    }
+  });
+  await runtime.load("blog-pack");
+
+  const service = new KernelSystemService(runtime);
+  const manifests = service.listAdminExtensions();
+
+  assert.equal(manifests.length, 1);
+  assert.equal(manifests[0].pluginId, "blog-pack");
+  assert.equal(manifests[0].displayName, "Blog Pack");
+  assert.equal(manifests[0].admin.routes?.[0]?.path, "/blog/posts");
+  assert.equal(manifests[0].admin.widgets?.[0]?.componentRef, "blog-pack:health");
+});
+
 test("KernelSystemService exposes configured plugin discovery sources", () => {
   const service = new KernelSystemService(createEmptyRuntime(), {
     pluginSources: () => [

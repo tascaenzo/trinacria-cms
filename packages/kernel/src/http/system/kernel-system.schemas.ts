@@ -205,6 +205,32 @@ export const ListPluginContributionsResponseSchema = s.object(
   { strict: true }
 );
 
+const AdminExtensionManifestSchema = s.object(
+  {
+    pluginId: s.string({ trim: true, minLength: 1 }),
+    displayName: s.string({ trim: true, minLength: 1 }),
+    admin: s.object(
+      {
+        navigation: s.array(s.object({}, { strict: false })).optional(),
+        routes: s.array(s.object({}, { strict: false })).optional(),
+        resources: s.array(s.object({}, { strict: false })).optional(),
+        widgets: s.array(s.object({}, { strict: false })).optional(),
+        settingsSections: s.array(s.object({}, { strict: false })).optional()
+      },
+      { strict: true }
+    )
+  },
+  { strict: true }
+);
+
+export const ListAdminExtensionsResponseSchema = s.object(
+  {
+    data: s.array(AdminExtensionManifestSchema),
+    meta: KernelSystemMetaSchema.optional()
+  },
+  { strict: true }
+);
+
 export const PluginOperationRequestSchema = s.object(
   {
     operation: s.enum(["load", "unload", "reload", "disable", "enable"] as const),

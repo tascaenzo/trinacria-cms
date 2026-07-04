@@ -85,7 +85,7 @@ In setup mode, solo gli endpoint di installazione sono accessibili.
 
 ```
 1. POST /v1/install/bootstrap → 409 (gia installato)
-2. GET /v1/install/status → { installed: true, dbConnected: true }
+2. GET /v1/install/status → { installed: true, dbConfigured: true }
 3. App funziona normalmente
 4. Riavvio futuro → legge .env, connette MongoDB, avvia normalmente
 ```
@@ -155,7 +155,7 @@ export interface UserRecord {
 | `GET`  | `/v1/install/status`    | none | pubblico   |
 | `POST` | `/v1/install/bootstrap` | none | pubblico   |
 
-`GET /v1/install/status` ritorna anche `dbConnected` in setup mode.
+`GET /v1/install/status` ritorna anche `dbConfigured` in setup mode.
 
 ## Storage Mongo
 

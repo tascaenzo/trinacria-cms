@@ -18,6 +18,7 @@ const system = {
       settingsSections: []
     }
   }),
+  listAdminExtensions: () => [],
   listPluginSources: () => [],
   getInstalledPlugin: () => undefined,
   executeOperation: async () => ({
@@ -53,4 +54,18 @@ test("KernelSystemHttpController uses provided admin guard instead of fallback d
 
   assert.equal(route?.middlewares?.[0], guard);
   assert.deepEqual(route?.docs?.security, [{ bearerAuth: [] }]);
+});
+
+test("KernelSystemHttpController exposes guarded admin extensions route", () => {
+  const guard = async (_ctx: never, next: () => Promise<unknown>) => next();
+  const routes = new KernelSystemHttpController(system, {
+    middleware: guard,
+    security: [{ bearerAuth: [] }]
+  }).routes();
+
+  const route = routes.find((entry) => entry.path === "/v1/admin/extensions");
+
+  assert.ok(route);
+  assert.equal(route.middlewares?.[0], guard);
+  assert.deepEqual(route.docs?.security, [{ bearerAuth: [] }]);
 });

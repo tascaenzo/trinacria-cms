@@ -27,10 +27,10 @@ export async function loadRuntimePluginInfo(): Promise<readonly AdminRuntimePlug
 }
 
 export async function loadRuntimeDiscovery(): Promise<AdminRuntimeDiscoverySnapshot> {
-  const [plugins, capabilities, contributions] = await Promise.all([
+  const [plugins, capabilities, manifests] = await Promise.all([
     cms.system.listInstalledPlugins(),
     cms.system.listInstalledCapabilities(),
-    cms.system.listPluginContributions()
+    loadAdminExtensionManifests()
   ]);
 
   const capabilityMap = new Map<string, Set<string>>();
@@ -53,16 +53,104 @@ export async function loadRuntimeDiscovery(): Promise<AdminRuntimeDiscoverySnaps
 
   return {
     plugins: runtimePlugins,
-    manifests: createAdminExtensionManifestsFromContributionCatalog(contributions.data)
+    manifests
   };
 }
 
 type ContributionCatalog = Awaited<ReturnType<typeof cms.system.listPluginContributions>>["data"];
+type AdminExtensionsResponse = {
+  data: readonly RuntimeAdminExtensionManifest[];
+};
+type RuntimeAdminExtensionManifest = {
+  pluginId: string;
+  displayName: string;
+  admin: {
+    navigation?: readonly Record<string, unknown>[];
+    routes?: readonly Record<string, unknown>[];
+    resources?: readonly Record<string, unknown>[];
+    widgets?: readonly Record<string, unknown>[];
+    settingsSections?: readonly Record<string, unknown>[];
+  };
+};
 type ContributionSnapshot = {
   pluginId: string;
   key: string;
   declaration: Record<string, unknown>;
 };
+
+async function loadAdminExtensionManifests(): Promise<readonly AdminExtensionManifest[]> {
+  try {
+    const response = await cms.request<AdminExtensionsResponse>({
+      method: "GET",
+      path: "/v1/admin/extensions"
+    });
+    return response.data.map((manifest) => toAdminExtensionManifest(manifest));
+  } catch {
+    const contributions = await cms.system.listPluginContributions();
+    return createAdminExtensionManifestsFromContributionCatalog(contributions.data);
+  }
+}
+
+function toAdminExtensionManifest(
+  manifest: RuntimeAdminExtensionManifest
+): AdminExtensionManifest {
+  const routes = (manifest.admin.routes ?? []).map((entry) =>
+    toAdminRoute({
+      pluginId: manifest.pluginId,
+      key: readString(entry.id) ?? readString(entry.path) ?? "route",
+      declaration: entry
+    })
+  );
+  const routeIdByPath = new Map(routes.map((route) => [route.path, route.id]));
+
+  return {
+    pluginId: manifest.pluginId,
+    displayName: manifest.displayName,
+    admin: {
+      pages: routes,
+      navigation: (manifest.admin.navigation ?? [])
+        .map((entry) =>
+          toAdminNavigationItem(
+            {
+              pluginId: manifest.pluginId,
+              key: readString(entry.id) ?? readString(entry.path) ?? "navigation",
+              declaration: entry
+            },
+            routeIdByPath
+          )
+        )
+        .filter((entry) => entry.routeId),
+      dashboard: {
+        widgets: (manifest.admin.widgets ?? []).map((entry) =>
+          toAdminWidget({
+            pluginId: manifest.pluginId,
+            key: readString(entry.id) ?? "widget",
+            declaration: entry
+          })
+        )
+      },
+      settings: {
+        sections: (manifest.admin.settingsSections ?? []).map((entry) =>
+          toAdminSettingsSection({
+            pluginId: manifest.pluginId,
+            key: readString(entry.id) ?? "settings",
+            declaration: entry
+          })
+        )
+      },
+      resources: (manifest.admin.resources ?? []).map((entry) =>
+        toAdminResource(
+          {
+            pluginId: manifest.pluginId,
+            key: readString(entry.id) ?? "resource",
+            declaration: entry
+          },
+          routeIdByPath
+        )
+      )
+    }
+  };
+}
 
 function createAdminExtensionManifestsFromContributionCatalog(
   catalog: ContributionCatalog

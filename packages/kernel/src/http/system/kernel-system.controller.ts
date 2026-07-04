@@ -16,6 +16,7 @@ import {
 } from "../../errors/plugin-errors.js";
 import {
   GetInstalledPluginResponseSchema,
+  ListAdminExtensionsResponseSchema,
   ListCapabilitiesResponseSchema,
   ListInstalledPluginsResponseSchema,
   ListPluginContributionsResponseSchema,
@@ -82,6 +83,21 @@ export class KernelSystemHttpController extends HttpController {
             200: {
               description: "Manifest-derived plugin contribution catalog",
               schema: toOpenApiSchema(ListPluginContributionsResponseSchema)
+            }
+          }
+        }
+      })
+      .get("/v1/admin/extensions", this.listAdminExtensions, {
+        middlewares: guardedMiddlewares,
+        docs: {
+          summary: "List runtime admin extension manifests for loaded plugins",
+          tags: ["System"],
+          operationId: "listAdminExtensions",
+          ...(guardedSecurity ? { security: guardedSecurity } : {}),
+          responses: {
+            200: {
+              description: "Runtime admin extension manifests",
+              schema: toOpenApiSchema(ListAdminExtensionsResponseSchema)
             }
           }
         }
@@ -164,6 +180,10 @@ export class KernelSystemHttpController extends HttpController {
 
   private listPluginContributions = async () => {
     return responder.success(this.system.listPluginContributions());
+  };
+
+  private listAdminExtensions = async () => {
+    return responder.list(this.system.listAdminExtensions());
   };
 
   private listPluginSources = async () => {

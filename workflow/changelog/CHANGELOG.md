@@ -19,6 +19,10 @@ Il formato si ispira a [Keep a Changelog](https://keepachangelog.com/).
   restore e observability token.
 - Checklist hardening security aggiunta per eventi sensibili, replay protection, permission
   escalation, CSRF e secret leakage.
+- Wizard installazione consolidato: bootstrap sito/admin senza campi MongoDB, nessuna scrittura
+  `.env`, settings sito verificati da test.
+- API admin extensions stabilizzata su `/v1/admin/extensions`, con fallback backoffice al catalogo
+  contribution legacy.
 
 ---
 

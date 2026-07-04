@@ -1,4 +1,4 @@
-import type { PluginManifest } from "../../contracts/plugin-manifest.js";
+import type { PluginManifest, PluginManifestAdmin } from "../../contracts/plugin-manifest.js";
 import type { PluginSourceSnapshot } from "../../contracts/plugin-discovery.js";
 import type {
   PluginDependencyGraphSnapshot,
@@ -89,6 +89,12 @@ export interface KernelPluginEventSnapshot {
   details?: PluginRuntimeEvent["details"];
 }
 
+export interface KernelAdminExtensionManifestSnapshot {
+  pluginId: string;
+  displayName: string;
+  admin: PluginManifestAdmin;
+}
+
 export interface KernelSystemServiceOptions {
   pluginSources?: () => readonly PluginSourceSnapshot[];
 }
@@ -124,6 +130,17 @@ export class KernelSystemService {
 
   listPluginContributions(): PluginContributionCatalogSnapshot {
     return this.runtime.describeContributions();
+  }
+
+  listAdminExtensions(): readonly KernelAdminExtensionManifestSnapshot[] {
+    return this.runtime
+      .list()
+      .filter((record) => record.state === "loaded" && record.manifest.admin)
+      .map((record) => ({
+        pluginId: record.manifest.id,
+        displayName: record.manifest.displayName ?? formatPluginDisplayName(record.manifest.id),
+        admin: record.manifest.admin as PluginManifestAdmin
+      }));
   }
 
   listPluginSources(): readonly PluginSourceSnapshot[] {
@@ -277,6 +294,14 @@ export class KernelSystemService {
       state
     }));
   }
+}
+
+function formatPluginDisplayName(pluginId: string): string {
+  return pluginId
+    .split(/[-_:]+/g)
+    .filter(Boolean)
+    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+    .join(" ");
 }
 
 function describeDependencyIssue(

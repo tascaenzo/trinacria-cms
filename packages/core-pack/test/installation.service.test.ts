@@ -40,7 +40,10 @@ test("InstallationService bootstraps admin user and local credentials", async ()
     lastName: "Admin",
     confirmPassword: "StrongerPass123!",
     password: "StrongerPass123!",
-    siteName: "My Site"
+    siteName: "My Site",
+    siteTagline: "Editorial operations",
+    locale: "it-IT",
+    timezone: "Europe/Rome"
   });
 
   assert.equal(result.status.installed, true);
@@ -71,6 +74,23 @@ test("InstallationService bootstraps admin user and local credentials", async ()
 
   const provisionedRoles = await runtime.roles.list();
   assert.deepEqual(provisionedRoles.map((role) => role.code).sort(), ["admin", "editor", "viewer"]);
+
+  assert.equal(
+    (await runtime.settings.getResolvedValueByKey("core-pack:site:name"))?.value,
+    "My Site"
+  );
+  assert.equal(
+    (await runtime.settings.getResolvedValueByKey("core-pack:branding:tagline"))?.value,
+    "Editorial operations"
+  );
+  assert.equal(
+    (await runtime.settings.getResolvedValueByKey("core-pack:cms:locale"))?.value,
+    "it-IT"
+  );
+  assert.equal(
+    (await runtime.settings.getResolvedValueByKey("core-pack:cms:timezone"))?.value,
+    "Europe/Rome"
+  );
 });
 
 test("InstallationService blocks bootstrap when installation is already completed", async () => {
@@ -122,6 +142,7 @@ interface InstallationRuntime {
   service: InstallationService;
   installationState: InstallationStateRepository;
   localCredentials: LocalCredentialsRepository;
+  settings: SettingsService;
   roles: RolesRepository;
   userAccess: UserAccessService;
   passwordHashing: PasswordHashingService;
@@ -172,6 +193,7 @@ function createInstallationRuntime(): InstallationRuntime {
     ),
     installationState,
     localCredentials,
+    settings,
     roles,
     userAccess,
     passwordHashing

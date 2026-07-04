@@ -1,4 +1,4 @@
-import { readFileSync, existsSync, writeFileSync, chmodSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import type { PluginSecurityProvisioner } from "@trinacria-cms/kernel";
 import type { EventBus } from "@trinacria/events";
@@ -120,8 +120,6 @@ export class InstallationService {
 
     // Mark installed
     const installed = await this.installationState.markInstalled(adminUser.id);
-    this.markInstalledInEnv();
-
     return {
       status: this.toStatus(installed, readInstallationEnvironmentStatus()),
       adminUser
@@ -235,35 +233,6 @@ export class InstallationService {
     };
   }
 
-  private markInstalledInEnv(): void {
-    process.env.CMS_INSTALLED = "true";
-    const envPath = resolveEnvFilePath();
-    try {
-      const env = existsSync(envPath) ? readFileSync(envPath, "utf-8") : "";
-      const lines = env
-        .split("\n")
-        .map((line) => line.trimEnd())
-        .filter((line) => line.length > 0);
-      let replaced = false;
-      const next = lines.map((line) => {
-        if (line.startsWith("CMS_INSTALLED=")) {
-          replaced = true;
-          return "CMS_INSTALLED=true";
-        }
-        return line;
-      });
-      if (!replaced) {
-        next.push("CMS_INSTALLED=true");
-      }
-      writeFileSync(envPath, `${next.join("\n")}\n`, "utf-8");
-      chmodSync(envPath, 0o600);
-    } catch (error: unknown) {
-      console.warn(
-        "[installation] Failed to persist CMS_INSTALLED flag in .env:",
-        error instanceof Error ? error.message : error
-      );
-    }
-  }
 }
 
 function resolveEnvFilePath(): string {

@@ -332,6 +332,25 @@ npm run sdk:generate
 npx prettier --check docs workflow
 ```
 
+## Esito
+
+Completato.
+
+- DTO bootstrap contiene solo dati sito + admin.
+- `POST /v1/install/test-connection` non e presente.
+- Backend bootstrap non testa la connessione MongoDB e non scrive configurazione MongoDB nel `.env`.
+- La UI installazione usa wizard sito → admin → review.
+- La guida database mostra il percorso `.env` e richiede riavvio applicativo.
+- Il bootstrap persiste admin user, credenziali locali, ruolo admin e settings sito.
+- Test core-pack coprono persistenza credenziali, ruolo admin e settings sito.
+
+Verifiche eseguite nel consolidamento:
+
+```bash
+npm run test -w @trinacria-cms/core-pack
+npm run test -w @trinacria-cms/admin-kernel
+```
+
 ## Task breakdown
 
 1. **DTO**: Rimuovere campi MongoDB da InstallBootstrapInput, rimuovere TestConnectionInputSchema
