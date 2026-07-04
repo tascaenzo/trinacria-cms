@@ -44,6 +44,8 @@ admin-kernel
 | `SafeAdminExtensionManifest`  | Manifest passato da `sanitizeAdminExtensionManifest`; puo entrare nel normalizer puro. |
 | `RenderableAdminContribution` | Forma interna montabile dal backoffice; include render React per le route.             |
 | `contributions`               | Escape hatch locale/non serializzabile per componenti React custom.                    |
+| `componentRef`                 | Identificatore namespaced che collega manifest dichiarativo e renderer React custom.   |
+| `BackofficeModule.renderers`   | Registry host dei renderer React esportati dal package proprietario del plugin.       |
 | `manifest`                    | Canale consigliato per plugin runtime/API.                                             |
 | `registry`                    | Merge tra contribution, runtime plugin state, capability e permission utente.          |
 | `renderer declarative`        | UI standard generata da metadati manifest, schema e endpoint binding.                  |
@@ -171,8 +173,14 @@ const manifest: AdminExtensionManifest = {
 `manifests` e il canale principale per plugin modulari. E serializzabile via API
 e produce UI standard tramite renderer declarative.
 
-`contributions` resta disponibile in `BackofficeModule` ma serve solo per casi
-non serializzabili:
+Quando il manifest non basta, un plugin puo aggiungere UI React custom tramite
+`componentRef` + `BackofficeModule.renderers`. Questo e il canale preferito per
+widget, settings section e superfici admin specifiche del plugin che devono
+restare nel package proprietario.
+
+`contributions` resta disponibile in `BackofficeModule`, ma deve restare un
+escape hatch locale/non serializzabile per casi in cui serve montare superfici
+React gia renderizzabili e non dichiarabili nel manifest:
 
 - componenti React locali all'app host;
 - editor visuali complessi;
@@ -180,8 +188,189 @@ non serializzabili:
 - override interni non distribuibili come manifest JSON;
 - prototipi di plugin prima di stabilizzare il contratto declarative.
 
-Regola: usare `manifest` per il percorso stabile, usare `contributions` solo
-quando un blocco JSON non e espressivo abbastanza.
+Regola: usare `manifest` per il percorso stabile, usare `componentRef` +
+`renderers` per UI plugin-specific non rappresentabile in JSON, usare
+`contributions` solo quando un blocco JSON non e espressivo abbastanza e la UI
+non deve essere distribuita come contratto plugin.
+
+## Plugin con UI custom
+
+Un plugin che espone parti di backoffice deve mantenere una separazione netta:
+
+- il backend plugin dichiara manifest, capability, permission, settings, eventi,
+  endpoint e lifecycle;
+- il manifest admin dichiara superfici serializzabili e `componentRef` per i
+  punti custom;
+- il frontend admin del plugin contiene i renderer React associati ai
+  `componentRef`;
+- il backoffice host registra il plugin collegando manifest e renderer;
+- `admin-kernel` non importa componenti specifici del plugin.
+
+Shape consigliata:
+
+```text
+packages/catalog-pack/
+  src/
+    plugin/
+      catalog-pack.manifest.ts
+      catalog-pack-admin.manifest.ts
+      catalog-pack.plugin.ts
+      index.ts
+    modules/
+      products/
+        products.module.ts
+        products.controller.ts
+        services/
+        repositories/
+        README.md
+    admin/
+      index.tsx
+      README.md
+      widgets/
+        catalog-health-widget.tsx
+      settings/
+        catalog-import-settings.tsx
+```
+
+### Manifest prima
+
+Se la UI e una lista, metrica, form settings, azione, risorsa o pagina
+dichiarativa, deve stare nel manifest.
+
+```ts
+export const CATALOG_PACK_ADMIN_MANIFEST = {
+  pluginId: "catalog-pack",
+  displayName: "Catalog",
+  admin: {
+    dashboard: {
+      widgets: [
+        {
+          id: "catalog-products-total",
+          pluginId: "catalog-pack",
+          mode: "declarative",
+          kind: "metric",
+          title: "Products",
+          data: {
+            endpoint: { method: "GET", path: "/admin/catalog/products/metrics" },
+            valuePath: "data.total"
+          },
+          guards: [{ capability: "catalog.products.read" }]
+        }
+      ]
+    }
+  }
+};
+```
+
+### Override React quando il manifest non basta
+
+Quando serve una UI specifica, il manifest deve dichiarare un `componentRef`
+stabile. Il `componentRef` e un contratto pubblico del plugin e deve essere
+namespaced con il `pluginId`.
+
+```ts
+export const CATALOG_PACK_ADMIN_MANIFEST = {
+  pluginId: "catalog-pack",
+  displayName: "Catalog",
+  admin: {
+    settings: {
+      sections: [
+        {
+          id: "catalog-import",
+          pluginId: "catalog-pack",
+          kind: "custom",
+          componentRef: "catalog-pack:catalog-import-settings",
+          title: "Catalog import",
+          guards: [{ capability: "catalog.settings.write" }]
+        }
+      ]
+    },
+    dashboard: {
+      widgets: [
+        {
+          id: "catalog-health",
+          pluginId: "catalog-pack",
+          kind: "custom",
+          componentRef: "catalog-pack:catalog-health-widget",
+          title: "Catalog health",
+          guards: [{ capability: "catalog.products.read" }]
+        }
+      ]
+    }
+  }
+};
+```
+
+I renderer React stanno nel plugin, non in `admin-kernel`:
+
+```tsx
+import type {
+  AdminDashboardWidgetRenderContext,
+  AdminSettingsSectionRenderContext
+} from "@trinacria-cms/admin-kernel";
+import { CatalogHealthWidget } from "./widgets/catalog-health-widget.js";
+import { CatalogImportSettings } from "./settings/catalog-import-settings.js";
+
+export const CATALOG_PACK_ADMIN_RENDERERS = {
+  dashboardWidgets: {
+    "catalog-pack:catalog-health-widget": (context: AdminDashboardWidgetRenderContext) => (
+      <CatalogHealthWidget {...context} />
+    )
+  },
+  settingsSections: {
+    "catalog-pack:catalog-import-settings": (context: AdminSettingsSectionRenderContext) => (
+      <CatalogImportSettings {...context} />
+    )
+  }
+};
+```
+
+Il backoffice host collega il modulo:
+
+```ts
+import { definePluginBackofficeModule } from "@trinacria-cms/admin-kernel";
+import { CATALOG_PACK_ADMIN_MANIFEST } from "@trinacria-cms/catalog-pack/admin-manifest";
+import { CATALOG_PACK_ADMIN_RENDERERS } from "@trinacria-cms/catalog-pack/admin";
+
+export const backofficeModules = [
+  {
+    ...definePluginBackofficeModule({
+      pluginId: "catalog-pack",
+      displayName: "Catalog",
+      admin: CATALOG_PACK_ADMIN_MANIFEST
+    }),
+    renderers: CATALOG_PACK_ADMIN_RENDERERS
+  }
+];
+```
+
+### Regole di ownership
+
+- `admin-kernel` puo conoscere solo renderer generici, contratti e superfici
+  core-owned.
+- Un plugin non deve modificare `admin-kernel` per aggiungere UI applicativa.
+- Un plugin deve esportare un entrypoint admin separato, per esempio
+  `@trinacria-cms/catalog-pack/admin`.
+- Il package plugin deve dichiarare come peer/dependency cio che serve alla UI:
+  React, `@trinacria-cms/admin-kernel`, `@trinacria-cms/sdk` e
+  `@trinacria-cms/trinacria-ui` quando usati.
+- I renderer custom ricevono il `cms` SDK dal contesto del backoffice. Non
+  devono creare client globali propri.
+- Gli endpoint chiamati dai renderer devono appartenere al plugin owner o a API
+  ufficiali, con permission server-side.
+- I `componentRef` sono stabili e versionabili: cambiarli rompe il wiring host.
+
+### Quando scegliere cosa
+
+| Necessita                                      | Scelta consigliata                    |
+| ---------------------------------------------- | ------------------------------------- |
+| Lista CRUD semplice                            | `resources` dichiarativo              |
+| Metrica o stato leggibile da endpoint `GET`    | widget dichiarativo                   |
+| Form settings semplice                         | settings section dichiarativa         |
+| Editor visuale, preview, builder, wizard       | `componentRef` + renderer plugin      |
+| Pagina custom non serializzabile locale        | `contributions` nel backoffice module |
+| Override temporaneo durante sviluppo           | `contributions`, poi stabilizzare     |
+| UI riusabile in piu plugin senza logica plugin | estrazione in `trinacria-ui`          |
 
 ## Pipeline runtime
 
@@ -191,7 +380,7 @@ AdminExtensionManifest raw
   -> SafeAdminExtensionManifest
   -> normalizeAdminExtensionManifest(safe)
   -> RenderableAdminContribution
-  -> buildAdminRegistry(contributions, runtimePlugins, t, userPermissions)
+  -> buildAdminRegistry(contributions, runtimePlugins, t, userPermissions, renderers)
   -> AdminShell + declarative renderers
 ```
 

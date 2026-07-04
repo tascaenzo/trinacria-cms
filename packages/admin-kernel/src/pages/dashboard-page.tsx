@@ -387,6 +387,7 @@ export function createDashboardRender(props: Omit<DashboardPageProps, "resourceC
         settings: context.settings,
         widgets: context.widgets,
         locale: context.locale,
+        cms: context.cms,
         t: context.t
       }}
       widgets={context.widgets}

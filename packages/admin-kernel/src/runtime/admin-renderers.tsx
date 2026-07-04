@@ -1,5 +1,3 @@
-import { EmailDeliveryWidget } from "../pages/dashboard-widgets/email-delivery-widget.js";
-import { EmailTemplateManager } from "../pages/settings/components/email-template-manager.js";
 import { PluginPermissionCenterSection } from "../pages/settings/components/plugin-permission-center.js";
 import type {
   AdminDashboardWidgetRenderContext,
@@ -15,26 +13,36 @@ export type AdminDashboardWidgetRenderer = (
   context: AdminDashboardWidgetRenderContext
 ) => ReactNode;
 
+export interface AdminRendererRegistryInput {
+  dashboardWidgets?: ReadonlyMap<string, AdminDashboardWidgetRenderer>;
+  settingsSections?: ReadonlyMap<string, AdminSettingsSectionRenderer>;
+}
+
 const settingsSectionRenderers = new Map<string, AdminSettingsSectionRenderer>([
   [
     "core-pack:plugin-permission-center",
     (context) => <PluginPermissionCenterSection {...context} />
-  ],
-  ["email-pack:email-template-manager", ({ t }) => <EmailTemplateManager t={t} />]
+  ]
 ]);
 
-const dashboardWidgetRenderers = new Map<string, AdminDashboardWidgetRenderer>([
-  ["email-pack:delivery-status-widget", (context) => <EmailDeliveryWidget {...context} />]
-]);
+const dashboardWidgetRenderers = new Map<string, AdminDashboardWidgetRenderer>();
 
 export function resolveAdminSettingsSectionRenderer(
-  componentRef: string | undefined
+  componentRef: string | undefined,
+  renderers?: AdminRendererRegistryInput
 ): AdminSettingsSectionRenderer | undefined {
-  return componentRef ? settingsSectionRenderers.get(componentRef) : undefined;
+  if (!componentRef) return undefined;
+  return (
+    renderers?.settingsSections?.get(componentRef) ?? settingsSectionRenderers.get(componentRef)
+  );
 }
 
 export function resolveAdminDashboardWidgetRenderer(
-  componentRef: string | undefined
+  componentRef: string | undefined,
+  renderers?: AdminRendererRegistryInput
 ): AdminDashboardWidgetRenderer | undefined {
-  return componentRef ? dashboardWidgetRenderers.get(componentRef) : undefined;
+  if (!componentRef) return undefined;
+  return (
+    renderers?.dashboardWidgets?.get(componentRef) ?? dashboardWidgetRenderers.get(componentRef)
+  );
 }

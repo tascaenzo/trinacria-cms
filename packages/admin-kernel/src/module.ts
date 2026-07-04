@@ -1,6 +1,15 @@
 import type { AdminExtensionManifest } from "./contracts.js";
 import type { I18nBundle } from "./lib/i18n.js";
+import type {
+  AdminDashboardWidgetRenderer,
+  AdminSettingsSectionRenderer
+} from "./runtime/admin-renderers.js";
 import type { RenderableAdminContribution } from "./runtime/admin-route-runtime.js";
+
+export interface BackofficeRendererRegistry {
+  dashboardWidgets?: Record<string, AdminDashboardWidgetRenderer>;
+  settingsSections?: Record<string, AdminSettingsSectionRenderer>;
+}
 
 /**
  * A backoffice module is the frontend equivalent of a CMS plugin pack: it can
@@ -10,6 +19,7 @@ export interface BackofficeModule {
   id: string;
   contributions?: readonly RenderableAdminContribution[];
   manifests?: readonly AdminExtensionManifest[];
+  renderers?: BackofficeRendererRegistry;
   i18n?: readonly I18nBundle[];
 }
 

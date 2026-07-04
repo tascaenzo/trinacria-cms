@@ -114,6 +114,18 @@ export function useBackofficeShellRuntime({
     [runtimeManifests]
   );
 
+  const rendererRegistry = useMemo(
+    () => ({
+      dashboardWidgets: new Map(
+        modules.flatMap((module) => Object.entries(module.renderers?.dashboardWidgets ?? {}))
+      ),
+      settingsSections: new Map(
+        modules.flatMap((module) => Object.entries(module.renderers?.settingsSections ?? {}))
+      )
+    }),
+    [modules]
+  );
+
   const registry = useMemo(() => {
     return buildAdminRegistry(
       [
@@ -130,11 +142,13 @@ export function useBackofficeShellRuntime({
       ],
       runtimePlugins,
       t,
-      userPermissionKeys
+      userPermissionKeys,
+      rendererRegistry
     );
   }, [
     customContributions,
     health?.status,
+    rendererRegistry,
     runtimeContributions,
     runtimePlugins,
     t,

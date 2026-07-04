@@ -13,12 +13,16 @@
     "./admin-manifest": {
       "types": "./dist/plugin/email-pack-admin.manifest.d.ts",
       "import": "./dist/plugin/email-pack-admin.manifest.js"
+    },
+    "./admin": {
+      "types": "./dist/admin/index.d.ts",
+      "import": "./dist/admin/index.js"
     }
   },
   "scripts": {
-    "prebuild": "npm run build -w @trinacria-cms/kernel && npm run build -w @trinacria-cms/core-pack",
+    "prebuild": "npm run build -w @trinacria-cms/kernel && npm run build -w @trinacria-cms/core-pack && npm run build -w @trinacria-cms/sdk && npm run build -w @trinacria-cms/trinacria-ui",
     "build": "tsc -p tsconfig.json",
-    "pretypecheck": "npm run build -w @trinacria-cms/kernel && npm run build -w @trinacria-cms/core-pack",
+    "pretypecheck": "npm run build -w @trinacria-cms/kernel && npm run build -w @trinacria-cms/core-pack && npm run build -w @trinacria-cms/sdk && npm run build -w @trinacria-cms/trinacria-ui",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "pretest": "npm run build -w @trinacria-cms/kernel && npm run build -w @trinacria-cms/core-pack",
     "test": "node --import tsx --test test/**/*.test.ts",
@@ -27,10 +31,17 @@
   "dependencies": {
     "@trinacria-cms/core-pack": "0.1.0",
     "@trinacria-cms/kernel": "0.1.0",
+    "@trinacria-cms/sdk": "0.1.0",
+    "@trinacria-cms/trinacria-ui": "0.1.0",
     "nodemailer": "^9.0.1"
   },
   "devDependencies": {
     "@types/node": "^25.9.1",
+    "@types/react": "^19.2.2",
     "@types/nodemailer": "^8.0.1"
+  },
+  "peerDependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   }
 }

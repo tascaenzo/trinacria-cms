@@ -57,6 +57,7 @@ const baseContext: AdminPageRenderContext = {
   settings: [],
   widgets: [],
   locale: "en",
+  cms: {} as AdminPageRenderContext["cms"],
   t: (key, fallback) => fallback ?? key
 };
 

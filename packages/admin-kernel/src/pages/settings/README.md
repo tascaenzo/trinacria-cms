@@ -2,7 +2,7 @@
 
 The settings page renders manifest-driven settings sections. Generic sections use the shared form;
 advanced sections declare a `componentRef` in their plugin manifest and are resolved by the admin
-renderer registry.
+renderer registry supplied by registered backoffice modules.
 
 ## Structure
 
@@ -16,12 +16,14 @@ renderer registry.
 ## Custom Renderers
 
 Custom settings UI is selected by `componentRef`, not by hardcoded checks inside the settings page.
-Renderer lookup is centralized in `runtime/admin-renderers.tsx`.
+Renderer lookup flows through `runtime/admin-renderers.tsx`, but plugin-owned renderers should be
+exported by the plugin package and passed through its `BackofficeModule.renderers` entry.
 
 The permission center edits the `core-pack:security:plugin_access_grants` setting through the
-`core-pack:plugin-permission-center` renderer. The email template editor uses the
-`email-pack:email-template-manager` renderer.
+kernel-owned `core-pack:plugin-permission-center` renderer. The email template editor is owned by
+`email-pack` and is registered by the email backoffice module through
+`email-pack:email-template-manager`.
 
 When adding another advanced settings surface, keep the generic form generic, declare
-`kind: "custom"` and `componentRef` in the plugin manifest, and register the renderer in the admin
-renderer registry.
+`kind: "custom"` and `componentRef` in the plugin manifest, then export the renderer from the plugin
+admin entrypoint and attach it to that plugin's `BackofficeModule.renderers`.

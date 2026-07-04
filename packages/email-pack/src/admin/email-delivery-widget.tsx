@@ -1,15 +1,26 @@
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Icon } from "@trinacria-cms/trinacria-ui";
-import { toDisplayError } from "../../lib/sdk-errors.js";
-import { cms } from "../../runtime/cms-sdk.js";
-import type { AdminDashboardWidgetRenderContext } from "../../runtime/admin-route-runtime.js";
+import type { createCmsSdkClient, EmailApi, SettingsApi } from "@trinacria-cms/sdk";
 
+type CmsClient = ReturnType<typeof createCmsSdkClient>;
 type EmailProvider = "disabled" | "console" | "smtp" | "unknown";
-type EmailTemplateRecord = Awaited<ReturnType<typeof cms.email.listEmailTemplates>>["data"][number];
+type EmailTemplateRecord = Awaited<ReturnType<EmailApi["listEmailTemplates"]>>["data"][number];
 
 const EMAIL_PROVIDER_SETTING_KEY = "email-pack:email:provider";
 
-export function EmailDeliveryWidget({ t, widget }: AdminDashboardWidgetRenderContext) {
+export interface EmailDeliveryWidgetContext {
+  cms: CmsClient & {
+    email: EmailApi;
+    settings: SettingsApi;
+  };
+  t: (key: string, fallback?: string) => string;
+  widget: {
+    pluginId: string;
+    title: string;
+  };
+}
+
+export function EmailDeliveryWidget({ cms, t, widget }: EmailDeliveryWidgetContext) {
   const [provider, setProvider] = useState<EmailProvider>("unknown");
   const [templates, setTemplates] = useState<readonly EmailTemplateRecord[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +57,7 @@ export function EmailDeliveryWidget({ t, widget }: AdminDashboardWidgetRenderCon
     return () => {
       isCancelled = true;
     };
-  }, []);
+  }, [cms]);
 
   const activeTemplates = useMemo(
     () => templates.filter((template) => template.status === "active").length,
@@ -118,4 +129,11 @@ function readProviderTone(provider: EmailProvider) {
   if (provider === "smtp") return "success";
   if (provider === "console") return "warning";
   return "neutral";
+}
+
+function toDisplayError(error: unknown): string {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+  return "Unexpected error";
 }

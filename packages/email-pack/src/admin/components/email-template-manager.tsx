@@ -6,14 +6,19 @@ import {
   Select,
   Textarea
 } from "@trinacria-cms/trinacria-ui";
-import { ErrorBanner, EmptyState } from "../../../components/resource-feedback.js";
-import type { TranslateFn } from "../../../lib/i18n.js";
-import { toDisplayError } from "../../../lib/sdk-errors.js";
-import { cms } from "../../../runtime/cms-sdk.js";
+import type { createCmsSdkClient, EmailApi } from "@trinacria-cms/sdk";
 
-type EmailTemplateRecord = Awaited<ReturnType<typeof cms.email.listEmailTemplates>>["data"][number];
+type CmsClient = ReturnType<typeof createCmsSdkClient>;
+type EmailTemplateRecord = Awaited<ReturnType<EmailApi["listEmailTemplates"]>>["data"][number];
 type EmailTemplateStatus = "active" | "disabled";
 type EmailPreviewMode = "html" | "text";
+
+export interface EmailTemplateManagerContext {
+  cms: CmsClient & {
+    email: EmailApi;
+  };
+  t: (key: string, fallback?: string) => string;
+}
 
 interface EmailTemplateDraft {
   key: string;
@@ -33,7 +38,7 @@ interface EmailTemplatePreview {
   html?: string;
 }
 
-export function EmailTemplateManager({ t }: { t: TranslateFn }) {
+export function EmailTemplateManager({ cms, t }: EmailTemplateManagerContext) {
   const [templates, setTemplates] = useState<readonly EmailTemplateRecord[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<EmailTemplateDraft | null>(null);
@@ -524,4 +529,26 @@ function upsertTemplateRecord(
   const found = current.some((item) => item.id === next.id);
   if (!found) return [next, ...current];
   return current.map((item) => (item.id === next.id ? next : item));
+}
+
+function EmptyState({ text }: { text: string }) {
+  return (
+    <div className="rounded-lg border border-[color:var(--color-border)] bg-white px-4 py-8 text-center text-sm text-[color:var(--color-ink-muted)]">
+      {text}
+    </div>
+  );
+}
+
+function ErrorBanner({ message }: { message: string }) {
+  return (
+    <div className="rounded-lg border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] px-4 py-3 text-sm text-[color:var(--color-danger-ink)]">
+      {message}
+    </div>
+  );
+}
+
+function toDisplayError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  return "Unexpected error";
 }

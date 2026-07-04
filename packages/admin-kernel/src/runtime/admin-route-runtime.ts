@@ -13,6 +13,7 @@ import type {
 import type { ReactNode } from "react";
 import type { Locale, TranslateFn } from "../lib/i18n.js";
 import {
+  type AdminRendererRegistryInput,
   resolveAdminDashboardWidgetRenderer,
   resolveAdminSettingsSectionRenderer
 } from "./admin-renderers.js";
@@ -30,6 +31,7 @@ export interface AdminPageRenderContext {
   settings: readonly RenderableAdminSettingsSection[];
   widgets: readonly RenderableAdminDashboardWidget[];
   locale: Locale;
+  cms: typeof import("./cms-sdk.js").cms;
   t: TranslateFn;
 }
 
@@ -297,7 +299,8 @@ export function buildAdminRegistry(
   contributions: readonly RenderableAdminContribution[],
   runtimePlugins: readonly AdminRuntimePluginInfo[],
   t: TranslateFn,
-  userPermissionKeys: readonly string[] = []
+  userPermissionKeys: readonly string[] = [],
+  renderers?: AdminRendererRegistryInput
 ): RenderableAdminRegistrySnapshot {
   const capabilityIndex = new Map<string, Set<string>>();
   for (const plugin of runtimePlugins) {
@@ -386,7 +389,8 @@ export function buildAdminRegistry(
           ...widget,
           title: widget.titleKey ? t(widget.titleKey, widget.title) : widget.title,
           summary: widget.summaryKey ? t(widget.summaryKey, widget.summary) : widget.summary,
-          render: widget.render ?? resolveAdminDashboardWidgetRenderer(widget.componentRef)
+          render:
+            widget.render ?? resolveAdminDashboardWidgetRenderer(widget.componentRef, renderers)
         })),
       (widget) => `${widget.pluginId}:${widget.id}`
     ).sort((left, right) => (left.order ?? 0) - (right.order ?? 0)),
@@ -400,7 +404,8 @@ export function buildAdminRegistry(
           ...section,
           title: section.titleKey ? t(section.titleKey, section.title) : section.title,
           summary: section.summaryKey ? t(section.summaryKey, section.summary) : section.summary,
-          render: section.render ?? resolveAdminSettingsSectionRenderer(section.componentRef),
+          render:
+            section.render ?? resolveAdminSettingsSectionRenderer(section.componentRef, renderers),
           actions: translateActions(
             section.actions,
             section.pluginId,

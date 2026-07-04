@@ -756,7 +756,9 @@ test("buildAdminRegistry resolves settings section renderers from component refs
     ]
   };
 
-  const registry = buildAdminRegistry([contribution], [plugin], identityTranslate);
+  const registry = buildAdminRegistry([contribution], [plugin], identityTranslate, [], {
+    settingsSections: new Map([["email-pack:email-template-manager", () => null]])
+  });
 
   assert.equal(registry.settings.length, 1);
   assert.equal(typeof registry.settings[0].render, "function");
@@ -787,7 +789,9 @@ test("buildAdminRegistry resolves dashboard widget renderers from component refs
     ]
   };
 
-  const registry = buildAdminRegistry([contribution], [plugin], identityTranslate);
+  const registry = buildAdminRegistry([contribution], [plugin], identityTranslate, [], {
+    dashboardWidgets: new Map([["email-pack:delivery-status-widget", () => null]])
+  });
 
   assert.equal(registry.widgets.length, 1);
   assert.equal(typeof registry.widgets[0].render, "function");

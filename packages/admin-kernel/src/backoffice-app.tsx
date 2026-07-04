@@ -395,6 +395,7 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
         settings: registry.settings,
         widgets: registry.widgets,
         locale,
+        cms,
         t
       })
     : null;

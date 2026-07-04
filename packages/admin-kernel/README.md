@@ -26,6 +26,7 @@ It does not own:
 
 - backend authorization
 - plugin business logic
+- plugin-specific React renderers for custom pages, settings or dashboard widgets
 - Mongo/repository access
 - visual primitives that belong in `trinacria-ui`
 - the authoritative runtime list of plugin admin manifests
@@ -55,13 +56,52 @@ Use `normalizeAdminExtensionManifest(safe)` only when the input is already a
 `manifests` are the primary scalable plugin channel. They are serializable and
 can come from a backend API.
 
-`contributions` are a React escape hatch for local/non-serializable UI.
+`componentRef` + `BackofficeModule.renderers` is the preferred path for
+plugin-owned custom React UI when the declarative manifest is not expressive
+enough.
+
+`contributions` are a React escape hatch for host-local/non-serializable UI.
 
 Use `manifests` for standard pages, menu items, resources, dashboard widgets,
 settings sections and declarative actions.
 
 Use `contributions` only for custom React surfaces that cannot be represented by
-the declarative contract.
+the declarative contract and should not be distributed as plugin-owned renderers.
+
+Plugin-specific custom renderers should live in the owning plugin package and be
+attached through `BackofficeModule.renderers`. `admin-kernel` may provide generic
+declarative renderers and core-owned admin surfaces, but it should not import UI
+components from feature plugins.
+
+Use this order when building a plugin backoffice:
+
+1. Model the surface in the plugin admin manifest when the declarative contract
+   is enough.
+2. Add a namespaced `componentRef` when a widget, settings section or page needs
+   custom React.
+3. Implement that React renderer inside the plugin package, usually under
+   `src/admin/`.
+4. Export a plugin admin registry such as `CATALOG_PACK_ADMIN_RENDERERS`.
+5. Register manifest and renderers from the host application's
+   `BackofficeModule`.
+
+Minimal host wiring:
+
+```ts
+export const backofficeModules = [
+  {
+    ...definePluginBackofficeModule({
+      pluginId: "catalog-pack",
+      displayName: "Catalog",
+      admin: CATALOG_PACK_ADMIN_MANIFEST
+    }),
+    renderers: CATALOG_PACK_ADMIN_RENDERERS
+  }
+];
+```
+
+The existing `email-pack` admin folder is the reference implementation for this
+pattern.
 
 ## Source layout
 
