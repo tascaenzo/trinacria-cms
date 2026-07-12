@@ -33,7 +33,7 @@
     "sdk:build": "npm run build -w @trinacria-cms/sdk",
     "sdk:test": "npm run test -w @trinacria-cms/sdk",
     "sdk:check": "npm run check:generated -w @trinacria-cms/sdk",
-    "typecheck": "npm run build:packages && npm run typecheck --workspaces --if-present && npm run e2e:typecheck",
+    "typecheck": "npm run build && npm run typecheck --workspaces --if-present && npm run e2e:typecheck",
     "test": "npm run build:packages && npm run test --workspaces --if-present",
     "test:integration": "npm run test:integration -w @trinacria-cms/kernel",
     "lint": "eslint .",
