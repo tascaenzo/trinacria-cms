@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { DbAdapter, DbQuery, DbRepository, NamespaceContext } from "@trinacria-cms/kernel";
+import type {
+  DbAdapter,
+  DbQuery,
+  DbRepository,
+  NamespaceContext,
+  PluginManifest
+} from "@trinacria-cms/kernel";
 import { LocalCredentialsRepository } from "../src/modules/installation/repositories/local-credentials.repository.js";
 import {
   InstallationAlreadyCompletedError,
@@ -93,6 +99,43 @@ test("InstallationService bootstraps admin user and local credentials", async ()
   );
 });
 
+test("InstallationService provisions security for plugins already loaded in setup mode", async () => {
+  const extensionManifest: PluginManifest = {
+    id: "extension-pack",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    security: {
+      permissions: [
+        {
+          key: "extension-pack:settings:read",
+          resource: "settings",
+          action: "read",
+          displayName: "Read extension settings"
+        }
+      ],
+      grants: [
+        {
+          roleCode: "admin",
+          permissionKeys: ["extension-pack:settings:read"]
+        }
+      ]
+    }
+  };
+  const runtime = createInstallationRuntime(extensionManifest);
+
+  const result = await runtime.service.bootstrap({
+    email: "admin@example.com",
+    firstName: "CMS",
+    lastName: "Admin",
+    confirmPassword: "StrongerPass123!",
+    password: "StrongerPass123!",
+    siteName: "My Site"
+  });
+
+  const permissions = await runtime.userAccess.resolveUserPermissions(result.adminUser.id);
+  assert.ok(permissions.includes("extension-pack:settings:read"));
+});
+
 test("InstallationService blocks bootstrap when installation is already completed", async () => {
   const runtime = createInstallationRuntime();
 
@@ -148,7 +191,7 @@ interface InstallationRuntime {
   passwordHashing: PasswordHashingService;
 }
 
-function createInstallationRuntime(): InstallationRuntime {
+function createInstallationRuntime(loadedManifest?: PluginManifest): InstallationRuntime {
   const db = createFakeDbAdapter();
   const users = new UsersRepository(db);
   const roles = new RolesRepository(db);
@@ -180,6 +223,7 @@ function createInstallationRuntime(): InstallationRuntime {
   const installationState = new InstallationStateRepository(db);
   const localCredentials = new LocalCredentialsRepository(db);
   const passwordHashing = new PasswordHashingService();
+  if (loadedManifest) securityProvisioning.defer(loadedManifest);
 
   return {
     service: new InstallationService(

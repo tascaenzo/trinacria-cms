@@ -29,15 +29,17 @@ export class AuthBlacklistRepository {
     sub: string,
     iat: number,
     tokenKind: "access" | "refresh",
-    expiresAt: string
+    expiresAt: string,
+    jti?: string
   ): Promise<void> {
     await this.maybeCleanupExpired();
-    const key = `${sub.trim()}:${iat}`;
+    const key = buildBlacklistKey(sub, iat, jti);
     await this.repository().insertOne({
       kind: BLACKLIST_KIND,
       key,
       sub: sub.trim(),
       iat,
+      ...(jti ? { jti: jti.trim() } : {}),
       tokenKind,
       expiresAt,
       createdAt: new Date().toISOString()
@@ -46,9 +48,9 @@ export class AuthBlacklistRepository {
     await this.cache?.set(CACHE_NAMESPACE, key, true, ttl);
   }
 
-  async isBlacklisted(sub: string, iat: number): Promise<boolean> {
+  async isBlacklisted(sub: string, iat: number, jti?: string): Promise<boolean> {
     await this.maybeCleanupExpired();
-    const key = `${sub.trim()}:${iat}`;
+    const key = buildBlacklistKey(sub, iat, jti);
     const cached = await this.cache?.get<boolean>(CACHE_NAMESPACE, key);
     if (cached !== undefined) return cached;
     const found = await this.repository().findOne({
@@ -125,6 +127,11 @@ export class AuthBlacklistRepository {
     this.cachedCleanupIntervalSeconds = DEFAULT_CLEANUP_INTERVAL_SECONDS;
     return this.cachedCleanupIntervalSeconds;
   }
+}
+
+function buildBlacklistKey(sub: string, iat: number, jti?: string): string {
+  const normalizedJti = jti?.trim();
+  return normalizedJti ? `${sub.trim()}:jti:${normalizedJti}` : `${sub.trim()}:${iat}`;
 }
 
 function clampCleanupInterval(input: number): number {

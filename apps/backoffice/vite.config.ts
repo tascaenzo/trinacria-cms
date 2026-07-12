@@ -9,6 +9,13 @@ import { fileURLToPath, URL } from "node:url";
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const base = normalizeViteBase(env.VITE_BACKOFFICE_BASE_PATH);
+  const cmsProxy = {
+    "/cms": {
+      target: env.VITE_CMS_PROXY_TARGET || "http://127.0.0.1:3000",
+      changeOrigin: true,
+      rewrite: (path: string) => path.replace(/^\/cms/, "")
+    }
+  };
 
   return {
     base,
@@ -35,13 +42,12 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 4174,
       host: "127.0.0.1",
-      proxy: {
-        "/cms": {
-          target: "http://127.0.0.1:3000",
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/cms/, "")
-        }
-      }
+      proxy: cmsProxy
+    },
+    preview: {
+      port: 4174,
+      host: "127.0.0.1",
+      proxy: cmsProxy
     }
   };
 });

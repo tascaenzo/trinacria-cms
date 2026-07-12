@@ -120,15 +120,15 @@ Checklist log:
 
 ## 6. Verification table
 
-| Area | Check | Stato atteso |
-| --- | --- | --- |
-| Eventi sensibili | Reset password emette solo secure payload metadata | nessun token raw |
-| Replay | nonce signed plugin auth riusato | rifiutato |
-| Secure payload | claim non autorizzato | rifiutato |
-| Permission escalation | plugin senza grant sensitive | denied/pending |
-| CSRF | mutazione cookie da origine non trusted | `csrf_origin_rejected` |
-| Settings secret | lettura SMTP password via API admin normale | mascherata |
-| Log | errore flusso reset password | niente token raw |
+| Area                  | Check                                              | Stato atteso           |
+| --------------------- | -------------------------------------------------- | ---------------------- |
+| Eventi sensibili      | Reset password emette solo secure payload metadata | nessun token raw       |
+| Replay                | nonce signed plugin auth riusato                   | rifiutato              |
+| Secure payload        | claim non autorizzato                              | rifiutato              |
+| Permission escalation | plugin senza grant sensitive                       | denied/pending         |
+| CSRF                  | mutazione cookie da origine non trusted            | `csrf_origin_rejected` |
+| Settings secret       | lettura SMTP password via API admin normale        | mascherata             |
+| Log                   | errore flusso reset password                       | niente token raw       |
 
 ## 7. Release gate
 
@@ -141,4 +141,3 @@ Non promuovere a production se uno di questi punti e falso:
 - permission center revisionato;
 - nessun token sensibile in eventi normali o log;
 - osservabilita protetta da token.
-

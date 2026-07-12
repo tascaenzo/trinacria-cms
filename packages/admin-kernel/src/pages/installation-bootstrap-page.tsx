@@ -1,4 +1,4 @@
-import { type FormEvent, useRef, useState } from "react";
+import { startTransition, type FormEvent, type MouseEvent, useRef, useState } from "react";
 import { Button, Input, Select } from "@trinacria-cms/trinacria-ui";
 import { AuthScreenLayout } from "../components/auth-screen-layout.js";
 import { useI18n } from "../lib/i18n.js";
@@ -111,7 +111,8 @@ export function InstallationBootstrapPage({
     return true;
   }
 
-  function handleContinue() {
+  function handleContinue(event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
     if (!validateCurrentStep()) {
       return;
     }
@@ -139,7 +140,7 @@ export function InstallationBootstrapPage({
     formData.set("email", values.email.trim());
     formData.set("password", values.password);
     formData.set("confirmPassword", values.confirmPassword);
-    action(formData);
+    startTransition(() => action(formData));
   }
 
   function handleBack() {

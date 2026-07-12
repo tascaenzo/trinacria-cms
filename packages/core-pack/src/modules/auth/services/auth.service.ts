@@ -1,4 +1,5 @@
 import { type DbAdapter } from "@trinacria-cms/kernel";
+import { randomUUID } from "node:crypto";
 import { SignJWT, jwtVerify, decodeJwt, type JWTPayload } from "jose";
 import type { UserRecord } from "../../users/users.schemas.js";
 import { type InstallationStateRecord } from "../../installation/installation.schemas.js";
@@ -115,6 +116,7 @@ export class JwtAuthService {
         sub: user.id,
         pluginId: "core-pack",
         isAdmin: Boolean(installation.adminUserId && installation.adminUserId === user.id),
+        jti: randomUUID(),
         iat: nowSeconds,
         exp: accessExp
       },
@@ -126,6 +128,7 @@ export class JwtAuthService {
         sub: user.id,
         pluginId: "core-pack",
         isAdmin: Boolean(installation.adminUserId && installation.adminUserId === user.id),
+        jti: randomUUID(),
         iat: nowSeconds,
         exp: refreshExp
       },
@@ -159,7 +162,7 @@ export class JwtAuthService {
       throw new JwtAuthError("auth_invalid_token", "Expected an access token");
     }
 
-    await this.assertTokenNotRevoked(claims.sub, claims.iat);
+    await this.assertTokenNotRevoked(claims.sub, claims.iat, claims.jti);
 
     const user = await this.users.findById(claims.sub);
     if (!user || user.status !== "active") {
@@ -192,7 +195,8 @@ export class JwtAuthService {
           payload.sub,
           payload.iat,
           payload.kind,
-          new Date(exp * 1000).toISOString()
+          new Date(exp * 1000).toISOString(),
+          typeof payload.jti === "string" ? payload.jti : undefined
         );
       }
     } catch {
@@ -213,7 +217,7 @@ export class JwtAuthService {
       throw new JwtAuthError("auth_invalid_token", "Expected a refresh token");
     }
 
-    await this.assertTokenNotRevoked(claims.sub, claims.iat);
+    await this.assertTokenNotRevoked(claims.sub, claims.iat, claims.jti);
 
     const user = await this.users.findById(claims.sub);
     if (!user || user.status !== "active") {
@@ -302,8 +306,8 @@ export class JwtAuthService {
     await this.loginAttempts.increment(email, maxAttempts, lockoutMinutes);
   }
 
-  private async assertTokenNotRevoked(sub: string, iat: number): Promise<void> {
-    const blacklisted = await this.blacklist.isBlacklisted(sub, iat);
+  private async assertTokenNotRevoked(sub: string, iat: number, jti?: string): Promise<void> {
+    const blacklisted = await this.blacklist.isBlacklisted(sub, iat, jti);
     if (blacklisted) {
       throw new JwtAuthError("auth_token_revoked", "Token has been revoked");
     }
@@ -390,6 +394,7 @@ interface JwtClaims extends JWTPayload {
   sub: string;
   pluginId: string;
   isAdmin: boolean;
+  jti?: string;
   iat: number;
   exp: number;
 }
@@ -406,6 +411,7 @@ async function createJwtToken(claims: JwtClaims, secret: Uint8Array): Promise<st
   })
     .setProtectedHeader({ alg: "HS256", typ: "JWT" })
     .setSubject(claims.sub)
+    .setJti(claims.jti ?? `${claims.sub}:${claims.kind}:${claims.iat}`)
     .setIssuedAt(claims.iat)
     .setExpirationTime(claims.exp)
     .sign(secret);
@@ -453,6 +459,7 @@ function normalizeClaims(payload: Partial<JwtClaims>): JwtClaims {
   const iat = Number(payload.iat);
   const exp = Number(payload.exp);
   const isAdmin = Boolean(payload.isAdmin);
+  const jti = typeof payload.jti === "string" ? payload.jti.trim() : undefined;
 
   if (!kind || !sub || !pluginId || !Number.isFinite(iat) || !Number.isFinite(exp)) {
     throw new JwtAuthError("auth_invalid_token", "Invalid JWT claims");
@@ -463,6 +470,7 @@ function normalizeClaims(payload: Partial<JwtClaims>): JwtClaims {
     sub,
     pluginId,
     isAdmin,
+    ...(jti ? { jti } : {}),
     iat,
     exp
   };

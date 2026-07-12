@@ -39,4 +39,3 @@ Disaccoppiare le UI custom di backoffice dalle pagine generiche usando renderer 
 
 - `npm run test -w @trinacria-cms/admin-kernel`
 - `npm run build`
-

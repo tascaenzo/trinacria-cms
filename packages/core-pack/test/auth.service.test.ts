@@ -91,6 +91,44 @@ test("JwtAuthService validates refresh token and rejects using it as access toke
   );
 });
 
+test("JwtAuthService allows an immediate login after revoking the previous session", async () => {
+  const runtime = createRuntime();
+  await runtime.installation.bootstrap({
+    email: "admin@example.com",
+    firstName: "Admin",
+    lastName: "User",
+    password: "StrongPassword123!",
+    confirmPassword: "StrongPassword123!",
+    siteName: "Test Site"
+  });
+
+  const originalNow = Date.now;
+  Date.now = () => 1_800_000_000_000;
+  try {
+    const first = await runtime.auth.loginWithPassword({
+      email: "admin@example.com",
+      password: "StrongPassword123!"
+    });
+    await runtime.auth.revokeBearerToken(first.accessToken);
+    await assert.rejects(
+      () => runtime.auth.authenticateBearerToken(first.accessToken),
+      (error: unknown) => error instanceof JwtAuthError && error.code === "auth_token_revoked"
+    );
+
+    const second = await runtime.auth.loginWithPassword({
+      email: "admin@example.com",
+      password: "StrongPassword123!"
+    });
+    assert.notEqual(second.accessToken, first.accessToken);
+    assert.equal(
+      (await runtime.auth.authenticateBearerToken(second.accessToken)).email,
+      "admin@example.com"
+    );
+  } finally {
+    Date.now = originalNow;
+  }
+});
+
 test("JwtAuthService rejects login before installation is completed", async () => {
   const runtime = createRuntime();
 

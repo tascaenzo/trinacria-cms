@@ -261,7 +261,7 @@ diagnostics, and owner-signed operations.
 
 ## Backoffice consumer
 
-The monorepo also includes [apps/backoffice](/Users/enzo/Desktop/trinacria-cms/apps/backoffice),
+The monorepo also includes [apps/backoffice](../../apps/backoffice),
 a thin Vite host that consumes the SDK through `@trinacria-cms/admin-kernel`.
 
 The app itself should stay small. Session bootstrap, runtime discovery, official

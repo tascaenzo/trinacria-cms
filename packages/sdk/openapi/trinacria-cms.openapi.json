@@ -1123,6 +1123,105 @@
         ]
       }
     },
+    "/v1/admin/extensions": {
+      "get": {
+        "operationId": "listAdminExtensions",
+        "summary": "List runtime admin extension manifests for loaded plugins",
+        "tags": ["System"],
+        "responses": {
+          "200": {
+            "description": "Runtime admin extension manifests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "pluginId": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "displayName": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "admin": {
+                            "type": "object",
+                            "properties": {
+                              "navigation": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {}
+                                }
+                              },
+                              "routes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {}
+                                }
+                              },
+                              "resources": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {}
+                                }
+                              },
+                              "widgets": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {}
+                                }
+                              },
+                              "settingsSections": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {}
+                                }
+                              }
+                            },
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": ["pluginId", "displayName", "admin"],
+                        "additionalProperties": false
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "pluginId": {
+                          "enum": ["kernel"]
+                        },
+                        "count": {
+                          "type": "integer"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": ["data"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/system/plugins/sources": {
       "get": {
         "operationId": "listPluginSources",

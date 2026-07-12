@@ -34,6 +34,7 @@ interface NormalizedSecurityManifest {
  */
 export class CorePackSecurityProvisioningService implements PluginSecurityProvisioner {
   private static readonly POLICY_UPDATE_MAX_RETRIES = 3;
+  private readonly deferredManifests = new Map<string, PluginManifest>();
 
   constructor(
     private readonly roles: RolesRepository,
@@ -110,6 +111,17 @@ export class CorePackSecurityProvisioningService implements PluginSecurityProvis
     await this.syncOwnedPolicyRules(pluginId, security);
     await this.syncOwnedRoles(pluginId, security);
     await this.syncManifestSettings(pluginId, manifest.settings ?? []);
+    this.deferredManifests.delete(pluginId);
+  }
+
+  defer(manifest: PluginManifest): void {
+    this.deferredManifests.set(manifest.id.trim().toLowerCase(), manifest);
+  }
+
+  async provisionDeferred(): Promise<void> {
+    for (const manifest of [...this.deferredManifests.values()]) {
+      await this.provision(manifest);
+    }
   }
 
   async deprovision(manifest: PluginManifest): Promise<void> {

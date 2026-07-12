@@ -32,7 +32,7 @@ The project keeps a strict separation between:
 - `docs/trinacria`: local imported Trinacria docs (framework reference)
 
 Detailed package ownership map:
-[docs/cms/architecture/package-map.md](/Users/enzo/Desktop/trinacria-cms/docs/cms/architecture/package-map.md).
+[docs/cms/architecture/package-map.md](docs/cms/architecture/package-map.md).
 
 ## Architecture model
 
@@ -59,17 +59,18 @@ definitions, response envelopes, and schema-like contracts. `core-pack` keeps
 compatibility re-exports and owns the signed settings request helpers.
 
 Sensitive cross-plugin communication is documented in
-[docs/plugin-secure-events.md](/Users/enzo/Desktop/trinacria-cms/docs/plugin-secure-events.md).
+[docs/plugin-secure-events.md](docs/plugin-secure-events.md).
 User lifecycle events and email flows are documented in
-[docs/plugin-user-events-and-email-flows.md](/Users/enzo/Desktop/trinacria-cms/docs/plugin-user-events-and-email-flows.md).
+[docs/plugin-user-events-and-email-flows.md](docs/plugin-user-events-and-email-flows.md).
 
 ## Development workflow
 
 Branch strategy:
 
-1. `unstable`: daily development
-2. `develop`: integration branch via PR from `unstable`
-3. `main`: stable releases via PR from `develop`
+1. feature branches: scoped work, with CI on every push
+2. `unstable`: daily integration via PR from feature branches
+3. `develop`: release-candidate integration via PR from `unstable`
+4. `main`: stable releases via PR from `develop`
 
 ## Local setup
 
@@ -131,12 +132,22 @@ Operational endpoints:
 npm run lint
 npm run format
 npm run build
-npm run typecheck -w @trinacria-cms/admin-kernel
-npm run typecheck -w @trinacria-cms/backoffice
-npm run test -w @trinacria-cms/kernel
-npm run test -w @trinacria-cms/core-pack
+npm run typecheck
+npm run test
 npm run test:integration
+npm run storybook:build
 ```
+
+Install Chromium once and run the production-readiness browser/API suite:
+
+```bash
+npx playwright install chromium
+npm run e2e
+```
+
+The E2E harness uses and resets only the dedicated `trinacria_cms_e2e` Mongo database. Override
+`E2E_MONGO_URI` only with a database name ending in `_e2e`; the reset guard rejects every other
+database name.
 
 ## Production Hardening
 
@@ -157,8 +168,8 @@ manager, not committed to `.env`.
 
 Full deployment runbook and hardening checklist:
 
-- [docs/cms/it/0020-runbook-deploy-production.md](/Users/enzo/Desktop/trinacria-cms/docs/cms/it/0020-runbook-deploy-production.md)
-- [docs/cms/it/0021-checklist-hardening-security.md](/Users/enzo/Desktop/trinacria-cms/docs/cms/it/0021-checklist-hardening-security.md)
+- [docs/cms/it/0020-runbook-deploy-production.md](docs/cms/it/0020-runbook-deploy-production.md)
+- [docs/cms/it/0021-checklist-hardening-security.md](docs/cms/it/0021-checklist-hardening-security.md)
 
 ## Observability
 
@@ -212,12 +223,12 @@ La gestione del lavoro attivo vive in [workflow/](workflow/README.md).
 
 Start here:
 
-- [docs/cms/README.md](/Users/enzo/Desktop/trinacria-cms/docs/cms/README.md)
-- [docs/cms/architecture/plugin-first-cms-direction.md](/Users/enzo/Desktop/trinacria-cms/docs/cms/architecture/plugin-first-cms-direction.md)
-- [docs/cms/specs/core-platform/README.md](/Users/enzo/Desktop/trinacria-cms/docs/cms/specs/core-platform/README.md)
+- [docs/cms/README.md](docs/cms/README.md)
+- [docs/cms/architecture/plugin-first-cms-direction.md](docs/cms/architecture/plugin-first-cms-direction.md)
+- [docs/cms/specs/core-platform/README.md](docs/cms/specs/core-platform/README.md)
 - `docs/cms/en/README.md` (official)
 - `docs/cms/it/README.md` (Italian)
-- [docs/trinacria-ui-design-system.md](/Users/enzo/Desktop/trinacria-cms/docs/trinacria-ui-design-system.md)
+- [docs/trinacria-ui-design-system.md](docs/trinacria-ui-design-system.md)
 
 Trinacria framework reference:
 

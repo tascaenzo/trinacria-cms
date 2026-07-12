@@ -1,11 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  Badge,
-  Button,
-  Input,
-  Select,
-  Textarea
-} from "@trinacria-cms/trinacria-ui";
+import { Badge, Button, Input, Select, Textarea } from "@trinacria-cms/trinacria-ui";
 import type { createCmsSdkClient, EmailApi } from "@trinacria-cms/sdk";
 
 type CmsClient = ReturnType<typeof createCmsSdkClient>;
@@ -374,7 +368,9 @@ export function EmailTemplateManager({ cms, t }: EmailTemplateManagerContext) {
                       )}
                       value={draft.variablesText}
                       readOnly={isSaving}
-                      onChange={(event) => updateDraft({ variablesText: event.currentTarget.value })}
+                      onChange={(event) =>
+                        updateDraft({ variablesText: event.currentTarget.value })
+                      }
                     />
                   </div>
                 </div>
@@ -424,7 +420,6 @@ export function EmailTemplateManager({ cms, t }: EmailTemplateManagerContext) {
               </section>
             </aside>
           </div>
-
         </div>
       </div>
     </section>

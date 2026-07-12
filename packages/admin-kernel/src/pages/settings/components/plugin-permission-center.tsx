@@ -22,10 +22,7 @@ interface PluginPermissionCenterProps {
   t: TranslateFn;
 }
 
-export function PluginPermissionCenterSection({
-  section,
-  t
-}: AdminSettingsSectionRenderContext) {
+export function PluginPermissionCenterSection({ section, t }: AdminSettingsSectionRenderContext) {
   const settingKey = section.settingKeys?.[0] ?? PLUGIN_ACCESS_GRANTS_SETTING_KEY;
   const [draftValue, setDraftValue] = useState("[]");
   const [error, setError] = useState<string | null>(null);
@@ -207,10 +204,7 @@ export function PluginPermissionCenter({
                       type="checkbox"
                       aria-label={`${grant.consumerPluginId} ${grant.eventName}`}
                       onChange={(event) =>
-                        void updateGrant(
-                          grant,
-                          event.currentTarget.checked ? "approved" : "denied"
-                        )
+                        void updateGrant(grant, event.currentTarget.checked ? "approved" : "denied")
                       }
                     />
                     <span className="h-7 w-12 rounded-full bg-[color:var(--color-interactive-soft)] transition peer-checked:bg-[color:var(--color-action-primary-bg)] peer-focus:ring-2 peer-focus:ring-[color:var(--color-overlay-soft)] peer-disabled:opacity-60" />

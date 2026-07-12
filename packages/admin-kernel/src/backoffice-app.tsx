@@ -291,11 +291,15 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
     getLocalizedInstallationError(installationActionState.error, t) ??
     getLocalizedInstallationError(bootstrapError, t);
 
-  function handleLogout() {
-    clearBackofficeSession();
-    setAuthUser(null);
-    setIsUserMenuOpen(false);
-    navigateTo("dashboard");
+  async function handleLogout() {
+    try {
+      await cms.auth.logoutSession();
+    } finally {
+      clearBackofficeSession();
+      setAuthUser(null);
+      setIsUserMenuOpen(false);
+      navigateTo("dashboard");
+    }
   }
 
   function renderWithI18n(node: ReactNode) {

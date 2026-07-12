@@ -790,6 +790,26 @@ export type InviteUserRequest = {
 
 export type InviteUserResponse = null;
 
+export type ListAdminExtensionsRequest = void;
+
+export type ListAdminExtensionsResponse = {
+  "data": Array<{
+  "pluginId": string;
+  "displayName": string;
+  "admin": {
+  "navigation"?: Array<Record<string, unknown>>;
+  "routes"?: Array<Record<string, unknown>>;
+  "resources"?: Array<Record<string, unknown>>;
+  "widgets"?: Array<Record<string, unknown>>;
+  "settingsSections"?: Array<Record<string, unknown>>;
+};
+}>;
+  "meta"?: {
+  "pluginId"?: "kernel";
+  "count"?: number;
+};
+};
+
 export type ListEmailTemplatesRequest = void;
 
 export type ListEmailTemplatesResponse = {

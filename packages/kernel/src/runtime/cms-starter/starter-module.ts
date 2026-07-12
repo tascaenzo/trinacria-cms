@@ -77,8 +77,11 @@ export function createCmsStarterKernelModule({
             runtimeStore: runtimeStore as PluginRuntimeStore,
             lifecycleHooks: {
               onAfterLoad: async (context) => {
-                if (!securityProvisioningEnabled) return;
                 const provisioner = await resolvePluginSecurityProvisioner(app);
+                if (!securityProvisioningEnabled) {
+                  await provisioner?.defer?.(context.manifest);
+                  return;
+                }
                 if (!provisioner) {
                   if (hasSecurityDeclarations(context.manifest)) {
                     throw new CoreError(

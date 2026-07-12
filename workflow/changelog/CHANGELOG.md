@@ -3,7 +3,7 @@
 Tutte le milestone significative sono documentate qui.
 Il formato si ispira a [Keep a Changelog](https://keepachangelog.com/).
 
-## [M6] Production Readiness — aperta
+## [M6] Production Readiness — completata
 
 ### Avvio
 
@@ -12,6 +12,16 @@ Il formato si ispira a [Keep a Changelog](https://keepachangelog.com/).
 
 ### Consolidato
 
+- Harness Playwright introdotto con Chromium, database Mongo `_e2e` isolato, lifecycle fixture,
+  trace/screenshot/video e report CI.
+- Prima baseline production-readiness verde: installazione browser, login bearer/cookie, CSRF,
+  admin extensions, settings/permission grants, template email e observability protetta.
+- Snapshot OpenAPI e generated SDK riallineati con `system.listAdminExtensions()`.
+- CI estesa a tutti i push, test Mongo reale obbligatorio, Storybook build ed E2E con artifact.
+- Corretta la race del wizard che poteva inviare due volte il bootstrap durante il passaggio alla
+  review.
+- Toolchain aggiornata senza breaking change: audit runtime a zero vulnerabilita e audit completo
+  ridotto a una sola segnalazione low su esbuild dev server Windows.
 - Backoffice plugin UI disaccoppiata tramite renderer registry e `componentRef`.
 - Flussi auth/email consolidati con test su secure payload, reset password, registrazione pubblica
   e verifica email.
@@ -23,6 +33,17 @@ Il formato si ispira a [Keep a Changelog](https://keepachangelog.com/).
   `.env`, settings sito verificati da test.
 - API admin extensions stabilizzata su `/v1/admin/extensions`, con fallback backoffice al catalogo
   contribution legacy.
+
+### Chiusura
+
+- Release gate Playwright completato con 14/14 scenari browser/API verdi.
+- Integrazione Mongo reale, smoke backup/restore e readiness `ok/degraded/down` verificati.
+- Logout reso server-side e revoca JWT resa univoca tramite `jti`, eliminando collisioni tra
+  sessioni create nello stesso secondo.
+- Corretto l'update Mongo dei documenti applicativi che contengono un campo `value`.
+- Il provisioning security differito completa i grant dei plugin caricati subito dopo il bootstrap,
+  senza richiedere un riavvio del CMS.
+- Log email console strutturati e token di verifica/reset redatti automaticamente.
 
 ---
 

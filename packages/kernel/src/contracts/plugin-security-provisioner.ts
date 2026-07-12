@@ -8,4 +8,6 @@ import type { PluginManifest } from "./plugin-manifest.js";
 export interface PluginSecurityProvisioner {
   provision(manifest: PluginManifest): Promise<void>;
   deprovision(manifest: PluginManifest): Promise<void>;
+  defer?(manifest: PluginManifest): Promise<void> | void;
+  provisionDeferred?(): Promise<void>;
 }

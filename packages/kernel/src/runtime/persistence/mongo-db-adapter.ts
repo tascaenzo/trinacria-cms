@@ -57,6 +57,9 @@ interface MongoCollectionLike<TData> {
 interface MongoConnectionLike {
   collection<TData = unknown>(name: string): MongoCollectionLike<TData>;
   startSession(): Promise<MongoSessionLike>;
+  db?: {
+    command(command: Record<string, unknown>): Promise<unknown>;
+  };
 }
 
 export interface MongoDbAdapterOptions {
@@ -98,6 +101,10 @@ export class MongoDbAdapter implements DbAdapter {
 
   async healthCheck(): Promise<{ ok: true } | { ok: false; reason: string }> {
     try {
+      if (this.options.connection.db) {
+        await this.options.connection.db.command({ ping: 1 });
+        return { ok: true };
+      }
       const session = await this.options.connection.startSession();
       await session.endSession?.();
       return { ok: true };
@@ -356,7 +363,11 @@ function extractFindOneAndUpdateValue<TData>(
   }
 
   const maybeRecord = value as Record<string, unknown>;
-  if ("value" in maybeRecord) {
+  const keys = Object.keys(maybeRecord);
+  const isLegacyResultWrapper =
+    "value" in maybeRecord &&
+    (keys.length === 1 || "lastErrorObject" in maybeRecord || "ok" in maybeRecord);
+  if (isLegacyResultWrapper) {
     return (maybeRecord.value as TData | null) ?? null;
   }
 

@@ -37,4 +37,3 @@ Documentare deploy production e hardening security mirato per il passaggio verso
 ## Check
 
 - Review documentale dei riferimenti e dei link.
-

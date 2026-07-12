@@ -44,8 +44,8 @@ admin-kernel
 | `SafeAdminExtensionManifest`  | Manifest passato da `sanitizeAdminExtensionManifest`; puo entrare nel normalizer puro. |
 | `RenderableAdminContribution` | Forma interna montabile dal backoffice; include render React per le route.             |
 | `contributions`               | Escape hatch locale/non serializzabile per componenti React custom.                    |
-| `componentRef`                 | Identificatore namespaced che collega manifest dichiarativo e renderer React custom.   |
-| `BackofficeModule.renderers`   | Registry host dei renderer React esportati dal package proprietario del plugin.       |
+| `componentRef`                | Identificatore namespaced che collega manifest dichiarativo e renderer React custom.   |
+| `BackofficeModule.renderers`  | Registry host dei renderer React esportati dal package proprietario del plugin.        |
 | `manifest`                    | Canale consigliato per plugin runtime/API.                                             |
 | `registry`                    | Merge tra contribution, runtime plugin state, capability e permission utente.          |
 | `renderer declarative`        | UI standard generata da metadati manifest, schema e endpoint binding.                  |

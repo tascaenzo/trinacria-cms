@@ -51,6 +51,19 @@ test("SecureEventPayloadsService encrypts payloads and enforces consumer authori
     requiredPermission: "email-pack:email:send"
   });
   assert.equal(claimed.payload.resetUrl, "https://cms.example/reset/raw-token");
+
+  await assert.rejects(
+    () =>
+      service.claim({
+        payloadId: record.id,
+        consumerPluginId: "email-pack",
+        eventName: "core-pack:secure-event-payload-ready",
+        payloadType: "email-pack:send-email-request",
+        schemaVersion: 1,
+        requiredPermission: "email-pack:email:send"
+      }),
+    /cannot be claimed/
+  );
 });
 
 test("SecureEventPayloadsService allows developer authorizer exceptions for third-party plugins", async () => {

@@ -19,50 +19,50 @@ operativo verificato. Prima di pubblicare:
 
 ### Runtime
 
-| Variabile | Richiesta | Note |
-| --- | --- | --- |
-| `NODE_ENV=production` | si | Attiva profilo hardened. `staging` applica lo stesso profilo critico. |
-| `MONGO_URI` | si | URI Mongo completo. Ha precedenza sulle variabili split. |
-| `CMS_PUBLIC_ORIGIN` | consigliata | Origine pubblica API/CMS usata anche per link e CSRF trusted origins. |
-| `VITE_CMS_API_BASE_URL` | consigliata | Base URL usata dal backoffice quando servito separatamente. |
-| `LOG_FORMAT=json` | si | Log strutturati per collector esterno. |
-| `CMS_INSTALLED=true` | post-install | Segnale operativo per checklist; non sostituisce lo stato DB. |
+| Variabile               | Richiesta    | Note                                                                  |
+| ----------------------- | ------------ | --------------------------------------------------------------------- |
+| `NODE_ENV=production`   | si           | Attiva profilo hardened. `staging` applica lo stesso profilo critico. |
+| `MONGO_URI`             | si           | URI Mongo completo. Ha precedenza sulle variabili split.              |
+| `CMS_PUBLIC_ORIGIN`     | consigliata  | Origine pubblica API/CMS usata anche per link e CSRF trusted origins. |
+| `VITE_CMS_API_BASE_URL` | consigliata  | Base URL usata dal backoffice quando servito separatamente.           |
+| `LOG_FORMAT=json`       | si           | Log strutturati per collector esterno.                                |
+| `CMS_INSTALLED=true`    | post-install | Segnale operativo per checklist; non sostituisce lo stato DB.         |
 
 ### HTTP, reverse proxy, CORS e CSRF
 
-| Variabile | Richiesta | Note |
-| --- | --- | --- |
-| `HTTP_CORS_ORIGINS` | si | Lista CSV di origini esplicite. `*` e rifiutato in production. |
-| `CMS_CSRF_TRUSTED_ORIGINS` | si per cookie auth | Lista CSV di origini autorizzate per mutazioni con cookie. |
-| `CMS_CSRF_PROTECTION=true` | default production | Lasciare attivo se si usano cookie auth. |
-| `HTTP_TRUST_PROXY=true` | solo dietro proxy trusted | Abilitare solo se il proxy imposta correttamente `x-forwarded-*`. |
-| `CMS_OPENAPI_ENABLED=false` | consigliata | Default production: disabilitato. |
-| `CMS_SWAGGER_ENABLED=false` | consigliata | Default production: disabilitato. |
+| Variabile                   | Richiesta                 | Note                                                              |
+| --------------------------- | ------------------------- | ----------------------------------------------------------------- |
+| `HTTP_CORS_ORIGINS`         | si                        | Lista CSV di origini esplicite. `*` e rifiutato in production.    |
+| `CMS_CSRF_TRUSTED_ORIGINS`  | si per cookie auth        | Lista CSV di origini autorizzate per mutazioni con cookie.        |
+| `CMS_CSRF_PROTECTION=true`  | default production        | Lasciare attivo se si usano cookie auth.                          |
+| `HTTP_TRUST_PROXY=true`     | solo dietro proxy trusted | Abilitare solo se il proxy imposta correttamente `x-forwarded-*`. |
+| `CMS_OPENAPI_ENABLED=false` | consigliata               | Default production: disabilitato.                                 |
+| `CMS_SWAGGER_ENABLED=false` | consigliata               | Default production: disabilitato.                                 |
 
 ### JWT e cookie auth
 
-| Variabile | Richiesta | Note |
-| --- | --- | --- |
-| `CMS_JWT_SECRET` oppure `CMS_JWT_SECRET_FILE` | si | Secret forte, non placeholder, non committato. Preferire file secret. |
-| `CMS_STRICT_JWT_SECRET_REQUIRED=true` | si | In production viene forzato a `true`. |
-| `CMS_JWT_COOKIE_SECURE=true` | si | In production viene impostato se assente. |
-| `CMS_JWT_COOKIE_SAME_SITE=lax` | default | Usare `none` solo con HTTPS e proxy/cookie cross-site corretti. |
-| `CMS_JWT_ACCESS_COOKIE_NAME` | opzionale | Default `cms_access_token`. |
-| `CMS_JWT_REFRESH_COOKIE_NAME` | opzionale | Default `cms_refresh_token`. |
+| Variabile                                     | Richiesta | Note                                                                  |
+| --------------------------------------------- | --------- | --------------------------------------------------------------------- |
+| `CMS_JWT_SECRET` oppure `CMS_JWT_SECRET_FILE` | si        | Secret forte, non placeholder, non committato. Preferire file secret. |
+| `CMS_STRICT_JWT_SECRET_REQUIRED=true`         | si        | In production viene forzato a `true`.                                 |
+| `CMS_JWT_COOKIE_SECURE=true`                  | si        | In production viene impostato se assente.                             |
+| `CMS_JWT_COOKIE_SAME_SITE=lax`                | default   | Usare `none` solo con HTTPS e proxy/cookie cross-site corretti.       |
+| `CMS_JWT_ACCESS_COOKIE_NAME`                  | opzionale | Default `cms_access_token`.                                           |
+| `CMS_JWT_REFRESH_COOKIE_NAME`                 | opzionale | Default `cms_refresh_token`.                                          |
 
 ### Settings e secret
 
-| Variabile | Richiesta | Note |
-| --- | --- | --- |
-| `CMS_SETTINGS_MASTER_KEY` | si | Chiave per secret settings. Deve essere stabile tra restart. |
-| `CMS_SETTINGS_MASTER_KEY_VERSION` | consigliata | Versione logica persistita con il ciphertext. |
-| `CMS_SECURE_PAYLOAD_MASTER_KEY` | consigliata | Chiave separata per secure payload; se assente usa `CMS_SETTINGS_MASTER_KEY`. |
+| Variabile                         | Richiesta   | Note                                                                          |
+| --------------------------------- | ----------- | ----------------------------------------------------------------------------- |
+| `CMS_SETTINGS_MASTER_KEY`         | si          | Chiave per secret settings. Deve essere stabile tra restart.                  |
+| `CMS_SETTINGS_MASTER_KEY_VERSION` | consigliata | Versione logica persistita con il ciphertext.                                 |
+| `CMS_SECURE_PAYLOAD_MASTER_KEY`   | consigliata | Chiave separata per secure payload; se assente usa `CMS_SETTINGS_MASTER_KEY`. |
 
 ### Observability
 
-| Variabile | Richiesta | Note |
-| --- | --- | --- |
-| `OBSERVABILITY_TOKEN` | si | Protegge `/metrics` e `/ops/checklist`. Deve essere trattato come secret. |
+| Variabile             | Richiesta | Note                                                                      |
+| --------------------- | --------- | ------------------------------------------------------------------------- |
+| `OBSERVABILITY_TOKEN` | si        | Protegge `/metrics` e `/ops/checklist`. Deve essere trattato come secret. |
 
 ## Esempio `.env.production`
 

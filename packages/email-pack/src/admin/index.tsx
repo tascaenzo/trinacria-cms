@@ -1,7 +1,4 @@
-import {
-  EmailDeliveryWidget,
-  type EmailDeliveryWidgetContext
-} from "./email-delivery-widget.js";
+import { EmailDeliveryWidget, type EmailDeliveryWidgetContext } from "./email-delivery-widget.js";
 import {
   EmailTemplateManager,
   type EmailTemplateManagerContext

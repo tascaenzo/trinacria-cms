@@ -70,6 +70,24 @@ test("MongoDbAdapter supports insert/update/delete", async () => {
   assert.equal(deleted, true);
 });
 
+test("MongoDbAdapter preserves a domain value field in direct findOneAndUpdate results", async () => {
+  const connection = createFakeConnection({ directFindOneAndUpdateResult: true });
+  const registry = new EntityRegistry();
+  registry.register({
+    entityName: "settings",
+    schema: s.object({ key: s.string(), value: s.string() })
+  });
+  const adapter = createMongoDbAdapter({ connection, entityRegistry: registry });
+  const repository = adapter.repository<{ key: string; value: string }>("settings", {
+    pluginId: "core-pack"
+  });
+
+  const updated = await repository.updateOne({ filter: { key: "theme" } }, { value: "dark" });
+
+  assert.equal(updated?.key, "theme");
+  assert.equal(updated?.value, "dark");
+});
+
 test("EntityRegistry throws when entity is missing", () => {
   const adapter = createMongoDbAdapter({
     connection: createFakeConnection(),
@@ -100,11 +118,24 @@ test("MongoDbAdapter healthCheck and transactions are available", async () => {
 
   const health = await adapter.healthCheck();
   assert.deepEqual(health, { ok: true });
+  assert.deepEqual(connection.commandLog, [{ ping: 1 }]);
 
   const tx = await adapter.beginTransaction({ pluginId: "cms/jobs" });
   await tx.commit();
   assert.equal(connection.sessionLog.includes("start"), true);
   assert.equal(connection.sessionLog.includes("commit"), true);
+});
+
+test("MongoDbAdapter healthCheck reports a failed Mongo ping", async () => {
+  const adapter = createMongoDbAdapter({
+    connection: createFakeConnection({ pingError: new Error("mongo unavailable") }),
+    entityRegistry: new EntityRegistry()
+  });
+
+  assert.deepEqual(await adapter.healthCheck(), {
+    ok: false,
+    reason: "mongo unavailable"
+  });
 });
 
 test("MongoDbAdapter ensureIndexes uses canonical index declarations", async () => {
@@ -167,9 +198,13 @@ test("MongoDbAdapter maps reserved kernel namespace without plugin prefix", asyn
   assert.equal(connection.lastCollectionName, "kernel__installed_plugins");
 });
 
-function createFakeConnection() {
+function createFakeConnection(options?: {
+  pingError?: Error;
+  directFindOneAndUpdateResult?: boolean;
+}) {
   const queryLog: Array<Record<string, unknown>> = [];
   const sessionLog: string[] = [];
+  const commandLog: Array<Record<string, unknown>> = [];
   const indexCalls: Array<{ collection: string; indexes: unknown[] }> = [];
   let stored: Record<string, unknown> = { _id: "seed-1", key: "theme", value: "light" };
   let lastCollectionName = "";
@@ -178,7 +213,15 @@ function createFakeConnection() {
   const connection = {
     queryLog,
     sessionLog,
+    commandLog,
     indexCalls,
+    db: {
+      async command(command: Record<string, unknown>) {
+        commandLog.push(command);
+        if (options?.pingError) throw options.pingError;
+        return { ok: 1 };
+      }
+    },
     get lastCollectionName() {
       return lastCollectionName;
     },
@@ -221,7 +264,8 @@ function createFakeConnection() {
         },
         async findOneAndUpdate(_filter: Record<string, unknown>, patch: Record<string, unknown>) {
           stored = applyMongoPatch(stored, patch);
-          return { value: { ...(stored as Record<string, unknown>) } };
+          const updated = { ...(stored as Record<string, unknown>) };
+          return options?.directFindOneAndUpdateResult ? updated : { value: updated };
         },
         async updateOne(filter: Record<string, unknown>, patch: Record<string, unknown>) {
           if (filter._id && stored._id === filter._id) {

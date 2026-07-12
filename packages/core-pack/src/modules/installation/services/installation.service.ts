@@ -102,6 +102,7 @@ export class InstallationService {
 
     // Security baseline
     await this.securityProvisioning.provision(CORE_PACK_MANIFEST);
+    await this.securityProvisioning.provisionDeferred?.();
 
     // Admin user
     const adminUser = await this.upsertAdminUser(input);
@@ -232,7 +233,6 @@ export class InstallationService {
       envFilePath: envStatus.envFilePath
     };
   }
-
 }
 
 function resolveEnvFilePath(): string {

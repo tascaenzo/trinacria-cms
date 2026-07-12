@@ -7,6 +7,7 @@ export const BlacklistedTokenRecordSchema = s.object(
     key: s.string({ trim: true, minLength: 1 }),
     sub: s.string({ trim: true, minLength: 1 }),
     iat: s.number(),
+    jti: s.string({ trim: true, minLength: 1 }).optional(),
     tokenKind: s.enum(["access", "refresh"] as const),
     expiresAt: s.dateTimeString(),
     createdAt: s.dateTimeString()

@@ -91,9 +91,7 @@ async function loadAdminExtensionManifests(): Promise<readonly AdminExtensionMan
   }
 }
 
-function toAdminExtensionManifest(
-  manifest: RuntimeAdminExtensionManifest
-): AdminExtensionManifest {
+function toAdminExtensionManifest(manifest: RuntimeAdminExtensionManifest): AdminExtensionManifest {
   const routes = (manifest.admin.routes ?? []).map((entry) =>
     toAdminRoute({
       pluginId: manifest.pluginId,

@@ -65,12 +65,7 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
     return getBackofficeRouteStateParam("section") ?? settings[0]?.id ?? null;
   });
 
-  const {
-    error,
-    isLoading,
-    records,
-    refresh
-  } = useSettingsDefinitions();
+  const { error, isLoading, records, refresh } = useSettingsDefinitions();
   const visibleRecords = useMemo(() => records.filter(isVisibleSettingDefinition), [records]);
   const { isOverviewLoading, overviewItems } = useSettingsOverview(visibleRecords);
   const [saveError, setSaveError] = useState<string | null>(null);
