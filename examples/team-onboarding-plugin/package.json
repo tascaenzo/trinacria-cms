@@ -1,0 +1,28 @@
+{
+  "name": "@trinacria-cms/example-team-onboarding-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "prebuild": "npm run build -w @trinacria-cms/kernel",
+    "build": "tsc -p tsconfig.json",
+    "pretypecheck": "npm run build -w @trinacria-cms/kernel",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "pretest": "npm run build -w @trinacria-cms/kernel",
+    "test": "node --import tsx --test test/**/*.test.ts"
+  },
+  "dependencies": {
+    "@trinacria-cms/kernel": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1"
+  }
+}

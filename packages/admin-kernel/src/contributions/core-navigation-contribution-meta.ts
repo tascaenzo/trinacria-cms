@@ -1,6 +1,13 @@
 import type { AdminNavigationItem } from "../contracts.js";
 
 export const OFFICIAL_CORE_NAV_META: Record<string, Partial<AdminNavigationItem>> = {
+  "nav-plugins": {
+    guards: [{ pluginId: "core-pack", capability: "plugins.read" }],
+    titleKey: "official.nav.plugins.title",
+    icon: "plug",
+    group: "Core",
+    groupKey: "official.nav.group.core"
+  },
   "nav-users": {
     guards: [{ pluginId: "core-pack", capability: "users.read" }],
     titleKey: "official.nav.users.title",

@@ -163,3 +163,32 @@ Su unregister:
 ## 10. Conclusione
 
 Un plugin moderno in Trinacria CMS e contract-first: dichiara cosa offre (`capabilities`) e cosa contribuisce alla security (`manifest.security`), lasciando al runtime la sincronizzazione coerente.
+
+## 11. Riferimento eseguibile: team onboarding
+
+Il repository include un plugin completo e copiabile in
+[`examples/team-onboarding-plugin`](../../../examples/team-onboarding-plugin).
+Non e uno pseudo-codice: il package viene compilato, testato e puo essere
+caricato dal playground come `workspace` source.
+
+Per avviarlo da un checkout pulito, segui il **Quick start** nel suo
+[README](../../../examples/team-onboarding-plugin/README.md): e la fonte unica
+per dipendenze locali, compilazione e flag di attivazione del playground.
+
+Il riferimento mostra, nello stesso manifest:
+
+- `onLoad` e `onUnload` per il lifecycle;
+- permission key e grant a ruoli esistenti;
+- setting tipizzati e owner-scoped;
+- subscription all'evento pubblico `core-pack:user-invited`;
+- un contratto evento `audit` dichiarato dal plugin;
+- widget e sezione Settings visibili nel backoffice senza duplicare la shell.
+
+Per trasformarlo in un plugin di dominio reale, sostituisci prima package name e
+plugin ID, poi aggiungi entity, repository, service, controller e relativo
+contratto OpenAPI. Genera infine il client da `packages/sdk`: il backoffice deve
+consumare l'SDK, non URL o fetch duplicati nel componente React.
+
+Per il percorso operativo completo, inclusi onboarding, ruoli, settings,
+operazioni plugin e audit lifecycle, segui
+[0022 - Beta team onboarding](./0022-beta-team-onboarding.md).

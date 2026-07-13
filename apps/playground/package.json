@@ -13,6 +13,7 @@
   "dependencies": {
     "@trinacria-cms/core-pack": "0.1.0",
     "@trinacria-cms/email-pack": "0.1.0",
+    "@trinacria-cms/example-team-onboarding-plugin": "0.1.0",
     "@trinacria-cms/kernel": "0.1.0",
     "dotenv": "^17.4.2"
   }

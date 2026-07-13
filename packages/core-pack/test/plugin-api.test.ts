@@ -7,6 +7,7 @@ import {
   definePermissionKey,
   successEnvelope
 } from "../src/plugin-api/index.js";
+import { CORE_PACK_MANIFEST } from "../src/plugin/core-pack.manifest.js";
 
 test("core-pack plugin API keeps kernel helper re-exports available for compatibility", () => {
   assert.equal(definePermissionKey("Blog-Pack", "Posts", "Read"), "blog-pack:posts:read");
@@ -41,4 +42,9 @@ test("core-pack plugin API creates signed plugin requests", () => {
       body: { value: true }
     })
   );
+});
+
+test("core-pack publishes the plugin operations route for the operational backoffice", () => {
+  assert.ok(CORE_PACK_MANIFEST.admin?.routes?.some((route) => route.id === "plugins"));
+  assert.ok(CORE_PACK_MANIFEST.admin?.navigation?.some((item) => item.id === "nav-plugins"));
 });

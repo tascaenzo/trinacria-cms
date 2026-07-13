@@ -62,6 +62,8 @@ Sensitive cross-plugin communication is documented in
 [docs/plugin-secure-events.md](docs/plugin-secure-events.md).
 User lifecycle events and email flows are documented in
 [docs/plugin-user-events-and-email-flows.md](docs/plugin-user-events-and-email-flows.md).
+The runnable plugin reference and beta onboarding journey are documented in
+[docs/cms/it/0022-beta-team-onboarding.md](docs/cms/it/0022-beta-team-onboarding.md).
 
 ## Development workflow
 

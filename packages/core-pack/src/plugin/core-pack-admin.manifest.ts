@@ -16,6 +16,14 @@ import { CORE_PACK_PERMISSION_KEYS } from "./core-pack.security.js";
 export const CORE_PACK_ADMIN_MANIFEST: PluginManifestAdmin = defineAdmin({
   routes: [
     defineAdminRoute({
+      id: "plugins",
+      path: "/plugins",
+      label: "Plugins",
+      requiredPermission: CORE_PACK_PERMISSION_KEYS.PLUGINS_READ,
+      componentRef: "core-pack.plugins",
+      order: 5
+    }),
+    defineAdminRoute({
       id: "users",
       path: "/users",
       label: "Users",
@@ -49,6 +57,13 @@ export const CORE_PACK_ADMIN_MANIFEST: PluginManifestAdmin = defineAdmin({
     })
   ],
   navigation: [
+    defineAdminNavigation({
+      id: "nav-plugins",
+      path: "/plugins",
+      label: "Plugins",
+      requiredPermission: CORE_PACK_PERMISSION_KEYS.PLUGINS_READ,
+      order: 5
+    }),
     defineAdminNavigation({
       id: "nav-users",
       path: "/users",

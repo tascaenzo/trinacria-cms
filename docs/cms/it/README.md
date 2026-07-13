@@ -34,6 +34,7 @@ Glossario terminologico unico: [GLOSSARY.md](../GLOSSARY.md)
 20. [0019 - Admin manifest e backoffice declarative](./0019-admin-manifest-e-backoffice-declarative.md)
 21. [0020 - Runbook deploy production](./0020-runbook-deploy-production.md)
 22. [0021 - Checklist hardening security](./0021-checklist-hardening-security.md)
+23. [0022 - Beta team onboarding: primo verticale prodotto](./0022-beta-team-onboarding.md)
 
 ## Cosa trovi in questo manuale
 

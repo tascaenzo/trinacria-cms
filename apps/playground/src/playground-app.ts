@@ -3,7 +3,8 @@ import {
   createInMemoryPluginRuntimeStore,
   startCmsApp,
   type CmsStarterHandle,
-  type KernelPluginDefinition
+  type KernelPluginDefinition,
+  type PluginDiscoverySource
 } from "@trinacria-cms/kernel";
 import { createCorePackMongoGlobalProviders, createCorePackPlugin } from "@trinacria-cms/core-pack";
 import { createEmailPackPlugin } from "@trinacria-cms/email-pack";
@@ -77,6 +78,7 @@ export async function createPlaygroundCmsApp(): Promise<PlaygroundCmsApp> {
     modules: [createPlaygroundObservabilityModule({ config: observability, logger, metrics })],
     globalProviders: createGlobalProviders({ mongoUri, installationMode, smokeStandalone }),
     plugins: createPlaygroundPlugins(smokeStandalone),
+    pluginSources: createPlaygroundPluginSources(smokeStandalone),
     pluginRuntimeStore: installationMode ? createInMemoryPluginRuntimeStore() : undefined,
     enablePluginSecurityProvisioning: smokeStandalone ? false : !installationMode,
     autoLoadPlugins: true
@@ -123,6 +125,25 @@ function createPlaygroundPlugins(smokeStandalone: boolean): readonly KernelPlugi
   return smokeStandalone
     ? smokePlugins
     : [createCorePackPlugin(), createEmailPackPlugin(), ...smokePlugins];
+}
+
+/**
+ * The reference plugin remains opt-in so the default playground stays a clean
+ * product baseline. Enable it with PLAYGROUND_TEAM_ONBOARDING_PLUGIN=1 while
+ * following the beta onboarding guide.
+ */
+function createPlaygroundPluginSources(smokeStandalone: boolean): readonly PluginDiscoverySource[] {
+  if (smokeStandalone || process.env.PLAYGROUND_TEAM_ONBOARDING_PLUGIN !== "1") {
+    return [];
+  }
+
+  return [
+    {
+      type: "workspace",
+      name: "team-onboarding-plugin",
+      entrypoint: "@trinacria-cms/example-team-onboarding-plugin"
+    }
+  ];
 }
 
 function isCmsInstalled(): boolean {
