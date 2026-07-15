@@ -396,6 +396,7 @@ export type GetAuthenticatedUserResponse = {
   "email": string;
   "firstName": string;
   "lastName": string;
+  "locale"?: "en" | "it";
   "status": "active" | "suspended";
   "createdAt": string;
   "updatedAt": string;
@@ -1230,6 +1231,7 @@ export type LoginWithPasswordResponse = {
   "email": string;
   "firstName": string;
   "lastName": string;
+  "locale"?: "en" | "it";
   "status": "active" | "suspended";
   "createdAt": string;
   "updatedAt": string;
@@ -1346,6 +1348,7 @@ export type UpdateAuthenticatedUserProfileRequest = {
   body: {
   "firstName": string;
   "lastName": string;
+  "locale"?: "en" | "it";
 };
 };
 
@@ -1355,6 +1358,7 @@ export type UpdateAuthenticatedUserProfileResponse = {
   "email": string;
   "firstName": string;
   "lastName": string;
+  "locale"?: "en" | "it";
   "status": "active" | "suspended";
   "createdAt": string;
   "updatedAt": string;

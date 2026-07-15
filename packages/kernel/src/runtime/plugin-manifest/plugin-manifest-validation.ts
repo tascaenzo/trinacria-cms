@@ -15,6 +15,7 @@ import {
   entitySchema,
   settingSchema,
   eventsSchema,
+  i18nSchema,
   adminSchema
 } from "./plugin-manifest-contributions.js";
 import { securitySectionSchema } from "./plugin-manifest-security.js";
@@ -89,6 +90,7 @@ const pluginManifestSchema = s
         .optional()
         .default([]),
       events: eventsSchema.optional(),
+      i18n: i18nSchema.optional(),
       admin: adminSchema.optional(),
       security: securitySectionSchema.optional()
     },
@@ -204,6 +206,18 @@ export function validatePluginManifest(input: unknown): PluginManifest {
             events: {
               emits: [...(parsed.events.emits ?? [])],
               subscribes: [...(parsed.events.subscribes ?? [])]
+            }
+          }
+        : {}),
+      ...(parsed.i18n
+        ? {
+            i18n: {
+              fallbackLocale: parsed.i18n.fallbackLocale,
+              bundles: parsed.i18n.bundles.map((bundle) => ({
+                namespace: bundle.namespace,
+                locale: bundle.locale,
+                messages: { ...bundle.messages }
+              }))
             }
           }
         : {}),

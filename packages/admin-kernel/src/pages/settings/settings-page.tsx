@@ -376,16 +376,15 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
       >
         {isLoading ? <EmptyState text={t("settings.empty.loading_definitions")} /> : null}
         {!isLoading ? (
-          <div className="grid h-full min-h-0 bg-white lg:grid-cols-[360px_minmax(0,1fr)]">
+          <div className="grid h-full min-h-0 bg-[color:var(--color-surface)] lg:grid-cols-[320px_minmax(0,1fr)]">
             <SettingsWorkspaceSidebar
               onSelectSection={handleSelectSection}
-              records={visibleRecords}
               sections={operationalSettings}
               selectedSection={selectedSection}
               t={t}
             />
 
-            <section className="min-h-0 bg-white">
+            <section className="min-h-0 bg-[color:var(--color-surface)]">
               <SettingsSectionForm
                 draftValues={sectionDraftValues}
                 editableRecords={selectedSectionRecords}

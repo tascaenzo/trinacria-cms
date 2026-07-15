@@ -9,6 +9,7 @@ export function definePluginManifest(input: DefinePluginManifestInput): PluginMa
   const entities = omitEmptyArray(input.entities);
   const settings = omitEmptyArray(input.settings);
   const events = compactSection(input.events);
+  const i18n = compactSection(input.i18n);
   const admin = compactSection(input.admin);
   const security = compactSection(input.security);
 
@@ -23,6 +24,7 @@ export function definePluginManifest(input: DefinePluginManifestInput): PluginMa
     ...(entities !== undefined ? { entities } : {}),
     ...(settings !== undefined ? { settings } : {}),
     ...(events !== undefined ? { events } : {}),
+    ...(i18n !== undefined ? { i18n } : {}),
     ...(admin !== undefined ? { admin } : {}),
     ...(security !== undefined ? { security } : {})
   };

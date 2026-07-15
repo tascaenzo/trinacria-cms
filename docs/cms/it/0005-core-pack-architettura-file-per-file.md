@@ -205,7 +205,7 @@ Responsabilita:
 - assegnazione ruoli a utenti
 - risoluzione effective permissions
 - CRUD policy rules
-- provisioning security dichiarata nel manifest
+- manifest provisioning dichiarato dal manifest (security, settings e i18n)
 - motore authz esposto al kernel
 
 Service esposti:
@@ -214,7 +214,8 @@ Service esposti:
 - `CORE_PACK_ROLE_POLICY_RULES_SERVICE_TOKEN` -> `RolePolicyRulesService`
 - `CORE_PACK_AUTHZ_SERVICE_TOKEN` -> `CorePackAuthzService`
 - `API_KEYS_SERVICE_TOKEN` -> `ApiKeysService`
-- `CORE_PACK_SECURITY_PROVISIONING_SERVICE_TOKEN` -> `CorePackSecurityProvisioningService`
+- `CORE_PACK_MANIFEST_PROVISIONING_SERVICE_TOKEN` -> `CorePackManifestProvisioningService`
+- `CORE_TOKENS.PLUGIN_MANIFEST_PROVISIONER` -> token lifecycle pubblico
 - `CORE_TOKENS.AUTHZ_SERVICE` -> alias pubblico verso `CorePackAuthzService`
 
 API esposte:

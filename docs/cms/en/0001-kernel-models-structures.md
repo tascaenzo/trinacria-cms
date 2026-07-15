@@ -123,7 +123,7 @@ Defines minimal app bootstrap:
 - extra modules
 - global providers
 - plugins and autoload
-- automatic security provisioning on load/unregister when a `PluginSecurityProvisioner` is available
+- automatic manifest provisioning on load/unregister when a `PluginManifestProvisioner` is available
 
 Why it matters:
 
@@ -139,7 +139,7 @@ Important tokens:
 - `CORE_TOKENS.DB_ADAPTER`
 - `CORE_TOKENS.ENTITY_REGISTRY`
 - `CORE_TOKENS.AUTHZ_SERVICE`
-- `CORE_TOKENS.PLUGIN_SECURITY_PROVISIONER`
+- `CORE_TOKENS.PLUGIN_MANIFEST_PROVISIONER`
 - `CORE_TOKENS.KERNEL_HEALTH_SERVICE`
 - `CORE_TOKENS.LOGGER`
 

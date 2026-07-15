@@ -33,11 +33,21 @@ test("core-pack settings bootstrap provisions the canonical seed catalog", async
   const timezone = await service.getResolvedValueByKey("core-pack:cms:timezone");
   const featureFlag = await service.getResolvedValueByKey("core-pack:features:editorial_workflow");
   const pluginAccessGrants = await service.getResolvedValueByKey(PLUGIN_ACCESS_GRANTS_SETTING_KEY);
+  const dashboardLayout = await service.getResolvedValueByKey("core-pack:dashboard:widget_layout");
+  const backofficeTheme = await service.getResolvedValueByKey(
+    "core-pack:branding:backoffice_theme"
+  );
+  const backofficeAccent = await service.getResolvedValueByKey(
+    "core-pack:branding:backoffice_accent"
+  );
 
   assert.equal(siteName?.value, "Trinacria CMS");
   assert.equal(timezone?.value, "Europe/Rome");
   assert.equal(featureFlag?.value, false);
   assert.ok(Array.isArray(pluginAccessGrants?.value));
+  assert.deepEqual(dashboardLayout?.value, { order: [], hidden: [], dimensions: {} });
+  assert.equal(backofficeTheme?.value, "light");
+  assert.equal(backofficeAccent?.value, "neutral");
 });
 
 test("core-pack manifest exposes the canonical settings catalog", () => {

@@ -31,6 +31,10 @@ export interface AdminPageRenderContext {
   settings: readonly RenderableAdminSettingsSection[];
   widgets: readonly RenderableAdminDashboardWidget[];
   locale: Locale;
+  /** Whether the authenticated operator may enter dashboard layout editing mode. */
+  canCustomizeDashboard?: boolean;
+  /** Route navigation supplied by the shell for widget-level quick actions. */
+  navigateToRoute?: (routeId: string) => void;
   cms: typeof import("./cms-sdk.js").cms;
   t: TranslateFn;
 }

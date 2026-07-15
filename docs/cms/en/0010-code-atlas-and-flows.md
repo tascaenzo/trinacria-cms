@@ -23,7 +23,7 @@ Quick navigation map of the real codebase, updated for plugin-contributed securi
   - manifest validation and security ownership checks
 
 - `runtime/cms-starter.ts`
-  - app bootstrap and runtime hook wiring to `PluginSecurityProvisioner`
+  - app bootstrap and runtime hook wiring to `PluginManifestProvisioner`
   - also registers built-in `kernelHealth` and `system` endpoints
 
 - `runtime/permission-key.ts`
@@ -39,7 +39,7 @@ Quick navigation map of the real codebase, updated for plugin-contributed securi
   - baseline security declaration (`admin` + core-pack grants)
 
 - `modules/core-pack-root.module.ts`
-  - composes users + security + settings
+  - composes users + security + settings + i18n
 
 ## 4. Core-pack IAM domains
 
@@ -65,14 +65,14 @@ Quick navigation map of the real codebase, updated for plugin-contributed securi
 - `modules/roles/grants/role-grants.schemas.ts`
 - `modules/roles/grants/role-grants.repository.ts`
 
-## 5. Security provisioning module
+## 5. Manifest provisioning module
 
 - `modules/security/security-provisioning.service.ts`
-  - load-time delta sync
-  - unregister-time safe cleanup
+  - load-time synchronization of security, settings, and i18n bundles
+  - unregister-time safe cleanup of manifest-owned resources
 
 - `modules/security/security.module.ts`
-  - exports `CORE_TOKENS.PLUGIN_SECURITY_PROVISIONER`
+  - exports `CORE_TOKENS.PLUGIN_MANIFEST_PROVISIONER`
   - also registers the `api_keys` domain and machine-subject authorization support
 
 - `modules/security/api-keys/*`
@@ -86,21 +86,21 @@ Quick navigation map of the real codebase, updated for plugin-contributed securi
 - `mongo-db-adapter.ts`
   - CRUD, canonical IDs, health checks, index translation, update compatibility
 
-## 7. Flow: plugin load with security
+## 7. Flow: plugin load with manifest provisioning
 
 1. `cms-starter.ts` builds runtime with lifecycle hooks
 2. `in-memory-plugin-runtime.ts#loadInternal`
 3. plugin modules are registered
 4. runtime `onAfterLoad` hook runs
-5. `PluginSecurityProvisioner` is resolved
-6. `provision(manifest)` syncs `permissions/roles` + embedded grants
+5. `PluginManifestProvisioner` is resolved
+6. `provision(manifest)` syncs security, settings, and i18n resources
 
 ## 8. Flow: plugin unregister
 
 1. `runtime.unregister(pluginId)`
 2. runtime `onBeforeUnregister` hook
 3. `deprovision(manifest)`
-4. owned contributions are removed/disabled
+4. owned security/settings/i18n contributions are removed or disabled
 5. runtime plugin record is deleted
 
 ## 9. Flow: `GET /v1/roles`

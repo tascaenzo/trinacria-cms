@@ -28,6 +28,42 @@ test("validatePluginManifest returns normalized manifest", () => {
   ]);
 });
 
+test("validatePluginManifest accepts plugin translation bundles with English fallback", () => {
+  const manifest = validatePluginManifest({
+    id: "cms/plugin-content",
+    version: "1.2.3",
+    requiresCore: "^0.1.0",
+    i18n: {
+      fallbackLocale: "en",
+      bundles: [
+        { namespace: "admin", locale: "en", messages: { "content.title": "Content" } },
+        { namespace: "admin", locale: "it", messages: { "content.title": "Contenuti" } }
+      ]
+    }
+  });
+
+  assert.equal(manifest.i18n?.fallbackLocale, "en");
+  assert.equal(manifest.i18n?.bundles[1]?.messages["content.title"], "Contenuti");
+});
+
+test("validatePluginManifest rejects i18n declarations without English fallback bundle", () => {
+  assert.throws(
+    () =>
+      validatePluginManifest({
+        id: "cms/plugin-content",
+        version: "1.2.3",
+        requiresCore: "^0.1.0",
+        i18n: {
+          fallbackLocale: "en",
+          bundles: [
+            { namespace: "admin", locale: "it", messages: { "content.title": "Contenuti" } }
+          ]
+        }
+      }),
+    PluginManifestError
+  );
+});
+
 test("validatePluginManifest throws on invalid manifest id", () => {
   assert.throws(
     () =>
@@ -300,6 +336,18 @@ test("validatePluginManifest accepts M4 declarative contribution blocks", () => 
           requiredPermission: "blog-pack:posts:read"
         }
       ],
+      widgets: [
+        {
+          id: "editorial-status",
+          label: "Editorial status",
+          layout: {
+            columnSpan: 2,
+            rowSpan: 1,
+            minColumnSpan: 1,
+            maxColumnSpan: 3
+          }
+        }
+      ],
       settingsSections: [
         {
           id: "editorial",
@@ -328,6 +376,12 @@ test("validatePluginManifest accepts M4 declarative contribution blocks", () => 
   assert.equal(manifest.settings?.[0]?.key, "blog-pack:editorial:default-status");
   assert.equal(manifest.events?.emits?.[0]?.delivery, "async");
   assert.equal(manifest.admin?.routes?.[0]?.path, "/blog/posts");
+  assert.deepEqual({ ...manifest.admin?.widgets?.[0]?.layout }, {
+    columnSpan: 2,
+    rowSpan: 1,
+    minColumnSpan: 1,
+    maxColumnSpan: 3
+  });
   assert.equal(manifest.admin?.settingsSections?.[0]?.kind, "custom");
   assert.equal(manifest.admin?.settingsSections?.[0]?.componentRef, "blog-pack.editorial-settings");
   assert.deepEqual(manifest.admin?.settingsSections?.[0]?.settingKeys, [

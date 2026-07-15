@@ -15,7 +15,8 @@ plugin-to-core signed.
 
 Il kernel definisce i contratti e i punti di integrazione. `core-pack`
 implementa la baseline ufficiale: utenti, ruoli, permission, grants, policy
-rules, signed plugin calls e provisioning security dichiarato dai plugin.
+rules, signed plugin calls e security dichiarata dai plugin, materializzata dal
+manifest provisioning.
 
 ## Responsabilita
 
@@ -253,8 +254,9 @@ Gli audit sono persistiti in `cms_core_audit_events` con retention 90 giorni.
 
 ## Lifecycle
 
-Security provisioning avviene dopo il load plugin e prima di marcare il plugin
-come operativo per le superfici admin protette.
+Il security provisioning e una fase del `PluginManifestProvisioner`: avviene
+dopo il load del plugin, insieme a settings e i18n, prima di rendere disponibili
+le superfici runtime del plugin.
 
 Se il provisioning fallisce, il plugin entra in `failed` con phase
 `security-provisioning`.

@@ -6,7 +6,7 @@ import type { KernelAdminRouteGuard } from "../contracts/kernel-admin-route-guar
 import type { PluginDiscoveryService } from "../contracts/plugin-discovery.js";
 import type { PluginRuntime } from "../contracts/plugin-runtime.js";
 import type { PluginRuntimeStore } from "../contracts/plugin-runtime-store.js";
-import type { PluginSecurityProvisioner } from "../contracts/plugin-security-provisioner.js";
+import type { PluginManifestProvisioner } from "../contracts/plugin-manifest-provisioner.js";
 import type {
   SecureEventPayloadAuthorizer,
   SecureEventPayloadStore
@@ -29,8 +29,8 @@ export const CORE_TOKENS = {
   CACHE_ADAPTER: createToken<CacheAdapter>("CMS_CORE_CACHE_ADAPTER"),
   ENTITY_REGISTRY: createToken<EntityRegistry>("CMS_CORE_ENTITY_REGISTRY"),
   AUTHZ_SERVICE: createToken<AuthzService>("CMS_CORE_AUTHZ_SERVICE"),
-  PLUGIN_SECURITY_PROVISIONER: createToken<PluginSecurityProvisioner>(
-    "CMS_CORE_PLUGIN_SECURITY_PROVISIONER"
+  PLUGIN_MANIFEST_PROVISIONER: createToken<PluginManifestProvisioner>(
+    "CMS_CORE_PLUGIN_MANIFEST_PROVISIONER"
   ),
   SECURE_EVENT_PAYLOAD_STORE: createToken<SecureEventPayloadStore>(
     "CMS_CORE_SECURE_EVENT_PAYLOAD_STORE"

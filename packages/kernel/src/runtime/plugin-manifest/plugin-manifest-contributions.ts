@@ -16,7 +16,7 @@ import {
 const namespaceSegmentSchema = s
   .string({ trim: true, toLowerCase: true, minLength: 1, maxLength: 80 })
   .refine(
-    (value) => isValidNamespaceSegment(value),
+    (value) => /^[a-z0-9][a-z0-9._-]*$/.test(value),
     "Namespace segment is invalid or reserved",
     "invalid_namespace_segment"
   );
@@ -208,6 +208,63 @@ export const eventsSchema = s.object(
   { strict: true }
 );
 
+const localeSchema = s
+  .string({ trim: true, minLength: 2, maxLength: 35 })
+  .refine(
+    (value) => /^[a-z]{2,3}(?:-[A-Z]{2})?$/.test(value),
+    "locale must be a BCP-47 language tag such as 'en', 'it', or 'fr-CA'",
+    "invalid_locale"
+  );
+
+const translationMessageKeySchema = s.string({
+  trim: true,
+  minLength: 1,
+  maxLength: 240,
+  pattern: /^[a-z0-9][a-z0-9._-]*$/
+});
+
+// Translation surfaces intentionally allow names such as `admin` and `public`.
+// These do not allocate a runtime/entity namespace, so reserved entity names do
+// not apply here.
+const translationNamespaceSchema = s
+  .string({ trim: true, toLowerCase: true, minLength: 1, maxLength: 80 })
+  .refine(
+    (value) => /^[a-z0-9][a-z0-9._-]*$/.test(value),
+    "Translation namespace is invalid",
+    "invalid_translation_namespace"
+  );
+
+const translationBundleSchema = s.object(
+  {
+    namespace: translationNamespaceSchema,
+    locale: localeSchema,
+    messages: s.record(translationMessageKeySchema, s.string({ minLength: 1, maxLength: 4000 }))
+  },
+  { strict: true }
+);
+
+/** Strict, transport-safe translation declaration for installable plugins. */
+export const i18nSchema = s
+  .object(
+    {
+      fallbackLocale: s.literal("en"),
+      bundles: s.array(translationBundleSchema, {
+        unique: (bundle) => `${bundle.namespace}|${bundle.locale}`
+      })
+    },
+    { strict: true }
+  )
+  .refine(
+    (value) =>
+      [...new Set(value.bundles.map((bundle) => bundle.namespace))].every((namespace) =>
+        value.bundles.some(
+          (bundle) => bundle.namespace === namespace && bundle.locale === value.fallbackLocale
+        )
+      ),
+    "Every i18n namespace must include the declared English fallback",
+    "missing_i18n_fallback"
+  );
+
 const adminNavigationSchema = s.object(
   {
     id: namespaceSegmentSchema,
@@ -263,6 +320,31 @@ const adminResourceSchema = s.object(
   { strict: true }
 );
 
+const dashboardColumnSpanSchema = s.union([s.literal(1), s.literal(2), s.literal(3), s.literal(4)]);
+const dashboardRowSpanSchema = s.union([s.literal(1), s.literal(2), s.literal(3)]);
+
+const adminWidgetLayoutSchema = s
+  .object(
+    {
+      defaultColumnSpan: dashboardColumnSpanSchema.optional(),
+      defaultRowSpan: dashboardRowSpanSchema.optional(),
+      columnSpan: dashboardColumnSpanSchema.optional(),
+      rowSpan: dashboardRowSpanSchema.optional(),
+      minColumnSpan: dashboardColumnSpanSchema.optional(),
+      maxColumnSpan: dashboardColumnSpanSchema.optional(),
+      minRowSpan: dashboardRowSpanSchema.optional(),
+      maxRowSpan: dashboardRowSpanSchema.optional()
+    },
+    { strict: true }
+  )
+  .refine(
+    (layout) =>
+      (layout.minColumnSpan ?? 1) <= (layout.maxColumnSpan ?? 4) &&
+      (layout.minRowSpan ?? 1) <= (layout.maxRowSpan ?? 3),
+    "Widget layout minimum span cannot exceed its maximum span",
+    "invalid_widget_layout_bounds"
+  );
+
 const adminWidgetSchema = s.object(
   {
     id: namespaceSegmentSchema,
@@ -275,7 +357,8 @@ const adminWidgetSchema = s.object(
         "invalid_required_permission"
       )
       .optional(),
-    componentRef: s.string({ trim: true, minLength: 1, maxLength: 180 }).optional()
+    componentRef: s.string({ trim: true, minLength: 1, maxLength: 180 }).optional(),
+    layout: adminWidgetLayoutSchema.optional()
   },
   { strict: true }
 );

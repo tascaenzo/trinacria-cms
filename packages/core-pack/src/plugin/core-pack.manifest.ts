@@ -3,6 +3,7 @@ import {
   defineEmittedEvent,
   defineEvents,
   defineGrant,
+  defineI18n,
   definePluginManifest,
   defineSecurity
 } from "@trinacria-cms/kernel/plugin-api";
@@ -30,6 +31,29 @@ export const CORE_PACK_MANIFEST: PluginManifest = definePluginManifest({
   version: "0.1.0",
   requiresCore: "^0.1.0",
   capabilities: [...CORE_PACK_CAPABILITY_LIST],
+  // First core Backoffice messages migrated to the persistent i18n registry.
+  // Remaining local strings stay as a safe fallback during the staged migration.
+  i18n: defineI18n({
+    fallbackLocale: "en",
+    bundles: [
+      {
+        namespace: "admin",
+        locale: "en",
+        messages: {
+          "dashboard.title": "Overview",
+          "dashboard.summary": "Operational summary of the current CMS instance."
+        }
+      },
+      {
+        namespace: "admin",
+        locale: "it",
+        messages: {
+          "dashboard.title": "Panoramica",
+          "dashboard.summary": "Riepilogo operativo dell'istanza CMS corrente."
+        }
+      }
+    ]
+  }),
   settings: CORE_PACK_SETTING_DEFINITION_SEEDS.map((item) => ({
     key: item.key,
     category: item.category,

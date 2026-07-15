@@ -20,9 +20,10 @@ Renderer lookup flows through `runtime/admin-renderers.tsx`, but plugin-owned re
 exported by the plugin package and passed through its `BackofficeModule.renderers` entry.
 
 The permission center edits the `core-pack:security:plugin_access_grants` setting through the
-kernel-owned `core-pack:plugin-permission-center` renderer. The email template editor is owned by
-`email-pack` and is registered by the email backoffice module through
-`email-pack:email-template-manager`.
+kernel-owned `core-pack:plugin-permission-center` renderer. Plugin management is rendered in the
+same workspace through `core-pack:plugin-management`; it intentionally exposes runtime operations,
+not package uninstallation. The email template editor is owned by `email-pack` and is registered by
+the email backoffice module through `email-pack:email-template-manager`.
 
 When adding another advanced settings surface, keep the generic form generic, declare
 `kind: "custom"` and `componentRef` in the plugin manifest, then export the renderer from the plugin

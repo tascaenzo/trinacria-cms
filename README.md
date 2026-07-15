@@ -47,7 +47,7 @@ plugin security policy support.
 Official baseline plugin pack loaded by the kernel runtime. It starts as the default CMS feature set and evolves incrementally.
 
 It should stay focused on platform-level CMS capabilities: installation, auth,
-users, roles, permissions, settings, and security provisioning.
+users, roles, permissions, settings, translations, and manifest provisioning.
 Application domains such as editorial or commerce should live in separate
 plugins.
 

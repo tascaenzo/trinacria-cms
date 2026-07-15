@@ -5,6 +5,7 @@ import { CorePackInstallationModule } from "./installation/installation.module.j
 import { CorePackUsersModule } from "./users/users.module.js";
 import { CorePackSecurityModule } from "./security/security.module.js";
 import { CorePackSettingsModule } from "./settings/settings.module.js";
+import { CorePackI18nModule } from "./i18n/i18n.module.js";
 
 /**
  * Root module importing all baseline core-pack domains.
@@ -18,6 +19,7 @@ export const CorePackRootModule = defineModule({
     CorePackInstallationModule,
     CorePackUsersModule,
     CorePackSecurityModule,
-    CorePackSettingsModule
+    CorePackSettingsModule,
+    CorePackI18nModule
   ]
 });

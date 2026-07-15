@@ -1,4 +1,5 @@
-import { Badge, Button, Icon, Input, Select, Textarea } from "@trinacria-cms/trinacria-ui";
+import { useEffect, useMemo, useState } from "react";
+import { Button, Icon, Input, Select, Textarea } from "@trinacria-cms/trinacria-ui";
 import { ErrorBanner, EmptyState } from "../../components/resource-feedback.js";
 import type { TranslateFn } from "../../lib/i18n.js";
 import type {
@@ -6,7 +7,6 @@ import type {
   RenderableAdminSettingsSection
 } from "../../runtime/admin-route-runtime.js";
 import {
-  filterRecordsForSettingsSection,
   formatSettingFormLabel,
   getSettingEnumOptions,
   getSettingValueKind,
@@ -18,7 +18,6 @@ import {
 } from "./settings-page.utils.js";
 
 interface SettingsWorkspaceSidebarProps {
-  records: readonly SettingDefinitionRecord[];
   sections: readonly RenderableAdminSettingsSection[];
   selectedSection: RenderableAdminSettingsSection | null;
   onSelectSection: (sectionId: string) => void;
@@ -26,20 +25,30 @@ interface SettingsWorkspaceSidebarProps {
 }
 
 export function SettingsWorkspaceSidebar({
-  records,
   sections,
   selectedSection,
   onSelectSection,
   t
 }: SettingsWorkspaceSidebarProps) {
+  const groups = useMemo(() => groupSettingsSections(sections, t), [sections, t]);
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  const selectedGroupId = selectedSection ? getSettingsSectionGroup(selectedSection).id : null;
+
+  useEffect(() => {
+    if (!selectedGroupId) return;
+    setCollapsedGroups((current) =>
+      current[selectedGroupId] ? { ...current, [selectedGroupId]: false } : current
+    );
+  }, [selectedGroupId]);
+
   return (
-    <aside className="min-h-0 overflow-auto border-b border-[color:var(--color-border)] bg-white lg:border-b-0 lg:border-r">
+    <aside className="min-h-0 overflow-auto border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] lg:border-b-0 lg:border-r">
       <div className="px-6 py-4">
         <p className="text-xs font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
           {t("official.route.settings.title", "Impostazioni")}
         </p>
         <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink-muted)]">
-          {sections.length} {t("settings.modules.title", "Settings modules").toLowerCase()}
+          {sections.length} {t("settings.navigation.sections", "sezioni")}
         </p>
       </div>
 
@@ -47,28 +56,43 @@ export function SettingsWorkspaceSidebar({
         {sections.length === 0 ? (
           <EmptyState text={t("settings.overview.not_configured")} />
         ) : (
-          <div className="grid gap-1">
-            {sections.map((section) => {
-              const isSelected = section.id === selectedSection?.id;
-              const sectionRecords = filterRecordsForSettingsSection(records, section);
-
+          <div className="grid gap-3">
+            {groups.map((group) => {
+              const isCollapsed = collapsedGroups[group.id] ?? false;
+              const groupContentId = `settings-group-${group.id}`;
               return (
-                <button
-                  key={`${section.pluginId}:${section.id}`}
-                  type="button"
-                  onClick={() => onSelectSection(section.id)}
-                  className={`flex min-h-12 w-full items-center gap-3 rounded-lg border px-3 py-2 text-left transition ${
-                    isSelected
-                      ? "border-[color:var(--color-border-strong)] bg-white text-[color:var(--color-ink)]"
-                      : "border-transparent text-[color:var(--color-ink-muted)] hover:border-[color:var(--color-border)] hover:bg-white hover:text-[color:var(--color-ink)]"
-                  }`}
-                >
-                  <Icon name={getSectionIcon(section.id)} className="h-4 w-4 shrink-0 opacity-75" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold">{section.title}</span>
-                  </span>
-                  <Badge>{sectionRecords.length}</Badge>
-                </button>
+                <section key={group.id} className="grid gap-1">
+                  <button
+                    type="button"
+                    aria-expanded={!isCollapsed}
+                    aria-controls={groupContentId}
+                    onClick={() =>
+                      setCollapsedGroups((current) => ({
+                        ...current,
+                        [group.id]: !isCollapsed
+                      }))
+                    }
+                    className="flex min-h-10 w-full items-center gap-2 rounded-lg px-2 text-left text-xs font-semibold uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)] transition hover:bg-[color:var(--color-interactive-hover)] hover:text-[color:var(--color-ink-muted)]"
+                  >
+                    <Icon name={group.icon} className="h-4 w-4" />
+                    <span className="min-w-0 flex-1 truncate">{group.label}</span>
+                    <Icon
+                      name={isCollapsed ? "chevron-right" : "chevron-down"}
+                      className="h-3.5 w-3.5"
+                    />
+                  </button>
+                  <div id={groupContentId} className={isCollapsed ? "hidden" : "grid gap-1 pl-2"}>
+                    {group.sections.map((section) => (
+                      <SettingsSectionNavigationItem
+                        key={`${section.pluginId}:${section.id}`}
+                        isSelected={section.id === selectedSection?.id}
+                        section={section}
+                        onSelect={onSelectSection}
+                        t={t}
+                      />
+                    ))}
+                  </div>
+                </section>
               );
             })}
           </div>
@@ -76,6 +100,143 @@ export function SettingsWorkspaceSidebar({
       </div>
     </aside>
   );
+}
+
+function SettingsSectionNavigationItem({
+  isSelected,
+  onSelect,
+  section,
+  t
+}: {
+  isSelected: boolean;
+  onSelect: (sectionId: string) => void;
+  section: RenderableAdminSettingsSection;
+  t: TranslateFn;
+}) {
+  const label = getCompactSectionLabel(section, t);
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(section.id)}
+      title={section.title}
+      aria-label={section.title}
+      className={`flex h-10 w-full items-center gap-3 rounded-md px-3 text-left transition ${
+        isSelected
+          ? "bg-[color:var(--color-interactive-selected)] text-[color:var(--color-interactive-selected-ink)]"
+          : "text-[color:var(--color-ink-muted)] hover:bg-[color:var(--color-interactive-hover)] hover:text-[color:var(--color-ink)]"
+      }`}
+    >
+      <Icon name={getSectionIcon(section.id)} className="h-4 w-4 shrink-0 opacity-75" />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[13px] font-medium">{label}</span>
+      </span>
+    </button>
+  );
+}
+
+function getCompactSectionLabel(section: RenderableAdminSettingsSection, t: TranslateFn): string {
+  const sectionId = section.id.toLowerCase();
+
+  if (sectionId.includes("general")) return t("settings.navigation.general", "Generale");
+  if (sectionId.includes("branding")) return t("settings.navigation.brand", "Brand");
+  if (sectionId.includes("theme")) return t("settings.navigation.theme", "Tema");
+  if (sectionId.includes("feature")) return t("settings.navigation.features", "Funzioni");
+  if (sectionId.includes("user-flow")) return t("settings.navigation.user_access", "Utenti");
+  if (sectionId.includes("plugin-permissions")) {
+    return t("settings.navigation.plugin_permissions", "Permessi");
+  }
+  if (sectionId.includes("plugin-management")) return t("settings.navigation.plugins", "Plugin");
+  if (sectionId.includes("email-template")) return t("settings.navigation.templates", "Template");
+  if (sectionId.includes("email")) return t("settings.navigation.email_delivery", "Email");
+
+  return section.title;
+}
+
+interface SettingsSectionGroup {
+  id: string;
+  icon: "layout-dashboard" | "users" | "settings-2" | "mail" | "puzzle";
+  label: string;
+  sections: readonly RenderableAdminSettingsSection[];
+}
+
+function groupSettingsSections(
+  sections: readonly RenderableAdminSettingsSection[],
+  t: TranslateFn
+): readonly SettingsSectionGroup[] {
+  const groups = new Map<string, SettingsSectionGroup>();
+
+  for (const section of sections) {
+    const group = getSettingsSectionGroup(section, t);
+    const current = groups.get(group.id);
+    if (current) {
+      groups.set(group.id, { ...current, sections: [...current.sections, section] });
+    } else {
+      groups.set(group.id, { ...group, sections: [section] });
+    }
+  }
+
+  const groupOrder = ["workspace", "access", "communication", "system", "extensions"];
+  return [...groups.values()].sort(
+    (left, right) => groupOrder.indexOf(left.id) - groupOrder.indexOf(right.id)
+  );
+}
+
+function getSettingsSectionGroup(
+  section: RenderableAdminSettingsSection,
+  t?: TranslateFn
+): Omit<SettingsSectionGroup, "sections"> {
+  const label = (key: string, fallback: string) => t?.(key, fallback) ?? fallback;
+  const sectionId = section.id.toLowerCase();
+  const category = section.category?.toLowerCase();
+
+  if (
+    category === "site" ||
+    category === "internationalization" ||
+    category === "branding" ||
+    sectionId.includes("general") ||
+    sectionId.includes("branding") ||
+    sectionId.includes("theme")
+  ) {
+    return {
+      id: "workspace",
+      label: label("settings.navigation.group.workspace", "Aspetto"),
+      icon: "layout-dashboard"
+    };
+  }
+
+  if (
+    category === "user_flows" ||
+    sectionId.includes("user-flow") ||
+    sectionId.includes("plugin-permissions")
+  ) {
+    return {
+      id: "access",
+      label: label("settings.navigation.group.access", "Accesso"),
+      icon: "users"
+    };
+  }
+
+  if (category === "email" || section.pluginId === "email-pack" || sectionId.includes("email")) {
+    return {
+      id: "communication",
+      label: label("settings.navigation.group.communication", "Email"),
+      icon: "mail"
+    };
+  }
+
+  if (category === "features" || sectionId.includes("plugin-management")) {
+    return {
+      id: "system",
+      label: label("settings.navigation.group.system", "Sistema"),
+      icon: "settings-2"
+    };
+  }
+
+  return {
+    id: "extensions",
+    label: label("settings.navigation.group.extensions", "Plugin"),
+    icon: "puzzle"
+  };
 }
 
 interface SettingsSectionFormProps {
@@ -109,7 +270,7 @@ export function SettingsSectionForm({
 }: SettingsSectionFormProps) {
   if (!section) {
     return (
-      <div className="flex min-h-full items-center justify-center rounded-lg border border-dashed border-[color:var(--color-border-strong)] bg-white p-8">
+      <div className="flex min-h-full items-center justify-center rounded-lg border border-dashed border-[color:var(--color-border-strong)] bg-[color:var(--color-surface)] p-8">
         <EmptyState text={t("settings.overview.not_configured")} />
       </div>
     );
@@ -134,8 +295,13 @@ export function SettingsSectionForm({
     >
       <div className="min-h-0 flex-1 overflow-auto px-6 py-4 sm:px-8 sm:py-6">
         <div className="mx-auto grid max-w-4xl gap-6">
-          <div className="border-b border-[color:var(--color-border)] pb-5">
+          <div className="grid gap-1">
             <h3 className="text-xl font-semibold text-[color:var(--color-ink)]">{section.title}</h3>
+            {section.summary ? (
+              <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink-muted)]">
+                {section.summary}
+              </p>
+            ) : null}
           </div>
 
           {isLoading ? <EmptyState text={t("settings.empty.loading_value")} /> : null}
@@ -184,7 +350,7 @@ export function SettingsSectionForm({
         </div>
       </div>
 
-      <div className="shrink-0 border-t border-[color:var(--color-border)] bg-white px-4 pb-2 pt-3 sm:px-5">
+      <div className="shrink-0 border-t border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 pb-2 pt-3 sm:px-5">
         <div className="mx-auto flex max-w-4xl justify-end">
           <Button type="submit" disabled={isSaving || isLoading || editableRecordsCount === 0}>
             {isSaving

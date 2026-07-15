@@ -56,7 +56,8 @@ export function defineAdminWidget(input: PluginManifestAdminWidget): PluginManif
     ...(input.requiredPermission !== undefined
       ? { requiredPermission: input.requiredPermission }
       : {}),
-    ...(input.componentRef !== undefined ? { componentRef: input.componentRef } : {})
+    ...(input.componentRef !== undefined ? { componentRef: input.componentRef } : {}),
+    ...(input.layout !== undefined ? { layout: { ...input.layout } } : {})
   };
 }
 

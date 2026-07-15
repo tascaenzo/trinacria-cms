@@ -44,7 +44,27 @@ test("core-pack plugin API creates signed plugin requests", () => {
   );
 });
 
-test("core-pack publishes the plugin operations route for the operational backoffice", () => {
-  assert.ok(CORE_PACK_MANIFEST.admin?.routes?.some((route) => route.id === "plugins"));
-  assert.ok(CORE_PACK_MANIFEST.admin?.navigation?.some((item) => item.id === "nav-plugins"));
+test("core-pack exposes plugin management only inside settings", () => {
+  assert.equal(
+    CORE_PACK_MANIFEST.admin?.routes?.some((route) => route.id === "plugins"),
+    false
+  );
+  assert.equal(
+    CORE_PACK_MANIFEST.admin?.navigation?.some((item) => item.id === "nav-plugins"),
+    false
+  );
+  assert.deepEqual(
+    CORE_PACK_MANIFEST.admin?.settingsSections?.find(
+      (section) => section.id === "core-pack-plugin-management-settings"
+    ),
+    {
+      id: "core-pack-plugin-management-settings",
+      label: "Plugins",
+      kind: "custom",
+      componentRef: "core-pack:plugin-management",
+      namespace: "plugins",
+      requiredPermission: "core-pack:plugins:read",
+      order: 60
+    }
+  );
 });

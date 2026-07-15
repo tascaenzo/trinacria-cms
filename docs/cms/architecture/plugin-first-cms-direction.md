@@ -225,7 +225,7 @@ Responsabile delle funzionalita ufficiali minime:
 - roles
 - permissions
 - settings
-- security provisioning
+- manifest provisioning (security, settings, and i18n)
 - signed plugin caller authentication
 
 Non deve diventare il contenitore di tutti i moduli applicativi.

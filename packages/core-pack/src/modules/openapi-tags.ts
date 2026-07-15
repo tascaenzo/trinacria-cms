@@ -9,5 +9,6 @@ export const CORE_PACK_OPENAPI_TAGS = {
   PERMISSIONS: "Permissions",
   SECURITY: "Security",
   SETTINGS: "Settings",
+  I18N: "Internationalization",
   INSTALLATION: "Installation"
 } as const;

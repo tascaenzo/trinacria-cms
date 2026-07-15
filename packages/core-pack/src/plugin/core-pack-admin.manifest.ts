@@ -4,7 +4,8 @@ import {
   defineAdminNavigation,
   defineAdminResource,
   defineAdminRoute,
-  defineAdminSettingsSection
+  defineAdminSettingsSection,
+  defineAdminWidget
 } from "@trinacria-cms/kernel/plugin-api";
 import { CORE_PACK_PERMISSION_KEYS } from "./core-pack.security.js";
 
@@ -14,15 +15,23 @@ import { CORE_PACK_PERMISSION_KEYS } from "./core-pack.security.js";
  * same manifest data without duplicating page definitions.
  */
 export const CORE_PACK_ADMIN_MANIFEST: PluginManifestAdmin = defineAdmin({
+  widgets: [
+    defineAdminWidget({
+      id: "core-pack-access-management",
+      label: "Utenti, ruoli e permessi",
+      componentRef: "core-pack:access-management-widget",
+      requiredPermission: CORE_PACK_PERMISSION_KEYS.USERS_READ,
+      layout: {
+        defaultColumnSpan: 4,
+        defaultRowSpan: 2,
+        minColumnSpan: 2,
+        maxColumnSpan: 4,
+        minRowSpan: 1,
+        maxRowSpan: 3
+      }
+    })
+  ],
   routes: [
-    defineAdminRoute({
-      id: "plugins",
-      path: "/plugins",
-      label: "Plugins",
-      requiredPermission: CORE_PACK_PERMISSION_KEYS.PLUGINS_READ,
-      componentRef: "core-pack.plugins",
-      order: 5
-    }),
     defineAdminRoute({
       id: "users",
       path: "/users",
@@ -57,13 +66,6 @@ export const CORE_PACK_ADMIN_MANIFEST: PluginManifestAdmin = defineAdmin({
     })
   ],
   navigation: [
-    defineAdminNavigation({
-      id: "nav-plugins",
-      path: "/plugins",
-      label: "Plugins",
-      requiredPermission: CORE_PACK_PERMISSION_KEYS.PLUGINS_READ,
-      order: 5
-    }),
     defineAdminNavigation({
       id: "nav-users",
       path: "/users",
@@ -130,6 +132,16 @@ export const CORE_PACK_ADMIN_MANIFEST: PluginManifestAdmin = defineAdmin({
       requiredPermission: CORE_PACK_PERMISSION_KEYS.SETTINGS_READ
     }),
     defineAdminSettingsSection({
+      id: "core-pack-backoffice-theme-settings",
+      label: "Backoffice theme",
+      kind: "custom",
+      componentRef: "core-pack:backoffice-theme",
+      namespace: "branding",
+      settingKeys: ["core-pack:branding:backoffice_theme", "core-pack:branding:backoffice_accent"],
+      requiredPermission: CORE_PACK_PERMISSION_KEYS.SETTINGS_WRITE,
+      order: 25
+    }),
+    defineAdminSettingsSection({
       id: "core-pack-feature-settings",
       label: "Features",
       namespace: "features",
@@ -149,6 +161,15 @@ export const CORE_PACK_ADMIN_MANIFEST: PluginManifestAdmin = defineAdmin({
       namespace: "security",
       settingKeys: ["core-pack:security:plugin_access_grants"],
       requiredPermission: CORE_PACK_PERMISSION_KEYS.SETTINGS_READ
+    }),
+    defineAdminSettingsSection({
+      id: "core-pack-plugin-management-settings",
+      label: "Plugins",
+      kind: "custom",
+      componentRef: "core-pack:plugin-management",
+      namespace: "plugins",
+      requiredPermission: CORE_PACK_PERMISSION_KEYS.PLUGINS_READ,
+      order: 60
     })
   ]
 });

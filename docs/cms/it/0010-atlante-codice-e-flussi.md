@@ -24,7 +24,7 @@ Mappa rapida del codice reale, aggiornata al modello security plugin-contributed
 
 - `runtime/cms-starter.ts`
   - bootstrap app
-  - hook runtime -> `PluginSecurityProvisioner`
+  - hook runtime -> `PluginManifestProvisioner`
   - registra anche gli endpoint built-in `kernelHealth` e `system`
 
 - `runtime/permission-key.ts`
@@ -40,7 +40,7 @@ Mappa rapida del codice reale, aggiornata al modello security plugin-contributed
   - dichiara security base del CMS (`admin` + grants core-pack)
 
 - `modules/core-pack-root.module.ts`
-  - compone users + security + settings
+  - compone users + security + settings + i18n
 
 ## 4. Core-pack domini IAM
 
@@ -66,14 +66,14 @@ Mappa rapida del codice reale, aggiornata al modello security plugin-contributed
 - `modules/roles/grants/role-grants.schemas.ts`
 - `modules/roles/grants/role-grants.repository.ts`
 
-## 5. Security provisioning module
+## 5. Modulo di manifest provisioning
 
 - `modules/security/security-provisioning.service.ts`
-  - sync delta su load
-  - cleanup sicuro su unregister
+  - sync su load di security, settings e bundle i18n
+  - cleanup sicuro su unregister delle risorse owned dal manifest
 
 - `modules/security/security.module.ts`
-  - espone `CORE_TOKENS.PLUGIN_SECURITY_PROVISIONER`
+  - espone `CORE_TOKENS.PLUGIN_MANIFEST_PROVISIONER`
   - registra anche il dominio `api_keys` e l'engine authz per subject macchina
 
 - `modules/security/api-keys/*`
@@ -87,21 +87,21 @@ Mappa rapida del codice reale, aggiornata al modello security plugin-contributed
 - `mongo-db-adapter.ts`
   - CRUD, canonical id, health, indici, compatibilita update shape
 
-## 7. Flusso: load plugin con security
+## 7. Flusso: load plugin con manifest provisioning
 
 1. `cms-starter.ts` crea runtime con lifecycle hooks
 2. `in-memory-plugin-runtime.ts#loadInternal`
 3. moduli plugin registrati
 4. hook runtime `onAfterLoad`
-5. resolve `PluginSecurityProvisioner`
-6. `provision(manifest)` -> sync `permissions/roles` + grants embedded
+5. resolve `PluginManifestProvisioner`
+6. `provision(manifest)` -> sync security, settings e risorse i18n
 
 ## 8. Flusso: unregister plugin
 
 1. `runtime.unregister(pluginId)`
 2. hook `onBeforeUnregister`
 3. `deprovision(manifest)`
-4. rimozione contributi owned
+4. rimozione contributi security/settings/i18n owned
 5. cancellazione record runtime plugin
 
 ## 9. Flusso: `GET /v1/roles`

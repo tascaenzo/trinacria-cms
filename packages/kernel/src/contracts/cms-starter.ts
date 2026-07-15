@@ -58,11 +58,8 @@ export interface CmsStarterOptions {
   pluginDiscoveryService?: PluginDiscoveryService;
   continueOnPluginDiscoveryError?: boolean;
   enableHealthModule?: boolean;
-  /**
-   * Enables automatic calls to a registered PluginSecurityProvisioner
-   * on plugin load/unregister lifecycle.
-   */
-  enablePluginSecurityProvisioning?: boolean;
+  /** Enables automatic calls to a PluginManifestProvisioner on plugin lifecycle. */
+  enablePluginManifestProvisioning?: boolean;
   autoLoadPlugins?: boolean;
   /**
    * Optional custom persistence backend for plugin runtime state.

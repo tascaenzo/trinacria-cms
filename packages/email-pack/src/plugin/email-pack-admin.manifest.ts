@@ -1,19 +1,10 @@
 import {
   defineAdmin,
-  defineAdminSettingsSection,
-  defineAdminWidget
+  defineAdminSettingsSection
 } from "@trinacria-cms/kernel/plugin-api";
 import { EMAIL_PACK_PERMISSION_KEYS } from "./email-pack.security.js";
 
 export const EMAIL_PACK_ADMIN_MANIFEST = defineAdmin({
-  widgets: [
-    defineAdminWidget({
-      id: "email-pack-delivery-status",
-      label: "Email delivery",
-      componentRef: "email-pack:delivery-status-widget",
-      requiredPermission: EMAIL_PACK_PERMISSION_KEYS.SETTINGS_READ
-    })
-  ],
   settingsSections: [
     defineAdminSettingsSection({
       id: "email-pack-email-settings",

@@ -26,7 +26,7 @@ import { PasswordHashingService } from "../src/modules/installation/services/pas
 import { PermissionsRepository } from "../src/modules/permissions/repositories/permissions.repository.js";
 import { RoleGrantsRepository } from "../src/modules/roles/grants/role-grants.repository.js";
 import { RolesRepository } from "../src/modules/roles/repositories/roles.repository.js";
-import { CorePackSecurityProvisioningService } from "../src/modules/security/services/security-provisioning.service.js";
+import { CorePackManifestProvisioningService } from "../src/modules/security/services/security-provisioning.service.js";
 import { RolePolicyRulesRepository } from "../src/modules/security/role-policy-rules/role-policy-rules.repository.js";
 import { UserAccessService } from "../src/modules/security/user-access/user-access.service.js";
 import { UserRolesRepository } from "../src/modules/security/user-access/user-roles.repository.js";
@@ -89,6 +89,31 @@ test("JwtAuthService validates refresh token and rejects using it as access toke
     async () => runtime.auth.authenticateBearerToken(session.refreshToken),
     (error: unknown) => error instanceof JwtAuthError && error.code === "auth_invalid_token"
   );
+});
+
+test("JwtAuthService persists the authenticated operator language preference", async () => {
+  const runtime = createRuntime();
+  await runtime.installation.bootstrap({
+    email: "admin@example.com",
+    firstName: "Admin",
+    lastName: "User",
+    password: "StrongPassword123!",
+    confirmPassword: "StrongPassword123!",
+    siteName: "Test Site"
+  });
+
+  const session = await runtime.auth.loginWithPassword({
+    email: "admin@example.com",
+    password: "StrongPassword123!"
+  });
+  const updated = await runtime.auth.updateAuthenticatedUserProfile(session.user.id, {
+    firstName: "Admin",
+    lastName: "User",
+    locale: "it"
+  });
+
+  assert.equal(updated.locale, "it");
+  assert.equal((await runtime.auth.authenticateBearerToken(session.accessToken)).locale, "it");
 });
 
 test("JwtAuthService allows an immediate login after revoking the previous session", async () => {
@@ -562,7 +587,7 @@ function createRuntime(): Runtime {
     permissions,
     userRoles
   );
-  const securityProvisioning = new CorePackSecurityProvisioningService(
+  const manifestProvisioning = new CorePackManifestProvisioningService(
     roles,
     roleGrants,
     permissions,
@@ -588,7 +613,7 @@ function createRuntime(): Runtime {
     localCredentials,
     users,
     userAccess,
-    securityProvisioning,
+    manifestProvisioning,
     passwordHashing,
     settings
   );

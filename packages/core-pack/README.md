@@ -7,7 +7,7 @@ Official baseline plugin pack for Trinacria CMS.
 - users
 - roles
 - permissions
-- plugin security provisioning (`permissions/roles/grants` from plugin manifest)
+- manifest provisioning (security, settings, and i18n bundles from plugin manifests)
 - advanced authz policies (`allow`/`deny`, wildcard patterns, conditions)
 - settings definitions/values/secrets (encrypted secrets + masked export)
 - grouped settings APIs for operator-facing forms
@@ -38,7 +38,23 @@ tokens, credentials, and personal data must stay out of public events. See
 - `roles.permissionGrants[]` stores per-plugin grant contributions (embedded)
 - `role_policy_rules` enables wildcard and conditional allow/deny rules
 - `users.roleAssignments[]` links users to roles for effective permission resolution (embedded)
-- provisioning is lifecycle-driven through `PluginSecurityProvisioner`
+- provisioning is lifecycle-driven through `PluginManifestProvisioner`
+
+## Plugin translations
+
+Plugins may declare `i18n` bundles in their manifest. Each bundle has a
+plugin-local namespace such as `admin`, `public`, or `mobile`, and every
+namespace must include an English fallback. During plugin load (or deferred
+installation completion) Core persists the bundles in `i18n_bundles` under the
+canonical namespace `<pluginId>:<namespace>`.
+
+Clients can resolve only the needed surface with:
+
+- `GET /v1/i18n/:locale?namespace=<pluginId>:<namespace>`
+- `GET /v1/i18n/:locale?surface=admin` for all installed Backoffice bundles
+
+The response merges English first and the requested locale second. This makes
+the records suitable for external sites/apps and for translation automation.
 
 ## Settings secret isolation
 

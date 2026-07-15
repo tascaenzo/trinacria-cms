@@ -123,7 +123,7 @@ Appartengono a `core-pack`:
 - settings base
 - secrets/settings isolation
 - signed plugin caller authentication for owner-scoped operations
-- provisioning security dichiarato dai plugin
+- manifest provisioning dichiarato dai plugin (security, settings e i18n)
 - endpoint amministrativi per la baseline piattaforma
 
 Non appartengono a `core-pack`:
@@ -387,7 +387,7 @@ I candidati implementativi sono:
 
 - contratto plugin consolidato
 - runtime plugin install/enabled/loaded
-- security provisioning
+- manifest provisioning (security, settings e i18n)
 - storage namespace/entity registry
 - admin extensibility core
 

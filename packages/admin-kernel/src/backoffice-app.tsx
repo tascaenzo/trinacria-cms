@@ -22,6 +22,7 @@ import type { BackofficeModule } from "./module.js";
 import { readRequiredString } from "./runtime/action-state.js";
 import { clearBackofficeSession, persistBackofficeSession } from "./runtime/auth-session.js";
 import { cms } from "./runtime/cms-sdk.js";
+import { loadRemoteBackofficeI18n } from "./lib/remote-i18n.js";
 import { InstallationDatabaseGuidePage } from "./pages/installation-database-guide-page.js";
 import { InstallationBootstrapPage } from "./pages/installation-bootstrap-page.js";
 import { LoginPage } from "./pages/login-page.js";
@@ -30,6 +31,11 @@ import { BackofficeUserMenu } from "./backoffice-app/backoffice-user-menu.js";
 import { useBackofficeRouteState } from "./backoffice-app/use-backoffice-route-state.js";
 import { useBackofficeShellRuntime } from "./backoffice-app/use-backoffice-shell-runtime.js";
 import { useAuthenticatedRoleLabel } from "./backoffice-app/use-authenticated-role-label.js";
+import {
+  applyBackofficeTheme,
+  BACKOFFICE_ACCENT_SETTING_KEY,
+  BACKOFFICE_THEME_SETTING_KEY
+} from "./lib/backoffice-theme.js";
 
 type AuthenticatedUser = GetAuthenticatedUserResponse["data"];
 type InstallationStatus = GetInstallationStatusResponse["data"] & {
@@ -71,9 +77,14 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
   const [bootstrapError, setBootstrapError] = useState<SdkErrorDetails | null>(null);
   const [isBootstrappingApp, setIsBootstrappingApp] = useState(true);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [remoteI18nBundle, setRemoteI18nBundle] = useState<I18nBundle | null>(null);
   const translationBundles = useMemo<readonly I18nBundle[]>(
-    () => [officialI18nBundle, ...modules.flatMap((module) => module.i18n ?? [])],
-    [modules]
+    () => [
+      officialI18nBundle,
+      ...modules.flatMap((module) => module.i18n ?? []),
+      ...(remoteI18nBundle ? [remoteI18nBundle] : [])
+    ],
+    [modules, remoteI18nBundle]
   );
   const t = useMemo(
     () => createTranslate(locale, translationBundles, "en"),
@@ -83,13 +94,19 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
     setLocale(normalizeLocale(nextLocale));
   }, []);
   const authRoleLabel = useAuthenticatedRoleLabel(authUser, t);
-  const { capabilityIndex, isShellLoading, registry, runtimePlugins, shellError } =
-    useBackofficeShellRuntime({
-      authUser,
-      installationInstalled: Boolean(installationStatus?.installed),
-      modules,
-      t
-    });
+  const {
+    canCustomizeDashboard,
+    capabilityIndex,
+    isShellLoading,
+    registry,
+    runtimePlugins,
+    shellError
+  } = useBackofficeShellRuntime({
+    authUser,
+    installationInstalled: Boolean(installationStatus?.installed),
+    modules,
+    t
+  });
 
   useEffect(() => {
     if (authUser) {
@@ -114,6 +131,63 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
     document.documentElement.lang = locale;
     persistBackofficeLocale(locale);
   }, [locale]);
+
+  useEffect(() => {
+    if (authUser?.locale) {
+      setLocale(normalizeLocale(authUser.locale));
+    }
+  }, [authUser?.locale]);
+
+  useEffect(() => {
+    if (!authUser) {
+      setRemoteI18nBundle(null);
+      return;
+    }
+
+    const controller = new AbortController();
+    void loadRemoteBackofficeI18n(locale, { signal: controller.signal })
+      .then((bundle) => {
+        if (!controller.signal.aborted) setRemoteI18nBundle(bundle);
+      })
+      .catch((error: unknown) => {
+        if (!(error instanceof DOMException && error.name === "AbortError")) {
+          // Static bundles intentionally remain the safe fallback while plugins migrate.
+          setRemoteI18nBundle(null);
+        }
+      });
+
+    return () => controller.abort();
+  }, [authUser, locale]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadBackofficeTheme() {
+      if (!authUser) {
+        applyBackofficeTheme("light", "neutral");
+        return;
+      }
+
+      try {
+        const [themeResponse, accentResponse] = await Promise.all([
+          cms.settings.getSettingValueByKey({ path: { key: BACKOFFICE_THEME_SETTING_KEY } }),
+          cms.settings.getSettingValueByKey({ path: { key: BACKOFFICE_ACCENT_SETTING_KEY } })
+        ]);
+        if (!isCancelled) {
+          applyBackofficeTheme(themeResponse.data?.value, accentResponse.data?.value);
+        }
+      } catch {
+        if (!isCancelled) {
+          applyBackofficeTheme("light", "neutral");
+        }
+      }
+    }
+
+    void loadBackofficeTheme();
+    return () => {
+      isCancelled = true;
+    };
+  }, [authUser]);
 
   const completeLogin = useCallback(
     (response: LoginWithPasswordResponse["data"]) => {
@@ -399,6 +473,8 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
         settings: registry.settings,
         widgets: registry.widgets,
         locale,
+        canCustomizeDashboard,
+        navigateToRoute: navigateTo,
         cms,
         t
       })

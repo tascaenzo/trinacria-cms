@@ -159,12 +159,26 @@ export function useBackofficeShellRuntime({
     () => new Map(runtimePlugins.map((plugin) => [plugin.pluginId, new Set(plugin.capabilities)])),
     [runtimePlugins]
   );
+  const canCustomizeDashboard = useMemo(
+    () => userPermissionKeys.some((permission) => matchesPermission(permission, "core-pack:settings:write")),
+    [userPermissionKeys]
+  );
 
   return {
     capabilityIndex,
+    canCustomizeDashboard,
     isShellLoading,
     registry,
     runtimePlugins,
     shellError
   };
+}
+
+function matchesPermission(grantedPermission: string, requiredPermission: string): boolean {
+  const grantedParts = grantedPermission.trim().toLowerCase().split(":");
+  const requiredParts = requiredPermission.trim().toLowerCase().split(":");
+  return (
+    grantedParts.length === requiredParts.length &&
+    grantedParts.every((part, index) => part === "*" || part === requiredParts[index])
+  );
 }

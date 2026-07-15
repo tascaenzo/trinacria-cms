@@ -47,13 +47,14 @@ export class AuthUsersRepository {
 
   async updateProfile(
     id: string,
-    input: { firstName: string; lastName: string }
+    input: { firstName: string; lastName: string; locale?: "en" | "it" }
   ): Promise<UserRecord | null> {
     const updated = await this.repository().updateOne(
       { filter: { id: id.trim() } },
       {
         firstName: input.firstName.trim(),
         lastName: input.lastName.trim(),
+        ...(input.locale ? { locale: input.locale } : {}),
         updatedAt: new Date().toISOString()
       }
     );

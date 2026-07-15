@@ -571,7 +571,7 @@ Indexes:
 2. Solo operatori con `core-pack:plugins:operate` possono eseguire operazioni su altri plugin.
 3. Il backoffice mostra stato, dipendenze e operazioni disponibili ma non diventa owner implicito del runtime.
 4. Ogni operazione produce audit event.
-5. Le operazioni di security provisioning sono gestite da `core-pack` e protette dalle permission del plugin chiamante.
+5. Il manifest provisioning e gestito da `core-pack`: materializza security, settings e i18n durante il lifecycle plugin. Le operazioni runtime restano protette dalle permission dell'operatore.
 
 ### Audit
 

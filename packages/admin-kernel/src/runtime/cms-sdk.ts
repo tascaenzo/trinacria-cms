@@ -12,6 +12,7 @@ export interface ConfigureBackofficeSdkOptions {
  * underlying client during bootstrap without making early imports stale.
  */
 let currentCms: CmsClient = createDefaultCmsClient("/cms");
+let currentApiBaseUrl = "/cms";
 
 export const cms: CmsClient = new Proxy({} as CmsClient, {
   get(_target, property, receiver) {
@@ -27,6 +28,12 @@ function createDefaultCmsClient(baseUrl: string): CmsClient {
 }
 
 export function configureBackofficeSdk(options: ConfigureBackofficeSdkOptions = {}): CmsClient {
-  currentCms = options.sdk ?? createDefaultCmsClient(options.baseUrl ?? "/cms");
+  currentApiBaseUrl = options.baseUrl ?? "/cms";
+  currentCms = options.sdk ?? createDefaultCmsClient(currentApiBaseUrl);
   return currentCms;
+}
+
+/** Base URL shared by the generated SDK and lightweight runtime endpoints. */
+export function getBackofficeApiBaseUrl(): string {
+  return currentApiBaseUrl.replace(/\/$/, "");
 }

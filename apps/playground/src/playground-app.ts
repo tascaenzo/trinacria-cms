@@ -80,7 +80,7 @@ export async function createPlaygroundCmsApp(): Promise<PlaygroundCmsApp> {
     plugins: createPlaygroundPlugins(smokeStandalone),
     pluginSources: createPlaygroundPluginSources(smokeStandalone),
     pluginRuntimeStore: installationMode ? createInMemoryPluginRuntimeStore() : undefined,
-    enablePluginSecurityProvisioning: smokeStandalone ? false : !installationMode,
+    enablePluginManifestProvisioning: smokeStandalone ? false : !installationMode,
     autoLoadPlugins: true
   });
 

@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { SettingsPage } from "../pages/settings-page.js";
-import { PluginOperationsPage } from "../pages/plugin-operations-page.js";
 import type { AdminRouteDefinition } from "../contracts.js";
 import { renderDeclarativeAdminPage } from "../declarative/components/declarative-page.js";
 import type { AdminPageRenderContext } from "../runtime/admin-route-runtime.js";
@@ -9,15 +8,6 @@ export const OFFICIAL_CORE_ROUTE_META: Record<
   string,
   Partial<AdminRouteDefinition> & { render: (context: AdminPageRenderContext) => ReactNode }
 > = {
-  plugins: {
-    mode: "react",
-    kind: "custom",
-    guards: [{ pluginId: "core-pack", capability: "plugins.read" }],
-    titleKey: "official.route.plugins.title",
-    summary: "Installed plugin inventory, runtime operations, and lifecycle audit.",
-    summaryKey: "official.route.plugins.summary",
-    render: () => <PluginOperationsPage />
-  },
   users: {
     mode: "declarative",
     kind: "resource",
@@ -103,7 +93,6 @@ export const OFFICIAL_CORE_COMPONENT_ROUTE_META: Record<
   string,
   keyof typeof OFFICIAL_CORE_ROUTE_META
 > = {
-  "core-pack.plugins": "plugins",
   "core-pack.users": "users",
   "core-pack.roles": "roles",
   "core-pack.permissions": "permissions",

@@ -23,6 +23,12 @@ export const OFFICIAL_CORE_SETTINGS_SECTION_META: Record<
     order: 20,
     settingKeys: ["core-pack:branding:tagline", "core-pack:branding:logo_url"]
   },
+  "core-pack:core-pack-backoffice-theme-settings": {
+    titleKey: "settings.section.backoffice_theme.title",
+    summary: "Shared theme and accent color for every operator.",
+    summaryKey: "settings.section.backoffice_theme.summary",
+    order: 25
+  },
   "core-pack:core-pack-feature-settings": {
     titleKey: "settings.section.features.title",
     summary: "Feature flags exposed for operator-level rollout control.",
@@ -43,6 +49,11 @@ export const OFFICIAL_CORE_SETTINGS_SECTION_META: Record<
     summaryKey: "settings.section.plugin_permissions.summary",
     order: 50,
     settingKeys: ["core-pack:security:plugin_access_grants"]
+  },
+  "core-pack:core-pack-plugin-management-settings": {
+    title: "Plugins",
+    summary: "Plugin installati e azioni disponibili nel runtime corrente.",
+    order: 60
   },
   "email-pack:email-pack-email-settings": {
     titleKey: "settings.section.email.title",

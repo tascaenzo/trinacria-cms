@@ -12,7 +12,7 @@ import type { KernelAdminRouteGuard } from "../../contracts/kernel-admin-route-g
 import type { PluginSourceSnapshot } from "../../contracts/plugin-discovery.js";
 import type { PluginRuntime } from "../../contracts/plugin-runtime.js";
 import type { PluginRuntimeStore } from "../../contracts/plugin-runtime-store.js";
-import type { PluginSecurityProvisioner } from "../../contracts/plugin-security-provisioner.js";
+import type { PluginManifestProvisioner } from "../../contracts/plugin-manifest-provisioner.js";
 import { CoreError } from "../../errors/core-error.js";
 import { KernelCorsPreflightController } from "../../http/cors-preflight.controller.js";
 import { KERNEL_CORS_PREFLIGHT_CONTROLLER } from "../../http/cors-preflight.tokens.js";
@@ -55,7 +55,7 @@ export function createCmsStarterKernelModule({
   swaggerUi,
   pluginSourceSnapshots
 }: CreateCmsStarterKernelModuleOptions) {
-  const securityProvisioningEnabled = options.enablePluginSecurityProvisioning !== false;
+  const manifestProvisioningEnabled = options.enablePluginManifestProvisioning !== false;
 
   return defineModule({
     name: "CmsStarterKernelModule",
@@ -77,16 +77,16 @@ export function createCmsStarterKernelModule({
             runtimeStore: runtimeStore as PluginRuntimeStore,
             lifecycleHooks: {
               onAfterLoad: async (context) => {
-                const provisioner = await resolvePluginSecurityProvisioner(app);
-                if (!securityProvisioningEnabled) {
+                const provisioner = await resolvePluginManifestProvisioner(app);
+                if (!manifestProvisioningEnabled) {
                   await provisioner?.defer?.(context.manifest);
                   return;
                 }
                 if (!provisioner) {
-                  if (hasSecurityDeclarations(context.manifest)) {
+                  if (hasManifestProvisioningDeclarations(context.manifest)) {
                     throw new CoreError(
-                      "CMS_STARTER_SECURITY_PROVISIONER_MISSING",
-                      `Plugin "${context.pluginId}" declares provisioning metadata but no PluginSecurityProvisioner is available`
+                      "CMS_STARTER_MANIFEST_PROVISIONER_MISSING",
+                      `Plugin "${context.pluginId}" declares provisioning metadata but no PluginManifestProvisioner is available`
                     );
                   }
                   return;
@@ -94,8 +94,8 @@ export function createCmsStarterKernelModule({
                 await provisioner.provision(context.manifest);
               },
               onBeforeUnregister: async (context) => {
-                if (!securityProvisioningEnabled) return;
-                const provisioner = await resolvePluginSecurityProvisioner(app);
+                if (!manifestProvisioningEnabled) return;
+                const provisioner = await resolvePluginManifestProvisioner(app);
                 if (!provisioner) return;
                 await provisioner.deprovision(context.manifest);
               }
@@ -221,16 +221,16 @@ async function resolveDefaultRuntimeStore(app: TrinacriaApp): Promise<PluginRunt
   });
 }
 
-async function resolvePluginSecurityProvisioner(
+async function resolvePluginManifestProvisioner(
   app: TrinacriaApp
-): Promise<PluginSecurityProvisioner | null> {
-  if (!app.hasToken(CORE_TOKENS.PLUGIN_SECURITY_PROVISIONER)) {
-    return null;
+): Promise<PluginManifestProvisioner | null> {
+  if (app.hasToken(CORE_TOKENS.PLUGIN_MANIFEST_PROVISIONER)) {
+    return app.resolve<PluginManifestProvisioner>(CORE_TOKENS.PLUGIN_MANIFEST_PROVISIONER);
   }
-  return app.resolve<PluginSecurityProvisioner>(CORE_TOKENS.PLUGIN_SECURITY_PROVISIONER);
+  return null;
 }
 
-function hasSecurityDeclarations(manifest: {
+function hasManifestProvisioningDeclarations(manifest: {
   security?: {
     permissions?: readonly unknown[];
     roles?: readonly unknown[];
@@ -238,13 +238,15 @@ function hasSecurityDeclarations(manifest: {
     policyRules?: readonly unknown[];
   };
   settings?: readonly unknown[];
+  i18n?: unknown;
 }): boolean {
   return (
     (manifest.security?.permissions?.length ?? 0) > 0 ||
     (manifest.security?.roles?.length ?? 0) > 0 ||
     (manifest.security?.grants?.length ?? 0) > 0 ||
     (manifest.security?.policyRules?.length ?? 0) > 0 ||
-    (manifest.settings?.length ?? 0) > 0
+    (manifest.settings?.length ?? 0) > 0 ||
+    manifest.i18n !== undefined
   );
 }
 

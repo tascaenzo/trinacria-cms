@@ -142,7 +142,7 @@ Definisce bootstrap minimo applicativo:
 - plugin da registrare
 - provider globali
 - auto-load lifecycle
-- provisioning security automatico su load/unregister (se disponibile un `PluginSecurityProvisioner`)
+- provisioning del manifest automatico su load/unregister (se disponibile un `PluginManifestProvisioner`)
 
 Impatto:
 
@@ -158,7 +158,7 @@ Token principali:
 - `DB_ADAPTER`
 - `ENTITY_REGISTRY`
 - `AUTHZ_SERVICE`
-- `PLUGIN_SECURITY_PROVISIONER`
+- `PLUGIN_MANIFEST_PROVISIONER`
 - `KERNEL_HEALTH_SERVICE`
 - `LOGGER`
 

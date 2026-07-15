@@ -1,4 +1,6 @@
 import { PluginPermissionCenterSection } from "../pages/settings/components/plugin-permission-center.js";
+import { PluginManagementSettingsSection } from "../pages/settings/components/plugin-management-settings-section.js";
+import { BackofficeThemeSettingsSection } from "../pages/settings/components/backoffice-theme-settings-section.js";
 import type {
   AdminDashboardWidgetRenderContext,
   AdminSettingsSectionRenderContext
@@ -22,7 +24,9 @@ const settingsSectionRenderers = new Map<string, AdminSettingsSectionRenderer>([
   [
     "core-pack:plugin-permission-center",
     (context) => <PluginPermissionCenterSection {...context} />
-  ]
+  ],
+  ["core-pack:plugin-management", (context) => <PluginManagementSettingsSection {...context} />],
+  ["core-pack:backoffice-theme", (context) => <BackofficeThemeSettingsSection {...context} />]
 ]);
 
 const dashboardWidgetRenderers = new Map<string, AdminDashboardWidgetRenderer>();

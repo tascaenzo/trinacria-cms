@@ -1,6 +1,6 @@
 # 0007 - Build a new plugin professionally
 
-This chapter defines the practical standard for building plugins compatible with kernel runtime and core-pack security provisioning.
+This chapter defines the practical standard for building plugins compatible with kernel runtime and core-pack manifest provisioning.
 
 ## 1. Initial decision
 
@@ -109,11 +109,35 @@ security: {
 }
 ```
 
-## 5. Root module
+## 5. Translations and namespaces
+
+Plugins can declare locale dictionaries in `manifest.i18n`. A namespace is
+plugin-local and identifies the consuming surface (`admin`, `public`, or
+`mobile`); Core persists it as `<pluginId>:<namespace>`.
+
+Every namespace must contain an English bundle. Other locales override English
+message-by-message:
+
+```ts
+i18n: {
+  fallbackLocale: "en",
+  bundles: [
+    { namespace: "public", locale: "en", messages: { "blog.title": "Blog" } },
+    { namespace: "public", locale: "it", messages: { "blog.title": "Articoli" } }
+  ]
+}
+```
+
+External clients resolve one surface with
+`GET /v1/i18n/:locale?namespace=blog-pack:public`.
+The Backoffice loads every installed admin namespace with
+`GET /v1/i18n/:locale?surface=admin`.
+
+## 6. Root module
 
 `BlogPackRootModule` should only compose internal modules.
 
-## 6. Internal domain implementation
+## 7. Internal domain implementation
 
 Repository:
 
@@ -129,20 +153,22 @@ Controller:
 - return envelopes with `createPluginApiResponder(pluginId)`
 - include OpenAPI route metadata
 
-## 7. Runtime lifecycle and provisioning
+## 8. Runtime lifecycle and provisioning
 
 With `startCmsApp(...)`:
 
 - plugin loads through runtime orchestration
-- runtime `onAfterLoad` hook calls `PluginSecurityProvisioner.provision(...)`
-- manifest security is synced into Mongo (`permissions/roles` + embedded grants inside roles)
+- runtime `onAfterLoad` hook calls `PluginManifestProvisioner.provision(...)`
+- manifest-owned resources are synced into Core: security (`permissions/roles`
+  + embedded grants), settings, and i18n bundles
 - including optional policy rules (`allow`/`deny`, wildcard, conditions)
 
 On unregister:
 
-- runtime `onBeforeUnregister` calls `deprovision(...)`
+- runtime `onBeforeUnregister` calls `deprovision(...)`; owned translation
+  bundles are removed too
 
-## 8. Release checklist
+## 9. Release checklist
 
 1. manifest passes validation
 2. namespaced permission keys are correct
@@ -151,13 +177,13 @@ On unregister:
 5. playground API smoke checks pass
 6. endpoints appear in OpenAPI
 
-## 9. Anti-patterns
+## 10. Anti-patterns
 
 - non-namespaced permission keys
 - direct mutation of foreign role definitions instead of grants
 - relying on manual plugin load order without dependencies
 - business logic in controllers
 
-## 10. Conclusion
+## 11. Conclusion
 
 A modern Trinacria CMS plugin is contract-first: it declares capabilities and security contributions in the manifest, while runtime orchestration handles consistent provisioning behavior.

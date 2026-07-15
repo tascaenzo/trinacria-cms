@@ -1,6 +1,6 @@
 # 0007 - Come progettare un nuovo plugin in modo professionale
 
-Questo capitolo descrive lo standard pratico per creare plugin compatibili con il kernel e con il provisioning security del `core-pack`.
+Questo capitolo descrive lo standard pratico per creare plugin compatibili con il kernel e con il provisioning del manifest del `core-pack`.
 
 ## 1. Decisione iniziale
 
@@ -111,11 +111,35 @@ security: {
 }
 ```
 
-## 5. Root module
+## 5. Traduzioni e namespace
+
+Un plugin puo dichiarare dizionari in `manifest.i18n`. Il namespace e locale al
+plugin e identifica la superficie che li usa (`admin`, `public` o `mobile`); il
+Core lo salva come `<pluginId>:<namespace>`.
+
+Ogni namespace deve avere il bundle inglese. Le altre lingue sovrascrivono i
+messaggi inglesi chiave per chiave:
+
+```ts
+i18n: {
+  fallbackLocale: "en",
+  bundles: [
+    { namespace: "public", locale: "en", messages: { "blog.title": "Blog" } },
+    { namespace: "public", locale: "it", messages: { "blog.title": "Articoli" } }
+  ]
+}
+```
+
+Un client esterno richiede una sola superficie con
+`GET /v1/i18n/:locale?namespace=blog-pack:public`.
+Il Backoffice carica tutti i namespace admin installati con
+`GET /v1/i18n/:locale?surface=admin`.
+
+## 6. Root module
 
 `BlogPackRootModule` deve fare composizione, non business logic.
 
-## 6. Dominio interno
+## 7. Dominio interno
 
 Repository:
 
@@ -131,20 +155,22 @@ Controller:
 - risposta con `createPluginApiResponder(pluginId)`
 - route docs OpenAPI
 
-## 7. Lifecycle runtime e provisioning
+## 8. Lifecycle runtime e provisioning
 
 Con `startCmsApp(...)`:
 
 - il plugin viene caricato dal runtime
-- l'hook runtime `onAfterLoad` invoca `PluginSecurityProvisioner`
-- il manifest security viene sincronizzato in Mongo (`permissions/roles` + grants embedded nei ruoli)
+- l'hook runtime `onAfterLoad` invoca `PluginManifestProvisioner.provision(...)`
+- le risorse del manifest vengono sincronizzate nel Core: security
+  (`permissions/roles` + grants embedded), settings e bundle i18n
 - incluse eventuali `policyRules` (`allow/deny`, wildcard, condizioni)
 
 Su unregister:
 
-- hook `onBeforeUnregister` invoca `deprovision(...)`
+- hook `onBeforeUnregister` invoca `deprovision(...)`; vengono rimossi anche i
+  bundle di traduzione owned dal plugin
 
-## 8. Checklist pre-rilascio
+## 9. Checklist pre-rilascio
 
 1. manifest valido (`validatePluginManifest`)
 2. key permission namespaced corrette
@@ -153,14 +179,14 @@ Su unregister:
 5. smoke API su playground
 6. endpoint presenti in OpenAPI
 
-## 9. Anti-pattern da evitare
+## 10. Anti-pattern da evitare
 
 - usare permission key non namespaced
 - modificare direttamente ruoli altrui senza grants
 - saltare `dependencies` e contare sull'ordine manuale di load
 - mettere logica business nei controller
 
-## 10. Conclusione
+## 11. Conclusione
 
 Un plugin moderno in Trinacria CMS e contract-first: dichiara cosa offre (`capabilities`) e cosa contribuisce alla security (`manifest.security`), lasciando al runtime la sincronizzazione coerente.
 

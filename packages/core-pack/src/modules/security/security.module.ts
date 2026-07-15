@@ -15,11 +15,13 @@ import { CorePackUsersModule } from "../users/users.module.js";
 import { USERS_REPOSITORY_TOKEN } from "../users/users.tokens.js";
 import { CorePackSettingsModule } from "../settings/settings.module.js";
 import { SETTINGS_SERVICE_TOKEN } from "../settings/settings.tokens.js";
+import { CorePackI18nModule } from "../i18n/i18n.module.js";
+import { I18N_BUNDLES_SERVICE_TOKEN } from "../i18n/i18n.tokens.js";
 import { CorePackAuthzService } from "./services/core-pack-authz.service.js";
 import { RolePolicyRulesController } from "./role-policy-rules/role-policy-rules.controller.js";
 import { RolePolicyRulesRepository } from "./role-policy-rules/role-policy-rules.repository.js";
 import { RolePolicyRulesService } from "./role-policy-rules/role-policy-rules.service.js";
-import { CorePackSecurityProvisioningService } from "./services/security-provisioning.service.js";
+import { CorePackManifestProvisioningService } from "./services/security-provisioning.service.js";
 import { UserAccessController } from "./user-access/user-access.controller.js";
 import { UserAccessService } from "./user-access/user-access.service.js";
 import { UserRolesRepository } from "./user-access/user-roles.repository.js";
@@ -28,7 +30,7 @@ import {
   CORE_PACK_ROLE_POLICY_RULES_REPOSITORY_TOKEN,
   CORE_PACK_ROLE_POLICY_RULES_SERVICE_TOKEN,
   CORE_PACK_ROLE_POLICY_RULES_CONTROLLER_TOKEN,
-  CORE_PACK_SECURITY_PROVISIONING_SERVICE_TOKEN,
+  CORE_PACK_MANIFEST_PROVISIONING_SERVICE_TOKEN,
   CORE_PACK_USER_ACCESS_CONTROLLER_TOKEN,
   CORE_PACK_USER_ACCESS_SERVICE_TOKEN,
   CORE_PACK_USER_ROLES_REPOSITORY_TOKEN
@@ -50,7 +52,8 @@ export const CorePackSecurityModule = defineModule({
     CorePackUsersModule,
     CorePackRolesModule,
     CorePackPermissionsModule,
-    CorePackSettingsModule
+    CorePackSettingsModule,
+    CorePackI18nModule
   ],
   providers: [
     classProvider(CORE_PACK_USER_ROLES_REPOSITORY_TOKEN, UserRolesRepository, [
@@ -64,14 +67,15 @@ export const CorePackSecurityModule = defineModule({
       CORE_PACK_ROLE_POLICY_RULES_REPOSITORY_TOKEN
     ]),
     classProvider(
-      CORE_PACK_SECURITY_PROVISIONING_SERVICE_TOKEN,
-      CorePackSecurityProvisioningService,
+      CORE_PACK_MANIFEST_PROVISIONING_SERVICE_TOKEN,
+      CorePackManifestProvisioningService,
       [
         ROLES_REPOSITORY_TOKEN,
         ROLE_GRANTS_REPOSITORY_TOKEN,
         PERMISSIONS_REPOSITORY_TOKEN,
         CORE_PACK_USER_ROLES_REPOSITORY_TOKEN,
-        SETTINGS_SERVICE_TOKEN
+        SETTINGS_SERVICE_TOKEN,
+        I18N_BUNDLES_SERVICE_TOKEN
       ]
     ),
     classProvider(CORE_PACK_USER_ACCESS_SERVICE_TOKEN, UserAccessService, [
@@ -93,8 +97,8 @@ export const CorePackSecurityModule = defineModule({
       CORE_PACK_ROLE_POLICY_RULES_SERVICE_TOKEN,
       CORE_PACK_JWT_AUTH_SERVICE_TOKEN
     ]),
-    factoryProvider(CORE_TOKENS.PLUGIN_SECURITY_PROVISIONER, (service) => service, [
-      CORE_PACK_SECURITY_PROVISIONING_SERVICE_TOKEN
+    factoryProvider(CORE_TOKENS.PLUGIN_MANIFEST_PROVISIONER, (service) => service, [
+      CORE_PACK_MANIFEST_PROVISIONING_SERVICE_TOKEN
     ]),
     factoryProvider(CORE_TOKENS.AUTHZ_SERVICE, (service) => service, [
       CORE_PACK_AUTHZ_SERVICE_TOKEN
@@ -107,8 +111,8 @@ export const CorePackSecurityModule = defineModule({
     CORE_PACK_USER_ACCESS_SERVICE_TOKEN,
     CORE_PACK_USER_ACCESS_CONTROLLER_TOKEN,
     CORE_PACK_AUTHZ_SERVICE_TOKEN,
-    CORE_PACK_SECURITY_PROVISIONING_SERVICE_TOKEN,
-    CORE_TOKENS.PLUGIN_SECURITY_PROVISIONER,
+    CORE_PACK_MANIFEST_PROVISIONING_SERVICE_TOKEN,
+    CORE_TOKENS.PLUGIN_MANIFEST_PROVISIONER,
     CORE_TOKENS.AUTHZ_SERVICE
   ]
 });

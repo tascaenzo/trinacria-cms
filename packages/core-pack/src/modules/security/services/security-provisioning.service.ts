@@ -6,7 +6,7 @@ import {
   type PluginManifestSecurityPolicyRule,
   type PluginManifestSecurityPermission,
   type PluginManifestSecurityRole,
-  type PluginSecurityProvisioner
+  type PluginManifestProvisioner
 } from "@trinacria-cms/kernel";
 import { PermissionsRepository } from "../../permissions/repositories/permissions.repository.js";
 import { RoleGrantsRepository } from "../../roles/grants/role-grants.repository.js";
@@ -16,6 +16,7 @@ import {
   type EmbeddedRolePolicyRule
 } from "../../roles/roles.schemas.js";
 import { SettingsService } from "../../settings/services/settings.service.js";
+import { I18nBundlesService } from "../../i18n/i18n-bundles.service.js";
 import { UserRolesRepository } from "../user-access/user-roles.repository.js";
 
 interface NormalizedSecurityManifest {
@@ -26,13 +27,13 @@ interface NormalizedSecurityManifest {
 }
 
 /**
- * Provisions plugin-contributed permissions, roles, and grants.
+ * Materializes manifest-owned Core resources: security, settings, and i18n.
  * Ownership is tracked by `sourcePluginId` to keep uninstall operations safe.
  *
  * Policy rules are stored as an embedded array inside the role document
  * (no separate collection is used).
  */
-export class CorePackSecurityProvisioningService implements PluginSecurityProvisioner {
+export class CorePackManifestProvisioningService implements PluginManifestProvisioner {
   private static readonly POLICY_UPDATE_MAX_RETRIES = 3;
   private readonly deferredManifests = new Map<string, PluginManifest>();
 
@@ -41,7 +42,8 @@ export class CorePackSecurityProvisioningService implements PluginSecurityProvis
     private readonly roleGrants: RoleGrantsRepository,
     private readonly permissions: PermissionsRepository,
     private readonly userRoles: UserRolesRepository,
-    private readonly settings: SettingsService
+    private readonly settings: SettingsService,
+    private readonly i18nBundles?: I18nBundlesService
   ) {}
 
   async provision(manifest: PluginManifest): Promise<void> {
@@ -111,6 +113,7 @@ export class CorePackSecurityProvisioningService implements PluginSecurityProvis
     await this.syncOwnedPolicyRules(pluginId, security);
     await this.syncOwnedRoles(pluginId, security);
     await this.syncManifestSettings(pluginId, manifest.settings ?? []);
+    await this.i18nBundles?.syncManifest(manifest);
     this.deferredManifests.delete(pluginId);
   }
 
@@ -126,6 +129,7 @@ export class CorePackSecurityProvisioningService implements PluginSecurityProvis
 
   async deprovision(manifest: PluginManifest): Promise<void> {
     const pluginId = manifest.id.trim().toLowerCase();
+    await this.i18nBundles?.removePlugin(pluginId);
     await this.userRoles.deleteBySourcePlugin(pluginId);
     await this.roleGrants.deleteBySourcePlugin(pluginId);
     await this.deletePolicyRulesBySourcePlugin(pluginId);
@@ -212,7 +216,7 @@ export class CorePackSecurityProvisioningService implements PluginSecurityProvis
 
     for (
       let attempt = 0;
-      attempt < CorePackSecurityProvisioningService.POLICY_UPDATE_MAX_RETRIES;
+      attempt < CorePackManifestProvisioningService.POLICY_UPDATE_MAX_RETRIES;
       attempt += 1
     ) {
       const role = await this.roles.findRawById(roleId);
@@ -383,7 +387,7 @@ export class CorePackSecurityProvisioningService implements PluginSecurityProvis
   ): Promise<void> {
     for (
       let attempt = 0;
-      attempt < CorePackSecurityProvisioningService.POLICY_UPDATE_MAX_RETRIES;
+      attempt < CorePackManifestProvisioningService.POLICY_UPDATE_MAX_RETRIES;
       attempt += 1
     ) {
       const raw = await this.roles.findRawById(roleId);

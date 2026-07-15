@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import type { PluginSecurityProvisioner } from "@trinacria-cms/kernel";
+import type { PluginManifestProvisioner } from "@trinacria-cms/kernel";
 import type { EventBus } from "@trinacria/events";
 import { CORE_PACK_MANIFEST } from "../../../plugin/core-pack.manifest.js";
 import { CORE_PACK_ADMIN_ROLE } from "../../../plugin/core-pack.security.js";
@@ -66,7 +66,7 @@ export class InstallationService {
     private readonly localCredentials: LocalCredentialsRepository,
     private readonly users: UsersRepository,
     private readonly userAccess: UserAccessService,
-    private readonly securityProvisioning: PluginSecurityProvisioner,
+    private readonly manifestProvisioning: PluginManifestProvisioner,
     private readonly passwordHashing: PasswordHashingService,
     private readonly settings: SettingsService,
     events?: EventBus
@@ -101,8 +101,8 @@ export class InstallationService {
     }
 
     // Security baseline
-    await this.securityProvisioning.provision(CORE_PACK_MANIFEST);
-    await this.securityProvisioning.provisionDeferred?.();
+    await this.manifestProvisioning.provision(CORE_PACK_MANIFEST);
+    await this.manifestProvisioning.provisionDeferred?.();
 
     // Admin user
     const adminUser = await this.upsertAdminUser(input);

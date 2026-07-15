@@ -81,6 +81,48 @@ export const CORE_PACK_SETTING_DEFINITION_SEEDS: readonly CorePackSettingDefinit
       } as JsonValue
     },
     {
+      key: "core-pack:branding:backoffice_theme",
+      category: "branding",
+      description: "Global light or dark appearance for the Trinacria UI backoffice.",
+      defaultValue: "light",
+      schema: {
+        type: "string",
+        enum: ["light", "dark"]
+      } as JsonValue,
+      visibility: "admin"
+    },
+    {
+      key: "core-pack:branding:backoffice_accent",
+      category: "branding",
+      description: "Global accent palette for the Trinacria UI backoffice.",
+      defaultValue: "neutral",
+      schema: {
+        type: "string",
+        enum: ["neutral", "trinacria", "ocean", "forest"]
+      } as JsonValue,
+      visibility: "admin"
+    },
+    {
+      key: "core-pack:dashboard:widget_layout",
+      category: "dashboard",
+      description:
+        "Shared backoffice dashboard widget order, visibility, and grid dimensions managed by administrators.",
+      defaultValue: {
+        order: [],
+        hidden: [],
+        dimensions: {}
+      } as JsonValue,
+      schema: {
+        type: "object",
+        properties: {
+          order: { type: "array", items: { type: "string" } },
+          hidden: { type: "array", items: { type: "string" } },
+          dimensions: { type: "object", additionalProperties: { type: "object" } }
+        }
+      } as JsonValue,
+      visibility: "admin"
+    },
+    {
       key: "core-pack:features:editorial_workflow",
       category: "features",
       description: "Feature flag reserved for the editorial workflow milestone rollout.",

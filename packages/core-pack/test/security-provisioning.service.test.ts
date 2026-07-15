@@ -10,7 +10,7 @@ import type {
 import { PermissionsRepository } from "../src/modules/permissions/repositories/permissions.repository.js";
 import { RoleGrantsRepository } from "../src/modules/roles/grants/role-grants.repository.js";
 import { RolesRepository } from "../src/modules/roles/repositories/roles.repository.js";
-import { CorePackSecurityProvisioningService } from "../src/modules/security/services/security-provisioning.service.js";
+import { CorePackManifestProvisioningService } from "../src/modules/security/services/security-provisioning.service.js";
 import { RolePolicyRulesRepository } from "../src/modules/security/role-policy-rules/role-policy-rules.repository.js";
 import { UserRolesRepository } from "../src/modules/security/user-access/user-roles.repository.js";
 import { SettingsDefinitionsRepository } from "../src/modules/settings/definitions/settings-definitions.repository.js";
@@ -18,6 +18,8 @@ import { SettingsValuesRepository } from "../src/modules/settings/values/setting
 import { SettingsSecretsRepository } from "../src/modules/settings/secrets/settings-secrets.repository.js";
 import { SettingsSecretsCryptoService } from "../src/modules/settings/secrets/settings-secrets-crypto.service.js";
 import { SettingsService } from "../src/modules/settings/services/settings.service.js";
+import { I18nBundlesRepository } from "../src/modules/i18n/i18n-bundles.repository.js";
+import { I18nBundlesService } from "../src/modules/i18n/i18n-bundles.service.js";
 import { CORE_PACK_MANIFEST } from "../src/plugin/core-pack.manifest.js";
 import { CORE_PACK_READONLY_PERMISSION_KEY_LIST } from "../src/plugin/core-pack.security.js";
 
@@ -29,7 +31,7 @@ test("security provisioning syncs plugin-owned permissions, roles and grants", a
   const permissions = new PermissionsRepository(db);
   const userRoles = new UserRolesRepository(db);
   const settings = createSettingsService(db);
-  const service = new CorePackSecurityProvisioningService(
+  const service = new CorePackManifestProvisioningService(
     roles,
     grants,
     permissions,
@@ -118,7 +120,7 @@ test("core-pack manifest provisions admin, editor and viewer baseline roles", as
   const permissions = new PermissionsRepository(db);
   const userRoles = new UserRolesRepository(db);
   const settings = createSettingsService(db);
-  const service = new CorePackSecurityProvisioningService(
+  const service = new CorePackManifestProvisioningService(
     roles,
     grants,
     permissions,
@@ -146,6 +148,60 @@ test("core-pack manifest provisions admin, editor and viewer baseline roles", as
   );
 });
 
+test("plugin provisioning persists translation bundles and removes them on uninstall", async () => {
+  const db = createFakeDbAdapter();
+  const translations = new I18nBundlesService(new I18nBundlesRepository(db));
+  const service = new CorePackManifestProvisioningService(
+    new RolesRepository(db),
+    new RoleGrantsRepository(db),
+    new PermissionsRepository(db),
+    new UserRolesRepository(db),
+    createSettingsService(db),
+    translations
+  );
+  const manifest: PluginManifest = {
+    id: "blog-pack",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    i18n: {
+      fallbackLocale: "en",
+      bundles: [
+        {
+          namespace: "public",
+          locale: "en",
+          messages: { "blog.title": "Blog", "blog.new": "New post" }
+        },
+        { namespace: "public", locale: "it", messages: { "blog.title": "Articoli" } },
+        { namespace: "admin", locale: "en", messages: { "blog.manage": "Manage posts" } },
+        { namespace: "admin", locale: "it", messages: { "blog.manage": "Gestisci articoli" } }
+      ]
+    }
+  };
+
+  await service.provision(manifest);
+  const repository = new I18nBundlesRepository(db);
+  assert.deepEqual(
+    (await repository.listByPlugin("blog-pack"))
+      .map((bundle) => `${bundle.namespace}:${bundle.locale}`)
+      .sort(),
+    ["blog-pack:admin:en", "blog-pack:admin:it", "blog-pack:public:en", "blog-pack:public:it"]
+  );
+  assert.deepEqual(await translations.resolveLocale("it", "blog-pack:public"), {
+    locale: "it",
+    fallbackLocale: "en",
+    namespace: "blog-pack:public",
+    messages: { "blog.title": "Articoli", "blog.new": "New post" }
+  });
+  assert.deepEqual(await translations.resolveLocale("it", undefined, "admin"), {
+    locale: "it",
+    fallbackLocale: "en",
+    messages: { "blog.manage": "Gestisci articoli" }
+  });
+
+  await service.deprovision(manifest);
+  assert.equal((await repository.listByPlugin("blog-pack")).length, 0);
+});
+
 test("deprovision keeps role as disabled when foreign plugin grants still exist", async () => {
   const db = createFakeDbAdapter();
   const roles = new RolesRepository(db);
@@ -154,7 +210,7 @@ test("deprovision keeps role as disabled when foreign plugin grants still exist"
   const permissions = new PermissionsRepository(db);
   const userRoles = new UserRolesRepository(db);
   const settings = createSettingsService(db);
-  const service = new CorePackSecurityProvisioningService(
+  const service = new CorePackManifestProvisioningService(
     roles,
     grants,
     permissions,

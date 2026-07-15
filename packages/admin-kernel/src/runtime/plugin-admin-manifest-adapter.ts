@@ -1,6 +1,7 @@
 import type {
   AdminAccessGuard,
   AdminActionDefinition,
+  AdminDashboardWidgetLayout,
   AdminExtensionManifest,
   AdminJsonDataBinding,
   AdminSettingsSectionKind
@@ -37,6 +38,7 @@ interface PluginAdminWidgetDeclaration {
   label: string;
   requiredPermission?: string;
   componentRef?: string;
+  layout?: AdminDashboardWidgetLayout;
 }
 
 interface PluginAdminSettingsSectionDeclaration {
@@ -123,6 +125,7 @@ export function createAdminExtensionManifestFromPluginAdmin(
           kind: widget.componentRef ? ("custom" as const) : ("card" as const),
           componentRef: widget.componentRef,
           title: widget.label,
+          layout: widget.layout,
           guards: toGuards(input.pluginId, widget.requiredPermission)
         }))
       },

@@ -11,7 +11,7 @@ import { CorePackCacheModule } from "../cache/cache.module.js";
 import { CORE_PACK_CACHE_SERVICE_TOKEN } from "../cache/cache.tokens.js";
 import { CorePackSecurityModule } from "../security/security.module.js";
 import {
-  CORE_PACK_SECURITY_PROVISIONING_SERVICE_TOKEN,
+  CORE_PACK_MANIFEST_PROVISIONING_SERVICE_TOKEN,
   CORE_PACK_USER_ACCESS_SERVICE_TOKEN
 } from "../security/security.tokens.js";
 import { CorePackSettingsModule } from "../settings/settings.module.js";
@@ -69,7 +69,7 @@ export const CorePackInstallationModule = defineModule({
       LOCAL_CREDENTIALS_REPOSITORY_TOKEN,
       USERS_REPOSITORY_TOKEN,
       CORE_PACK_USER_ACCESS_SERVICE_TOKEN,
-      CORE_PACK_SECURITY_PROVISIONING_SERVICE_TOKEN,
+      CORE_PACK_MANIFEST_PROVISIONING_SERVICE_TOKEN,
       PASSWORD_HASHING_SERVICE_TOKEN,
       SETTINGS_SERVICE_TOKEN,
       EVENT_BUS_TOKEN

@@ -9,7 +9,7 @@ import { reconcileSelectedPluginId } from "./plugin-operations-utils.js";
  * receives a monotonic request id so a slower request can never overwrite a
  * newer plugin selection.
  */
-export function usePluginOperations() {
+export function usePluginOperations({ includeEvents = true }: { includeEvents?: boolean } = {}) {
   const [plugins, setPlugins] = useState<readonly PluginSnapshot[]>([]);
   const [selectedPluginId, setSelectedPluginId] = useState<string | null>(null);
   const [events, setEvents] = useState<
@@ -79,9 +79,9 @@ export function usePluginOperations() {
   const refresh = useCallback(async () => {
     await Promise.all([
       refreshPlugins(),
-      selectedPlugin ? refreshEvents(selectedPlugin.id) : Promise.resolve()
+      includeEvents && selectedPlugin ? refreshEvents(selectedPlugin.id) : Promise.resolve()
     ]);
-  }, [refreshEvents, refreshPlugins, selectedPlugin]);
+  }, [includeEvents, refreshEvents, refreshPlugins, selectedPlugin]);
 
   const executeOperation = useCallback(
     async (pluginId: string, operation: PluginOperation, reason?: string) => {
@@ -93,7 +93,10 @@ export function usePluginOperations() {
           path: { pluginId },
           body: { operation, ...(reason ? { reason } : {}) }
         });
-        await Promise.all([refreshPlugins(), refreshEvents(pluginId)]);
+        await Promise.all([
+          refreshPlugins(),
+          includeEvents ? refreshEvents(pluginId) : Promise.resolve()
+        ]);
         return response.data;
       } catch (error) {
         setOperationError(toDisplayError(error));
@@ -102,7 +105,7 @@ export function usePluginOperations() {
         setIsRunningOperation(null);
       }
     },
-    [refreshEvents, refreshPlugins]
+    [includeEvents, refreshEvents, refreshPlugins]
   );
 
   useEffect(() => {
@@ -110,6 +113,7 @@ export function usePluginOperations() {
   }, [refreshPlugins]);
 
   useEffect(() => {
+    if (!includeEvents) return;
     if (!selectedPluginKey) {
       eventsRequestId.current += 1;
       setEvents([]);
@@ -119,7 +123,7 @@ export function usePluginOperations() {
     }
 
     void refreshEvents(selectedPluginKey);
-  }, [refreshEvents, selectedPluginKey]);
+  }, [includeEvents, refreshEvents, selectedPluginKey]);
 
   useEffect(
     () => () => {

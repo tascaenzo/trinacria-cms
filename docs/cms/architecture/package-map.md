@@ -119,7 +119,7 @@ Responsabilita:
 - permessi
 - policy rules
 - settings definitions/values/secrets
-- security provisioning dai manifest plugin
+- manifest provisioning dai manifest plugin (security, settings e i18n)
 - signed plugin authentication for owner-scoped settings operations
 - servizi baseline necessari a ogni installazione
 

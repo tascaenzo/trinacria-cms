@@ -8,7 +8,8 @@ import {
   DropdownMenuItem,
   FeedbackBanner,
   Icon,
-  Input
+  Input,
+  Select
 } from "@trinacria-cms/trinacria-ui";
 import type {
   GetAuthenticatedUserResponse,
@@ -18,6 +19,7 @@ import type {
 import { ErrorBanner, EmptyState } from "../components/resource-feedback.js";
 import { JsonPreviewAction } from "../components/json-preview-action.js";
 import { formatDateTime } from "../lib/formatting.js";
+import { normalizeLocale } from "../lib/auth-i18n.js";
 import { useI18n } from "../lib/i18n.js";
 import { toDisplayError } from "../lib/sdk-errors.js";
 import { formatUserName } from "../lib/user-formatting.js";
@@ -34,7 +36,7 @@ type ProfileRole = ListUserRolesResponse["data"][number];
 type ProfilePermissions = ListUserEffectivePermissionsResponse["data"];
 
 export function ProfilePage() {
-  const { t } = useI18n();
+  const { locale, setLocale, t } = useI18n();
   const [user, setUser] = useState<ProfileUser | null>(null);
   const [roles, setRoles] = useState<readonly ProfileRole[]>([]);
   const [permissions, setPermissions] = useState<ProfilePermissions>([]);
@@ -75,10 +77,12 @@ export function ProfilePage() {
         const response = await cms.auth.updateAuthenticatedUserProfile({
           body: {
             firstName: readRequiredString(formData, "firstName"),
-            lastName: readRequiredString(formData, "lastName")
+            lastName: readRequiredString(formData, "lastName"),
+            locale: normalizeLocale(readRequiredString(formData, "locale"))
           }
         });
         setUser(response.data);
+        setLocale(normalizeLocale(response.data.locale ?? locale));
         window.dispatchEvent(
           new CustomEvent("trinacria-cms:auth-user-updated", {
             detail: response.data
@@ -255,6 +259,14 @@ export function ProfilePage() {
                   />
                   <ProfileDetail label={t("profile.details.email", "Email")} value={user.email} />
                   <ProfileDetail
+                    label={t("profile.details.language", "Lingua")}
+                    value={
+                      user.locale === "it"
+                        ? t("profile.language.italian", "Italiano")
+                        : t("profile.language.english", "English")
+                    }
+                  />
+                  <ProfileDetail
                     label={t("profile.roles.title", "Assigned roles")}
                     value={
                       roles.length > 0
@@ -314,6 +326,14 @@ export function ProfilePage() {
                 autoComplete="family-name"
                 required
               />
+              <Select
+                label={t("profile.language.label", "Lingua backoffice")}
+                name="locale"
+                defaultValue={user.locale ?? normalizeLocale(locale)}
+              >
+                <option value="it">{t("profile.language.italian", "Italiano")}</option>
+                <option value="en">{t("profile.language.english", "English")}</option>
+              </Select>
               <div className="flex justify-end gap-2">
                 <Button
                   type="button"

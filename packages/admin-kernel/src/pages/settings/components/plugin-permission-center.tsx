@@ -67,7 +67,7 @@ export function PluginPermissionCenterSection({ section, t }: AdminSettingsSecti
   return (
     <div className="min-h-0 overflow-auto px-6 py-4 sm:px-8 sm:py-6">
       <div className="mx-auto grid max-w-4xl gap-6">
-        <div className="border-b border-[color:var(--color-border)] pb-5">
+        <div className="grid gap-1">
           <h3 className="text-xl font-semibold text-[color:var(--color-ink)]">{section.title}</h3>
           {section.summary ? (
             <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink-muted)]">
@@ -161,7 +161,7 @@ export function PluginPermissionCenter({
             return (
               <article
                 key={getPluginGrantId(grant)}
-                className="grid gap-4 rounded-lg border border-[color:var(--color-border)] bg-white p-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
+                className="grid gap-4 rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
               >
                 <div className="grid min-w-0 gap-2">
                   <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -208,7 +208,7 @@ export function PluginPermissionCenter({
                       }
                     />
                     <span className="h-7 w-12 rounded-full bg-[color:var(--color-interactive-soft)] transition peer-checked:bg-[color:var(--color-action-primary-bg)] peer-focus:ring-2 peer-focus:ring-[color:var(--color-overlay-soft)] peer-disabled:opacity-60" />
-                    <span className="pointer-events-none absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition peer-checked:translate-x-5" />
+                    <span className="pointer-events-none absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-[color:var(--color-surface)] shadow-sm transition peer-checked:translate-x-5" />
                   </label>
                 </div>
               </article>

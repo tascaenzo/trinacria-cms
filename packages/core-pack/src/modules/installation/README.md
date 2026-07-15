@@ -1,7 +1,7 @@
 # Installation Module
 
 The installation module owns first-run bootstrap state, local admin credential creation, and the
-initial security provisioning required before the CMS is usable.
+initial manifest provisioning required before the CMS is usable.
 
 ## Structure
 
@@ -12,7 +12,7 @@ initial security provisioning required before the CMS is usable.
 
 ## Development Notes
 
-Bootstrap logic touches users, credentials, settings, and security provisioning. Keep orchestration
+Bootstrap logic touches users, credentials, settings, and manifest provisioning. Keep orchestration
 in `services/installation.service.ts` and avoid duplicating setup work in controllers. Password
 hashing must stay algorithm-versioned so future migrations can be introduced without breaking
 existing credentials.

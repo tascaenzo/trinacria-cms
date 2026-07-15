@@ -8,6 +8,8 @@ export const UserRecordSchema = s.object(
     email: s.string({ trim: true, toLowerCase: true, email: true }),
     firstName: s.string({ trim: true, minLength: 1, maxLength: 60 }),
     lastName: s.string({ trim: true, minLength: 1, maxLength: 60 }),
+    /** Personal backoffice language preference. Legacy records may omit it. */
+    locale: s.enum(["en", "it"] as const).optional(),
     status: UserStatusSchema,
     createdAt: s.dateTimeString(),
     updatedAt: s.dateTimeString()

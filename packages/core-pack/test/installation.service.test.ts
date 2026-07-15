@@ -17,7 +17,7 @@ import { PasswordHashingService } from "../src/modules/installation/services/pas
 import { PermissionsRepository } from "../src/modules/permissions/repositories/permissions.repository.js";
 import { RoleGrantsRepository } from "../src/modules/roles/grants/role-grants.repository.js";
 import { RolesRepository } from "../src/modules/roles/repositories/roles.repository.js";
-import { CorePackSecurityProvisioningService } from "../src/modules/security/services/security-provisioning.service.js";
+import { CorePackManifestProvisioningService } from "../src/modules/security/services/security-provisioning.service.js";
 import { RolePolicyRulesRepository } from "../src/modules/security/role-policy-rules/role-policy-rules.repository.js";
 import { UserAccessService } from "../src/modules/security/user-access/user-access.service.js";
 import { UserRolesRepository } from "../src/modules/security/user-access/user-roles.repository.js";
@@ -213,7 +213,7 @@ function createInstallationRuntime(loadedManifest?: PluginManifest): Installatio
     permissions,
     userRoles
   );
-  const securityProvisioning = new CorePackSecurityProvisioningService(
+  const manifestProvisioning = new CorePackManifestProvisioningService(
     roles,
     roleGrants,
     permissions,
@@ -223,7 +223,7 @@ function createInstallationRuntime(loadedManifest?: PluginManifest): Installatio
   const installationState = new InstallationStateRepository(db);
   const localCredentials = new LocalCredentialsRepository(db);
   const passwordHashing = new PasswordHashingService();
-  if (loadedManifest) securityProvisioning.defer(loadedManifest);
+  if (loadedManifest) manifestProvisioning.defer(loadedManifest);
 
   return {
     service: new InstallationService(
@@ -231,7 +231,7 @@ function createInstallationRuntime(loadedManifest?: PluginManifest): Installatio
       localCredentials,
       users,
       userAccess,
-      securityProvisioning,
+      manifestProvisioning,
       passwordHashing,
       settings
     ),

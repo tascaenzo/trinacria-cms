@@ -19,13 +19,13 @@ framework.
 - MongoDB adapter with Mongoose-compatible bridge
 - runtime observability events, retry policy, dependency graph snapshot
 - runtime state persistence (`PluginRuntimeStore`)
-- starter bootstrap with optional automatic plugin security provisioning
+- starter bootstrap with optional automatic plugin manifest provisioning
 - system API DTOs for plugin source, lifecycle operations, dependency status,
   recent events, and contribution diagnostics
 
 ## Key exports
 
-- contracts: `plugin-manifest`, `plugin-runtime`, `plugin-runtime-store`, `plugin-security-provisioner`, `db-adapter`, `authz-service`
+- contracts: `plugin-manifest`, `plugin-manifest-provisioner`, `plugin-runtime`, `plugin-runtime-store`, `db-adapter`, `authz-service`
 - plugin API helpers: `definePluginManifest`, `defineSetting`, `defineAdmin`, `defineAdminRoute`, `defineAdminResource`, `defineAdminSettingsSection`, `successEnvelope`, `errorEnvelope`
 - runtime: `validatePluginManifest`, `assertPluginCompatibility`, `InMemoryPluginRuntime`, `PluginContributionRegistry`
 - runtime helpers: `isValidPermissionKey`, `parsePermissionKey`, `buildContributionKey`, `buildSettingKey`, `isValidPluginId`, `isValidNamespaceSegment`
@@ -47,6 +47,8 @@ framework.
   - `onAfterLoad`
   - `onBeforeUnregister`
 - `unregister(...)` support for plugin uninstall-like flows
+- `PluginManifestProvisioner` materializes manifest-owned Core resources on
+  load, deferred installation completion, and unregister
 - manifest security validation supports policy rules (`allow`/`deny`, wildcard, conditions)
 - starter auto-selects runtime store:
   - `DbPluginRuntimeStore` when Mongo storage is available
