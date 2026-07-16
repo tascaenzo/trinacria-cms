@@ -367,7 +367,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
 
     try {
       if (this.lifecycleHooks?.onBeforeUnregister) {
-        const context = this.createContext(definition.manifest);
+        const context = this.createContext(definition);
         await this.lifecycleHooks.onBeforeUnregister(context);
       }
     } catch (error) {
@@ -553,19 +553,20 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     return this.loadedContributions.snapshot();
   }
 
-  private createContext(manifest: PluginRuntimeRecord["manifest"]): KernelPluginRuntimeContext {
+  private createContext(definition: KernelPluginDefinition): KernelPluginRuntimeContext {
     if (!this.app) {
       throw new PluginRuntimeError(
-        `Plugin "${manifest.id}" requires an ApplicationContext to run lifecycle hooks`,
-        { pluginId: manifest.id }
+        `Plugin "${definition.manifest.id}" requires an ApplicationContext to run lifecycle hooks`,
+        { pluginId: definition.manifest.id }
       );
     }
     return {
       app: this.app,
-      pluginId: manifest.id,
-      manifest,
+      pluginId: definition.manifest.id,
+      manifest: definition.manifest,
+      i18nSources: definition.i18nSources ?? [],
       events: {
-        emit: (eventName, payload) => this.emitPluginEvent(manifest.id, eventName, payload)
+        emit: (eventName, payload) => this.emitPluginEvent(definition.manifest.id, eventName, payload)
       }
     };
   }

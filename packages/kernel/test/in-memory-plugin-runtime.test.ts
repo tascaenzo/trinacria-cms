@@ -883,25 +883,28 @@ test("onBeforeUnregister lifecycle hook is executed", async () => {
 
 test("onAfterLoad lifecycle hook is executed", async () => {
   const app = createFakeApp();
-  const calls: string[] = [];
+  const calls: Array<{ pluginId: string; sourceCount: number }> = [];
   const runtime = new InMemoryPluginRuntime({
     coreVersion: "0.1.0",
     app,
     lifecycleHooks: {
       onAfterLoad(context) {
-        calls.push(context.pluginId);
+        calls.push({ pluginId: context.pluginId, sourceCount: context.i18nSources.length });
       }
     }
   });
 
   await runtime.register({
-    id: "cms/plugin-temp",
-    version: "1.0.0",
-    requiresCore: "^0.1.0"
+    manifest: {
+      id: "cms/plugin-temp",
+      version: "1.0.0",
+      requiresCore: "^0.1.0"
+    },
+    i18nSources: [{ source: "admin", locale: "en", messages: { "plugin.title": "Plugin" } }]
   });
   await runtime.load("cms/plugin-temp");
 
-  assert.deepEqual(calls, ["cms/plugin-temp"]);
+  assert.deepEqual(calls, [{ pluginId: "cms/plugin-temp", sourceCount: 1 }]);
 });
 
 function createModule(name: string): ModuleDefinition {

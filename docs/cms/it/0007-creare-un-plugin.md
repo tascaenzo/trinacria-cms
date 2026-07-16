@@ -113,21 +113,34 @@ security: {
 
 ## 5. Traduzioni e namespace
 
-Un plugin puo dichiarare dizionari in `manifest.i18n`. Il namespace e locale al
-plugin e identifica la superficie che li usa (`admin`, `public` o `mobile`); il
-Core lo salva come `<pluginId>:<namespace>`.
+Un plugin dichiara metadati i18n leggeri in `manifest.i18n`. Il namespace e
+locale al plugin e identifica la superficie che lo usa (`admin`, `public` o
+`mobile`). I dizionari reali restano negli asset del package, ad esempio
+`src/i18n/public/en.json` e `src/i18n/public/it.json`.
 
-Ogni namespace deve avere il bundle inglese. Le altre lingue sovrascrivono i
-messaggi inglesi chiave per chiave:
+Ogni namespace deve elencare il fallback inglese. Il manifest non contiene i
+messaggi:
 
 ```ts
 i18n: {
   fallbackLocale: "en",
-  bundles: [
-    { namespace: "public", locale: "en", messages: { "blog.title": "Blog" } },
-    { namespace: "public", locale: "it", messages: { "blog.title": "Articoli" } }
+  namespaces: [
+    { id: "public", surface: "public", locales: ["en", "it"], source: "public" }
   ]
 }
+```
+
+Esponi gli asset nella definizione del plugin: il provisioning importa un
+record DB piccolo per ogni coppia lingua/chiave.
+
+```ts
+const plugin: KernelPluginDefinition = {
+  manifest,
+  i18nSources: [
+    { source: "public", locale: "en", messages: en },
+    { source: "public", locale: "it", messages: it }
+  ]
+};
 ```
 
 Un client esterno richiede una sola superficie con
@@ -162,13 +175,13 @@ Con `startCmsApp(...)`:
 - il plugin viene caricato dal runtime
 - l'hook runtime `onAfterLoad` invoca `PluginManifestProvisioner.provision(...)`
 - le risorse del manifest vengono sincronizzate nel Core: security
-  (`permissions/roles` + grants embedded), settings e bundle i18n
+  (`permissions/roles` + grants embedded), settings e asset i18n locali al package
 - incluse eventuali `policyRules` (`allow/deny`, wildcard, condizioni)
 
 Su unregister:
 
 - hook `onBeforeUnregister` invoca `deprovision(...)`; vengono rimossi anche i
-  bundle di traduzione owned dal plugin
+  record di traduzione owned dal plugin
 
 ## 9. Checklist pre-rilascio
 

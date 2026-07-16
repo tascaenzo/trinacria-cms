@@ -111,21 +111,34 @@ security: {
 
 ## 5. Translations and namespaces
 
-Plugins can declare locale dictionaries in `manifest.i18n`. A namespace is
-plugin-local and identifies the consuming surface (`admin`, `public`, or
-`mobile`); Core persists it as `<pluginId>:<namespace>`.
+Plugins declare lightweight translation metadata in `manifest.i18n`. A
+namespace is plugin-local and identifies the consuming surface (`admin`,
+`public`, or `mobile`). Keep the actual dictionaries in package assets such as
+`src/i18n/public/en.json` and `src/i18n/public/it.json`.
 
-Every namespace must contain an English bundle. Other locales override English
-message-by-message:
+Every namespace must list the English fallback. The manifest contains no
+message payload:
 
 ```ts
 i18n: {
   fallbackLocale: "en",
-  bundles: [
-    { namespace: "public", locale: "en", messages: { "blog.title": "Blog" } },
-    { namespace: "public", locale: "it", messages: { "blog.title": "Articoli" } }
+  namespaces: [
+    { id: "public", surface: "public", locales: ["en", "it"], source: "public" }
   ]
 }
+```
+
+Expose the package assets on the plugin definition; provisioning imports one
+small DB record for each locale/key pair:
+
+```ts
+const plugin: KernelPluginDefinition = {
+  manifest,
+  i18nSources: [
+    { source: "public", locale: "en", messages: en },
+    { source: "public", locale: "it", messages: it }
+  ]
+};
 ```
 
 External clients resolve one surface with
@@ -160,13 +173,13 @@ With `startCmsApp(...)`:
 - plugin loads through runtime orchestration
 - runtime `onAfterLoad` hook calls `PluginManifestProvisioner.provision(...)`
 - manifest-owned resources are synced into Core: security (`permissions/roles`
-  + embedded grants), settings, and i18n bundles
+  + embedded grants), settings, and package-local i18n assets
 - including optional policy rules (`allow`/`deny`, wildcard, conditions)
 
 On unregister:
 
 - runtime `onBeforeUnregister` calls `deprovision(...)`; owned translation
-  bundles are removed too
+  message records are removed too
 
 ## 9. Release checklist
 

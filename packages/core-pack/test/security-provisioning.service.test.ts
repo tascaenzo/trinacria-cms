@@ -18,8 +18,11 @@ import { SettingsValuesRepository } from "../src/modules/settings/values/setting
 import { SettingsSecretsRepository } from "../src/modules/settings/secrets/settings-secrets.repository.js";
 import { SettingsSecretsCryptoService } from "../src/modules/settings/secrets/settings-secrets-crypto.service.js";
 import { SettingsService } from "../src/modules/settings/services/settings.service.js";
-import { I18nBundlesRepository } from "../src/modules/i18n/i18n-bundles.repository.js";
-import { I18nBundlesService } from "../src/modules/i18n/i18n-bundles.service.js";
+import { I18nMessagesRepository } from "../src/modules/i18n/i18n-messages.repository.js";
+import { I18nMessagesService } from "../src/modules/i18n/i18n-messages.service.js";
+import { MemoryCacheAdapter } from "../src/modules/cache/adapters/memory-cache-adapter.js";
+import { CacheService } from "../src/modules/cache/services/cache.service.js";
+import { CORE_PACK_ADMIN_I18N, CORE_PACK_ADMIN_I18N_SOURCES } from "../src/admin-i18n/index.js";
 import { CORE_PACK_MANIFEST } from "../src/plugin/core-pack.manifest.js";
 import { CORE_PACK_READONLY_PERMISSION_KEY_LIST } from "../src/plugin/core-pack.security.js";
 
@@ -120,15 +123,17 @@ test("core-pack manifest provisions admin, editor and viewer baseline roles", as
   const permissions = new PermissionsRepository(db);
   const userRoles = new UserRolesRepository(db);
   const settings = createSettingsService(db);
+  const translations = new I18nMessagesService(new I18nMessagesRepository(db));
   const service = new CorePackManifestProvisioningService(
     roles,
     grants,
     permissions,
     userRoles,
-    settings
+    settings,
+    translations
   );
 
-  await service.provision(CORE_PACK_MANIFEST);
+  await service.provision(CORE_PACK_MANIFEST, CORE_PACK_ADMIN_I18N_SOURCES);
 
   const provisionedRoles = await roles.list();
   assert.deepEqual(provisionedRoles.map((role) => role.code).sort(), ["admin", "editor", "viewer"]);
@@ -146,11 +151,23 @@ test("core-pack manifest provisions admin, editor and viewer baseline roles", as
     viewerGrants.map((grant) => grant.permissionKey).sort(),
     [...CORE_PACK_READONLY_PERMISSION_KEY_LIST].sort()
   );
+  assert.deepEqual(await translations.resolveLocale("en", "admin"), {
+    locale: "en",
+    fallbackLocale: "en",
+    namespace: "admin",
+    messages: CORE_PACK_ADMIN_I18N.en
+  });
+  assert.deepEqual(await translations.resolveLocale("it", "admin"), {
+    locale: "it",
+    fallbackLocale: "en",
+    namespace: "admin",
+    messages: CORE_PACK_ADMIN_I18N.it
+  });
 });
 
-test("plugin provisioning persists translation bundles and removes them on uninstall", async () => {
+test("plugin provisioning imports granular translation messages and removes them on uninstall", async () => {
   const db = createFakeDbAdapter();
-  const translations = new I18nBundlesService(new I18nBundlesRepository(db));
+  const translations = new I18nMessagesService(new I18nMessagesRepository(db));
   const service = new CorePackManifestProvisioningService(
     new RolesRepository(db),
     new RoleGrantsRepository(db),
@@ -165,31 +182,36 @@ test("plugin provisioning persists translation bundles and removes them on unins
     requiresCore: "^0.1.0",
     i18n: {
       fallbackLocale: "en",
-      bundles: [
-        {
-          namespace: "public",
-          locale: "en",
-          messages: { "blog.title": "Blog", "blog.new": "New post" }
-        },
-        { namespace: "public", locale: "it", messages: { "blog.title": "Articoli" } },
-        { namespace: "admin", locale: "en", messages: { "blog.manage": "Manage posts" } },
-        { namespace: "admin", locale: "it", messages: { "blog.manage": "Gestisci articoli" } }
+      namespaces: [
+        { id: "public", surface: "public", locales: ["en", "it"], source: "public" },
+        { id: "admin", surface: "admin", locales: ["en", "it"], source: "admin" }
       ]
     }
   };
 
-  await service.provision(manifest);
-  const repository = new I18nBundlesRepository(db);
+  await service.provision(manifest, [
+    { source: "public", locale: "en", messages: { "blog.title": "Blog", "blog.new": "New post" } },
+    { source: "public", locale: "it", messages: { "blog.title": "Articoli" } },
+    { source: "admin", locale: "en", messages: { "blog.manage": "Manage posts" } },
+    { source: "admin", locale: "it", messages: { "blog.manage": "Gestisci articoli" } }
+  ]);
+  const repository = new I18nMessagesRepository(db);
   assert.deepEqual(
     (await repository.listByPlugin("blog-pack"))
-      .map((bundle) => `${bundle.namespace}:${bundle.locale}`)
+      .map((message) => `${message.namespace}:${message.locale}:${message.key}`)
       .sort(),
-    ["blog-pack:admin:en", "blog-pack:admin:it", "blog-pack:public:en", "blog-pack:public:it"]
+    [
+      "admin:en:blog.manage",
+      "admin:it:blog.manage",
+      "public:en:blog.new",
+      "public:en:blog.title",
+      "public:it:blog.title"
+    ]
   );
-  assert.deepEqual(await translations.resolveLocale("it", "blog-pack:public"), {
+  assert.deepEqual(await translations.resolveLocale("it", "public"), {
     locale: "it",
     fallbackLocale: "en",
-    namespace: "blog-pack:public",
+    namespace: "public",
     messages: { "blog.title": "Articoli", "blog.new": "New post" }
   });
   assert.deepEqual(await translations.resolveLocale("it", undefined, "admin"), {
@@ -198,8 +220,67 @@ test("plugin provisioning persists translation bundles and removes them on unins
     messages: { "blog.manage": "Gestisci articoli" }
   });
 
+  await service.provision(
+    { ...manifest, version: "1.0.1" },
+    [
+      { source: "public", locale: "en", messages: { "blog.title": "Posts" } },
+      { source: "public", locale: "it", messages: { "blog.title": "Articoli" } },
+      { source: "admin", locale: "en", messages: { "blog.manage": "Manage posts" } },
+      { source: "admin", locale: "it", messages: { "blog.manage": "Gestisci articoli" } }
+    ]
+  );
+  assert.deepEqual(await translations.resolveLocale("it", "public"), {
+    locale: "it",
+    fallbackLocale: "en",
+    namespace: "public",
+    messages: { "blog.title": "Articoli" }
+  });
+  assert.equal(
+    (await repository.listByPlugin("blog-pack")).every((message) => message.sourceVersion === "1.0.1"),
+    true
+  );
+
   await service.deprovision(manifest);
   assert.equal((await repository.listByPlugin("blog-pack")).length, 0);
+});
+
+test("translation resolution uses cache and invalidates it after package asset synchronization", async () => {
+  const db = createFakeDbAdapter();
+  const adapter = new CountingMemoryCacheAdapter();
+  const translations = new I18nMessagesService(
+    new I18nMessagesRepository(db),
+    new CacheService(adapter)
+  );
+  const manifest: PluginManifest = {
+    id: "blog-pack",
+    version: "1.0.0",
+    requiresCore: "^0.1.0",
+    i18n: {
+      fallbackLocale: "en",
+      namespaces: [{ id: "public", surface: "public", locales: ["en", "it"], source: "public" }]
+    }
+  };
+
+  await translations.syncManifest(manifest, [
+    { source: "public", locale: "en", messages: { "blog.title": "Blog" } },
+    { source: "public", locale: "it", messages: { "blog.title": "Articoli" } }
+  ]);
+  assert.equal((await translations.resolveLocale("it", undefined, "public")).messages["blog.title"], "Articoli");
+  assert.equal((await translations.resolveLocale("it", undefined, "public")).messages["blog.title"], "Articoli");
+  assert.equal(adapter.setCalls, 1);
+
+  await translations.syncManifest(
+    { ...manifest, version: "1.0.1" },
+    [
+      { source: "public", locale: "en", messages: { "blog.title": "Blog" } },
+      { source: "public", locale: "it", messages: { "blog.title": "Articoli aggiornati" } }
+    ]
+  );
+  assert.equal(
+    (await translations.resolveLocale("it", undefined, "public")).messages["blog.title"],
+    "Articoli aggiornati"
+  );
+  assert.equal(adapter.setCalls, 2);
 });
 
 test("deprovision keeps role as disabled when foreign plugin grants still exist", async () => {
@@ -262,6 +343,15 @@ test("deprovision keeps role as disabled when foreign plugin grants still exist"
   const blogPermissions = await permissions.listBySourcePlugin("blog-pack");
   assert.equal(blogPermissions.length, 0);
 });
+
+class CountingMemoryCacheAdapter extends MemoryCacheAdapter {
+  setCalls = 0;
+
+  override async set<T>(namespace: string, key: string, value: T, ttlSeconds?: number): Promise<void> {
+    this.setCalls += 1;
+    await super.set(namespace, key, value, ttlSeconds);
+  }
+}
 
 function createFakeDbAdapter(): DbAdapter {
   const buckets = new Map<string, Array<Record<string, unknown>>>();

@@ -159,24 +159,26 @@ export interface PluginManifestEvents {
   subscribes?: readonly PluginManifestEventSubscription[];
 }
 
-/** A locale dictionary supplied by a plugin for an admin or public client. */
-export interface PluginManifestTranslationBundle {
-  /** Plugin-local surface, for example `admin`, `public`, or `mobile`. */
-  namespace: string;
-  /** BCP-47 language tag, for example `en`, `it`, or `fr-CA`. */
-  locale: string;
-  /** Flat message map. Keys are namespaced by the plugin when appropriate. */
-  messages: Readonly<Record<string, string>>;
+/** Lightweight declaration for one plugin-owned translation namespace. */
+export interface PluginManifestTranslationNamespace {
+  /** Plugin-local namespace, for example `admin`, `public`, or `mobile`. */
+  id: string;
+  /** Client surface allowed to resolve this namespace. */
+  surface: string;
+  /** Locales supplied by the package assets. Must include the English fallback. */
+  locales: readonly string[];
+  /** Stable source identifier matched to assets on the plugin definition, never a message payload. */
+  source: string;
 }
 
 /**
  * Translations contributed by a plugin. Every translated plugin ships an
- * English fallback; the Core persists these bundles on installation. A plugin
- * can declare multiple namespaces for its admin, public site, and app UI.
+ * English fallback; the Core imports the package assets on installation. A
+ * plugin can declare multiple namespaces for its admin, public site, and app UI.
  */
 export interface PluginManifestI18n {
   fallbackLocale: "en";
-  bundles: readonly PluginManifestTranslationBundle[];
+  namespaces: readonly PluginManifestTranslationNamespace[];
 }
 
 export interface PluginManifestAdminNavigation {
@@ -274,7 +276,7 @@ export interface PluginManifest {
   settings?: readonly PluginManifestSetting[];
   /** Event contracts emitted or consumed by the plugin. */
   events?: PluginManifestEvents;
-  /** Locale dictionaries supplied by the plugin. */
+  /** Lightweight metadata for package-local translation assets. */
   i18n?: PluginManifestI18n;
   /** Declarative admin/backoffice contribution points. */
   admin?: PluginManifestAdmin;

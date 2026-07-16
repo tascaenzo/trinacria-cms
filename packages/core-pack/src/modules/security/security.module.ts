@@ -16,7 +16,7 @@ import { USERS_REPOSITORY_TOKEN } from "../users/users.tokens.js";
 import { CorePackSettingsModule } from "../settings/settings.module.js";
 import { SETTINGS_SERVICE_TOKEN } from "../settings/settings.tokens.js";
 import { CorePackI18nModule } from "../i18n/i18n.module.js";
-import { I18N_BUNDLES_SERVICE_TOKEN } from "../i18n/i18n.tokens.js";
+import { I18N_MESSAGES_SERVICE_TOKEN } from "../i18n/i18n-messages.tokens.js";
 import { CorePackAuthzService } from "./services/core-pack-authz.service.js";
 import { RolePolicyRulesController } from "./role-policy-rules/role-policy-rules.controller.js";
 import { RolePolicyRulesRepository } from "./role-policy-rules/role-policy-rules.repository.js";
@@ -75,7 +75,7 @@ export const CorePackSecurityModule = defineModule({
         PERMISSIONS_REPOSITORY_TOKEN,
         CORE_PACK_USER_ROLES_REPOSITORY_TOKEN,
         SETTINGS_SERVICE_TOKEN,
-        I18N_BUNDLES_SERVICE_TOKEN
+        I18N_MESSAGES_SERVICE_TOKEN
       ]
     ),
     classProvider(CORE_PACK_USER_ACCESS_SERVICE_TOKEN, UserAccessService, [

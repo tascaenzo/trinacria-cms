@@ -32,7 +32,7 @@ export function createRemoteI18nBundle(payload: unknown): I18nBundle | null {
 
 /**
  * Loads all installed plugin dictionaries intended for the admin surface.
- * Local bundles remain available as a bootstrap and offline fallback.
+ * The Core Pack catalog remains available only as a bootstrap and offline fallback.
  */
 export async function loadRemoteBackofficeI18n(
   locale: Locale,

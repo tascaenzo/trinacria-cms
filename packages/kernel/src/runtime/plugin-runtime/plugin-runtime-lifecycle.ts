@@ -91,20 +91,21 @@ function getDefinition(
 }
 
 function createContext(
-  manifest: PluginRuntimeRecord["manifest"],
+  definition: KernelPluginDefinition,
   app: ApplicationContext | undefined,
   emitPluginEvent: (eventName: string, payload: unknown) => Promise<void>
 ): KernelPluginRuntimeContext {
   if (!app) {
     throw new PluginRuntimeError(
-      `Plugin "${manifest.id}" requires an ApplicationContext to run lifecycle hooks`,
-      { pluginId: manifest.id }
+      `Plugin "${definition.manifest.id}" requires an ApplicationContext to run lifecycle hooks`,
+      { pluginId: definition.manifest.id }
     );
   }
   return {
     app,
-    pluginId: manifest.id,
-    manifest,
+    pluginId: definition.manifest.id,
+    manifest: definition.manifest,
+    i18nSources: definition.i18nSources ?? [],
     events: {
       emit: emitPluginEvent
     }
@@ -241,7 +242,7 @@ export async function loadPluginInternal(
     Boolean(definition.onUnload) ||
     Boolean(ctx.lifecycleHooks?.onAfterLoad);
   const context = needsRuntimeContext
-    ? createContext(definition.manifest, ctx.app, async (eventName, payload) => {
+    ? createContext(definition, ctx.app, async (eventName, payload) => {
         if (!ctx.emitPluginEvent) {
           throw new PluginRuntimeError(
             `Plugin "${definition.manifest.id}" cannot emit "${eventName}" because the runtime publisher is not available`,
@@ -351,7 +352,7 @@ export async function unloadPlugin(
   const definition = getDefinition(ctx.definitions, pluginId);
   const needsRuntimeContext = Boolean(definition.onUnload);
   const context = needsRuntimeContext
-    ? createContext(definition.manifest, ctx.app, async (eventName, payload) => {
+    ? createContext(definition, ctx.app, async (eventName, payload) => {
         if (!ctx.emitPluginEvent) {
           throw new PluginRuntimeError(
             `Plugin "${pluginId}" cannot emit "${eventName}" because the runtime publisher is not available`,

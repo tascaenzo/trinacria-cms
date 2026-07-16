@@ -17,6 +17,7 @@ import {
   CORE_PACK_READONLY_PERMISSION_KEY_LIST
 } from "./core-pack.security.js";
 import { CORE_PACK_ADMIN_MANIFEST } from "./core-pack-admin.manifest.js";
+import { CORE_PACK_ADMIN_I18N } from "../admin-i18n/index.js";
 import { CORE_PACK_SETTING_DEFINITION_SEEDS } from "../modules/settings/settings.bootstrap.js";
 import { CORE_PACK_USER_EVENT_DEFINITIONS } from "../modules/users/events/user-events.catalog.js";
 
@@ -31,26 +32,15 @@ export const CORE_PACK_MANIFEST: PluginManifest = definePluginManifest({
   version: "0.1.0",
   requiresCore: "^0.1.0",
   capabilities: [...CORE_PACK_CAPABILITY_LIST],
-  // First core Backoffice messages migrated to the persistent i18n registry.
-  // Remaining local strings stay as a safe fallback during the staged migration.
+  // Complete Core Pack Backoffice catalog, synchronized into the persistent registry.
   i18n: defineI18n({
     fallbackLocale: "en",
-    bundles: [
+    namespaces: [
       {
-        namespace: "admin",
-        locale: "en",
-        messages: {
-          "dashboard.title": "Overview",
-          "dashboard.summary": "Operational summary of the current CMS instance."
-        }
-      },
-      {
-        namespace: "admin",
-        locale: "it",
-        messages: {
-          "dashboard.title": "Panoramica",
-          "dashboard.summary": "Riepilogo operativo dell'istanza CMS corrente."
-        }
+        id: "admin",
+        surface: "admin",
+        locales: ["en", "it"],
+        source: "admin"
       }
     ]
   }),

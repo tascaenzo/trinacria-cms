@@ -57,7 +57,16 @@ export interface KernelPluginRuntimeContext {
   app: ApplicationContext;
   pluginId: string;
   manifest: PluginManifest;
+  /** Message assets live in package files and are never persisted in the manifest. */
+  i18nSources: readonly PluginTranslationSource[];
   events: PluginEventPublisher;
+}
+
+/** One package-local message dictionary loaded while its plugin is installed. */
+export interface PluginTranslationSource {
+  source: string;
+  locale: string;
+  messages: Readonly<Record<string, string>>;
 }
 
 export interface PluginEventPublisher {
@@ -110,6 +119,7 @@ export type KernelPluginEventHandler = (
  */
 export interface KernelPluginDefinition extends KernelPluginHooks {
   manifest: PluginManifest;
+  i18nSources?: readonly PluginTranslationSource[];
   modules?: readonly ModuleDefinition[];
   eventHandlers?: Readonly<Record<string, KernelPluginEventHandler>>;
 }

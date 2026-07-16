@@ -91,7 +91,7 @@ export function createCmsStarterKernelModule({
                   }
                   return;
                 }
-                await provisioner.provision(context.manifest);
+                await provisioner.provision(context.manifest, context.i18nSources);
               },
               onBeforeUnregister: async (context) => {
                 if (!manifestProvisioningEnabled) return;

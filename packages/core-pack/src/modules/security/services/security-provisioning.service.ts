@@ -6,7 +6,8 @@ import {
   type PluginManifestSecurityPolicyRule,
   type PluginManifestSecurityPermission,
   type PluginManifestSecurityRole,
-  type PluginManifestProvisioner
+  type PluginManifestProvisioner,
+  type PluginTranslationSource
 } from "@trinacria-cms/kernel";
 import { PermissionsRepository } from "../../permissions/repositories/permissions.repository.js";
 import { RoleGrantsRepository } from "../../roles/grants/role-grants.repository.js";
@@ -16,7 +17,7 @@ import {
   type EmbeddedRolePolicyRule
 } from "../../roles/roles.schemas.js";
 import { SettingsService } from "../../settings/services/settings.service.js";
-import { I18nBundlesService } from "../../i18n/i18n-bundles.service.js";
+import { I18nMessagesService } from "../../i18n/i18n-messages.service.js";
 import { UserRolesRepository } from "../user-access/user-roles.repository.js";
 
 interface NormalizedSecurityManifest {
@@ -43,10 +44,13 @@ export class CorePackManifestProvisioningService implements PluginManifestProvis
     private readonly permissions: PermissionsRepository,
     private readonly userRoles: UserRolesRepository,
     private readonly settings: SettingsService,
-    private readonly i18nBundles?: I18nBundlesService
+    private readonly i18nMessages?: I18nMessagesService
   ) {}
 
-  async provision(manifest: PluginManifest): Promise<void> {
+  async provision(
+    manifest: PluginManifest,
+    i18nSources: readonly PluginTranslationSource[] = []
+  ): Promise<void> {
     const pluginId = manifest.id.trim().toLowerCase();
     const security = this.normalizeSecurity(manifest.security);
 
@@ -113,7 +117,7 @@ export class CorePackManifestProvisioningService implements PluginManifestProvis
     await this.syncOwnedPolicyRules(pluginId, security);
     await this.syncOwnedRoles(pluginId, security);
     await this.syncManifestSettings(pluginId, manifest.settings ?? []);
-    await this.i18nBundles?.syncManifest(manifest);
+    await this.i18nMessages?.syncManifest(manifest, i18nSources);
     this.deferredManifests.delete(pluginId);
   }
 
@@ -129,7 +133,7 @@ export class CorePackManifestProvisioningService implements PluginManifestProvis
 
   async deprovision(manifest: PluginManifest): Promise<void> {
     const pluginId = manifest.id.trim().toLowerCase();
-    await this.i18nBundles?.removePlugin(pluginId);
+    await this.i18nMessages?.removePlugin(pluginId);
     await this.userRoles.deleteBySourcePlugin(pluginId);
     await this.roleGrants.deleteBySourcePlugin(pluginId);
     await this.deletePolicyRulesBySourcePlugin(pluginId);

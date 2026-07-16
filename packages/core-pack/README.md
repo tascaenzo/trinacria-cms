@@ -7,7 +7,7 @@ Official baseline plugin pack for Trinacria CMS.
 - users
 - roles
 - permissions
-- manifest provisioning (security, settings, and i18n bundles from plugin manifests)
+- manifest provisioning (security, settings, and package-local i18n assets)
 - advanced authz policies (`allow`/`deny`, wildcard patterns, conditions)
 - settings definitions/values/secrets (encrypted secrets + masked export)
 - grouped settings APIs for operator-facing forms
@@ -42,19 +42,30 @@ tokens, credentials, and personal data must stay out of public events. See
 
 ## Plugin translations
 
-Plugins may declare `i18n` bundles in their manifest. Each bundle has a
-plugin-local namespace such as `admin`, `public`, or `mobile`, and every
-namespace must include an English fallback. During plugin load (or deferred
-installation completion) Core persists the bundles in `i18n_bundles` under the
-canonical namespace `<pluginId>:<namespace>`.
+Plugins declare lightweight i18n namespace metadata in their manifest. The
+actual `en.json`, `it.json`, and other source files remain in each plugin
+package and are imported during plugin load (or deferred installation).
+Every namespace must include an English fallback. Core writes one small record
+per message to `i18n_messages`, indexed by plugin, namespace, locale, and key.
 
 Clients can resolve only the needed surface with:
 
-- `GET /v1/i18n/:locale?namespace=<pluginId>:<namespace>`
-- `GET /v1/i18n/:locale?surface=admin` for all installed Backoffice bundles
+- `GET /v1/i18n/:locale?namespace=<namespace>`
+- `GET /v1/i18n/:locale?surface=admin` for all installed Backoffice namespaces
 
 The response merges English first and the requested locale second. This makes
 the records suitable for external sites/apps and for translation automation.
+
+Resolved dictionaries are cached for five minutes by locale, namespace, and
+surface. Provisioning and uninstall invalidate the `i18n_messages` cache
+namespace; configure Redis for cache invalidation shared by multiple app
+instances.
+
+Core Pack's complete Backoffice catalog (`en` and `it`) is the canonical
+`src/admin-i18n/` source. Its manifest carries only the `admin` descriptor;
+the package runtime imports the files into granular records. The Backoffice
+reuses the same catalog only before authentication or if the remote registry
+is temporarily unavailable.
 
 ## Settings secret isolation
 

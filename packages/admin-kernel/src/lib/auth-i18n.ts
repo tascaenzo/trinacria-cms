@@ -1,5 +1,4 @@
-import en from "../i18n/en.json";
-import it from "../i18n/it.json";
+import { CORE_PACK_ADMIN_I18N } from "@trinacria-cms/core-pack/i18n";
 import type { SdkErrorDetails } from "./sdk-errors.js";
 import { defineI18nBundle, type TranslateFn } from "./i18n.js";
 
@@ -8,11 +7,9 @@ export type SupportedLocale = "en" | "it";
 const LOCALE_STORAGE_KEY = "trinacria.backoffice.locale";
 
 export const officialI18nBundle = defineI18nBundle({
-  pluginId: "kernel",
-  dictionaries: {
-    en,
-    it
-  }
+  pluginId: "core-pack",
+  // Needed before authentication; the same catalog is provisioned remotely by Core Pack.
+  dictionaries: CORE_PACK_ADMIN_I18N
 });
 
 export function normalizeLocale(value: string | null | undefined): SupportedLocale {

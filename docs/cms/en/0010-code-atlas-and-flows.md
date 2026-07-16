@@ -68,7 +68,7 @@ Quick navigation map of the real codebase, updated for plugin-contributed securi
 ## 5. Manifest provisioning module
 
 - `modules/security/security-provisioning.service.ts`
-  - load-time synchronization of security, settings, and i18n bundles
+  - load-time import of security, settings, and granular i18n messages
   - unregister-time safe cleanup of manifest-owned resources
 
 - `modules/security/security.module.ts`

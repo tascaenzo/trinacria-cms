@@ -3,6 +3,7 @@ import { join } from "node:path";
 import type { PluginManifestProvisioner } from "@trinacria-cms/kernel";
 import type { EventBus } from "@trinacria/events";
 import { CORE_PACK_MANIFEST } from "../../../plugin/core-pack.manifest.js";
+import { CORE_PACK_ADMIN_I18N_SOURCES } from "../../../admin-i18n/index.js";
 import { CORE_PACK_ADMIN_ROLE } from "../../../plugin/core-pack.security.js";
 import { SettingsService } from "../../settings/services/settings.service.js";
 import { UserAccessService } from "../../security/user-access/user-access.service.js";
@@ -101,7 +102,7 @@ export class InstallationService {
     }
 
     // Security baseline
-    await this.manifestProvisioning.provision(CORE_PACK_MANIFEST);
+    await this.manifestProvisioning.provision(CORE_PACK_MANIFEST, CORE_PACK_ADMIN_I18N_SOURCES);
     await this.manifestProvisioning.provisionDeferred?.();
 
     // Admin user

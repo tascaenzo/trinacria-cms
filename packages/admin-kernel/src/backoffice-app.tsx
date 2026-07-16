@@ -151,7 +151,7 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
       })
       .catch((error: unknown) => {
         if (!(error instanceof DOMException && error.name === "AbortError")) {
-          // Static bundles intentionally remain the safe fallback while plugins migrate.
+          // Package-local assets remain the safe bootstrap and offline fallback.
           setRemoteI18nBundle(null);
         }
       });

@@ -28,25 +28,29 @@ test("validatePluginManifest returns normalized manifest", () => {
   ]);
 });
 
-test("validatePluginManifest accepts plugin translation bundles with English fallback", () => {
+test("validatePluginManifest accepts lightweight translation declarations with English fallback", () => {
   const manifest = validatePluginManifest({
     id: "cms/plugin-content",
     version: "1.2.3",
     requiresCore: "^0.1.0",
     i18n: {
       fallbackLocale: "en",
-      bundles: [
-        { namespace: "admin", locale: "en", messages: { "content.title": "Content" } },
-        { namespace: "admin", locale: "it", messages: { "content.title": "Contenuti" } }
+      namespaces: [
+        { id: "admin", surface: "admin", locales: ["en", "it"], source: "admin" }
       ]
     }
   });
 
   assert.equal(manifest.i18n?.fallbackLocale, "en");
-  assert.equal(manifest.i18n?.bundles[1]?.messages["content.title"], "Contenuti");
+  assert.deepEqual(manifest.i18n?.namespaces[0], {
+    id: "admin",
+    surface: "admin",
+    locales: ["en", "it"],
+    source: "admin"
+  });
 });
 
-test("validatePluginManifest rejects i18n declarations without English fallback bundle", () => {
+test("validatePluginManifest rejects i18n declarations without English fallback locale", () => {
   assert.throws(
     () =>
       validatePluginManifest({
@@ -55,8 +59,8 @@ test("validatePluginManifest rejects i18n declarations without English fallback 
         requiresCore: "^0.1.0",
         i18n: {
           fallbackLocale: "en",
-          bundles: [
-            { namespace: "admin", locale: "it", messages: { "content.title": "Contenuti" } }
+          namespaces: [
+            { id: "admin", surface: "admin", locales: ["it"], source: "admin" }
           ]
         }
       }),

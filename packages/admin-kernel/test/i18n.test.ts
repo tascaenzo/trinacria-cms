@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { CORE_PACK_ADMIN_I18N } from "@trinacria-cms/core-pack/i18n";
+import { officialI18nBundle } from "../src/lib/auth-i18n.js";
 import { createTranslate, defineI18nBundle } from "../src/lib/i18n.js";
 
 const enBundle = defineI18nBundle({
@@ -69,4 +71,9 @@ test("defineI18nBundle preserves type inference", () => {
   });
   assert.equal(bundle.pluginId, "type-test");
   assert.equal(bundle.dictionaries.en?.key, "value");
+});
+
+test("official bootstrap catalog reuses the Core Pack dictionaries", () => {
+  assert.equal(officialI18nBundle.pluginId, "core-pack");
+  assert.deepEqual(officialI18nBundle.dictionaries, CORE_PACK_ADMIN_I18N);
 });

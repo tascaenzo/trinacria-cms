@@ -1,4 +1,5 @@
 import type { PluginManifest } from "./plugin-manifest.js";
+import type { PluginTranslationSource } from "./plugin-runtime.js";
 
 /**
  * Kernel lifecycle capability that materializes a plugin manifest in the Core.
@@ -8,7 +9,7 @@ import type { PluginManifest } from "./plugin-manifest.js";
  * and reverse that work before it is unregistered.
  */
 export interface PluginManifestProvisioner {
-  provision(manifest: PluginManifest): Promise<void>;
+  provision(manifest: PluginManifest, i18nSources?: readonly PluginTranslationSource[]): Promise<void>;
   deprovision(manifest: PluginManifest): Promise<void>;
   defer?(manifest: PluginManifest): Promise<void> | void;
   provisionDeferred?(): Promise<void>;

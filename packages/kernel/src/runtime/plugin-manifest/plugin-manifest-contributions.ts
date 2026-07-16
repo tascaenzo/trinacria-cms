@@ -216,13 +216,6 @@ const localeSchema = s
     "invalid_locale"
   );
 
-const translationMessageKeySchema = s.string({
-  trim: true,
-  minLength: 1,
-  maxLength: 240,
-  pattern: /^[a-z0-9][a-z0-9._-]*$/
-});
-
 // Translation surfaces intentionally allow names such as `admin` and `public`.
 // These do not allocate a runtime/entity namespace, so reserved entity names do
 // not apply here.
@@ -234,11 +227,15 @@ const translationNamespaceSchema = s
     "invalid_translation_namespace"
   );
 
-const translationBundleSchema = s.object(
+const translationNamespaceDeclarationSchema = s.object(
   {
-    namespace: translationNamespaceSchema,
-    locale: localeSchema,
-    messages: s.record(translationMessageKeySchema, s.string({ minLength: 1, maxLength: 4000 }))
+    id: translationNamespaceSchema,
+    surface: translationNamespaceSchema,
+    locales: s.array(localeSchema, { unique: true }).refine(
+      (locales) => locales.length > 0,
+      "At least one translation locale is required"
+    ),
+    source: translationNamespaceSchema
   },
   { strict: true }
 );
@@ -248,19 +245,15 @@ export const i18nSchema = s
   .object(
     {
       fallbackLocale: s.literal("en"),
-      bundles: s.array(translationBundleSchema, {
-        unique: (bundle) => `${bundle.namespace}|${bundle.locale}`
+      namespaces: s.array(translationNamespaceDeclarationSchema, {
+        unique: (namespace) => namespace.id
       })
     },
     { strict: true }
   )
   .refine(
     (value) =>
-      [...new Set(value.bundles.map((bundle) => bundle.namespace))].every((namespace) =>
-        value.bundles.some(
-          (bundle) => bundle.namespace === namespace && bundle.locale === value.fallbackLocale
-        )
-      ),
+      value.namespaces.every((namespace) => namespace.locales.includes(value.fallbackLocale)),
     "Every i18n namespace must include the declared English fallback",
     "missing_i18n_fallback"
   );

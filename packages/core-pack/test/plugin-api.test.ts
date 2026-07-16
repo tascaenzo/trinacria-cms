@@ -7,6 +7,7 @@ import {
   definePermissionKey,
   successEnvelope
 } from "../src/plugin-api/index.js";
+import { CORE_PACK_ADMIN_I18N, CORE_PACK_ADMIN_I18N_SOURCES } from "../src/admin-i18n/index.js";
 import { CORE_PACK_MANIFEST } from "../src/plugin/core-pack.manifest.js";
 
 test("core-pack plugin API keeps kernel helper re-exports available for compatibility", () => {
@@ -67,4 +68,18 @@ test("core-pack exposes plugin management only inside settings", () => {
       order: 60
     }
   );
+});
+
+test("core-pack manifest declares admin assets without embedding their message payload", () => {
+  assert.deepEqual(CORE_PACK_MANIFEST.i18n, {
+    fallbackLocale: "en",
+    namespaces: [{ id: "admin", surface: "admin", locales: ["en", "it"], source: "admin" }]
+  });
+  assert.equal(JSON.stringify(CORE_PACK_MANIFEST.i18n).includes("dashboard.title"), false);
+  assert.deepEqual(CORE_PACK_ADMIN_I18N_SOURCES, [
+    { source: "admin", locale: "en", messages: CORE_PACK_ADMIN_I18N.en },
+    { source: "admin", locale: "it", messages: CORE_PACK_ADMIN_I18N.it }
+  ]);
+  assert.equal(Object.keys(CORE_PACK_ADMIN_I18N.en).length, 548);
+  assert.equal(Object.keys(CORE_PACK_ADMIN_I18N.it).length, 548);
 });

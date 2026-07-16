@@ -7,7 +7,7 @@ import {
 } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import { CORE_PACK_OPENAPI_TAGS } from "../openapi-tags.js";
-import { I18nBundlesService } from "./i18n-bundles.service.js";
+import { I18nMessagesService } from "./i18n-messages.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
 const LocaleSchema = s
@@ -30,7 +30,7 @@ const I18nBundleResponseSchema = s.object(
 
 /** Public, cacheable translation dictionary endpoint for modular clients. */
 export class I18nController extends HttpController {
-  constructor(private readonly bundles: I18nBundlesService) {
+  constructor(private readonly messages: I18nMessagesService) {
     super();
   }
 
@@ -59,7 +59,7 @@ export class I18nController extends HttpController {
         (typeof ctx.query.namespace === "string" ? ctx.query.namespace.trim() : "") || undefined;
       const surface =
         (typeof ctx.query.surface === "string" ? ctx.query.surface.trim() : "") || undefined;
-      return responder.success(await this.bundles.resolveLocale(locale, namespace, surface));
+      return responder.success(await this.messages.resolveLocale(locale, namespace, surface));
     } catch (error) {
       return responder.fromError(error);
     }

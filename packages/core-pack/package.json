@@ -17,6 +17,10 @@
     "./admin-manifest": {
       "types": "./dist/plugin/core-pack-admin.manifest.d.ts",
       "import": "./dist/plugin/core-pack-admin.manifest.js"
+    },
+    "./i18n": {
+      "types": "./dist/admin-i18n/index.d.ts",
+      "import": "./dist/admin-i18n/index.js"
     }
   },
   "scripts": {

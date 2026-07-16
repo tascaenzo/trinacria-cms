@@ -213,10 +213,11 @@ export function validatePluginManifest(input: unknown): PluginManifest {
         ? {
             i18n: {
               fallbackLocale: parsed.i18n.fallbackLocale,
-              bundles: parsed.i18n.bundles.map((bundle) => ({
-                namespace: bundle.namespace,
-                locale: bundle.locale,
-                messages: { ...bundle.messages }
+              namespaces: parsed.i18n.namespaces.map((namespace) => ({
+                id: namespace.id,
+                surface: namespace.surface,
+                locales: [...namespace.locales],
+                source: namespace.source
               }))
             }
           }

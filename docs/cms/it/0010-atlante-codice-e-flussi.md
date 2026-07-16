@@ -69,7 +69,7 @@ Mappa rapida del codice reale, aggiornata al modello security plugin-contributed
 ## 5. Modulo di manifest provisioning
 
 - `modules/security/security-provisioning.service.ts`
-  - sync su load di security, settings e bundle i18n
+  - import su load di security, settings e messaggi i18n granulari
   - cleanup sicuro su unregister delle risorse owned dal manifest
 
 - `modules/security/security.module.ts`
