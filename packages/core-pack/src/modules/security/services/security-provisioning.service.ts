@@ -20,6 +20,8 @@ import { SettingsService } from "../../settings/services/settings.service.js";
 import { I18nMessagesService } from "../../i18n/i18n-messages.service.js";
 import { UserRolesRepository } from "../user-access/user-roles.repository.js";
 
+const RETIRED_CORE_PACK_SETTING_KEYS = new Set(["core-pack:features:editorial_workflow"]);
+
 interface NormalizedSecurityManifest {
   permissions: readonly PluginManifestSecurityPermission[];
   roles: readonly PluginManifestSecurityRole[];
@@ -373,6 +375,10 @@ export class CorePackManifestProvisioningService implements PluginManifestProvis
     const existingDefinitions = await this.settings.listDefinitions({ ownerPluginId: pluginId });
     for (const definition of existingDefinitions) {
       if (desiredKeys.has(definition.key)) continue;
+      if (pluginId === "core-pack" && RETIRED_CORE_PACK_SETTING_KEYS.has(definition.key)) {
+        await this.settings.deleteRetiredSetting({ requesterPluginId: pluginId, key: definition.key });
+        continue;
+      }
       await this.settings.upsertDefinition({
         requesterPluginId: pluginId,
         key: definition.key,

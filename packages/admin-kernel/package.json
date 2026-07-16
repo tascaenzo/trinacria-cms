@@ -18,10 +18,12 @@
   },
   "dependencies": {
     "@trinacria-cms/core-pack": "0.1.0",
+    "@trinacria-cms/sdk": "0.1.0",
     "@trinacria-cms/trinacria-ui": "0.1.0",
-    "@trinacria-cms/sdk": "0.1.0"
+    "qrcode": "^1.5.4"
   },
   "devDependencies": {
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2"
   },

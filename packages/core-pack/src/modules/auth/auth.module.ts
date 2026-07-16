@@ -15,10 +15,13 @@ import { PasswordHashingService } from "../installation/services/password-hashin
 import { AuthBlacklistRepository } from "./repositories/auth-blacklist.repository.js";
 import { AuthController } from "./auth.controller.js";
 import { AUTH_FLOW_TOKENS_ENTITY } from "./auth-flow-tokens.schemas.js";
+import { AUTH_MFA_CHALLENGES_ENTITY, AUTH_MFA_CREDENTIALS_ENTITY } from "./auth-mfa.schemas.js";
 import { AuthFlowTokensRepository } from "./repositories/auth-flow-tokens.repository.js";
 import { AuthLoginAttemptRepository } from "./repositories/auth-login-attempt.repository.js";
+import { AuthMfaRepository } from "./repositories/auth-mfa.repository.js";
 import { AuthUsersRepository } from "./repositories/auth-users.repository.js";
 import { JwtAuthService } from "./services/auth.service.js";
+import { AuthMfaService } from "./services/auth-mfa.service.js";
 import { AuthUserFlowsService } from "./services/auth-user-flows.service.js";
 import {
   CORE_PACK_AUTH_BLACKLIST_REPOSITORY_TOKEN,
@@ -26,6 +29,8 @@ import {
   CORE_PACK_AUTH_ENTITY_REGISTRATION_TOKEN,
   CORE_PACK_AUTH_FLOW_TOKENS_REPOSITORY_TOKEN,
   CORE_PACK_AUTH_LOGIN_ATTEMPT_REPOSITORY_TOKEN,
+  CORE_PACK_AUTH_MFA_REPOSITORY_TOKEN,
+  CORE_PACK_AUTH_MFA_SERVICE_TOKEN,
   CORE_PACK_AUTH_USERS_REPOSITORY_TOKEN,
   CORE_PACK_AUTH_USER_FLOWS_SERVICE_TOKEN,
   CORE_PACK_JWT_AUTH_SERVICE_TOKEN
@@ -59,6 +64,8 @@ export const CorePackAuthModule = defineModule({
       (registry) => {
         (registry as EntityRegistry).register(LOCAL_CREDENTIALS_ENTITY);
         (registry as EntityRegistry).register(AUTH_FLOW_TOKENS_ENTITY);
+        (registry as EntityRegistry).register(AUTH_MFA_CREDENTIALS_ENTITY);
+        (registry as EntityRegistry).register(AUTH_MFA_CHALLENGES_ENTITY);
         return true;
       },
       [CORE_TOKENS.ENTITY_REGISTRY]
@@ -81,6 +88,10 @@ export const CorePackAuthModule = defineModule({
       CORE_TOKENS.DB_ADAPTER,
       CORE_PACK_CACHE_SERVICE_TOKEN
     ]),
+    classProvider(CORE_PACK_AUTH_MFA_REPOSITORY_TOKEN, AuthMfaRepository, [CORE_TOKENS.DB_ADAPTER]),
+    classProvider(CORE_PACK_AUTH_MFA_SERVICE_TOKEN, AuthMfaService, [
+      CORE_PACK_AUTH_MFA_REPOSITORY_TOKEN
+    ]),
     classProvider(CORE_PACK_AUTH_FLOW_TOKENS_REPOSITORY_TOKEN, AuthFlowTokensRepository, [
       CORE_TOKENS.DB_ADAPTER
     ]),
@@ -92,7 +103,8 @@ export const CorePackAuthModule = defineModule({
       CORE_PACK_AUTH_BLACKLIST_REPOSITORY_TOKEN,
       CORE_PACK_AUTH_LOGIN_ATTEMPT_REPOSITORY_TOKEN,
       RUNTIME_CONFIG_SERVICE_TOKEN,
-      CORE_TOKENS.DB_ADAPTER
+      CORE_TOKENS.DB_ADAPTER,
+      CORE_PACK_AUTH_MFA_SERVICE_TOKEN
     ]),
     classProvider(CORE_PACK_AUTH_USER_FLOWS_SERVICE_TOKEN, AuthUserFlowsService, [
       CORE_PACK_AUTH_USERS_REPOSITORY_TOKEN,
@@ -112,6 +124,7 @@ export const CorePackAuthModule = defineModule({
     CORE_PACK_AUTH_ENTITY_REGISTRATION_TOKEN,
     CORE_PACK_AUTH_USERS_REPOSITORY_TOKEN,
     CORE_PACK_AUTH_FLOW_TOKENS_REPOSITORY_TOKEN,
+    CORE_PACK_AUTH_MFA_SERVICE_TOKEN,
     CORE_PACK_AUTH_USER_FLOWS_SERVICE_TOKEN,
     CORE_PACK_JWT_AUTH_SERVICE_TOKEN,
     CORE_PACK_AUTH_CONTROLLER_TOKEN

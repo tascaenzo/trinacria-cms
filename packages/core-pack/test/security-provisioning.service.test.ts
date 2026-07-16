@@ -133,7 +133,27 @@ test("core-pack manifest provisions admin, editor and viewer baseline roles", as
     translations
   );
 
+  await settings.upsertDefinition({
+    requesterPluginId: "core-pack",
+    key: "core-pack:features:editorial_workflow",
+    defaultValue: false
+  });
+  await settings.upsertValue({
+    requesterPluginId: "core-pack",
+    key: "core-pack:features:editorial_workflow",
+    value: true
+  });
+
   await service.provision(CORE_PACK_MANIFEST, CORE_PACK_ADMIN_I18N_SOURCES);
+
+  assert.equal(
+    await settings.getDefinitionByKey("core-pack:features:editorial_workflow"),
+    null
+  );
+  assert.equal(
+    await settings.getResolvedValueByKey("core-pack:features:editorial_workflow"),
+    null
+  );
 
   const provisionedRoles = await roles.list();
   assert.deepEqual(provisionedRoles.map((role) => role.code).sort(), ["admin", "editor", "viewer"]);

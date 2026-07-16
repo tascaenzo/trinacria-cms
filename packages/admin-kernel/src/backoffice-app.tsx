@@ -3,7 +3,9 @@ import { AdminShell, Card, SearchField } from "@trinacria-cms/trinacria-ui";
 import type {
   GetAuthenticatedUserResponse,
   GetInstallationStatusResponse,
-  LoginWithPasswordResponse
+  LoginWithPasswordResponse,
+  CompleteLoginMfaEnrollmentResponse,
+  CompleteMfaLoginResponse
 } from "@trinacria-cms/sdk";
 import {
   getLocalizedInstallationError,
@@ -26,6 +28,7 @@ import { loadRemoteBackofficeI18n } from "./lib/remote-i18n.js";
 import { InstallationDatabaseGuidePage } from "./pages/installation-database-guide-page.js";
 import { InstallationBootstrapPage } from "./pages/installation-bootstrap-page.js";
 import { LoginPage } from "./pages/login-page.js";
+import { MfaLoginPage, MfaRecoveryCodesPage } from "./pages/mfa-login-page.js";
 import { BackofficeShellStatus } from "./backoffice-app/backoffice-shell-status.js";
 import { BackofficeUserMenu } from "./backoffice-app/backoffice-user-menu.js";
 import { useBackofficeRouteState } from "./backoffice-app/use-backoffice-route-state.js";
@@ -48,8 +51,12 @@ type FormActionState<T> = {
   error: SdkErrorDetails | null;
   data: T | null;
 };
-type LoginActionState = FormActionState<LoginWithPasswordResponse["data"]>;
-type InstallationActionState = FormActionState<LoginWithPasswordResponse["data"]>;
+type PasswordLoginResult = LoginWithPasswordResponse["data"];
+type LoginSession = Exclude<PasswordLoginResult, { status: string }>;
+type MfaChallenge = Extract<PasswordLoginResult, { status: string }>;
+type LoginActionState = FormActionState<LoginSession>;
+type InstallationActionState = FormActionState<LoginSession>;
+type MfaSession = CompleteLoginMfaEnrollmentResponse["data"] | CompleteMfaLoginResponse["data"];
 
 const USER_MENU_NAVIGATION_IDS = ["nav-settings"] as const;
 
@@ -78,6 +85,11 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
   const [isBootstrappingApp, setIsBootstrappingApp] = useState(true);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [remoteI18nBundle, setRemoteI18nBundle] = useState<I18nBundle | null>(null);
+  const [mfaChallenge, setMfaChallenge] = useState<MfaChallenge | null>(null);
+  const [mfaSetup, setMfaSetup] = useState<{ manualKey: string; otpauthUrl: string; expiresAt: string } | null>(null);
+  const [mfaError, setMfaError] = useState<string | null>(null);
+  const [isMfaSubmitting, setIsMfaSubmitting] = useState(false);
+  const [mfaPendingSession, setMfaPendingSession] = useState<MfaSession | null>(null);
   const translationBundles = useMemo<readonly I18nBundle[]>(
     () => [
       officialI18nBundle,
@@ -190,7 +202,7 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
   }, [authUser]);
 
   const completeLogin = useCallback(
-    (response: LoginWithPasswordResponse["data"]) => {
+    (response: LoginSession | MfaSession) => {
       persistBackofficeSession({
         expiresAt: response.expiresAt
       });
@@ -210,6 +222,12 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
           }
         });
 
+        if (isMfaChallenge(response.data)) {
+          setMfaChallenge(response.data);
+          setMfaSetup(null);
+          setMfaError(null);
+          return { ok: false, error: null, data: null };
+        }
         return {
           ok: true,
           error: null,
@@ -223,7 +241,7 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
         };
       }
     },
-    createIdleFormActionState<LoginWithPasswordResponse["data"]>()
+    createIdleFormActionState<LoginSession>()
   );
 
   const [installationActionState, submitInstallation, isInstalling] = useActionState<
@@ -255,6 +273,13 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
         }
       });
 
+      if (isMfaChallenge(loginResponse.data)) {
+        return {
+          ok: false,
+          error: { code: "auth_mfa_enrollment_required", message: "Complete MFA enrollment before signing in." },
+          data: null
+        };
+      }
       return {
         ok: true,
         error: null,
@@ -267,7 +292,7 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
         data: null
       };
     }
-  }, createIdleFormActionState<LoginWithPasswordResponse["data"]>());
+  }, createIdleFormActionState<LoginSession>());
 
   useEffect(() => {
     if (!loginState.ok || !loginState.data) {
@@ -292,6 +317,50 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
     }));
     completeLogin(installationActionState.data);
   }, [completeLogin, installationActionState]);
+
+  useEffect(() => {
+    if (mfaChallenge?.status !== "mfa_enrollment_required") return;
+    let cancelled = false;
+    void cms.auth
+      .beginLoginMfaEnrollment({ body: { challengeId: mfaChallenge.challengeId } })
+      .then((response) => {
+        if (!cancelled) setMfaSetup(response.data);
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) setMfaError(toDisplayMfaError(error));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mfaChallenge]);
+
+  const submitMfa = async (formData: FormData) => {
+    if (!mfaChallenge) return;
+    setIsMfaSubmitting(true);
+    setMfaError(null);
+    try {
+      const code = readRequiredString(formData, "code");
+      const result =
+        mfaChallenge.status === "mfa_required"
+          ? await cms.auth.completeMfaLogin({ body: { challengeId: mfaChallenge.challengeId, code } })
+          : await cms.auth.completeLoginMfaEnrollment({ body: { challengeId: mfaChallenge.challengeId, code } });
+      if (result.data.recoveryCodes?.length) {
+        setMfaPendingSession(result.data);
+      } else {
+        completeLogin(result.data);
+      }
+    } catch (error) {
+      setMfaError(toDisplayMfaError(error));
+    } finally {
+      setIsMfaSubmitting(false);
+    }
+  };
+
+  const cancelMfa = () => {
+    setMfaChallenge(null);
+    setMfaSetup(null);
+    setMfaError(null);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -449,6 +518,26 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
   }
 
   if (!authUser) {
+    if (mfaPendingSession?.recoveryCodes?.length) {
+      return renderWithI18n(
+        <MfaRecoveryCodesPage
+          recoveryCodes={mfaPendingSession.recoveryCodes}
+          onContinue={() => completeLogin(mfaPendingSession)}
+        />
+      );
+    }
+    if (mfaChallenge) {
+      return renderWithI18n(
+        <MfaLoginPage
+          mode={mfaChallenge.status === "mfa_required" ? "verify" : "enroll"}
+          setup={mfaSetup}
+          action={submitMfa}
+          isSubmitting={isMfaSubmitting}
+          error={mfaError}
+          onCancel={cancelMfa}
+        />
+      );
+    }
     return renderWithI18n(
       <LoginPage
         action={submitLogin}
@@ -513,4 +602,12 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
       {shouldRenderContent ? content : null}
     </AdminShell>
   );
+}
+
+function isMfaChallenge(value: PasswordLoginResult): value is MfaChallenge {
+  return "status" in value;
+}
+
+function toDisplayMfaError(error: unknown): string {
+  return getSdkErrorDetails(error).message ?? "Unable to complete two-factor authentication.";
 }

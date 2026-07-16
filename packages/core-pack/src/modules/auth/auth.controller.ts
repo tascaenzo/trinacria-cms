@@ -21,13 +21,22 @@ import {
 import {
   AuthErrorResponseSchema,
   AuthLogoutResponseSchema,
+  AuthMfaEnrollmentConfirmationResponseSchema,
+  AuthMfaEnrollmentSetupResponseSchema,
+  AuthMfaLoginSessionResponseSchema,
+  AuthMfaStatusResponseSchema,
   AuthMeResponseSchema,
+  AuthPasswordLoginResponseSchema,
   AuthSessionResponseSchema,
   AcceptUserInviteInputSchema,
   ChangeAuthenticatedUserPasswordInputSchema,
+  CompleteMfaLoginInputSchema,
   CompletePasswordResetInputSchema,
   ConfirmEmailVerificationInputSchema,
   LoginWithPasswordInputSchema,
+  MfaChallengeInputSchema,
+  MfaCodeInputSchema,
+  DisableMfaInputSchema,
   PublicRegistrationInputSchema,
   RequestEmailVerificationInputSchema,
   RequestPasswordResetInputSchema,
@@ -35,6 +44,7 @@ import {
 } from "./dto/index.js";
 import type { JwtAuthService } from "./services/auth.service.js";
 import type { AuthUserFlowsService } from "./services/auth-user-flows.service.js";
+import type { UserRecord } from "../users/users.schemas.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
 
@@ -68,12 +78,48 @@ export class AuthController extends HttpController {
           responses: {
             200: {
               description: "Authenticated session token",
-              schema: toOpenApiSchema(AuthSessionResponseSchema)
+              schema: toOpenApiSchema(AuthPasswordLoginResponseSchema)
             },
             401: {
               description: "Authentication failed",
               schema: toOpenApiSchema(AuthErrorResponseSchema)
             }
+          }
+        }
+      })
+      .post("/v1/auth/login/mfa", this.completeMfaLogin, {
+        docs: {
+          summary: "Complete login with an authenticator or recovery code",
+          tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
+          operationId: "completeMfaLogin",
+          requestBody: { required: true, schema: toOpenApiSchema(CompleteMfaLoginInputSchema) },
+          responses: {
+            200: { description: "Authenticated session token", schema: toOpenApiSchema(AuthMfaLoginSessionResponseSchema) },
+            401: { description: "Authentication failed", schema: toOpenApiSchema(AuthErrorResponseSchema) }
+          }
+        }
+      })
+      .post("/v1/auth/login/mfa/enrollment", this.beginLoginMfaEnrollment, {
+        docs: {
+          summary: "Begin required MFA enrollment during login",
+          tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
+          operationId: "beginLoginMfaEnrollment",
+          requestBody: { required: true, schema: toOpenApiSchema(MfaChallengeInputSchema) },
+          responses: {
+            200: { description: "Authenticator setup data", schema: toOpenApiSchema(AuthMfaEnrollmentSetupResponseSchema) },
+            401: { description: "Authentication failed", schema: toOpenApiSchema(AuthErrorResponseSchema) }
+          }
+        }
+      })
+      .post("/v1/auth/login/mfa/enrollment/confirm", this.completeLoginMfaEnrollment, {
+        docs: {
+          summary: "Confirm required MFA enrollment and complete login",
+          tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
+          operationId: "completeLoginMfaEnrollment",
+          requestBody: { required: true, schema: toOpenApiSchema(CompleteMfaLoginInputSchema) },
+          responses: {
+            200: { description: "Authenticated session token and recovery codes", schema: toOpenApiSchema(AuthMfaLoginSessionResponseSchema) },
+            401: { description: "Authentication failed", schema: toOpenApiSchema(AuthErrorResponseSchema) }
           }
         }
       })
@@ -226,6 +272,48 @@ export class AuthController extends HttpController {
           }
         }
       })
+      .get("/v1/auth/mfa", this.mfaStatus, {
+        middlewares: [this.authMiddleware],
+        docs: {
+          summary: "Get MFA enrollment status for the current user",
+          tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
+          operationId: "getMfaStatus",
+          security: [{ bearerAuth: [] }],
+          responses: { 200: { description: "MFA status", schema: toOpenApiSchema(AuthMfaStatusResponseSchema) } }
+        }
+      })
+      .post("/v1/auth/mfa/enrollment", this.beginMfaEnrollment, {
+        middlewares: [this.authMiddleware],
+        docs: {
+          summary: "Begin MFA enrollment for the current user",
+          tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
+          operationId: "beginMfaEnrollment",
+          security: [{ bearerAuth: [] }],
+          responses: { 200: { description: "Authenticator setup data", schema: toOpenApiSchema(AuthMfaEnrollmentSetupResponseSchema) } }
+        }
+      })
+      .post("/v1/auth/mfa/enrollment/confirm", this.confirmMfaEnrollment, {
+        middlewares: [this.authMiddleware],
+        docs: {
+          summary: "Confirm MFA enrollment for the current user",
+          tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
+          operationId: "confirmMfaEnrollment",
+          security: [{ bearerAuth: [] }],
+          requestBody: { required: true, schema: toOpenApiSchema(MfaCodeInputSchema) },
+          responses: { 200: { description: "Recovery codes", schema: toOpenApiSchema(AuthMfaEnrollmentConfirmationResponseSchema) } }
+        }
+      })
+      .delete("/v1/auth/mfa", this.disableMfa, {
+        middlewares: [this.authMiddleware],
+        docs: {
+          summary: "Disable MFA for the current user",
+          tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
+          operationId: "disableMfa",
+          security: [{ bearerAuth: [] }],
+          requestBody: { required: true, schema: toOpenApiSchema(DisableMfaInputSchema) },
+          responses: { 200: { description: "MFA disabled" }, 401: { description: "Authentication failed", schema: toOpenApiSchema(AuthErrorResponseSchema) } }
+        }
+      })
       .post("/v1/auth/logout", this.logout, {
         docs: {
           summary: "Logout current JWT session and clear auth cookies",
@@ -249,24 +337,93 @@ export class AuthController extends HttpController {
   private login = async (ctx: HttpContext) => {
     try {
       const payload = LoginWithPasswordInputSchema.parse(ctx.body);
-      const session = await this.auth.loginWithPassword(payload);
-      const cookieConfig = await this.auth.getJwtCookieConfig();
-      const publicSession = {
-        accessToken: session.accessToken,
-        tokenType: session.tokenType,
-        expiresAt: session.expiresAt,
-        refreshExpiresAt: session.refreshExpiresAt,
-        user: session.user
-      };
-      return response(responder.success(publicSession), {
-        headers: {
-          "set-cookie": buildLoginSetCookieHeaders(session, cookieConfig)
-        }
-      });
+      const result = await this.auth.beginPasswordLogin(payload);
+      if ("status" in result) return responder.success(result);
+      return this.respondWithSession(result);
     } catch (error) {
       return responder.fromError(error);
     }
   };
+
+  private completeMfaLogin = async (ctx: HttpContext) => {
+    try {
+      const payload = CompleteMfaLoginInputSchema.parse(ctx.body);
+      return this.respondWithSession(await this.auth.completeMfaLogin(payload.challengeId, payload.code));
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private beginLoginMfaEnrollment = async (ctx: HttpContext) => {
+    try {
+      const payload = MfaChallengeInputSchema.parse(ctx.body);
+      return responder.success(await this.auth.beginMfaEnrollmentForLogin(payload.challengeId));
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private completeLoginMfaEnrollment = async (ctx: HttpContext) => {
+    try {
+      const payload = CompleteMfaLoginInputSchema.parse(ctx.body);
+      return this.respondWithSession(
+        await this.auth.completeMfaEnrollmentForLogin(payload.challengeId, payload.code)
+      );
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private mfaStatus = async (ctx: HttpContext) => {
+    try {
+      return responder.success(await this.auth.getMfaStatus(getAuthenticatedUser(ctx).id));
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private beginMfaEnrollment = async (ctx: HttpContext) => {
+    try {
+      return responder.success(await this.auth.beginMfaEnrollment(getAuthenticatedUser(ctx).id));
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private confirmMfaEnrollment = async (ctx: HttpContext) => {
+    try {
+      const payload = MfaCodeInputSchema.parse(ctx.body);
+      return responder.success(await this.auth.confirmMfaEnrollment(getAuthenticatedUser(ctx).id, payload.code));
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private disableMfa = async (ctx: HttpContext) => {
+    try {
+      const payload = DisableMfaInputSchema.parse(ctx.body);
+      await this.auth.disableMfa(getAuthenticatedUser(ctx).id, payload);
+      return responder.success({ disabled: true });
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private async respondWithSession(session: {
+    accessToken: string;
+    refreshToken: string;
+    tokenType: "Bearer";
+    expiresAt: string;
+    refreshExpiresAt: string;
+    user: UserRecord;
+    recoveryCodes?: readonly string[];
+  }) {
+    const cookieConfig = await this.auth.getJwtCookieConfig();
+    const { refreshToken: _refreshToken, ...publicSession } = session;
+    return response(responder.success(publicSession), {
+      headers: { "set-cookie": buildLoginSetCookieHeaders(session, cookieConfig) }
+    });
+  }
 
   private me = async (ctx: HttpContext) => {
     try {

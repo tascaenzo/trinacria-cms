@@ -184,6 +184,20 @@ export class SettingsService {
     }
   }
 
+  /** Permanently removes a retired setting and every persisted representation of it. */
+  async deleteRetiredSetting(input: { requesterPluginId: string; key: string }): Promise<void> {
+    try {
+      assertRequesterOwnsSettingKey(input.requesterPluginId, input.key, "delete retired setting");
+      await this.secrets.deleteByKey(input.key);
+      await this.values.deleteByKey(input.key);
+      await this.definitions.deleteByKey(input.key);
+      this.metrics.writes += 1;
+    } catch (error) {
+      this.trackFailure(error);
+      throw error;
+    }
+  }
+
   async listDefinitions(options?: {
     ownerPluginId?: string;
     limit?: number;

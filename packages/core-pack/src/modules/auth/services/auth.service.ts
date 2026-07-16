@@ -11,6 +11,7 @@ import { AuthBlacklistRepository } from "../repositories/auth-blacklist.reposito
 import { AuthLoginAttemptRepository } from "../repositories/auth-login-attempt.repository.js";
 import type { RuntimeConfigService } from "../../settings/config/runtime-config.service.js";
 import { type JwtCookieConfig, readJwtCookieConfig } from "../auth-session.js";
+import { type AuthMfaService, type MfaMode } from "./auth-mfa.service.js";
 
 export interface LoginResult {
   accessToken: string;
@@ -20,6 +21,14 @@ export interface LoginResult {
   refreshExpiresAt: string;
   user: UserRecord;
 }
+
+export interface MfaLoginChallengeResult {
+  status: "mfa_required" | "mfa_enrollment_required";
+  challengeId: string;
+  expiresAt: string;
+}
+
+export type PasswordLoginResult = LoginResult | MfaLoginChallengeResult;
 
 /**
  * Typed authentication error used by JWT auth API and middleware.
@@ -50,6 +59,7 @@ export class JwtAuthService {
     refreshTtlSeconds: number;
     maxLoginAttempts: number;
     loginLockoutMinutes: number;
+    mfaMode: MfaMode;
   };
   private cookieConfigCache?: { loadedAtMs: number; value: JwtCookieConfig };
 
@@ -61,10 +71,147 @@ export class JwtAuthService {
     private readonly blacklist: AuthBlacklistRepository,
     private readonly loginAttempts: AuthLoginAttemptRepository,
     private readonly config: RuntimeConfigService,
-    private readonly db: DbAdapter
+    private readonly db: DbAdapter,
+    private readonly mfa?: AuthMfaService
   ) {}
 
   async loginWithPassword(input: { email: string; password: string }): Promise<LoginResult> {
+    const authenticated = await this.authenticatePassword(input);
+    return this.issueSession(authenticated.user, authenticated.installation, authenticated.authConfig);
+  }
+
+  /**
+   * HTTP login entry point. Password verification always happens first; a session
+   * is issued only after the configured MFA policy has been satisfied.
+   */
+  async beginPasswordLogin(input: {
+    email: string;
+    password: string;
+  }): Promise<PasswordLoginResult> {
+    const authenticated = await this.authenticatePassword(input);
+    const mfaMode = await this.getMfaMode();
+    if (mfaMode === "disabled") {
+      return this.issueSession(authenticated.user, authenticated.installation, authenticated.authConfig);
+    }
+    const mfa = this.getMfaService();
+    const enabled = await mfa.hasEnabledFactor(authenticated.user.id);
+    if (enabled) {
+      const challenge = await mfa.createChallenge(authenticated.user.id, "verify");
+      return { status: "mfa_required", challengeId: challenge.challengeId, expiresAt: challenge.expiresAt };
+    }
+    if (mfaMode === "required") {
+      const challenge = await mfa.createChallenge(authenticated.user.id, "enroll");
+      return {
+        status: "mfa_enrollment_required",
+        challengeId: challenge.challengeId,
+        expiresAt: challenge.expiresAt
+      };
+    }
+    return this.issueSession(authenticated.user, authenticated.installation, authenticated.authConfig);
+  }
+
+  async completeMfaLogin(challengeId: string, code: string): Promise<LoginResult> {
+    const mfa = this.getMfaService();
+    const challenge = await mfa.resolveChallenge(challengeId, "verify");
+    const authConfig = await this.getAuthConfig();
+    const user = await this.users.findById(challenge.userId);
+    if (!user || user.status !== "active" || !(await mfa.verifyCode(challenge.userId, code))) {
+      if (user) {
+        await this.recordFailedAttempt(user.email, authConfig.maxLoginAttempts, authConfig.loginLockoutMinutes);
+      }
+      throw new JwtAuthError("auth_mfa_invalid_code", "Invalid authenticator or recovery code");
+    }
+    await mfa.consumeChallenge(challenge.id);
+    await this.loginAttempts.reset(user.email);
+    return this.issueSession(user, await this.assertInstallationCompleted(), authConfig);
+  }
+
+  async beginMfaEnrollmentForLogin(challengeId: string): Promise<{
+    manualKey: string;
+    otpauthUrl: string;
+    expiresAt: string;
+  }> {
+    const mfa = this.getMfaService();
+    const challenge = await mfa.resolveChallenge(challengeId, "enroll");
+    const user = await this.users.findById(challenge.userId);
+    if (!user || user.status !== "active") {
+      throw new JwtAuthError("auth_invalid_user", "JWT user is not active");
+    }
+    return mfa.beginEnrollment(user);
+  }
+
+  async completeMfaEnrollmentForLogin(
+    challengeId: string,
+    code: string
+  ): Promise<LoginResult & { recoveryCodes: readonly string[] }> {
+    const mfa = this.getMfaService();
+    const challenge = await mfa.resolveChallenge(challengeId, "enroll");
+    const user = await this.users.findById(challenge.userId);
+    if (!user || user.status !== "active") {
+      throw new JwtAuthError("auth_invalid_user", "JWT user is not active");
+    }
+    const enrollment = await mfa.confirmEnrollment(user.id, code);
+    await mfa.consumeChallenge(challenge.id);
+    const session = await this.issueSession(user, await this.assertInstallationCompleted(), await this.getAuthConfig());
+    return { ...session, recoveryCodes: enrollment.recoveryCodes };
+  }
+
+  async getMfaStatus(userId: string): Promise<{
+    mode: MfaMode;
+    enabled: boolean;
+    enabledAt?: string;
+    recoveryCodesRemaining: number;
+  }> {
+    return this.getMfaService().getStatus(userId, await this.getMfaMode());
+  }
+
+  async beginMfaEnrollment(userId: string): Promise<{
+    manualKey: string;
+    otpauthUrl: string;
+    expiresAt: string;
+  }> {
+    const user = await this.users.findById(userId);
+    if (!user || user.status !== "active") {
+      throw new JwtAuthError("auth_invalid_user", "Authenticated user no longer exists");
+    }
+    if ((await this.getMfaMode()) === "disabled") {
+      throw new JwtAuthError("auth_mfa_disabled", "MFA is disabled by the administrator");
+    }
+    return this.getMfaService().beginEnrollment(user);
+  }
+
+  async confirmMfaEnrollment(userId: string, code: string): Promise<{ recoveryCodes: readonly string[] }> {
+    return this.getMfaService().confirmEnrollment(userId, code);
+  }
+
+  async disableMfa(userId: string, input: { currentPassword: string; code: string }): Promise<void> {
+    if ((await this.getMfaMode()) === "required") {
+      throw new JwtAuthError("auth_mfa_required_by_policy", "MFA is required by the administrator");
+    }
+    const user = await this.users.findById(userId);
+    const credentials = user ? await this.localCredentials.findByUserId(user.id) : null;
+    if (!user || !credentials) throw new JwtAuthError("auth_invalid_credentials", "Invalid credentials");
+    const passwordMatches = await this.passwordHashing.verifyPassword(input.currentPassword, {
+      algorithm: credentials.algorithm,
+      passwordHash: credentials.passwordHash,
+      passwordSalt: credentials.passwordSalt
+    });
+    if (!passwordMatches || !(await this.getMfaService().verifyCode(userId, input.code))) {
+      throw new JwtAuthError("auth_mfa_invalid_code", "Invalid password or authenticator code");
+    }
+    await this.getMfaService().disable(userId);
+  }
+
+  private getMfaService(): AuthMfaService {
+    if (!this.mfa) throw new Error("MFA service is not configured");
+    return this.mfa;
+  }
+
+  private async authenticatePassword(input: { email: string; password: string }): Promise<{
+    user: UserRecord;
+    installation: InstallationStateRecord;
+    authConfig: Awaited<ReturnType<JwtAuthService["getAuthConfig"]>>;
+  }> {
     const authConfig = await this.getAuthConfig();
     const email = input.email.trim().toLowerCase();
     await this.assertNotLockedOut(email, authConfig.loginLockoutMinutes);
@@ -107,6 +254,14 @@ export class JwtAuthService {
 
     await this.loginAttempts.reset(email);
 
+    return { user, installation, authConfig };
+  }
+
+  private async issueSession(
+    user: UserRecord,
+    installation: InstallationStateRecord,
+    authConfig: Awaited<ReturnType<JwtAuthService["getAuthConfig"]>>
+  ): Promise<LoginResult> {
     const nowSeconds = Math.floor(Date.now() / 1000);
     const accessExp = nowSeconds + authConfig.accessTtlSeconds;
     const refreshExp = nowSeconds + authConfig.refreshTtlSeconds;
@@ -330,6 +485,7 @@ export class JwtAuthService {
     refreshTtlSeconds: number;
     maxLoginAttempts: number;
     loginLockoutMinutes: number;
+    mfaMode: MfaMode;
   }> {
     const nowMs = Date.now();
     if (this.authSettingsCache && nowMs - this.authSettingsCache.loadedAtMs < 30_000) {
@@ -360,6 +516,13 @@ export class JwtAuthService {
         fallback: 15,
         min: 1
       })) ?? 15;
+    const configuredMfaMode = await this.config.getString("core-pack:auth:mfa_mode", {
+      fallback: "disabled"
+    });
+    const mfaMode: MfaMode =
+      configuredMfaMode === "optional" || configuredMfaMode === "required"
+        ? configuredMfaMode
+        : "disabled";
     const strictSecret =
       (await this.config.getBoolean("core-pack:auth:strict_jwt_secret_required", {
         envVar: "CMS_STRICT_JWT_SECRET_REQUIRED",
@@ -372,10 +535,20 @@ export class JwtAuthService {
       accessTtlSeconds,
       refreshTtlSeconds,
       maxLoginAttempts,
-      loginLockoutMinutes
+      loginLockoutMinutes,
+      mfaMode
     };
     this.authSettingsCache = value;
     return value;
+  }
+
+  /** MFA policy changes must take effect on the next password login, not after the auth cache TTL. */
+  private async getMfaMode(): Promise<MfaMode> {
+    this.config.invalidate("core-pack:auth:mfa_mode");
+    const configured = await this.config.getString("core-pack:auth:mfa_mode", {
+      fallback: "disabled"
+    });
+    return configured === "optional" || configured === "required" ? configured : "disabled";
   }
 }
 

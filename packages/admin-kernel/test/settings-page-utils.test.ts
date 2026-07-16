@@ -112,7 +112,6 @@ test("plugin permission center setting is visible through its explicit settings 
 test("groupSettingRecordsForForm assigns readable groups from visible category and keys", () => {
   const groups = groupSettingRecordsForForm([
     setting({ key: "core-pack:site:name", category: "site" }),
-    setting({ key: "core-pack:features:editorial_workflow", category: "features" }),
     setting({
       key: "core-pack:user_flows:public_registration_enabled",
       category: "user_flows"
@@ -126,7 +125,7 @@ test("groupSettingRecordsForForm assigns readable groups from visible category a
 
   assert.deepEqual(
     groups.map((group) => group.title),
-    ["Site details", "Feature flags", "User lifecycle", "Authentication"]
+    ["Site details", "User lifecycle", "Authentication"]
   );
 });
 

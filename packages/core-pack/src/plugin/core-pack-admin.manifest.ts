@@ -142,16 +142,18 @@ export const CORE_PACK_ADMIN_MANIFEST: PluginManifestAdmin = defineAdmin({
       order: 25
     }),
     defineAdminSettingsSection({
-      id: "core-pack-feature-settings",
-      label: "Features",
-      namespace: "features",
-      requiredPermission: CORE_PACK_PERMISSION_KEYS.SETTINGS_READ
-    }),
-    defineAdminSettingsSection({
       id: "core-pack-user-flow-settings",
       label: "User flows",
       namespace: "user_flows",
       requiredPermission: CORE_PACK_PERMISSION_KEYS.SETTINGS_READ
+    }),
+    defineAdminSettingsSection({
+      id: "core-pack-authentication-settings",
+      label: "Authentication",
+      namespace: "auth",
+      settingKeys: ["core-pack:auth:mfa_mode"],
+      requiredPermission: CORE_PACK_PERMISSION_KEYS.SETTINGS_WRITE,
+      order: 45
     }),
     defineAdminSettingsSection({
       id: "core-pack-plugin-permissions-settings",

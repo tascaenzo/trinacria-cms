@@ -67,6 +67,22 @@ the package runtime imports the files into granular records. The Backoffice
 reuses the same catalog only before authentication or if the remote registry
 is temporarily unavailable.
 
+## Two-factor authentication
+
+Core Pack supports TOTP authenticator apps and one-time recovery codes. The
+administrator controls `core-pack:auth:mfa_mode` from **Settings →
+Authentication**:
+
+- `disabled` (default): password login only;
+- `optional`: each user can enable TOTP from their profile;
+- `required`: users with no enrolled factor are guided through enrollment after
+  password verification, before a session is issued.
+
+MFA secrets are AES-256-GCM encrypted in `plugin_core_pack__auth_mfa_credentials`.
+Set `CMS_MFA_ENCRYPTION_KEY` to a 32-byte base64url value (or 64-character hex)
+in production and staging; the development fallback is intentionally rejected
+there.
+
 ## Settings secret isolation
 
 Sensitive settings routes are protected by signed plugin caller authentication.

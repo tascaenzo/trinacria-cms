@@ -10,6 +10,7 @@ import { createRolesApi, type RolesApi } from "./roles.gen.js";
 import { createUsersApi, type UsersApi } from "./users.gen.js";
 import { createSystemApi, type SystemApi } from "./system.gen.js";
 import { createSettingsApi, type SettingsApi } from "./settings.gen.js";
+import { createInternationalizationApi, type InternationalizationApi } from "./internationalization.gen.js";
 import { createKernelHealthApi, type KernelHealthApi } from "./kernelHealth.gen.js";
 import { createEmailApi, type EmailApi } from "./email.gen.js";
 export * from "./types.gen.js";
@@ -21,6 +22,7 @@ export type { RolesApi } from "./roles.gen.js";
 export type { UsersApi } from "./users.gen.js";
 export type { SystemApi } from "./system.gen.js";
 export type { SettingsApi } from "./settings.gen.js";
+export type { InternationalizationApi } from "./internationalization.gen.js";
 export type { KernelHealthApi } from "./kernelHealth.gen.js";
 export type { EmailApi } from "./email.gen.js";
 
@@ -33,6 +35,7 @@ export interface GeneratedCmsSdk {
   users: UsersApi;
   system: SystemApi;
   settings: SettingsApi;
+  internationalization: InternationalizationApi;
   kernelHealth: KernelHealthApi;
   email: EmailApi;
 }
@@ -47,6 +50,7 @@ export function createGeneratedCmsSdk(client: CmsSdkClientCore): GeneratedCmsSdk
     users: createUsersApi(client),
     system: createSystemApi(client),
     settings: createSettingsApi(client),
+    internationalization: createInternationalizationApi(client),
     kernelHealth: createKernelHealthApi(client),
     email: createEmailApi(client),
   };

@@ -36,6 +36,36 @@ export type AssignUserRoleResponse = {
 };
 };
 
+export type BeginLoginMfaEnrollmentRequest = {
+  body: {
+  "challengeId": string;
+};
+};
+
+export type BeginLoginMfaEnrollmentResponse = {
+  "data": {
+  "manualKey": string;
+  "otpauthUrl": string;
+  "expiresAt": string;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+};
+};
+
+export type BeginMfaEnrollmentRequest = void;
+
+export type BeginMfaEnrollmentResponse = {
+  "data": {
+  "manualKey": string;
+  "otpauthUrl": string;
+  "expiresAt": string;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+};
+};
+
 export type BootstrapInstallationRequest = {
   body: {
   "firstName": string;
@@ -65,6 +95,7 @@ export type BootstrapInstallationResponse = {
   "email": string;
   "firstName": string;
   "lastName": string;
+  "locale"?: "en" | "it";
   "status": "active" | "suspended";
   "createdAt": string;
   "updatedAt": string;
@@ -88,9 +119,70 @@ export type ChangeAuthenticatedUserPasswordResponse = {
   "email": string;
   "firstName": string;
   "lastName": string;
+  "locale"?: "en" | "it";
   "status": "active" | "suspended";
   "createdAt": string;
   "updatedAt": string;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+};
+};
+
+export type CompleteLoginMfaEnrollmentRequest = {
+  body: {
+  "challengeId": string;
+  "code": string;
+};
+};
+
+export type CompleteLoginMfaEnrollmentResponse = {
+  "data": {
+  "accessToken": string;
+  "tokenType": "Bearer";
+  "expiresAt": string;
+  "refreshExpiresAt": string;
+  "user": {
+  "id": string;
+  "email": string;
+  "firstName": string;
+  "lastName": string;
+  "locale"?: "en" | "it";
+  "status": "active" | "suspended";
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "recoveryCodes"?: Array<string>;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+};
+};
+
+export type CompleteMfaLoginRequest = {
+  body: {
+  "challengeId": string;
+  "code": string;
+};
+};
+
+export type CompleteMfaLoginResponse = {
+  "data": {
+  "accessToken": string;
+  "tokenType": "Bearer";
+  "expiresAt": string;
+  "refreshExpiresAt": string;
+  "user": {
+  "id": string;
+  "email": string;
+  "firstName": string;
+  "lastName": string;
+  "locale"?: "en" | "it";
+  "status": "active" | "suspended";
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "recoveryCodes"?: Array<string>;
 };
   "meta"?: {
   "pluginId"?: "core-pack";
@@ -113,6 +205,21 @@ export type ConfirmEmailVerificationRequest = {
 };
 
 export type ConfirmEmailVerificationResponse = null;
+
+export type ConfirmMfaEnrollmentRequest = {
+  body: {
+  "code": string;
+};
+};
+
+export type ConfirmMfaEnrollmentResponse = {
+  "data": {
+  "recoveryCodes": Array<string>;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+};
+};
 
 export type CreatePermissionRequest = {
   body: {
@@ -222,6 +329,7 @@ export type CreateUserResponse = {
   "email": string;
   "firstName": string;
   "lastName": string;
+  "locale"?: "en" | "it";
   "status": "active" | "suspended";
   "createdAt": string;
   "updatedAt": string;
@@ -259,6 +367,15 @@ export type DeleteRolePolicyRuleResponse = {
   "offset"?: number;
 };
 };
+
+export type DisableMfaRequest = {
+  body: {
+  "currentPassword": string;
+  "code": string;
+};
+};
+
+export type DisableMfaResponse = null;
 
 export type ExecutePluginOperationRequest = {
   path: {
@@ -406,6 +523,23 @@ export type GetAuthenticatedUserResponse = {
 };
 };
 
+export type GetI18nBundleRequest = {
+  path: {
+  "locale": string;
+};
+};
+
+export type GetI18nBundleResponse = {
+  "data": {
+  "locale": string;
+  "fallbackLocale": "en";
+  "namespace"?: string;
+  "messages": {
+  [key: string]: string;
+};
+};
+};
+
 export type GetInstallationStatusRequest = void;
 
 export type GetInstallationStatusResponse = {
@@ -541,6 +675,20 @@ export type GetKernelHealthResponse = {
   "reason"?: string;
 };
   "issues": Array<string>;
+};
+
+export type GetMfaStatusRequest = void;
+
+export type GetMfaStatusResponse = {
+  "data": {
+  "mode": "disabled" | "optional" | "required";
+  "enabled": boolean;
+  "enabledAt"?: string;
+  "recoveryCodesRemaining": number;
+};
+  "meta"?: {
+  "pluginId"?: "core-pack";
+};
 };
 
 export type GetPermissionByIdRequest = {
@@ -771,6 +919,7 @@ export type GetUserByIdResponse = {
   "email": string;
   "firstName": string;
   "lastName": string;
+  "locale"?: "en" | "it";
   "status": "active" | "suspended";
   "createdAt": string;
   "updatedAt": string;
@@ -1201,6 +1350,7 @@ export type ListUsersResponse = {
   "email": string;
   "firstName": string;
   "lastName": string;
+  "locale"?: "en" | "it";
   "status": "active" | "suspended";
   "createdAt": string;
   "updatedAt": string;
@@ -1236,6 +1386,10 @@ export type LoginWithPasswordResponse = {
   "createdAt": string;
   "updatedAt": string;
 };
+} | {
+  "status": "mfa_required" | "mfa_enrollment_required";
+  "challengeId": string;
+  "expiresAt": string;
 };
   "meta"?: {
   "pluginId"?: "core-pack";
@@ -1551,6 +1705,7 @@ export type UpdateUserProfileResponse = {
   "email": string;
   "firstName": string;
   "lastName": string;
+  "locale"?: "en" | "it";
   "status": "active" | "suspended";
   "createdAt": string;
   "updatedAt": string;
@@ -1578,6 +1733,7 @@ export type UpdateUserStatusResponse = {
   "email": string;
   "firstName": string;
   "lastName": string;
+  "locale"?: "en" | "it";
   "status": "active" | "suspended";
   "createdAt": string;
   "updatedAt": string;

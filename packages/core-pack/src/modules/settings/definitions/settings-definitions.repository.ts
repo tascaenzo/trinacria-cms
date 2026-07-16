@@ -90,6 +90,12 @@ export class SettingsDefinitionsRepository {
     });
   }
 
+  async deleteByKey(key: string): Promise<boolean> {
+    return this.repository().deleteOne({
+      filter: { key: key.trim().toLowerCase(), kind: DEFINITION_KIND }
+    });
+  }
+
   async list(options?: {
     ownerPluginId?: string;
     limit?: number;

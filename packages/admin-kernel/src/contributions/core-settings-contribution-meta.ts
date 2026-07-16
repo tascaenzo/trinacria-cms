@@ -29,13 +29,6 @@ export const OFFICIAL_CORE_SETTINGS_SECTION_META: Record<
     summaryKey: "settings.section.backoffice_theme.summary",
     order: 25
   },
-  "core-pack:core-pack-feature-settings": {
-    titleKey: "settings.section.features.title",
-    summary: "Feature flags exposed for operator-level rollout control.",
-    summaryKey: "settings.section.features.summary",
-    order: 30,
-    category: "features"
-  },
   "core-pack:core-pack-user-flow-settings": {
     titleKey: "settings.section.user_flows.title",
     summary: "Registration, invitations, verification, and password recovery policies.",

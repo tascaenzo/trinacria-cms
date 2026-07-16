@@ -71,6 +71,7 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isMfaRequiredConfirmationOpen, setIsMfaRequiredConfirmationOpen] = useState(false);
 
   useEffect(() => {
     function handleNavigationChange() {
@@ -98,7 +99,7 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
     writeBackofficeNavigationState("settings", params);
   };
 
-  async function saveSettingsSection() {
+  async function saveSettingsSection(confirmMfaRequired = false) {
     const editableRecords = selectedSectionRecords.filter(
       (record) => record.mutable && record.status === "active"
     );
@@ -130,6 +131,14 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
           throw new Error(`${formatSettingFormLabel(record)}: ${detail}`, { cause: currentError });
         }
       });
+
+      const isEnablingRequiredMfa = updates.some(
+        ({ record, value }) => record.key === "core-pack:auth:mfa_mode" && value === "required"
+      );
+      if (isEnablingRequiredMfa && !confirmMfaRequired) {
+        setIsMfaRequiredConfirmationOpen(true);
+        return;
+      }
 
       await Promise.all(
         updates.map(({ record, value }) => {
@@ -402,6 +411,38 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
             </section>
           </div>
         ) : null}
+      </Dialog>
+
+      <Dialog
+        open={isMfaRequiredConfirmationOpen}
+        onClose={() => setIsMfaRequiredConfirmationOpen(false)}
+        title={t("settings.mfa_required.title", "Require two-factor authentication?")}
+        description={t("settings.mfa_required.summary", "Review the impact before saving this policy.")}
+        width="md"
+        variant="modal"
+      >
+        <div className="grid gap-4">
+          <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
+            {t("settings.mfa_required.line1", "At the next password login, every user without 2FA will be guided through setup before receiving a session.")}
+          </p>
+          <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
+            {t("settings.mfa_required.line2", "Users who already configured 2FA will need their authenticator or a recovery code to sign in.")}
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="secondary" onClick={() => setIsMfaRequiredConfirmationOpen(false)}>
+              {t("common.actions.cancel", "Cancel")}
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                setIsMfaRequiredConfirmationOpen(false);
+                void saveSettingsSection(true);
+              }}
+            >
+              {t("settings.mfa_required.confirm", "Require 2FA")}
+            </Button>
+          </div>
+        </div>
       </Dialog>
     </div>
   );

@@ -1,5 +1,5 @@
-import en from "./en.json";
-import it from "./it.json";
+import en from "./en.json" with { type: "json" };
+import it from "./it.json" with { type: "json" };
 import type { PluginTranslationSource } from "@trinacria-cms/kernel";
 
 export type CorePackAdminLocale = "en" | "it";

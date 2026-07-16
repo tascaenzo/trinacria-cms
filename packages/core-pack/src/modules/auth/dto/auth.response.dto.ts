@@ -42,6 +42,93 @@ export const AuthSessionResponseSchema = s.object(
   { strict: true }
 );
 
+export const AuthMfaChallengeSchema = s.object(
+  {
+    status: s.enum(["mfa_required", "mfa_enrollment_required"] as const),
+    challengeId: s.string({ trim: true, minLength: 32 }),
+    expiresAt: s.dateTimeString()
+  },
+  { strict: true }
+);
+
+export const AuthPasswordLoginResponseSchema = s.object(
+  {
+    data: s.union([AuthSessionSchema, AuthMfaChallengeSchema]),
+    meta: AuthResponseMetaSchema.optional()
+  },
+  { strict: true }
+);
+
+export const AuthMfaStatusSchema = s.object(
+  {
+    mode: s.enum(["disabled", "optional", "required"] as const),
+    enabled: s.boolean(),
+    enabledAt: s.dateTimeString().optional(),
+    recoveryCodesRemaining: s.number({ min: 0 })
+  },
+  { strict: true }
+);
+
+export const AuthMfaStatusResponseSchema = s.object(
+  {
+    data: AuthMfaStatusSchema,
+    meta: AuthResponseMetaSchema.optional()
+  },
+  { strict: true }
+);
+
+export const AuthMfaEnrollmentSetupSchema = s.object(
+  {
+    manualKey: s.string({ trim: true, minLength: 16 }),
+    otpauthUrl: s.string({ trim: true, minLength: 20 }),
+    expiresAt: s.dateTimeString()
+  },
+  { strict: true }
+);
+
+export const AuthMfaEnrollmentSetupResponseSchema = s.object(
+  {
+    data: AuthMfaEnrollmentSetupSchema,
+    meta: AuthResponseMetaSchema.optional()
+  },
+  { strict: true }
+);
+
+export const AuthMfaEnrollmentConfirmationSchema = s.object(
+  {
+    recoveryCodes: s.array(s.string({ trim: true, minLength: 8 }))
+  },
+  { strict: true }
+);
+
+export const AuthMfaEnrollmentConfirmationResponseSchema = s.object(
+  {
+    data: AuthMfaEnrollmentConfirmationSchema,
+    meta: AuthResponseMetaSchema.optional()
+  },
+  { strict: true }
+);
+
+export const AuthMfaLoginSessionSchema = s.object(
+  {
+    accessToken: s.string({ trim: true, minLength: 16 }),
+    tokenType: s.literal("Bearer"),
+    expiresAt: s.dateTimeString(),
+    refreshExpiresAt: s.dateTimeString(),
+    user: UserRecordSchema,
+    recoveryCodes: s.array(s.string({ trim: true, minLength: 8 })).optional()
+  },
+  { strict: true }
+);
+
+export const AuthMfaLoginSessionResponseSchema = s.object(
+  {
+    data: AuthMfaLoginSessionSchema,
+    meta: AuthResponseMetaSchema.optional()
+  },
+  { strict: true }
+);
+
 export const AuthMeResponseSchema = s.object(
   {
     data: UserRecordSchema,

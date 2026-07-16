@@ -142,6 +142,7 @@ function getCompactSectionLabel(section: RenderableAdminSettingsSection, t: Tran
   if (sectionId.includes("theme")) return t("settings.navigation.theme", "Tema");
   if (sectionId.includes("feature")) return t("settings.navigation.features", "Funzioni");
   if (sectionId.includes("user-flow")) return t("settings.navigation.user_access", "Utenti");
+  if (sectionId.includes("authentication")) return t("settings.navigation.authentication", "Autenticazione");
   if (sectionId.includes("plugin-permissions")) {
     return t("settings.navigation.plugin_permissions", "Permessi");
   }
@@ -206,7 +207,9 @@ function getSettingsSectionGroup(
 
   if (
     category === "user_flows" ||
+    category === "auth" ||
     sectionId.includes("user-flow") ||
+    sectionId.includes("authentication") ||
     sectionId.includes("plugin-permissions")
   ) {
     return {
@@ -224,7 +227,7 @@ function getSettingsSectionGroup(
     };
   }
 
-  if (category === "features" || sectionId.includes("plugin-management")) {
+  if (sectionId.includes("plugin-management")) {
     return {
       id: "system",
       label: label("settings.navigation.group.system", "Sistema"),

@@ -71,6 +71,12 @@ export class SettingsValuesRepository {
     });
   }
 
+  async deleteByKey(key: string): Promise<boolean> {
+    return this.repository().deleteOne({
+      filter: { key: key.trim().toLowerCase(), kind: VALUE_KIND }
+    });
+  }
+
   async listByOwnerPlugin(ownerPluginId: string): Promise<readonly SettingValueRecord[]> {
     return this.repository().findMany({
       filter: {

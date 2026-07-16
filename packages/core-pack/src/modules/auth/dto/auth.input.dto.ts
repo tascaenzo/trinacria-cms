@@ -13,6 +13,44 @@ export const LoginWithPasswordInputSchema = s.object(
 
 export type LoginWithPasswordInput = Infer<typeof LoginWithPasswordInputSchema>;
 
+export const MfaChallengeInputSchema = s.object(
+  {
+    challengeId: s.string({ trim: true, minLength: 32, maxLength: 200 })
+  },
+  { strict: true }
+);
+
+export type MfaChallengeInput = Infer<typeof MfaChallengeInputSchema>;
+
+export const MfaCodeInputSchema = s.object(
+  {
+    code: s.string({ trim: true, minLength: 6, maxLength: 32 })
+  },
+  { strict: true }
+);
+
+export type MfaCodeInput = Infer<typeof MfaCodeInputSchema>;
+
+export const CompleteMfaLoginInputSchema = s.object(
+  {
+    challengeId: s.string({ trim: true, minLength: 32, maxLength: 200 }),
+    code: s.string({ trim: true, minLength: 6, maxLength: 32 })
+  },
+  { strict: true }
+);
+
+export type CompleteMfaLoginInput = Infer<typeof CompleteMfaLoginInputSchema>;
+
+export const DisableMfaInputSchema = s.object(
+  {
+    currentPassword: s.string({ minLength: 1, maxLength: 200 }),
+    code: s.string({ trim: true, minLength: 6, maxLength: 32 })
+  },
+  { strict: true }
+);
+
+export type DisableMfaInput = Infer<typeof DisableMfaInputSchema>;
+
 export const UpdateAuthenticatedUserProfileInputSchema = s.object(
   {
     firstName: s.string({ trim: true, minLength: 1, maxLength: 60 }),

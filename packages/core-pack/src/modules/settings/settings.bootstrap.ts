@@ -123,15 +123,6 @@ export const CORE_PACK_SETTING_DEFINITION_SEEDS: readonly CorePackSettingDefinit
       visibility: "admin"
     },
     {
-      key: "core-pack:features:editorial_workflow",
-      category: "features",
-      description: "Feature flag reserved for the editorial workflow milestone rollout.",
-      defaultValue: false,
-      schema: {
-        type: "boolean"
-      } as JsonValue
-    },
-    {
       key: "core-pack:user_flows:public_registration_enabled",
       category: "user_flows",
       description:
@@ -312,6 +303,18 @@ export const CORE_PACK_SETTING_DEFINITION_SEEDS: readonly CorePackSettingDefinit
         minimum: 1,
         maximum: 1440
       } as JsonValue
+    },
+    {
+      key: "core-pack:auth:mfa_mode",
+      category: "auth",
+      description:
+        "Two-factor authentication policy for local users: disabled, optional per user, or required at the next login.",
+      defaultValue: "disabled",
+      schema: {
+        type: "string",
+        enum: ["disabled", "optional", "required"]
+      } as JsonValue,
+      visibility: "admin"
     },
     {
       key: "core-pack:auth:jwt_cookie_access_name",

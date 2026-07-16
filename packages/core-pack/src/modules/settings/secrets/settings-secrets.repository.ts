@@ -83,6 +83,12 @@ export class SettingsSecretsRepository {
     });
   }
 
+  async deleteByKey(key: string): Promise<boolean> {
+    return this.repository().deleteOne({
+      filter: { key: key.trim().toLowerCase(), kind: SECRET_KIND }
+    });
+  }
+
   async listByOwnerPlugin(ownerPluginId: string): Promise<readonly SettingSecretRecord[]> {
     return this.repository().findMany({
       filter: {

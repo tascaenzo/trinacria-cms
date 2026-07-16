@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHmac } from "node:crypto";
 import test from "node:test";
 import {
   type DbAdapter,
@@ -16,8 +17,10 @@ import { AuthController } from "../src/modules/auth/auth.controller.js";
 import { AuthFlowTokensRepository } from "../src/modules/auth/repositories/auth-flow-tokens.repository.js";
 import { AuthBlacklistRepository } from "../src/modules/auth/repositories/auth-blacklist.repository.js";
 import { AuthLoginAttemptRepository } from "../src/modules/auth/repositories/auth-login-attempt.repository.js";
+import { AuthMfaRepository } from "../src/modules/auth/repositories/auth-mfa.repository.js";
 import { AuthUsersRepository } from "../src/modules/auth/repositories/auth-users.repository.js";
 import { AuthUserFlowsService } from "../src/modules/auth/services/auth-user-flows.service.js";
+import { AuthMfaService } from "../src/modules/auth/services/auth-mfa.service.js";
 import { JwtAuthError, JwtAuthService } from "../src/modules/auth/services/auth.service.js";
 import { LocalCredentialsRepository } from "../src/modules/installation/repositories/local-credentials.repository.js";
 import { InstallationService } from "../src/modules/installation/services/installation.service.js";
@@ -152,6 +155,47 @@ test("JwtAuthService allows an immediate login after revoking the previous sessi
   } finally {
     Date.now = originalNow;
   }
+});
+
+test("JwtAuthService enforces optional TOTP after a user enrolls", async () => {
+  const runtime = createRuntime();
+  await seedCoreSettings(runtime.settings);
+  await runtime.settings.upsertValue({
+    requesterPluginId: "core-pack",
+    key: "core-pack:auth:mfa_mode",
+    value: "optional"
+  });
+  await runtime.installation.bootstrap({
+    email: "admin@example.com",
+    firstName: "Admin",
+    lastName: "User",
+    password: "StrongPassword123!",
+    confirmPassword: "StrongPassword123!",
+    siteName: "Test Site"
+  });
+
+  const initial = await runtime.auth.loginWithPassword({
+    email: "admin@example.com",
+    password: "StrongPassword123!"
+  });
+  const setup = await runtime.auth.beginMfaEnrollment(initial.user.id);
+  const enrollment = await runtime.auth.confirmMfaEnrollment(initial.user.id, createTotp(setup.manualKey));
+  assert.equal(enrollment.recoveryCodes.length, 8);
+
+  const status = await runtime.auth.getMfaStatus(initial.user.id);
+  assert.equal(status.enabled, true);
+  assert.ok(status.enabledAt);
+  assert.equal(status.recoveryCodesRemaining, 8);
+
+  const challenge = await runtime.auth.beginPasswordLogin({
+    email: "admin@example.com",
+    password: "StrongPassword123!"
+  });
+  assert.equal("status" in challenge && challenge.status, "mfa_required");
+  if (!("status" in challenge)) throw new Error("Expected an MFA challenge");
+
+  const completed = await runtime.auth.completeMfaLogin(challenge.challengeId, createTotp(setup.manualKey));
+  assert.equal(completed.user.email, "admin@example.com");
 });
 
 test("JwtAuthService rejects login before installation is completed", async () => {
@@ -631,7 +675,8 @@ function createRuntime(): Runtime {
     new AuthBlacklistRepository(db),
     new AuthLoginAttemptRepository(db),
     config,
-    db
+    db,
+    new AuthMfaService(new AuthMfaRepository(db))
   );
   const flows = new AuthUserFlowsService(
     authUsers,
@@ -767,6 +812,31 @@ function applySort<TData extends Record<string, unknown>>(
     }
     return aValue > bValue ? -1 : 1;
   });
+}
+
+function createTotp(secret: string): string {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  let bits = 0;
+  let accumulator = 0;
+  const bytes: number[] = [];
+  for (const char of secret) {
+    accumulator = (accumulator << 5) | alphabet.indexOf(char);
+    bits += 5;
+    if (bits >= 8) {
+      bytes.push((accumulator >>> (bits - 8)) & 0xff);
+      bits -= 8;
+    }
+  }
+  const counter = Buffer.alloc(8);
+  counter.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30_000)));
+  const digest = (awaitableHmac(bytes, counter));
+  const offset = digest[digest.length - 1] & 0x0f;
+  const binary = ((digest[offset] & 0x7f) << 24) | (digest[offset + 1] << 16) | (digest[offset + 2] << 8) | digest[offset + 3];
+  return String(binary % 1_000_000).padStart(6, "0");
+}
+
+function awaitableHmac(secret: readonly number[], counter: Buffer): Buffer {
+  return createHmac("sha1", Buffer.from(secret)).update(counter).digest();
 }
 
 function createHttpContext(body: unknown, headers: Record<string, string> = {}): HttpContext {
