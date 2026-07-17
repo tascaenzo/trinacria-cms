@@ -42,6 +42,37 @@ export class ContentTypesService {
     return this.repository.create({ ...parsed, createdByUserId });
   }
 
+  /** Creates the usable blog baseline once, without overwriting local changes. */
+  async ensureDefaultContentTypes(): Promise<void> {
+    await this.ensureDefaultContentType({
+      key: "article",
+      name: "Article",
+      description: "Long-form editorial content for a blog or newsroom.",
+      fields: [
+        {
+          key: "excerpt",
+          label: "Excerpt",
+          type: "text",
+          required: false,
+          multiple: false
+        },
+        {
+          key: "cover_image",
+          label: "Cover image",
+          type: "media",
+          required: false,
+          multiple: false
+        }
+      ]
+    });
+    await this.ensureDefaultContentType({
+      key: "page",
+      name: "Page",
+      description: "Standalone site page with title, slug and block content.",
+      fields: []
+    });
+  }
+
   async getContentType(id: string) {
     return this.repository.findById(id);
   }
@@ -71,5 +102,10 @@ export class ContentTypesService {
       }
       fieldKeys.add(field.key);
     }
+  }
+
+  private async ensureDefaultContentType(input: CreateContentTypeInput) {
+    if (await this.repository.findByKey(input.key)) return;
+    await this.repository.create({ ...input, createdByUserId: "system:editorial-pack" });
   }
 }
