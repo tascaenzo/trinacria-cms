@@ -1,0 +1,47 @@
+{
+  "name": "@trinacria-cms/media-pack",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./admin-manifest": {
+      "types": "./dist/plugin/media-pack-admin.manifest.d.ts",
+      "import": "./dist/plugin/media-pack-admin.manifest.js"
+    },
+    "./admin": {
+      "types": "./dist/admin/index.d.ts",
+      "import": "./dist/admin/index.js"
+    }
+  },
+  "scripts": {
+    "prebuild": "npm run build -w @trinacria-cms/kernel && npm run build -w @trinacria-cms/core-pack && npm run build -w @trinacria-cms/sdk && npm run build -w @trinacria-cms/trinacria-ui",
+    "build": "tsc -p tsconfig.json",
+    "pretypecheck": "npm run build -w @trinacria-cms/kernel && npm run build -w @trinacria-cms/core-pack && npm run build -w @trinacria-cms/sdk && npm run build -w @trinacria-cms/trinacria-ui",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "pretest": "npm run build -w @trinacria-cms/kernel",
+    "test": "node --import tsx --test test/**/*.test.ts",
+    "lint": "echo \"No lint config yet\""
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1089.0",
+    "@aws-sdk/s3-request-presigner": "^3.1089.0",
+    "@trinacria-cms/core-pack": "0.1.0",
+    "@trinacria-cms/kernel": "0.1.0",
+    "@trinacria-cms/sdk": "0.1.0",
+    "@trinacria-cms/trinacria-ui": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "@types/react": "^19.2.2"
+  },
+  "peerDependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  }
+}
