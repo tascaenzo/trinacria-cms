@@ -30,7 +30,9 @@ const CORE_PACK_HIDDEN_SETTINGS_SECTION_IDS = new Set([
   "core-pack-auth-settings",
   "core-pack-security-settings",
   "core-pack-cache-settings",
-  "core-pack-settings-catalog"
+  "core-pack-settings-catalog",
+  "core-pack-plugin-permissions-settings",
+  "core-pack-plugin-management-settings"
 ]);
 
 export function isVisibleSettingsSection(section: RenderableAdminSettingsSection): boolean {

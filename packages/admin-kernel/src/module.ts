@@ -1,12 +1,14 @@
 import type { AdminExtensionManifest } from "./contracts.js";
 import type { I18nBundle } from "./lib/i18n.js";
 import type {
+  AdminPageRenderer,
   AdminDashboardWidgetRenderer,
   AdminSettingsSectionRenderer
 } from "./runtime/admin-renderers.js";
 import type { RenderableAdminContribution } from "./runtime/admin-route-runtime.js";
 
 export interface BackofficeRendererRegistry {
+  pages?: Record<string, AdminPageRenderer>;
   dashboardWidgets?: Record<string, AdminDashboardWidgetRenderer>;
   settingsSections?: Record<string, AdminSettingsSectionRenderer>;
 }

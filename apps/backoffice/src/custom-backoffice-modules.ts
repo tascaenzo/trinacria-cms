@@ -2,6 +2,8 @@ import { definePluginBackofficeModule, type BackofficeModule } from "@trinacria-
 import { CORE_PACK_ADMIN_MANIFEST } from "@trinacria-cms/core-pack/admin-manifest";
 import { EMAIL_PACK_ADMIN_MANIFEST } from "@trinacria-cms/email-pack/admin-manifest";
 import { EMAIL_PACK_ADMIN_RENDERERS } from "@trinacria-cms/email-pack/admin";
+import { MEDIA_PACK_ADMIN_MANIFEST } from "@trinacria-cms/media-pack/admin-manifest";
+import { MEDIA_PACK_ADMIN_RENDERERS } from "@trinacria-cms/media-pack/admin";
 
 /**
  * Monorepo-local extension point for plugin admin modules. Custom plugins can
@@ -45,5 +47,13 @@ export const backofficeModules: readonly BackofficeModule[] = [
       admin: EMAIL_PACK_ADMIN_MANIFEST
     }),
     renderers: EMAIL_PACK_ADMIN_RENDERERS
+  },
+  {
+    ...definePluginBackofficeModule({
+      pluginId: "media-pack",
+      displayName: "Media",
+      admin: MEDIA_PACK_ADMIN_MANIFEST
+    }),
+    renderers: MEDIA_PACK_ADMIN_RENDERERS
   }
 ];

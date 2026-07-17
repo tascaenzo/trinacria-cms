@@ -8,6 +8,7 @@ import {
 } from "@trinacria-cms/kernel";
 import { createCorePackMongoGlobalProviders, createCorePackPlugin } from "@trinacria-cms/core-pack";
 import { createEmailPackPlugin } from "@trinacria-cms/email-pack";
+import { createMediaPackPlugin } from "@trinacria-cms/media-pack";
 import {
   applyProductionSecurityDefaults,
   assertProductionSecurityConfig,
@@ -124,7 +125,7 @@ function createPlaygroundPlugins(smokeStandalone: boolean): readonly KernelPlugi
   const smokePlugins = createPlaygroundEventSmokePlugins();
   return smokeStandalone
     ? smokePlugins
-    : [createCorePackPlugin(), createEmailPackPlugin(), ...smokePlugins];
+    : [createCorePackPlugin(), createEmailPackPlugin(), createMediaPackPlugin(), ...smokePlugins];
 }
 
 /**

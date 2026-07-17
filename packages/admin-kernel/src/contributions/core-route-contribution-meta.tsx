@@ -80,6 +80,7 @@ export const OFFICIAL_CORE_ROUTE_META: Record<
           settings: context.settings,
           widgets: context.widgets,
           locale: context.locale,
+          apiBaseUrl: context.apiBaseUrl,
           cms: context.cms,
           t: context.t
         }}

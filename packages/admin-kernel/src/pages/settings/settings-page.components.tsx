@@ -149,13 +149,19 @@ function getCompactSectionLabel(section: RenderableAdminSettingsSection, t: Tran
   if (sectionId.includes("plugin-management")) return t("settings.navigation.plugins", "Plugin");
   if (sectionId.includes("email-template")) return t("settings.navigation.templates", "Template");
   if (sectionId.includes("email")) return t("settings.navigation.email_delivery", "Email");
+  if (sectionId.includes("media") && sectionId.includes("storage")) {
+    return t("settings.navigation.media_storage", "Archiviazione");
+  }
+  if (sectionId.includes("media") && sectionId.includes("limit")) {
+    return t("settings.navigation.media_limits", "Limiti");
+  }
 
   return section.title;
 }
 
 interface SettingsSectionGroup {
   id: string;
-  icon: "layout-dashboard" | "users" | "settings-2" | "mail" | "puzzle";
+  icon: "layout-dashboard" | "users" | "settings-2" | "mail" | "hard-drive";
   label: string;
   sections: readonly RenderableAdminSettingsSection[];
 }
@@ -176,7 +182,7 @@ function groupSettingsSections(
     }
   }
 
-  const groupOrder = ["workspace", "access", "communication", "system", "extensions"];
+  const groupOrder = ["workspace", "access", "communication", "media", "system"];
   return [...groups.values()].sort(
     (left, right) => groupOrder.indexOf(left.id) - groupOrder.indexOf(right.id)
   );
@@ -227,7 +233,15 @@ function getSettingsSectionGroup(
     };
   }
 
-  if (sectionId.includes("plugin-management")) {
+  if (sectionId.includes("media") || category === "storage" || category === "limits") {
+    return {
+      id: "media",
+      label: label("settings.navigation.group.media", "Media"),
+      icon: "hard-drive"
+    };
+  }
+
+  if (category === "features" || sectionId.includes("plugin-management")) {
     return {
       id: "system",
       label: label("settings.navigation.group.system", "Sistema"),
@@ -236,9 +250,9 @@ function getSettingsSectionGroup(
   }
 
   return {
-    id: "extensions",
-    label: label("settings.navigation.group.extensions", "Plugin"),
-    icon: "puzzle"
+    id: "system",
+    label: label("settings.navigation.group.system", "Sistema"),
+    icon: "settings-2"
   };
 }
 
@@ -472,6 +486,7 @@ function getSectionIcon(sectionId: string) {
   if (normalizedId.includes("auth")) return "lock-keyhole";
   if (normalizedId.includes("security")) return "shield-check";
   if (normalizedId.includes("cache")) return "hard-drive";
+  if (normalizedId.includes("media")) return "hard-drive";
   if (normalizedId.includes("catalog")) return "database";
   return "settings-2";
 }

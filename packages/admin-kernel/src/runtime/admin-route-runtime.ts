@@ -14,6 +14,7 @@ import type { ReactNode } from "react";
 import type { Locale, TranslateFn } from "../lib/i18n.js";
 import {
   type AdminRendererRegistryInput,
+  resolveAdminPageRenderer,
   resolveAdminDashboardWidgetRenderer,
   resolveAdminSettingsSectionRenderer
 } from "./admin-renderers.js";
@@ -35,6 +36,8 @@ export interface AdminPageRenderContext {
   canCustomizeDashboard?: boolean;
   /** Route navigation supplied by the shell for widget-level quick actions. */
   navigateToRoute?: (routeId: string) => void;
+  /** Base path used by direct browser uploads and other binary endpoints. */
+  apiBaseUrl?: string;
   cms: typeof import("./cms-sdk.js").cms;
   t: TranslateFn;
 }
@@ -318,7 +321,8 @@ export function buildAdminRegistry(
     .map((route) => ({
       ...route,
       title: route.titleKey ? t(route.titleKey, route.title) : route.title,
-      summary: route.summaryKey ? t(route.summaryKey, route.summary) : route.summary
+      summary: route.summaryKey ? t(route.summaryKey, route.summary) : route.summary,
+      render: resolveAdminPageRenderer(route.componentRef, renderers) ?? route.render
     }));
   const uniqueRoutes = dedupeByLast(routes, (route) => route.id).sort(
     (left, right) => (left.order ?? 0) - (right.order ?? 0)

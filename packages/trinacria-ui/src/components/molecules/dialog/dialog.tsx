@@ -52,19 +52,22 @@ export function Dialog({
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (!shouldRender) {
+    if (!open) {
       return;
     }
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
+      const visibleDialogs = document.querySelectorAll<HTMLElement>('[role="dialog"][aria-modal="true"]');
+      if (event.key === "Escape" && visibleDialogs.item(visibleDialogs.length - 1) === dialogRef.current) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
         onClose();
       }
     }
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onClose, shouldRender]);
+  }, [onClose, open]);
 
   useEffect(() => {
     if (open) {

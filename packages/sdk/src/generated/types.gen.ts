@@ -159,6 +159,46 @@ export type CompleteLoginMfaEnrollmentResponse = {
 };
 };
 
+export type CompleteMediaUploadRequest = {
+  path: {
+  "id": string;
+};
+};
+
+export type CompleteMediaUploadResponse = {
+  "data": {
+  "id": string;
+  "directoryId"?: string;
+  "ownerUserId": string;
+  "uploadedByUserId": string;
+  "displayName": string;
+  "originalFilename": string;
+  "mimeType": string;
+  "byteSize": number;
+  "checksum": {
+  "algorithm": "sha256";
+  "value": string;
+};
+  "width"?: number;
+  "height"?: number;
+  "durationMs"?: number;
+  "providerId": string;
+  "storageKey": string;
+  "status": "uploading" | "processing" | "ready" | "rejected" | "quarantined" | "deleted";
+  "visibility": "private" | "restricted" | "public";
+  "aclVersion": number;
+  "createdAt": string;
+  "updatedAt": string;
+  "deletedAt"?: string;
+};
+  "meta"?: {
+  "pluginId"?: "media-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
 export type CompleteMfaLoginRequest = {
   body: {
   "challengeId": string;
@@ -218,6 +258,55 @@ export type ConfirmMfaEnrollmentResponse = {
 };
   "meta"?: {
   "pluginId"?: "core-pack";
+};
+};
+
+export type CreateMediaAccessUrlRequest = {
+  path: {
+  "id": string;
+};
+};
+
+export type CreateMediaAccessUrlResponse = {
+  "data": {
+  "url": string;
+  "expiresAt": string;
+};
+  "meta"?: {
+  "pluginId"?: "media-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type CreateMediaDirectoryRequest = {
+  body: {
+  "name"?: string;
+  "parentId"?: string;
+  "clearParent"?: boolean;
+  "visibility"?: "private" | "restricted" | "public";
+  "inheritAcl"?: boolean;
+};
+};
+
+export type CreateMediaDirectoryResponse = {
+  "data": {
+  "id": string;
+  "parentId"?: string;
+  "name": string;
+  "ownerUserId": string;
+  "visibility": "private" | "restricted" | "public";
+  "inheritAcl": boolean;
+  "createdAt": string;
+  "updatedAt": string;
+  "deletedAt"?: string;
+};
+  "meta"?: {
+  "pluginId"?: "media-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
 };
 };
 
@@ -342,6 +431,110 @@ export type CreateUserResponse = {
 };
 };
 
+export type DeleteMediaAssetRequest = {
+  path: {
+  "id": string;
+};
+};
+
+export type DeleteMediaAssetResponse = {
+  "data": {
+  "id": string;
+  "directoryId"?: string;
+  "ownerUserId": string;
+  "uploadedByUserId": string;
+  "displayName": string;
+  "originalFilename": string;
+  "mimeType": string;
+  "byteSize": number;
+  "checksum": {
+  "algorithm": "sha256";
+  "value": string;
+};
+  "width"?: number;
+  "height"?: number;
+  "durationMs"?: number;
+  "providerId": string;
+  "storageKey": string;
+  "status": "uploading" | "processing" | "ready" | "rejected" | "quarantined" | "deleted";
+  "visibility": "private" | "restricted" | "public";
+  "aclVersion": number;
+  "createdAt": string;
+  "updatedAt": string;
+  "deletedAt"?: string;
+};
+  "meta"?: {
+  "pluginId"?: "media-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type DeleteMediaAssetShareRequest = {
+  path: {
+  "id": string;
+  "shareId": string;
+};
+};
+
+export type DeleteMediaAssetShareResponse = {
+  "data": {
+  "deleted": true;
+};
+  "meta"?: {
+  "pluginId"?: "media-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type DeleteMediaDirectoryRequest = {
+  path: {
+  "id": string;
+};
+};
+
+export type DeleteMediaDirectoryResponse = {
+  "data": {
+  "id": string;
+  "parentId"?: string;
+  "name": string;
+  "ownerUserId": string;
+  "visibility": "private" | "restricted" | "public";
+  "inheritAcl": boolean;
+  "createdAt": string;
+  "updatedAt": string;
+  "deletedAt"?: string;
+};
+  "meta"?: {
+  "pluginId"?: "media-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type DeleteMediaDirectoryShareRequest = {
+  path: {
+  "id": string;
+  "shareId": string;
+};
+};
+
+export type DeleteMediaDirectoryShareResponse = {
+  "data": {
+  "deleted": true;
+};
+  "meta"?: {
+  "pluginId"?: "media-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
 export type DeleteRolePolicyRuleRequest = {
   path: {
   "roleCode": string;
@@ -367,6 +560,14 @@ export type DeleteRolePolicyRuleResponse = {
   "offset"?: number;
 };
 };
+
+export type DeliverLocalMediaAssetRequest = {
+  path: {
+  "storageKey": string;
+};
+};
+
+export type DeliverLocalMediaAssetResponse = string;
 
 export type DisableMfaRequest = {
   body: {
@@ -675,6 +876,63 @@ export type GetKernelHealthResponse = {
   "reason"?: string;
 };
   "issues": Array<string>;
+};
+
+export type GetMediaAssetRequest = {
+  path: {
+  "id": string;
+};
+};
+
+export type GetMediaAssetResponse = {
+  "data": {
+  "id": string;
+  "directoryId"?: string;
+  "ownerUserId": string;
+  "uploadedByUserId": string;
+  "displayName": string;
+  "originalFilename": string;
+  "mimeType": string;
+  "byteSize": number;
+  "checksum": {
+  "algorithm": "sha256";
+  "value": string;
+};
+  "width"?: number;
+  "height"?: number;
+  "durationMs"?: number;
+  "providerId": string;
+  "storageKey": string;
+  "status": "uploading" | "processing" | "ready" | "rejected" | "quarantined" | "deleted";
+  "visibility": "private" | "restricted" | "public";
+  "aclVersion": number;
+  "createdAt": string;
+  "updatedAt": string;
+  "deletedAt"?: string;
+};
+  "meta"?: {
+  "pluginId"?: "media-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type GetMediaProviderHealthRequest = void;
+
+export type GetMediaProviderHealthResponse = {
+  "data": Array<{
+  "id": string;
+  "kind": "local-disk" | "s3-compatible" | "custom";
+  "selected": boolean;
+  "status": "ok" | "degraded" | "down";
+}>;
+  "meta"?: {
+  "pluginId"?: "media-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
 };
 
 export type GetMfaStatusRequest = void;
@@ -1061,6 +1319,118 @@ export type ListInstalledPluginsResponse = {
 };
 };
 
+export type ListMediaAssetsRequest = void;
+
+export type ListMediaAssetsResponse = {
+  "data": Array<{
+  "id": string;
+  "directoryId"?: string;
+  "ownerUserId": string;
+  "uploadedByUserId": string;
+  "displayName": string;
+  "originalFilename": string;
+  "mimeType": string;
+  "byteSize": number;
+  "checksum": {
+  "algorithm": "sha256";
+  "value": string;
+};
+  "width"?: number;
+  "height"?: number;
+  "durationMs"?: number;
+  "providerId": string;
+  "storageKey": string;
+  "status": "uploading" | "processing" | "ready" | "rejected" | "quarantined" | "deleted";
+  "visibility": "private" | "restricted" | "public";
+  "aclVersion": number;
+  "createdAt": string;
+  "updatedAt": string;
+  "deletedAt"?: string;
+}>;
+  "meta"?: {
+  "pluginId"?: "media-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type ListMediaAssetSharesRequest = {
+  path: {
+  "id": string;
+};
+};
+
+export type ListMediaAssetSharesResponse = {
+  "data": Array<{
+  "id": string;
+  "targetType": "asset" | "directory";
+  "targetId": string;
+  "principalType": "user" | "role" | "plugin";
+  "principalId": string;
+  "actions": Array<"read" | "write" | "manage" | "share">;
+  "createdByUserId": string;
+  "expiresAt"?: string;
+  "createdAt": string;
+  "updatedAt": string;
+}>;
+  "meta"?: {
+  "pluginId"?: "media-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type ListMediaDirectoriesRequest = void;
+
+export type ListMediaDirectoriesResponse = {
+  "data": Array<{
+  "id": string;
+  "parentId"?: string;
+  "name": string;
+  "ownerUserId": string;
+  "visibility": "private" | "restricted" | "public";
+  "inheritAcl": boolean;
+  "createdAt": string;
+  "updatedAt": string;
+  "deletedAt"?: string;
+}>;
+  "meta"?: {
+  "pluginId"?: "media-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type ListMediaDirectorySharesRequest = {
+  path: {
+  "id": string;
+};
+};
+
+export type ListMediaDirectorySharesResponse = {
+  "data": Array<{
+  "id": string;
+  "targetType": "asset" | "directory";
+  "targetId": string;
+  "principalType": "user" | "role" | "plugin";
+  "principalId": string;
+  "actions": Array<"read" | "write" | "manage" | "share">;
+  "createdByUserId": string;
+  "expiresAt"?: string;
+  "createdAt": string;
+  "updatedAt": string;
+}>;
+  "meta"?: {
+  "pluginId"?: "media-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
 export type ListPermissionsRequest = {
   query: {
   "limit"?: number;
@@ -1431,6 +1801,41 @@ export type PreviewEmailTemplateResponse = {
 };
 };
 
+export type ReceiveMediaUploadContentRequest = {
+  path: {
+  "id": string;
+};
+  body: string;
+};
+
+export type ReceiveMediaUploadContentResponse = {
+  "data": {
+  "id": string;
+  "ownerUserId": string;
+  "providerId": string;
+  "storageKey": string;
+  "replacementAssetId"?: string;
+  "directoryId"?: string;
+  "displayName": string;
+  "originalFilename": string;
+  "mimeType": string;
+  "expectedByteSize": number;
+  "expectedChecksumSha256"?: string;
+  "status": "pending" | "content_received" | "completed" | "rejected" | "expired";
+  "expiresAt": string;
+  "assetId"?: string;
+  "rejectionReason"?: string;
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "meta"?: {
+  "pluginId"?: "media-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
 export type RegisterPublicUserRequest = {
   body: {
   "email": string;
@@ -1460,6 +1865,76 @@ export type RemoveUserRoleResponse = {
 }>;
   "meta"?: {
   "pluginId"?: "core-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type ReplaceMediaAssetSharesRequest = {
+  path: {
+  "id": string;
+};
+  body: {
+  "grants": Array<{
+  "principalType": "user" | "role" | "plugin";
+  "principalId": string;
+  "actions": Array<"read" | "write" | "manage" | "share">;
+  "expiresAt"?: string;
+}>;
+};
+};
+
+export type ReplaceMediaAssetSharesResponse = {
+  "data": Array<{
+  "id": string;
+  "targetType": "asset" | "directory";
+  "targetId": string;
+  "principalType": "user" | "role" | "plugin";
+  "principalId": string;
+  "actions": Array<"read" | "write" | "manage" | "share">;
+  "createdByUserId": string;
+  "expiresAt"?: string;
+  "createdAt": string;
+  "updatedAt": string;
+}>;
+  "meta"?: {
+  "pluginId"?: "media-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type ReplaceMediaDirectorySharesRequest = {
+  path: {
+  "id": string;
+};
+  body: {
+  "grants": Array<{
+  "principalType": "user" | "role" | "plugin";
+  "principalId": string;
+  "actions": Array<"read" | "write" | "manage" | "share">;
+  "expiresAt"?: string;
+}>;
+};
+};
+
+export type ReplaceMediaDirectorySharesResponse = {
+  "data": Array<{
+  "id": string;
+  "targetType": "asset" | "directory";
+  "targetId": string;
+  "principalType": "user" | "role" | "plugin";
+  "principalId": string;
+  "actions": Array<"read" | "write" | "manage" | "share">;
+  "createdByUserId": string;
+  "expiresAt"?: string;
+  "createdAt": string;
+  "updatedAt": string;
+}>;
+  "meta"?: {
+  "pluginId"?: "media-pack";
   "count"?: number;
   "limit"?: number;
   "offset"?: number;
@@ -1498,6 +1973,56 @@ export type RevealSettingSecretResponse = {
 };
 };
 
+export type StartMediaUploadRequest = {
+  body: {
+  "filename": string;
+  "mimeType": string;
+  "byteSize": number;
+  "checksumSha256"?: string;
+  "directoryId"?: string;
+  "displayName"?: string;
+  "replacementAssetId"?: string;
+};
+};
+
+export type StartMediaUploadResponse = {
+  "data": {
+  "session": {
+  "id": string;
+  "ownerUserId": string;
+  "providerId": string;
+  "storageKey": string;
+  "replacementAssetId"?: string;
+  "directoryId"?: string;
+  "displayName": string;
+  "originalFilename": string;
+  "mimeType": string;
+  "expectedByteSize": number;
+  "expectedChecksumSha256"?: string;
+  "status": "pending" | "content_received" | "completed" | "rejected" | "expired";
+  "expiresAt": string;
+  "assetId"?: string;
+  "rejectionReason"?: string;
+  "createdAt": string;
+  "updatedAt": string;
+};
+  "upload": {
+  "method": "proxy" | "presigned";
+  "uploadUrl": string;
+  "expiresAt": string;
+  "requiredHeaders"?: {
+  [key: string]: string;
+};
+};
+};
+  "meta"?: {
+  "pluginId"?: "media-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
 export type UpdateAuthenticatedUserProfileRequest = {
   body: {
   "firstName": string;
@@ -1519,6 +2044,85 @@ export type UpdateAuthenticatedUserProfileResponse = {
 };
   "meta"?: {
   "pluginId"?: "core-pack";
+};
+};
+
+export type UpdateMediaAssetRequest = {
+  path: {
+  "id": string;
+};
+  body: {
+  "displayName"?: string;
+  "directoryId"?: string;
+  "clearDirectory"?: boolean;
+  "visibility"?: "private" | "restricted" | "public";
+};
+};
+
+export type UpdateMediaAssetResponse = {
+  "data": {
+  "id": string;
+  "directoryId"?: string;
+  "ownerUserId": string;
+  "uploadedByUserId": string;
+  "displayName": string;
+  "originalFilename": string;
+  "mimeType": string;
+  "byteSize": number;
+  "checksum": {
+  "algorithm": "sha256";
+  "value": string;
+};
+  "width"?: number;
+  "height"?: number;
+  "durationMs"?: number;
+  "providerId": string;
+  "storageKey": string;
+  "status": "uploading" | "processing" | "ready" | "rejected" | "quarantined" | "deleted";
+  "visibility": "private" | "restricted" | "public";
+  "aclVersion": number;
+  "createdAt": string;
+  "updatedAt": string;
+  "deletedAt"?: string;
+};
+  "meta"?: {
+  "pluginId"?: "media-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
+};
+};
+
+export type UpdateMediaDirectoryRequest = {
+  path: {
+  "id": string;
+};
+  body: {
+  "name"?: string;
+  "parentId"?: string;
+  "clearParent"?: boolean;
+  "visibility"?: "private" | "restricted" | "public";
+  "inheritAcl"?: boolean;
+};
+};
+
+export type UpdateMediaDirectoryResponse = {
+  "data": {
+  "id": string;
+  "parentId"?: string;
+  "name": string;
+  "ownerUserId": string;
+  "visibility": "private" | "restricted" | "public";
+  "inheritAcl": boolean;
+  "createdAt": string;
+  "updatedAt": string;
+  "deletedAt"?: string;
+};
+  "meta"?: {
+  "pluginId"?: "media-pack";
+  "count"?: number;
+  "limit"?: number;
+  "offset"?: number;
 };
 };
 

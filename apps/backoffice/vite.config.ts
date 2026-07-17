@@ -31,6 +31,15 @@ export default defineConfig(({ mode }) => {
             import.meta.url
           )
         ),
+        "@trinacria-cms/media-pack/admin-manifest": fileURLToPath(
+          new URL(
+            "../../packages/media-pack/src/plugin/media-pack-admin.manifest.ts",
+            import.meta.url
+          )
+        ),
+        "@trinacria-cms/media-pack/admin": fileURLToPath(
+          new URL("../../packages/media-pack/src/admin/index.tsx", import.meta.url)
+        ),
         "@trinacria-cms/trinacria-ui": fileURLToPath(
           new URL("../../packages/trinacria-ui/src/index.ts", import.meta.url)
         ),
