@@ -24,6 +24,14 @@ import {
   ENTRY_REVISIONS_ENTITY_REGISTRATION_TOKEN,
   ENTRY_REVISIONS_REPOSITORY_TOKEN
 } from "../revisions/revisions.tokens.js";
+import { REVIEW_ASSIGNMENTS_ENTITY } from "../reviews/review-assignments.schemas.js";
+import { ReviewAssignmentsRepository } from "../reviews/review-assignments.repository.js";
+import { ReviewAssignmentsService } from "../reviews/review-assignments.service.js";
+import {
+  REVIEW_ASSIGNMENTS_ENTITY_REGISTRATION_TOKEN,
+  REVIEW_ASSIGNMENTS_REPOSITORY_TOKEN,
+  REVIEW_ASSIGNMENTS_SERVICE_TOKEN
+} from "../reviews/review-assignments.tokens.js";
 import {
   ENTRIES_CONTROLLER_TOKEN,
   ENTRIES_ENTITY_REGISTRATION_TOKEN,
@@ -51,9 +59,24 @@ export const EditorialEntriesModule: ModuleDefinition = defineModule({
       },
       [CORE_TOKENS.ENTITY_REGISTRY]
     ),
+    factoryProvider(
+      REVIEW_ASSIGNMENTS_ENTITY_REGISTRATION_TOKEN,
+      (registry) => {
+        (registry as EntityRegistry).register(REVIEW_ASSIGNMENTS_ENTITY);
+        return true;
+      },
+      [CORE_TOKENS.ENTITY_REGISTRY]
+    ),
     classProvider(ENTRIES_REPOSITORY_TOKEN, EntriesRepository, [CORE_TOKENS.DB_ADAPTER]),
     classProvider(ENTRY_REVISIONS_REPOSITORY_TOKEN, EntryRevisionsRepository, [
       CORE_TOKENS.DB_ADAPTER
+    ]),
+    classProvider(REVIEW_ASSIGNMENTS_REPOSITORY_TOKEN, ReviewAssignmentsRepository, [
+      CORE_TOKENS.DB_ADAPTER
+    ]),
+    classProvider(REVIEW_ASSIGNMENTS_SERVICE_TOKEN, ReviewAssignmentsService, [
+      REVIEW_ASSIGNMENTS_REPOSITORY_TOKEN,
+      ENTRIES_REPOSITORY_TOKEN
     ]),
     classProvider(ENTRIES_SERVICE_TOKEN, EntriesService, [
       ENTRIES_REPOSITORY_TOKEN,
@@ -71,6 +94,9 @@ export const EditorialEntriesModule: ModuleDefinition = defineModule({
     ENTRY_REVISIONS_ENTITY_REGISTRATION_TOKEN,
     ENTRIES_REPOSITORY_TOKEN,
     ENTRY_REVISIONS_REPOSITORY_TOKEN,
+    REVIEW_ASSIGNMENTS_ENTITY_REGISTRATION_TOKEN,
+    REVIEW_ASSIGNMENTS_REPOSITORY_TOKEN,
+    REVIEW_ASSIGNMENTS_SERVICE_TOKEN,
     ENTRIES_SERVICE_TOKEN,
     ENTRIES_CONTROLLER_TOKEN
   ]
