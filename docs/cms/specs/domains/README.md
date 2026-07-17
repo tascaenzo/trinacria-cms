@@ -6,4 +6,5 @@ deve dichiarare dipendenze, ownership, API e confini con gli altri plugin.
 
 | File | Plugin | Stato |
 | --- | --- | --- |
+| [editorial-pack.md](./editorial-pack.md) | Motore di contenuti strutturati, workflow e tassonomie | `functional-spec-v1` |
 | [media-pack.md](./media-pack.md) | Asset, storage provider, directory e access control | `implemented-v0` |
