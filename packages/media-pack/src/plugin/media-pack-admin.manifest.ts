@@ -3,12 +3,29 @@ import {
   defineAdmin,
   defineAdminNavigation,
   defineAdminRoute,
-  defineAdminSettingsSection
+  defineAdminSettingsSection,
+  defineAdminWidget
 } from "@trinacria-cms/kernel/plugin-api";
 import { MEDIA_PACK_PERMISSION_KEYS } from "./media-pack.security.js";
 
 /** Declarative admin contribution; a host can attach richer picker components later. */
 export const MEDIA_PACK_ADMIN_MANIFEST: PluginManifestAdmin = defineAdmin({
+  widgets: [
+    defineAdminWidget({
+      id: "media-file-manager",
+      label: "File manager",
+      componentRef: "media-pack:file-manager-widget",
+      requiredPermission: MEDIA_PACK_PERMISSION_KEYS.ASSETS_READ,
+      layout: {
+        defaultColumnSpan: 2,
+        defaultRowSpan: 2,
+        minColumnSpan: 2,
+        maxColumnSpan: 4,
+        minRowSpan: 2,
+        maxRowSpan: 3
+      }
+    })
+  ],
   routes: [
     defineAdminRoute({
       id: "media-assets",

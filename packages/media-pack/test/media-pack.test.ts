@@ -48,6 +48,21 @@ test("media-pack manifest declares its foundation contributions", () => {
     manifest.settings.map((setting) => setting.key).sort(),
     MEDIA_PACK_SETTING_DEFINITIONS.map((setting) => setting.key).sort()
   );
+  const mediaWidget = manifest.admin?.widgets?.[0];
+  assert.equal(mediaWidget?.id, "media-file-manager");
+  assert.equal(mediaWidget?.componentRef, "media-pack:file-manager-widget");
+  assert.equal(mediaWidget?.requiredPermission, "media-pack:assets:read");
+  assert.deepEqual(
+    mediaWidget?.layout ? { ...mediaWidget.layout } : undefined,
+    {
+      defaultColumnSpan: 2,
+      defaultRowSpan: 2,
+      minColumnSpan: 2,
+      maxColumnSpan: 4,
+      minRowSpan: 2,
+      maxRowSpan: 3
+    }
+  );
   assert.deepEqual(
     manifest.security?.grants?.find((grant) => grant.roleCode === "admin")?.permissionKeys,
     MEDIA_PACK_PERMISSION_KEY_LIST
