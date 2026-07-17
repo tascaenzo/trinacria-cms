@@ -13,6 +13,10 @@
     "./admin-manifest": {
       "types": "./dist/plugin/editorial-pack-admin.manifest.d.ts",
       "import": "./dist/plugin/editorial-pack-admin.manifest.js"
+    },
+    "./admin": {
+      "types": "./dist/admin/index.d.ts",
+      "import": "./dist/admin/index.js"
     }
   },
   "scripts": {
@@ -27,9 +31,16 @@
   "dependencies": {
     "@trinacria-cms/core-pack": "0.1.0",
     "@trinacria-cms/kernel": "0.1.0",
-    "@trinacria-cms/media-pack": "0.1.0"
+    "@trinacria-cms/media-pack": "0.1.0",
+    "@trinacria-cms/sdk": "0.1.0",
+    "@trinacria-cms/trinacria-ui": "0.1.0"
   },
   "devDependencies": {
-    "@types/node": "^25.9.1"
+    "@types/node": "^25.9.1",
+    "@types/react": "^19.2.2"
+  },
+  "peerDependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   }
 }

@@ -79,6 +79,7 @@ export const EDITORIAL_PACK_ADMIN_MANIFEST: PluginManifestAdmin = defineAdmin({
     defineAdminWidget({
       id: "editorial-work-queue",
       label: "Editorial work queue",
+      componentRef: "editorial-pack:work-queue",
       requiredPermission: EDITORIAL_PACK_PERMISSION_KEYS.ENTRIES_READ,
       layout: {
         defaultColumnSpan: 2,
