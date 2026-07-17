@@ -83,10 +83,12 @@ export class LocalDiskMediaStorageProvider implements MediaStorageProvider {
     }
     await mkdir(dirname(destination), { recursive: true });
     const checksum = await this.hashFile(source);
+    const contentPrefix = await this.readFilePrefix(source);
     await rename(source, destination);
     return {
       storageKey: input.storageKey,
       byteSize: sourceStats.size,
+      contentPrefix,
       checksum: { algorithm: "sha256", value: checksum }
     };
   }
@@ -157,6 +159,17 @@ export class LocalDiskMediaStorageProvider implements MediaStorageProvider {
       hash.update(chunk);
     }
     return hash.digest("hex");
+  }
+
+  private async readFilePrefix(path: string, maxBytes = 1_048_576): Promise<Uint8Array> {
+    const chunks: Buffer[] = [];
+    let length = 0;
+    for await (const chunk of createReadStream(path, { start: 0, end: maxBytes - 1 })) {
+      const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+      chunks.push(buffer);
+      length += buffer.byteLength;
+    }
+    return new Uint8Array(Buffer.concat(chunks, length));
   }
 
   private signReadUrl(storageKey: string, expiresAtMs: number): string {

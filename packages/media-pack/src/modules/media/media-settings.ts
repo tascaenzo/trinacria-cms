@@ -92,7 +92,14 @@ export const MEDIA_PACK_SETTING_DEFINITIONS: readonly PluginManifestSetting[] = 
     key: `${MEDIA_PACK_PLUGIN_ID}:limits:allowed_mime_types`,
     category: "limits",
     description: "Allowlist of MIME types accepted by media uploads.",
-    defaultValue: ["image/jpeg", "image/png", "image/webp", "application/pdf", "text/plain", "text/csv"],
+    defaultValue: [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "application/pdf",
+      "text/plain",
+      "text/csv"
+    ],
     schema: {
       type: "array",
       items: { type: "string", minLength: 1, maxLength: 120 },
@@ -117,7 +124,8 @@ export const MEDIA_PACK_SETTING_DEFINITIONS: readonly PluginManifestSetting[] = 
   {
     key: `${MEDIA_PACK_PLUGIN_ID}:retention:deleted_asset_days`,
     category: "retention",
-    description: "Days a soft-deleted asset remains recoverable before cleanup.",
+    description:
+      "Days a soft-deleted asset and its stored object are retained before permanent cleanup.",
     defaultValue: 30,
     schema: { type: "number", minimum: 1, maximum: 3650 } as JsonValue,
     status: "active",
@@ -134,5 +142,13 @@ export const MEDIA_PACK_SETTING_DEFINITIONS: readonly PluginManifestSetting[] = 
 export const MEDIA_PACK_DEFAULT_UPLOAD_POLICY = Object.freeze({
   providerId: "local-disk",
   maxFileBytes: 25_000_000,
-  allowedMimeTypes: ["image/jpeg", "image/png", "image/webp", "application/pdf", "text/plain", "text/csv"]
+  maxImagePixels: 40_000_000,
+  allowedMimeTypes: [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "application/pdf",
+    "text/plain",
+    "text/csv"
+  ]
 });

@@ -163,18 +163,29 @@ export function MediaStorageSettings({ cms, t }: MediaStorageSettingsContext) {
             </p>
           </header>
 
-          {error ? <p className="rounded-md border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] p-3 text-sm text-[color:var(--color-danger-ink)]">{error}</p> : null}
-          {message ? <p className="text-sm font-medium text-[color:var(--color-success-ink)]">{message}</p> : null}
+          {error ? (
+            <p className="rounded-md border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] p-3 text-sm text-[color:var(--color-danger-ink)]">
+              {error}
+            </p>
+          ) : null}
+          {message ? (
+            <p className="text-sm font-medium text-[color:var(--color-success-ink)]">{message}</p>
+          ) : null}
 
           <section className="grid gap-4 rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4">
             <Select
               label={t("settings.media.storage.provider", "Provider di archiviazione")}
-              hint={t("settings.media.storage.provider_hint", "Il provider viene applicato ai nuovi caricamenti.")}
+              hint={t(
+                "settings.media.storage.provider_hint",
+                "Il provider viene applicato ai nuovi caricamenti."
+              )}
               value={provider === "custom" ? draft.provider : provider}
               disabled={isLoading || isSaving}
               onChange={(event) => updateDraft({ provider: event.currentTarget.value })}
             >
-              {provider === "custom" ? <option value={draft.provider}>{draft.provider}</option> : null}
+              {provider === "custom" ? (
+                <option value={draft.provider}>{draft.provider}</option>
+              ) : null}
               <option value="local-disk">Disco locale</option>
               <option value="s3-compatible">S3 compatibile</option>
             </Select>
@@ -183,7 +194,9 @@ export function MediaStorageSettings({ cms, t }: MediaStorageSettingsContext) {
           {!isLoading && provider === "local-disk" ? (
             <section className="grid gap-4 rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4">
               <div>
-                <h4 className="text-sm font-semibold text-[color:var(--color-ink)]">Disco locale</h4>
+                <h4 className="text-sm font-semibold text-[color:var(--color-ink)]">
+                  Disco locale
+                </h4>
                 <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
                   I file vengono salvati nel filesystem dell&apos;istanza CMS.
                 </p>
@@ -200,35 +213,81 @@ export function MediaStorageSettings({ cms, t }: MediaStorageSettingsContext) {
           {!isLoading && provider === "s3-compatible" ? (
             <section className="grid gap-4 rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4">
               <div>
-                <h4 className="text-sm font-semibold text-[color:var(--color-ink)]">S3 compatibile</h4>
+                <h4 className="text-sm font-semibold text-[color:var(--color-ink)]">
+                  S3 compatibile
+                </h4>
                 <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
                   Configura bucket e credenziali del provider compatibile con le API S3.
                 </p>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
-                <Input label="Endpoint" value={draft.s3Endpoint} readOnly={isSaving} onChange={(event) => updateDraft({ s3Endpoint: event.currentTarget.value })} />
-                <Input label="Bucket" value={draft.s3Bucket} readOnly={isSaving} onChange={(event) => updateDraft({ s3Bucket: event.currentTarget.value })} />
-                <Input label="Region" value={draft.s3Region} readOnly={isSaving} onChange={(event) => updateDraft({ s3Region: event.currentTarget.value })} />
-                <Input label="Access key" value={draft.s3AccessKey} type="password" placeholder="Lascia vuoto per mantenere il valore" readOnly={isSaving} autoComplete="new-password" onChange={(event) => updateDraft({ s3AccessKey: event.currentTarget.value })} />
-                <Input className="md:col-span-2" label="Secret key" value={draft.s3SecretKey} type="password" placeholder="Lascia vuoto per mantenere il valore" readOnly={isSaving} autoComplete="new-password" onChange={(event) => updateDraft({ s3SecretKey: event.currentTarget.value })} />
+                <Input
+                  label="Endpoint"
+                  value={draft.s3Endpoint}
+                  readOnly={isSaving}
+                  onChange={(event) => updateDraft({ s3Endpoint: event.currentTarget.value })}
+                />
+                <Input
+                  label="Bucket"
+                  value={draft.s3Bucket}
+                  readOnly={isSaving}
+                  onChange={(event) => updateDraft({ s3Bucket: event.currentTarget.value })}
+                />
+                <Input
+                  label="Region"
+                  value={draft.s3Region}
+                  readOnly={isSaving}
+                  onChange={(event) => updateDraft({ s3Region: event.currentTarget.value })}
+                />
+                <Input
+                  label="Access key"
+                  value={draft.s3AccessKey}
+                  type="password"
+                  placeholder="Lascia vuoto per mantenere il valore"
+                  readOnly={isSaving}
+                  autoComplete="new-password"
+                  onChange={(event) => updateDraft({ s3AccessKey: event.currentTarget.value })}
+                />
+                <Input
+                  className="md:col-span-2"
+                  label="Secret key"
+                  value={draft.s3SecretKey}
+                  type="password"
+                  placeholder="Lascia vuoto per mantenere il valore"
+                  readOnly={isSaving}
+                  autoComplete="new-password"
+                  onChange={(event) => updateDraft({ s3SecretKey: event.currentTarget.value })}
+                />
               </div>
             </section>
           ) : null}
 
           {!isLoading && provider === "custom" ? (
             <section className="rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4 text-sm text-[color:var(--color-ink-muted)]">
-              Questo provider è configurato dall&apos;ambiente che lo ha registrato. Le impostazioni specifiche vengono mostrate dalla relativa funzionalità quando disponibili.
+              Questo provider è configurato dall&apos;ambiente che lo ha registrato. Le impostazioni
+              specifiche vengono mostrate dalla relativa funzionalità quando disponibili.
             </section>
           ) : null}
         </div>
       </div>
       <footer className="shrink-0 border-t border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 pb-2 pt-3 sm:px-5">
         <div className="mx-auto flex max-w-4xl justify-end gap-2">
-          <Button type="button" variant="secondary" disabled={isLoading || isSaving} onClick={() => void loadSettings()}>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={isLoading || isSaving}
+            onClick={() => void loadSettings()}
+          >
             {t("common.actions.refresh", "Aggiorna")}
           </Button>
-          <Button type="button" disabled={isLoading || isSaving} onClick={() => void saveSettings()}>
-            {isSaving ? t("common.actions.saving", "Salvataggio...") : t("common.actions.save", "Salva")}
+          <Button
+            type="button"
+            disabled={isLoading || isSaving}
+            onClick={() => void saveSettings()}
+          >
+            {isSaving
+              ? t("common.actions.saving", "Salvataggio...")
+              : t("common.actions.save", "Salva")}
           </Button>
         </div>
       </footer>

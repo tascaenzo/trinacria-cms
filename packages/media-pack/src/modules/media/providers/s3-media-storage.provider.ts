@@ -116,14 +116,10 @@ export class S3MediaStorageProvider implements MediaStorageProvider {
     if (input.checksumSha256 && checksum !== input.checksumSha256) {
       throw new Error("S3-compatible storage checksum does not match the upload session");
     }
-    const preview = await this.client.send(
-      new GetObjectCommand({
-        Bucket: this.options.bucket,
-        Key: sourceKey,
-        Range: "bytes=0-15"
-      })
-    );
-    const contentPrefix = await readBodyPrefix(preview.Body);
+    const contentPrefix =
+      head.ContentLength === 0
+        ? new Uint8Array()
+        : await this.readObjectPrefix(sourceKey, head.ContentLength);
     await this.client.send(
       new CopyObjectCommand({
         Bucket: this.options.bucket,
@@ -169,16 +165,28 @@ export class S3MediaStorageProvider implements MediaStorageProvider {
     if (!/^[a-zA-Z0-9_-]{1,160}$/.test(uploadId)) throw new Error("Media upload id is invalid");
     return `_trinacria-media-staging/${uploadId}`;
   }
+
+  private async readObjectPrefix(storageKey: string, byteSize: number): Promise<Uint8Array> {
+    const lastByte = Math.min(byteSize, 1_048_576) - 1;
+    const preview = await this.client.send(
+      new GetObjectCommand({
+        Bucket: this.options.bucket,
+        Key: storageKey,
+        Range: `bytes=0-${lastByte}`
+      })
+    );
+    return readBodyPrefix(preview.Body, 1_048_576);
+  }
 }
 
-async function readBodyPrefix(body: unknown): Promise<Uint8Array> {
+async function readBodyPrefix(body: unknown, maxBytes: number): Promise<Uint8Array> {
   if (!body || typeof body !== "object" || !(Symbol.asyncIterator in body)) return new Uint8Array();
   const bytes: number[] = [];
   for await (const chunk of body as AsyncIterable<Uint8Array>) {
     for (const byte of chunk) {
-      if (bytes.length < 16) bytes.push(byte);
+      if (bytes.length < maxBytes) bytes.push(byte);
     }
-    if (bytes.length === 16) break;
+    if (bytes.length === maxBytes) break;
   }
   return Uint8Array.from(bytes);
 }

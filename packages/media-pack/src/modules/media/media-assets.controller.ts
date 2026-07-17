@@ -5,6 +5,7 @@ import {
   parseQueryNumber,
   response,
   s,
+  toOpenApiSchema,
   type AuthzService,
   type HttpContext,
   type HttpMiddleware
@@ -21,6 +22,17 @@ import { MediaAssetsService } from "./services/media-assets.service.js";
 import { MediaDirectoriesService } from "./services/media-directories.service.js";
 import { MediaStorageConfigService } from "./services/media-storage-config.service.js";
 import { createMediaPermissionMiddleware } from "./media-upload.controller.js";
+import {
+  MediaAccessUrlResponseSchema,
+  MediaAclEntriesListResponseSchema,
+  MediaApiErrorResponseSchema,
+  MediaAssetResponseSchema,
+  MediaAssetsListResponseSchema,
+  MediaDeletedResponseSchema,
+  MediaDirectoriesListResponseSchema,
+  MediaDirectoryResponseSchema,
+  MediaProviderHealthListResponseSchema
+} from "./media-api.schemas.js";
 
 const responder = createPluginApiResponder(MEDIA_PACK_PLUGIN_ID);
 
@@ -94,49 +106,187 @@ export class MediaAssetsController extends HttpController {
 
   routes() {
     return this.router()
-      .get("/v1/media/assets", this.listAssets, { middlewares: [this.authenticated, this.canRead] })
+      .get("/v1/media/assets", this.listAssets, {
+        middlewares: [this.authenticated, this.canRead],
+        docs: {
+          summary: "List accessible media assets",
+          tags: ["Media"],
+          operationId: "listMediaAssets",
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            queryParameter("directoryId", { type: "string" }),
+            queryParameter("rootOnly", { type: "boolean" }),
+            queryParameter("limit", { type: "integer", minimum: 1, maximum: 500 }),
+            queryParameter("offset", { type: "integer", minimum: 0 })
+          ],
+          responses: okResponse("Media assets list", MediaAssetsListResponseSchema)
+        }
+      })
       .get("/v1/media/assets/:id", this.getAsset, {
-        middlewares: [this.authenticated, this.canRead]
+        middlewares: [this.authenticated, this.canRead],
+        docs: mediaDocs(
+          "Get a media asset",
+          "getMediaAsset",
+          "Media asset",
+          MediaAssetResponseSchema
+        )
       })
       .patch("/v1/media/assets/:id", this.updateAsset, {
-        middlewares: [this.authenticated, this.canUpdate]
+        middlewares: [this.authenticated, this.canUpdate],
+        docs: mediaDocs(
+          "Update or move a media asset",
+          "updateMediaAsset",
+          "Updated media asset",
+          MediaAssetResponseSchema,
+          UpdateAssetSchema
+        )
       })
       .delete("/v1/media/assets/:id", this.deleteAsset, {
-        middlewares: [this.authenticated, this.canDelete]
+        middlewares: [this.authenticated, this.canDelete],
+        docs: mediaDocs(
+          "Soft-delete a media asset",
+          "deleteMediaAsset",
+          "Deleted media asset",
+          MediaAssetResponseSchema
+        )
       })
       .post("/v1/media/assets/:id/access-url", this.accessUrl, {
-        middlewares: [this.authenticated, this.canRead]
+        middlewares: [this.authenticated, this.canRead],
+        docs: {
+          ...mediaDocs(
+            "Create a temporary media access URL",
+            "createMediaAccessUrl",
+            "Temporary access URL",
+            MediaAccessUrlResponseSchema
+          ),
+          parameters: [
+            queryParameter("expiresInSeconds", { type: "integer", minimum: 1, maximum: 3600 })
+          ]
+        }
       })
-      .get("/v1/media/local/:storageKey", this.deliverLocalAsset)
+      .get("/v1/media/local/:storageKey", this.deliverLocalAsset, {
+        docs: {
+          summary: "Deliver a local media object using a signed URL",
+          tags: ["Media"],
+          operationId: "deliverLocalMediaAsset",
+          parameters: [
+            queryParameter("expires", { type: "integer" }, true),
+            queryParameter("signature", { type: "string" }, true)
+          ],
+          responses: {
+            200: { description: "Media bytes", schema: { type: "string", format: "binary" } },
+            404: {
+              description: "Media object not found",
+              schema: toOpenApiSchema(MediaApiErrorResponseSchema)
+            }
+          }
+        }
+      })
       .get("/v1/media/providers/health", this.providerHealth, {
-        middlewares: [this.authenticated, this.canManageSettings]
+        middlewares: [this.authenticated, this.canManageSettings],
+        docs: mediaDocs(
+          "Check media storage providers",
+          "getMediaProviderHealth",
+          "Provider health",
+          MediaProviderHealthListResponseSchema
+        )
       })
       .get("/v1/media/assets/:id/shares", this.listShares, {
-        middlewares: [this.authenticated, this.canManageShares]
+        middlewares: [this.authenticated, this.canManageShares],
+        docs: mediaDocs(
+          "List media asset shares",
+          "listMediaAssetShares",
+          "Media asset shares",
+          MediaAclEntriesListResponseSchema
+        )
       })
       .put("/v1/media/assets/:id/shares", this.replaceShares, {
-        middlewares: [this.authenticated, this.canManageShares]
+        middlewares: [this.authenticated, this.canManageShares],
+        docs: mediaDocs(
+          "Replace media asset shares",
+          "replaceMediaAssetShares",
+          "Updated media asset shares",
+          MediaAclEntriesListResponseSchema,
+          SharesSchema
+        )
       })
       .delete("/v1/media/assets/:id/shares/:shareId", this.deleteShare, {
-        middlewares: [this.authenticated, this.canManageShares]
+        middlewares: [this.authenticated, this.canManageShares],
+        docs: mediaDocs(
+          "Remove a media asset share",
+          "deleteMediaAssetShare",
+          "Media asset share removed",
+          MediaDeletedResponseSchema
+        )
       })
       .get("/v1/media/directories/:id/shares", this.listDirectoryShares, {
-        middlewares: [this.authenticated, this.canManageShares]
+        middlewares: [this.authenticated, this.canManageShares],
+        docs: mediaDocs(
+          "List media directory shares",
+          "listMediaDirectoryShares",
+          "Media directory shares",
+          MediaAclEntriesListResponseSchema
+        )
       })
       .put("/v1/media/directories/:id/shares", this.replaceDirectoryShares, {
-        middlewares: [this.authenticated, this.canManageShares]
+        middlewares: [this.authenticated, this.canManageShares],
+        docs: mediaDocs(
+          "Replace media directory shares",
+          "replaceMediaDirectoryShares",
+          "Updated media directory shares",
+          MediaAclEntriesListResponseSchema,
+          SharesSchema
+        )
+      })
+      .delete("/v1/media/directories/:id/shares/:shareId", this.deleteDirectoryShare, {
+        middlewares: [this.authenticated, this.canManageShares],
+        docs: mediaDocs(
+          "Remove a media directory share",
+          "deleteMediaDirectoryShare",
+          "Media directory share removed",
+          MediaDeletedResponseSchema
+        )
       })
       .get("/v1/media/directories", this.listDirectories, {
-        middlewares: [this.authenticated, this.canRead]
+        middlewares: [this.authenticated, this.canRead],
+        docs: {
+          ...mediaDocs(
+            "List accessible media directories",
+            "listMediaDirectories",
+            "Media directories",
+            MediaDirectoriesListResponseSchema
+          ),
+          parameters: [queryParameter("parentId", { type: "string" })]
+        }
       })
       .post("/v1/media/directories", this.createDirectory, {
-        middlewares: [this.authenticated, this.canManageDirectories]
+        middlewares: [this.authenticated, this.canManageDirectories],
+        docs: mediaDocs(
+          "Create a media directory",
+          "createMediaDirectory",
+          "Created media directory",
+          MediaDirectoryResponseSchema,
+          DirectorySchema
+        )
       })
       .patch("/v1/media/directories/:id", this.updateDirectory, {
-        middlewares: [this.authenticated, this.canManageDirectories]
+        middlewares: [this.authenticated, this.canManageDirectories],
+        docs: mediaDocs(
+          "Update or move a media directory",
+          "updateMediaDirectory",
+          "Updated media directory",
+          MediaDirectoryResponseSchema,
+          DirectorySchema
+        )
       })
       .delete("/v1/media/directories/:id", this.deleteDirectory, {
-        middlewares: [this.authenticated, this.canManageDirectories]
+        middlewares: [this.authenticated, this.canManageDirectories],
+        docs: mediaDocs(
+          "Delete an empty media directory",
+          "deleteMediaDirectory",
+          "Deleted media directory",
+          MediaDirectoryResponseSchema
+        )
       })
       .build();
   }
@@ -148,11 +298,7 @@ export class MediaAssetsController extends HttpController {
         ...(typeof ctx.query.directoryId === "string"
           ? { directoryId: ctx.query.directoryId }
           : {}),
-        ...(
-          ctx.query.rootOnly === "true"
-            ? { rootOnly: true }
-            : {}
-        ),
+        ...(ctx.query.rootOnly === "true" ? { rootOnly: true } : {}),
         limit: parseQueryNumber(ctx.query.limit),
         offset: parseQueryNumber(ctx.query.offset)
       });
@@ -181,8 +327,11 @@ export class MediaAssetsController extends HttpController {
       const user = getAuthenticatedUser(ctx);
       if (!(await this.assets.canAccessAsset(id, { userId: user.id }, "write"))) return forbidden();
       const input = UpdateAssetSchema.parse(ctx.body);
-      if (input.directoryId && !(await this.directories.getDirectory(input.directoryId))) {
-        return responder.invalidRequest("Target media directory not found");
+      if (
+        input.directoryId &&
+        !(await this.assets.canAccessDirectory(input.directoryId, { userId: user.id }, "write"))
+      ) {
+        return forbidden();
       }
       const updated = await this.assets.updateAsset(id, {
         ...(input.displayName !== undefined ? { displayName: input.displayName } : {}),
@@ -288,11 +437,7 @@ export class MediaAssetsController extends HttpController {
       const user = getAuthenticatedUser(ctx);
       if (!(await this.assets.canAccessAsset(id, { userId: user.id }, "share"))) return forbidden();
       const input = SharesSchema.parse(ctx.body);
-      const shares = await Promise.all(
-        input.grants.map((grant) =>
-          this.assets.shareAsset({ assetId: id, createdByUserId: user.id, ...grant })
-        )
-      );
+      const shares = await this.assets.replaceAssetShares(id, user.id, input.grants);
       return responder.list(shares);
     } catch (error) {
       return responder.fromError(error);
@@ -370,6 +515,12 @@ export class MediaAssetsController extends HttpController {
       if (!(await this.assets.canAccessDirectory(id, { userId: user.id }, "manage")))
         return forbidden();
       const input = DirectorySchema.parse(ctx.body);
+      if (
+        input.parentId &&
+        !(await this.assets.canAccessDirectory(input.parentId, { userId: user.id }, "write"))
+      ) {
+        return forbidden();
+      }
       const directory = await this.directories.updateDirectory(id, {
         ...(input.name !== undefined ? { name: input.name } : {}),
         ...(input.clearParent ? { parentId: null } : {}),
@@ -429,13 +580,25 @@ export class MediaAssetsController extends HttpController {
         return forbidden();
       }
       const input = SharesSchema.parse(ctx.body);
-      return responder.list(
-        await Promise.all(
-          input.grants.map((grant) =>
-            this.assets.shareDirectory({ directoryId: id, createdByUserId: user.id, ...grant })
-          )
-        )
-      );
+      return responder.list(await this.assets.replaceDirectoryShares(id, user.id, input.grants));
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private deleteDirectoryShare = async (ctx: HttpContext) => {
+    const id = ctx.params.id;
+    const shareId = ctx.params.shareId;
+    if (!id || !shareId) return responder.invalidRequest("Missing media directory or share id");
+    try {
+      const user = getAuthenticatedUser(ctx);
+      if (!(await this.assets.canAccessDirectory(id, { userId: user.id }, "share"))) {
+        return forbidden();
+      }
+      const removed = await this.assets.removeDirectoryShare(id, shareId);
+      return removed
+        ? responder.success({ deleted: true })
+        : responder.notFound("Media directory share not found");
     } catch (error) {
       return responder.fromError(error);
     }
@@ -452,7 +615,43 @@ function forbidden() {
 }
 
 function encodeHeaderFilename(value: string) {
-  return encodeURIComponent(value).replace(/['()*]/g, (character) =>
-    `%${character.charCodeAt(0).toString(16).toUpperCase()}`
+  return encodeURIComponent(value).replace(
+    /['()*]/g,
+    (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`
   );
+}
+
+type OpenApiSchemaSource = Parameters<typeof toOpenApiSchema>[0];
+
+function mediaDocs(
+  summary: string,
+  operationId: string,
+  responseDescription: string,
+  responseSchema: OpenApiSchemaSource,
+  requestSchema?: OpenApiSchemaSource
+) {
+  return {
+    summary,
+    tags: ["Media"],
+    operationId,
+    security: [{ bearerAuth: [] }],
+    ...(requestSchema
+      ? { requestBody: { required: true, schema: toOpenApiSchema(requestSchema) } }
+      : {}),
+    responses: okResponse(responseDescription, responseSchema)
+  };
+}
+
+function okResponse(description: string, schema: OpenApiSchemaSource) {
+  return {
+    200: { description, schema: toOpenApiSchema(schema) },
+    400: {
+      description: "Invalid media request",
+      schema: toOpenApiSchema(MediaApiErrorResponseSchema)
+    }
+  };
+}
+
+function queryParameter(name: string, schema: Record<string, unknown>, required = false) {
+  return { name, in: "query" as const, required, schema };
 }

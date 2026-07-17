@@ -1,9 +1,16 @@
-import { MediaStorageSettings, type MediaStorageSettingsContext } from "./media-storage-settings.js";
+import {
+  MediaStorageSettings,
+  type MediaStorageSettingsContext
+} from "./media-storage-settings.js";
 import {
   MediaUploadPolicySettings,
   type MediaUploadPolicySettingsContext
 } from "./media-upload-policy-settings.js";
-import { FileManager, MediaFileManager, type MediaFileManagerContext } from "./media-file-manager.js";
+import {
+  FileManager,
+  MediaFileManager,
+  type MediaFileManagerContext
+} from "./media-file-manager.js";
 import { MediaFileManagerModalDemo } from "./media-file-manager-modal-demo.js";
 import {
   MediaFileManagerWidget,

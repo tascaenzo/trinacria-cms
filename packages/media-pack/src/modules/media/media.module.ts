@@ -99,7 +99,8 @@ export const MediaPackMediaModule: ModuleDefinition = defineModule({
       CORE_TOKENS.DB_ADAPTER
     ]),
     classProvider(MEDIA_DIRECTORIES_SERVICE_TOKEN, MediaDirectoriesService, [
-      MEDIA_DIRECTORIES_REPOSITORY_TOKEN
+      MEDIA_DIRECTORIES_REPOSITORY_TOKEN,
+      MEDIA_ASSETS_REPOSITORY_TOKEN
     ]),
     classProvider(MEDIA_UPLOADS_REPOSITORY_TOKEN, MediaUploadsRepository, [CORE_TOKENS.DB_ADAPTER]),
     classProvider(MEDIA_STORAGE_CONFIG_SERVICE_TOKEN, MediaStorageConfigService, [

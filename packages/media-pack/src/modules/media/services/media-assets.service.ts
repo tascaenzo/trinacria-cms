@@ -27,7 +27,10 @@ export class MediaAssetsService implements MediaAssetsServiceContract {
     return this.repository.findById(assetId);
   }
 
-  async getAssetByStorage(providerId: string, storageKey: string): Promise<MediaAssetRecord | null> {
+  async getAssetByStorage(
+    providerId: string,
+    storageKey: string
+  ): Promise<MediaAssetRecord | null> {
     return this.repository.findByStorage(providerId, storageKey);
   }
 
@@ -75,9 +78,17 @@ export class MediaAssetsService implements MediaAssetsServiceContract {
     return deleted;
   }
 
+  async listDeletedAssetsBefore(cutoff: string) {
+    return this.repository.listDeletedBefore(cutoff);
+  }
+
+  async hardDeleteAsset(assetId: string): Promise<boolean> {
+    return this.repository.hardDelete(assetId);
+  }
+
   async shareAsset(input: ReplaceMediaAssetAccessInput) {
     const entry = await this.repository.replaceAccess(input);
-    const asset = await this.repository.findById(input.assetId);
+    const asset = await this.repository.bumpAclVersion(input.assetId);
     if (asset) {
       await this.events?.emit("asset-access-changed", {
         assetId: asset.id,
@@ -94,8 +105,8 @@ export class MediaAssetsService implements MediaAssetsServiceContract {
 
   async removeAssetShare(assetId: string, shareId: string): Promise<boolean> {
     const removed = await this.repository.deleteAccessEntryForTarget("asset", assetId, shareId);
-    const asset = await this.repository.findById(assetId);
-    if (removed && asset) {
+    const asset = removed ? await this.repository.bumpAclVersion(assetId) : null;
+    if (asset) {
       await this.events?.emit("asset-access-changed", {
         assetId: asset.id,
         visibility: asset.visibility,
@@ -117,6 +128,67 @@ export class MediaAssetsService implements MediaAssetsServiceContract {
 
   async listDirectoryShares(directoryId: string) {
     return this.repository.listAccessEntriesForTarget("directory", directoryId);
+  }
+
+  async replaceAssetShares(
+    assetId: string,
+    createdByUserId: string,
+    grants: readonly MediaGrant[]
+  ) {
+    const normalized = normalizeGrants(grants);
+    const desiredKeys = new Set(normalized.map(principalKey));
+    const existing = await this.repository.listAccessEntriesForTarget("asset", assetId);
+    await Promise.all(
+      existing
+        .filter((entry) => !desiredKeys.has(principalKey(entry)))
+        .map((entry) => this.repository.deleteAccessEntryForTarget("asset", assetId, entry.id))
+    );
+    await Promise.all(
+      normalized.map((grant) =>
+        this.repository.replaceAccess({ assetId, createdByUserId, ...grant })
+      )
+    );
+    const asset = await this.repository.bumpAclVersion(assetId);
+    if (asset) {
+      await this.events?.emit("asset-access-changed", {
+        assetId: asset.id,
+        visibility: asset.visibility,
+        aclVersion: asset.aclVersion
+      });
+    }
+    return this.repository.listAccessEntriesForTarget("asset", assetId);
+  }
+
+  async replaceDirectoryShares(
+    directoryId: string,
+    createdByUserId: string,
+    grants: readonly MediaGrant[]
+  ) {
+    const normalized = normalizeGrants(grants);
+    const desiredKeys = new Set(normalized.map(principalKey));
+    const existing = await this.repository.listAccessEntriesForTarget("directory", directoryId);
+    await Promise.all(
+      existing
+        .filter((entry) => !desiredKeys.has(principalKey(entry)))
+        .map((entry) =>
+          this.repository.deleteAccessEntryForTarget("directory", directoryId, entry.id)
+        )
+    );
+    await Promise.all(
+      normalized.map((grant) =>
+        this.repository.replaceAccessForTarget({
+          ...grant,
+          assetId: directoryId,
+          createdByUserId,
+          targetType: "directory"
+        })
+      )
+    );
+    return this.repository.listAccessEntriesForTarget("directory", directoryId);
+  }
+
+  async removeDirectoryShare(directoryId: string, shareId: string): Promise<boolean> {
+    return this.repository.deleteAccessEntryForTarget("directory", directoryId, shareId);
   }
 
   async canAccessAsset(
@@ -219,12 +291,32 @@ export class MediaAssetsService implements MediaAssetsServiceContract {
     while (currentId && !seen.has(currentId)) {
       seen.add(currentId);
       const directory = await this.directories.findById(currentId);
-      if (!directory || directory.deletedAt || !directory.inheritAcl) break;
+      if (!directory || directory.deletedAt) break;
       entries.push(
         ...(await this.repository.listAccessEntriesForTarget("directory", directory.id))
       );
+      if (!directory.inheritAcl) break;
       currentId = directory.parentId;
     }
     return entries;
   }
+}
+
+type MediaGrant = Omit<ReplaceMediaAssetAccessInput, "assetId" | "createdByUserId">;
+
+function principalKey(grant: Pick<MediaGrant, "principalType" | "principalId">): string {
+  return `${grant.principalType}:${grant.principalId.trim()}`;
+}
+
+function normalizeGrants(grants: readonly MediaGrant[]): MediaGrant[] {
+  const normalized = new Map<string, MediaGrant>();
+  for (const grant of grants) {
+    if (grant.actions.length === 0) continue;
+    normalized.set(principalKey(grant), {
+      ...grant,
+      principalId: grant.principalId.trim(),
+      actions: [...new Set(grant.actions)]
+    });
+  }
+  return [...normalized.values()];
 }

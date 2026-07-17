@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Dialog } from "@trinacria-cms/trinacria-ui";
+import { Button, Dialog } from "@trinacria-cms/trinacria-ui";
 import type {
   AdminSettingsSectionRenderContext,
   RenderableAdminSettingsSection
@@ -21,10 +21,7 @@ import {
   parseSettingFormValue
 } from "./settings-page.utils.js";
 import { SettingsSectionForm, SettingsWorkspaceSidebar } from "./settings-page.components.js";
-import {
-  useSettingsDefinitions,
-  useSettingsSectionDrafts
-} from "./settings-page.hooks.js";
+import { useSettingsDefinitions, useSettingsSectionDrafts } from "./settings-page.hooks.js";
 
 export interface SettingsPageProps {
   sectionContext?: Omit<AdminSettingsSectionRenderContext, "section">;
@@ -183,7 +180,8 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
   }
 
   return (
-    <Dialog
+    <div className="h-full min-h-0">
+      <Dialog
         open={isInspectOpen}
         title={t("official.route.settings.title", "Impostazioni")}
         description={selectedSection?.summary ?? selectedSection?.title}
@@ -193,7 +191,11 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
         onClose={closeSettingsWorkspace}
         width="fullscreen"
       >
-        {error ? <div className="p-6"><ErrorBanner message={error} /></div> : null}
+        {error ? (
+          <div className="p-6">
+            <ErrorBanner message={error} />
+          </div>
+        ) : null}
         {isLoading ? <EmptyState text={t("settings.empty.loading_definitions")} /> : null}
         {!isLoading ? (
           <div className="grid h-full min-h-0 bg-[color:var(--color-surface)] lg:grid-cols-[320px_minmax(0,1fr)]">
@@ -228,19 +230,32 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
         open={isMfaRequiredConfirmationOpen}
         onClose={() => setIsMfaRequiredConfirmationOpen(false)}
         title={t("settings.mfa_required.title", "Require two-factor authentication?")}
-        description={t("settings.mfa_required.summary", "Review the impact before saving this policy.")}
+        description={t(
+          "settings.mfa_required.summary",
+          "Review the impact before saving this policy."
+        )}
         width="md"
         variant="modal"
       >
         <div className="grid gap-4">
           <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
-            {t("settings.mfa_required.line1", "At the next password login, every user without 2FA will be guided through setup before receiving a session.")}
+            {t(
+              "settings.mfa_required.line1",
+              "At the next password login, every user without 2FA will be guided through setup before receiving a session."
+            )}
           </p>
           <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
-            {t("settings.mfa_required.line2", "Users who already configured 2FA will need their authenticator or a recovery code to sign in.")}
+            {t(
+              "settings.mfa_required.line2",
+              "Users who already configured 2FA will need their authenticator or a recovery code to sign in."
+            )}
           </p>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="secondary" onClick={() => setIsMfaRequiredConfirmationOpen(false)}>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setIsMfaRequiredConfirmationOpen(false)}
+            >
               {t("common.actions.cancel", "Cancel")}
             </Button>
             <Button

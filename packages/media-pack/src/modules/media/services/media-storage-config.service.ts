@@ -8,9 +8,11 @@ import type { MediaStorageProvider } from "../media-storage.types.js";
 
 const PREFIX = `${MEDIA_PACK_PLUGIN_ID}:storage`;
 const LIMITS_PREFIX = `${MEDIA_PACK_PLUGIN_ID}:limits`;
+const RETENTION_PREFIX = `${MEDIA_PACK_PLUGIN_ID}:retention`;
 
 export interface MediaUploadPolicy {
   maxFileBytes: number;
+  maxImagePixels: number;
   allowedMimeTypes: readonly string[];
 }
 
@@ -68,11 +70,16 @@ export class MediaStorageConfigService {
   }
 
   async getUploadPolicy(): Promise<MediaUploadPolicy> {
-    const [maxFileBytes, configuredMimeTypes] = await Promise.all([
+    const [maxFileBytes, maxImagePixels, configuredMimeTypes] = await Promise.all([
       this.runtime.getNumber(`${LIMITS_PREFIX}:max_file_bytes`, {
         fallback: MEDIA_PACK_DEFAULT_UPLOAD_POLICY.maxFileBytes,
         min: 1,
         max: 5_000_000_000
+      }),
+      this.runtime.getNumber(`${LIMITS_PREFIX}:max_image_pixels`, {
+        fallback: 40_000_000,
+        min: 1,
+        max: 1_000_000_000
       }),
       this.runtime.getJson<unknown>(`${LIMITS_PREFIX}:allowed_mime_types`, {
         fallback: MEDIA_PACK_DEFAULT_UPLOAD_POLICY.allowedMimeTypes
@@ -86,10 +93,21 @@ export class MediaStorageConfigService {
       : [];
     return {
       maxFileBytes: maxFileBytes ?? MEDIA_PACK_DEFAULT_UPLOAD_POLICY.maxFileBytes,
+      maxImagePixels: maxImagePixels ?? MEDIA_PACK_DEFAULT_UPLOAD_POLICY.maxImagePixels,
       allowedMimeTypes: allowedMimeTypes.length
         ? [...new Set(allowedMimeTypes)]
         : MEDIA_PACK_DEFAULT_UPLOAD_POLICY.allowedMimeTypes
     };
+  }
+
+  async getDeletedAssetRetentionDays(): Promise<number> {
+    return (
+      (await this.runtime.getNumber(`${RETENTION_PREFIX}:deleted_asset_days`, {
+        fallback: 30,
+        min: 1,
+        max: 3650
+      })) ?? 30
+    );
   }
 
   private async readSecret(key: string): Promise<string | undefined> {

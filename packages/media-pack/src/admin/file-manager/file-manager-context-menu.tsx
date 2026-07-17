@@ -51,17 +51,38 @@ export function FileManagerContextMenu({
       {menu.asset ? (
         <>
           <ContextMenuItem icon="eye" label="Apri" onClick={() => command(onOpen)} />
-          <ContextMenuItem icon="info" label="Mostra proprietà" onClick={() => command(onProperties)} />
+          <ContextMenuItem
+            icon="info"
+            label="Mostra proprietà"
+            onClick={() => command(onProperties)}
+          />
           <ContextMenuItem icon="pencil" label="Rinomina" onClick={() => command(onRename)} />
           <ContextMenuItem icon="folder-input" label="Sposta in…" onClick={() => command(onMove)} />
           <div className="my-1 border-t border-black/10" />
-          <ContextMenuItem danger icon="trash-2" label="Sposta nel cestino" onClick={() => command(onDelete)} />
+          <ContextMenuItem
+            danger
+            icon="trash-2"
+            label="Sposta nel cestino"
+            onClick={() => command(onDelete)}
+          />
         </>
       ) : (
         <>
-          <ContextMenuItem icon="folder-plus" label="Nuova cartella" onClick={() => command(onCreateFolder)} />
-          <ContextMenuItem icon="file-plus-2" label="Nuovo file CSV" onClick={() => command(onCreateCsv)} />
-          <ContextMenuItem icon="file-plus-2" label="Nuovo file di testo" onClick={() => command(onCreateTextFile)} />
+          <ContextMenuItem
+            icon="folder-plus"
+            label="Nuova cartella"
+            onClick={() => command(onCreateFolder)}
+          />
+          <ContextMenuItem
+            icon="file-plus-2"
+            label="Nuovo file CSV"
+            onClick={() => command(onCreateCsv)}
+          />
+          <ContextMenuItem
+            icon="file-plus-2"
+            label="Nuovo file di testo"
+            onClick={() => command(onCreateTextFile)}
+          />
           <div className="my-1 border-t border-black/10" />
           <ContextMenuItem icon="upload" label="Carica file…" onClick={() => command(onUpload)} />
         </>
@@ -70,6 +91,26 @@ export function FileManagerContextMenu({
   );
 }
 
-function ContextMenuItem({ danger = false, icon, label, onClick }: { danger?: boolean; icon: string; label: string; onClick: () => void }) {
-  return <button type="button" role="menuitem" onClick={onClick} className={`flex h-9 w-full items-center gap-2 rounded-lg px-3 text-left text-sm transition ${danger ? "text-red-700 hover:bg-red-50" : "text-slate-700 hover:bg-slate-100"}`}><Icon name={icon} className="h-4 w-4" /><span>{label}</span></button>;
+function ContextMenuItem({
+  danger = false,
+  icon,
+  label,
+  onClick
+}: {
+  danger?: boolean;
+  icon: string;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      onClick={onClick}
+      className={`flex h-9 w-full items-center gap-2 rounded-lg px-3 text-left text-sm transition ${danger ? "text-red-700 hover:bg-red-50" : "text-slate-700 hover:bg-slate-100"}`}
+    >
+      <Icon name={icon} className="h-4 w-4" />
+      <span>{label}</span>
+    </button>
+  );
 }

@@ -3,9 +3,9 @@
 ## Stato
 
 - Milestone: prossima milestone dominio, dopo `M6`
-- Stato: `implemented-v0`
+- Stato: `production-candidate-v0`
 - Scope: specifica low-level del primo plugin dominio di media
-- Ultimo aggiornamento: `2026-07-16`
+- Ultimo aggiornamento: `2026-07-17`
 
 ## 1. Decisione
 
@@ -25,7 +25,8 @@ cambiare il modello asset.
 Decisioni chiuse per v0:
 
 - i byte non sono memorizzati in Mongo;
-- ogni asset ha `providerId` immutabile dopo il completamento dell'upload;
+- l'identita dell'asset resta stabile; una sostituzione di contenuto puo
+  aggiornare `providerId` e `storageKey` senza cambiare `assetId`;
 - le directory sono virtuali, non cartelle/prefissi fisici;
 - il provider predefinito e unico per installazione, ma il modello permette
   provider diversi per asset e una futura policy per directory;
@@ -34,14 +35,14 @@ Decisioni chiuse per v0:
 
 ## 2. Responsabilita
 
-| Area | Owner | Responsabilita |
-| --- | --- | --- |
-| Lifecycle, manifest, namespace | `kernel` | Caricamento plugin e dipendenze |
-| Settings e secret | `core-pack` | Configurazione provider, limiti, cifratura e audit |
-| Asset e directory | `media-pack` | Modello dominio, repository, ACL e policy |
-| Byte storage | provider del media pack | Scrittura, lettura controllata, delete e health |
-| Picker e gestione asset | media pack + `admin-kernel` | UI admin e SDK |
-| Riferimenti nei contenuti | `editorial-pack` | `assetId`, alt text, caption, crop e placement |
+| Area                           | Owner                       | Responsabilita                                     |
+| ------------------------------ | --------------------------- | -------------------------------------------------- |
+| Lifecycle, manifest, namespace | `kernel`                    | Caricamento plugin e dipendenze                    |
+| Settings e secret              | `core-pack`                 | Configurazione provider, limiti, cifratura e audit |
+| Asset e directory              | `media-pack`                | Modello dominio, repository, ACL e policy          |
+| Byte storage                   | provider del media pack     | Scrittura, lettura controllata, delete e health    |
+| Picker e gestione asset        | media pack + `admin-kernel` | UI admin e SDK                                     |
+| Riferimenti nei contenuti      | `editorial-pack`            | `assetId`, alt text, caption, crop e placement     |
 
 `media-pack` non e owner di post, blocchi editoriali, SEO o pubblicazione.
 `editorial-pack` non e owner del MIME type, storage key o visibilita effettiva
@@ -169,7 +170,9 @@ permanenti al browser. `s3-compatible` puo restituire una URL presigned;
 ### Servizio pubblico per altri plugin
 
 ```ts
-export interface MediaAssetReference { assetId: string }
+export interface MediaAssetReference {
+  assetId: string;
+}
 
 export interface MediaAssetUseResult {
   asset: Pick<MediaAsset, "id" | "mimeType" | "status" | "visibility">;
@@ -210,23 +213,23 @@ definePluginManifest({
 Tutte le API sono owner `media-pack`, usano admin bearer e envelope API
 standard. Gli endpoint di storage non restituiscono credenziali permanenti.
 
-| Metodo | Path | Permission | Scopo |
-| --- | --- | --- | --- |
-| `GET` | `/v1/media/assets` | `media-pack:assets:read` | Lista filtrabile e picker |
-| `POST` | `/v1/media/uploads` | `media-pack:assets:upload` | Avvia upload sicuro |
-| `PUT` | `/v1/media/uploads/{id}/content` | `media-pack:assets:upload` | Stream proxy per provider locale/custom |
-| `POST` | `/v1/media/uploads/{id}/complete` | `media-pack:assets:upload` | Completa e valida upload |
-| `GET` | `/v1/media/assets/{id}` | read + ACL | Dettaglio metadata |
-| `PATCH` | `/v1/media/assets/{id}` | update + ACL write | Nome, directory, visibilita |
-| `DELETE` | `/v1/media/assets/{id}` | delete + ACL manage | Soft delete |
-| `POST` | `/v1/media/assets/{id}/access-url` | read + ACL | URL temporanea |
-| `GET` | `/v1/media/directories` | `media-pack:assets:read` | Directory visibili |
-| `POST` | `/v1/media/directories` | `media-pack:directories:manage` | Crea directory |
-| `PATCH` | `/v1/media/directories/{id}` | directories manage + ACL manage | Rinomina/sposta/policy |
-| `DELETE` | `/v1/media/directories/{id}` | directories manage + ACL manage | Elimina directory vuota |
-| `GET` | `/v1/media/{targetType}/{targetId}/shares` | shares manage + ACL share | Legge ACL |
-| `PUT` | `/v1/media/{targetType}/{targetId}/shares` | shares manage + ACL share | Sostituisce ACL |
-| `GET` | `/v1/media/providers/health` | `media-pack:settings:manage` | Stato provider senza secret |
+| Metodo   | Path                                       | Permission                      | Scopo                                   |
+| -------- | ------------------------------------------ | ------------------------------- | --------------------------------------- |
+| `GET`    | `/v1/media/assets`                         | `media-pack:assets:read`        | Lista filtrabile e picker               |
+| `POST`   | `/v1/media/uploads`                        | `media-pack:assets:upload`      | Avvia upload sicuro                     |
+| `PUT`    | `/v1/media/uploads/{id}/content`           | `media-pack:assets:upload`      | Stream proxy per provider locale/custom |
+| `POST`   | `/v1/media/uploads/{id}/complete`          | `media-pack:assets:upload`      | Completa e valida upload                |
+| `GET`    | `/v1/media/assets/{id}`                    | read + ACL                      | Dettaglio metadata                      |
+| `PATCH`  | `/v1/media/assets/{id}`                    | update + ACL write              | Nome, directory, visibilita             |
+| `DELETE` | `/v1/media/assets/{id}`                    | delete + ACL manage             | Soft delete                             |
+| `POST`   | `/v1/media/assets/{id}/access-url`         | read + ACL                      | URL temporanea                          |
+| `GET`    | `/v1/media/directories`                    | `media-pack:assets:read`        | Directory visibili                      |
+| `POST`   | `/v1/media/directories`                    | `media-pack:directories:manage` | Crea directory                          |
+| `PATCH`  | `/v1/media/directories/{id}`               | directories manage + ACL manage | Rinomina/sposta/policy                  |
+| `DELETE` | `/v1/media/directories/{id}`               | directories manage + ACL manage | Elimina directory vuota                 |
+| `GET`    | `/v1/media/{targetType}/{targetId}/shares` | shares manage + ACL share       | Legge ACL                               |
+| `PUT`    | `/v1/media/{targetType}/{targetId}/shares` | shares manage + ACL share       | Sostituisce ACL                         |
+| `GET`    | `/v1/media/providers/health`               | `media-pack:settings:manage`    | Stato provider senza secret             |
 
 L'upload S3-compatible restituisce una URL presigned e richiede
 `checksumSha256` esadecimale nel preflight; la response contiene gli header
@@ -258,7 +261,9 @@ export interface CreateMediaUploadResponseDto {
   requiredHeaders?: Record<string, string>;
 }
 
-export interface CompleteMediaUploadRequestDto { storageUploadToken?: string }
+export interface CompleteMediaUploadRequestDto {
+  storageUploadToken?: string;
+}
 
 export interface UpdateMediaAssetRequestDto {
   displayName?: string;
@@ -284,34 +289,35 @@ server verifica dimensione, checksum e contenuto prima di emettere un asset
 Tutte le collection usano il namespace fisico del plugin:
 `plugin_media_pack__<entity>`.
 
-| Collection | Indici principali | Note |
-| --- | --- | --- |
-| `plugin_media_pack__assets` | `id` unique; `{ directoryId, status, updatedAt }`; `{ ownerUserId, createdAt }`; `{ providerId, storageKey }` unique | Nessun byte binario |
-| `plugin_media_pack__directories` | `id` unique; `{ parentId, name }` unique sui record non eliminati | Directory virtuali |
-| `plugin_media_pack__acl_entries` | `{ targetType, targetId, principal.type, principal.id }` unique | Grant e scadenze |
-| `plugin_media_pack__uploads` | `id` unique; `{ expiresAt }` TTL; `{ status, createdAt }` | Sessioni upload effimere |
+| Collection                       | Indici principali                                                                                                                             | Note                                                |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `plugin_media_pack__assets`      | `id` unique; `{ directoryId, status, updatedAt }`; `{ status, deletedAt }`; `{ ownerUserId, createdAt }`; `{ providerId, storageKey }` unique | Nessun byte binario                                 |
+| `plugin_media_pack__directories` | `id` unique; `{ parentId, name }` unique; il tombstone riceve un nome tecnico                                                                 | Directory virtuali                                  |
+| `plugin_media_pack__acl_entries` | `{ targetType, targetId, principal.type, principal.id }` unique                                                                               | Grant e scadenze                                    |
+| `plugin_media_pack__uploads`     | `id` unique; `{ expiresAt }`; `{ status, updatedAt }`; `{ ownerUserId, status, createdAt }`                                                   | Sessioni effimere eliminate dal cleanup pianificato |
 
-Campi audit obbligatori: `createdAt`, `updatedAt`, `createdBy`, `updatedBy`;
-per delete: `deletedAt`, `deletedBy`. L'upload incompleto scade via TTL e un
-cleanup elimina anche l'oggetto temporaneo, best effort.
+I record conservano `createdAt` e `updatedAt`; ownership e attore sono espressi
+con `ownerUserId`, `uploadedByUserId` e `createdByUserId` per gli ACL. L'upload
+incompleto scade dopo quindici minuti: il cleanup elimina lo staging object e
+rimuove i record terminali dopo ventiquattro ore.
 
 ## 8. Settings
 
 Settings del media pack, tutte owner `media-pack`:
 
-| Chiave | Visibilita | Scopo |
-| --- | --- | --- |
-| `media-pack:storage:default_provider_id` | protected | Provider attivo |
-| `media-pack:storage:local_root` | protected | Root del provider locale |
-| `media-pack:storage:s3_endpoint` | protected | Endpoint S3-compatible |
-| `media-pack:storage:s3_bucket` | protected | Bucket |
-| `media-pack:storage:s3_region` | protected | Region S3-compatible |
-| `media-pack:storage:s3_access_key` | secret | Credenziale S3 |
-| `media-pack:storage:s3_secret_key` | secret | Credenziale S3 |
-| `media-pack:limits:max_file_bytes` | protected | Dimensione massima file |
-| `media-pack:limits:allowed_mime_types` | protected | Allowlist MIME |
-| `media-pack:limits:max_image_pixels` | protected | Limite immagine |
-| `media-pack:retention:deleted_asset_days` | protected | Retention cestino |
+| Chiave                                    | Visibilita | Scopo                    |
+| ----------------------------------------- | ---------- | ------------------------ |
+| `media-pack:storage:default_provider_id`  | protected  | Provider attivo          |
+| `media-pack:storage:local_root`           | protected  | Root del provider locale |
+| `media-pack:storage:s3_endpoint`          | protected  | Endpoint S3-compatible   |
+| `media-pack:storage:s3_bucket`            | protected  | Bucket                   |
+| `media-pack:storage:s3_region`            | protected  | Region S3-compatible     |
+| `media-pack:storage:s3_access_key`        | secret     | Credenziale S3           |
+| `media-pack:storage:s3_secret_key`        | secret     | Credenziale S3           |
+| `media-pack:limits:max_file_bytes`        | protected  | Dimensione massima file  |
+| `media-pack:limits:allowed_mime_types`    | protected  | Allowlist MIME           |
+| `media-pack:limits:max_image_pixels`      | protected  | Limite immagine          |
+| `media-pack:retention:deleted_asset_days` | protected  | Retention cestino        |
 
 La v0 applica limiti globali. Quota per utente/ruolo e provider per directory
 restano estensioni compatibili con il modello.
@@ -320,31 +326,33 @@ restano estensioni compatibili con il modello.
 
 All'avvio il plugin elimina subito le sessioni scadute e avvia un cleanup
 best-effort ogni cinque minuti; l'operazione e idempotente e rimuove anche lo
-staging object. `GET /v1/media/providers/health` restituisce solo id, kind,
+staging object. Lo stesso processo elimina asset e byte dopo
+`retention:deleted_asset_days`, mantenendo il tombstone quando lo storage non e
+raggiungibile per poter ritentare. `GET /v1/media/providers/health` restituisce solo id, kind,
 selezione e stato (`ok`, `degraded`, `down`), mai endpoint o credenziali.
 
 ## 9. Security e permission
 
-| Permission | Scopo |
-| --- | --- |
-| `media-pack:assets:read` | Lista, metadata e URL se ACL consente |
-| `media-pack:assets:upload` | Creazione e completion upload |
-| `media-pack:assets:update` | Metadata, directory e visibilita autorizzati |
-| `media-pack:assets:delete` | Soft delete autorizzato |
-| `media-pack:directories:manage` | Gestione directory |
-| `media-pack:shares:manage` | ACL e condivisione |
-| `media-pack:settings:manage` | Limiti, provider e policy |
+| Permission                      | Scopo                                        |
+| ------------------------------- | -------------------------------------------- |
+| `media-pack:assets:read`        | Lista, metadata e URL se ACL consente        |
+| `media-pack:assets:upload`      | Creazione e completion upload                |
+| `media-pack:assets:update`      | Metadata, directory e visibilita autorizzati |
+| `media-pack:assets:delete`      | Soft delete autorizzato                      |
+| `media-pack:directories:manage` | Gestione directory                           |
+| `media-pack:shares:manage`      | ACL e condivisione                           |
+| `media-pack:settings:manage`    | Limiti, provider e policy                    |
 
 Le permission sono il gate grossolano. Il service applica poi ACL, ownership,
 scadenza grant e stato asset. Un utente con `assets:read` non legge ogni asset
 privato automaticamente.
 
-| Ruolo | Grant media proposto |
-| --- | --- |
-| `author` | read, upload e update sui propri asset |
-| `editor` | read, upload, update e uso degli asset consentiti |
+| Ruolo           | Grant media proposto                                    |
+| --------------- | ------------------------------------------------------- |
+| `author`        | read, upload e update sui propri asset                  |
+| `editor`        | read, upload, update e uso degli asset consentiti       |
 | `media-manager` | tutte le permission media eccetto settings, se separato |
-| `admin` | tutte |
+| `admin`         | tutte                                                   |
 
 Il browser non e autorita: nasconde azioni non consentite, ma backend e ACL
 decidono. Access key e secret S3 non entrano in DTO di risposta o log/audit.
@@ -358,34 +366,34 @@ pubblico un asset privato per errore.
 
 ## 10. Eventi
 
-| Evento | Visibility | Delivery | Payload minimo | Quando |
-| --- | --- | --- | --- | --- |
-| `media-pack:asset-ready` | protected | async | `{ assetId, mimeType, visibility }` | Validazione conclusa |
-| `media-pack:asset-rejected` | protected | async | `{ assetId, reason }` | Validazione/scanning fallisce |
-| `media-pack:asset-deleted` | protected | async | `{ assetId, deletedAt }` | Soft delete |
-| `media-pack:asset-access-changed` | protected | async | `{ assetId, visibility, aclVersion }` | ACL/visibility cambia |
-| `media-pack:asset-uploaded` | audit | sync | `{ assetId, actorId, providerId }` | Upload completato |
+| Evento                            | Visibility | Delivery | Payload minimo                        | Quando                        |
+| --------------------------------- | ---------- | -------- | ------------------------------------- | ----------------------------- |
+| `media-pack:asset-ready`          | protected  | async    | `{ assetId, mimeType, visibility }`   | Validazione conclusa          |
+| `media-pack:asset-rejected`       | protected  | async    | `{ assetId, reason }`                 | Validazione/scanning fallisce |
+| `media-pack:asset-deleted`        | protected  | async    | `{ assetId, deletedAt }`              | Soft delete                   |
+| `media-pack:asset-access-changed` | protected  | async    | `{ assetId, visibility, aclVersion }` | ACL/visibility cambia         |
+| `media-pack:asset-uploaded`       | audit      | sync     | `{ assetId, actorId, providerId }`    | Upload completato             |
 
 Gli handler editoriali devono essere idempotenti. L'evento informa di una
 variazione; la validazione sincrona resta la fonte di verita prima del publish.
 
 ## 11. Errori
 
-| Code | HTTP | Quando |
-| --- | --- | --- |
-| `media_asset_not_found` | 404 | Asset assente o non visibile |
-| `media_directory_not_found` | 404 | Directory assente/non visibile |
-| `media_upload_expired` | 410 | Completion dopo scadenza |
-| `media_file_too_large` | 413 | Limite superato |
-| `media_mime_type_denied` | 415 | MIME rilevato non consentito |
-| `media_content_invalid` | 422 | Metadata/contenuto incoerenti |
-| `media_asset_not_ready` | 409 | Asset non usabile |
-| `media_asset_not_publishable` | 409 | Asset non idoneo al pubblico |
-| `media_access_denied` | 403 | Permission o ACL insufficienti |
-| `media_acl_invalid` | 422 | Grant/principal/scadenza non validi |
-| `media_provider_unavailable` | 503 | Provider non disponibile |
-| `media_storage_integrity_failed` | 502 | Oggetto/checksum non verificabile |
-| `media_directory_not_empty` | 409 | Delete directory con figli/asset |
+| Code                             | HTTP | Quando                              |
+| -------------------------------- | ---- | ----------------------------------- |
+| `media_asset_not_found`          | 404  | Asset assente o non visibile        |
+| `media_directory_not_found`      | 404  | Directory assente/non visibile      |
+| `media_upload_expired`           | 410  | Completion dopo scadenza            |
+| `media_file_too_large`           | 413  | Limite superato                     |
+| `media_mime_type_denied`         | 415  | MIME rilevato non consentito        |
+| `media_content_invalid`          | 422  | Metadata/contenuto incoerenti       |
+| `media_asset_not_ready`          | 409  | Asset non usabile                   |
+| `media_asset_not_publishable`    | 409  | Asset non idoneo al pubblico        |
+| `media_access_denied`            | 403  | Permission o ACL insufficienti      |
+| `media_acl_invalid`              | 422  | Grant/principal/scadenza non validi |
+| `media_provider_unavailable`     | 503  | Provider non disponibile            |
+| `media_storage_integrity_failed` | 502  | Oggetto/checksum non verificabile   |
+| `media_directory_not_empty`      | 409  | Delete directory con figli/asset    |
 
 ## 12. Lifecycle
 
@@ -437,7 +445,7 @@ lifecycle.
 - provider per directory e migrazione automatica cross-provider;
 - multipart/resumable oltre quanto strettamente richiesto dal provider S3.
 
-## 16. Gap rispetto al codice attuale
+## 16. Stato implementazione
 
 Implementato in `@trinacria-cms/media-pack`:
 
@@ -446,8 +454,13 @@ Implementato in `@trinacria-cms/media-pack`:
 - adapter S3-compatible con staging privato, verifica checksum e URL presigned;
 - provider registry estendibile e selezione runtime da settings protetti/secret;
 - upload proxy, verifica della dimensione e della firma dei formati JPEG, PNG,
-  WebP e PDF, completion e cleanup esplicito delle sessioni scadute;
-- asset, directory, ACL asset-specifiche e endpoint HTTP per gestione/picker;
+  WebP e PDF, limite reale dei pixel, completion e cleanup delle sessioni;
+- asset, directory virtuali senza cicli, ACL ereditate e sostituzione completa
+  dei grant con controlli backend sulle destinazioni di upload e spostamento;
+- retention e purge idempotente di record, ACL e oggetti dei provider;
+- file manager amministrativo, editor testo/CSV, preview immagini e widget;
+- OpenAPI e SDK generato per upload, asset, directory, condivisioni e delivery;
+- unit test, integrazione Mongo e smoke contract S3-compatible tramite MinIO;
 - contribution amministrativa dichiarativa e registrazione nel playground;
 - contratto capability tipizzato `MEDIA_ASSETS_SERVICE_TOKEN` per
   `editorial-pack`.
@@ -456,12 +469,15 @@ Restano da sviluppare con il futuro `editorial-pack` soltanto il componente UI
 picker concreto e il consumer che richiama `validateUse` durante authoring e
 pubblicazione. Non richiedono accesso diretto a Mongo o modifiche al media pack.
 
-## Open questions
+## Decisioni operative v0
 
-1. Un asset `public` e allegabile a contenuti pubblici direttamente, o richiede
-   un'esplicita azione di publish asset?
-2. La quota deve essere globale soltanto o per utente/ruolo gia nella v0?
-3. `local-disk` e ammesso in produzione o solo development/test?
-4. Al delete di un asset referenziato, l'editoriale blocca, usa placeholder o
-   segnala solamente la reference rotta?
-5. Il primo provider S3 deve supportare multipart/resumable gia nella v0?
+1. La visibilita `public` e l'azione esplicita che rende l'asset utilizzabile in
+   pubblicazione; `validateUse` rifiuta asset privati, eliminati o non pronti.
+2. Limiti e quota sono globali nella v0; quote per utente o ruolo sono evolutive.
+3. `local-disk` e raccomandato per sviluppo, test o deployment single-node con
+   volume durevole. Deployment multi-replica devono usare S3-compatible.
+4. La cancellazione rende subito la reference non utilizzabile ed emette
+   `asset-deleted`; il futuro editorial pack deve bloccare una nuova
+   pubblicazione finche la reference non viene sostituita.
+5. Multipart e resumable non fanno parte della v0; il provider S3 usa upload
+   presigned singolo con checksum SHA-256 obbligatorio.

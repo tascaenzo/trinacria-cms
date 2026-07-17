@@ -143,6 +143,8 @@ export class MediaAssetsRepository {
       checksum: MediaAssetRecord["checksum"];
       providerId: string;
       storageKey: string;
+      width?: number;
+      height?: number;
     }
   ): Promise<MediaAssetRecord | null> {
     const updated = await this.assets().updateOne(
@@ -156,8 +158,8 @@ export class MediaAssetsRepository {
         providerId: input.providerId.trim().toLowerCase(),
         storageKey: input.storageKey.trim(),
         status: "ready",
-        width: undefined,
-        height: undefined,
+        width: input.width,
+        height: input.height,
         durationMs: undefined,
         deletedAt: undefined,
         updatedAt: new Date().toISOString()
@@ -183,6 +185,19 @@ export class MediaAssetsRepository {
     return updated ? MediaAssetRecordSchema.parse(updated) : null;
   }
 
+  async bumpAclVersion(id: string): Promise<MediaAssetRecord | null> {
+    const existing = await this.findById(id);
+    if (!existing) return null;
+    const updated = await this.assets().updateOne(
+      { filter: { id: existing.id } },
+      {
+        aclVersion: existing.aclVersion + 1,
+        updatedAt: new Date().toISOString()
+      }
+    );
+    return updated ? MediaAssetRecordSchema.parse(updated) : null;
+  }
+
   async softDelete(id: string): Promise<MediaAssetRecord | null> {
     const existing = await this.findById(id);
     if (!existing) return null;
@@ -197,6 +212,24 @@ export class MediaAssetsRepository {
       }
     );
     return updated ? MediaAssetRecordSchema.parse(updated) : null;
+  }
+
+  async listDeletedBefore(cutoff: string): Promise<readonly MediaAssetRecord[]> {
+    return this.assets().findMany({
+      filter: { status: "deleted", deletedAt: { $lte: cutoff } },
+      parse: (value: unknown) => MediaAssetRecordSchema.parse(value)
+    });
+  }
+
+  async hardDelete(id: string): Promise<boolean> {
+    const assetId = id.trim();
+    const entries = await this.listAccessEntriesForTarget("asset", assetId);
+    await Promise.all(
+      entries.map((entry) =>
+        this.aclEntries().deleteOne({ filter: { id: entry.id, targetId: assetId } })
+      )
+    );
+    return this.assets().deleteOne({ filter: { id: assetId, status: "deleted" } });
   }
 
   async listAccessEntries(assetId: string): Promise<readonly MediaAclEntryRecord[]> {
@@ -229,6 +262,17 @@ export class MediaAssetsRepository {
         targetId: targetId.trim()
       }
     });
+  }
+
+  async deleteAccessEntriesForTarget(
+    targetType: MediaAclEntryRecord["targetType"],
+    targetId: string
+  ): Promise<number> {
+    const entries = await this.listAccessEntriesForTarget(targetType, targetId);
+    const removed = await Promise.all(
+      entries.map((entry) => this.deleteAccessEntryForTarget(targetType, targetId, entry.id))
+    );
+    return removed.filter(Boolean).length;
   }
 
   async replaceAccessForTarget(

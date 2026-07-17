@@ -17,6 +17,12 @@ import {
 } from "@trinacria-cms/core-pack";
 import { MEDIA_PACK_PLUGIN_ID } from "../../plugin/media-pack.constants.js";
 import { MediaUploadError, MediaUploadsService } from "./services/media-uploads.service.js";
+import {
+  MediaApiErrorResponseSchema,
+  MediaAssetResponseSchema,
+  MediaUploadSessionResponseSchema,
+  StartedMediaUploadResponseSchema
+} from "./media-api.schemas.js";
 
 const responder = createPluginApiResponder(MEDIA_PACK_PLUGIN_ID);
 
@@ -56,7 +62,17 @@ export class MediaUploadController extends HttpController {
           tags: ["Media"],
           operationId: "startMediaUpload",
           security: [{ bearerAuth: [] }],
-          requestBody: { required: true, schema: toOpenApiSchema(StartMediaUploadInputSchema) }
+          requestBody: { required: true, schema: toOpenApiSchema(StartMediaUploadInputSchema) },
+          responses: {
+            200: {
+              description: "Upload session created",
+              schema: toOpenApiSchema(StartedMediaUploadResponseSchema)
+            },
+            400: {
+              description: "Invalid upload request",
+              schema: toOpenApiSchema(MediaApiErrorResponseSchema)
+            }
+          }
         }
       })
       .put("/v1/media/uploads/:id/content", this.receiveContent, {
@@ -65,7 +81,21 @@ export class MediaUploadController extends HttpController {
           summary: "Stream content into a media upload session",
           tags: ["Media"],
           operationId: "receiveMediaUploadContent",
-          security: [{ bearerAuth: [] }]
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            schema: { type: "string", format: "binary" }
+          },
+          responses: {
+            200: {
+              description: "Upload content received",
+              schema: toOpenApiSchema(MediaUploadSessionResponseSchema)
+            },
+            409: {
+              description: "Upload session cannot receive content",
+              schema: toOpenApiSchema(MediaApiErrorResponseSchema)
+            }
+          }
         }
       })
       .post("/v1/media/uploads/:id/complete", this.completeUpload, {
@@ -74,7 +104,17 @@ export class MediaUploadController extends HttpController {
           summary: "Complete a media upload and create the asset",
           tags: ["Media"],
           operationId: "completeMediaUpload",
-          security: [{ bearerAuth: [] }]
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: {
+              description: "Ready media asset",
+              schema: toOpenApiSchema(MediaAssetResponseSchema)
+            },
+            409: {
+              description: "Upload cannot be completed",
+              schema: toOpenApiSchema(MediaApiErrorResponseSchema)
+            }
+          }
         }
       })
       .build();
@@ -169,15 +209,17 @@ function toMediaErrorResponse(error: unknown) {
         ? 410
         : error.code === "media_asset_not_editable"
           ? 403
-        : error.code === "media_file_too_large"
-          ? 413
-          : error.code === "media_mime_type_denied"
-            ? 415
-            : error.code === "media_content_invalid"
-              ? 422
-              : error.code === "media_checksum_required"
+          : error.code === "media_directory_not_writable"
+            ? 403
+            : error.code === "media_image_too_large" || error.code === "media_file_too_large"
+              ? 413
+              : error.code === "media_image_dimensions_invalid" ||
+                  error.code === "media_content_invalid" ||
+                  error.code === "media_checksum_required"
                 ? 422
-                : 409;
+                : error.code === "media_mime_type_denied"
+                  ? 415
+                  : 409;
   return response(
     apiError(error.code, error.message, undefined, { pluginId: MEDIA_PACK_PLUGIN_ID }),
     {

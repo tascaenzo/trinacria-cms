@@ -1,8 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button, Checkbox, Dialog, Icon, Input, Select } from "@trinacria-cms/trinacria-ui";
 import type { createCmsSdkClient } from "@trinacria-cms/sdk";
-import { FileManagerContextMenu, type FileManagerContextMenuState } from "./file-manager/file-manager-context-menu.js";
-import { ConfirmationDialog, CreateCsvDialog, CreateFolderDialog, MoveAssetDialog, RenameAssetDialog, TextFileDialog, type CsvDelimiter } from "./file-manager/file-manager-dialogs.js";
+import {
+  FileManagerContextMenu,
+  type FileManagerContextMenuState
+} from "./file-manager/file-manager-context-menu.js";
+import {
+  ConfirmationDialog,
+  CreateCsvDialog,
+  CreateFolderDialog,
+  MoveAssetDialog,
+  RenameAssetDialog,
+  TextFileDialog,
+  type CsvDelimiter
+} from "./file-manager/file-manager-dialogs.js";
 import { FileManagerFrame } from "./file-manager/file-manager-frame.js";
 import type { FileManagerSort } from "./file-manager/file-manager-toolbar.js";
 import { MediaContentDialog } from "./file-manager/media-content-dialog.js";
@@ -67,7 +78,13 @@ const EMPTY_SHARE = {
   expiresAt: ""
 };
 
-export function MediaFileManager({ apiBaseUrl = "/cms", cms, onClose = () => undefined, open = true, presentation = "page", t }: MediaFileManagerContext) {
+export function MediaFileManager({
+  apiBaseUrl = "/cms",
+  cms,
+  onClose = () => undefined,
+  open = true,
+  presentation = "page"
+}: MediaFileManagerContext) {
   const [directories, setDirectories] = useState<readonly MediaDirectory[]>([]);
   const [assets, setAssets] = useState<readonly MediaAsset[]>([]);
   const [currentDirectoryId, setCurrentDirectoryId] = useState<string | null>(null);
@@ -113,21 +130,26 @@ export function MediaFileManager({ apiBaseUrl = "/cms", cms, onClose = () => und
   );
   const visibleAssets = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return assets.filter(
-      (asset) =>
-        asset.status !== "deleted" &&
-        (!query ||
-          asset.displayName.toLowerCase().includes(query) ||
-          asset.originalFilename.toLowerCase().includes(query) ||
-          asset.mimeType.toLowerCase().includes(query))
-    ).sort((left, right) => sortMediaItems(left, right, sort));
+    return assets
+      .filter(
+        (asset) =>
+          asset.status !== "deleted" &&
+          (!query ||
+            asset.displayName.toLowerCase().includes(query) ||
+            asset.originalFilename.toLowerCase().includes(query) ||
+            asset.mimeType.toLowerCase().includes(query))
+      )
+      .sort((left, right) => sortMediaItems(left, right, sort));
   }, [assets, search, sort]);
   const visibleDirectories = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return directories.filter(
-      (directory) => directory.parentId === (currentDirectoryId ?? undefined) &&
-        (!query || directory.name.toLowerCase().includes(query))
-    ).sort((left, right) => sortMediaItems(left, right, sort));
+    return directories
+      .filter(
+        (directory) =>
+          directory.parentId === (currentDirectoryId ?? undefined) &&
+          (!query || directory.name.toLowerCase().includes(query))
+      )
+      .sort((left, right) => sortMediaItems(left, right, sort));
   }, [currentDirectoryId, directories, search, sort]);
 
   useEffect(() => {
@@ -187,24 +209,29 @@ export function MediaFileManager({ apiBaseUrl = "/cms", cms, onClose = () => und
     return response.data;
   }
 
-  const resolveAssetPreview = useCallback(async (assetId: string): Promise<string | null> => {
-    const cached = previewUrlCacheRef.current.get(assetId);
-    if (cached && cached.expiresAtMs > Date.now() + 10_000) return cached.url;
-    try {
-      const response = await cms.request<ApiEnvelope<{ url: string; expiresAt?: string }>>({
-        method: "POST",
-        path: `/v1/media/assets/${encodeURIComponent(assetId)}/access-url`
-      });
-      const url = resolveUploadUrl(response.data.url, apiBaseUrl);
-      previewUrlCacheRef.current.set(assetId, {
-        url,
-        expiresAtMs: response.data.expiresAt ? Date.parse(response.data.expiresAt) : Date.now() + 240_000
-      });
-      return url;
-    } catch {
-      return null;
-    }
-  }, [apiBaseUrl, cms]);
+  const resolveAssetPreview = useCallback(
+    async (assetId: string): Promise<string | null> => {
+      const cached = previewUrlCacheRef.current.get(assetId);
+      if (cached && cached.expiresAtMs > Date.now() + 10_000) return cached.url;
+      try {
+        const response = await cms.request<ApiEnvelope<{ url: string; expiresAt?: string }>>({
+          method: "POST",
+          path: `/v1/media/assets/${encodeURIComponent(assetId)}/access-url`
+        });
+        const url = resolveUploadUrl(response.data.url, apiBaseUrl);
+        previewUrlCacheRef.current.set(assetId, {
+          url,
+          expiresAtMs: response.data.expiresAt
+            ? Date.parse(response.data.expiresAt)
+            : Date.now() + 240_000
+        });
+        return url;
+      } catch {
+        return null;
+      }
+    },
+    [apiBaseUrl, cms]
+  );
 
   async function createDirectory(nameOverride?: string) {
     const name = (nameOverride ?? "").trim();
@@ -237,9 +264,11 @@ export function MediaFileManager({ apiBaseUrl = "/cms", cms, onClose = () => und
       });
       const updatedAsset = response.data;
       const remainsInCurrentDirectory = (updatedAsset.directoryId ?? null) === currentDirectoryId;
-      setAssets((current) => remainsInCurrentDirectory
-        ? current.map((asset) => asset.id === updatedAsset.id ? updatedAsset : asset)
-        : current.filter((asset) => asset.id !== updatedAsset.id));
+      setAssets((current) =>
+        remainsInCurrentDirectory
+          ? current.map((asset) => (asset.id === updatedAsset.id ? updatedAsset : asset))
+          : current.filter((asset) => asset.id !== updatedAsset.id)
+      );
       if (!remainsInCurrentDirectory) setSelectedAssetId(null);
       setMessage("Media aggiornato.");
       await loadFileManager();
@@ -339,19 +368,29 @@ export function MediaFileManager({ apiBaseUrl = "/cms", cms, onClose = () => und
         mimeType: file.type || "application/octet-stream",
         byteSize: file.size,
         checksumSha256,
-        ...(replacementAssetId ? { replacementAssetId } : currentDirectoryId ? { directoryId: currentDirectoryId } : {})
+        ...(replacementAssetId
+          ? { replacementAssetId }
+          : currentDirectoryId
+            ? { directoryId: currentDirectoryId }
+            : {})
       }
     });
-    const uploadResponse = await fetch(resolveUploadUrl(started.data.upload.uploadUrl, apiBaseUrl), {
-      method: "PUT",
-      body: file,
-      credentials: "include",
-      headers: {
-        ...(started.data.upload.method === "proxy" ? { "content-type": "application/octet-stream" } : {}),
-        ...(started.data.upload.requiredHeaders ?? {})
+    const uploadResponse = await fetch(
+      resolveUploadUrl(started.data.upload.uploadUrl, apiBaseUrl),
+      {
+        method: "PUT",
+        body: file,
+        credentials: "include",
+        headers: {
+          ...(started.data.upload.method === "proxy"
+            ? { "content-type": "application/octet-stream" }
+            : {}),
+          ...(started.data.upload.requiredHeaders ?? {})
+        }
       }
-    });
-    if (!uploadResponse.ok) throw new Error(`Caricamento di ${file.name} non riuscito (${uploadResponse.status}).`);
+    );
+    if (!uploadResponse.ok)
+      throw new Error(`Caricamento di ${file.name} non riuscito (${uploadResponse.status}).`);
     const completed = await cms.request<ApiEnvelope<MediaAsset>>({
       method: "POST",
       path: `/v1/media/uploads/${encodeURIComponent(started.data.session.id)}/complete`
@@ -366,7 +405,7 @@ export function MediaFileManager({ apiBaseUrl = "/cms", cms, onClose = () => und
       const file = new File([content], asset.originalFilename, { type: asset.mimeType });
       const updated = await transferFile(file, asset.id);
       previewUrlCacheRef.current.delete(asset.id);
-      setAssets((current) => current.map((entry) => entry.id === updated.id ? updated : entry));
+      setAssets((current) => current.map((entry) => (entry.id === updated.id ? updated : entry)));
       setContentAsset(updated);
       setMessage("Contenuto salvato.");
       await loadFileManager();
@@ -401,8 +440,12 @@ export function MediaFileManager({ apiBaseUrl = "/cms", cms, onClose = () => und
   async function createTextFile() {
     const filename = textFileName.trim();
     if (!filename) return;
-    const normalizedFilename = filename.toLowerCase().endsWith(".txt") ? filename : `${filename}.txt`;
-    if (await uploadFiles([new File([textFileContent], normalizedFilename, { type: "text/plain" })])) {
+    const normalizedFilename = filename.toLowerCase().endsWith(".txt")
+      ? filename
+      : `${filename}.txt`;
+    if (
+      await uploadFiles([new File([textFileContent], normalizedFilename, { type: "text/plain" })])
+    ) {
       setTextFileName("untitled.txt");
       setTextFileContent("");
       setIsTextDialogOpen(false);
@@ -418,9 +461,14 @@ export function MediaFileManager({ apiBaseUrl = "/cms", cms, onClose = () => und
   }
 
   async function createCsvFile() {
-    const columns = csvColumns.split(/\r?\n/).map((column) => column.trim()).filter(Boolean);
+    const columns = csvColumns
+      .split(/\r?\n/)
+      .map((column) => column.trim())
+      .filter(Boolean);
     if (!csvFileName.trim() || columns.length === 0) return;
-    const filename = csvFileName.trim().toLowerCase().endsWith(".csv") ? csvFileName.trim() : `${csvFileName.trim()}.csv`;
+    const filename = csvFileName.trim().toLowerCase().endsWith(".csv")
+      ? csvFileName.trim()
+      : `${csvFileName.trim()}.csv`;
     const content = `${serializeCsv({ delimiter: csvDelimiter, rows: [columns] })}\r\n`;
     try {
       setIsSaving(true);
@@ -498,138 +546,181 @@ export function MediaFileManager({ apiBaseUrl = "/cms", cms, onClose = () => und
   const workspace = (
     <div className="relative h-full" onClick={() => setContextMenu(null)}>
       <FileManagerFrame
-      assets={visibleAssets}
-      breadcrumbs={breadcrumbs}
-      childDirectories={visibleDirectories}
-      currentDirectory={currentDirectory}
-      currentDirectoryId={currentDirectoryId}
-      detailsVisible={detailsVisible}
-      directories={directories}
-      embedded={presentation === "modal"}
-      error={error}
-      fileInputRef={fileInputRef}
-      inspector={inspector}
-      isLoading={isLoading}
-      isSaving={isSaving}
-      message={message}
-      onCreateFolder={openCreateDirectoryDialog}
-      onCreateCsv={openCreateCsvDialog}
-      onDetailsVisibleChange={setDetailsVisible}
-      onNavigate={navigateToDirectory}
-      onOpenAsset={setContentAsset}
-      onAssetContextMenu={(asset, event) => openContextMenu(event, asset)}
-      onBackgroundContextMenu={(event) => openContextMenu(event)}
-      onSearchChange={setSearch}
-      onSelectAsset={setSelectedAssetId}
-      onSortChange={setSort}
-      onUpload={(files) => void uploadFiles(files)}
-      onViewModeChange={setViewMode}
-      search={search}
-      selectedAssetId={selectedAssetId}
-      sort={sort}
-      viewMode={viewMode}
-      resolveAssetPreview={resolveAssetPreview}
-      />
-      {contextMenu ? <FileManagerContextMenu
-        menu={contextMenu}
-        onClose={() => setContextMenu(null)}
-        onCreateFolder={() => {
-          openCreateDirectoryDialog();
-        }}
+        assets={visibleAssets}
+        breadcrumbs={breadcrumbs}
+        childDirectories={visibleDirectories}
+        currentDirectory={currentDirectory}
+        currentDirectoryId={currentDirectoryId}
+        detailsVisible={detailsVisible}
+        directories={directories}
+        embedded={presentation === "modal"}
+        error={error}
+        fileInputRef={fileInputRef}
+        inspector={inspector}
+        isLoading={isLoading}
+        isSaving={isSaving}
+        message={message}
+        onCreateFolder={openCreateDirectoryDialog}
         onCreateCsv={openCreateCsvDialog}
-        onCreateTextFile={() => setIsTextDialogOpen(true)}
-        onDelete={() => { if (contextMenu.asset) setDeleteTarget({ kind: "asset", value: contextMenu.asset }); }}
-        onMove={() => { if (contextMenu.asset) setMoveAsset(contextMenu.asset); }}
-        onOpen={() => { if (contextMenu.asset) setContentAsset(contextMenu.asset); }}
-        onProperties={() => { if (contextMenu.asset) setSelectedAssetId(contextMenu.asset.id); }}
-        onRename={() => { if (contextMenu.asset) openRenameDialog(contextMenu.asset); }}
-        onUpload={() => fileInputRef.current?.click()}
-      /> : null}
+        onDetailsVisibleChange={setDetailsVisible}
+        onNavigate={navigateToDirectory}
+        onOpenAsset={setContentAsset}
+        onAssetContextMenu={(asset, event) => openContextMenu(event, asset)}
+        onBackgroundContextMenu={(event) => openContextMenu(event)}
+        onSearchChange={setSearch}
+        onSelectAsset={setSelectedAssetId}
+        onSortChange={setSort}
+        onUpload={(files) => void uploadFiles(files)}
+        onViewModeChange={setViewMode}
+        search={search}
+        selectedAssetId={selectedAssetId}
+        sort={sort}
+        viewMode={viewMode}
+        resolveAssetPreview={resolveAssetPreview}
+      />
+      {contextMenu ? (
+        <FileManagerContextMenu
+          menu={contextMenu}
+          onClose={() => setContextMenu(null)}
+          onCreateFolder={() => {
+            openCreateDirectoryDialog();
+          }}
+          onCreateCsv={openCreateCsvDialog}
+          onCreateTextFile={() => setIsTextDialogOpen(true)}
+          onDelete={() => {
+            if (contextMenu.asset) setDeleteTarget({ kind: "asset", value: contextMenu.asset });
+          }}
+          onMove={() => {
+            if (contextMenu.asset) setMoveAsset(contextMenu.asset);
+          }}
+          onOpen={() => {
+            if (contextMenu.asset) setContentAsset(contextMenu.asset);
+          }}
+          onProperties={() => {
+            if (contextMenu.asset) setSelectedAssetId(contextMenu.asset.id);
+          }}
+          onRename={() => {
+            if (contextMenu.asset) openRenameDialog(contextMenu.asset);
+          }}
+          onUpload={() => fileInputRef.current?.click()}
+        />
+      ) : null}
     </div>
   );
 
-  const dialogs = <>
-    <CreateCsvDialog
-      columns={csvColumns}
-      delimiter={csvDelimiter}
-      error={csvCreateError}
-      filename={csvFileName}
-      isSaving={isSaving}
-      onClose={() => setIsCsvDialogOpen(false)}
-      onColumnsChange={setCsvColumns}
-      onCreate={() => void createCsvFile()}
-      onDelimiterChange={setCsvDelimiter}
-      onFilenameChange={setCsvFileName}
-      open={isCsvDialogOpen}
-    />
-    <CreateFolderDialog
-      isSaving={isSaving}
-      name={folderName}
-      onClose={() => setIsCreateFolderOpen(false)}
-      onCreate={submitCreateDirectory}
-      onNameChange={setFolderName}
-      open={isCreateFolderOpen}
-      parentName={currentDirectory?.name}
-    />
-    <RenameAssetDialog
-      asset={renameTarget}
-      isSaving={isSaving}
-      name={renameName}
-      onClose={() => setRenameTarget(null)}
-      onNameChange={setRenameName}
-      onRename={submitRename}
-    />
-    <ConfirmationDialog
-      confirmLabel={deleteTarget?.kind === "directory" ? "Elimina cartella" : "Elimina media"}
-      description={deleteTarget?.kind === "directory" ? `La cartella “${deleteTarget.value.name}” deve essere vuota per poter essere eliminata.` : deleteTarget ? `Vuoi eliminare “${deleteTarget.value.displayName}”?` : ""}
-      isSaving={isSaving}
-      onClose={() => setDeleteTarget(null)}
-      onConfirm={confirmDelete}
-      open={deleteTarget !== null}
-      title={deleteTarget?.kind === "directory" ? "Eliminare la cartella?" : "Eliminare il media?"}
-    />
-    <TextFileDialog
-      content={textFileContent}
-      filename={textFileName}
-      isSaving={isSaving}
-      onClose={() => setIsTextDialogOpen(false)}
-      onContentChange={setTextFileContent}
-      onCreate={() => void createTextFile()}
-      onFilenameChange={setTextFileName}
-      open={isTextDialogOpen}
-    />
-    <MoveAssetDialog
-      asset={moveAsset}
-      directories={directories}
-      isSaving={isSaving}
-      onClose={() => setMoveAsset(null)}
-      onMove={moveAssetTo}
-    />
-    <MediaContentDialog
-      apiBaseUrl={apiBaseUrl}
-      asset={contentAsset}
-      cms={cms}
-      onClose={() => setContentAsset(null)}
-      onSave={replaceAssetContent}
-    />
-  </>;
+  const dialogs = (
+    <>
+      <CreateCsvDialog
+        columns={csvColumns}
+        delimiter={csvDelimiter}
+        error={csvCreateError}
+        filename={csvFileName}
+        isSaving={isSaving}
+        onClose={() => setIsCsvDialogOpen(false)}
+        onColumnsChange={setCsvColumns}
+        onCreate={() => void createCsvFile()}
+        onDelimiterChange={setCsvDelimiter}
+        onFilenameChange={setCsvFileName}
+        open={isCsvDialogOpen}
+      />
+      <CreateFolderDialog
+        isSaving={isSaving}
+        name={folderName}
+        onClose={() => setIsCreateFolderOpen(false)}
+        onCreate={submitCreateDirectory}
+        onNameChange={setFolderName}
+        open={isCreateFolderOpen}
+        parentName={currentDirectory?.name}
+      />
+      <RenameAssetDialog
+        asset={renameTarget}
+        isSaving={isSaving}
+        name={renameName}
+        onClose={() => setRenameTarget(null)}
+        onNameChange={setRenameName}
+        onRename={submitRename}
+      />
+      <ConfirmationDialog
+        confirmLabel={deleteTarget?.kind === "directory" ? "Elimina cartella" : "Elimina media"}
+        description={
+          deleteTarget?.kind === "directory"
+            ? `La cartella “${deleteTarget.value.name}” deve essere vuota per poter essere eliminata.`
+            : deleteTarget
+              ? `Vuoi eliminare “${deleteTarget.value.displayName}”?`
+              : ""
+        }
+        isSaving={isSaving}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        open={deleteTarget !== null}
+        title={
+          deleteTarget?.kind === "directory" ? "Eliminare la cartella?" : "Eliminare il media?"
+        }
+      />
+      <TextFileDialog
+        content={textFileContent}
+        filename={textFileName}
+        isSaving={isSaving}
+        onClose={() => setIsTextDialogOpen(false)}
+        onContentChange={setTextFileContent}
+        onCreate={() => void createTextFile()}
+        onFilenameChange={setTextFileName}
+        open={isTextDialogOpen}
+      />
+      <MoveAssetDialog
+        asset={moveAsset}
+        directories={directories}
+        isSaving={isSaving}
+        onClose={() => setMoveAsset(null)}
+        onMove={moveAssetTo}
+      />
+      <MediaContentDialog
+        apiBaseUrl={apiBaseUrl}
+        asset={contentAsset}
+        cms={cms}
+        onClose={() => setContentAsset(null)}
+        onSave={replaceAssetContent}
+      />
+    </>
+  );
 
   if (presentation === "modal") {
-    return <>
-      <Dialog open={open} title="File manager" description="Gestisci file, cartelle e condivisioni." closeLabel="Chiudi" closeVariant="icon" onClose={onClose} width="fullscreen">
-        {workspace}
-      </Dialog>
-      {dialogs}
-    </>;
+    return (
+      <>
+        <Dialog
+          open={open}
+          title="File manager"
+          description="Gestisci file, cartelle e condivisioni."
+          closeLabel="Chiudi"
+          closeVariant="icon"
+          onClose={onClose}
+          width="fullscreen"
+        >
+          {workspace}
+        </Dialog>
+        {dialogs}
+      </>
+    );
   }
 
-  return <>{workspace}{dialogs}</>;
+  return (
+    <>
+      {workspace}
+      {dialogs}
+    </>
+  );
 }
 
 /** Alias intended for consumers that embed the reusable Media file manager. */
 export const FileManager = MediaFileManager;
 
-function DirectoryInspector({ directory, directories, disabled, onDelete, onSave }: {
+function DirectoryInspector({
+  directory,
+  directories,
+  disabled,
+  onDelete,
+  onSave
+}: {
   directory: MediaDirectory;
   directories: readonly MediaDirectory[];
   disabled: boolean;
@@ -651,22 +742,134 @@ function DirectoryInspector({ directory, directories, disabled, onDelete, onSave
 
   return (
     <div className="h-full overflow-auto p-5">
-      <div className="flex items-start gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-lg bg-amber-100 text-amber-700"><Icon name="folder" className="h-5 w-5" /></span><div className="min-w-0"><h2 className="truncate text-base font-semibold text-[color:var(--color-ink)]">{directory.name}</h2><p className="mt-1 text-xs text-[color:var(--color-ink-muted)]">Impostazioni cartella</p></div></div>
-      <CompactProperties items={[{ label: "Visibilità", value: visibilityLabel(visibility) }, { label: "Posizione", value: directory.parentId ? directoryPath(directory, directories).split(" / ").slice(0, -1).join(" / ") || "Radice media" : "Radice media" }, { label: "Permessi", value: directory.inheritAcl ? "Ereditati" : "Specifici" }]} />
-      <Button type="button" className="mt-5 w-full" variant="secondary" onClick={() => setIsEditOpen(true)}><Icon name="pencil" className="h-4 w-4" /> Modifica cartella</Button>
-      <Dialog open={isEditOpen} title="Modifica cartella" description={directory.name} closeLabel="Chiudi" closeVariant="icon" width="lg" onClose={() => setIsEditOpen(false)} footer={<><Button type="button" variant="secondary" className="mr-auto text-[color:var(--color-danger-ink)]" disabled={disabled} onClick={onDelete}>Elimina cartella</Button><Button type="button" variant="secondary" onClick={() => setIsEditOpen(false)}>Annulla</Button><Button type="button" disabled={disabled || !name.trim()} onClick={() => { onSave({ name: name.trim(), visibility, inheritAcl, ...(parentId ? { parentId } : { clearParent: true }) }); setIsEditOpen(false); }}>Salva</Button></>}>
+      <div className="flex items-start gap-3">
+        <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+          <Icon name="folder" className="h-5 w-5" />
+        </span>
+        <div className="min-w-0">
+          <h2 className="truncate text-base font-semibold text-[color:var(--color-ink)]">
+            {directory.name}
+          </h2>
+          <p className="mt-1 text-xs text-[color:var(--color-ink-muted)]">Impostazioni cartella</p>
+        </div>
+      </div>
+      <CompactProperties
+        items={[
+          { label: "Visibilità", value: visibilityLabel(visibility) },
+          {
+            label: "Posizione",
+            value: directory.parentId
+              ? directoryPath(directory, directories).split(" / ").slice(0, -1).join(" / ") ||
+                "Radice media"
+              : "Radice media"
+          },
+          { label: "Permessi", value: directory.inheritAcl ? "Ereditati" : "Specifici" }
+        ]}
+      />
+      <Button
+        type="button"
+        className="mt-5 w-full"
+        variant="secondary"
+        onClick={() => setIsEditOpen(true)}
+      >
+        <Icon name="pencil" className="h-4 w-4" /> Modifica cartella
+      </Button>
+      <Dialog
+        open={isEditOpen}
+        title="Modifica cartella"
+        description={directory.name}
+        closeLabel="Chiudi"
+        closeVariant="icon"
+        width="lg"
+        onClose={() => setIsEditOpen(false)}
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              className="mr-auto text-[color:var(--color-danger-ink)]"
+              disabled={disabled}
+              onClick={onDelete}
+            >
+              Elimina cartella
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => setIsEditOpen(false)}>
+              Annulla
+            </Button>
+            <Button
+              type="button"
+              disabled={disabled || !name.trim()}
+              onClick={() => {
+                onSave({
+                  name: name.trim(),
+                  visibility,
+                  inheritAcl,
+                  ...(parentId ? { parentId } : { clearParent: true })
+                });
+                setIsEditOpen(false);
+              }}
+            >
+              Salva
+            </Button>
+          </>
+        }
+      >
         <div className="grid gap-4">
-          <Input label="Nome cartella" value={name} readOnly={disabled} onChange={(event) => setName(event.currentTarget.value)} />
-          <Select label="Cartella superiore" value={parentId} disabled={disabled} onChange={(event) => setParentId(event.currentTarget.value)}><option value="">Radice media</option>{directories.filter((candidate) => candidate.id !== directory.id).map((candidate) => <option key={candidate.id} value={candidate.id}>{directoryPath(candidate, directories)}</option>)}</Select>
-          <Select label="Visibilità" value={visibility} disabled={disabled} onChange={(event) => setVisibility(event.currentTarget.value as Visibility)}><option value="private">Privata</option><option value="restricted">Con restrizioni</option><option value="public">Pubblica</option></Select>
-          <Checkbox label="Eredita le regole di condivisione" description="Applica anche a questa cartella le condivisioni definite nella gerarchia superiore." checked={inheritAcl} disabled={disabled} onChange={(event) => setInheritAcl(event.currentTarget.checked)} />
+          <Input
+            label="Nome cartella"
+            value={name}
+            readOnly={disabled}
+            onChange={(event) => setName(event.currentTarget.value)}
+          />
+          <Select
+            label="Cartella superiore"
+            value={parentId}
+            disabled={disabled}
+            onChange={(event) => setParentId(event.currentTarget.value)}
+          >
+            <option value="">Radice media</option>
+            {directories
+              .filter((candidate) => candidate.id !== directory.id)
+              .map((candidate) => (
+                <option key={candidate.id} value={candidate.id}>
+                  {directoryPath(candidate, directories)}
+                </option>
+              ))}
+          </Select>
+          <Select
+            label="Visibilità"
+            value={visibility}
+            disabled={disabled}
+            onChange={(event) => setVisibility(event.currentTarget.value as Visibility)}
+          >
+            <option value="private">Privata</option>
+            <option value="restricted">Con restrizioni</option>
+            <option value="public">Pubblica</option>
+          </Select>
+          <Checkbox
+            label="Eredita le regole di condivisione"
+            description="Applica anche a questa cartella le condivisioni definite nella gerarchia superiore."
+            checked={inheritAcl}
+            disabled={disabled}
+            onChange={(event) => setInheritAcl(event.currentTarget.checked)}
+          />
         </div>
       </Dialog>
     </div>
   );
 }
 
-function AssetInspector({ asset, apiBaseUrl, directories, cms, disabled, onDelete, onSave, onChanged, onOpenContent }: {
+function AssetInspector({
+  asset,
+  apiBaseUrl,
+  directories,
+  cms,
+  disabled,
+  onDelete,
+  onSave,
+  onChanged,
+  onOpenContent
+}: {
   asset: MediaAsset;
   apiBaseUrl: string;
   directories: readonly MediaDirectory[];
@@ -703,24 +906,33 @@ function AssetInspector({ asset, apiBaseUrl, directories, cms, disabled, onDelet
     setPreviewUrl(null);
     setPreviewError(null);
     setIsLoadingPreview(true);
-    void cms.request<ApiEnvelope<{ url: string }>>({
-      method: "POST",
-      path: `/v1/media/assets/${encodeURIComponent(asset.id)}/access-url`
-    }).then((response) => {
-      if (!cancelled) setPreviewUrl(resolveUploadUrl(response.data.url, apiBaseUrl));
-    }).catch((error) => {
-      if (!cancelled) setPreviewError(toDisplayError(error));
-    }).finally(() => {
-      if (!cancelled) setIsLoadingPreview(false);
-    });
-    return () => { cancelled = true; };
+    void cms
+      .request<ApiEnvelope<{ url: string }>>({
+        method: "POST",
+        path: `/v1/media/assets/${encodeURIComponent(asset.id)}/access-url`
+      })
+      .then((response) => {
+        if (!cancelled) setPreviewUrl(resolveUploadUrl(response.data.url, apiBaseUrl));
+      })
+      .catch((error) => {
+        if (!cancelled) setPreviewError(toDisplayError(error));
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingPreview(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [apiBaseUrl, asset.id, cms]);
 
   async function loadShares() {
     try {
       setIsLoadingShares(true);
       setShareError(null);
-      const response = await cms.request<ApiEnvelope<readonly MediaShare[]>>({ method: "GET", path: `/v1/media/assets/${encodeURIComponent(asset.id)}/shares` });
+      const response = await cms.request<ApiEnvelope<readonly MediaShare[]>>({
+        method: "GET",
+        path: `/v1/media/assets/${encodeURIComponent(asset.id)}/shares`
+      });
       setShares(response.data);
     } catch (error) {
       setShareError(toDisplayError(error));
@@ -746,12 +958,16 @@ function AssetInspector({ asset, apiBaseUrl, directories, cms, disabled, onDelet
         method: "PUT",
         path: `/v1/media/assets/${encodeURIComponent(asset.id)}/shares`,
         body: {
-          grants: [{
-            principalType: share.principalType,
-            principalId,
-            actions: share.actions,
-            ...(share.expiresAt ? { expiresAt: new Date(`${share.expiresAt}T23:59:59`).toISOString() } : {})
-          }]
+          grants: [
+            {
+              principalType: share.principalType,
+              principalId,
+              actions: share.actions,
+              ...(share.expiresAt
+                ? { expiresAt: new Date(`${share.expiresAt}T23:59:59`).toISOString() }
+                : {})
+            }
+          ]
         }
       });
       setShare(EMPTY_SHARE);
@@ -795,24 +1011,239 @@ function AssetInspector({ asset, apiBaseUrl, directories, cms, disabled, onDelet
     <div className="h-full overflow-auto p-5">
       <div className="flex items-start gap-3">
         <InspectorMediaGlyph mimeType={asset.mimeType} />
-        <div className="min-w-0"><h2 className="truncate text-base font-semibold text-[color:var(--color-ink)]">{asset.displayName}</h2><p className="mt-1 truncate text-xs text-[color:var(--color-ink-muted)]">{asset.originalFilename}</p></div>
+        <div className="min-w-0">
+          <h2 className="truncate text-base font-semibold text-[color:var(--color-ink)]">
+            {asset.displayName}
+          </h2>
+          <p className="mt-1 truncate text-xs text-[color:var(--color-ink-muted)]">
+            {asset.originalFilename}
+          </p>
+        </div>
       </div>
-      <PreviewSurface asset={asset} error={previewError} isLoading={isLoadingPreview} url={previewUrl} />
-      <CompactProperties items={[{ label: "Tipo", value: asset.mimeType }, { label: "Dimensione", value: formatBytes(asset.byteSize) }, { label: "Visibilità", value: visibilityLabel(asset.visibility) }, { label: "Modificato", value: formatDate(asset.updatedAt) }]} />
-      <div className="mt-5 grid grid-cols-2 gap-2"><Button type="button" variant="secondary" onClick={onOpenContent}><Icon name="eye" className="h-4 w-4" /> Visualizza</Button><Button type="button" onClick={() => setIsEditOpen(true)}><Icon name="pencil" className="h-4 w-4" /> Proprietà</Button></div>
+      <PreviewSurface
+        asset={asset}
+        error={previewError}
+        isLoading={isLoadingPreview}
+        url={previewUrl}
+      />
+      <CompactProperties
+        items={[
+          { label: "Tipo", value: asset.mimeType },
+          { label: "Dimensione", value: formatBytes(asset.byteSize) },
+          { label: "Visibilità", value: visibilityLabel(asset.visibility) },
+          { label: "Modificato", value: formatDate(asset.updatedAt) }
+        ]}
+      />
+      <div className="mt-5 grid grid-cols-2 gap-2">
+        <Button type="button" variant="secondary" onClick={onOpenContent}>
+          <Icon name="eye" className="h-4 w-4" /> Visualizza
+        </Button>
+        <Button type="button" onClick={() => setIsEditOpen(true)}>
+          <Icon name="pencil" className="h-4 w-4" /> Proprietà
+        </Button>
+      </div>
 
-      <Dialog open={isEditOpen} title="Modifica media" description={asset.displayName} closeLabel="Chiudi" closeVariant="icon" width="xl" onClose={() => setIsEditOpen(false)} footer={<><Button type="button" variant="secondary" className="mr-auto text-[color:var(--color-danger-ink)]" disabled={disabled} onClick={onDelete}>Elimina media</Button><Button type="button" variant="secondary" onClick={() => setIsEditOpen(false)}>Annulla</Button><Button type="button" disabled={disabled || !displayName.trim()} onClick={() => { onSave({ displayName: displayName.trim(), visibility, ...(directoryId ? { directoryId } : { clearDirectory: true }) }); setIsEditOpen(false); }}>Salva modifiche</Button></>}>
+      <Dialog
+        open={isEditOpen}
+        title="Modifica media"
+        description={asset.displayName}
+        closeLabel="Chiudi"
+        closeVariant="icon"
+        width="xl"
+        onClose={() => setIsEditOpen(false)}
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              className="mr-auto text-[color:var(--color-danger-ink)]"
+              disabled={disabled}
+              onClick={onDelete}
+            >
+              Elimina media
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => setIsEditOpen(false)}>
+              Annulla
+            </Button>
+            <Button
+              type="button"
+              disabled={disabled || !displayName.trim()}
+              onClick={() => {
+                onSave({
+                  displayName: displayName.trim(),
+                  visibility,
+                  ...(directoryId ? { directoryId } : { clearDirectory: true })
+                });
+                setIsEditOpen(false);
+              }}
+            >
+              Salva modifiche
+            </Button>
+          </>
+        }
+      >
         <div className="grid gap-7 lg:grid-cols-[minmax(0,0.85fr)_minmax(340px,1.15fr)]">
-          <section className="grid content-start gap-4"><div><h3 className="text-sm font-semibold text-[color:var(--color-ink)]">Proprietà</h3><p className="mt-1 text-xs text-[color:var(--color-ink-muted)]">Nome, posizione e accesso generale.</p></div><Input label="Nome" value={displayName} readOnly={disabled} onChange={(event) => setDisplayName(event.currentTarget.value)} /><Select label="Cartella" value={directoryId} disabled={disabled} onChange={(event) => setDirectoryId(event.currentTarget.value)}><option value="">Tutti i media</option>{directories.map((directory) => <option key={directory.id} value={directory.id}>{directoryPath(directory, directories)}</option>)}</Select><Select label="Visibilità" value={visibility} disabled={disabled} onChange={(event) => setVisibility(event.currentTarget.value as Visibility)}><option value="private">Privato</option><option value="restricted">Con restrizioni</option><option value="public">Pubblico</option></Select></section>
-          <section className="grid min-w-0 content-start gap-4 border-t border-[color:var(--color-border)] pt-6 lg:border-l lg:border-t-0 lg:pl-7 lg:pt-0"><div><h3 className="text-sm font-semibold text-[color:var(--color-ink)]">Condivisioni</h3><p className="mt-1 text-xs leading-5 text-[color:var(--color-ink-muted)]">Concedi accesso mirato a utenti, ruoli o servizi.</p></div>{shareError ? <p className="break-words text-sm text-[color:var(--color-danger-ink)]">{shareError}</p> : null}<div className="grid min-w-0 gap-4 sm:grid-cols-2"><Select label="Destinatario" value={share.principalType} disabled={disabled || isLoadingShares} onChange={(event) => setShare((current) => ({ ...current, principalType: event.currentTarget.value as PrincipalType }))}><option value="role">Ruolo</option><option value="user">Utente (ID)</option><option value="plugin">Servizio</option></Select><Input label={share.principalType === "role" ? "Codice ruolo" : share.principalType === "user" ? "ID utente" : "ID servizio"} value={share.principalId} readOnly={disabled || isLoadingShares} onChange={(event) => setShare((current) => ({ ...current, principalId: event.currentTarget.value }))} /></div><div className="grid gap-1 sm:grid-cols-2">{(["read", "write", "manage", "share"] as const).map((action) => <Checkbox key={action} label={shareActionLabel(action)} checked={share.actions.includes(action)} disabled={disabled || isLoadingShares} onChange={() => toggleShareAction(action)} />)}</div><div className="grid min-w-0 items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto]"><Input label="Scadenza (facoltativa)" type="date" value={share.expiresAt} readOnly={disabled || isLoadingShares} onChange={(event) => setShare((current) => ({ ...current, expiresAt: event.currentTarget.value }))} /><Button type="button" variant="secondary" disabled={disabled || isLoadingShares} onClick={() => void addShare()}>Aggiungi</Button></div><div className="grid max-h-48 min-w-0 gap-2 overflow-auto">{isLoadingShares ? <p className="text-xs text-[color:var(--color-ink-muted)]">Caricamento regole…</p> : null}{shares.length === 0 && !isLoadingShares ? <p className="rounded-md border border-dashed border-[color:var(--color-border)] p-3 text-xs text-[color:var(--color-ink-muted)]">Nessuna condivisione specifica.</p> : null}{shares.map((entry) => <div key={entry.id} className="min-w-0 rounded-md border border-[color:var(--color-border)] p-3 text-xs text-[color:var(--color-ink-muted)]"><div className="flex min-w-0 items-start justify-between gap-2"><div className="min-w-0"><p className="break-words font-semibold text-[color:var(--color-ink)]">{entry.principalType}: {entry.principalId}</p><p className="mt-1 break-words">{entry.actions.map(shareActionLabel).join(", ")}{entry.expiresAt ? ` · fino al ${formatDate(entry.expiresAt)}` : ""}</p></div><button type="button" disabled={disabled || isLoadingShares} className="shrink-0 text-[color:var(--color-danger-ink)] hover:underline" onClick={() => setShareToRevoke(entry)}>Revoca</button></div></div>)}</div></section>
+          <section className="grid content-start gap-4">
+            <div>
+              <h3 className="text-sm font-semibold text-[color:var(--color-ink)]">Proprietà</h3>
+              <p className="mt-1 text-xs text-[color:var(--color-ink-muted)]">
+                Nome, posizione e accesso generale.
+              </p>
+            </div>
+            <Input
+              label="Nome"
+              value={displayName}
+              readOnly={disabled}
+              onChange={(event) => setDisplayName(event.currentTarget.value)}
+            />
+            <Select
+              label="Cartella"
+              value={directoryId}
+              disabled={disabled}
+              onChange={(event) => setDirectoryId(event.currentTarget.value)}
+            >
+              <option value="">Tutti i media</option>
+              {directories.map((directory) => (
+                <option key={directory.id} value={directory.id}>
+                  {directoryPath(directory, directories)}
+                </option>
+              ))}
+            </Select>
+            <Select
+              label="Visibilità"
+              value={visibility}
+              disabled={disabled}
+              onChange={(event) => setVisibility(event.currentTarget.value as Visibility)}
+            >
+              <option value="private">Privato</option>
+              <option value="restricted">Con restrizioni</option>
+              <option value="public">Pubblico</option>
+            </Select>
+          </section>
+          <section className="grid min-w-0 content-start gap-4 border-t border-[color:var(--color-border)] pt-6 lg:border-l lg:border-t-0 lg:pl-7 lg:pt-0">
+            <div>
+              <h3 className="text-sm font-semibold text-[color:var(--color-ink)]">Condivisioni</h3>
+              <p className="mt-1 text-xs leading-5 text-[color:var(--color-ink-muted)]">
+                Concedi accesso mirato a utenti, ruoli o servizi.
+              </p>
+            </div>
+            {shareError ? (
+              <p className="break-words text-sm text-[color:var(--color-danger-ink)]">
+                {shareError}
+              </p>
+            ) : null}
+            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+              <Select
+                label="Destinatario"
+                value={share.principalType}
+                disabled={disabled || isLoadingShares}
+                onChange={(event) =>
+                  setShare((current) => ({
+                    ...current,
+                    principalType: event.currentTarget.value as PrincipalType
+                  }))
+                }
+              >
+                <option value="role">Ruolo</option>
+                <option value="user">Utente (ID)</option>
+                <option value="plugin">Servizio</option>
+              </Select>
+              <Input
+                label={
+                  share.principalType === "role"
+                    ? "Codice ruolo"
+                    : share.principalType === "user"
+                      ? "ID utente"
+                      : "ID servizio"
+                }
+                value={share.principalId}
+                readOnly={disabled || isLoadingShares}
+                onChange={(event) =>
+                  setShare((current) => ({ ...current, principalId: event.currentTarget.value }))
+                }
+              />
+            </div>
+            <div className="grid gap-1 sm:grid-cols-2">
+              {(["read", "write", "manage", "share"] as const).map((action) => (
+                <Checkbox
+                  key={action}
+                  label={shareActionLabel(action)}
+                  checked={share.actions.includes(action)}
+                  disabled={disabled || isLoadingShares}
+                  onChange={() => toggleShareAction(action)}
+                />
+              ))}
+            </div>
+            <div className="grid min-w-0 items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+              <Input
+                label="Scadenza (facoltativa)"
+                type="date"
+                value={share.expiresAt}
+                readOnly={disabled || isLoadingShares}
+                onChange={(event) =>
+                  setShare((current) => ({ ...current, expiresAt: event.currentTarget.value }))
+                }
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={disabled || isLoadingShares}
+                onClick={() => void addShare()}
+              >
+                Aggiungi
+              </Button>
+            </div>
+            <div className="grid max-h-48 min-w-0 gap-2 overflow-auto">
+              {isLoadingShares ? (
+                <p className="text-xs text-[color:var(--color-ink-muted)]">Caricamento regole…</p>
+              ) : null}
+              {shares.length === 0 && !isLoadingShares ? (
+                <p className="rounded-md border border-dashed border-[color:var(--color-border)] p-3 text-xs text-[color:var(--color-ink-muted)]">
+                  Nessuna condivisione specifica.
+                </p>
+              ) : null}
+              {shares.map((entry) => (
+                <div
+                  key={entry.id}
+                  className="min-w-0 rounded-md border border-[color:var(--color-border)] p-3 text-xs text-[color:var(--color-ink-muted)]"
+                >
+                  <div className="flex min-w-0 items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="break-words font-semibold text-[color:var(--color-ink)]">
+                        {entry.principalType}: {entry.principalId}
+                      </p>
+                      <p className="mt-1 break-words">
+                        {entry.actions.map(shareActionLabel).join(", ")}
+                        {entry.expiresAt ? ` · fino al ${formatDate(entry.expiresAt)}` : ""}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={disabled || isLoadingShares}
+                      className="shrink-0 text-[color:var(--color-danger-ink)] hover:underline"
+                      onClick={() => setShareToRevoke(entry)}
+                    >
+                      Revoca
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
       </Dialog>
       <ConfirmationDialog
         confirmLabel="Revoca accesso"
-        description={shareToRevoke ? `Revocare l’accesso per ${shareToRevoke.principalType}: ${shareToRevoke.principalId}?` : ""}
+        description={
+          shareToRevoke
+            ? `Revocare l’accesso per ${shareToRevoke.principalType}: ${shareToRevoke.principalId}?`
+            : ""
+        }
         isSaving={isLoadingShares}
         onClose={() => setShareToRevoke(null)}
-        onConfirm={() => { if (shareToRevoke) void revokeShare(shareToRevoke); }}
+        onConfirm={() => {
+          if (shareToRevoke) void revokeShare(shareToRevoke);
+        }}
         open={shareToRevoke !== null}
         title="Revocare la condivisione?"
       />
@@ -820,44 +1251,165 @@ function AssetInspector({ asset, apiBaseUrl, directories, cms, disabled, onDelet
   );
 }
 
-function PreviewSurface({ asset, error, isLoading, url }: { asset: MediaAsset; error: string | null; isLoading: boolean; url: string | null }) {
+function PreviewSurface({
+  asset,
+  error,
+  isLoading,
+  url
+}: {
+  asset: MediaAsset;
+  error: string | null;
+  isLoading: boolean;
+  url: string | null;
+}) {
   let content: React.ReactNode;
   if (isLoading) {
-    content = <div className="grid h-full place-items-center text-xs text-[color:var(--color-ink-muted)]">Caricamento anteprima…</div>;
+    content = (
+      <div className="grid h-full place-items-center text-xs text-[color:var(--color-ink-muted)]">
+        Caricamento anteprima…
+      </div>
+    );
   } else if (!url || error) {
-    content = <div className="grid h-full place-items-center p-5 text-center"><div><InspectorMediaGlyph mimeType={asset.mimeType} /><p className="mt-3 text-xs text-[color:var(--color-ink-muted)]">{error ?? "Anteprima non disponibile"}</p></div></div>;
+    content = (
+      <div className="grid h-full place-items-center p-5 text-center">
+        <div>
+          <InspectorMediaGlyph mimeType={asset.mimeType} />
+          <p className="mt-3 text-xs text-[color:var(--color-ink-muted)]">
+            {error ?? "Anteprima non disponibile"}
+          </p>
+        </div>
+      </div>
+    );
   } else if (asset.mimeType.startsWith("image/")) {
     content = <img src={url} alt={asset.displayName} className="h-full w-full object-contain" />;
   } else if (asset.mimeType.startsWith("video/")) {
-    content = <video src={url} controls preload="metadata" className="h-full w-full object-contain" />;
+    content = (
+      <video src={url} controls preload="metadata" className="h-full w-full object-contain" />
+    );
   } else if (asset.mimeType.startsWith("audio/")) {
-    content = <div className="grid h-full place-items-center p-5"><audio src={url} controls preload="metadata" className="w-full" /></div>;
+    content = (
+      <div className="grid h-full place-items-center p-5">
+        <audio src={url} controls preload="metadata" className="w-full" />
+      </div>
+    );
   } else if (asset.mimeType === "application/pdf" || asset.mimeType.startsWith("text/")) {
-    content = <iframe src={url} title={`Anteprima di ${asset.displayName}`} className="h-full w-full border-0 bg-white" />;
+    content = (
+      <iframe
+        src={url}
+        title={`Anteprima di ${asset.displayName}`}
+        className="h-full w-full border-0 bg-white"
+      />
+    );
   } else {
-    content = <div className="grid h-full place-items-center p-5 text-center"><div><InspectorMediaGlyph mimeType={asset.mimeType} /><p className="mt-3 text-xs text-[color:var(--color-ink-muted)]">Anteprima non disponibile per questo formato.</p></div></div>;
+    content = (
+      <div className="grid h-full place-items-center p-5 text-center">
+        <div>
+          <InspectorMediaGlyph mimeType={asset.mimeType} />
+          <p className="mt-3 text-xs text-[color:var(--color-ink-muted)]">
+            Anteprima non disponibile per questo formato.
+          </p>
+        </div>
+      </div>
+    );
   }
-  return <div className="mt-5 h-44 overflow-hidden rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)]">{content}</div>;
+  return (
+    <div className="mt-5 h-44 overflow-hidden rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)]">
+      {content}
+    </div>
+  );
 }
 
 function CompactProperties({ items }: { items: readonly { label: string; value: string }[] }) {
-  return <dl className="mt-5 divide-y divide-[color:var(--color-border)] rounded-md border border-[color:var(--color-border)]">{items.map((item) => <div key={item.label} className="flex items-start justify-between gap-4 px-3 py-2.5"><dt className="text-xs text-[color:var(--color-ink-muted)]">{item.label}</dt><dd className="min-w-0 truncate text-right text-xs font-medium text-[color:var(--color-ink)]" title={item.value}>{item.value}</dd></div>)}</dl>;
+  return (
+    <dl className="mt-5 divide-y divide-[color:var(--color-border)] rounded-md border border-[color:var(--color-border)]">
+      {items.map((item) => (
+        <div key={item.label} className="flex items-start justify-between gap-4 px-3 py-2.5">
+          <dt className="text-xs text-[color:var(--color-ink-muted)]">{item.label}</dt>
+          <dd
+            className="min-w-0 truncate text-right text-xs font-medium text-[color:var(--color-ink)]"
+            title={item.value}
+          >
+            {item.value}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
 }
 
-function buildBreadcrumbs(directoryId: string | null, directories: readonly MediaDirectory[]) { const result: MediaDirectory[] = []; let current = directories.find((directory) => directory.id === directoryId); const seen = new Set<string>(); while (current && !seen.has(current.id)) { seen.add(current.id); result.unshift(current); current = directories.find((directory) => directory.id === current?.parentId); } return result; }
-function sortMediaItems(left: MediaDirectory | MediaAsset, right: MediaDirectory | MediaAsset, sort: FileManagerSort) {
-  const fallback = () => mediaItemName(left).localeCompare(mediaItemName(right), "it", { sensitivity: "base" });
-  if (sort === "updated") return (("updatedAt" in right ? Date.parse(right.updatedAt) || 0 : 0) - ("updatedAt" in left ? Date.parse(left.updatedAt) || 0 : 0)) || fallback();
-  if (sort === "size") return (("byteSize" in right ? right.byteSize : 0) - ("byteSize" in left ? left.byteSize : 0)) || fallback();
+function buildBreadcrumbs(directoryId: string | null, directories: readonly MediaDirectory[]) {
+  const result: MediaDirectory[] = [];
+  let current = directories.find((directory) => directory.id === directoryId);
+  const seen = new Set<string>();
+  while (current && !seen.has(current.id)) {
+    seen.add(current.id);
+    result.unshift(current);
+    current = directories.find((directory) => directory.id === current?.parentId);
+  }
+  return result;
+}
+function sortMediaItems(
+  left: MediaDirectory | MediaAsset,
+  right: MediaDirectory | MediaAsset,
+  sort: FileManagerSort
+) {
+  const fallback = () =>
+    mediaItemName(left).localeCompare(mediaItemName(right), "it", { sensitivity: "base" });
+  if (sort === "updated")
+    return (
+      ("updatedAt" in right ? Date.parse(right.updatedAt) || 0 : 0) -
+        ("updatedAt" in left ? Date.parse(left.updatedAt) || 0 : 0) || fallback()
+    );
+  if (sort === "size")
+    return (
+      ("byteSize" in right ? right.byteSize : 0) - ("byteSize" in left ? left.byteSize : 0) ||
+      fallback()
+    );
   return fallback();
 }
-function mediaItemName(item: MediaDirectory | MediaAsset) { return "displayName" in item ? item.displayName : item.name; }
-function InspectorMediaGlyph({ mimeType }: { mimeType: string }) { const isImage = mimeType.startsWith("image/"); return <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${isImage ? "bg-sky-100 text-sky-700" : "bg-slate-100 text-slate-600"}`}><Icon name={isImage ? "image" : mimeType === "application/pdf" ? "file-text" : "file"} className="h-5 w-5" /></span>; }
-function directoryPath(directory: MediaDirectory, directories: readonly MediaDirectory[]) { return buildBreadcrumbs(directory.id, directories).map((entry) => entry.name).join(" / "); }
-function formatBytes(value: number) { if (value < 1_000_000) return `${Math.max(1, Math.round(value / 1_000))} KB`; return `${(value / 1_000_000).toFixed(value >= 10_000_000 ? 0 : 1)} MB`; }
-function formatDate(value: string) { const date = new Date(value); return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("it-IT", { dateStyle: "medium" }).format(date); }
-function visibilityLabel(value: Visibility) { return value === "public" ? "Pubblica" : value === "restricted" ? "Con restrizioni" : "Privata"; }
-function shareActionLabel(value: ShareAction) { return value === "read" ? "Leggere" : value === "write" ? "Modificare" : value === "manage" ? "Gestire" : "Condividere"; }
+function mediaItemName(item: MediaDirectory | MediaAsset) {
+  return "displayName" in item ? item.displayName : item.name;
+}
+function InspectorMediaGlyph({ mimeType }: { mimeType: string }) {
+  const isImage = mimeType.startsWith("image/");
+  return (
+    <span
+      className={`flex h-11 w-11 items-center justify-center rounded-xl ${isImage ? "bg-sky-100 text-sky-700" : "bg-slate-100 text-slate-600"}`}
+    >
+      <Icon
+        name={isImage ? "image" : mimeType === "application/pdf" ? "file-text" : "file"}
+        className="h-5 w-5"
+      />
+    </span>
+  );
+}
+function directoryPath(directory: MediaDirectory, directories: readonly MediaDirectory[]) {
+  return buildBreadcrumbs(directory.id, directories)
+    .map((entry) => entry.name)
+    .join(" / ");
+}
+function formatBytes(value: number) {
+  if (value < 1_000_000) return `${Math.max(1, Math.round(value / 1_000))} KB`;
+  return `${(value / 1_000_000).toFixed(value >= 10_000_000 ? 0 : 1)} MB`;
+}
+function formatDate(value: string) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : new Intl.DateTimeFormat("it-IT", { dateStyle: "medium" }).format(date);
+}
+function visibilityLabel(value: Visibility) {
+  return value === "public" ? "Pubblica" : value === "restricted" ? "Con restrizioni" : "Privata";
+}
+function shareActionLabel(value: ShareAction) {
+  return value === "read"
+    ? "Leggere"
+    : value === "write"
+      ? "Modificare"
+      : value === "manage"
+        ? "Gestire"
+        : "Condividere";
+}
 interface StartedUpload {
   session: { id: string };
   upload: {
@@ -874,9 +1426,12 @@ function resolveUploadUrl(uploadUrl: string, apiBaseUrl: string) {
 }
 
 async function sha256(file: File): Promise<string> {
-  if (!globalThis.crypto?.subtle) throw new Error("Il browser non supporta il controllo di integrità dei file.");
+  if (!globalThis.crypto?.subtle)
+    throw new Error("Il browser non supporta il controllo di integrità dei file.");
   const digest = await globalThis.crypto.subtle.digest("SHA-256", await file.arrayBuffer());
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-function toDisplayError(error: unknown) { return error instanceof Error ? error.message : "Operazione media non riuscita."; }
+function toDisplayError(error: unknown) {
+  return error instanceof Error ? error.message : "Operazione media non riuscita.";
+}

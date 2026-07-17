@@ -8,7 +8,10 @@ export { MediaAssetsRepository } from "./repositories/media-assets.repository.js
 export { MediaDirectoriesRepository } from "./repositories/media-directories.repository.js";
 export { MediaUploadsRepository } from "./repositories/media-uploads.repository.js";
 export { MediaAssetsService } from "./services/media-assets.service.js";
-export { MediaDirectoriesService } from "./services/media-directories.service.js";
+export {
+  MediaDirectoriesService,
+  MediaDirectoryError
+} from "./services/media-directories.service.js";
 export { MediaUploadError, MediaUploadsService } from "./services/media-uploads.service.js";
 export { MediaStorageConfigService } from "./services/media-storage-config.service.js";
 export { MediaDomainEventsService } from "./services/media-domain-events.service.js";

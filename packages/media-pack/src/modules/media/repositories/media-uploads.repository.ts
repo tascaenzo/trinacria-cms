@@ -76,14 +76,27 @@ export class MediaUploadsRepository {
   }
 
   async listExpiredActiveSessions(now = Date.now()): Promise<readonly MediaUploadSessionRecord[]> {
-    const sessions = await this.repository().findMany({
+    return this.repository().findMany({
+      filter: {
+        status: { $in: ["pending", "content_received"] },
+        expiresAt: { $lte: new Date(now).toISOString() }
+      },
       parse: (value: unknown) => MediaUploadSessionRecordSchema.parse(value)
     });
-    return sessions.filter(
-      (session) =>
-        (session.status === "pending" || session.status === "content_received") &&
-        Date.parse(session.expiresAt) <= now
-    );
+  }
+
+  async listTerminalSessionsBefore(cutoff: string): Promise<readonly MediaUploadSessionRecord[]> {
+    return this.repository().findMany({
+      filter: {
+        status: { $in: ["completed", "rejected", "expired"] },
+        updatedAt: { $lte: cutoff }
+      },
+      parse: (value: unknown) => MediaUploadSessionRecordSchema.parse(value)
+    });
+  }
+
+  async delete(id: string): Promise<boolean> {
+    return this.repository().deleteOne({ filter: { id: id.trim() } });
   }
 
   private async update(

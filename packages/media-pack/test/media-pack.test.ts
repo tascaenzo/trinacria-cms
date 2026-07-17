@@ -25,6 +25,7 @@ import {
   MediaAssetsService,
   MediaDomainEventsService,
   MediaDirectoriesRepository,
+  MediaDirectoriesService,
   MediaUploadsRepository,
   MediaUploadsService,
   MediaProviderRegistry,
@@ -52,17 +53,14 @@ test("media-pack manifest declares its foundation contributions", () => {
   assert.equal(mediaWidget?.id, "media-file-manager");
   assert.equal(mediaWidget?.componentRef, "media-pack:file-manager-widget");
   assert.equal(mediaWidget?.requiredPermission, "media-pack:assets:read");
-  assert.deepEqual(
-    mediaWidget?.layout ? { ...mediaWidget.layout } : undefined,
-    {
-      defaultColumnSpan: 2,
-      defaultRowSpan: 2,
-      minColumnSpan: 2,
-      maxColumnSpan: 4,
-      minRowSpan: 2,
-      maxRowSpan: 3
-    }
-  );
+  assert.deepEqual(mediaWidget?.layout ? { ...mediaWidget.layout } : undefined, {
+    defaultColumnSpan: 2,
+    defaultRowSpan: 2,
+    minColumnSpan: 2,
+    maxColumnSpan: 4,
+    minRowSpan: 2,
+    maxRowSpan: 3
+  });
   assert.deepEqual(
     manifest.security?.grants?.find((grant) => grant.roleCode === "admin")?.permissionKeys,
     MEDIA_PACK_PERMISSION_KEY_LIST
@@ -190,7 +188,11 @@ test("MediaAssetsService inherits access grants from an ACL-enabled directory", 
   const db = createFakeDbAdapter();
   const directories = new MediaDirectoriesRepository(db);
   const service = new MediaAssetsService(new MediaAssetsRepository(db), directories);
-  const directory = await directories.create({ ownerUserId: "owner", name: "Campaign" });
+  const directory = await directories.create({
+    ownerUserId: "owner",
+    name: "Campaign",
+    inheritAcl: false
+  });
   const asset = await service.createAsset({
     ownerUserId: "owner",
     uploadedByUserId: "owner",
@@ -232,12 +234,107 @@ test("MediaAssetsService keeps moved assets out of their previous directory", as
     originalFilename: "file.txt"
   });
 
-  assert.deepEqual((await service.listAssets({ rootOnly: true })).map((entry) => entry.id), [asset.id]);
+  assert.deepEqual(
+    (await service.listAssets({ rootOnly: true })).map((entry) => entry.id),
+    [asset.id]
+  );
 
   await service.updateAsset(asset.id, { directoryId: "destination" });
 
   assert.deepEqual(await service.listAssets({ rootOnly: true }), []);
-  assert.deepEqual((await service.listAssets({ directoryId: "destination" })).map((entry) => entry.id), [asset.id]);
+  assert.deepEqual(
+    (await service.listAssets({ directoryId: "destination" })).map((entry) => entry.id),
+    [asset.id]
+  );
+});
+
+test("MediaDirectoriesService prevents cycles and deletion of directories containing assets", async () => {
+  const db = createFakeDbAdapter();
+  const directoryRepository = new MediaDirectoriesRepository(db);
+  const assetRepository = new MediaAssetsRepository(db);
+  const directories = new MediaDirectoriesService(directoryRepository, assetRepository);
+  const root = await directories.createDirectory({ ownerUserId: "owner", name: "Root" });
+  const child = await directories.createDirectory({
+    ownerUserId: "owner",
+    name: "Child",
+    parentId: root.id
+  });
+
+  await assert.rejects(
+    directories.updateDirectory(root.id, { parentId: child.id }),
+    (error: unknown) =>
+      error instanceof Error && "code" in error && error.code === "media_directory_cycle"
+  );
+
+  await assetRepository.create({
+    directoryId: child.id,
+    ownerUserId: "owner",
+    uploadedByUserId: "owner",
+    displayName: "notes.txt",
+    originalFilename: "notes.txt",
+    mimeType: "text/plain",
+    byteSize: 5,
+    checksum: { algorithm: "sha256", value: "a".repeat(64) },
+    providerId: "local-disk",
+    storageKey: "assets/notes"
+  });
+  await assert.rejects(
+    directories.deleteDirectory(child.id),
+    (error: unknown) =>
+      error instanceof Error && "code" in error && error.code === "media_directory_not_empty"
+  );
+});
+
+test("MediaUploadsService rejects uploads into directories without write access", async () => {
+  const db = createFakeDbAdapter();
+  const directoryRepository = new MediaDirectoriesRepository(db);
+  const directory = await directoryRepository.create({ ownerUserId: "owner", name: "Private" });
+  const providers = new MediaProviderRegistry();
+  providers.register(createProvider("local-disk"));
+  const assets = new MediaAssetsService(new MediaAssetsRepository(db), directoryRepository);
+  const uploads = new MediaUploadsService(new MediaUploadsRepository(db), assets, providers);
+
+  await assert.rejects(
+    uploads.startUpload({
+      ownerUserId: "intruder",
+      directoryId: directory.id,
+      filename: "notes.txt",
+      mimeType: "text/plain",
+      byteSize: 5
+    }),
+    (error: unknown) =>
+      error instanceof Error && "code" in error && error.code === "media_directory_not_writable"
+  );
+});
+
+test("replacing media shares removes omitted grants and increments the ACL version", async () => {
+  const db = createFakeDbAdapter();
+  const assets = new MediaAssetsService(new MediaAssetsRepository(db));
+  const asset = await assets.createAsset({
+    ownerUserId: "owner",
+    uploadedByUserId: "owner",
+    displayName: "notes.txt",
+    originalFilename: "notes.txt",
+    mimeType: "text/plain",
+    byteSize: 5,
+    checksum: { algorithm: "sha256", value: "b".repeat(64) },
+    providerId: "local-disk",
+    storageKey: "assets/shared-notes"
+  });
+
+  await assets.replaceAssetShares(asset.id, "owner", [
+    { principalType: "user", principalId: "reader", actions: ["read"] },
+    { principalType: "role", principalId: "editor", actions: ["read", "write"] }
+  ]);
+  const shares = await assets.replaceAssetShares(asset.id, "owner", [
+    { principalType: "user", principalId: "reader", actions: ["read"] }
+  ]);
+
+  assert.deepEqual(
+    shares.map((share) => `${share.principalType}:${share.principalId}`),
+    ["user:reader"]
+  );
+  assert.equal((await assets.getAsset(asset.id))?.aclVersion, 3);
 });
 
 test("LocalDiskMediaStorageProvider stages, promotes and deletes opaque objects", async () => {
@@ -280,6 +377,7 @@ test("LocalDiskMediaStorageProvider stages, promotes and deletes opaque objects"
 test("MediaUploadsService creates a private ready asset from a staged upload", async () => {
   const root = await mkdtemp(join(tmpdir(), "trinacria-media-upload-"));
   try {
+    const png = createPngHeader(640, 480);
     const db = createFakeDbAdapter();
     const providers = new MediaProviderRegistry();
     providers.register(new LocalDiskMediaStorageProvider({ rootDirectory: root }));
@@ -290,7 +388,7 @@ test("MediaUploadsService creates a private ready asset from a staged upload", a
       ownerUserId: "owner",
       filename: "launch.png",
       mimeType: "image/png",
-      byteSize: 8
+      byteSize: png.byteLength
     });
     assert.equal(started.session.status, "pending");
     assert.equal(started.upload.method, "proxy");
@@ -298,7 +396,7 @@ test("MediaUploadsService creates a private ready asset from a staged upload", a
     const received = await uploads.receiveContent({
       uploadId: started.session.id,
       ownerUserId: "owner",
-      body: Readable.from([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])])
+      body: Readable.from([png])
     });
     assert.equal(received.status, "content_received");
 
@@ -308,9 +406,14 @@ test("MediaUploadsService creates a private ready asset from a staged upload", a
     });
     assert.equal(asset.status, "ready");
     assert.equal(asset.visibility, "private");
-    assert.equal(asset.byteSize, 8);
+    assert.equal(asset.byteSize, png.byteLength);
+    assert.equal(asset.width, 640);
+    assert.equal(asset.height, 480);
     assert.equal((await assets.getAsset(asset.id))?.storageKey, started.session.storageKey);
-    assert.equal((await assets.getAssetByStorage("local-disk", started.session.storageKey))?.id, asset.id);
+    assert.equal(
+      (await assets.getAssetByStorage("local-disk", started.session.storageKey))?.id,
+      asset.id
+    );
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -411,6 +514,7 @@ test("direct S3-compatible completion validates checksum and emits the ready eve
   const db = createFakeDbAdapter();
   const providers = new MediaProviderRegistry();
   const checksum = "c".repeat(64);
+  const png = createPngHeader(320, 200);
   providers.register({
     id: "s3-compatible",
     kind: "s3-compatible",
@@ -431,8 +535,8 @@ test("direct S3-compatible completion validates checksum and emits the ready eve
       assert.equal(input.checksumSha256, checksum);
       return {
         storageKey: input.storageKey,
-        byteSize: 8,
-        contentPrefix: Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+        byteSize: png.byteLength,
+        contentPrefix: png,
         checksum: { algorithm: "sha256" as const, value: checksum }
       };
     },
@@ -454,7 +558,11 @@ test("direct S3-compatible completion validates checksum and emits the ready eve
       return providers.get("s3-compatible");
     },
     async getUploadPolicy() {
-      return { maxFileBytes: 25_000_000, allowedMimeTypes: ["image/png"] };
+      return {
+        maxFileBytes: 25_000_000,
+        maxImagePixels: 40_000_000,
+        allowedMimeTypes: ["image/png"]
+      };
     }
   } as unknown as MediaStorageConfigService;
   const uploads = new MediaUploadsService(
@@ -469,7 +577,7 @@ test("direct S3-compatible completion validates checksum and emits the ready eve
     ownerUserId: "owner",
     filename: "launch.png",
     mimeType: "image/png",
-    byteSize: 8,
+    byteSize: png.byteLength,
     checksumSha256: checksum
   });
   assert.equal(started.upload.method, "presigned");
@@ -478,7 +586,80 @@ test("direct S3-compatible completion validates checksum and emits the ready eve
     ownerUserId: "owner"
   });
   assert.equal(asset.status, "ready");
+  assert.equal(asset.width, 320);
+  assert.equal(asset.height, 200);
   assert.deepEqual(events, ["asset-ready"]);
+});
+
+test("MediaUploadsService enforces image pixel limits and purges retained records", async () => {
+  const root = await mkdtemp(join(tmpdir(), "trinacria-media-retention-"));
+  try {
+    const db = createFakeDbAdapter();
+    const providers = new MediaProviderRegistry();
+    const provider = new LocalDiskMediaStorageProvider({ rootDirectory: root });
+    providers.register(provider);
+    const assetRepository = new MediaAssetsRepository(db);
+    const assets = new MediaAssetsService(assetRepository);
+    const uploadRepository = new MediaUploadsRepository(db);
+    const config = {
+      async resolveDefaultProvider() {
+        return provider;
+      },
+      async getUploadPolicy() {
+        return {
+          maxFileBytes: 25_000_000,
+          maxImagePixels: 100,
+          allowedMimeTypes: ["image/png", "text/plain"]
+        };
+      },
+      async getDeletedAssetRetentionDays() {
+        return 30;
+      }
+    } as unknown as MediaStorageConfigService;
+    const uploads = new MediaUploadsService(uploadRepository, assets, providers, config);
+    const oversizedPng = createPngHeader(20, 20);
+    const oversized = await uploads.startUpload({
+      ownerUserId: "owner",
+      filename: "oversized.png",
+      mimeType: "image/png",
+      byteSize: oversizedPng.byteLength
+    });
+    await uploads.receiveContent({
+      uploadId: oversized.session.id,
+      ownerUserId: "owner",
+      body: Readable.from([oversizedPng])
+    });
+    await assert.rejects(
+      uploads.completeUpload({ uploadId: oversized.session.id, ownerUserId: "owner" }),
+      (error: unknown) =>
+        error instanceof Error && "code" in error && error.code === "media_image_too_large"
+    );
+
+    const text = Buffer.from("retained");
+    const started = await uploads.startUpload({
+      ownerUserId: "owner",
+      filename: "retained.txt",
+      mimeType: "text/plain",
+      byteSize: text.byteLength
+    });
+    await uploads.receiveContent({
+      uploadId: started.session.id,
+      ownerUserId: "owner",
+      body: Readable.from([text])
+    });
+    const asset = await uploads.completeUpload({
+      uploadId: started.session.id,
+      ownerUserId: "owner"
+    });
+    await assets.deleteAsset(asset.id);
+
+    await uploads.cleanupExpired(Date.now() + 31 * 24 * 60 * 60_000);
+    assert.equal(await assets.getAsset(asset.id), null);
+    assert.equal(await uploadRepository.findById(started.session.id), null);
+    await assert.rejects(stat(join(root, asset.storageKey)));
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });
 
 function createProvider(id: string): MediaStorageProvider {
@@ -507,6 +688,15 @@ function createProvider(id: string): MediaStorageProvider {
   };
 }
 
+function createPngHeader(width: number, height: number): Uint8Array {
+  const bytes = Buffer.alloc(24);
+  Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(bytes, 0);
+  Buffer.from("IHDR").copy(bytes, 12);
+  bytes.writeUInt32BE(width, 16);
+  bytes.writeUInt32BE(height, 20);
+  return bytes;
+}
+
 function createFakeDbAdapter(): DbAdapter {
   const records = new Map<string, Record<string, unknown>[]>();
   const getRecords = (context: NamespaceContext, entityName: string) => {
@@ -518,9 +708,23 @@ function createFakeDbAdapter(): DbAdapter {
     return created;
   };
   const matches = (value: Record<string, unknown>, filter?: Record<string, unknown>) =>
-    !filter || Object.entries(filter).every(([key, expected]) => {
-      if (expected && typeof expected === "object" && "$exists" in expected) {
-        return Object.prototype.hasOwnProperty.call(value, key) === Boolean((expected as { $exists: unknown }).$exists);
+    !filter ||
+    Object.entries(filter).every(([key, expected]) => {
+      if (expected && typeof expected === "object") {
+        if ("$exists" in expected) {
+          return (
+            Object.prototype.hasOwnProperty.call(value, key) ===
+            Boolean((expected as { $exists: unknown }).$exists)
+          );
+        }
+        if ("$in" in expected) {
+          return (expected as { $in: unknown[] }).$in.includes(value[key]);
+        }
+        if ("$lte" in expected) {
+          return (
+            typeof value[key] === "string" && value[key] <= (expected as { $lte: string }).$lte
+          );
+        }
       }
       return value[key] === expected;
     });

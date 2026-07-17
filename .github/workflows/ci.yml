@@ -26,6 +26,11 @@ jobs:
     env:
       MONGO_URI: mongodb://trinacria:trinacria@127.0.0.1:27017/trinacria_cms?authSource=admin
       TRINACRIA_RUN_MONGO_INTEGRATION: "1"
+      TRINACRIA_RUN_S3_INTEGRATION: "1"
+      TRINACRIA_S3_ENDPOINT: http://127.0.0.1:9000
+      TRINACRIA_S3_ACCESS_KEY: trinacria
+      TRINACRIA_S3_SECRET_KEY: trinacria-secret
+      TRINACRIA_S3_BUCKET: trinacria-media-ci
 
     steps:
       - name: Checkout
@@ -57,6 +62,26 @@ jobs:
 
       - name: SDK generated check
         run: npm run sdk:check
+
+      - name: Start S3-compatible storage
+        run: >-
+          docker run --detach --rm --name trinacria-minio
+          --publish 9000:9000
+          --env MINIO_ROOT_USER=trinacria
+          --env MINIO_ROOT_PASSWORD=trinacria-secret
+          minio/minio:RELEASE.2025-09-07T16-13-09Z
+          server /data
+
+      - name: Wait for S3-compatible storage
+        run: |
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:9000/minio/health/live >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs trinacria-minio
+          exit 1
 
       - name: Unit tests
         run: npm run test

@@ -120,7 +120,8 @@ export const MEDIA_ASSETS_ENTITY = defineEntity({
     { fields: { id: 1 }, unique: true, name: "assets_id_unique" },
     { fields: { providerId: 1, storageKey: 1 }, unique: true, name: "assets_storage_unique" },
     { fields: { directoryId: 1, status: 1, updatedAt: -1 }, name: "assets_directory_status_idx" },
-    { fields: { ownerUserId: 1, createdAt: -1 }, name: "assets_owner_created_idx" }
+    { fields: { ownerUserId: 1, createdAt: -1 }, name: "assets_owner_created_idx" },
+    { fields: { status: 1, deletedAt: 1 }, name: "assets_deleted_retention_idx" }
   ] as const
 });
 
@@ -152,6 +153,7 @@ export const MEDIA_UPLOADS_ENTITY = defineEntity({
   indexes: [
     { fields: { id: 1 }, unique: true, name: "uploads_id_unique" },
     { fields: { ownerUserId: 1, status: 1, createdAt: -1 }, name: "uploads_owner_status_idx" },
+    { fields: { status: 1, updatedAt: 1 }, name: "uploads_status_updated_idx" },
     { fields: { expiresAt: 1 }, name: "uploads_expires_at_idx" }
   ] as const
 });

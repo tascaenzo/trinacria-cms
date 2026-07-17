@@ -16,8 +16,14 @@ export function CodeEditor({ ariaLabel, onChange, readOnly = false, value }: Cod
   const [search, setSearch] = useState("");
   const [cursor, setCursor] = useState({ line: 1, column: 1 });
   const lineCount = useMemo(() => value.split("\n").length, [value]);
-  const lineNumbers = useMemo(() => Array.from({ length: lineCount }, (_, index) => index + 1).join("\n"), [lineCount]);
-  const matchCount = useMemo(() => search ? value.toLocaleLowerCase().split(search.toLocaleLowerCase()).length - 1 : 0, [search, value]);
+  const lineNumbers = useMemo(
+    () => Array.from({ length: lineCount }, (_, index) => index + 1).join("\n"),
+    [lineCount]
+  );
+  const matchCount = useMemo(
+    () => (search ? value.toLocaleLowerCase().split(search.toLocaleLowerCase()).length - 1 : 0),
+    [search, value]
+  );
 
   function updateCursor(textarea = textareaRef.current) {
     if (!textarea) return;
@@ -59,19 +65,74 @@ export function CodeEditor({ ariaLabel, onChange, readOnly = false, value }: Cod
     updateCursor(textarea);
   }
 
-  return <div className="flex h-full min-h-0 flex-col bg-[color:var(--color-surface)]">
-    <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-[color:var(--color-border)] bg-[color:var(--color-panel)] px-3 py-2">
-      <div className="flex min-w-48 flex-1 items-center rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-2 focus-within:ring-2 focus-within:ring-[color:var(--color-focus)]">
-        <Icon name="search" className="h-4 w-4 shrink-0 text-[color:var(--color-ink-subtle)]" />
-        <input ref={searchRef} aria-label="Cerca nel file" placeholder="Cerca nel file" value={search} onChange={(event) => setSearch(event.currentTarget.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); findNext(); } }} className="h-8 min-w-0 flex-1 bg-transparent px-2 text-sm outline-none" />
-        <span className="shrink-0 text-xs text-[color:var(--color-ink-subtle)]">{search ? `${matchCount} risultati` : "⌘F"}</span>
+  return (
+    <div className="flex h-full min-h-0 flex-col bg-[color:var(--color-surface)]">
+      <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-[color:var(--color-border)] bg-[color:var(--color-panel)] px-3 py-2">
+        <div className="flex min-w-48 flex-1 items-center rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-2 focus-within:ring-2 focus-within:ring-[color:var(--color-focus)]">
+          <Icon name="search" className="h-4 w-4 shrink-0 text-[color:var(--color-ink-subtle)]" />
+          <input
+            ref={searchRef}
+            aria-label="Cerca nel file"
+            placeholder="Cerca nel file"
+            value={search}
+            onChange={(event) => setSearch(event.currentTarget.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                findNext();
+              }
+            }}
+            className="h-8 min-w-0 flex-1 bg-transparent px-2 text-sm outline-none"
+          />
+          <span className="shrink-0 text-xs text-[color:var(--color-ink-subtle)]">
+            {search ? `${matchCount} risultati` : "⌘F"}
+          </span>
+        </div>
+        <button
+          type="button"
+          disabled={!search || matchCount === 0}
+          onClick={findNext}
+          className="h-8 rounded-md border border-[color:var(--color-border)] px-3 text-sm text-[color:var(--color-ink-muted)] disabled:opacity-40"
+        >
+          Successivo
+        </button>
       </div>
-      <button type="button" disabled={!search || matchCount === 0} onClick={findNext} className="h-8 rounded-md border border-[color:var(--color-border)] px-3 text-sm text-[color:var(--color-ink-muted)] disabled:opacity-40">Successivo</button>
+      <div className="relative flex min-h-0 flex-1 overflow-hidden font-mono text-[13px] leading-6">
+        <pre
+          ref={gutterRef}
+          aria-hidden="true"
+          className="m-0 min-w-12 select-none overflow-hidden border-r border-[color:var(--color-border)] bg-[color:var(--color-panel)] px-3 py-4 text-right text-[color:var(--color-ink-subtle)]"
+        >
+          {lineNumbers}
+        </pre>
+        <textarea
+          ref={textareaRef}
+          aria-label={ariaLabel}
+          readOnly={readOnly}
+          spellCheck={false}
+          wrap="off"
+          value={value}
+          onChange={(event) => {
+            onChange(event.currentTarget.value);
+            updateCursor(event.currentTarget);
+          }}
+          onClick={(event) => updateCursor(event.currentTarget)}
+          onKeyUp={(event) => updateCursor(event.currentTarget)}
+          onKeyDown={handleKeyDown}
+          onScroll={(event) => {
+            if (gutterRef.current) gutterRef.current.scrollTop = event.currentTarget.scrollTop;
+          }}
+          className="h-full min-h-0 min-w-0 flex-1 resize-none overflow-auto whitespace-pre border-0 bg-[color:var(--color-surface)] p-4 font-mono text-[13px] leading-6 text-[color:var(--color-ink)] outline-none focus:ring-2 focus:ring-inset focus:ring-[color:var(--color-focus)]"
+        />
+      </div>
+      <div className="flex shrink-0 items-center justify-between border-t border-[color:var(--color-border)] bg-[color:var(--color-panel)] px-3 py-1.5 text-xs text-[color:var(--color-ink-subtle)]">
+        <span>
+          Riga {cursor.line}, colonna {cursor.column}
+        </span>
+        <span>
+          {lineCount} righe · {value.length} caratteri
+        </span>
+      </div>
     </div>
-    <div className="relative flex min-h-0 flex-1 overflow-hidden font-mono text-[13px] leading-6">
-      <pre ref={gutterRef} aria-hidden="true" className="m-0 min-w-12 select-none overflow-hidden border-r border-[color:var(--color-border)] bg-[color:var(--color-panel)] px-3 py-4 text-right text-[color:var(--color-ink-subtle)]">{lineNumbers}</pre>
-      <textarea ref={textareaRef} aria-label={ariaLabel} readOnly={readOnly} spellCheck={false} wrap="off" value={value} onChange={(event) => { onChange(event.currentTarget.value); updateCursor(event.currentTarget); }} onClick={(event) => updateCursor(event.currentTarget)} onKeyUp={(event) => updateCursor(event.currentTarget)} onKeyDown={handleKeyDown} onScroll={(event) => { if (gutterRef.current) gutterRef.current.scrollTop = event.currentTarget.scrollTop; }} className="h-full min-h-0 min-w-0 flex-1 resize-none overflow-auto whitespace-pre border-0 bg-[color:var(--color-surface)] p-4 font-mono text-[13px] leading-6 text-[color:var(--color-ink)] outline-none focus:ring-2 focus:ring-inset focus:ring-[color:var(--color-focus)]" />
-    </div>
-    <div className="flex shrink-0 items-center justify-between border-t border-[color:var(--color-border)] bg-[color:var(--color-panel)] px-3 py-1.5 text-xs text-[color:var(--color-ink-subtle)]"><span>Riga {cursor.line}, colonna {cursor.column}</span><span>{lineCount} righe · {value.length} caratteri</span></div>
-  </div>;
+  );
 }

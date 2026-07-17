@@ -67,10 +67,16 @@ export class MediaDirectoriesRepository {
   }
 
   async softDelete(id: string): Promise<MediaDirectoryRecord | null> {
+    const existing = await this.findById(id);
+    if (!existing) return null;
     const deletedAt = new Date().toISOString();
     const updated = await this.repository().updateOne(
-      { filter: { id: id.trim() } },
-      { deletedAt, updatedAt: deletedAt }
+      { filter: { id: existing.id } },
+      {
+        name: `${existing.name.slice(0, 180)}~deleted~${existing.id}`,
+        deletedAt,
+        updatedAt: deletedAt
+      }
     );
     return updated ? MediaDirectoryRecordSchema.parse(updated) : null;
   }

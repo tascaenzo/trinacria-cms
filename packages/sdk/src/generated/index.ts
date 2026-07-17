@@ -5,6 +5,7 @@ import type { CmsSdkClientCore } from "../runtime/types.js";
 import { createAuthApi, type AuthApi } from "./auth.gen.js";
 import { createSecurityApi, type SecurityApi } from "./security.gen.js";
 import { createInstallationApi, type InstallationApi } from "./installation.gen.js";
+import { createMediaApi, type MediaApi } from "./media.gen.js";
 import { createPermissionsApi, type PermissionsApi } from "./permissions.gen.js";
 import { createRolesApi, type RolesApi } from "./roles.gen.js";
 import { createUsersApi, type UsersApi } from "./users.gen.js";
@@ -17,6 +18,7 @@ export * from "./types.gen.js";
 export type { AuthApi } from "./auth.gen.js";
 export type { SecurityApi } from "./security.gen.js";
 export type { InstallationApi } from "./installation.gen.js";
+export type { MediaApi } from "./media.gen.js";
 export type { PermissionsApi } from "./permissions.gen.js";
 export type { RolesApi } from "./roles.gen.js";
 export type { UsersApi } from "./users.gen.js";
@@ -30,6 +32,7 @@ export interface GeneratedCmsSdk {
   auth: AuthApi;
   security: SecurityApi;
   installation: InstallationApi;
+  media: MediaApi;
   permissions: PermissionsApi;
   roles: RolesApi;
   users: UsersApi;
@@ -45,6 +48,7 @@ export function createGeneratedCmsSdk(client: CmsSdkClientCore): GeneratedCmsSdk
     auth: createAuthApi(client),
     security: createSecurityApi(client),
     installation: createInstallationApi(client),
+    media: createMediaApi(client),
     permissions: createPermissionsApi(client),
     roles: createRolesApi(client),
     users: createUsersApi(client),
