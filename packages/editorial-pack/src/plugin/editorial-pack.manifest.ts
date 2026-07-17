@@ -73,7 +73,19 @@ export const EDITORIAL_PACK_MANIFEST: PluginManifest = definePluginManifest({
         }
       ]
     },
-    { name: "entry_revisions", schemaVersion: 1 },
+    {
+      name: "entry_revisions",
+      schemaVersion: 1,
+      indexes: [
+        { name: "entry_revisions_id_unique", fields: { id: 1 }, unique: true },
+        {
+          name: "entry_revisions_entry_number_unique",
+          fields: { entryId: 1, revisionNumber: 1 },
+          unique: true
+        },
+        { name: "entry_revisions_entry_created_idx", fields: { entryId: 1, createdAt: -1 } }
+      ]
+    },
     { name: "review_assignments", schemaVersion: 1 },
     { name: "editorial_comments", schemaVersion: 1 },
     { name: "taxonomies", schemaVersion: 1 },

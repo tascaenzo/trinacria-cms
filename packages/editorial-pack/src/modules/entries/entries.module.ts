@@ -18,6 +18,12 @@ import { EntriesController } from "./entries.controller.js";
 import { ENTRIES_ENTITY } from "./entries.schemas.js";
 import { EntriesRepository } from "./repositories/entries.repository.js";
 import { EntriesService } from "./services/entries.service.js";
+import { ENTRY_REVISIONS_ENTITY } from "../revisions/revisions.schemas.js";
+import { EntryRevisionsRepository } from "../revisions/repositories/entry-revisions.repository.js";
+import {
+  ENTRY_REVISIONS_ENTITY_REGISTRATION_TOKEN,
+  ENTRY_REVISIONS_REPOSITORY_TOKEN
+} from "../revisions/revisions.tokens.js";
 import {
   ENTRIES_CONTROLLER_TOKEN,
   ENTRIES_ENTITY_REGISTRATION_TOKEN,
@@ -37,10 +43,22 @@ export const EditorialEntriesModule: ModuleDefinition = defineModule({
       },
       [CORE_TOKENS.ENTITY_REGISTRY]
     ),
+    factoryProvider(
+      ENTRY_REVISIONS_ENTITY_REGISTRATION_TOKEN,
+      (registry) => {
+        (registry as EntityRegistry).register(ENTRY_REVISIONS_ENTITY);
+        return true;
+      },
+      [CORE_TOKENS.ENTITY_REGISTRY]
+    ),
     classProvider(ENTRIES_REPOSITORY_TOKEN, EntriesRepository, [CORE_TOKENS.DB_ADAPTER]),
+    classProvider(ENTRY_REVISIONS_REPOSITORY_TOKEN, EntryRevisionsRepository, [
+      CORE_TOKENS.DB_ADAPTER
+    ]),
     classProvider(ENTRIES_SERVICE_TOKEN, EntriesService, [
       ENTRIES_REPOSITORY_TOKEN,
-      CONTENT_TYPES_SERVICE_TOKEN
+      CONTENT_TYPES_SERVICE_TOKEN,
+      ENTRY_REVISIONS_REPOSITORY_TOKEN
     ]),
     httpProvider(ENTRIES_CONTROLLER_TOKEN, EntriesController, [
       ENTRIES_SERVICE_TOKEN,
@@ -50,7 +68,9 @@ export const EditorialEntriesModule: ModuleDefinition = defineModule({
   ],
   exports: [
     ENTRIES_ENTITY_REGISTRATION_TOKEN,
+    ENTRY_REVISIONS_ENTITY_REGISTRATION_TOKEN,
     ENTRIES_REPOSITORY_TOKEN,
+    ENTRY_REVISIONS_REPOSITORY_TOKEN,
     ENTRIES_SERVICE_TOKEN,
     ENTRIES_CONTROLLER_TOKEN
   ]

@@ -63,6 +63,14 @@ export class EntriesRepository {
     return updated ? EntryRecordSchema.parse(updated) : null;
   }
 
+  async updateStatus(id: string, status: EntryRecord["status"]): Promise<EntryRecord | null> {
+    const updated = await this.repository().updateOne(
+      { filter: { id: id.trim() } },
+      { status, updatedAt: new Date().toISOString() }
+    );
+    return updated ? EntryRecordSchema.parse(updated) : null;
+  }
+
   private repository() {
     this.scope = this.scope ?? createPluginDbScope(this.db, EDITORIAL_PACK_PLUGIN_ID);
     return this.scope.repository<EntryRecord>(ENTRIES_ENTITY_NAME);

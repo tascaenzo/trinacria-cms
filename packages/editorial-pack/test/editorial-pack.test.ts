@@ -97,6 +97,14 @@ test("entries are validated against the active content type before persistence",
       async getContentType(id: string) {
         return id === contentType.id ? contentType : null;
       }
+    } as never,
+    {
+      async create() {
+        throw new Error("Unexpected revision creation");
+      },
+      async listByEntryId() {
+        return [];
+      }
     } as never
   );
 
@@ -137,6 +145,58 @@ test("entries are validated against the active content type before persistence",
         },
         "author-1"
       ),
+    EntryValidationError
+  );
+});
+
+test("editorial transitions create immutable revision snapshots", async () => {
+  const entry: EntryRecord = {
+    id: "entry-workflow-1",
+    contentTypeId: "content-type-event",
+    ownerUserId: "author-1",
+    data: {},
+    status: "draft",
+    createdAt: "2026-07-17T00:00:00.000Z",
+    updatedAt: "2026-07-17T00:00:00.000Z"
+  };
+  const revisions: Array<{ reason: string; snapshotJson: string; createdByUserId: string }> = [];
+  const service = new EntriesService(
+    {
+      async create() {
+        return entry;
+      },
+      async findById() {
+        return entry;
+      },
+      async list() {
+        return [];
+      },
+      async update() {
+        return entry;
+      },
+      async updateStatus(_id: string, status: EntryRecord["status"]) {
+        entry.status = status;
+        return entry;
+      }
+    } as never,
+    {} as never,
+    {
+      async create(input: { reason: string; snapshotJson: string; createdByUserId: string }) {
+        revisions.push(input);
+        return {};
+      },
+      async listByEntryId() {
+        return [];
+      }
+    } as never
+  );
+
+  const submitted = await service.transitionEntry(entry.id, "submit", "author-1");
+  assert.equal(submitted?.status, "in_review");
+  assert.equal(revisions[0]?.reason, "transition:submit");
+  assert.equal(JSON.parse(revisions[0]?.snapshotJson ?? "{}").status, "in_review");
+  await assert.rejects(
+    () => service.transitionEntry(entry.id, "publish", "editor-1"),
     EntryValidationError
   );
 });

@@ -16,6 +16,7 @@ import {
 import { EDITORIAL_PACK_PLUGIN_ID } from "../../plugin/editorial-pack.constants.js";
 import { CreateEntryInputSchema, UpdateEntryInputSchema } from "./entries.input.js";
 import { EntriesService } from "./services/entries.service.js";
+import type { EditorialTransition } from "./services/entries.service.js";
 
 const responder = createPluginApiResponder(EDITORIAL_PACK_PLUGIN_ID);
 
@@ -24,6 +25,9 @@ export class EntriesController extends HttpController {
   private readonly canRead: HttpMiddleware;
   private readonly canCreate: HttpMiddleware;
   private readonly canUpdate: HttpMiddleware;
+  private readonly canSubmit: HttpMiddleware;
+  private readonly canApprove: HttpMiddleware;
+  private readonly canPublish: HttpMiddleware;
 
   constructor(
     private readonly entries: EntriesService,
@@ -35,6 +39,9 @@ export class EntriesController extends HttpController {
     this.canRead = createEntriesPermissionMiddleware(authz, "read");
     this.canCreate = createEntriesPermissionMiddleware(authz, "create");
     this.canUpdate = createEntriesPermissionMiddleware(authz, "update");
+    this.canSubmit = createEntriesPermissionMiddleware(authz, "submit");
+    this.canApprove = createEntriesPermissionMiddleware(authz, "approve");
+    this.canPublish = createEntriesPermissionMiddleware(authz, "publish");
   }
 
   routes() {
@@ -50,6 +57,24 @@ export class EntriesController extends HttpController {
       })
       .patch("/v1/editorial/entries/:id", this.updateEntry, {
         middlewares: [this.authenticated, this.canUpdate]
+      })
+      .post("/v1/editorial/entries/:id/submit", this.submitEntry, {
+        middlewares: [this.authenticated, this.canSubmit]
+      })
+      .post("/v1/editorial/entries/:id/approve", this.approveEntry, {
+        middlewares: [this.authenticated, this.canApprove]
+      })
+      .post("/v1/editorial/entries/:id/request-changes", this.requestChanges, {
+        middlewares: [this.authenticated, this.canApprove]
+      })
+      .post("/v1/editorial/entries/:id/publish", this.publishEntry, {
+        middlewares: [this.authenticated, this.canPublish]
+      })
+      .post("/v1/editorial/entries/:id/unpublish", this.unpublishEntry, {
+        middlewares: [this.authenticated, this.canPublish]
+      })
+      .get("/v1/editorial/entries/:id/revisions", this.listRevisions, {
+        middlewares: [this.authenticated, this.canRead]
       })
       .build();
   }
@@ -109,6 +134,40 @@ export class EntriesController extends HttpController {
       return responder.fromError(error);
     }
   };
+
+  private submitEntry = async (ctx: HttpContext) => this.transition(ctx, "submit");
+  private approveEntry = async (ctx: HttpContext) => this.transition(ctx, "approve");
+  private requestChanges = async (ctx: HttpContext) => this.transition(ctx, "request-changes");
+  private publishEntry = async (ctx: HttpContext) => this.transition(ctx, "publish");
+  private unpublishEntry = async (ctx: HttpContext) => this.transition(ctx, "unpublish");
+
+  private listRevisions = async (ctx: HttpContext) => {
+    if (!ctx.params.id) return responder.invalidRequest("Missing entry id");
+    try {
+      const revisions = await this.entries.listRevisions(ctx.params.id);
+      return revisions
+        ? responder.list(revisions)
+        : responder.notFound(`Entry "${ctx.params.id}" not found`);
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private async transition(ctx: HttpContext, transition: EditorialTransition) {
+    if (!ctx.params.id) return responder.invalidRequest("Missing entry id");
+    try {
+      const updated = await this.entries.transitionEntry(
+        ctx.params.id,
+        transition,
+        getAuthenticatedUser(ctx).id
+      );
+      return updated
+        ? responder.success(updated)
+        : responder.notFound(`Entry "${ctx.params.id}" not found`);
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  }
 }
 
 function createEntriesPermissionMiddleware(authz: AuthzService, action: string): HttpMiddleware {

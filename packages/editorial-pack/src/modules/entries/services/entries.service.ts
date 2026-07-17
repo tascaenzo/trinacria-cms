@@ -8,6 +8,7 @@ import {
 } from "../entries.input.js";
 import type { EntryRecord } from "../entries.schemas.js";
 import { EntriesRepository } from "../repositories/entries.repository.js";
+import { EntryRevisionsRepository } from "../../revisions/repositories/entry-revisions.repository.js";
 
 export class EntryValidationError extends Error {
   constructor(message: string) {
@@ -16,10 +17,34 @@ export class EntryValidationError extends Error {
   }
 }
 
+export type EditorialTransition =
+  | "submit"
+  | "approve"
+  | "request-changes"
+  | "publish"
+  | "unpublish";
+
+const TRANSITIONS: Readonly<Record<EditorialTransition, readonly EntryRecord["status"][]>> = {
+  submit: ["draft"],
+  approve: ["in_review"],
+  "request-changes": ["in_review", "approved"],
+  publish: ["approved"],
+  unpublish: ["published"]
+};
+
+const TRANSITION_TARGET: Readonly<Record<EditorialTransition, EntryRecord["status"]>> = {
+  submit: "in_review",
+  approve: "approved",
+  "request-changes": "draft",
+  publish: "published",
+  unpublish: "draft"
+};
+
 export class EntriesService {
   constructor(
     private readonly repository: EntriesRepository,
-    private readonly contentTypes: ContentTypesService
+    private readonly contentTypes: ContentTypesService,
+    private readonly revisions: EntryRevisionsRepository
   ) {}
 
   async createEntry(input: CreateEntryInput, ownerUserId: string): Promise<EntryRecord> {
@@ -46,6 +71,31 @@ export class EntriesService {
       this.validateData(contentType, parsed.data as Record<string, unknown>);
     }
     return this.repository.update(entry.id, parsed);
+  }
+
+  async transitionEntry(id: string, transition: EditorialTransition, actorUserId: string) {
+    const entry = await this.repository.findById(id);
+    if (!entry) return null;
+    if (!TRANSITIONS[transition].includes(entry.status)) {
+      throw new EntryValidationError(
+        `Transition "${transition}" is not available from status "${entry.status}"`
+      );
+    }
+    const updated = await this.repository.updateStatus(entry.id, TRANSITION_TARGET[transition]);
+    if (!updated) return null;
+    await this.revisions.create({
+      entryId: updated.id,
+      reason: `transition:${transition}`,
+      snapshotJson: JSON.stringify(updated),
+      createdByUserId: actorUserId
+    });
+    return updated;
+  }
+
+  async listRevisions(entryId: string) {
+    const entry = await this.repository.findById(entryId);
+    if (!entry) return null;
+    return this.revisions.listByEntryId(entry.id);
   }
 
   private async requireActiveContentType(contentTypeId: string): Promise<ContentTypeRecord> {

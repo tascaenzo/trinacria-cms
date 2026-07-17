@@ -1,6 +1,12 @@
 import { defineEntity, s, type Infer } from "@trinacria-cms/kernel";
 
-export const EntryStatusSchema = s.enum(["draft", "archived"] as const);
+export const EntryStatusSchema = s.enum([
+  "draft",
+  "in_review",
+  "approved",
+  "published",
+  "archived"
+] as const);
 const JsonScalarSchema = s.union([s.string(), s.number(), s.boolean()]);
 const JsonObjectSchema = s.record(s.string({ trim: true, minLength: 1 }), JsonScalarSchema);
 const JsonValueSchema = s.union([
