@@ -44,7 +44,15 @@ export const EDITORIAL_PACK_MANIFEST: PluginManifest = definePluginManifest({
     { pluginId: "media-pack", versionRange: "^0.1.0" }
   ],
   entities: [
-    { name: "content_types", schemaVersion: 1 },
+    {
+      name: "content_types",
+      schemaVersion: 1,
+      indexes: [
+        { name: "content_types_id_unique", fields: { id: 1 }, unique: true },
+        { name: "content_types_key_unique", fields: { key: 1 }, unique: true },
+        { name: "content_types_status_updated_idx", fields: { status: 1, updatedAt: -1 } }
+      ]
+    },
     { name: "entries", schemaVersion: 1 },
     { name: "entry_revisions", schemaVersion: 1 },
     { name: "review_assignments", schemaVersion: 1 },
