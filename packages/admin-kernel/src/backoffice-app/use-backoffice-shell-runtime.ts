@@ -116,6 +116,7 @@ export function useBackofficeShellRuntime({
 
   const rendererRegistry = useMemo(
     () => ({
+      pages: new Map(modules.flatMap((module) => Object.entries(module.renderers?.pages ?? {}))),
       dashboardWidgets: new Map(
         modules.flatMap((module) => Object.entries(module.renderers?.dashboardWidgets ?? {}))
       ),

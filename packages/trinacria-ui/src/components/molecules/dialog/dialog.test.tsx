@@ -24,3 +24,27 @@ test("Dialog renders modal semantics and invokes onClose from Escape", async () 
     restoreDom();
   }
 });
+
+test("Escape closes only the topmost dialog", async () => {
+  const restoreDom = installDom();
+  let parentCloseCount = 0;
+  let childCloseCount = 0;
+
+  try {
+    const view = await renderClient(
+      <Dialog open title="File manager" onClose={() => parentCloseCount++}>
+        <Dialog open title="Edit media" onClose={() => childCloseCount++}>
+          Editor
+        </Dialog>
+      </Dialog>
+    );
+
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    assert.equal(childCloseCount, 1);
+    assert.equal(parentCloseCount, 0);
+
+    await view.unmount();
+  } finally {
+    restoreDom();
+  }
+});

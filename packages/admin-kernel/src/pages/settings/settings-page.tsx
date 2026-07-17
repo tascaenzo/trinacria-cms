@@ -1,31 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  Badge,
-  Button,
-  Card,
-  DataTable,
-  DataTableBody,
-  DataTableCell,
-  DataTableHead,
-  DataTableHeadCell,
-  DataTableHeaderRow,
-  DataTablePrimaryCell,
-  DataTableRow,
-  DataTableTable,
-  Dialog,
-  InfoCard,
-  PropertyItem,
-  PropertyList
-} from "@trinacria-cms/trinacria-ui";
+import { Dialog } from "@trinacria-cms/trinacria-ui";
 import type {
   AdminSettingsSectionRenderContext,
   RenderableAdminSettingsSection
 } from "../../runtime/admin-route-runtime.js";
-import {
-  MobileRecordCard,
-  MobileRecordField,
-  MobileRecordList
-} from "../../components/mobile-records.js";
 import { ErrorBanner, EmptyState } from "../../components/resource-feedback.js";
 import {
   writeBackofficeNavigationState,
@@ -35,21 +13,17 @@ import {
 import { cms } from "../../runtime/cms-sdk.js";
 import { toDisplayError } from "../../lib/sdk-errors.js";
 import { useI18n } from "../../lib/i18n.js";
-import { translateStatusLabel } from "../../lib/ui-translations.js";
 import {
   filterRecordsForSettingsSection,
   formatSettingFormLabel,
   isVisibleSettingDefinition,
   isVisibleSettingsSection,
-  parseSettingFormValue,
-  type SettingDefinitionRecord
+  parseSettingFormValue
 } from "./settings-page.utils.js";
 import { SettingsSectionForm, SettingsWorkspaceSidebar } from "./settings-page.components.js";
 import {
   useSettingsDefinitions,
-  useSettingsOverview,
-  useSettingsSectionDrafts,
-  type CmsOverviewItem
+  useSettingsSectionDrafts
 } from "./settings-page.hooks.js";
 
 export interface SettingsPageProps {
@@ -67,7 +41,6 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
 
   const { error, isLoading, records, refresh } = useSettingsDefinitions();
   const visibleRecords = useMemo(() => records.filter(isVisibleSettingDefinition), [records]);
-  const { isOverviewLoading, overviewItems } = useSettingsOverview(visibleRecords);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -179,11 +152,6 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
     writeBackofficeNavigationState("dashboard");
   }
 
-  const activeDefinitionsCount = visibleRecords.filter(
-    (record) => record.status === "active"
-  ).length;
-  const ownerPluginsCount = new Set(visibleRecords.map((record) => record.ownerPluginId)).size;
-
   const operationalSettings = useMemo(
     () =>
       settings.filter(
@@ -208,172 +176,14 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
   const { isSectionValuesLoading, sectionDraftValues, sectionValueErrors, setSectionDraftValues } =
     useSettingsSectionDrafts(selectedSectionRecords, t);
 
-  function openRecordSection(record: SettingDefinitionRecord) {
-    const recordSection = operationalSettings.find((section) =>
-      filterRecordsForSettingsSection(visibleRecords, section).some(
-        (entry) => entry.id === record.id
-      )
-    );
-    if (recordSection) {
-      handleSelectSection(recordSection.id);
-    }
-  }
-
   function handleSectionDraftValueChange(recordKey: string, value: string) {
     setSectionDraftValues((current) => ({ ...current, [recordKey]: value }));
     setSaveError(null);
     setSaveMessage(null);
   }
 
-  function renderOverviewValue(item: CmsOverviewItem): string {
-    if (item.status === "resolved" && item.value) return item.value;
-    if (item.status === "error") return t("settings.overview.unavailable");
-    return t("settings.overview.not_configured");
-  }
-
-  function renderOverviewLabel(field: CmsOverviewItem["field"]): string {
-    switch (field) {
-      case "siteName":
-        return t("settings.overview.site_name");
-      case "siteUrl":
-        return t("settings.overview.site_url");
-      case "locale":
-        return t("settings.overview.locale");
-      case "timezone":
-        return t("settings.overview.timezone");
-    }
-  }
-
   return (
-    <div className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
-      <Card eyebrow={t("settings.eyebrow")} title={t("settings.title")}>
-        <div className="mb-5 flex flex-wrap items-start justify-between gap-4 border-b border-[color:var(--color-border)] pb-4">
-          <p className="max-w-2xl text-sm leading-6 text-[color:var(--color-ink-muted)]">
-            {t("settings.summary")}
-          </p>
-          <Button type="button" variant="secondary" onClick={() => void refresh()}>
-            {t("common.actions.refresh")}
-          </Button>
-        </div>
-        {error ? <ErrorBanner message={error} /> : null}
-        {isLoading ? <EmptyState text={t("settings.empty.loading_definitions")} /> : null}
-        {!isLoading ? (
-          <>
-            <MobileRecordList>
-              {visibleRecords.map((record) => (
-                <MobileRecordCard
-                  key={record.id}
-                  title={record.key}
-                  subtitle={record.category ?? t("settings.uncategorized")}
-                  badges={
-                    <Badge tone={record.status === "active" ? "success" : "warning"}>
-                      {translateStatusLabel(record.status, t)}
-                    </Badge>
-                  }
-                  actions={
-                    <Button
-                      variant="secondary"
-                      className="w-full"
-                      onClick={() => openRecordSection(record)}
-                    >
-                      {t("common.actions.open", "Apri")}
-                    </Button>
-                  }
-                >
-                  <MobileRecordField label={t("common.table.owner")} value={record.ownerPluginId} />
-                </MobileRecordCard>
-              ))}
-            </MobileRecordList>
-
-            <DataTable>
-              <DataTableTable>
-                <DataTableHead>
-                  <DataTableHeaderRow>
-                    <DataTableHeadCell>{t("common.table.key")}</DataTableHeadCell>
-                    <DataTableHeadCell>{t("common.table.owner")}</DataTableHeadCell>
-                    <DataTableHeadCell>{t("common.table.status")}</DataTableHeadCell>
-                    <DataTableHeadCell>{t("common.table.action")}</DataTableHeadCell>
-                  </DataTableHeaderRow>
-                </DataTableHead>
-                <DataTableBody>
-                  {visibleRecords.map((record) => (
-                    <DataTableRow key={record.id}>
-                      <DataTablePrimaryCell meta={record.category ?? t("settings.uncategorized")}>
-                        {record.key}
-                      </DataTablePrimaryCell>
-                      <DataTableCell className="text-[color:var(--color-ink-muted)]">
-                        {record.ownerPluginId}
-                      </DataTableCell>
-                      <DataTableCell>
-                        <Badge tone={record.status === "active" ? "success" : "warning"}>
-                          {translateStatusLabel(record.status, t)}
-                        </Badge>
-                      </DataTableCell>
-                      <DataTableCell>
-                        <Button variant="secondary" onClick={() => openRecordSection(record)}>
-                          {t("common.actions.open", "Apri")}
-                        </Button>
-                      </DataTableCell>
-                    </DataTableRow>
-                  ))}
-                </DataTableBody>
-              </DataTableTable>
-            </DataTable>
-          </>
-        ) : null}
-      </Card>
-
-      <div className="grid gap-4">
-        <Card eyebrow={t("settings.overview.eyebrow")} title={t("settings.overview.title")}>
-          <div className="grid gap-4">
-            <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
-              {t("settings.overview.summary")}
-            </p>
-            {isOverviewLoading ? <EmptyState text={t("settings.overview.loading")} /> : null}
-            {!isOverviewLoading ? (
-              <PropertyList columns={2}>
-                {overviewItems.map((item) => (
-                  <PropertyItem
-                    key={item.field}
-                    label={renderOverviewLabel(item.field)}
-                    value={renderOverviewValue(item)}
-                    hint={
-                      item.key
-                        ? `${t("settings.overview.detected_key")} ${item.key}`
-                        : t("settings.overview.not_configured_hint")
-                    }
-                  />
-                ))}
-                <PropertyItem
-                  label={t("settings.overview.active_definitions")}
-                  value={activeDefinitionsCount}
-                  hint={t("settings.overview.active_definitions_hint")}
-                />
-                <PropertyItem
-                  label={t("settings.overview.owner_plugins")}
-                  value={ownerPluginsCount}
-                  hint={t("settings.overview.owner_plugins_hint")}
-                />
-              </PropertyList>
-            ) : null}
-          </div>
-        </Card>
-
-        <Card eyebrow={t("settings.policy.eyebrow")} title={t("settings.policy.title")}>
-          <div className="grid gap-4">
-            <InfoCard
-              title={t("settings.policy.ownership.title")}
-              description={t("settings.policy.ownership.body")}
-            />
-            <InfoCard
-              title={t("settings.policy.json_first.title")}
-              description={t("settings.policy.json_first.body")}
-            />
-          </div>
-        </Card>
-      </div>
-
-      <Dialog
+    <Dialog
         open={isInspectOpen}
         title={t("official.route.settings.title", "Impostazioni")}
         description={selectedSection?.summary ?? selectedSection?.title}
@@ -383,6 +193,7 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
         onClose={closeSettingsWorkspace}
         width="fullscreen"
       >
+        {error ? <div className="p-6"><ErrorBanner message={error} /></div> : null}
         {isLoading ? <EmptyState text={t("settings.empty.loading_definitions")} /> : null}
         {!isLoading ? (
           <div className="grid h-full min-h-0 bg-[color:var(--color-surface)] lg:grid-cols-[320px_minmax(0,1fr)]">

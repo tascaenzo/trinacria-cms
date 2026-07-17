@@ -2,6 +2,7 @@ import { PluginPermissionCenterSection } from "../pages/settings/components/plug
 import { PluginManagementSettingsSection } from "../pages/settings/components/plugin-management-settings-section.js";
 import { BackofficeThemeSettingsSection } from "../pages/settings/components/backoffice-theme-settings-section.js";
 import type {
+  AdminPageRenderContext,
   AdminDashboardWidgetRenderContext,
   AdminSettingsSectionRenderContext
 } from "./admin-route-runtime.js";
@@ -15,7 +16,10 @@ export type AdminDashboardWidgetRenderer = (
   context: AdminDashboardWidgetRenderContext
 ) => ReactNode;
 
+export type AdminPageRenderer = (context: AdminPageRenderContext) => ReactNode;
+
 export interface AdminRendererRegistryInput {
+  pages?: ReadonlyMap<string, AdminPageRenderer>;
   dashboardWidgets?: ReadonlyMap<string, AdminDashboardWidgetRenderer>;
   settingsSections?: ReadonlyMap<string, AdminSettingsSectionRenderer>;
 }
@@ -30,6 +34,15 @@ const settingsSectionRenderers = new Map<string, AdminSettingsSectionRenderer>([
 ]);
 
 const dashboardWidgetRenderers = new Map<string, AdminDashboardWidgetRenderer>();
+const pageRenderers = new Map<string, AdminPageRenderer>();
+
+export function resolveAdminPageRenderer(
+  componentRef: string | undefined,
+  renderers?: AdminRendererRegistryInput
+): AdminPageRenderer | undefined {
+  if (!componentRef) return undefined;
+  return renderers?.pages?.get(componentRef) ?? pageRenderers.get(componentRef);
+}
 
 export function resolveAdminSettingsSectionRenderer(
   componentRef: string | undefined,

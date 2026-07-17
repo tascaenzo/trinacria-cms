@@ -23,7 +23,7 @@ import { AuthScreenLayout } from "./components/auth-screen-layout.js";
 import type { BackofficeModule } from "./module.js";
 import { readRequiredString } from "./runtime/action-state.js";
 import { clearBackofficeSession, persistBackofficeSession } from "./runtime/auth-session.js";
-import { cms } from "./runtime/cms-sdk.js";
+import { cms, getBackofficeApiBaseUrl } from "./runtime/cms-sdk.js";
 import { loadRemoteBackofficeI18n } from "./lib/remote-i18n.js";
 import { InstallationDatabaseGuidePage } from "./pages/installation-database-guide-page.js";
 import { InstallationBootstrapPage } from "./pages/installation-bootstrap-page.js";
@@ -564,6 +564,7 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
         locale,
         canCustomizeDashboard,
         navigateToRoute: navigateTo,
+        apiBaseUrl: getBackofficeApiBaseUrl(),
         cms,
         t
       })
