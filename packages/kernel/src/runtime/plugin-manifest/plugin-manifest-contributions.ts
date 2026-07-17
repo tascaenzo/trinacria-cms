@@ -231,10 +231,9 @@ const translationNamespaceDeclarationSchema = s.object(
   {
     id: translationNamespaceSchema,
     surface: translationNamespaceSchema,
-    locales: s.array(localeSchema, { unique: true }).refine(
-      (locales) => locales.length > 0,
-      "At least one translation locale is required"
-    ),
+    locales: s
+      .array(localeSchema, { unique: true })
+      .refine((locales) => locales.length > 0, "At least one translation locale is required"),
     source: translationNamespaceSchema
   },
   { strict: true }
@@ -263,6 +262,7 @@ const adminNavigationSchema = s.object(
     id: namespaceSegmentSchema,
     label: s.string({ trim: true, minLength: 1, maxLength: 120 }),
     path: publicPathSchema.optional(),
+    group: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
     requiredPermission: s
       .string({ trim: true, toLowerCase: true, minLength: 3, maxLength: 220 })
       .refine(
