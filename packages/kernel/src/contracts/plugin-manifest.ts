@@ -185,6 +185,8 @@ export interface PluginManifestAdminNavigation {
   id: string;
   label: string;
   path?: string;
+  /** Collapsible sidebar section used to group related plugin navigation. */
+  group?: string;
   requiredPermission?: string;
   order?: number;
 }
