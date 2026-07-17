@@ -22,6 +22,7 @@ export const EDITORIAL_PACK_ADMIN_MANIFEST: PluginManifestAdmin = defineAdmin({
       id: "editorial-content-types",
       path: "/editorial/content-types",
       label: "Content models",
+      componentRef: "editorial-pack:content-types",
       requiredPermission: EDITORIAL_PACK_PERMISSION_KEYS.CONTENT_TYPES_READ,
       order: 81
     }),
