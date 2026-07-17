@@ -8,6 +8,7 @@
     "packages/kernel",
     "packages/core-pack",
     "packages/email-pack",
+    "packages/editorial-pack",
     "packages/media-pack",
     "packages/sdk",
     "packages/admin-kernel",
@@ -15,7 +16,7 @@
   ],
   "scripts": {
     "build": "npm run build:packages && npm run build:apps",
-    "build:packages": "npm run build -w @trinacria-cms/kernel && npm run build -w @trinacria-cms/core-pack && npm run build -w @trinacria-cms/sdk && npm run build -w @trinacria-cms/trinacria-ui && npm run build -w @trinacria-cms/email-pack && npm run build -w @trinacria-cms/media-pack && npm run build -w @trinacria-cms/example-team-onboarding-plugin && npm run build -w @trinacria-cms/admin-kernel",
+    "build:packages": "npm run build -w @trinacria-cms/kernel && npm run build -w @trinacria-cms/core-pack && npm run build -w @trinacria-cms/sdk && npm run build -w @trinacria-cms/trinacria-ui && npm run build -w @trinacria-cms/email-pack && npm run build -w @trinacria-cms/media-pack && npm run build -w @trinacria-cms/editorial-pack && npm run build -w @trinacria-cms/example-team-onboarding-plugin && npm run build -w @trinacria-cms/admin-kernel",
     "build:apps": "npm run build -w @trinacria-cms/playground && npm run build -w @trinacria-cms/backoffice",
     "dev": "npm run build:packages && (npm run dev:playground:watch & npm run dev:backoffice:watch & wait)",
     "dev:playground": "npm run build:packages && npm run dev:playground:watch",
