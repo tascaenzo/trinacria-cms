@@ -15,7 +15,6 @@ export const EDITORIAL_PACK_ADMIN_MANIFEST: PluginManifestAdmin = defineAdmin({
       id: "editorial-entries",
       path: "/editorial/entries",
       label: "Content",
-      group: "Editoriale",
       requiredPermission: EDITORIAL_PACK_PERMISSION_KEYS.ENTRIES_READ,
       order: 80
     }),
@@ -23,7 +22,6 @@ export const EDITORIAL_PACK_ADMIN_MANIFEST: PluginManifestAdmin = defineAdmin({
       id: "editorial-content-types",
       path: "/editorial/content-types",
       label: "Content models",
-      group: "Editoriale",
       requiredPermission: EDITORIAL_PACK_PERMISSION_KEYS.CONTENT_TYPES_READ,
       order: 81
     }),
@@ -31,7 +29,6 @@ export const EDITORIAL_PACK_ADMIN_MANIFEST: PluginManifestAdmin = defineAdmin({
       id: "editorial-taxonomies",
       path: "/editorial/taxonomies",
       label: "Taxonomies",
-      group: "Editoriale",
       requiredPermission: EDITORIAL_PACK_PERMISSION_KEYS.ENTRIES_READ,
       order: 82
     })
@@ -41,6 +38,7 @@ export const EDITORIAL_PACK_ADMIN_MANIFEST: PluginManifestAdmin = defineAdmin({
       id: "nav-editorial-entries",
       path: "/editorial/entries",
       label: "Content",
+      group: "Editoriale",
       requiredPermission: EDITORIAL_PACK_PERMISSION_KEYS.ENTRIES_READ,
       order: 80
     }),
@@ -48,6 +46,7 @@ export const EDITORIAL_PACK_ADMIN_MANIFEST: PluginManifestAdmin = defineAdmin({
       id: "nav-editorial-content-types",
       path: "/editorial/content-types",
       label: "Content models",
+      group: "Editoriale",
       requiredPermission: EDITORIAL_PACK_PERMISSION_KEYS.CONTENT_TYPES_READ,
       order: 81
     }),
@@ -55,6 +54,7 @@ export const EDITORIAL_PACK_ADMIN_MANIFEST: PluginManifestAdmin = defineAdmin({
       id: "nav-editorial-taxonomies",
       path: "/editorial/taxonomies",
       label: "Taxonomies",
+      group: "Editoriale",
       requiredPermission: EDITORIAL_PACK_PERMISSION_KEYS.ENTRIES_READ,
       order: 82
     })
