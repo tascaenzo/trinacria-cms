@@ -99,7 +99,7 @@ export const MediaUploadSessionRecordSchema = s.object(
     displayName: s.string({ trim: true, minLength: 1, maxLength: 255 }),
     originalFilename: s.string({ trim: true, minLength: 1, maxLength: 500 }),
     mimeType: s.string({ trim: true, minLength: 1, maxLength: 120 }),
-    expectedByteSize: s.number({ int: true, min: 1 }),
+    expectedByteSize: s.number({ int: true, min: 0 }),
     expectedChecksumSha256: s.string({ trim: true, minLength: 64, maxLength: 64 }).optional(),
     status: MediaUploadStatusSchema,
     expiresAt: s.dateTimeString(),

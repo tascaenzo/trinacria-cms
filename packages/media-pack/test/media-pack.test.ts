@@ -301,6 +301,41 @@ test("MediaUploadsService creates a private ready asset from a staged upload", a
   }
 });
 
+test("MediaUploadsService accepts and completes empty text files", async () => {
+  const root = await mkdtemp(join(tmpdir(), "trinacria-media-empty-upload-"));
+  try {
+    const db = createFakeDbAdapter();
+    const providers = new MediaProviderRegistry();
+    providers.register(new LocalDiskMediaStorageProvider({ rootDirectory: root }));
+    const assets = new MediaAssetsService(new MediaAssetsRepository(db));
+    const uploads = new MediaUploadsService(new MediaUploadsRepository(db), assets, providers);
+
+    const started = await uploads.startUpload({
+      ownerUserId: "owner",
+      filename: "empty.txt",
+      mimeType: "text/plain",
+      byteSize: 0
+    });
+    assert.equal(started.session.expectedByteSize, 0);
+
+    await uploads.receiveContent({
+      uploadId: started.session.id,
+      ownerUserId: "owner",
+      body: Readable.from([Buffer.alloc(0)])
+    });
+    const asset = await uploads.completeUpload({
+      uploadId: started.session.id,
+      ownerUserId: "owner"
+    });
+
+    assert.equal(asset.byteSize, 0);
+    assert.equal(asset.mimeType, "text/plain");
+    await stat(join(root, asset.storageKey));
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test("MediaUploadsService replaces content without changing asset identity or access", async () => {
   const root = await mkdtemp(join(tmpdir(), "trinacria-media-replace-"));
   try {
