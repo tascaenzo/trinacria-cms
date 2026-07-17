@@ -7,6 +7,9 @@ import {
   EDITORIAL_PACK_SETTING_DEFINITIONS,
   ContentTypeValidationError,
   ContentTypesService,
+  EntriesService,
+  EntryValidationError,
+  type EntryRecord,
   type ContentTypeRecord
 } from "../src/index.js";
 
@@ -43,6 +46,98 @@ test("editorial-pack declares the plugin foundation", () => {
   assert.deepEqual(
     manifest.security?.roles?.map((role) => role.code),
     ["author", "reviewer", "content-manager"]
+  );
+});
+
+test("entries are validated against the active content type before persistence", async () => {
+  const contentType: ContentTypeRecord = {
+    id: "content-type-event",
+    key: "event",
+    name: "Event",
+    status: "active",
+    fields: [
+      { key: "starts_at", label: "Starts at", type: "date_time", required: true, multiple: false },
+      { key: "tickets_url", label: "Tickets", type: "url", required: false, multiple: false }
+    ],
+    taxonomyIds: [],
+    ownershipScope: "inherit",
+    createdByUserId: "manager-1",
+    createdAt: "2026-07-17T00:00:00.000Z",
+    updatedAt: "2026-07-17T00:00:00.000Z"
+  };
+  const service = new EntriesService(
+    {
+      async create(input: {
+        contentTypeId: string;
+        ownerUserId: string;
+        data: Record<string, unknown>;
+      }) {
+        const now = "2026-07-17T00:00:00.000Z";
+        return {
+          id: "entry-1",
+          contentTypeId: input.contentTypeId,
+          ownerUserId: input.ownerUserId,
+          data: input.data,
+          status: "draft",
+          createdAt: now,
+          updatedAt: now
+        } as EntryRecord;
+      },
+      async findById() {
+        return null;
+      },
+      async list() {
+        return [];
+      },
+      async update() {
+        return null;
+      }
+    } as never,
+    {
+      async getContentType(id: string) {
+        return id === contentType.id ? contentType : null;
+      }
+    } as never
+  );
+
+  const entry = await service.createEntry(
+    {
+      contentTypeId: contentType.id,
+      data: {
+        starts_at: "2026-07-20T18:30:00.000Z",
+        tickets_url: "https://example.test/tickets"
+      }
+    },
+    "author-1"
+  );
+
+  assert.equal(entry.status, "draft");
+  await assert.rejects(
+    () =>
+      service.createEntry(
+        { contentTypeId: contentType.id, data: { tickets_url: "https://example.test/tickets" } },
+        "author-1"
+      ),
+    EntryValidationError
+  );
+  await assert.rejects(
+    () =>
+      service.createEntry(
+        { contentTypeId: contentType.id, data: { starts_at: "not-a-date" } },
+        "author-1"
+      ),
+    EntryValidationError
+  );
+  await assert.rejects(
+    () =>
+      service.createEntry(
+        {
+          contentTypeId: contentType.id,
+          data: { starts_at: "2026-07-20T18:30:00.000Z", unexpected: "value" }
+        },
+        "author-1"
+      ),
+    EntryValidationError
   );
 });
 

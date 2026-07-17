@@ -53,7 +53,26 @@ export const EDITORIAL_PACK_MANIFEST: PluginManifest = definePluginManifest({
         { name: "content_types_status_updated_idx", fields: { status: 1, updatedAt: -1 } }
       ]
     },
-    { name: "entries", schemaVersion: 1 },
+    {
+      name: "entries",
+      schemaVersion: 1,
+      indexes: [
+        { name: "entries_id_unique", fields: { id: 1 }, unique: true },
+        {
+          name: "entries_content_type_status_updated_idx",
+          fields: { contentTypeId: 1, status: 1, updatedAt: -1 }
+        },
+        {
+          name: "entries_owner_status_updated_idx",
+          fields: { ownerUserId: 1, status: 1, updatedAt: -1 }
+        },
+        {
+          name: "entries_content_type_slug_idx",
+          fields: { contentTypeId: 1, slug: 1 },
+          sparse: true
+        }
+      ]
+    },
     { name: "entry_revisions", schemaVersion: 1 },
     { name: "review_assignments", schemaVersion: 1 },
     { name: "editorial_comments", schemaVersion: 1 },
