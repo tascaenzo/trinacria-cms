@@ -2,6 +2,8 @@ import type { KernelPluginDefinition } from "@trinacria-cms/kernel/contracts";
 import { EditorialPackRootModule } from "../modules/editorial-pack-root.module.js";
 import { CONTENT_TYPES_SERVICE_TOKEN } from "../modules/content-types/content-types.tokens.js";
 import { ContentTypesService } from "../modules/content-types/services/content-types.service.js";
+import { ENTRIES_SERVICE_TOKEN } from "../modules/entries/entries.tokens.js";
+import { EntriesService } from "../modules/entries/services/entries.service.js";
 import { EDITORIAL_PACK_MANIFEST } from "./editorial-pack.manifest.js";
 
 export function createEditorialPackPlugin(): KernelPluginDefinition {
@@ -13,6 +15,8 @@ export function createEditorialPackPlugin(): KernelPluginDefinition {
         CONTENT_TYPES_SERVICE_TOKEN
       );
       await contentTypes.ensureDefaultContentTypes();
+      const entries = await context.app.resolve<EntriesService>(ENTRIES_SERVICE_TOKEN);
+      await entries.ensureDefaultBlogContent();
     }
   };
 }

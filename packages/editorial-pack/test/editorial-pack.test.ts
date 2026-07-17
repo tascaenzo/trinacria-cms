@@ -23,17 +23,7 @@ test("editorial-pack declares the plugin foundation", () => {
   ]);
   assert.deepEqual(
     manifest.entities.map((entity) => entity.name),
-    [
-      "content_types",
-      "entries",
-      "entry_revisions",
-      "review_assignments",
-      "editorial_comments",
-      "taxonomies",
-      "taxonomy_terms",
-      "entry_taxonomy_terms",
-      "entry_relations"
-    ]
+    ["content_types", "entries"]
   );
   assert.deepEqual(
     manifest.settings.map((setting) => setting.key).sort(),
@@ -159,7 +149,6 @@ test("editorial transitions create immutable revision snapshots", async () => {
     createdAt: "2026-07-17T00:00:00.000Z",
     updatedAt: "2026-07-17T00:00:00.000Z"
   };
-  const revisions: Array<{ reason: string; snapshotJson: string; createdByUserId: string }> = [];
   const service = new EntriesService(
     {
       async create() {
@@ -177,28 +166,68 @@ test("editorial transitions create immutable revision snapshots", async () => {
       async updateStatus(_id: string, status: EntryRecord["status"]) {
         entry.status = status;
         return entry;
+      },
+      async appendRevision(updated: EntryRecord, revision: EntryRecord["revisions"] extends readonly (infer T)[] | undefined ? T : never) {
+        entry.revisions = [...(updated.revisions ?? []), revision];
+        return entry;
       }
     } as never,
-    {} as never,
     {
-      async create(input: { reason: string; snapshotJson: string; createdByUserId: string }) {
-        revisions.push(input);
-        return {};
-      },
-      async listByEntryId() {
-        return [];
+      async getContentType() {
+        return {
+          id: "content-type-event",
+          key: "event",
+          name: "Event",
+          status: "active",
+          fields: [],
+          taxonomyIds: [],
+          ownershipScope: "inherit",
+          createdByUserId: "manager-1",
+          createdAt: "2026-07-17T00:00:00.000Z",
+          updatedAt: "2026-07-17T00:00:00.000Z"
+        } satisfies ContentTypeRecord;
       }
     } as never
   );
 
   const submitted = await service.transitionEntry(entry.id, "submit", "author-1");
   assert.equal(submitted?.status, "in_review");
-  assert.equal(revisions[0]?.reason, "transition:submit");
-  assert.equal(JSON.parse(revisions[0]?.snapshotJson ?? "{}").status, "in_review");
+  assert.equal(entry.revisions?.[0]?.reason, "transition:submit");
+  assert.equal(JSON.parse(entry.revisions?.[0]?.snapshotJson ?? "{}").status, "in_review");
   await assert.rejects(
     () => service.transitionEntry(entry.id, "publish", "editor-1"),
     EntryValidationError
   );
+});
+
+test("direct workflows allow a draft to be published without review", async () => {
+  const entry: EntryRecord = {
+    id: "entry-direct-1",
+    contentTypeId: "content-type-page",
+    ownerUserId: "author-1",
+    data: {},
+    status: "draft",
+    createdAt: "2026-07-17T00:00:00.000Z",
+    updatedAt: "2026-07-17T00:00:00.000Z"
+  };
+  const service = new EntriesService(
+    {
+      async findById() { return entry; },
+      async updateStatus(_id: string, status: EntryRecord["status"]) { entry.status = status; return entry; },
+      async appendRevision(updated: EntryRecord, revision: EntryRecord["revisions"] extends readonly (infer T)[] | undefined ? T : never) { entry.revisions = [...(updated.revisions ?? []), revision]; return entry; }
+    } as never,
+    {
+      async getContentType() {
+        return {
+          id: "content-type-page", key: "page", name: "Page", workflowId: "direct", status: "active", fields: [], taxonomyIds: [], ownershipScope: "inherit", createdByUserId: "manager-1", createdAt: "2026-07-17T00:00:00.000Z", updatedAt: "2026-07-17T00:00:00.000Z"
+        } satisfies ContentTypeRecord;
+      }
+    } as never,
+    { async create() { return {}; } } as never
+  );
+
+  const published = await service.transitionEntry(entry.id, "publish", "author-1");
+  assert.equal(published?.status, "published");
 });
 
 test("content types keep stable keys and reject unsafe field definitions", async () => {

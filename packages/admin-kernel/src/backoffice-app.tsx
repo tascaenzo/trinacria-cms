@@ -32,6 +32,7 @@ import { MfaLoginPage, MfaRecoveryCodesPage } from "./pages/mfa-login-page.js";
 import { BackofficeShellStatus } from "./backoffice-app/backoffice-shell-status.js";
 import { BackofficeUserMenu } from "./backoffice-app/backoffice-user-menu.js";
 import { useBackofficeRouteState } from "./backoffice-app/use-backoffice-route-state.js";
+import { readBackofficeNavigationState } from "./runtime/backoffice-navigation-state.js";
 import { useBackofficeShellRuntime } from "./backoffice-app/use-backoffice-shell-runtime.js";
 import { useAuthenticatedRoleLabel } from "./backoffice-app/use-authenticated-role-label.js";
 import {
@@ -86,7 +87,11 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [remoteI18nBundle, setRemoteI18nBundle] = useState<I18nBundle | null>(null);
   const [mfaChallenge, setMfaChallenge] = useState<MfaChallenge | null>(null);
-  const [mfaSetup, setMfaSetup] = useState<{ manualKey: string; otpauthUrl: string; expiresAt: string } | null>(null);
+  const [mfaSetup, setMfaSetup] = useState<{
+    manualKey: string;
+    otpauthUrl: string;
+    expiresAt: string;
+  } | null>(null);
   const [mfaError, setMfaError] = useState<string | null>(null);
   const [isMfaSubmitting, setIsMfaSubmitting] = useState(false);
   const [mfaPendingSession, setMfaPendingSession] = useState<MfaSession | null>(null);
@@ -276,7 +281,10 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
       if (isMfaChallenge(loginResponse.data)) {
         return {
           ok: false,
-          error: { code: "auth_mfa_enrollment_required", message: "Complete MFA enrollment before signing in." },
+          error: {
+            code: "auth_mfa_enrollment_required",
+            message: "Complete MFA enrollment before signing in."
+          },
           data: null
         };
       }
@@ -342,8 +350,12 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
       const code = readRequiredString(formData, "code");
       const result =
         mfaChallenge.status === "mfa_required"
-          ? await cms.auth.completeMfaLogin({ body: { challengeId: mfaChallenge.challengeId, code } })
-          : await cms.auth.completeLoginMfaEnrollment({ body: { challengeId: mfaChallenge.challengeId, code } });
+          ? await cms.auth.completeMfaLogin({
+              body: { challengeId: mfaChallenge.challengeId, code }
+            })
+          : await cms.auth.completeLoginMfaEnrollment({
+              body: { challengeId: mfaChallenge.challengeId, code }
+            });
       if (result.data.recoveryCodes?.length) {
         setMfaPendingSession(result.data);
       } else {
@@ -573,6 +585,7 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
   return renderWithI18n(
     <AdminShell
       activeRouteId={activeRoute?.id ?? ""}
+      activeNavigationParams={readBackofficeNavigationState().params.toString()}
       navigation={registry.navigation}
       hiddenNavigationIds={USER_MENU_NAVIGATION_IDS}
       onNavigate={navigateTo}

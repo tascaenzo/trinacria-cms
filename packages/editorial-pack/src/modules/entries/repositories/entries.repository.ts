@@ -3,6 +3,7 @@ import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinac
 import { EDITORIAL_PACK_PLUGIN_ID } from "../../../plugin/editorial-pack.constants.js";
 import type { CreateEntryInput, UpdateEntryInput } from "../entries.input.js";
 import { EntryRecordSchema, type EntryRecord } from "../entries.schemas.js";
+import type { EntryRevisionRecord } from "../../revisions/revisions.schemas.js";
 
 const ENTRIES_ENTITY_NAME = "entries";
 
@@ -11,7 +12,9 @@ export class EntriesRepository {
 
   constructor(private readonly db: DbAdapter) {}
 
-  async create(input: CreateEntryInput & { ownerUserId: string }): Promise<EntryRecord> {
+  async create(
+    input: CreateEntryInput & { ownerUserId: string; initialStatus: EntryRecord["status"] }
+  ): Promise<EntryRecord> {
     const now = new Date().toISOString();
     const record = await this.repository().insertOne({
       id: randomUUID(),
@@ -21,7 +24,7 @@ export class EntriesRepository {
       ...(input.slug ? { slug: input.slug } : {}),
       ...(input.body ? { body: input.body } : {}),
       data: input.data,
-      status: "draft" as const,
+      status: input.initialStatus,
       createdAt: now,
       updatedAt: now
     });
@@ -38,7 +41,7 @@ export class EntriesRepository {
   async list(
     options: { contentTypeId?: string; ownerUserId?: string; limit?: number; offset?: number } = {}
   ) {
-    const filter: Record<string, unknown> = { status: { $ne: "archived" } };
+    const filter: Record<string, unknown> = {};
     if (options.contentTypeId) filter.contentTypeId = options.contentTypeId.trim();
     if (options.ownerUserId) filter.ownerUserId = options.ownerUserId.trim();
     return this.repository().findMany({
@@ -67,6 +70,20 @@ export class EntriesRepository {
     const updated = await this.repository().updateOne(
       { filter: { id: id.trim() } },
       { status, updatedAt: new Date().toISOString() }
+    );
+    return updated ? EntryRecordSchema.parse(updated) : null;
+  }
+
+  async appendRevision(
+    entry: EntryRecord,
+    revision: EntryRevisionRecord
+  ): Promise<EntryRecord | null> {
+    const updated = await this.repository().updateOne(
+      { filter: { id: entry.id } },
+      {
+        revisions: [...(entry.revisions ?? []), revision],
+        updatedAt: new Date().toISOString()
+      }
     );
     return updated ? EntryRecordSchema.parse(updated) : null;
   }

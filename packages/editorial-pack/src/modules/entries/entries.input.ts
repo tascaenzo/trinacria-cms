@@ -53,3 +53,18 @@ export const UpdateEntryInputSchema = s.object(
 );
 
 export type UpdateEntryInput = Infer<typeof UpdateEntryInputSchema>;
+
+export const TransitionEntryInputSchema = s.object(
+  {
+    transitionId: s.string({
+      trim: true,
+      toLowerCase: true,
+      minLength: 1,
+      maxLength: 80,
+      pattern: /^[a-z][a-z0-9_]*$/
+    })
+  },
+  { strict: true }
+);
+
+export type TransitionEntryInput = Infer<typeof TransitionEntryInputSchema>;

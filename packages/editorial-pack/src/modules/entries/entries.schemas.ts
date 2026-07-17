@@ -1,12 +1,13 @@
 import { defineEntity, s, type Infer } from "@trinacria-cms/kernel";
+import { EntryRevisionRecordSchema } from "../revisions/revisions.schemas.js";
 
-export const EntryStatusSchema = s.enum([
-  "draft",
-  "in_review",
-  "approved",
-  "published",
-  "archived"
-] as const);
+export const EntryStatusSchema = s.string({
+  trim: true,
+  toLowerCase: true,
+  minLength: 1,
+  maxLength: 80,
+  pattern: /^[a-z][a-z0-9_]*$/
+});
 const JsonScalarSchema = s.union([s.string(), s.number(), s.boolean()]);
 const JsonObjectSchema = s.record(s.string({ trim: true, minLength: 1 }), JsonScalarSchema);
 const JsonValueSchema = s.union([
@@ -35,6 +36,7 @@ export const EntryRecordSchema = s.object(
     body: FreeformObjectSchema.optional(),
     data: FreeformObjectSchema,
     status: EntryStatusSchema,
+    revisions: s.array(EntryRevisionRecordSchema, { unique: false }).optional(),
     createdAt: s.dateTimeString(),
     updatedAt: s.dateTimeString()
   },

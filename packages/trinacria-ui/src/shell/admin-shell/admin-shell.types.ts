@@ -8,6 +8,7 @@ export interface AdminShellNavigationItem {
   group?: string;
   badge?: string;
   order?: number;
+  params?: Readonly<Record<string, string>>;
 }
 
 export interface AdminShellStatusBadge {
@@ -20,9 +21,10 @@ export interface AdminShellProps extends PropsWithChildren {
   title: string;
   subtitle?: string;
   activeRouteId: string;
+  activeNavigationParams?: string;
   navigation: readonly AdminShellNavigationItem[];
   hiddenNavigationIds?: readonly string[];
-  onNavigate: (routeId: string) => void;
+  onNavigate: (routeId: string, params?: URLSearchParams) => void;
   statusBadges?: readonly AdminShellStatusBadge[];
   headerActions?: ReactNode;
   sidebarFooter?: ReactNode;

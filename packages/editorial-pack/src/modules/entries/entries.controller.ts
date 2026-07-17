@@ -14,7 +14,11 @@ import {
   type JwtAuthService
 } from "@trinacria-cms/core-pack";
 import { EDITORIAL_PACK_PLUGIN_ID } from "../../plugin/editorial-pack.constants.js";
-import { CreateEntryInputSchema, UpdateEntryInputSchema } from "./entries.input.js";
+import {
+  CreateEntryInputSchema,
+  TransitionEntryInputSchema,
+  UpdateEntryInputSchema
+} from "./entries.input.js";
 import { EntriesService } from "./services/entries.service.js";
 import type { EditorialTransition } from "./services/entries.service.js";
 
@@ -72,6 +76,9 @@ export class EntriesController extends HttpController {
       })
       .post("/v1/editorial/entries/:id/unpublish", this.unpublishEntry, {
         middlewares: [this.authenticated, this.canPublish]
+      })
+      .post("/v1/editorial/entries/:id/transition", this.transitionEntry, {
+        middlewares: [this.authenticated, this.canSubmit]
       })
       .get("/v1/editorial/entries/:id/revisions", this.listRevisions, {
         middlewares: [this.authenticated, this.canRead]
@@ -137,9 +144,18 @@ export class EntriesController extends HttpController {
 
   private submitEntry = async (ctx: HttpContext) => this.transition(ctx, "submit");
   private approveEntry = async (ctx: HttpContext) => this.transition(ctx, "approve");
-  private requestChanges = async (ctx: HttpContext) => this.transition(ctx, "request-changes");
+  private requestChanges = async (ctx: HttpContext) => this.transition(ctx, "request_changes");
   private publishEntry = async (ctx: HttpContext) => this.transition(ctx, "publish");
   private unpublishEntry = async (ctx: HttpContext) => this.transition(ctx, "unpublish");
+
+  private transitionEntry = async (ctx: HttpContext) => {
+    try {
+      const input = TransitionEntryInputSchema.parse(ctx.body);
+      return this.transition(ctx, input.transitionId);
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
 
   private listRevisions = async (ctx: HttpContext) => {
     if (!ctx.params.id) return responder.invalidRequest("Missing entry id");

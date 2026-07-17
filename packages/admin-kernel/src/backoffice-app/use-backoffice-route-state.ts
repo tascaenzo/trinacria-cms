@@ -24,8 +24,8 @@ export function useBackofficeRouteState(defaultRouteId = "dashboard") {
     };
   }, [defaultRouteId]);
 
-  const navigateTo = useCallback((routeId: string) => {
-    writeBackofficeNavigationState(routeId);
+  const navigateTo = useCallback((routeId: string, params?: URLSearchParams) => {
+    writeBackofficeNavigationState(routeId, params);
     setActiveRouteId(routeId);
   }, []);
 

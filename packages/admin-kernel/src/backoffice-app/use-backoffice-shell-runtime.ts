@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import type { GetAuthenticatedUserResponse, GetKernelHealthResponse } from "@trinacria-cms/sdk";
-import type { AdminExtensionManifest, AdminRuntimePluginInfo } from "../contracts.js";
+import type {
+  AdminExtensionManifest,
+  AdminNavigationItem,
+  AdminRuntimePluginInfo
+} from "../contracts.js";
 import {
   createOfficialAdminContributions,
   withOfficialAdminRouteRenderers
@@ -33,6 +37,8 @@ export function useBackofficeShellRuntime({
   const [health, setHealth] = useState<HealthSnapshot | null>(null);
   const [shellError, setShellError] = useState<string | null>(null);
   const [isShellLoading, setIsShellLoading] = useState(false);
+  const [dynamicNavigation, setDynamicNavigation] = useState<readonly AdminNavigationItem[]>([]);
+  const [navigationRevision, setNavigationRevision] = useState(0);
 
   useEffect(() => {
     if (!installationInstalled || !authUser) {
@@ -98,6 +104,34 @@ export function useBackofficeShellRuntime({
     };
   }, [authUser, installationInstalled]);
 
+  useEffect(() => {
+    const loaders = modules
+      .map((module) => module.dynamicNavigation)
+      .filter((navigation): navigation is NonNullable<typeof navigation> => Boolean(navigation));
+    if (!authUser || !installationInstalled || !loaders.length) {
+      setDynamicNavigation([]);
+      return;
+    }
+    let isMounted = true;
+    void Promise.all(loaders.map((navigation) => navigation.load({ cms })))
+      .then((items) => {
+        if (isMounted) setDynamicNavigation(items.flat());
+      })
+      .catch(() => {
+        if (isMounted) setDynamicNavigation([]);
+      });
+    const refresh = () => setNavigationRevision((current) => current + 1);
+    for (const loader of loaders) {
+      if (loader.refreshEvent) window.addEventListener(loader.refreshEvent, refresh);
+    }
+    return () => {
+      isMounted = false;
+      for (const loader of loaders) {
+        if (loader.refreshEvent) window.removeEventListener(loader.refreshEvent, refresh);
+      }
+    };
+  }, [authUser, installationInstalled, modules, navigationRevision]);
+
   const customContributions = useMemo(
     () =>
       withOfficialAdminRouteRenderers(
@@ -128,7 +162,7 @@ export function useBackofficeShellRuntime({
   );
 
   const registry = useMemo(() => {
-    return buildAdminRegistry(
+    const baseRegistry = buildAdminRegistry(
       [
         ...createOfficialAdminContributions({
           pluginCount: runtimePlugins.length,
@@ -146,12 +180,21 @@ export function useBackofficeShellRuntime({
       userPermissionKeys,
       rendererRegistry
     );
+    const navigationById = new Map(baseRegistry.navigation.map((item) => [item.id, item]));
+    for (const item of dynamicNavigation) navigationById.set(item.id, item);
+    return {
+      ...baseRegistry,
+      navigation: Array.from(navigationById.values()).sort(
+        (left, right) => (left.order ?? 0) - (right.order ?? 0)
+      )
+    };
   }, [
     customContributions,
     health?.status,
     rendererRegistry,
     runtimeContributions,
     runtimePlugins,
+    dynamicNavigation,
     t,
     userPermissionKeys
   ]);
@@ -161,7 +204,10 @@ export function useBackofficeShellRuntime({
     [runtimePlugins]
   );
   const canCustomizeDashboard = useMemo(
-    () => userPermissionKeys.some((permission) => matchesPermission(permission, "core-pack:settings:write")),
+    () =>
+      userPermissionKeys.some((permission) =>
+        matchesPermission(permission, "core-pack:settings:write")
+      ),
     [userPermissionKeys]
   );
 

@@ -1,4 +1,7 @@
-import type { ContentTypeRecord } from "../../content-types/content-types.schemas.js";
+import type {
+  ContentTypeRecord,
+  ContentWorkflow
+} from "../../content-types/content-types.schemas.js";
 import { ContentTypesService } from "../../content-types/services/content-types.service.js";
 import {
   CreateEntryInputSchema,
@@ -8,7 +11,7 @@ import {
 } from "../entries.input.js";
 import type { EntryRecord } from "../entries.schemas.js";
 import { EntriesRepository } from "../repositories/entries.repository.js";
-import { EntryRevisionsRepository } from "../../revisions/repositories/entry-revisions.repository.js";
+import { randomUUID } from "node:crypto";
 
 export class EntryValidationError extends Error {
   constructor(message: string) {
@@ -17,41 +20,68 @@ export class EntryValidationError extends Error {
   }
 }
 
-export type EditorialTransition =
-  | "submit"
-  | "approve"
-  | "request-changes"
-  | "publish"
-  | "unpublish";
+export type EditorialTransition = string;
 
-const TRANSITIONS: Readonly<Record<EditorialTransition, readonly EntryRecord["status"][]>> = {
-  submit: ["draft"],
-  approve: ["in_review"],
-  "request-changes": ["in_review", "approved"],
-  publish: ["approved"],
-  unpublish: ["published"]
+const REVIEW_WORKFLOW: ContentWorkflow = {
+  preset: "review",
+  states: [
+    { key: "draft", label: "Bozza", initial: true },
+    { key: "in_review", label: "In revisione", initial: false },
+    { key: "approved", label: "Approvato", initial: false },
+    { key: "published", label: "Pubblicato", initial: false }
+  ],
+  transitions: [
+    { key: "submit", label: "Invia in revisione", from: "draft", to: "in_review" },
+    { key: "approve", label: "Approva", from: "in_review", to: "approved" },
+    {
+      key: "request_changes",
+      label: "Richiedi modifiche",
+      from: "in_review",
+      to: "draft"
+    },
+    { key: "publish", label: "Pubblica", from: "approved", to: "published" },
+    {
+      key: "unpublish",
+      label: "Rimuovi dalla pubblicazione",
+      from: "published",
+      to: "draft"
+    }
+  ]
 };
 
-const TRANSITION_TARGET: Readonly<Record<EditorialTransition, EntryRecord["status"]>> = {
-  submit: "in_review",
-  approve: "approved",
-  "request-changes": "draft",
-  publish: "published",
-  unpublish: "draft"
+const DIRECT_WORKFLOW: ContentWorkflow = {
+  preset: "direct",
+  states: [
+    { key: "draft", label: "Bozza", initial: true },
+    { key: "published", label: "Pubblicato", initial: false }
+  ],
+  transitions: [
+    { key: "publish", label: "Pubblica", from: "draft", to: "published" },
+    {
+      key: "unpublish",
+      label: "Rimuovi dalla pubblicazione",
+      from: "published",
+      to: "draft"
+    }
+  ]
 };
 
 export class EntriesService {
   constructor(
     private readonly repository: EntriesRepository,
-    private readonly contentTypes: ContentTypesService,
-    private readonly revisions: EntryRevisionsRepository
+    private readonly contentTypes: ContentTypesService
   ) {}
 
   async createEntry(input: CreateEntryInput, ownerUserId: string): Promise<EntryRecord> {
     const parsed = CreateEntryInputSchema.parse(input);
     const contentType = await this.requireActiveContentType(parsed.contentTypeId);
     this.validateData(contentType, parsed.data as Record<string, unknown>);
-    return this.repository.create({ ...parsed, ownerUserId });
+    return this.repository.create({
+      ...parsed,
+      ownerUserId,
+      initialStatus:
+        resolveWorkflow(contentType).states.find((state) => state.initial)?.key ?? "draft"
+    });
   }
 
   async getEntry(id: string) {
@@ -60,6 +90,36 @@ export class EntriesService {
 
   async listEntries(options?: Parameters<EntriesRepository["list"]>[0]) {
     return this.repository.list(options);
+  }
+
+  /** Seeds a small, immediately understandable blog only when the workspace is empty. */
+  async ensureDefaultBlogContent(): Promise<void> {
+    if ((await this.repository.list({ limit: 1 })).length > 0) return;
+    const contentTypes = await this.contentTypes.listContentTypes({ status: "active", limit: 20 });
+    const article = contentTypes.find((contentType) => contentType.key === "article");
+    const page = contentTypes.find((contentType) => contentType.key === "page");
+    if (article) {
+      await this.createEntry(
+        {
+          contentTypeId: article.id,
+          title: "Benvenuto nel tuo nuovo blog",
+          slug: "benvenuto-nel-tuo-nuovo-blog",
+          data: { category: "Tecnologia", tags: ["CMS", "Editoriale"] }
+        },
+        "system:editorial-pack"
+      );
+    }
+    if (page) {
+      await this.createEntry(
+        {
+          contentTypeId: page.id,
+          title: "Chi siamo",
+          slug: "chi-siamo",
+          data: {}
+        },
+        "system:editorial-pack"
+      );
+    }
   }
 
   async updateEntry(id: string, input: UpdateEntryInput) {
@@ -76,26 +136,34 @@ export class EntriesService {
   async transitionEntry(id: string, transition: EditorialTransition, actorUserId: string) {
     const entry = await this.repository.findById(id);
     if (!entry) return null;
-    if (!TRANSITIONS[transition].includes(entry.status)) {
+    const contentType = await this.requireActiveContentType(entry.contentTypeId);
+    const configuredWorkflow = resolveWorkflow(contentType);
+    const configuredTransition = configuredWorkflow.transitions.find(
+      (candidate) => candidate.key === transition && candidate.from === entry.status
+    );
+    if (!configuredTransition) {
       throw new EntryValidationError(
         `Transition "${transition}" is not available from status "${entry.status}"`
       );
     }
-    const updated = await this.repository.updateStatus(entry.id, TRANSITION_TARGET[transition]);
+    const updated = await this.repository.updateStatus(entry.id, configuredTransition.to);
     if (!updated) return null;
-    await this.revisions.create({
+    const revision = {
+      id: randomUUID(),
       entryId: updated.id,
-      reason: `transition:${transition}`,
+      revisionNumber: (updated.revisions?.length ?? 0) + 1,
+      reason: `transition:${transition}` as const,
       snapshotJson: JSON.stringify(updated),
-      createdByUserId: actorUserId
-    });
-    return updated;
+      createdByUserId: actorUserId,
+      createdAt: new Date().toISOString()
+    };
+    return (await this.repository.appendRevision(updated, revision)) ?? updated;
   }
 
   async listRevisions(entryId: string) {
     const entry = await this.repository.findById(entryId);
     if (!entry) return null;
-    return this.revisions.listByEntryId(entry.id);
+    return entry.revisions ?? [];
   }
 
   private async requireActiveContentType(contentTypeId: string): Promise<ContentTypeRecord> {
@@ -158,4 +226,9 @@ export class EntriesService {
                       : false;
     if (!valid) throw new EntryValidationError(`Field "${key}" has an invalid ${type} value`);
   }
+}
+
+function resolveWorkflow(contentType: Pick<ContentTypeRecord, "workflowId" | "workflow">) {
+  if (contentType.workflow) return contentType.workflow;
+  return contentType.workflowId === "direct" ? DIRECT_WORKFLOW : REVIEW_WORKFLOW;
 }

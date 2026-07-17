@@ -25,6 +25,8 @@ export class ContentTypesRepository {
       fields: input.fields,
       taxonomyIds: input.taxonomyIds ?? [],
       ...(input.workflowId ? { workflowId: input.workflowId } : {}),
+      ...(input.workflow ? { workflow: input.workflow } : {}),
+      showInMainNavigation: input.showInMainNavigation ?? false,
       ownershipScope: input.ownershipScope ?? "inherit",
       createdByUserId: input.createdByUserId.trim(),
       createdAt: now,
@@ -71,6 +73,11 @@ export class ContentTypesRepository {
     if (input.taxonomyIds !== undefined) patch.taxonomyIds = input.taxonomyIds;
     if (input.workflowId !== undefined) patch.workflowId = input.workflowId;
     if (input.clearWorkflow) patch.workflowId = undefined;
+    if (input.workflow !== undefined) patch.workflow = input.workflow;
+    if (input.clearWorkflowDefinition) patch.workflow = undefined;
+    if (input.showInMainNavigation !== undefined) {
+      patch.showInMainNavigation = input.showInMainNavigation;
+    }
     if (input.ownershipScope !== undefined) patch.ownershipScope = input.ownershipScope;
 
     const updated = await this.repository().updateOne({ filter: { id: id.trim() } }, patch);

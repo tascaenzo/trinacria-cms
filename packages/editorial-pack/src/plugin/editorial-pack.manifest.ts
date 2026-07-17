@@ -35,7 +35,7 @@ const entryEventPayloadSchema = {
 export const EDITORIAL_PACK_MANIFEST: PluginManifest = definePluginManifest({
   id: EDITORIAL_PACK_PLUGIN_ID,
   displayName: "Editorial Pack",
-  description: "Configurable content modelling, editorial workflows, revisions and taxonomies.",
+  description: "Configurable content modelling with document-native editorial workflows.",
   version: "0.1.0",
   requiresCore: "^0.1.0",
   capabilities: [...EDITORIAL_PACK_CAPABILITY_LIST],
@@ -72,26 +72,7 @@ export const EDITORIAL_PACK_MANIFEST: PluginManifest = definePluginManifest({
           sparse: true
         }
       ]
-    },
-    {
-      name: "entry_revisions",
-      schemaVersion: 1,
-      indexes: [
-        { name: "entry_revisions_id_unique", fields: { id: 1 }, unique: true },
-        {
-          name: "entry_revisions_entry_number_unique",
-          fields: { entryId: 1, revisionNumber: 1 },
-          unique: true
-        },
-        { name: "entry_revisions_entry_created_idx", fields: { entryId: 1, createdAt: -1 } }
-      ]
-    },
-    { name: "review_assignments", schemaVersion: 1 },
-    { name: "editorial_comments", schemaVersion: 1 },
-    { name: "taxonomies", schemaVersion: 1 },
-    { name: "taxonomy_terms", schemaVersion: 1 },
-    { name: "entry_taxonomy_terms", schemaVersion: 1 },
-    { name: "entry_relations", schemaVersion: 1 }
+    }
   ],
   settings: [...EDITORIAL_PACK_SETTING_DEFINITIONS],
   admin: EDITORIAL_PACK_ADMIN_MANIFEST,

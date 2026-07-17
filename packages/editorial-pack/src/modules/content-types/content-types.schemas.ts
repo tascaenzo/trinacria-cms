@@ -21,6 +21,43 @@ export const ContentTypeOwnershipScopeSchema = s.enum([
 ] as const);
 
 const FreeformObjectSchema = s.object({}, { strict: false });
+const WorkflowStateKeySchema = s.string({
+  trim: true,
+  toLowerCase: true,
+  minLength: 1,
+  maxLength: 80,
+  pattern: /^[a-z][a-z0-9_]*$/
+});
+
+export const ContentWorkflowStateSchema = s.object(
+  {
+    key: WorkflowStateKeySchema,
+    label: s.string({ trim: true, minLength: 1, maxLength: 80 }),
+    initial: s.boolean()
+  },
+  { strict: true }
+);
+
+export const ContentWorkflowTransitionSchema = s.object(
+  {
+    key: WorkflowStateKeySchema,
+    label: s.string({ trim: true, minLength: 1, maxLength: 120 }),
+    from: WorkflowStateKeySchema,
+    to: WorkflowStateKeySchema
+  },
+  { strict: true }
+);
+
+export const ContentWorkflowSchema = s.object(
+  {
+    preset: s.enum(["review", "direct", "custom"] as const),
+    states: s.array(ContentWorkflowStateSchema, { unique: false }),
+    transitions: s.array(ContentWorkflowTransitionSchema, { unique: false })
+  },
+  { strict: true }
+);
+
+export type ContentWorkflow = Infer<typeof ContentWorkflowSchema>;
 
 export const ContentTypeFieldSchema = s.object(
   {
@@ -60,6 +97,8 @@ export const ContentTypeRecordSchema = s.object(
     fields: s.array(ContentTypeFieldSchema, { unique: false }),
     taxonomyIds: s.array(s.string({ trim: true, minLength: 1 }), { unique: true }),
     workflowId: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
+    workflow: ContentWorkflowSchema.optional(),
+    showInMainNavigation: s.boolean().optional(),
     ownershipScope: ContentTypeOwnershipScopeSchema,
     createdByUserId: s.string({ trim: true, minLength: 1 }),
     createdAt: s.dateTimeString(),

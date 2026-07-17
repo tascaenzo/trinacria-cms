@@ -1,7 +1,10 @@
 import { definePluginBackofficeModule, type BackofficeModule } from "@trinacria-cms/admin-kernel";
 import { CORE_PACK_ADMIN_MANIFEST } from "@trinacria-cms/core-pack/admin-manifest";
 import { EDITORIAL_PACK_ADMIN_MANIFEST } from "@trinacria-cms/editorial-pack/admin-manifest";
-import { EDITORIAL_PACK_ADMIN_RENDERERS } from "@trinacria-cms/editorial-pack/admin";
+import {
+  EDITORIAL_PACK_ADMIN_RENDERERS,
+  loadEditorialContentNavigation
+} from "@trinacria-cms/editorial-pack/admin";
 import { EMAIL_PACK_ADMIN_MANIFEST } from "@trinacria-cms/email-pack/admin-manifest";
 import { EMAIL_PACK_ADMIN_RENDERERS } from "@trinacria-cms/email-pack/admin";
 import { MEDIA_PACK_ADMIN_MANIFEST } from "@trinacria-cms/media-pack/admin-manifest";
@@ -48,7 +51,11 @@ export const backofficeModules: readonly BackofficeModule[] = [
       displayName: "Editorial Pack",
       admin: EDITORIAL_PACK_ADMIN_MANIFEST
     }),
-    renderers: EDITORIAL_PACK_ADMIN_RENDERERS
+    renderers: EDITORIAL_PACK_ADMIN_RENDERERS,
+    dynamicNavigation: {
+      load: ({ cms }) => loadEditorialContentNavigation(cms),
+      refreshEvent: "trinacria-cms:editorial-navigation-updated"
+    }
   },
   {
     ...definePluginBackofficeModule({

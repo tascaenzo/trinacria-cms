@@ -2,7 +2,8 @@ import { s, type Infer } from "@trinacria-cms/kernel";
 import {
   ContentTypeFieldSchema,
   ContentTypeOwnershipScopeSchema,
-  ContentTypeStatusSchema
+  ContentTypeStatusSchema,
+  ContentWorkflowSchema
 } from "./content-types.schemas.js";
 
 export const CreateContentTypeInputSchema = s.object(
@@ -20,6 +21,8 @@ export const CreateContentTypeInputSchema = s.object(
     fields: s.array(ContentTypeFieldSchema, { unique: false }),
     taxonomyIds: s.array(s.string({ trim: true, minLength: 1 }), { unique: true }).optional(),
     workflowId: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
+    workflow: ContentWorkflowSchema.optional(),
+    showInMainNavigation: s.boolean().optional(),
     ownershipScope: ContentTypeOwnershipScopeSchema.optional()
   },
   { strict: true }
@@ -39,6 +42,9 @@ export const UpdateContentTypeInputSchema = s.object(
     taxonomyIds: s.array(s.string({ trim: true, minLength: 1 }), { unique: true }).optional(),
     workflowId: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
     clearWorkflow: s.boolean().optional(),
+    workflow: ContentWorkflowSchema.optional(),
+    clearWorkflowDefinition: s.boolean().optional(),
+    showInMainNavigation: s.boolean().optional(),
     ownershipScope: ContentTypeOwnershipScopeSchema.optional()
   },
   { strict: true }

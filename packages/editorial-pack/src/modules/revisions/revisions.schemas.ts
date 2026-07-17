@@ -1,4 +1,4 @@
-import { defineEntity, s, type Infer } from "@trinacria-cms/kernel";
+import { s, type Infer } from "@trinacria-cms/kernel";
 
 export const EntryRevisionRecordSchema = s.object(
   {
@@ -14,17 +14,3 @@ export const EntryRevisionRecordSchema = s.object(
 );
 
 export type EntryRevisionRecord = Infer<typeof EntryRevisionRecordSchema>;
-
-export const ENTRY_REVISIONS_ENTITY = defineEntity({
-  entityName: "entry_revisions",
-  schema: EntryRevisionRecordSchema,
-  indexes: [
-    { fields: { id: 1 }, unique: true, name: "entry_revisions_id_unique" },
-    {
-      fields: { entryId: 1, revisionNumber: 1 },
-      unique: true,
-      name: "entry_revisions_entry_number_unique"
-    },
-    { fields: { entryId: 1, createdAt: -1 }, name: "entry_revisions_entry_created_idx" }
-  ] as const
-});

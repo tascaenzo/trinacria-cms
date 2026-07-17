@@ -35,7 +35,7 @@ export interface AdminPageRenderContext {
   /** Whether the authenticated operator may enter dashboard layout editing mode. */
   canCustomizeDashboard?: boolean;
   /** Route navigation supplied by the shell for widget-level quick actions. */
-  navigateToRoute?: (routeId: string) => void;
+  navigateToRoute?: (routeId: string, params?: URLSearchParams) => void;
   /** Base path used by direct browser uploads and other binary endpoints. */
   apiBaseUrl?: string;
   cms: typeof import("./cms-sdk.js").cms;
