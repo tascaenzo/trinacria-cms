@@ -34,6 +34,8 @@ export * from "./components/molecules/page-section/index.js";
 export * from "./components/molecules/pagination/index.js";
 export * from "./components/molecules/property-list/index.js";
 export * from "./components/molecules/stat-card/index.js";
+export * from "./components/molecules/stepper/index.js";
+export * from "./components/molecules/tabs/index.js";
 export * from "./components/molecules/toast/index.js";
 export * from "./components/organisms/data-table/index.js";
 export * from "./components/organisms/detail-section/index.js";

@@ -1,0 +1,19 @@
+import { Meta, Canvas } from "@storybook/addon-docs/blocks";
+import * as Stories from "./stepper.stories";
+
+<Meta of={Stories} />
+
+# Stepper
+
+Indicatore di avanzamento per procedure guidate. Mostra con chiarezza lo step corrente, quelli completati e quelli ancora da svolgere.
+
+Usalo per workflow brevi e lineari: il componente non rende gli step cliccabili e non gestisce la navigazione del wizard.
+
+<Canvas of={Stories.Default} />
+
+## Comportamento
+
+- `currentStep` deve corrispondere all’identificativo di uno step.
+- Gli step precedenti sono contrassegnati come completati.
+- Se l’identificativo non è valido, viene evidenziato il primo step.
+- Le descrizioni restano disponibili sui viewport medi e grandi per non comprimere la navigazione mobile.

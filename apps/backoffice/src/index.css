@@ -1,5 +1,10 @@
-@import "tailwindcss";
-@config "../tailwind.config.ts";
+@import "tailwindcss" source(none);
+@source "../index.html";
+@source "../src";
+@source "../../../packages/admin-kernel/src";
+@source "../../../packages/media-pack/src/admin";
+@source "../../../packages/editorial-pack/src/admin";
+@source "../../../packages/trinacria-ui/src";
 
 html.auth-page,
 html.auth-page body,

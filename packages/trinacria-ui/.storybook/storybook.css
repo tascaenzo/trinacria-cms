@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@config "../tailwind.config.ts";
+@import "tailwindcss" source(none);
+@source "../src";
 
 html.auth-page,
 html.auth-page body,

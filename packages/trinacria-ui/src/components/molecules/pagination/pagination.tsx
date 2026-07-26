@@ -81,15 +81,15 @@ export function Pagination({
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 border-t border-[color:var(--color-border)] pt-4 md:flex-row md:items-center md:justify-between",
+        "flex flex-col gap-3 border-t border-(--color-border) pt-4 md:flex-row md:items-center md:justify-between",
         className
       )}
       {...props}
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <p className="text-sm text-[color:var(--color-ink-muted)]">{summary}</p>
+        <p className="text-sm text-(--color-ink-muted)">{summary}</p>
         {onPageSizeChange ? (
-          <div className="w-full sm:w-[140px]">
+          <div className="w-full sm:w-35">
             <Select
               aria-label="Rows per page"
               value={safePageSize}
@@ -121,7 +121,7 @@ export function Pagination({
             item === "ellipsis" ? (
               <span
                 key={`ellipsis-${index}`}
-                className="inline-flex h-8 min-w-8 items-center justify-center px-2 text-xs font-medium text-[color:var(--color-ink-subtle)]"
+                className="inline-flex h-8 min-w-8 items-center justify-center px-2 text-xs font-medium text-(--color-ink-subtle)"
               >
                 ...
               </span>
@@ -140,7 +140,7 @@ export function Pagination({
           )}
         </div>
 
-        <div className="inline-flex items-center rounded-[var(--radius-control)] border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] px-3 py-1 text-xs font-medium text-[color:var(--color-ink-muted)] md:hidden">
+        <div className="inline-flex items-center rounded-(--radius-control) border border-(--color-border) bg-(--color-panel-soft) px-3 py-1 text-xs font-medium text-(--color-ink-muted) md:hidden">
           Page {currentPage} / {totalPages}
         </div>
 
