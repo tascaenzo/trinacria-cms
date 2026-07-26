@@ -261,6 +261,7 @@ const adminNavigationSchema = s.object(
   {
     id: namespaceSegmentSchema,
     label: s.string({ trim: true, minLength: 1, maxLength: 120 }),
+    icon: s.string({ trim: true, minLength: 1, maxLength: 80 }).optional(),
     path: publicPathSchema.optional(),
     group: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
     requiredPermission: s

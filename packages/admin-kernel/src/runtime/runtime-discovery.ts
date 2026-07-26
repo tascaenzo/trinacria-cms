@@ -226,6 +226,7 @@ function toAdminNavigationItem(
     id: readString(declaration.id) ?? entry.key,
     routeId: path ? (routeIdByPath.get(path) ?? fallbackRouteId) : fallbackRouteId,
     title: readString(declaration.label) ?? readString(declaration.title) ?? entry.key,
+    icon: readString(declaration.icon),
     group: readString(declaration.group),
     order: readNumber(declaration.order),
     guards: toGuards(entry.pluginId, declaration.requiredPermission)
