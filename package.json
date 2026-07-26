@@ -17,9 +17,10 @@
   ],
   "scripts": {
     "build": "turbo run build",
-    "dev": "npm run build && turbo run dev",
-    "dev:playground": "npm run build && turbo run dev --filter=@trinacria-cms/playground...",
-    "dev:backoffice": "npm run build && turbo run dev --filter=@trinacria-cms/backoffice...",
+    "dev": "npm run build && turbo run dev --ui=tui",
+    "dev:stream": "npm run build && turbo run dev --ui=stream",
+    "dev:playground": "npm run build && turbo run dev --ui=tui --filter=@trinacria-cms/playground...",
+    "dev:backoffice": "npm run build && turbo run dev --ui=tui --filter=@trinacria-cms/backoffice...",
     "dev:playground:watch": "npm run dev -w @trinacria-cms/playground",
     "dev:backoffice:watch": "npm run dev -w @trinacria-cms/backoffice",
     "storybook": "npm run storybook -w @trinacria-cms/trinacria-ui",

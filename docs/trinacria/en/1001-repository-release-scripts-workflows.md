@@ -7,11 +7,12 @@ This document lists the commands currently defined in the CMS root `package.json
 | Command | Purpose |
 | --- | --- |
 | `npm run dev` | Builds the monorepo, then starts all workspace watchers through Turborepo. |
+| `npm run dev:stream` | Starts the same watchers with plain, interleaved logs for non-interactive terminals. |
 | `npm run dev:playground` | Builds the monorepo, then starts Playground and its dependency watchers. |
 | `npm run dev:backoffice` | Builds the monorepo, then starts Backoffice and its dependency watchers. |
 | `npm run storybook` | Starts the Trinacria UI Storybook. |
 
-Vite provides HMR for the Backoffice, `tsx watch` restarts the Playground, and library workspaces use TypeScript watch builds so their `dist` output stays current.
+`npm run dev` uses Turborepo's terminal UI: select a task to inspect its logs without mixing the output from the other watchers. Vite provides HMR for the Backoffice, `tsx watch` restarts the Playground, and library workspaces use TypeScript watch builds so their `dist` output stays current.
 
 ## Quality commands
 
