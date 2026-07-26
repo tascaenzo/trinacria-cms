@@ -12,6 +12,11 @@ import {
   type EntryRecord,
   type ContentTypeRecord
 } from "../src/index.js";
+import {
+  getTransitionToStatus,
+  supportsEditorialReview,
+  type EditorialEntryContentType
+} from "../src/admin/entries/entries.types.js";
 
 test("editorial-pack declares the plugin foundation", () => {
   const manifest = validatePluginManifest(EDITORIAL_PACK_MANIFEST);
@@ -37,6 +42,34 @@ test("editorial-pack declares the plugin foundation", () => {
     manifest.security?.roles?.map((role) => role.code),
     ["author", "reviewer", "content-manager"]
   );
+});
+
+test("review boards expose only configured workflow transitions", () => {
+  const reviewModel = {
+    id: "content-type-article",
+    key: "article",
+    name: "Article",
+    status: "active",
+    workflowId: "review"
+  } satisfies EditorialEntryContentType;
+  const directModel = {
+    id: "content-type-page",
+    key: "page",
+    name: "Page",
+    status: "active",
+    workflowId: "direct"
+  } satisfies EditorialEntryContentType;
+  const draft = {
+    id: "entry-1",
+    contentTypeId: reviewModel.id,
+    status: "draft",
+    updatedAt: "2026-07-26T00:00:00.000Z"
+  };
+
+  assert.equal(supportsEditorialReview(reviewModel), true);
+  assert.equal(supportsEditorialReview(directModel), false);
+  assert.equal(getTransitionToStatus(draft, "in_review", reviewModel)?.id, "submit");
+  assert.equal(getTransitionToStatus(draft, "published", reviewModel), null);
 });
 
 test("entries are validated against the active content type before persistence", async () => {

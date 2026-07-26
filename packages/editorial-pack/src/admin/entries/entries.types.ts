@@ -84,6 +84,41 @@ export function getEntryActions(
     .map((transition) => ({ id: transition.key, label: transition.label }));
 }
 
+export function getTransitionToStatus(
+  entry: EditorialEntry,
+  targetStatus: string,
+  contentType?: EditorialEntryContentType
+): TransitionAction | null {
+  const transition = getWorkflow(contentType).transitions.find(
+    (candidate) => candidate.from === entry.status && candidate.to === targetStatus
+  );
+  return transition ? { id: transition.key, label: transition.label } : null;
+}
+
+export function supportsEditorialReview(contentType: EditorialEntryContentType): boolean {
+  const workflow = getWorkflow(contentType);
+  if (workflow.preset === "review") return true;
+  return (
+    workflow.states.some((state) => state.key === "in_review" || state.key === "approved") ||
+    workflow.transitions.some(
+      (transition) =>
+        transition.requiredPermission === "review" || transition.requiredPermission === "approve"
+    )
+  );
+}
+
+export function getWorkflowStates(
+  contentTypes: readonly EditorialEntryContentType[]
+): ContentWorkflow["states"] {
+  const states = new Map<string, ContentWorkflow["states"][number]>();
+  for (const contentType of contentTypes) {
+    for (const state of getWorkflow(contentType).states) {
+      if (!states.has(state.key)) states.set(state.key, state);
+    }
+  }
+  return Array.from(states.values());
+}
+
 export function formatEditorialDate(value: string, locale: string): string {
   const date = new Date(value);
   return Number.isNaN(date.getTime())

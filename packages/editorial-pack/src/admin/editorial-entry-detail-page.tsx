@@ -110,7 +110,12 @@ export function EditorialEntryDetailPage({
 
   if (isLoading) return <LoadingEditor />;
   if (!entry || !contentType) {
-    return <MissingEditor error={error} onBack={() => navigateToRoute?.("editorial-entries")} />;
+    return (
+      <MissingEditor
+        error={error}
+        onBack={() => navigateToRoute?.("editorial-entries", contentTypeParams(contentType))}
+      />
+    );
   }
 
   return (
@@ -123,7 +128,7 @@ export function EditorialEntryDetailPage({
             size="sm"
             iconOnly
             aria-label="Torna ai contenuti"
-            onClick={() => navigateToRoute?.("editorial-entries")}
+            onClick={() => navigateToRoute?.("editorial-entries", contentTypeParams(contentType))}
           >
             <Icon name="arrow-left" />
           </Button>
@@ -220,6 +225,15 @@ export function EditorialEntryDetailPage({
       </div>
     </main>
   );
+}
+
+function contentTypeParams(contentType: EditorialContentType | null) {
+  const routeModelId =
+    typeof window === "undefined"
+      ? null
+      : new URLSearchParams(window.location.search).get("modelId");
+  const modelId = contentType?.id ?? routeModelId;
+  return modelId ? new URLSearchParams({ modelId }) : undefined;
 }
 
 function DynamicField({

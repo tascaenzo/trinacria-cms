@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import { ResourcePage } from "@trinacria-cms/trinacria-ui";
+import { ResourcePage, Tabs } from "@trinacria-cms/trinacria-ui";
 import {
   CreateEditorialEntryDialog,
   EntryRevisionsDialog
 } from "./entries/editorial-entries-dialogs.js";
 import { EditorialEntriesList } from "./entries/editorial-entries-list.js";
+import { EditorialReviewBoard } from "./entries/editorial-review-board.js";
 import { useEditorialEntries } from "./entries/use-editorial-entries.js";
-import type { EditorialEntry, EntryRevision } from "./entries/entries.types.js";
+import {
+  supportsEditorialReview,
+  type EditorialEntry,
+  type EntryRevision
+} from "./entries/entries.types.js";
 import type { CmsClient, EditorialNavigator } from "./editorial-admin.types.js";
 
 export interface EditorialEntriesPageContext {
@@ -16,6 +21,7 @@ export interface EditorialEntriesPageContext {
 }
 
 const NAVIGATION_EVENT = "trinacria-cms:backoffice-navigation";
+type EntriesView = "table" | "review";
 
 export function EditorialEntriesPage({
   cms,
@@ -24,6 +30,7 @@ export function EditorialEntriesPage({
 }: EditorialEntriesPageContext) {
   const desk = useEditorialEntries(cms);
   const [contentTypeFilter, setContentTypeFilter] = useState(readContentTypeFilter);
+  const [view, setView] = useState<EntriesView>("table");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [revisionEntry, setRevisionEntry] = useState<EditorialEntry | null>(null);
   const [revisions, setRevisions] = useState<readonly EntryRevision[]>([]);
@@ -54,6 +61,25 @@ export function EditorialEntriesPage({
     [contentTypeFilter, desk.entries]
   );
   const selectedContentType = desk.contentTypeById.get(contentTypeFilter);
+  const reviewContentTypes = useMemo(
+    () =>
+      selectedContentType
+        ? supportsEditorialReview(selectedContentType)
+          ? [selectedContentType]
+          : []
+        : desk.activeContentTypes.filter(supportsEditorialReview),
+    [desk.activeContentTypes, selectedContentType]
+  );
+  const reviewContentTypeIds = useMemo(
+    () => new Set(reviewContentTypes.map((contentType) => contentType.id)),
+    [reviewContentTypes]
+  );
+  const reviewEntries = useMemo(
+    () => entries.filter((entry) => reviewContentTypeIds.has(entry.contentTypeId)),
+    [entries, reviewContentTypeIds]
+  );
+  const hasReviewView = reviewContentTypes.length > 0;
+  const activeView = hasReviewView ? view : "table";
 
   const openRevisions = async (entry: EditorialEntry) => {
     setRevisionEntry(entry);
@@ -64,30 +90,59 @@ export function EditorialEntriesPage({
   };
 
   const openEntry = (entry: EditorialEntry) =>
-    navigateToRoute?.("editorial-entry-detail", new URLSearchParams({ entryId: entry.id }));
+    navigateToRoute?.(
+      "editorial-entry-detail",
+      new URLSearchParams({ entryId: entry.id, modelId: entry.contentTypeId })
+    );
+
+  const title = selectedContentType?.name ?? "Contenuti";
+  const description = selectedContentType
+    ? `Gestisci i contenuti di tipo ${selectedContentType.name}.`
+    : "Crea e gestisci tutti i contenuti della redazione.";
+  const sharedViewProps = {
+    title,
+    description,
+    contentTypeById: desk.contentTypeById,
+    locale,
+    actionEntryId: desk.actionEntryId,
+    isLoading: desk.isLoading,
+    canCreate: desk.activeContentTypes.length > 0,
+    onCreate: () => setIsCreateOpen(true),
+    onRefresh: () => void desk.refresh(),
+    onRevisions: (entry: EditorialEntry) => void openRevisions(entry),
+    onEdit: openEntry,
+    onTransition: desk.transition
+  };
+  const currentView =
+    activeView === "review" ? (
+      <EditorialReviewBoard
+        {...sharedViewProps}
+        entries={reviewEntries}
+        contentTypes={reviewContentTypes}
+      />
+    ) : (
+      <EditorialEntriesList {...sharedViewProps} entries={entries} />
+    );
 
   return (
     <main className="mx-auto w-full max-w-7xl px-5 py-6 sm:px-8">
       <ResourcePage feedback={desk.error ? <ErrorMessage message={desk.error} /> : undefined}>
-        <EditorialEntriesList
-          title={selectedContentType?.name ?? "Contenuti"}
-          description={
-            selectedContentType
-              ? `Gestisci i contenuti di tipo ${selectedContentType.name}.`
-              : "Crea e gestisci tutti i contenuti della redazione."
-          }
-          entries={entries}
-          contentTypeById={desk.contentTypeById}
-          locale={locale}
-          actionEntryId={desk.actionEntryId}
-          isLoading={desk.isLoading}
-          canCreate={desk.activeContentTypes.length > 0}
-          onCreate={() => setIsCreateOpen(true)}
-          onRefresh={() => void desk.refresh()}
-          onRevisions={(entry) => void openRevisions(entry)}
-          onEdit={openEntry}
-          onTransition={desk.transition}
-        />
+        {hasReviewView ? (
+          <Tabs
+            ariaLabel="Vista dei contenuti"
+            items={[
+              { value: "table", label: "Contenuti", count: entries.length },
+              { value: "review", label: "Revisione", count: reviewEntries.length }
+            ]}
+            value={activeView}
+            panelClassName="pt-4"
+            onValueChange={(nextView) => setView(nextView as EntriesView)}
+          >
+            {currentView}
+          </Tabs>
+        ) : (
+          currentView
+        )}
       </ResourcePage>
 
       <CreateEditorialEntryDialog

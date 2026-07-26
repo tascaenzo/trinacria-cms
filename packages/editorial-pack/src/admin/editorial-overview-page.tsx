@@ -74,7 +74,10 @@ export function EditorialOverviewPage({ cms, navigateToRoute }: EditorialOvervie
   );
   const recentEntries = entries.slice(0, 6);
   const openEntry = (entry: EditorialEntryRecord) =>
-    navigateToRoute?.("editorial-entry-detail", new URLSearchParams({ entryId: entry.id }));
+    navigateToRoute?.(
+      "editorial-entry-detail",
+      new URLSearchParams({ entryId: entry.id, modelId: entry.contentTypeId })
+    );
 
   return (
     <main className="mx-auto w-full max-w-6xl px-5 py-6 sm:px-8">
