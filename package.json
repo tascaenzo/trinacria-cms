@@ -18,7 +18,6 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "npm run build && turbo run dev --ui=tui",
-    "dev:stream": "npm run build && turbo run dev --ui=stream",
     "dev:playground": "npm run build && turbo run dev --ui=tui --filter=@trinacria-cms/playground...",
     "dev:backoffice": "npm run build && turbo run dev --ui=tui --filter=@trinacria-cms/backoffice...",
     "dev:playground:watch": "npm run dev -w @trinacria-cms/playground",
