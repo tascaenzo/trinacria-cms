@@ -1,5 +1,6 @@
 {
   "$schema": "https://turborepo.com/schema.json",
+  "concurrency": "12",
   "globalDependencies": ["biome.json", "tsconfig.base.json", "package-lock.json"],
   "tasks": {
     "build": {
