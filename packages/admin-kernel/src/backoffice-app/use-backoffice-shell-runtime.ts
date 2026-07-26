@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
 import type { GetAuthenticatedUserResponse, GetKernelHealthResponse } from "@trinacria-cms/sdk";
+import { useEffect, useMemo, useState } from "react";
 import type {
   AdminExtensionManifest,
   AdminNavigationItem,

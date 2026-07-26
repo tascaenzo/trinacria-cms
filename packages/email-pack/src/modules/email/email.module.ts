@@ -1,17 +1,17 @@
-import { classProvider, defineModule, type ModuleDefinition } from "@trinacria-cms/kernel";
 import {
   CorePackRuntimeConfigModule,
   CorePackSettingsModule,
   RUNTIME_CONFIG_SERVICE_TOKEN,
   SETTINGS_SERVICE_TOKEN
 } from "@trinacria-cms/core-pack";
+import { classProvider, defineModule, type ModuleDefinition } from "@trinacria-cms/kernel";
 import { EmailPackEmailTemplatesModule } from "../email-templates/email-templates.module.js";
-import { EmailConfigService } from "./services/email-config.service.js";
-import { EmailDeliveryService } from "./services/email-delivery.service.js";
 import {
   EMAIL_PACK_EMAIL_CONFIG_SERVICE_TOKEN,
   EMAIL_PACK_EMAIL_DELIVERY_SERVICE_TOKEN
 } from "./email.tokens.js";
+import { EmailConfigService } from "./services/email-config.service.js";
+import { EmailDeliveryService } from "./services/email-delivery.service.js";
 
 export const EmailPackModule: ModuleDefinition = defineModule({
   name: "EmailPackModule",

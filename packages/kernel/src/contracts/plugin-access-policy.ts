@@ -1,5 +1,5 @@
-import type { SecureEventPayloadRecord } from "./secure-event-payloads.js";
 import type { PluginManifestEmittedEvent } from "./plugin-manifest.js";
+import type { SecureEventPayloadRecord } from "./secure-event-payloads.js";
 
 export type PluginAccessGrantStatus = "pending" | "approved" | "denied" | "revoked";
 export type PluginAccessGrantType =

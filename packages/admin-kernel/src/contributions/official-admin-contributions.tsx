@@ -1,5 +1,3 @@
-import { createDashboardRender } from "../pages/dashboard-page.js";
-import { ProfilePage } from "../pages/profile-page.js";
 import type {
   AdminExtensionManifest,
   AdminNavigationItem,
@@ -7,6 +5,8 @@ import type {
   AdminRouteDefinition,
   AdminSettingsSectionDefinition
 } from "../contracts.js";
+import { createDashboardRender } from "../pages/dashboard-page.js";
+import { ProfilePage } from "../pages/profile-page.js";
 import { normalizeSafeAdminExtensionManifests } from "../runtime/admin-extension-manifest.js";
 import type {
   RenderableAdminContribution,
@@ -14,11 +14,11 @@ import type {
   RenderableAdminSettingsSection
 } from "../runtime/admin-route-runtime.js";
 import { OFFICIAL_CORE_NAV_META } from "./core-navigation-contribution-meta.js";
+import { OFFICIAL_CORE_RESOURCE_META } from "./core-resource-contribution-meta.js";
 import {
   OFFICIAL_CORE_COMPONENT_ROUTE_META,
   OFFICIAL_CORE_ROUTE_META
 } from "./core-route-contribution-meta.js";
-import { OFFICIAL_CORE_RESOURCE_META } from "./core-resource-contribution-meta.js";
 import { OFFICIAL_CORE_SETTINGS_SECTION_META } from "./core-settings-contribution-meta.js";
 
 /**

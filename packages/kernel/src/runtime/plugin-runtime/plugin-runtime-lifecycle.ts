@@ -1,5 +1,4 @@
-import type { ModuleDefinition } from "@trinacria/core";
-import type { ApplicationContext } from "@trinacria/core";
+import type { ApplicationContext, ModuleDefinition } from "@trinacria/core";
 import type {
   KernelPluginDefinition,
   KernelPluginRuntimeContext,
@@ -9,20 +8,20 @@ import type {
   PluginRuntimeRecord,
   PluginState
 } from "../../contracts/plugin-runtime.js";
+import type { PluginRuntimeStore } from "../../contracts/plugin-runtime-store.js";
 import { CoreError } from "../../errors/core-error.js";
 import {
   PluginDependencyError,
   PluginLifecycleError,
   PluginRuntimeError
 } from "../../errors/plugin-errors.js";
-import {
-  extractRequiredDependencies,
-  assertRequiredDependenciesAvailable
-} from "./plugin-runtime-dependencies.js";
-import type { PluginContributionRegistry } from "./plugin-runtime-contributions.js";
-import { persistRecord } from "./plugin-runtime-persistence.js";
-import type { PluginRuntimeStore } from "../../contracts/plugin-runtime-store.js";
 import type { TrinacriaModuleBridge } from "../bridge/trinacria-module-bridge.js";
+import type { PluginContributionRegistry } from "./plugin-runtime-contributions.js";
+import {
+  assertRequiredDependenciesAvailable,
+  extractRequiredDependencies
+} from "./plugin-runtime-dependencies.js";
+import { persistRecord } from "./plugin-runtime-persistence.js";
 import {
   createPluginStatusReason,
   transitionPluginRecord

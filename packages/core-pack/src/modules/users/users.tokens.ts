@@ -1,7 +1,7 @@
 import { createCapabilityToken, createToken } from "@trinacria-cms/kernel";
-import { UsersController } from "./users.controller.js";
-import { UsersRepository } from "./repositories/users.repository.js";
-import { UsersService } from "./services/users.service.js";
+import type { UsersRepository } from "./repositories/users.repository.js";
+import type { UsersService } from "./services/users.service.js";
+import type { UsersController } from "./users.controller.js";
 
 export const USERS_REPOSITORY_TOKEN = createToken<UsersRepository>("CORE_PACK_USERS_REPOSITORY");
 export const USERS_SERVICE_TOKEN = createCapabilityToken<UsersService>("users.service");

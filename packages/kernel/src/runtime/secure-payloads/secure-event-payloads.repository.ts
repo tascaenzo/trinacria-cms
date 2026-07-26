@@ -1,7 +1,9 @@
 import type { DbAdapter } from "../../contracts/db-adapter.js";
 import type { SecureEventPayloadRecord } from "../../contracts/secure-event-payloads.js";
-import { SECURE_EVENT_PAYLOADS_ENTITY } from "./secure-event-payloads.schemas.js";
-import { SecureEventPayloadRecordSchema } from "./secure-event-payloads.schemas.js";
+import {
+  SECURE_EVENT_PAYLOADS_ENTITY,
+  SecureEventPayloadRecordSchema
+} from "./secure-event-payloads.schemas.js";
 
 const KERNEL_NAMESPACE_PLUGIN_ID = "kernel";
 

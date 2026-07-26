@@ -2,16 +2,16 @@ import { s } from "@trinacria/schema";
 import { createSchema, type Schema } from "@trinacria/schema/dist/core/index.js";
 import type { JsonValue } from "../../contracts/plugin-manifest.js";
 import {
-  isValidPluginId,
-  isValidNamespaceSegment,
-  isReservedNamespaceSegment,
-  buildContributionKey,
-  findContributionCollisions
-} from "../plugin-namespace/plugin-namespace.js";
-import {
-  isValidPermissionKey,
-  isPermissionOwnedByPlugin
+  isPermissionOwnedByPlugin,
+  isValidPermissionKey
 } from "../plugin-namespace/permission-key.js";
+import {
+  buildContributionKey,
+  findContributionCollisions,
+  isReservedNamespaceSegment,
+  isValidNamespaceSegment,
+  isValidPluginId
+} from "../plugin-namespace/plugin-namespace.js";
 
 const namespaceSegmentSchema = s
   .string({ trim: true, toLowerCase: true, minLength: 1, maxLength: 80 })

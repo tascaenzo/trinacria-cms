@@ -1,9 +1,9 @@
 import type { DbAdapter } from "@trinacria-cms/kernel";
 import { Redis } from "ioredis";
+import type { RuntimeConfigService } from "../settings/config/runtime-config.service.js";
 import type { CacheAdapter } from "./adapters/cache-adapter.js";
 import { MemoryCacheAdapter } from "./adapters/memory-cache-adapter.js";
 import { RedisCacheAdapter } from "./adapters/redis-cache-adapter.js";
-import type { RuntimeConfigService } from "../settings/config/runtime-config.service.js";
 
 /*
  * Global registry for custom cache adapters.

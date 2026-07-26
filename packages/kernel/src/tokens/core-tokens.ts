@@ -3,18 +3,18 @@ import type { AuthzService } from "../contracts/authz-service.js";
 import type { CacheAdapter } from "../contracts/cache-adapter.js";
 import type { DbAdapter } from "../contracts/db-adapter.js";
 import type { KernelAdminRouteGuard } from "../contracts/kernel-admin-route-guard.js";
+import type { PluginEventSubscriptionAuthorizer } from "../contracts/plugin-access-policy.js";
 import type { PluginDiscoveryService } from "../contracts/plugin-discovery.js";
+import type { PluginManifestProvisioner } from "../contracts/plugin-manifest-provisioner.js";
 import type { PluginRuntime } from "../contracts/plugin-runtime.js";
 import type { PluginRuntimeStore } from "../contracts/plugin-runtime-store.js";
-import type { PluginManifestProvisioner } from "../contracts/plugin-manifest-provisioner.js";
 import type {
   SecureEventPayloadAuthorizer,
   SecureEventPayloadStore
 } from "../contracts/secure-event-payloads.js";
-import type { PluginEventSubscriptionAuthorizer } from "../contracts/plugin-access-policy.js";
-import type { KernelSystemService } from "../runtime/system/kernel-system-service.js";
-import type { KernelHealthService } from "../runtime/system/kernel-health-service.js";
 import type { EntityRegistry } from "../runtime/persistence/entity-registry.js";
+import type { KernelHealthService } from "../runtime/system/kernel-health-service.js";
+import type { KernelSystemService } from "../runtime/system/kernel-system-service.js";
 
 /**
  * Core DI tokens exposed as stable integration points for platform services.

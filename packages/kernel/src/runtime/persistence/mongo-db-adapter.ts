@@ -7,7 +7,7 @@ import type {
 import type { NamespaceContext } from "../../contracts/namespace-context.js";
 import { buildNamespaceKey } from "../../contracts/namespace-context.js";
 import { DbAdapterError } from "../../errors/db-errors.js";
-import { EntityRegistry, type EntityIndexDefinition } from "./entity-registry.js";
+import type { EntityIndexDefinition, EntityRegistry } from "./entity-registry.js";
 
 interface MongoSessionLike {
   startTransaction?(): void;

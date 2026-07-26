@@ -1,9 +1,9 @@
 import {
   defineEntity,
+  type Infer,
   isValidPermissionKey,
   isValidPermissionPattern,
-  s,
-  type Infer
+  s
 } from "@trinacria-cms/kernel";
 
 export const RoleStatusSchema = s.enum(["active", "disabled"] as const);

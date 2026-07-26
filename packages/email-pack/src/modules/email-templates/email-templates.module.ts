@@ -1,23 +1,23 @@
+import { CorePackSettingsModule } from "@trinacria-cms/core-pack";
 import {
-  classProvider,
   CORE_TOKENS,
+  classProvider,
   defineModule,
+  type EntityRegistry,
   factoryProvider,
   httpProvider,
-  type EntityRegistry,
   type ModuleDefinition
 } from "@trinacria-cms/kernel";
-import { CorePackSettingsModule } from "@trinacria-cms/core-pack";
-import { EMAIL_TEMPLATES_ENTITY } from "./email-templates.schemas.js";
 import { EmailTemplatesController } from "./email-templates.controller.js";
-import { EmailTemplatesRepository } from "./repositories/email-templates.repository.js";
-import { EmailTemplatesService } from "./services/email-templates.service.js";
+import { EMAIL_TEMPLATES_ENTITY } from "./email-templates.schemas.js";
 import {
   EMAIL_TEMPLATES_CONTROLLER_TOKEN,
   EMAIL_TEMPLATES_ENTITY_REGISTRATION_TOKEN,
   EMAIL_TEMPLATES_REPOSITORY_TOKEN,
   EMAIL_TEMPLATES_SERVICE_TOKEN
 } from "./email-templates.tokens.js";
+import { EmailTemplatesRepository } from "./repositories/email-templates.repository.js";
+import { EmailTemplatesService } from "./services/email-templates.service.js";
 
 export const EmailPackEmailTemplatesModule: ModuleDefinition = defineModule({
   name: "EmailPackEmailTemplatesModule",

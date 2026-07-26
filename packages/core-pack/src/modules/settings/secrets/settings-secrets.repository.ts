@@ -1,8 +1,8 @@
 import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import {
-  SettingSecretRecordSchema,
-  type SettingSecretRecord
+  type SettingSecretRecord,
+  SettingSecretRecordSchema
 } from "../schemas/settings.schemas.js";
 
 const SETTINGS_ENTITY_NAME = "settings";

@@ -1,12 +1,12 @@
-import { useState } from "react";
 import {
   Button,
+  type ButtonProps,
   Icon,
   IconButton,
   JsonViewDialog,
-  type ButtonProps,
   type JsonViewDialogProps
 } from "@trinacria-cms/trinacria-ui";
+import { useState } from "react";
 
 export interface JsonPreviewActionProps {
   className?: string;

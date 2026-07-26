@@ -1,169 +1,48 @@
-# Release: Script e Workflow (Guida Pratica)
+# Repository: comandi e workflow CI
 
-Questa guida spiega in modo operativo gli script npm legati a versioning/release e i workflow GitHub Actions configurati nel repository.
+Questo documento elenca i comandi definiti nel `package.json` root del CMS e i controlli eseguiti dalla CI.
 
-## Script disponibili
+## Comandi di sviluppo
 
-Definiti nel root `package.json`:
+| Comando | Scopo |
+| --- | --- |
+| `npm run dev` | Compila il monorepo e avvia i watcher di tutti i workspace tramite Turborepo. |
+| `npm run dev:stream` | Avvia gli stessi watcher con log testuali mescolati, adatti a terminali non interattivi. |
+| `npm run dev:playground` | Compila il monorepo e avvia Playground e i watcher delle sue dipendenze. |
+| `npm run dev:backoffice` | Compila il monorepo e avvia Backoffice e i watcher delle sue dipendenze. |
+| `npm run storybook` | Avvia Storybook di Trinacria UI. |
 
-- `npm run changeset`
-- `npm run changeset:status`
-- `npm run version-packages`
-- `npm run release`
-- `npm run precommit:check`
-- `npm run hooks:install`
+`npm run dev` usa la UI del terminale di Turborepo: seleziona un task per leggerne i log senza mescolarli con quelli degli altri watcher. Vite fornisce HMR al Backoffice, `tsx watch` riavvia il Playground e i workspace libreria usano build TypeScript in watch per mantenere aggiornato `dist`.
 
-## Cosa fa ogni script
+## Comandi di qualita`
 
-### `npm run changeset`
+| Comando | Scopo |
+| --- | --- |
+| `npm run format` | Verifica la formattazione con Biome. |
+| `npm run format:write` | Applica la formattazione Biome. |
+| `npm run lint` | Esegue controlli Biome di formattazione, lint e import in tutti i workspace tramite Turborepo. |
+| `npm run typecheck` | Esegue il typecheck dei workspace tramite Turborepo e quello E2E. |
+| `npm run build` | Compila tutti i workspace rispettando le dipendenze tramite Turborepo. |
+| `npm run test` | Esegue tutti i test unitari dei workspace tramite Turborepo. |
+| `npm run test:integration` | Esegue le suite di integrazione MongoDB e S3 abilitate dall'ambiente. |
+| `npm run check` | Esegue il gate locale completo: formattazione, lint, typecheck, test unitari e validazione del grafo delle dipendenze dei workspace. |
+| `npm run dependencies:check` | Verifica che gli import interni abbiano la corrispondente dipendenza nel manifest del workspace. |
 
-Comando interattivo di Changesets.
+## Comandi E2E e SDK
 
-Serve a creare un file markdown in `.changeset/` che descrive:
+- `npm run e2e` esegue Playwright dopo la build automatica `pree2e`.
+- `npm run e2e:ci` e` l'alias Playwright usato in CI e compila anch'esso prima di partire.
+- `npm run e2e:ui` apre l'interfaccia di Playwright.
+- `npm run sdk:snapshot`, `npm run sdk:generate`, `npm run sdk:build`, `npm run sdk:test` e `npm run sdk:check` operano sull'SDK generato.
 
-- quali package cambiano (`@trinacria/core`, `@trinacria/http`, ecc.)
-- tipo di bump (`patch`, `minor`, `major`)
-- nota release/changelog
+## Workflow CI
 
-Quando usarlo:
-
-- ogni volta che una PR modifica comportamento/API di package pubblicati.
-
-Output atteso:
-
-- nuovo file tipo `.changeset/your-message.md` da committare insieme al codice.
-
-### `npm run changeset:status`
-
-Mostra lo stato dei changeset pendenti e quali versioni verranno generate.
-
-Quando usarlo:
-
-- prima di merge/release per verificare se manca qualche changeset
-- in CI per controllo qualità del flusso release
-
-### `npm run version-packages`
-
-Esegue `changeset version`.
-
-Cosa fa:
-
-- legge i file in `.changeset/`
-- aggiorna le versioni dei package coinvolti
-- aggiorna dipendenze interne in base a `updateInternalDependencies`
-- genera/aggiorna i `CHANGELOG.md` dei package
-- consuma i changeset usati (li rimuove)
-
-Quando usarlo:
-
-- nella release PR gestita da automation (workflow release)
-- localmente solo se vuoi simulare il risultato del release PR
-
-### `npm run release`
-
-Esegue `changeset publish`.
-
-Cosa fa:
-
-- pubblica su npm i package con nuova versione
-- crea i relativi tag release
-
-Quando usarlo:
-
-- nel workflow `Release` su `main` (non manualmente su feature branch)
-
-Prerequisiti:
-
-- token npm configurato (`NPM_TOKEN`) nei secret GitHub Actions
-- package non privati e configurati correttamente
-
-### `npm run precommit:check`
-
-Esegue `node scripts/pre-commit.mjs`.
-
-Cosa fa:
-
-- individua i workspace toccati dai file staged
-- esegue `build` sui workspace toccati (se hanno script `build`)
-- esegue `test` sui workspace toccati (se hanno script `test`)
-- se tocchi file globali (es. `package.json`, `scripts/*`), estende i controlli a tutto il monorepo
-
-Obiettivo:
-
-- bloccare commit con build/test rotti prima che arrivino in CI.
-
-### `npm run hooks:install`
-
-Installa il git hook locale:
-
-- imposta `core.hooksPath` su `.githooks`
-- rende eseguibile `.githooks/pre-commit`
-
-Dopo questo comando, a ogni `git commit` verrà eseguito `npm run precommit:check`.
-
-## Flusso consigliato (sviluppo normale)
-
-1. Sviluppa la feature/fix.
-2. Esegui test locali pertinenti.
-3. Crea changeset:
-
-```bash
-npm run changeset
-```
-
-4. Commit di codice + changeset.
-5. Apri PR.
-
-## Flusso CI su PR (`.github/workflows/ci.yml`)
-
-La CI fa:
+Il workflow attivo e` [`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml). Esegue:
 
 1. `npm ci`
-2. `npm run lint`
-3. `npm run build`
-4. `npm run test:packages`
-5. verifica changeset su PR con:
+2. format globale e lint, typecheck e build solo dei package impattati
+3. build Storybook e verifica dell'SDK generato
+4. test unitari e di integrazione solo dei package impattati con MongoDB e MinIO, piu` validazione del grafo delle dipendenze dei workspace
+5. test E2E con Playwright
 
-```bash
-npx changeset status --since=origin/main
-```
-
-Se manca il changeset per una modifica che impatta package pubblicati, la PR dovrebbe essere aggiornata.
-
-## Flusso release (attuale)
-
-La release viene eseguita con il comando guidato:
-
-```bash
-npm run deploy:npm
-```
-
-Cosa fa:
-
-1. chiede scelte package/tag/versione
-2. esegue pre-check (`npm whoami`, build, test, pack dry-run)
-3. richiama la publish tramite `scripts/publish-libs.mjs`
-
-`scripts/publish-libs.mjs --mode npm` esegue di default gli smoke test dei template CLI prima della publish.
-
-## Errori comuni e come risolverli
-
-- "Manca changeset" in PR:
-  - aggiungi `npm run changeset` e committa il file creato.
-
-- Release non pubblica:
-  - verifica `NPM_TOKEN` nei secrets repository.
-
-- Versioni interne non aggiornate come atteso:
-  - controlla `.changeset/config.json` (`updateInternalDependencies`).
-
-- Hook pre-commit non parte:
-  - esegui `npm run hooks:install` una volta nel clone locale.
-
-## File di riferimento
-
-- `.changeset/config.json`
-- `.github/workflows/ci.yml`
-- `.github/workflows/cli-template-smoke.yml`
-- `scripts/pre-commit.mjs`
-- [`1000 - Repository: Policy di Versioning`](./1000-repository-policy-versioning.md)
+Nel root di questo CMS non sono inclusi un hook Git locale, un workflow Changesets o un comando di release. Non usare tali comandi finche` non vengono aggiunti intenzionalmente con la relativa automazione.

@@ -1,20 +1,19 @@
 import {
-  classProvider,
   CORE_TOKENS,
+  classProvider,
   defineModule,
+  type EntityRegistry,
   factoryProvider,
-  httpProvider,
-  type EntityRegistry
+  httpProvider
 } from "@trinacria-cms/kernel";
 import { CorePackAuthModule } from "../auth/auth.module.js";
 import { CORE_PACK_JWT_AUTH_SERVICE_TOKEN } from "../auth/auth.tokens.js";
-import { CORE_PACK_CACHE_SERVICE_TOKEN } from "../cache/cache.tokens.js";
 import { CorePackCacheModule } from "../cache/cache.module.js";
-import { RolesController } from "./roles.controller.js";
+import { CORE_PACK_CACHE_SERVICE_TOKEN } from "../cache/cache.tokens.js";
 import { RoleGrantsRepository } from "./grants/role-grants.repository.js";
-import { ROLES_ENTITY } from "./roles.schemas.js";
 import { RolesRepository } from "./repositories/roles.repository.js";
-import { RolesService } from "./services/roles.service.js";
+import { RolesController } from "./roles.controller.js";
+import { ROLES_ENTITY } from "./roles.schemas.js";
 import {
   ROLE_GRANTS_REPOSITORY_TOKEN,
   ROLES_CONTROLLER_TOKEN,
@@ -22,6 +21,7 @@ import {
   ROLES_REPOSITORY_TOKEN,
   ROLES_SERVICE_TOKEN
 } from "./roles.tokens.js";
+import { RolesService } from "./services/roles.service.js";
 
 /**
  * Roles domain module wiring.

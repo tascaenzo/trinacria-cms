@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
 import { Button, Icon, Input, Select, Textarea } from "@trinacria-cms/trinacria-ui";
-import { ErrorBanner, EmptyState } from "../../components/resource-feedback.js";
+import { useEffect, useMemo, useState } from "react";
+import { EmptyState, ErrorBanner } from "../../components/resource-feedback.js";
 import type { TranslateFn } from "../../lib/i18n.js";
 import type {
   AdminSettingsSectionRenderContext,
@@ -11,10 +11,10 @@ import {
   getSettingEnumOptions,
   getSettingValueKind,
   groupSettingRecordsForForm,
-  toEditableSettingInput,
   type SettingDefinitionRecord,
   type SettingDraftValues,
-  type SettingValueErrors
+  type SettingValueErrors,
+  toEditableSettingInput
 } from "./settings-page.utils.js";
 
 interface SettingsWorkspaceSidebarProps {
@@ -142,7 +142,8 @@ function getCompactSectionLabel(section: RenderableAdminSettingsSection, t: Tran
   if (sectionId.includes("theme")) return t("settings.navigation.theme", "Tema");
   if (sectionId.includes("feature")) return t("settings.navigation.features", "Funzioni");
   if (sectionId.includes("user-flow")) return t("settings.navigation.user_access", "Utenti");
-  if (sectionId.includes("authentication")) return t("settings.navigation.authentication", "Autenticazione");
+  if (sectionId.includes("authentication"))
+    return t("settings.navigation.authentication", "Autenticazione");
   if (sectionId.includes("plugin-permissions")) {
     return t("settings.navigation.plugin_permissions", "Permessi");
   }

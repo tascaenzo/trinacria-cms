@@ -1,9 +1,9 @@
 import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
-import type { CacheService } from "../../cache/services/cache.service.js";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
+import type { CacheService } from "../../cache/services/cache.service.js";
 import {
-  LoginAttemptRecordSchema,
-  type LoginAttemptRecord
+  type LoginAttemptRecord,
+  LoginAttemptRecordSchema
 } from "../auth-login-attempt.schemas.js";
 
 const SETTINGS_ENTITY_NAME = "settings";

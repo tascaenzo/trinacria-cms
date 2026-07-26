@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import { Badge, Button, Input, Select, Textarea } from "@trinacria-cms/trinacria-ui";
 import type { createCmsSdkClient, EmailApi } from "@trinacria-cms/sdk";
+import { Badge, Button, Input, Select, Textarea } from "@trinacria-cms/trinacria-ui";
+import { useEffect, useMemo, useState } from "react";
 
 type CmsClient = ReturnType<typeof createCmsSdkClient>;
 type EmailTemplateRecord = Awaited<ReturnType<EmailApi["listEmailTemplates"]>>["data"][number];

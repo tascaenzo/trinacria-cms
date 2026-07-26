@@ -1,12 +1,12 @@
-import { PluginPermissionCenterSection } from "../pages/settings/components/plugin-permission-center.js";
-import { PluginManagementSettingsSection } from "../pages/settings/components/plugin-management-settings-section.js";
+import type { ReactNode } from "react";
 import { BackofficeThemeSettingsSection } from "../pages/settings/components/backoffice-theme-settings-section.js";
+import { PluginManagementSettingsSection } from "../pages/settings/components/plugin-management-settings-section.js";
+import { PluginPermissionCenterSection } from "../pages/settings/components/plugin-permission-center.js";
 import type {
-  AdminPageRenderContext,
   AdminDashboardWidgetRenderContext,
+  AdminPageRenderContext,
   AdminSettingsSectionRenderContext
 } from "./admin-route-runtime.js";
-import type { ReactNode } from "react";
 
 export type AdminSettingsSectionRenderer = (
   context: AdminSettingsSectionRenderContext

@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { Icon } from "../../components/atoms/icon/icon.js";
 import { cn } from "../../utils/class-names.js";
-import type {
-  AdminShellNavigationItem,
-  AdminShellProps,
-  AdminShellStatusBadge
-} from "./admin-shell.types.js";
 import {
   readCollapsedGroups,
   readSidebarState,
   writeCollapsedGroups,
   writeSidebarState
 } from "./admin-shell.storage.js";
+import type {
+  AdminShellNavigationItem,
+  AdminShellProps,
+  AdminShellStatusBadge
+} from "./admin-shell.types.js";
 
 const EMPTY_HIDDEN_NAVIGATION_IDS: readonly string[] = [];
 

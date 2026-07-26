@@ -3,8 +3,8 @@ import type {
   PropsWithChildren,
   ReactNode,
   TableHTMLAttributes,
-  ThHTMLAttributes,
-  TdHTMLAttributes
+  TdHTMLAttributes,
+  ThHTMLAttributes
 } from "react";
 
 export interface ResourceTableProps extends HTMLAttributes<HTMLDivElement> {

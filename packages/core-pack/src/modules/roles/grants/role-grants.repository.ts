@@ -2,8 +2,8 @@ import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinac
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import {
   EmbeddedRoleGrantSchema,
-  RoleGrantRecordSchema,
-  type RoleGrantRecord
+  type RoleGrantRecord,
+  RoleGrantRecordSchema
 } from "./role-grants.schemas.js";
 
 const ROLES_ENTITY_NAME = "roles";

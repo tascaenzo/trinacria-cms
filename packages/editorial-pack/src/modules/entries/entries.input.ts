@@ -1,4 +1,4 @@
-import { s, type Infer } from "@trinacria-cms/kernel";
+import { type Infer, s } from "@trinacria-cms/kernel";
 
 const JsonScalarSchema = s.union([s.string(), s.number(), s.boolean()]);
 const JsonObjectSchema = s.record(s.string({ trim: true, minLength: 1 }), JsonScalarSchema);

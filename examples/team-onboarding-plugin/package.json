@@ -12,11 +12,10 @@
     }
   },
   "scripts": {
-    "prebuild": "npm run build -w @trinacria-cms/kernel",
+    "dev": "tsc -p tsconfig.json --watch",
     "build": "tsc -p tsconfig.json",
-    "pretypecheck": "npm run build -w @trinacria-cms/kernel",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "pretest": "npm run build -w @trinacria-cms/kernel",
+    "lint": "biome check .",
     "test": "node --import tsx --test test/**/*.test.ts"
   },
   "dependencies": {

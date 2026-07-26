@@ -1,5 +1,4 @@
-import type { ModuleDefinition } from "@trinacria/core";
-import type { Provider } from "@trinacria/core";
+import type { ModuleDefinition, Provider } from "@trinacria/core";
 import type { HttpMiddleware, OpenApiDocument } from "@trinacria/http";
 import type {
   PluginDiscoveryService,

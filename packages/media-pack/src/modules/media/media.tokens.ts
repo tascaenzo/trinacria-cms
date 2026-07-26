@@ -1,16 +1,16 @@
 import { createCapabilityToken, createToken } from "@trinacria-cms/kernel";
+import type { MediaAssetsController } from "./media-assets.controller.js";
 import type { MediaProviderRegistry } from "./media-provider-registry.service.js";
+import type { MediaUploadController } from "./media-upload.controller.js";
 import type { LocalDiskMediaStorageProvider } from "./providers/local-disk-media-storage.provider.js";
 import type { MediaAssetsRepository } from "./repositories/media-assets.repository.js";
-import type { MediaUploadsRepository } from "./repositories/media-uploads.repository.js";
 import type { MediaDirectoriesRepository } from "./repositories/media-directories.repository.js";
+import type { MediaUploadsRepository } from "./repositories/media-uploads.repository.js";
 import type { MediaAssetsService } from "./services/media-assets.service.js";
-import type { MediaUploadsService } from "./services/media-uploads.service.js";
 import type { MediaDirectoriesService } from "./services/media-directories.service.js";
-import type { MediaStorageConfigService } from "./services/media-storage-config.service.js";
 import type { MediaDomainEventsService } from "./services/media-domain-events.service.js";
-import type { MediaUploadController } from "./media-upload.controller.js";
-import type { MediaAssetsController } from "./media-assets.controller.js";
+import type { MediaStorageConfigService } from "./services/media-storage-config.service.js";
+import type { MediaUploadsService } from "./services/media-uploads.service.js";
 
 export const MEDIA_PROVIDER_REGISTRY_TOKEN = createCapabilityToken<MediaProviderRegistry>(
   "media-pack.storage.providers"

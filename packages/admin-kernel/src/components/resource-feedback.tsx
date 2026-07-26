@@ -1,7 +1,7 @@
 export {
   EmptyState,
+  type EmptyStateProps,
   ErrorBanner,
   FeedbackBanner,
-  type EmptyStateProps,
   type FeedbackBannerProps
 } from "@trinacria-cms/trinacria-ui";

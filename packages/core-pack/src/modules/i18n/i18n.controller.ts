@@ -1,13 +1,13 @@
 import {
   createPluginApiResponder,
+  type HttpContext,
   HttpController,
   s,
-  toOpenApiSchema,
-  type HttpContext
+  toOpenApiSchema
 } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import { CORE_PACK_OPENAPI_TAGS } from "../openapi-tags.js";
-import { I18nMessagesService } from "./i18n-messages.service.js";
+import type { I18nMessagesService } from "./i18n-messages.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
 const LocaleSchema = s
@@ -35,21 +35,26 @@ export class I18nController extends HttpController {
   }
 
   routes() {
-    return this.router().get("/v1/i18n/:locale", this.getLocale, {
-      docs: {
-        summary: "Resolve installed plugin translations for a locale",
-        tags: [CORE_PACK_OPENAPI_TAGS.I18N],
-        operationId: "getI18nBundle",
-        parameters: [
-          { name: "locale", in: "path", required: true, schema: { type: "string" } },
-          { name: "namespace", in: "query", required: false, schema: { type: "string" } },
-          { name: "surface", in: "query", required: false, schema: { type: "string" } }
-        ],
-        responses: {
-          200: { description: "Merged translation dictionary", schema: toOpenApiSchema(I18nBundleResponseSchema) }
+    return this.router()
+      .get("/v1/i18n/:locale", this.getLocale, {
+        docs: {
+          summary: "Resolve installed plugin translations for a locale",
+          tags: [CORE_PACK_OPENAPI_TAGS.I18N],
+          operationId: "getI18nBundle",
+          parameters: [
+            { name: "locale", in: "path", required: true, schema: { type: "string" } },
+            { name: "namespace", in: "query", required: false, schema: { type: "string" } },
+            { name: "surface", in: "query", required: false, schema: { type: "string" } }
+          ],
+          responses: {
+            200: {
+              description: "Merged translation dictionary",
+              schema: toOpenApiSchema(I18nBundleResponseSchema)
+            }
+          }
         }
-      }
-    }).build();
+      })
+      .build();
   }
 
   private getLocale = async (ctx: HttpContext) => {

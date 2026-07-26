@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import { Button, Icon } from "@trinacria-cms/trinacria-ui";
 import type { PermissionsApi, RolesApi, UsersApi } from "@trinacria-cms/sdk";
+import { Button, Icon } from "@trinacria-cms/trinacria-ui";
+import { useEffect, useMemo, useState } from "react";
 import type { AdminDashboardWidgetRenderContext } from "../runtime/admin-route-runtime.js";
 
 type UserRecord = Awaited<ReturnType<UsersApi["listUsers"]>>["data"][number];
@@ -105,7 +105,9 @@ export function AccessManagementDashboardWidget({
           <div className="grid divide-y divide-[color:var(--color-border)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
             <AccessMetric
               label="Utenti"
-              value={isLoading ? "…" : hasMoreUsers ? `${PAGE_LIMIT}+` : String(snapshot.users.length)}
+              value={
+                isLoading ? "…" : hasMoreUsers ? `${PAGE_LIMIT}+` : String(snapshot.users.length)
+              }
               detail={isLoading ? "" : `${activeUsers} attivi`}
               onClick={routeAvailable("users") ? () => navigate("users") : undefined}
             />
@@ -126,16 +128,26 @@ export function AccessManagementDashboardWidget({
           <section className="grid gap-3">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-medium text-[color:var(--color-ink)]">Nuove registrazioni</p>
+                <p className="text-sm font-medium text-[color:var(--color-ink)]">
+                  Nuove registrazioni
+                </p>
                 <p className="text-xs text-[color:var(--color-ink-muted)]">Ultime 6 settimane</p>
               </div>
               {hasMoreUsers ? (
-                <span className="text-xs text-[color:var(--color-ink-subtle)]">Ultimi 200 utenti</span>
+                <span className="text-xs text-[color:var(--color-ink-subtle)]">
+                  Ultimi 200 utenti
+                </span>
               ) : null}
             </div>
-            <div className="grid h-20 grid-cols-6 items-end gap-2" aria-label="Andamento registrazioni utenti">
+            <div
+              className="grid h-20 grid-cols-6 items-end gap-2"
+              aria-label="Andamento registrazioni utenti"
+            >
               {registrationTrend.map((bucket) => (
-                <div key={bucket.label} className="grid h-full grid-rows-[1fr_auto] gap-1 text-center">
+                <div
+                  key={bucket.label}
+                  className="grid h-full grid-rows-[1fr_auto] gap-1 text-center"
+                >
                   <div className="flex items-end rounded-sm bg-[color:var(--color-surface-subtle)]">
                     <span
                       title={`${bucket.label}: ${bucket.count} registrazioni`}
@@ -143,7 +155,9 @@ export function AccessManagementDashboardWidget({
                       style={{ height: `${Math.max(6, bucket.height)}%` }}
                     />
                   </div>
-                  <span className="text-[10px] text-[color:var(--color-ink-subtle)]">{bucket.label}</span>
+                  <span className="text-[10px] text-[color:var(--color-ink-subtle)]">
+                    {bucket.label}
+                  </span>
                 </div>
               ))}
             </div>
@@ -217,5 +231,7 @@ function buildRegistrationTrend(users: readonly UserRecord[]) {
 }
 
 function toDisplayError(error: unknown): string {
-  return error instanceof Error && error.message ? error.message : "Impossibile caricare i dati di accesso.";
+  return error instanceof Error && error.message
+    ? error.message
+    : "Impossibile caricare i dati di accesso.";
 }

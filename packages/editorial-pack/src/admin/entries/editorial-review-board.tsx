@@ -1,15 +1,15 @@
-import { useState, type DragEvent } from "react";
 import { Icon } from "@trinacria-cms/trinacria-ui";
+import { type DragEvent, useState } from "react";
 import { EditorialEntriesHeader } from "./editorial-entries-header.js";
 import { EditorialEntryActionsMenu } from "./editorial-entry-actions-menu.js";
 import {
+  type EditorialEntry,
+  type EditorialEntryContentType,
   formatEditorialDate,
   getEntryActions,
   getEntryStatusMeta,
   getTransitionToStatus,
   getWorkflowStates,
-  type EditorialEntry,
-  type EditorialEntryContentType,
   type TransitionAction
 } from "./entries.types.js";
 

@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { ResourcePage, Tabs } from "@trinacria-cms/trinacria-ui";
+import { useState } from "react";
 import {
   ContentModelDeleteDialog,
   type ContentModelDeleteRequest

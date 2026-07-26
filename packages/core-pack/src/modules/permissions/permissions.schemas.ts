@@ -1,4 +1,4 @@
-import { defineEntity, isValidPermissionKey, s, type Infer } from "@trinacria-cms/kernel";
+import { defineEntity, type Infer, isValidPermissionKey, s } from "@trinacria-cms/kernel";
 
 export const PermissionStatusSchema = s.enum(["active", "disabled"] as const);
 

@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState, type DragEvent, type ReactNode } from "react";
 import { Button, Icon } from "@trinacria-cms/trinacria-ui";
+import { type DragEvent, type ReactNode, useEffect, useMemo, useState } from "react";
 import {
-  normalizeDashboardWidgetLayout,
-  reorderDashboardWidgets,
   type DashboardWidgetDimension,
   type DashboardWidgetLayoutDefinition,
   type DashboardWidgetLayoutItem,
-  type DashboardWidgetLayoutState
+  type DashboardWidgetLayoutState,
+  normalizeDashboardWidgetLayout,
+  reorderDashboardWidgets
 } from "./dashboard-widget-board.storage.js";
 
 export interface DashboardWidgetBoardItem extends DashboardWidgetLayoutItem {

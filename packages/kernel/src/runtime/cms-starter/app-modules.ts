@@ -1,4 +1,4 @@
-import { TrinacriaApp, type ModuleDefinition } from "@trinacria/core";
+import type { ModuleDefinition, TrinacriaApp } from "@trinacria/core";
 import { CoreError } from "../../errors/core-error.js";
 
 export async function registerAppModules(

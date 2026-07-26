@@ -1,13 +1,13 @@
-import { useEffect, useState } from "react";
 import { Button, Icon, Input, Select, Textarea } from "@trinacria-cms/trinacria-ui";
+import { useEffect, useState } from "react";
 import { ContentTypeDetailSection } from "./content-type-detail/content-type-detail-section.js";
 import { ContentTypeFieldComposer } from "./content-type-detail/content-type-field-composer.js";
 import { ContentTypeFieldList } from "./content-type-detail/content-type-field-list.js";
 import { ContentTypeWorkflowEditor } from "./content-type-detail/content-type-workflow-editor.js";
 import { useContentTypeDetail } from "./content-type-detail/use-content-type-detail.js";
 import {
-  CONTENT_MODEL_ICON_OPTIONS,
   type CmsClient,
+  CONTENT_MODEL_ICON_OPTIONS,
   type ContentTypeField,
   type EditorialNavigator
 } from "./editorial-admin.types.js";

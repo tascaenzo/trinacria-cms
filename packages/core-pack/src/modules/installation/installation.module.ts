@@ -1,12 +1,12 @@
-import {
-  classProvider,
-  CORE_TOKENS,
-  defineModule,
-  factoryProvider,
-  httpProvider,
-  type EntityRegistry
-} from "@trinacria-cms/kernel";
 import { EVENT_BUS_TOKEN } from "@trinacria/events";
+import {
+  CORE_TOKENS,
+  classProvider,
+  defineModule,
+  type EntityRegistry,
+  factoryProvider,
+  httpProvider
+} from "@trinacria-cms/kernel";
 import { CorePackCacheModule } from "../cache/cache.module.js";
 import { CORE_PACK_CACHE_SERVICE_TOKEN } from "../cache/cache.tokens.js";
 import { CorePackSecurityModule } from "../security/security.module.js";
@@ -19,11 +19,7 @@ import { SETTINGS_SERVICE_TOKEN } from "../settings/settings.tokens.js";
 import { CorePackUsersModule } from "../users/users.module.js";
 import { USERS_REPOSITORY_TOKEN } from "../users/users.tokens.js";
 import { InstallationController } from "./installation.controller.js";
-import { InstallationStateRepository } from "./repositories/installation-state.repository.js";
 import { LOCAL_CREDENTIALS_ENTITY } from "./installation.schemas.js";
-import { InstallationService } from "./services/installation.service.js";
-import { LocalCredentialsRepository } from "./repositories/local-credentials.repository.js";
-import { PasswordHashingService } from "./services/password-hashing.service.js";
 import {
   CORE_PACK_INSTALLATION_CONTROLLER_TOKEN,
   CORE_PACK_INSTALLATION_ENTITY_REGISTRATION_TOKEN,
@@ -32,6 +28,10 @@ import {
   LOCAL_CREDENTIALS_REPOSITORY_TOKEN,
   PASSWORD_HASHING_SERVICE_TOKEN
 } from "./installation.tokens.js";
+import { InstallationStateRepository } from "./repositories/installation-state.repository.js";
+import { LocalCredentialsRepository } from "./repositories/local-credentials.repository.js";
+import { InstallationService } from "./services/installation.service.js";
+import { PasswordHashingService } from "./services/password-hashing.service.js";
 
 /**
  * Installation module wiring:

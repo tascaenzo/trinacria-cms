@@ -25,7 +25,10 @@ export class AuthMfaService {
     return Boolean(credential?.secretEncrypted && credential.enabledAt);
   }
 
-  async getStatus(userId: string, mode: MfaMode): Promise<{
+  async getStatus(
+    userId: string,
+    mode: MfaMode
+  ): Promise<{
     mode: MfaMode;
     enabled: boolean;
     enabledAt?: string;
@@ -52,7 +55,10 @@ export class AuthMfaService {
     };
   }
 
-  async confirmEnrollment(userId: string, code: string): Promise<{ recoveryCodes: readonly string[] }> {
+  async confirmEnrollment(
+    userId: string,
+    code: string
+  ): Promise<{ recoveryCodes: readonly string[] }> {
     const credential = await this.repository.findCredential(userId);
     if (!credential?.pendingSecretEncrypted || !credential.pendingExpiresAt) {
       throw new JwtAuthError("auth_mfa_enrollment_missing", "No MFA enrollment is in progress");
@@ -110,7 +116,11 @@ export class AuthMfaService {
     expectedPurpose: AuthMfaChallengePurpose
   ): Promise<{ id: string; userId: string }> {
     const record = await this.repository.findChallenge(hashChallenge(challengeId));
-    if (!record || record.purpose !== expectedPurpose || new Date(record.expiresAt).getTime() <= Date.now()) {
+    if (
+      !record ||
+      record.purpose !== expectedPurpose ||
+      new Date(record.expiresAt).getTime() <= Date.now()
+    ) {
       throw new JwtAuthError("auth_mfa_challenge_invalid", "MFA challenge is invalid or expired");
     }
     return { id: record.id, userId: record.userId };
@@ -148,15 +158,26 @@ function encryptSecret(value: string): string {
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", key, iv);
   const encrypted = Buffer.concat([cipher.update(value, "utf8"), cipher.final()]);
-  return [iv.toString("base64url"), cipher.getAuthTag().toString("base64url"), encrypted.toString("base64url")].join(".");
+  return [
+    iv.toString("base64url"),
+    cipher.getAuthTag().toString("base64url"),
+    encrypted.toString("base64url")
+  ].join(".");
 }
 
 function decryptSecret(value: string): string {
   const [ivRaw, tagRaw, encryptedRaw] = value.split(".");
   if (!ivRaw || !tagRaw || !encryptedRaw) throw new Error("Invalid encrypted MFA secret");
-  const decipher = createDecipheriv("aes-256-gcm", readEncryptionKey(), Buffer.from(ivRaw, "base64url"));
+  const decipher = createDecipheriv(
+    "aes-256-gcm",
+    readEncryptionKey(),
+    Buffer.from(ivRaw, "base64url")
+  );
   decipher.setAuthTag(Buffer.from(tagRaw, "base64url"));
-  return Buffer.concat([decipher.update(Buffer.from(encryptedRaw, "base64url")), decipher.final()]).toString("utf8");
+  return Buffer.concat([
+    decipher.update(Buffer.from(encryptedRaw, "base64url")),
+    decipher.final()
+  ]).toString("utf8");
 }
 
 function readEncryptionKey(): Buffer {
@@ -172,7 +193,9 @@ function readEncryptionKey(): Buffer {
     throw new Error("CMS_MFA_ENCRYPTION_KEY is required when MFA is enabled in production");
   }
   return createHash("sha256")
-    .update(`trinacria-mfa-dev:${process.env.CMS_JWT_SECRET ?? "trinacria-cms-dev-secret-change-me"}`)
+    .update(
+      `trinacria-mfa-dev:${process.env.CMS_JWT_SECRET ?? "trinacria-cms-dev-secret-change-me"}`
+    )
     .digest();
 }
 
@@ -180,7 +203,9 @@ function verifyTotp(secret: string, code: string): boolean {
   const normalized = normalizeCode(code);
   if (!/^\d{6}$/.test(normalized)) return false;
   const currentStep = Math.floor(Date.now() / 1000 / TOTP_PERIOD_SECONDS);
-  return [-1, 0, 1].some((offset) => safeEquals(generateTotp(secret, currentStep + offset), normalized));
+  return [-1, 0, 1].some((offset) =>
+    safeEquals(generateTotp(secret, currentStep + offset), normalized)
+  );
 }
 
 function generateTotp(secret: string, step: number): string {
@@ -188,7 +213,11 @@ function generateTotp(secret: string, step: number): string {
   counter.writeBigUInt64BE(BigInt(step));
   const digest = createHmac("sha1", fromBase32(secret)).update(counter).digest();
   const offset = digest[digest.length - 1] & 0x0f;
-  const binary = ((digest[offset] & 0x7f) << 24) | (digest[offset + 1] << 16) | (digest[offset + 2] << 8) | digest[offset + 3];
+  const binary =
+    ((digest[offset] & 0x7f) << 24) |
+    (digest[offset + 1] << 16) |
+    (digest[offset + 2] << 8) |
+    digest[offset + 3];
   return String(binary % 10 ** TOTP_DIGITS).padStart(TOTP_DIGITS, "0");
 }
 

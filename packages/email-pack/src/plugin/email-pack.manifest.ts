@@ -7,13 +7,13 @@ import {
   defineSecurity
 } from "@trinacria-cms/kernel/plugin-api";
 import { EMAIL_PACK_SETTING_DEFINITIONS } from "../modules/email/email-settings.js";
-import { EMAIL_PACK_ADMIN_MANIFEST } from "./email-pack-admin.manifest.js";
 import { EMAIL_PACK_PLUGIN_ID } from "./email-pack.constants.js";
 import {
   EMAIL_PACK_CAPABILITY_LIST,
   EMAIL_PACK_PERMISSION_DEFINITIONS,
   EMAIL_PACK_PERMISSION_KEY_LIST
 } from "./email-pack.security.js";
+import { EMAIL_PACK_ADMIN_MANIFEST } from "./email-pack-admin.manifest.js";
 
 export const EMAIL_PACK_MANIFEST: PluginManifest = definePluginManifest({
   id: EMAIL_PACK_PLUGIN_ID,

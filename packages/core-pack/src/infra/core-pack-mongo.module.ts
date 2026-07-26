@@ -1,7 +1,6 @@
-import mongoose, { type ConnectOptions } from "mongoose";
 import {
-  classProvider,
   CORE_TOKENS,
+  classProvider,
   createMongoDbAdapter,
   createToken,
   defineModule,
@@ -10,6 +9,7 @@ import {
   type Provider,
   valueProvider
 } from "@trinacria-cms/kernel";
+import mongoose, { type ConnectOptions } from "mongoose";
 
 export interface CorePackMongoModuleOptions {
   uri: string;

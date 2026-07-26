@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { EDITORIAL_PACK_PLUGIN_ID } from "../../../plugin/editorial-pack.constants.js";
-import { ContentTypeRecordSchema, type ContentTypeRecord } from "../content-types.schemas.js";
 import type { CreateContentTypeInput, UpdateContentTypeInput } from "../content-types.input.js";
+import { type ContentTypeRecord, ContentTypeRecordSchema } from "../content-types.schemas.js";
 
 const CONTENT_TYPES_ENTITY_NAME = "content_types";
 

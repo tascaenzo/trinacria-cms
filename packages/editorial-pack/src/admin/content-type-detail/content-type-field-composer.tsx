@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
 import { Button, Dialog, Input, Select, Switch } from "@trinacria-cms/trinacria-ui";
+import { useEffect, useState } from "react";
 import type { ContentFieldType, ContentTypeField } from "../editorial-admin.types.js";
 
 interface FieldDraft {

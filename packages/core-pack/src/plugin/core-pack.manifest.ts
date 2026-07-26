@@ -7,6 +7,9 @@ import {
   definePluginManifest,
   defineSecurity
 } from "@trinacria-cms/kernel/plugin-api";
+import { CORE_PACK_ADMIN_I18N } from "../admin-i18n/index.js";
+import { CORE_PACK_SETTING_DEFINITION_SEEDS } from "../modules/settings/settings.bootstrap.js";
+import { CORE_PACK_USER_EVENT_DEFINITIONS } from "../modules/users/events/user-events.catalog.js";
 import { CORE_PACK_PLUGIN_ID } from "./core-pack.constants.js";
 import {
   CORE_PACK_ADMIN_ROLE,
@@ -17,9 +20,6 @@ import {
   CORE_PACK_READONLY_PERMISSION_KEY_LIST
 } from "./core-pack.security.js";
 import { CORE_PACK_ADMIN_MANIFEST } from "./core-pack-admin.manifest.js";
-import { CORE_PACK_ADMIN_I18N } from "../admin-i18n/index.js";
-import { CORE_PACK_SETTING_DEFINITION_SEEDS } from "../modules/settings/settings.bootstrap.js";
-import { CORE_PACK_USER_EVENT_DEFINITIONS } from "../modules/users/events/user-events.catalog.js";
 
 /**
  * Official baseline plugin manifest for Trinacria CMS core-pack.

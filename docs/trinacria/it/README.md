@@ -16,10 +16,10 @@ Questa sezione raccoglie la documentazione ufficiale in italiano.
 - [0005 - Plugin Cron](./0005-cron.md)
 - [0006 - Plugin Events](./0006-events-plugin.md)
 - [1000 - Repository: Policy di Versioning](./1000-repository-policy-versioning.md)
-- [1001 - Repository: Script e Workflow Release](./1001-repository-release-scripts-workflow.md)
+- [1001 - Repository: comandi e workflow CI](./1001-repository-release-scripts-workflow.md)
 - [1002 - Repository: Publish librerie e artifact npm](./1002-repository-publish-artifacts.md)
 - [1003 - Repository: Workflow Branching (`unstable` -> `develop` -> `main`)](./1003-repository-branching-workflow.md)
-- [1004 - Repository: Valutazione ESLint + Prettier](./1004-eslint-prettier-evaluation.md)
+- [1004 - Repository: Biome + Turborepo](./1004-eslint-prettier-evaluation.md)
 - [1005 - Repository: Flussi reali attivi](./1005-repository-real-workflows.md)
 - [1006 - Repository: Auto-update dipendenze (SemVer)](./1006-repository-dependency-auto-update.md)
 
@@ -28,7 +28,7 @@ Questa sezione raccoglie la documentazione ufficiale in italiano.
 - [Riferimento Middleware HTTP Built-in + Ricette](./0002-http-plugin.md)
 - [Guida Plugin Cron + Hook Lock](./0005-cron.md)
 - [Guida Plugin Events (Bus interno + Redis/RabbitMQ)](./0006-events-plugin.md)
-- [Guida Release e Versioning (Changesets + CI)](./1001-repository-release-scripts-workflow.md)
+- [Guida ai comandi e alla CI](./1001-repository-release-scripts-workflow.md)
 - [Guida Publish Artifact e Registry (pack/npm/git)](./1002-repository-publish-artifacts.md)
 
 ## Ambito

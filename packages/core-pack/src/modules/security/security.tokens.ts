@@ -1,12 +1,12 @@
 import { createToken } from "@trinacria-cms/kernel";
-import { CorePackAuthzService } from "./services/core-pack-authz.service.js";
-import { RolePolicyRulesController } from "./role-policy-rules/role-policy-rules.controller.js";
-import { RolePolicyRulesRepository } from "./role-policy-rules/role-policy-rules.repository.js";
-import { RolePolicyRulesService } from "./role-policy-rules/role-policy-rules.service.js";
-import { CorePackManifestProvisioningService } from "./services/security-provisioning.service.js";
-import { UserAccessController } from "./user-access/user-access.controller.js";
-import { UserAccessService } from "./user-access/user-access.service.js";
-import { UserRolesRepository } from "./user-access/user-roles.repository.js";
+import type { RolePolicyRulesController } from "./role-policy-rules/role-policy-rules.controller.js";
+import type { RolePolicyRulesRepository } from "./role-policy-rules/role-policy-rules.repository.js";
+import type { RolePolicyRulesService } from "./role-policy-rules/role-policy-rules.service.js";
+import type { CorePackAuthzService } from "./services/core-pack-authz.service.js";
+import type { CorePackManifestProvisioningService } from "./services/security-provisioning.service.js";
+import type { UserAccessController } from "./user-access/user-access.controller.js";
+import type { UserAccessService } from "./user-access/user-access.service.js";
+import type { UserRolesRepository } from "./user-access/user-roles.repository.js";
 
 export const CORE_PACK_MANIFEST_PROVISIONING_SERVICE_TOKEN =
   createToken<CorePackManifestProvisioningService>("CORE_PACK_MANIFEST_PROVISIONING_SERVICE");

@@ -1,4 +1,4 @@
-import { Card, Button } from "@trinacria-cms/trinacria-ui";
+import { Button, Card } from "@trinacria-cms/trinacria-ui";
 import { useI18n } from "../lib/i18n.js";
 
 export interface ResourcePlaceholderPageProps {

@@ -1,20 +1,20 @@
-import type {
-  PluginDependencyGraphSnapshot,
-  KernelPluginDefinition,
-  KernelPluginRuntimeContext,
-  PluginRuntimeLifecycleHooks,
-  PluginContributionCatalogSnapshot,
-  PluginRuntimeEvent,
-  PluginRuntimeRetryPolicy,
-  PluginEventSubscriptionAuthorizer,
-  PluginRuntime,
-  PluginRuntimeRecord,
-  PluginState
-} from "../../contracts/plugin-runtime.js";
-import type { PluginManifestEmittedEvent } from "../../contracts/plugin-manifest.js";
-import type { PluginRuntimeStore } from "../../contracts/plugin-runtime-store.js";
 import type { ApplicationContext } from "@trinacria/core";
 import { EVENT_BUS_TOKEN, type EventBus, type EventEnvelope } from "@trinacria/events";
+import type { PluginManifestEmittedEvent } from "../../contracts/plugin-manifest.js";
+import type {
+  KernelPluginDefinition,
+  KernelPluginRuntimeContext,
+  PluginContributionCatalogSnapshot,
+  PluginDependencyGraphSnapshot,
+  PluginEventSubscriptionAuthorizer,
+  PluginRuntime,
+  PluginRuntimeEvent,
+  PluginRuntimeLifecycleHooks,
+  PluginRuntimeRecord,
+  PluginRuntimeRetryPolicy,
+  PluginState
+} from "../../contracts/plugin-runtime.js";
+import type { PluginRuntimeStore } from "../../contracts/plugin-runtime-store.js";
 import {
   PluginCompatibilityError,
   PluginDependencyError,
@@ -23,17 +23,18 @@ import {
   PluginRuntimeError,
   PluginStateTransitionError
 } from "../../errors/plugin-errors.js";
-import {
-  assertPluginCompatibility,
-  validatePluginManifest
-} from "../plugin-manifest/plugin-manifest-validation.js";
+import { CORE_TOKENS } from "../../tokens/core-tokens.js";
 import {
   TrinacriaModuleBridge,
   type TrinacriaModuleBridgeApp
 } from "../bridge/trinacria-module-bridge.js";
 import { createInMemoryPluginRuntimeStore } from "../persistence/plugin-runtime-store.js";
+import {
+  assertPluginCompatibility,
+  validatePluginManifest
+} from "../plugin-manifest/plugin-manifest-validation.js";
+import { isPermissionOwnedByPlugin } from "../plugin-namespace/permission-key.js";
 import { PluginContributionRegistry } from "./plugin-runtime-contributions.js";
-import { PluginRegistryManager } from "./plugin-runtime-registry.js";
 import {
   assertDependencyGraphWithoutCycles,
   assertNoLoadedDependents,
@@ -43,17 +44,16 @@ import {
   sortPluginsByDependencies
 } from "./plugin-runtime-dependencies.js";
 import { PluginRuntimeEventLog } from "./plugin-runtime-events.js";
-import { createPluginStatusReason } from "./plugin-runtime-state-machine.js";
-import { persistRecord, hydrateFromRuntimeStore } from "./plugin-runtime-persistence.js";
 import {
   createLifecycleContext,
   loadPluginInternal,
   unloadPlugin
 } from "./plugin-runtime-lifecycle.js";
-import { isPermissionOwnedByPlugin } from "../plugin-namespace/permission-key.js";
-import { CORE_TOKENS } from "../../tokens/core-tokens.js";
+import { hydrateFromRuntimeStore, persistRecord } from "./plugin-runtime-persistence.js";
+import { PluginRegistryManager } from "./plugin-runtime-registry.js";
+import { createPluginStatusReason } from "./plugin-runtime-state-machine.js";
 
-export { type PluginRuntimeLifecycleHooks, type TrinacriaModuleBridge };
+export type { PluginRuntimeLifecycleHooks, TrinacriaModuleBridge };
 
 export interface InMemoryPluginRuntimeOptions {
   coreVersion: string;
@@ -566,7 +566,8 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       manifest: definition.manifest,
       i18nSources: definition.i18nSources ?? [],
       events: {
-        emit: (eventName, payload) => this.emitPluginEvent(definition.manifest.id, eventName, payload)
+        emit: (eventName, payload) =>
+          this.emitPluginEvent(definition.manifest.id, eventName, payload)
       }
     };
   }

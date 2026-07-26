@@ -1,7 +1,7 @@
 import type { KernelPluginDefinition } from "@trinacria-cms/kernel/contracts";
+import { CORE_PACK_ADMIN_I18N_SOURCES } from "../admin-i18n/index.js";
 import { CorePackRootModule } from "../modules/core-pack-root.module.js";
 import { CORE_PACK_MANIFEST } from "./core-pack.manifest.js";
-import { CORE_PACK_ADMIN_I18N_SOURCES } from "../admin-i18n/index.js";
 
 /**
  * Factory returning the baseline core-pack plugin definition.

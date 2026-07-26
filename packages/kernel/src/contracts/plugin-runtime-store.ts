@@ -1,10 +1,10 @@
+import type { PluginManifest } from "./plugin-manifest.js";
 import type {
   PluginLifecyclePhase,
   PluginRuntimeRecord,
   PluginRuntimeStatusReason,
   PluginState
 } from "./plugin-runtime.js";
-import type { PluginManifest } from "./plugin-manifest.js";
 
 /**
  * Persisted snapshot of a plugin runtime record.

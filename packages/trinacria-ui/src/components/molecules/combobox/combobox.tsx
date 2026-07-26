@@ -1,4 +1,6 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { type KeyboardEvent, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useControllableState } from "../../../hooks/use-controllable-state.js";
+import { cn } from "../../../utils/class-names.js";
 import {
   buildFormControlAria,
   FormControlShell,
@@ -7,8 +9,6 @@ import {
 } from "../../atoms/form-control/form-control.js";
 import { Icon } from "../../atoms/icon/icon.js";
 import { OverlaySurface } from "../../primitives/overlay-surface/overlay-surface.js";
-import { useControllableState } from "../../../hooks/use-controllable-state.js";
-import { cn } from "../../../utils/class-names.js";
 import type { ComboboxOption, ComboboxProps } from "./combobox.types.js";
 
 function normalize(text: string) {

@@ -1,18 +1,18 @@
 import {
   createPluginApiResponder,
+  type HttpContext,
   HttpController,
-  toOpenApiSchema,
-  type HttpContext
+  toOpenApiSchema
 } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import { CORE_PACK_OPENAPI_TAGS } from "../openapi-tags.js";
 import {
-  InstallBootstrapInputSchema,
   InstallationBootstrapResponseSchema,
   InstallationErrorResponseSchema,
-  InstallationStatusResponseSchema
+  InstallationStatusResponseSchema,
+  InstallBootstrapInputSchema
 } from "./dto/index.js";
-import { type InstallationService } from "./services/installation.service.js";
+import type { InstallationService } from "./services/installation.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
 

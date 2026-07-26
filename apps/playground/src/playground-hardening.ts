@@ -1,12 +1,12 @@
 import { readFileSync } from "node:fs";
 import {
   cors,
+  type HttpContext,
+  type HttpMiddleware,
   rateLimit,
   requestTimeout,
   response,
-  securityHeaders,
-  type HttpContext,
-  type HttpMiddleware
+  securityHeaders
 } from "@trinacria-cms/kernel";
 
 const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;

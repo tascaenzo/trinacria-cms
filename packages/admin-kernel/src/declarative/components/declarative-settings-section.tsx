@@ -1,9 +1,9 @@
-import { FormSection, InfoCard, Input, Textarea, Card } from "@trinacria-cms/trinacria-ui";
+import { Card, FormSection, InfoCard, Input, Textarea } from "@trinacria-cms/trinacria-ui";
 import { useMemo } from "react";
 import type { RenderableAdminSettingsSection } from "../../runtime/admin-route-runtime.js";
-import type { DeclarativeField } from "../types.js";
 import { useDeclarativeActionController } from "../hooks/use-declarative-action-controller.js";
 import { useDeclarativeData } from "../hooks/use-declarative-data.js";
+import type { DeclarativeField } from "../types.js";
 import { formatCellValue, formatEndpoint } from "../utils/formatting.js";
 import { readObjectPath } from "../utils/object-path.js";
 import { inferFormFields } from "../utils/schema.js";

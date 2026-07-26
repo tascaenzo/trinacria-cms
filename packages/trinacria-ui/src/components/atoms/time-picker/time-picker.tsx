@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "../../../utils/class-names.js";
+import { OverlaySurface } from "../../primitives/overlay-surface/overlay-surface.js";
 import { Button } from "../button/button.js";
 import {
   buildFormControlAria,
@@ -8,7 +9,6 @@ import {
   useFormControlIds
 } from "../form-control/form-control.js";
 import { Icon } from "../icon/icon.js";
-import { OverlaySurface } from "../../primitives/overlay-surface/overlay-surface.js";
 import type { TimePickerProps } from "./time-picker.types.js";
 
 function pad(value: number): string {

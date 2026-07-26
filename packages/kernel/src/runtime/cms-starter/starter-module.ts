@@ -2,17 +2,17 @@ import {
   createToken,
   defineModule,
   factoryProvider,
-  TrinacriaApp,
+  type TrinacriaApp,
   valueProvider
 } from "@trinacria/core";
-import { httpProvider, response, type HttpMiddleware } from "@trinacria/http";
+import { type HttpMiddleware, httpProvider, response } from "@trinacria/http";
 import { apiError } from "../../contracts/api-contract.js";
 import type { CmsStarterOptions, CmsSwaggerUiConfig } from "../../contracts/cms-starter.js";
 import type { KernelAdminRouteGuard } from "../../contracts/kernel-admin-route-guard.js";
 import type { PluginSourceSnapshot } from "../../contracts/plugin-discovery.js";
+import type { PluginManifestProvisioner } from "../../contracts/plugin-manifest-provisioner.js";
 import type { PluginRuntime } from "../../contracts/plugin-runtime.js";
 import type { PluginRuntimeStore } from "../../contracts/plugin-runtime-store.js";
-import type { PluginManifestProvisioner } from "../../contracts/plugin-manifest-provisioner.js";
 import { CoreError } from "../../errors/core-error.js";
 import { KernelCorsPreflightController } from "../../http/cors-preflight.controller.js";
 import { KERNEL_CORS_PREFLIGHT_CONTROLLER } from "../../http/cors-preflight.tokens.js";
@@ -22,13 +22,13 @@ import { CmsSwaggerController } from "../../http/swagger/cms-swagger.controller.
 import { KernelSystemHttpController } from "../../http/system/kernel-system.controller.js";
 import { KERNEL_SYSTEM_HTTP_CONTROLLER } from "../../http/system/kernel-system.tokens.js";
 import { CORE_TOKENS } from "../../tokens/core-tokens.js";
-import { ConfiguredPluginDiscoveryService } from "../plugin-discovery/plugin-discovery-service.js";
-import { InMemoryPluginRuntime } from "../plugin-runtime/in-memory-plugin-runtime.js";
 import {
   createDbPluginRuntimeStore,
   createDeferredPluginRuntimeStore,
   createInMemoryPluginRuntimeStore
 } from "../persistence/plugin-runtime-store.js";
+import { ConfiguredPluginDiscoveryService } from "../plugin-discovery/plugin-discovery-service.js";
+import { InMemoryPluginRuntime } from "../plugin-runtime/in-memory-plugin-runtime.js";
 import { KernelHealthService } from "../system/kernel-health-service.js";
 import { KernelSystemService } from "../system/kernel-system-service.js";
 

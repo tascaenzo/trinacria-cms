@@ -1,4 +1,4 @@
-import { s, type Infer } from "@trinacria/schema";
+import { type Infer, s } from "@trinacria/schema";
 import { defineEntity } from "../persistence/entity-registry.js";
 
 export const EncryptedSecurePayloadSchema = s.object(

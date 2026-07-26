@@ -1,12 +1,18 @@
-import { useActionState, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { AdminShell, Card, SearchField } from "@trinacria-cms/trinacria-ui";
 import type {
+  CompleteLoginMfaEnrollmentResponse,
+  CompleteMfaLoginResponse,
   GetAuthenticatedUserResponse,
   GetInstallationStatusResponse,
-  LoginWithPasswordResponse,
-  CompleteLoginMfaEnrollmentResponse,
-  CompleteMfaLoginResponse
+  LoginWithPasswordResponse
 } from "@trinacria-cms/sdk";
+import { AdminShell, Card, SearchField } from "@trinacria-cms/trinacria-ui";
+import { type ReactNode, useActionState, useCallback, useEffect, useMemo, useState } from "react";
+import { BackofficeShellStatus } from "./backoffice-app/backoffice-shell-status.js";
+import { BackofficeUserMenu } from "./backoffice-app/backoffice-user-menu.js";
+import { useAuthenticatedRoleLabel } from "./backoffice-app/use-authenticated-role-label.js";
+import { useBackofficeRouteState } from "./backoffice-app/use-backoffice-route-state.js";
+import { useBackofficeShellRuntime } from "./backoffice-app/use-backoffice-shell-runtime.js";
+import { AuthScreenLayout } from "./components/auth-screen-layout.js";
 import {
   getLocalizedInstallationError,
   getLocalizedLoginError,
@@ -16,29 +22,23 @@ import {
   readBackofficeLocale,
   type SupportedLocale
 } from "./lib/auth-i18n.js";
-import { I18nProvider, createTranslate, type I18nBundle } from "./lib/i18n.js";
-import { getSdkErrorDetails, type SdkErrorDetails } from "./lib/sdk-errors.js";
-import { formatUserName } from "./lib/user-formatting.js";
-import { AuthScreenLayout } from "./components/auth-screen-layout.js";
-import type { BackofficeModule } from "./module.js";
-import { readRequiredString } from "./runtime/action-state.js";
-import { clearBackofficeSession, persistBackofficeSession } from "./runtime/auth-session.js";
-import { cms, getBackofficeApiBaseUrl } from "./runtime/cms-sdk.js";
-import { loadRemoteBackofficeI18n } from "./lib/remote-i18n.js";
-import { InstallationDatabaseGuidePage } from "./pages/installation-database-guide-page.js";
-import { InstallationBootstrapPage } from "./pages/installation-bootstrap-page.js";
-import { LoginPage } from "./pages/login-page.js";
-import { MfaLoginPage, MfaRecoveryCodesPage } from "./pages/mfa-login-page.js";
-import { BackofficeShellStatus } from "./backoffice-app/backoffice-shell-status.js";
-import { BackofficeUserMenu } from "./backoffice-app/backoffice-user-menu.js";
-import { useBackofficeRouteState } from "./backoffice-app/use-backoffice-route-state.js";
-import { useBackofficeShellRuntime } from "./backoffice-app/use-backoffice-shell-runtime.js";
-import { useAuthenticatedRoleLabel } from "./backoffice-app/use-authenticated-role-label.js";
 import {
   applyBackofficeTheme,
   BACKOFFICE_ACCENT_SETTING_KEY,
   BACKOFFICE_THEME_SETTING_KEY
 } from "./lib/backoffice-theme.js";
+import { createTranslate, type I18nBundle, I18nProvider } from "./lib/i18n.js";
+import { loadRemoteBackofficeI18n } from "./lib/remote-i18n.js";
+import { getSdkErrorDetails, type SdkErrorDetails } from "./lib/sdk-errors.js";
+import { formatUserName } from "./lib/user-formatting.js";
+import type { BackofficeModule } from "./module.js";
+import { InstallationBootstrapPage } from "./pages/installation-bootstrap-page.js";
+import { InstallationDatabaseGuidePage } from "./pages/installation-database-guide-page.js";
+import { LoginPage } from "./pages/login-page.js";
+import { MfaLoginPage, MfaRecoveryCodesPage } from "./pages/mfa-login-page.js";
+import { readRequiredString } from "./runtime/action-state.js";
+import { clearBackofficeSession, persistBackofficeSession } from "./runtime/auth-session.js";
+import { cms, getBackofficeApiBaseUrl } from "./runtime/cms-sdk.js";
 
 type AuthenticatedUser = GetAuthenticatedUserResponse["data"];
 type InstallationStatus = GetInstallationStatusResponse["data"] & {

@@ -1,15 +1,15 @@
+import type { EventBus } from "@trinacria/events";
 import type {
   CreateUserInput,
   UpdateUserProfileInput,
   UpdateUserStatusInput
 } from "../dto/users.input.dto.js";
-import type { EventBus } from "@trinacria/events";
-import type { UserRecord } from "../users.schemas.js";
-import { UsersRepository } from "../repositories/users.repository.js";
-import {
-  type CorePackUserEventSource,
-  type CorePackUserStatusChangedPayload
+import type {
+  CorePackUserEventSource,
+  CorePackUserStatusChangedPayload
 } from "../events/user-events.catalog.js";
+import type { UsersRepository } from "../repositories/users.repository.js";
+import type { UserRecord } from "../users.schemas.js";
 import { UserLifecycleEventPublisher } from "./user-lifecycle-event-publisher.js";
 
 /**

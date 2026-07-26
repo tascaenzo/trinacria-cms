@@ -1,8 +1,8 @@
 import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import {
-  TranslationMessageRecordSchema,
-  type TranslationMessageRecord
+  type TranslationMessageRecord,
+  TranslationMessageRecordSchema
 } from "./i18n-messages.schemas.js";
 
 const ENTITY_NAME = "i18n_messages";
@@ -48,7 +48,9 @@ export class I18nMessagesRepository {
       }
     );
     if (!updated) {
-      throw new Error(`Translation message "${namespace}:${locale}:${key}" disappeared during upsert`);
+      throw new Error(
+        `Translation message "${namespace}:${locale}:${key}" disappeared during upsert`
+      );
     }
     return TranslationMessageRecordSchema.parse(updated);
   }

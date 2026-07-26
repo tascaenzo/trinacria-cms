@@ -1,23 +1,23 @@
+import { createSettingsOwnerAccessError, SettingsAccessError } from "../_shared/settings.errors.js";
+import { cloneJsonValue, type JsonValue, parseJsonValue } from "../_shared/settings-json.js";
 import {
   assertRequesterOwnsSettingKey,
   getOwnerPluginIdFromSettingKey,
   parseSettingKey
 } from "../_shared/settings-key.js";
-import { cloneJsonValue, parseJsonValue, type JsonValue } from "../_shared/settings-json.js";
-import {
+import type {
   SettingsDefinitionsRepository,
-  type UpsertSettingDefinitionRecordInput
+  UpsertSettingDefinitionRecordInput
 } from "../definitions/settings-definitions.repository.js";
-import {
-  SettingsValuesRepository,
-  type UpsertSettingValueRecordInput
-} from "../values/settings-values.repository.js";
-import {
+import type {
   SettingsSecretsRepository,
-  type UpsertSettingSecretRecordInput
+  UpsertSettingSecretRecordInput
 } from "../secrets/settings-secrets.repository.js";
-import { SettingsSecretsCryptoService } from "../secrets/settings-secrets-crypto.service.js";
-import { SettingsAccessError, createSettingsOwnerAccessError } from "../_shared/settings.errors.js";
+import type { SettingsSecretsCryptoService } from "../secrets/settings-secrets-crypto.service.js";
+import type {
+  SettingsValuesRepository,
+  UpsertSettingValueRecordInput
+} from "../values/settings-values.repository.js";
 
 export interface SettingsDefinition {
   id: string;

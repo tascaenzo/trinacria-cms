@@ -1,5 +1,5 @@
-import { defineConfig, devices } from "@playwright/test";
 import { resolve } from "node:path";
+import { defineConfig, devices } from "@playwright/test";
 import {
   E2E_API_URL,
   E2E_APP_URL,

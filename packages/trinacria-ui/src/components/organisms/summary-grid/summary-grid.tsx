@@ -1,6 +1,6 @@
+import { cn } from "../../../utils/class-names.js";
 import { Panel } from "../../primitives/panel/panel.js";
 import { BodyText } from "../../primitives/text/text.js";
-import { cn } from "../../../utils/class-names.js";
 import type { SummaryCardProps, SummaryGridProps } from "./summary-grid.types.js";
 
 export function SummaryGrid({ children, className, ...props }: SummaryGridProps) {

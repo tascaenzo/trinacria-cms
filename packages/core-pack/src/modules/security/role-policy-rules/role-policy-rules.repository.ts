@@ -1,11 +1,11 @@
 import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
+import type { EmbeddedRolePolicyRule } from "../../roles/roles.schemas.js";
 import {
   EmbeddedRolePolicyRuleSchema,
-  RolePolicyRuleRecordSchema,
-  type RolePolicyRuleRecord
+  type RolePolicyRuleRecord,
+  RolePolicyRuleRecordSchema
 } from "./role-policy-rules.schemas.js";
-import type { EmbeddedRolePolicyRule } from "../../roles/roles.schemas.js";
 
 const ROLES_ENTITY_NAME = "roles";
 

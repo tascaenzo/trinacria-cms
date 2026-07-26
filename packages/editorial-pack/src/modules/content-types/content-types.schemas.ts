@@ -1,4 +1,4 @@
-import { defineEntity, s, type Infer } from "@trinacria-cms/kernel";
+import { defineEntity, type Infer, s } from "@trinacria-cms/kernel";
 
 export const ContentTypeStatusSchema = s.enum(["active", "archived"] as const);
 export const ContentTypeFieldKindSchema = s.enum([

@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from "react";
 import { Button, FieldDescription, FieldGroup, Input } from "@trinacria-cms/trinacria-ui";
+import { type ReactNode, useState } from "react";
 import { useI18n } from "../lib/i18n.js";
 import { MfaQrCode } from "./mfa-qr-code.js";
 
@@ -56,18 +56,38 @@ export function MfaEnrollmentWizard({
       {step === 1 ? (
         <EnrollmentStep
           title={t("auth.mfa.setup.step1.title", "Open your authenticator app")}
-          firstLine={t("auth.mfa.setup.step1.line1", "Use Google Authenticator, 1Password, Authy, or another compatible app.")}
-          secondLine={t("auth.mfa.setup.step1.line2", "Choose the option to add a new account before continuing.")}
+          firstLine={t(
+            "auth.mfa.setup.step1.line1",
+            "Use Google Authenticator, 1Password, Authy, or another compatible app."
+          )}
+          secondLine={t(
+            "auth.mfa.setup.step1.line2",
+            "Choose the option to add a new account before continuing."
+          )}
         >
-          {showActions ? <MfaEnrollmentActions step={step} isSubmitting={isSubmitting} onCancel={onCancel} onStepChange={setStep} confirmationFormId={confirmationFormId} /> : null}
+          {showActions ? (
+            <MfaEnrollmentActions
+              step={step}
+              isSubmitting={isSubmitting}
+              onCancel={onCancel}
+              onStepChange={setStep}
+              confirmationFormId={confirmationFormId}
+            />
+          ) : null}
         </EnrollmentStep>
       ) : null}
 
       {step === 2 ? (
         <EnrollmentStep
           title={t("auth.mfa.setup.step2.title", "Scan the QR code")}
-          firstLine={t("auth.mfa.setup.step2.line1", "In your authenticator app, scan this code to add your Trinacria CMS account.")}
-          secondLine={t("auth.mfa.setup.step2.line2", "If scanning is unavailable, use the manual key shown below.")}
+          firstLine={t(
+            "auth.mfa.setup.step2.line1",
+            "In your authenticator app, scan this code to add your Trinacria CMS account."
+          )}
+          secondLine={t(
+            "auth.mfa.setup.step2.line2",
+            "If scanning is unavailable, use the manual key shown below."
+          )}
         >
           <div className="flex justify-center">
             <MfaQrCode
@@ -81,23 +101,48 @@ export function MfaEnrollmentWizard({
             </Button>
           ) : (
             <div className="rounded-[var(--radius-control)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-muted)] p-3">
-              <p className="text-xs font-medium text-[color:var(--color-ink-muted)]">{t("auth.mfa.enroll.manual_label", "Manual setup key")}</p>
-              <code className="mt-2 block break-all text-sm text-[color:var(--color-ink)]">{setup.manualKey}</code>
+              <p className="text-xs font-medium text-[color:var(--color-ink-muted)]">
+                {t("auth.mfa.enroll.manual_label", "Manual setup key")}
+              </p>
+              <code className="mt-2 block break-all text-sm text-[color:var(--color-ink)]">
+                {setup.manualKey}
+              </code>
             </div>
           )}
-          {showActions ? <MfaEnrollmentActions step={step} isSubmitting={isSubmitting} onCancel={onCancel} onStepChange={setStep} confirmationFormId={confirmationFormId} /> : null}
+          {showActions ? (
+            <MfaEnrollmentActions
+              step={step}
+              isSubmitting={isSubmitting}
+              onCancel={onCancel}
+              onStepChange={setStep}
+              confirmationFormId={confirmationFormId}
+            />
+          ) : null}
         </EnrollmentStep>
       ) : null}
 
       {step === 3 ? (
         <EnrollmentStep
           title={t("auth.mfa.setup.step3.title", "Confirm the generated code")}
-          firstLine={t("auth.mfa.setup.step3.line1", "Your authenticator app now shows a six-digit code that changes every few seconds.")}
-          secondLine={t("auth.mfa.setup.step3.line2", "Enter the current code to finish activation and receive recovery codes.")}
+          firstLine={t(
+            "auth.mfa.setup.step3.line1",
+            "Your authenticator app now shows a six-digit code that changes every few seconds."
+          )}
+          secondLine={t(
+            "auth.mfa.setup.step3.line2",
+            "Enter the current code to finish activation and receive recovery codes."
+          )}
         >
           <form id={confirmationFormId} action={action}>
             <FieldGroup className="gap-4">
-              {error ? <FieldDescription role="alert" className="rounded-[var(--radius-control)] border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] px-4 py-3 text-[color:var(--color-danger-ink)]">{error}</FieldDescription> : null}
+              {error ? (
+                <FieldDescription
+                  role="alert"
+                  className="rounded-[var(--radius-control)] border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] px-4 py-3 text-[color:var(--color-danger-ink)]"
+                >
+                  {error}
+                </FieldDescription>
+              ) : null}
               <Input
                 name="code"
                 label={t("auth.mfa.code_label", "Authentication code")}
@@ -106,7 +151,15 @@ export function MfaEnrollmentWizard({
                 placeholder="123456"
                 required
               />
-              {showActions ? <MfaEnrollmentActions step={step} isSubmitting={isSubmitting} onCancel={onCancel} onStepChange={setStep} confirmationFormId={confirmationFormId} /> : null}
+              {showActions ? (
+                <MfaEnrollmentActions
+                  step={step}
+                  isSubmitting={isSubmitting}
+                  onCancel={onCancel}
+                  onStepChange={setStep}
+                  confirmationFormId={confirmationFormId}
+                />
+              ) : null}
             </FieldGroup>
           </form>
         </EnrollmentStep>
@@ -128,8 +181,12 @@ export function MfaEnrollmentActions({
   if (step === 1) {
     return (
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="secondary" onClick={onCancel}>{t("common.actions.cancel", "Cancel")}</Button>
-        <Button type="button" onClick={() => onStepChange(2)}>{t("common.actions.continue", "Continue")}</Button>
+        <Button type="button" variant="secondary" onClick={onCancel}>
+          {t("common.actions.cancel", "Cancel")}
+        </Button>
+        <Button type="button" onClick={() => onStepChange(2)}>
+          {t("common.actions.continue", "Continue")}
+        </Button>
       </div>
     );
   }
@@ -137,17 +194,25 @@ export function MfaEnrollmentActions({
   if (step === 2) {
     return (
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="secondary" onClick={() => onStepChange(1)}>{t("common.actions.back", "Back")}</Button>
-        <Button type="button" onClick={() => onStepChange(3)}>{t("common.actions.continue", "Continue")}</Button>
+        <Button type="button" variant="secondary" onClick={() => onStepChange(1)}>
+          {t("common.actions.back", "Back")}
+        </Button>
+        <Button type="button" onClick={() => onStepChange(3)}>
+          {t("common.actions.continue", "Continue")}
+        </Button>
       </div>
     );
   }
 
   return (
     <div className="flex justify-end gap-2">
-      <Button type="button" variant="secondary" onClick={() => onStepChange(2)}>{t("common.actions.back", "Back")}</Button>
+      <Button type="button" variant="secondary" onClick={() => onStepChange(2)}>
+        {t("common.actions.back", "Back")}
+      </Button>
       <Button type="submit" form={confirmationFormId} disabled={isSubmitting}>
-        {isSubmitting ? t("auth.mfa.submitting", "Verifying…") : t("profile.mfa.confirm", "Confirm")}
+        {isSubmitting
+          ? t("auth.mfa.submitting", "Verifying…")
+          : t("profile.mfa.confirm", "Confirm")}
       </Button>
     </div>
   );

@@ -1,15 +1,15 @@
 import {
   createPluginApiResponder,
-  HttpController,
-  parseQueryNumber,
-  toOpenApiSchema,
   type HttpContext,
-  type HttpMiddleware
+  HttpController,
+  type HttpMiddleware,
+  parseQueryNumber,
+  toOpenApiSchema
 } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
-import { CORE_PACK_OPENAPI_TAGS } from "../openapi-tags.js";
 import { createJwtAuthMiddleware } from "../auth/auth.middleware.js";
 import type { JwtAuthService } from "../auth/services/auth.service.js";
+import { CORE_PACK_OPENAPI_TAGS } from "../openapi-tags.js";
 import {
   CreatePermissionInputSchema,
   ListPermissionsQuerySchema,

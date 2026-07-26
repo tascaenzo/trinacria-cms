@@ -272,10 +272,11 @@ Contributions are welcome.
 Common commands:
 
 ```bash
-npm run build:packages
-npm run test:packages
-npm run coverage:all
-npm run precommit:check
+npm run build
+npm run typecheck
+npm run lint
+npm run format
+npm run test
 ```
 
 Repository documentation:
@@ -286,10 +287,7 @@ Repository documentation:
 - `docs/en/1002-repository-publish-artifacts.md` (library publish/artifact pipeline)
 - `docs/it/1002-repository-publish-artifacts.md` (pipeline publish librerie/artifact)
 
-Release channels:
-
-- publish flow via `npm run release:npm` (guided)
-- CLI template smoke workflow: `.github/workflows/cli-template-smoke.yml`
+Release automation is not configured in this CMS root. Follow the versioning policy before introducing a publishing workflow.
 
 ## License
 

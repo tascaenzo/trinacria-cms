@@ -1,8 +1,8 @@
 import type { HTMLAttributes, PropsWithChildren } from "react";
+import { cn } from "../../../utils/class-names.js";
 import { Eyebrow } from "../../primitives/eyebrow/eyebrow.js";
 import { Panel } from "../../primitives/panel/panel.js";
 import { BodyText } from "../../primitives/text/text.js";
-import { cn } from "../../../utils/class-names.js";
 import type { PageHeaderProps } from "./page-section.types.js";
 
 export function PageHeader({

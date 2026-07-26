@@ -1,10 +1,10 @@
-import { type RuntimeConfigService, type SettingsService } from "@trinacria-cms/core-pack";
+import type { RuntimeConfigService, SettingsService } from "@trinacria-cms/core-pack";
 import { MEDIA_PACK_PLUGIN_ID } from "../../../plugin/media-pack.constants.js";
-import { MediaProviderRegistry } from "../media-provider-registry.service.js";
+import type { MediaProviderRegistry } from "../media-provider-registry.service.js";
 import { MEDIA_PACK_DEFAULT_UPLOAD_POLICY } from "../media-settings.js";
+import type { MediaStorageProvider } from "../media-storage.types.js";
 import { LocalDiskMediaStorageProvider } from "../providers/local-disk-media-storage.provider.js";
 import { S3MediaStorageProvider } from "../providers/s3-media-storage.provider.js";
-import type { MediaStorageProvider } from "../media-storage.types.js";
 
 const PREFIX = `${MEDIA_PACK_PLUGIN_ID}:storage`;
 const LIMITS_PREFIX = `${MEDIA_PACK_PLUGIN_ID}:limits`;

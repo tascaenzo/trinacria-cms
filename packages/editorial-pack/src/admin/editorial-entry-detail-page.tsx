@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
 import { Button, Icon, Input, Select, Switch, Textarea } from "@trinacria-cms/trinacria-ui";
+import { useCallback, useEffect, useState } from "react";
 import type {
   CmsClient,
   ContentTypeField,

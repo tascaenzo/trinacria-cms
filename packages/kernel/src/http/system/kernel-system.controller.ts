@@ -1,19 +1,19 @@
-import {
-  createPluginApiResponder,
-  parsePathParam,
-  parseQueryNumber,
-  toOpenApiSchema
-} from "../api-http-utils.js";
+import { type HttpContext, HttpController, type HttpMiddleware, response } from "@trinacria/http";
 import { apiError } from "../../contracts/api-contract.js";
 import type { KernelAdminRouteGuard } from "../../contracts/kernel-admin-route-guard.js";
-import { HttpController, response, type HttpContext, type HttpMiddleware } from "@trinacria/http";
-import type { KernelSystemService } from "../../runtime/system/kernel-system-service.js";
 import {
   PluginDependencyError,
   PluginLifecycleError,
   PluginRuntimeError,
   PluginStateTransitionError
 } from "../../errors/plugin-errors.js";
+import type { KernelSystemService } from "../../runtime/system/kernel-system-service.js";
+import {
+  createPluginApiResponder,
+  parsePathParam,
+  parseQueryNumber,
+  toOpenApiSchema
+} from "../api-http-utils.js";
 import {
   GetInstalledPluginResponseSchema,
   ListAdminExtensionsResponseSchema,

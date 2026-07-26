@@ -1,7 +1,6 @@
+import { formatValidationError, type Infer, s, ValidationError } from "@trinacria/schema";
 import type { PluginManifest } from "../../contracts/plugin-manifest.js";
-import { ValidationError, formatValidationError, s, type Infer } from "@trinacria/schema";
 import { PluginCompatibilityError, PluginManifestError } from "../../errors/plugin-errors.js";
-import { isValidVersion, isValidVersionRange, satisfiesVersion } from "./semver.js";
 import {
   isPermissionOwnedByPlugin,
   isPermissionPatternOwnedByPlugin
@@ -12,13 +11,14 @@ import {
   isValidPluginId
 } from "../plugin-namespace/plugin-namespace.js";
 import {
+  adminSchema,
   entitySchema,
-  settingSchema,
   eventsSchema,
   i18nSchema,
-  adminSchema
+  settingSchema
 } from "./plugin-manifest-contributions.js";
 import { securitySectionSchema } from "./plugin-manifest-security.js";
+import { isValidVersion, isValidVersionRange, satisfiesVersion } from "./semver.js";
 
 const pluginDependencySchema = s.object(
   {

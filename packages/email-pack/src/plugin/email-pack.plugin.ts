@@ -5,13 +5,13 @@ import type {
   SecureEventPayloadReadyEvent
 } from "@trinacria-cms/kernel/contracts";
 import { EmailPackModule } from "../modules/email/email.module.js";
-import type { EmailDeliveryService } from "../modules/email/services/email-delivery.service.js";
+import { EMAIL_PACK_EMAIL_DELIVERY_SERVICE_TOKEN } from "../modules/email/email.tokens.js";
 import {
   EMAIL_SEND_REQUEST_PAYLOAD_TYPE,
   EMAIL_SEND_REQUEST_SCHEMA_VERSION,
   type EmailSendRequestPayload
 } from "../modules/email/email-request.types.js";
-import { EMAIL_PACK_EMAIL_DELIVERY_SERVICE_TOKEN } from "../modules/email/email.tokens.js";
+import type { EmailDeliveryService } from "../modules/email/services/email-delivery.service.js";
 import { EMAIL_TEMPLATES_SERVICE_TOKEN } from "../modules/email-templates/email-templates.tokens.js";
 import { EMAIL_PACK_PLUGIN_ID } from "./email-pack.constants.js";
 import { EMAIL_PACK_MANIFEST } from "./email-pack.manifest.js";

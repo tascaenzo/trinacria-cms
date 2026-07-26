@@ -11,10 +11,8 @@ export interface DropdownMenuProps extends HTMLAttributes<HTMLDivElement> {
   onOpenChange?: (open: boolean) => void;
 }
 
-export interface DropdownMenuItemProps extends Omit<
-  ButtonHTMLAttributes<HTMLButtonElement>,
-  "title"
-> {
+export interface DropdownMenuItemProps
+  extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "title"> {
   icon?: IconName;
   title?: ReactNode;
   description?: ReactNode;

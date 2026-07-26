@@ -1,15 +1,15 @@
 import {
-  CreateContentTypeInputSchema,
-  UpdateContentTypeInputSchema,
   type CreateContentTypeInput,
-  type UpdateContentTypeInput
+  CreateContentTypeInputSchema,
+  type UpdateContentTypeInput,
+  UpdateContentTypeInputSchema
 } from "../content-types.input.js";
 import type {
   ContentTypeField,
   ContentTypeRecord,
   ContentWorkflow
 } from "../content-types.schemas.js";
-import { ContentTypesRepository } from "../repositories/content-types.repository.js";
+import type { ContentTypesRepository } from "../repositories/content-types.repository.js";
 
 const RESERVED_FIELD_KEYS = new Set([
   "id",

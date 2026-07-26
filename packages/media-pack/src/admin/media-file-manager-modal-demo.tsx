@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { Button, Icon } from "@trinacria-cms/trinacria-ui";
+import { useState } from "react";
 import { FileManager, type MediaFileManagerContext } from "./media-file-manager.js";
 
 /** Integration example: the same manager can be embedded as a full-screen picker. */

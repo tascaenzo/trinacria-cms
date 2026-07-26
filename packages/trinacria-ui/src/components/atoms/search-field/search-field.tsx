@@ -1,7 +1,7 @@
 import { forwardRef } from "react";
+import { cn } from "../../../utils/class-names.js";
 import { FormControlSurface } from "../form-control/form-control.js";
 import { Icon } from "../icon/icon.js";
-import { cn } from "../../../utils/class-names.js";
 import type { SearchFieldProps } from "./search-field.types.js";
 
 export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(function SearchField(

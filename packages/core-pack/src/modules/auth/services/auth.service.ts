@@ -1,17 +1,17 @@
-import { type DbAdapter } from "@trinacria-cms/kernel";
 import { randomUUID } from "node:crypto";
-import { SignJWT, jwtVerify, decodeJwt, type JWTPayload } from "jose";
-import type { UserRecord } from "../../users/users.schemas.js";
-import { type InstallationStateRecord } from "../../installation/installation.schemas.js";
-import { InstallationStateRepository } from "../../installation/repositories/installation-state.repository.js";
-import { LocalCredentialsRepository } from "../../installation/repositories/local-credentials.repository.js";
-import { PasswordHashingService } from "../../installation/services/password-hashing.service.js";
-import { AuthUsersRepository } from "../repositories/auth-users.repository.js";
-import { AuthBlacklistRepository } from "../repositories/auth-blacklist.repository.js";
-import { AuthLoginAttemptRepository } from "../repositories/auth-login-attempt.repository.js";
+import type { DbAdapter } from "@trinacria-cms/kernel";
+import { decodeJwt, type JWTPayload, jwtVerify, SignJWT } from "jose";
+import type { InstallationStateRecord } from "../../installation/installation.schemas.js";
+import type { InstallationStateRepository } from "../../installation/repositories/installation-state.repository.js";
+import type { LocalCredentialsRepository } from "../../installation/repositories/local-credentials.repository.js";
+import type { PasswordHashingService } from "../../installation/services/password-hashing.service.js";
 import type { RuntimeConfigService } from "../../settings/config/runtime-config.service.js";
+import type { UserRecord } from "../../users/users.schemas.js";
 import { type JwtCookieConfig, readJwtCookieConfig } from "../auth-session.js";
-import { type AuthMfaService, type MfaMode } from "./auth-mfa.service.js";
+import type { AuthBlacklistRepository } from "../repositories/auth-blacklist.repository.js";
+import type { AuthLoginAttemptRepository } from "../repositories/auth-login-attempt.repository.js";
+import type { AuthUsersRepository } from "../repositories/auth-users.repository.js";
+import type { AuthMfaService, MfaMode } from "./auth-mfa.service.js";
 
 export interface LoginResult {
   accessToken: string;
@@ -77,7 +77,11 @@ export class JwtAuthService {
 
   async loginWithPassword(input: { email: string; password: string }): Promise<LoginResult> {
     const authenticated = await this.authenticatePassword(input);
-    return this.issueSession(authenticated.user, authenticated.installation, authenticated.authConfig);
+    return this.issueSession(
+      authenticated.user,
+      authenticated.installation,
+      authenticated.authConfig
+    );
   }
 
   /**
@@ -91,13 +95,21 @@ export class JwtAuthService {
     const authenticated = await this.authenticatePassword(input);
     const mfaMode = await this.getMfaMode();
     if (mfaMode === "disabled") {
-      return this.issueSession(authenticated.user, authenticated.installation, authenticated.authConfig);
+      return this.issueSession(
+        authenticated.user,
+        authenticated.installation,
+        authenticated.authConfig
+      );
     }
     const mfa = this.getMfaService();
     const enabled = await mfa.hasEnabledFactor(authenticated.user.id);
     if (enabled) {
       const challenge = await mfa.createChallenge(authenticated.user.id, "verify");
-      return { status: "mfa_required", challengeId: challenge.challengeId, expiresAt: challenge.expiresAt };
+      return {
+        status: "mfa_required",
+        challengeId: challenge.challengeId,
+        expiresAt: challenge.expiresAt
+      };
     }
     if (mfaMode === "required") {
       const challenge = await mfa.createChallenge(authenticated.user.id, "enroll");
@@ -107,7 +119,11 @@ export class JwtAuthService {
         expiresAt: challenge.expiresAt
       };
     }
-    return this.issueSession(authenticated.user, authenticated.installation, authenticated.authConfig);
+    return this.issueSession(
+      authenticated.user,
+      authenticated.installation,
+      authenticated.authConfig
+    );
   }
 
   async completeMfaLogin(challengeId: string, code: string): Promise<LoginResult> {
@@ -117,7 +133,11 @@ export class JwtAuthService {
     const user = await this.users.findById(challenge.userId);
     if (!user || user.status !== "active" || !(await mfa.verifyCode(challenge.userId, code))) {
       if (user) {
-        await this.recordFailedAttempt(user.email, authConfig.maxLoginAttempts, authConfig.loginLockoutMinutes);
+        await this.recordFailedAttempt(
+          user.email,
+          authConfig.maxLoginAttempts,
+          authConfig.loginLockoutMinutes
+        );
       }
       throw new JwtAuthError("auth_mfa_invalid_code", "Invalid authenticator or recovery code");
     }
@@ -152,7 +172,11 @@ export class JwtAuthService {
     }
     const enrollment = await mfa.confirmEnrollment(user.id, code);
     await mfa.consumeChallenge(challenge.id);
-    const session = await this.issueSession(user, await this.assertInstallationCompleted(), await this.getAuthConfig());
+    const session = await this.issueSession(
+      user,
+      await this.assertInstallationCompleted(),
+      await this.getAuthConfig()
+    );
     return { ...session, recoveryCodes: enrollment.recoveryCodes };
   }
 
@@ -180,17 +204,24 @@ export class JwtAuthService {
     return this.getMfaService().beginEnrollment(user);
   }
 
-  async confirmMfaEnrollment(userId: string, code: string): Promise<{ recoveryCodes: readonly string[] }> {
+  async confirmMfaEnrollment(
+    userId: string,
+    code: string
+  ): Promise<{ recoveryCodes: readonly string[] }> {
     return this.getMfaService().confirmEnrollment(userId, code);
   }
 
-  async disableMfa(userId: string, input: { currentPassword: string; code: string }): Promise<void> {
+  async disableMfa(
+    userId: string,
+    input: { currentPassword: string; code: string }
+  ): Promise<void> {
     if ((await this.getMfaMode()) === "required") {
       throw new JwtAuthError("auth_mfa_required_by_policy", "MFA is required by the administrator");
     }
     const user = await this.users.findById(userId);
     const credentials = user ? await this.localCredentials.findByUserId(user.id) : null;
-    if (!user || !credentials) throw new JwtAuthError("auth_invalid_credentials", "Invalid credentials");
+    if (!user || !credentials)
+      throw new JwtAuthError("auth_invalid_credentials", "Invalid credentials");
     const passwordMatches = await this.passwordHashing.verifyPassword(input.currentPassword, {
       algorithm: credentials.algorithm,
       passwordHash: credentials.passwordHash,

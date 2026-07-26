@@ -1,12 +1,12 @@
 import type {
   AdminActionDefinition,
+  AdminDashboardWidgetDefinition,
   AdminEndpointBinding,
   AdminExtensionManifest,
   AdminJsonDataBinding,
   AdminResourceDefinition,
   AdminRouteDefinition,
-  AdminSettingsSectionDefinition,
-  AdminDashboardWidgetDefinition
+  AdminSettingsSectionDefinition
 } from "../contracts.js";
 
 const DEFAULT_ALLOWED_PREFIXES = ["/admin"] as const;

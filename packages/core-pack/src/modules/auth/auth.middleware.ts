@@ -1,14 +1,14 @@
 import {
   apiError,
   getRequestHeader,
-  response,
   type HttpContext,
-  type HttpMiddleware
+  type HttpMiddleware,
+  response
 } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
-import { UserRecordSchema, type UserRecord } from "../users/users.schemas.js";
+import { type UserRecord, UserRecordSchema } from "../users/users.schemas.js";
 import { extractAccessTokenFromCookie, readJwtCookieConfigFromEnv } from "./auth-session.js";
-import { JwtAuthError, JwtAuthService } from "./services/auth.service.js";
+import { JwtAuthError, type JwtAuthService } from "./services/auth.service.js";
 
 export const AUTHENTICATED_USER_STATE_KEY = "corePack.auth.authenticatedUser";
 

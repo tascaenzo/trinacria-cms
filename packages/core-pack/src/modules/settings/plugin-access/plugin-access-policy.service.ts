@@ -8,7 +8,7 @@ import type {
   SecureEventPayloadAuthorizer
 } from "@trinacria-cms/kernel/contracts";
 import type { JsonValue } from "../_shared/settings-json.js";
-import { SettingsService } from "../services/settings.service.js";
+import type { SettingsService } from "../services/settings.service.js";
 
 export const PLUGIN_ACCESS_GRANTS_SETTING_KEY = "core-pack:security:plugin_access_grants";
 

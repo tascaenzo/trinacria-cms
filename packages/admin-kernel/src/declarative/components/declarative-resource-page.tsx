@@ -8,8 +8,8 @@ import {
   getBackofficeRouteStateParam,
   setBackofficeRouteStateParam
 } from "../../runtime/backoffice-navigation-state.js";
-import type { DeclarativeDataController } from "../types.js";
 import { useDeclarativeActionController } from "../hooks/use-declarative-action-controller.js";
+import type { DeclarativeDataController } from "../types.js";
 import { getRecordIdentity } from "../utils/formatting.js";
 import { extractRecordList } from "../utils/resource.js";
 import { DeclarativeResourceDetail } from "./declarative-resource-detail.js";

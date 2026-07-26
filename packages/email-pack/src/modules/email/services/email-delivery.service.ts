@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
-import type { EmailConfigService } from "./email-config.service.js";
 import type { EmailDeliveryConfig, MailSender, SendEmailInput } from "../email.types.js";
+import type { EmailConfigService } from "./email-config.service.js";
 
 export class EmailDeliveryDisabledError extends Error {
   readonly code = "email_delivery_disabled" as const;

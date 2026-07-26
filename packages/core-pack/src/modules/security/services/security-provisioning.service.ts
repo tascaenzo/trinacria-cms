@@ -1,24 +1,24 @@
-import {
-  type PluginManifest,
-  type PluginManifestSetting,
-  type PluginManifestSecurity,
-  type PluginManifestSecurityGrant,
-  type PluginManifestSecurityPolicyRule,
-  type PluginManifestSecurityPermission,
-  type PluginManifestSecurityRole,
-  type PluginManifestProvisioner,
-  type PluginTranslationSource
+import type {
+  PluginManifest,
+  PluginManifestProvisioner,
+  PluginManifestSecurity,
+  PluginManifestSecurityGrant,
+  PluginManifestSecurityPermission,
+  PluginManifestSecurityPolicyRule,
+  PluginManifestSecurityRole,
+  PluginManifestSetting,
+  PluginTranslationSource
 } from "@trinacria-cms/kernel";
-import { PermissionsRepository } from "../../permissions/repositories/permissions.repository.js";
-import { RoleGrantsRepository } from "../../roles/grants/role-grants.repository.js";
-import { RolesRepository } from "../../roles/repositories/roles.repository.js";
+import type { I18nMessagesService } from "../../i18n/i18n-messages.service.js";
+import type { PermissionsRepository } from "../../permissions/repositories/permissions.repository.js";
+import type { RoleGrantsRepository } from "../../roles/grants/role-grants.repository.js";
+import type { RolesRepository } from "../../roles/repositories/roles.repository.js";
 import {
-  EmbeddedRolePolicyRuleSchema,
-  type EmbeddedRolePolicyRule
+  type EmbeddedRolePolicyRule,
+  EmbeddedRolePolicyRuleSchema
 } from "../../roles/roles.schemas.js";
-import { SettingsService } from "../../settings/services/settings.service.js";
-import { I18nMessagesService } from "../../i18n/i18n-messages.service.js";
-import { UserRolesRepository } from "../user-access/user-roles.repository.js";
+import type { SettingsService } from "../../settings/services/settings.service.js";
+import type { UserRolesRepository } from "../user-access/user-roles.repository.js";
 
 const RETIRED_CORE_PACK_SETTING_KEYS = new Set(["core-pack:features:editorial_workflow"]);
 
@@ -376,7 +376,10 @@ export class CorePackManifestProvisioningService implements PluginManifestProvis
     for (const definition of existingDefinitions) {
       if (desiredKeys.has(definition.key)) continue;
       if (pluginId === "core-pack" && RETIRED_CORE_PACK_SETTING_KEYS.has(definition.key)) {
-        await this.settings.deleteRetiredSetting({ requesterPluginId: pluginId, key: definition.key });
+        await this.settings.deleteRetiredSetting({
+          requesterPluginId: pluginId,
+          key: definition.key
+        });
         continue;
       }
       await this.settings.upsertDefinition({

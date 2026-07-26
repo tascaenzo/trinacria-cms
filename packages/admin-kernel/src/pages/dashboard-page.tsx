@@ -1,18 +1,18 @@
-import { useCallback, useEffect, useState } from "react";
 import { InfoCard } from "@trinacria-cms/trinacria-ui";
+import { useCallback, useEffect, useState } from "react";
 import { DeclarativeDashboardWidgetPanel } from "../declarative/index.js";
-import { DashboardWidgetBoard } from "./dashboard-widget-board.js";
-import { AccessManagementDashboardWidget } from "./access-management-dashboard-widget.js";
-import {
-  GLOBAL_DASHBOARD_WIDGET_LAYOUT_SETTING_KEY,
-  type DashboardWidgetLayoutState
-} from "./dashboard-widget-board.storage.js";
 import { toDisplayError } from "../lib/sdk-errors.js";
 import type {
   AdminDashboardWidgetRenderContext,
   AdminPageRenderContext,
   RenderableAdminDashboardWidget
 } from "../runtime/admin-route-runtime.js";
+import { AccessManagementDashboardWidget } from "./access-management-dashboard-widget.js";
+import { DashboardWidgetBoard } from "./dashboard-widget-board.js";
+import {
+  type DashboardWidgetLayoutState,
+  GLOBAL_DASHBOARD_WIDGET_LAYOUT_SETTING_KEY
+} from "./dashboard-widget-board.storage.js";
 export interface DashboardPageProps {
   pluginCount: number;
   capabilityCount: number;

@@ -1,12 +1,12 @@
-import { Panel } from "../../primitives/panel/panel.js";
-import { BodyText } from "../../primitives/text/text.js";
+import { cn } from "../../../utils/class-names.js";
 import { Icon, type IconName } from "../../atoms/icon/icon.js";
 import { IconButton } from "../../atoms/icon-button/icon-button.js";
-import { cn } from "../../../utils/class-names.js";
+import { Panel } from "../../primitives/panel/panel.js";
+import { BodyText } from "../../primitives/text/text.js";
 import type {
   NotificationProps,
-  NotificationTone,
-  NotificationStackProps
+  NotificationStackProps,
+  NotificationTone
 } from "./notification.types.js";
 
 const NOTIFICATION_ICON_BY_TONE: Record<NotificationTone, IconName> = {

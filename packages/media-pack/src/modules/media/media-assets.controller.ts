@@ -1,27 +1,21 @@
 import {
-  apiError,
-  createPluginApiResponder,
-  HttpController,
-  parseQueryNumber,
-  response,
-  s,
-  toOpenApiSchema,
-  type AuthzService,
-  type HttpContext,
-  type HttpMiddleware
-} from "@trinacria-cms/kernel";
-import {
   createJwtAuthMiddleware,
   getAuthenticatedUser,
   type JwtAuthService
 } from "@trinacria-cms/core-pack";
+import {
+  type AuthzService,
+  apiError,
+  createPluginApiResponder,
+  type HttpContext,
+  HttpController,
+  type HttpMiddleware,
+  parseQueryNumber,
+  response,
+  s,
+  toOpenApiSchema
+} from "@trinacria-cms/kernel";
 import { MEDIA_PACK_PLUGIN_ID } from "../../plugin/media-pack.constants.js";
-import { MediaProviderRegistry } from "./media-provider-registry.service.js";
-import { LocalDiskMediaStorageProvider } from "./providers/local-disk-media-storage.provider.js";
-import { MediaAssetsService } from "./services/media-assets.service.js";
-import { MediaDirectoriesService } from "./services/media-directories.service.js";
-import { MediaStorageConfigService } from "./services/media-storage-config.service.js";
-import { createMediaPermissionMiddleware } from "./media-upload.controller.js";
 import {
   MediaAccessUrlResponseSchema,
   MediaAclEntriesListResponseSchema,
@@ -33,6 +27,12 @@ import {
   MediaDirectoryResponseSchema,
   MediaProviderHealthListResponseSchema
 } from "./media-api.schemas.js";
+import type { MediaProviderRegistry } from "./media-provider-registry.service.js";
+import { createMediaPermissionMiddleware } from "./media-upload.controller.js";
+import { LocalDiskMediaStorageProvider } from "./providers/local-disk-media-storage.provider.js";
+import type { MediaAssetsService } from "./services/media-assets.service.js";
+import type { MediaDirectoriesService } from "./services/media-directories.service.js";
+import type { MediaStorageConfigService } from "./services/media-storage-config.service.js";
 
 const responder = createPluginApiResponder(MEDIA_PACK_PLUGIN_ID);
 

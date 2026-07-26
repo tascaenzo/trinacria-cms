@@ -1,8 +1,8 @@
 import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { EMAIL_PACK_PLUGIN_ID } from "../../../plugin/email-pack.constants.js";
 import {
-  EmailTemplateRecordSchema,
   type EmailTemplateRecord,
+  EmailTemplateRecordSchema,
   type EmailTemplateStatus
 } from "../email-templates.schemas.js";
 import type { EmailTemplateSeed, UpsertEmailTemplateInput } from "../email-templates.types.js";

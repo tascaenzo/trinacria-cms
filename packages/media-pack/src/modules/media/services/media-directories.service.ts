@@ -1,9 +1,9 @@
 import type { MediaDirectoryRecord } from "../media.schemas.js";
-import {
-  MediaDirectoriesRepository,
-  type CreateMediaDirectoryInput
+import type { MediaAssetsRepository } from "../repositories/media-assets.repository.js";
+import type {
+  CreateMediaDirectoryInput,
+  MediaDirectoriesRepository
 } from "../repositories/media-directories.repository.js";
-import { MediaAssetsRepository } from "../repositories/media-assets.repository.js";
 
 export class MediaDirectoryError extends Error {
   constructor(

@@ -1,13 +1,13 @@
-import type { PluginManifest, PluginManifestAdmin } from "../../contracts/plugin-manifest.js";
 import type { PluginSourceSnapshot } from "../../contracts/plugin-discovery.js";
+import type { PluginManifest, PluginManifestAdmin } from "../../contracts/plugin-manifest.js";
 import type {
+  PluginContributionCatalogSnapshot,
   PluginDependencyGraphSnapshot,
+  PluginRuntime,
   PluginRuntimeDiagnostic,
   PluginRuntimeEvent,
   PluginRuntimeOperation,
   PluginRuntimeOperationAvailability,
-  PluginContributionCatalogSnapshot,
-  PluginRuntime,
   PluginRuntimeRecord,
   PluginState
 } from "../../contracts/plugin-runtime.js";

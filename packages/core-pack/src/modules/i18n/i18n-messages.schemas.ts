@@ -1,4 +1,4 @@
-import { defineEntity, s, type Infer } from "@trinacria-cms/kernel";
+import { defineEntity, type Infer, s } from "@trinacria-cms/kernel";
 
 const LocaleSchema = s
   .string({ trim: true, minLength: 2, maxLength: 35 })

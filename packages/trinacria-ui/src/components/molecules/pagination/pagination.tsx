@@ -1,7 +1,7 @@
 import { cn } from "../../../utils/class-names.js";
-import { ButtonBase } from "../../primitives/button-base/button-base.js";
 import { Icon } from "../../atoms/icon/icon.js";
 import { Select } from "../../atoms/select/select.js";
+import { ButtonBase } from "../../primitives/button-base/button-base.js";
 import type { PaginationProps } from "./pagination.types.js";
 
 function clamp(value: number, min: number, max: number) {

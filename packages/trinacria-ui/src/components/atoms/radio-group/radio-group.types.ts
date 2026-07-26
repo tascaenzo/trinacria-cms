@@ -7,10 +7,8 @@ export interface RadioOption {
   value: string;
 }
 
-export interface RadioGroupProps extends Omit<
-  FieldsetHTMLAttributes<HTMLFieldSetElement>,
-  "onChange"
-> {
+export interface RadioGroupProps
+  extends Omit<FieldsetHTMLAttributes<HTMLFieldSetElement>, "onChange"> {
   label?: ReactNode;
   hint?: ReactNode;
   error?: string;

@@ -5,9 +5,9 @@ import type {
   PluginState
 } from "../../contracts/plugin-runtime.js";
 import { PluginManifestError, PluginRuntimeError } from "../../errors/plugin-errors.js";
-import { PluginContributionRegistry } from "./plugin-runtime-contributions.js";
-import { createNamespaceValidator } from "../plugin-namespace/plugin-namespace-validator.js";
 import type { NamespaceValidator } from "../plugin-namespace/plugin-namespace.js";
+import { createNamespaceValidator } from "../plugin-namespace/plugin-namespace-validator.js";
+import { PluginContributionRegistry } from "./plugin-runtime-contributions.js";
 import { transitionPluginRecord } from "./plugin-runtime-state-machine.js";
 
 export class PluginRegistryManager {

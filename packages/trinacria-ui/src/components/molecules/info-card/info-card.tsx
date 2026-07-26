@@ -1,5 +1,5 @@
-import { Panel } from "../../primitives/panel/panel.js";
 import { cn } from "../../../utils/class-names.js";
+import { Panel } from "../../primitives/panel/panel.js";
 import type { InfoCardProps } from "./info-card.types.js";
 
 export function InfoCard({

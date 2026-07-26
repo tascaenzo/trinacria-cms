@@ -1,6 +1,6 @@
 import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
-import { UserRecordSchema, type UserRecord } from "../../users/users.schemas.js";
+import { type UserRecord, UserRecordSchema } from "../../users/users.schemas.js";
 
 const USERS_ENTITY_NAME = "users";
 

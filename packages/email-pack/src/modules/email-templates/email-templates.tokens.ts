@@ -1,7 +1,7 @@
 import { createCapabilityToken, createToken } from "@trinacria-cms/kernel";
-import { EmailTemplatesRepository } from "./repositories/email-templates.repository.js";
-import { EmailTemplatesService } from "./services/email-templates.service.js";
-import { EmailTemplatesController } from "./email-templates.controller.js";
+import type { EmailTemplatesController } from "./email-templates.controller.js";
+import type { EmailTemplatesRepository } from "./repositories/email-templates.repository.js";
+import type { EmailTemplatesService } from "./services/email-templates.service.js";
 
 export const EMAIL_TEMPLATES_REPOSITORY_TOKEN = createToken<EmailTemplatesRepository>(
   "EMAIL_PACK_EMAIL_TEMPLATES_REPOSITORY"

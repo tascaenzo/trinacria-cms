@@ -475,37 +475,37 @@ La proposta non richiede di cambiare:
 
 ## P0 — preparazione
 
-- [ ] Inventariare ESLint, Prettier, plugin e configurazioni esistenti.
-- [ ] Inventariare gli script root e i `prebuild` che compilano altri workspace.
-- [ ] Verificare che ogni workspace esponga script locali coerenti.
-- [ ] Identificare output reali di build, test e code generation.
-- [ ] Identificare file generati da escludere dal formatter.
+- [x] Inventariare ESLint, Prettier, plugin e configurazioni esistenti.
+- [x] Inventariare gli script root e i `prebuild` che compilano altri workspace.
+- [x] Verificare che ogni workspace esponga script locali coerenti.
+- [x] Identificare output reali di build, test e code generation.
+- [x] Identificare file generati da escludere dal formatter.
 
 ## P1 — Biome
 
-- [ ] Aggiungere Biome nella root.
-- [ ] Creare una configurazione compatibile con lo stile esistente.
-- [ ] Sostituire gli script lint placeholder.
-- [ ] Applicare il reformat in un commit isolato.
-- [ ] Aggiornare CI ed editor configuration.
-- [ ] Rimuovere dipendenze legacy non più necessarie.
+- [x] Aggiungere Biome nella root.
+- [x] Creare una configurazione compatibile con lo stile esistente.
+- [x] Sostituire gli script lint placeholder.
+- [x] Applicare il reformat in un commit isolato.
+- [x] Aggiornare CI ed editor configuration.
+- [x] Rimuovere dipendenze legacy non più necessarie.
 
 ## P1 — Turborepo
 
-- [ ] Aggiungere Turborepo nella root.
-- [ ] Creare `turbo.json` con `build`, `typecheck`, `lint`, `test` e `dev`.
-- [ ] Sostituire la sequenza manuale degli script root.
-- [ ] Rimuovere `prebuild` e `pretypecheck` che ricompilano dipendenze esplicitamente.
-- [ ] Dichiarare correttamente gli output dei task.
-- [ ] Verificare cache hit e invalidazione su modifiche alle dipendenze.
+- [x] Aggiungere Turborepo nella root.
+- [x] Creare `turbo.json` con `build`, `typecheck`, `lint`, `test` e `dev`.
+- [x] Sostituire la sequenza manuale degli script root.
+- [x] Rimuovere `prebuild` e `pretypecheck` che ricompilano dipendenze esplicitamente.
+- [x] Dichiarare correttamente gli output dei task.
+- [x] Verificare cache hit e invalidazione su modifiche alle dipendenze.
 
 ## P2 — ottimizzazione
 
-- [ ] Introdurre filtri affected-only in CI.
-- [ ] Valutare cache remota solo dopo aver stabilizzato quella locale.
-- [ ] Valutare task separati per code generation costosa.
-- [ ] Aggiungere controlli sul grafo delle dipendenze tra workspace.
-- [ ] Misurare tempi di build, typecheck, lint e test prima e dopo la migrazione.
+- [x] Introdurre filtri affected-only in CI.
+- [x] Valutare cache remota solo dopo aver stabilizzato quella locale. La decisione è rinviare l'attivazione finché non saranno disponibili token e team del progetto.
+- [x] Valutare task separati per code generation costosa. La generazione SDK è ora un task `generate` cacheabile e indipendente.
+- [x] Aggiungere controlli sul grafo delle dipendenze tra workspace.
+- [ ] Misurare tempi di build, typecheck, lint e test prima e dopo la migrazione. È disponibile solo la misurazione post-migrazione: build completamente in cache in circa 103 ms; manca una baseline equivalente precedente.
 
 ---
 

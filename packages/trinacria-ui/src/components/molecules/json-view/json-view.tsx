@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
+import { cn } from "../../../utils/class-names.js";
 import { Button } from "../../atoms/button/button.js";
 import { Icon } from "../../atoms/icon/icon.js";
-import { Dialog } from "../dialog/dialog.js";
 import { Eyebrow } from "../../primitives/eyebrow/eyebrow.js";
-import { cn } from "../../../utils/class-names.js";
+import { Dialog } from "../dialog/dialog.js";
 import type { JsonViewDialogProps, JsonViewProps } from "./json-view.types.js";
 
 type JsonPath = string;

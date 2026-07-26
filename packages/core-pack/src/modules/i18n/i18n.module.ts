@@ -1,22 +1,22 @@
 import {
-  classProvider,
   CORE_TOKENS,
+  classProvider,
   defineModule,
+  type EntityRegistry,
   factoryProvider,
-  httpProvider,
-  type EntityRegistry
+  httpProvider
 } from "@trinacria-cms/kernel";
-import { I18nMessagesRepository } from "./i18n-messages.repository.js";
-import { I18nMessagesService } from "./i18n-messages.service.js";
 import { CorePackCacheModule } from "../cache/cache.module.js";
 import { CORE_PACK_CACHE_SERVICE_TOKEN } from "../cache/cache.tokens.js";
 import { I18nController } from "./i18n.controller.js";
+import { I18nMessagesRepository } from "./i18n-messages.repository.js";
 import { I18N_MESSAGES_ENTITY } from "./i18n-messages.schemas.js";
+import { I18nMessagesService } from "./i18n-messages.service.js";
 import {
+  I18N_CONTROLLER_TOKEN,
   I18N_MESSAGES_ENTITY_REGISTRATION_TOKEN,
   I18N_MESSAGES_REPOSITORY_TOKEN,
-  I18N_MESSAGES_SERVICE_TOKEN,
-  I18N_CONTROLLER_TOKEN
+  I18N_MESSAGES_SERVICE_TOKEN
 } from "./i18n-messages.tokens.js";
 
 export const CorePackI18nModule = defineModule({
@@ -38,9 +38,5 @@ export const CorePackI18nModule = defineModule({
     ]),
     httpProvider(I18N_CONTROLLER_TOKEN, I18nController, [I18N_MESSAGES_SERVICE_TOKEN])
   ],
-  exports: [
-    I18N_CONTROLLER_TOKEN,
-    I18N_MESSAGES_SERVICE_TOKEN,
-    I18N_MESSAGES_REPOSITORY_TOKEN
-  ]
+  exports: [I18N_CONTROLLER_TOKEN, I18N_MESSAGES_SERVICE_TOKEN, I18N_MESSAGES_REPOSITORY_TOKEN]
 });

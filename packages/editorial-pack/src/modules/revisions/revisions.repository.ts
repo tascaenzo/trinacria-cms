@@ -1,6 +1,6 @@
 import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { EDITORIAL_PACK_PLUGIN_ID } from "../../plugin/editorial-pack.constants.js";
-import { EntryRevisionRecordSchema, type EntryRevisionRecord } from "./revisions.schemas.js";
+import { type EntryRevisionRecord, EntryRevisionRecordSchema } from "./revisions.schemas.js";
 
 export class RevisionsRepository {
   private scope?: PluginDbScope;

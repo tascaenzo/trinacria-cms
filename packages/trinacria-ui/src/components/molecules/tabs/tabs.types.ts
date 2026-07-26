@@ -7,9 +7,8 @@ export interface TabItem {
   disabled?: boolean;
 }
 
-export interface TabsProps extends PropsWithChildren<
-  Omit<HTMLAttributes<HTMLDivElement>, "onChange">
-> {
+export interface TabsProps
+  extends PropsWithChildren<Omit<HTMLAttributes<HTMLDivElement>, "onChange">> {
   items: readonly TabItem[];
   value: string;
   onValueChange: (value: string) => void;

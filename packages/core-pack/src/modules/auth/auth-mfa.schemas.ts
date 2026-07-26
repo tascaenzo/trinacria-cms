@@ -1,4 +1,4 @@
-import { defineEntity, s, type Infer } from "@trinacria-cms/kernel";
+import { defineEntity, type Infer, s } from "@trinacria-cms/kernel";
 
 export const AuthMfaCredentialRecordSchema = s.object(
   {

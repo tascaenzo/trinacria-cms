@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  CONTENT_MODEL_ICON_OPTIONS,
-  type CmsClient,
-  type ContentTypeField,
-  type ContentWorkflow,
-  type EditorialContentType
-} from "../editorial-admin.types.js";
-import {
   hasDuplicateFieldKey,
   moveField,
   upsertField
 } from "../content-types/content-field-collection.js";
+import {
+  type CmsClient,
+  CONTENT_MODEL_ICON_OPTIONS,
+  type ContentTypeField,
+  type ContentWorkflow,
+  type EditorialContentType
+} from "../editorial-admin.types.js";
 import { toEditorialDisplayError } from "../lib/editorial-admin-errors.js";
 import { workflowFromPreset } from "./content-workflow-presets.js";
 

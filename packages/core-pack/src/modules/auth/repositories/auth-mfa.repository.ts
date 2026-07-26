@@ -1,11 +1,11 @@
 import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import {
-  AuthMfaChallengeRecordSchema,
-  AuthMfaCredentialRecordSchema,
   type AuthMfaChallengePurpose,
   type AuthMfaChallengeRecord,
-  type AuthMfaCredentialRecord
+  AuthMfaChallengeRecordSchema,
+  type AuthMfaCredentialRecord,
+  AuthMfaCredentialRecordSchema
 } from "../auth-mfa.schemas.js";
 
 export class AuthMfaRepository {

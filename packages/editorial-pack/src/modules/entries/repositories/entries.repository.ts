@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { EDITORIAL_PACK_PLUGIN_ID } from "../../../plugin/editorial-pack.constants.js";
 import type { CreateEntryInput, UpdateEntryInput } from "../entries.input.js";
-import { EntryRecordSchema, type EntryRecord } from "../entries.schemas.js";
+import { type EntryRecord, EntryRecordSchema } from "../entries.schemas.js";
 
 const ENTRIES_ENTITY_NAME = "entries";
 
@@ -83,7 +83,12 @@ export class EntriesRepository {
     if (input.clearScheduledAt) patch.scheduledAt = undefined;
     if (currentVersion !== undefined) patch.version = currentVersion + 1;
     const updated = await this.repository().updateOne(
-      { filter: { id: id.trim(), ...(currentVersion !== undefined ? { version: currentVersion } : {}) } },
+      {
+        filter: {
+          id: id.trim(),
+          ...(currentVersion !== undefined ? { version: currentVersion } : {})
+        }
+      },
       patch
     );
     return updated ? EntryRecordSchema.parse(updated) : null;
@@ -124,15 +129,26 @@ export class EntriesRepository {
     currentVersion?: number
   ): Promise<EntryRecord | null> {
     const updated = await this.repository().updateOne(
-      { filter: { id: id.trim(), ...(currentVersion !== undefined ? { version: currentVersion } : {}) } },
+      {
+        filter: {
+          id: id.trim(),
+          ...(currentVersion !== undefined ? { version: currentVersion } : {})
+        }
+      },
       {
         ...(snapshot.title !== undefined ? { title: snapshot.title } : { title: undefined }),
         ...(snapshot.slug !== undefined ? { slug: snapshot.slug } : { slug: undefined }),
         ...(snapshot.body !== undefined ? { body: snapshot.body } : { body: undefined }),
         data: snapshot.data,
-        ...(snapshot.reviewerUserId ? { reviewerUserId: snapshot.reviewerUserId } : { reviewerUserId: undefined }),
-        ...(snapshot.scheduledAt ? { scheduledAt: snapshot.scheduledAt } : { scheduledAt: undefined }),
-        ...(snapshot.publishedAt ? { publishedAt: snapshot.publishedAt } : { publishedAt: undefined }),
+        ...(snapshot.reviewerUserId
+          ? { reviewerUserId: snapshot.reviewerUserId }
+          : { reviewerUserId: undefined }),
+        ...(snapshot.scheduledAt
+          ? { scheduledAt: snapshot.scheduledAt }
+          : { scheduledAt: undefined }),
+        ...(snapshot.publishedAt
+          ? { publishedAt: snapshot.publishedAt }
+          : { publishedAt: undefined }),
         status: snapshot.status,
         updatedAt: new Date().toISOString(),
         ...(currentVersion !== undefined ? { version: currentVersion + 1 } : {})
