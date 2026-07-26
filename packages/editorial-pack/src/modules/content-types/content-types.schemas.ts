@@ -20,7 +20,18 @@ export const ContentTypeOwnershipScopeSchema = s.enum([
   "all_entries"
 ] as const);
 
-const FreeformObjectSchema = s.object({}, { strict: false });
+const ContentTypeFieldConfigSchema = s.object(
+  {
+    options: s
+      .array(s.string({ trim: true, minLength: 1, maxLength: 120 }), { unique: true })
+      .optional(),
+    targetContentTypeId: s.string({ trim: true, minLength: 1 }).optional(),
+    allowedMimeTypes: s
+      .array(s.string({ trim: true, minLength: 1, maxLength: 120 }), { unique: true })
+      .optional()
+  },
+  { strict: false }
+);
 const WorkflowStateKeySchema = s.string({
   trim: true,
   toLowerCase: true,
@@ -43,7 +54,8 @@ export const ContentWorkflowTransitionSchema = s.object(
     key: WorkflowStateKeySchema,
     label: s.string({ trim: true, minLength: 1, maxLength: 120 }),
     from: WorkflowStateKeySchema,
-    to: WorkflowStateKeySchema
+    to: WorkflowStateKeySchema,
+    requiredPermission: s.enum(["submit", "review", "approve", "publish"] as const).optional()
   },
   { strict: true }
 );
@@ -51,6 +63,7 @@ export const ContentWorkflowTransitionSchema = s.object(
 export const ContentWorkflowSchema = s.object(
   {
     preset: s.enum(["review", "direct", "custom"] as const),
+    name: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
     states: s.array(ContentWorkflowStateSchema, { unique: false }),
     transitions: s.array(ContentWorkflowTransitionSchema, { unique: false })
   },
@@ -73,7 +86,7 @@ export const ContentTypeFieldSchema = s.object(
     required: s.boolean(),
     multiple: s.boolean(),
     helpText: s.string({ trim: true, maxLength: 500 }).optional(),
-    config: FreeformObjectSchema.optional()
+    config: ContentTypeFieldConfigSchema.optional()
   },
   { strict: true }
 );
@@ -98,11 +111,13 @@ export const ContentTypeRecordSchema = s.object(
     taxonomyIds: s.array(s.string({ trim: true, minLength: 1 }), { unique: true }),
     workflowId: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
     workflow: ContentWorkflowSchema.optional(),
+    // Kept only to read existing records created before model navigation became mandatory.
     showInMainNavigation: s.boolean().optional(),
     ownershipScope: ContentTypeOwnershipScopeSchema,
     createdByUserId: s.string({ trim: true, minLength: 1 }),
     createdAt: s.dateTimeString(),
-    updatedAt: s.dateTimeString()
+    updatedAt: s.dateTimeString(),
+    deletedAt: s.dateTimeString().optional()
   },
   { strict: true }
 );

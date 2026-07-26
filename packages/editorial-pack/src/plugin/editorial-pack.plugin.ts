@@ -16,6 +16,7 @@ export function createEditorialPackPlugin(): KernelPluginDefinition {
       );
       await contentTypes.ensureDefaultContentTypes();
       const entries = await context.app.resolve<EntriesService>(ENTRIES_SERVICE_TOKEN);
+      entries.setPublisher(context.events);
       await entries.ensureDefaultBlogContent();
     }
   };

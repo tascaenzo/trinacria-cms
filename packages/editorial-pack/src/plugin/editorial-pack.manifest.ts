@@ -67,10 +67,32 @@ export const EDITORIAL_PACK_MANIFEST: PluginManifest = definePluginManifest({
           fields: { ownerUserId: 1, status: 1, updatedAt: -1 }
         },
         {
-          name: "entries_content_type_slug_idx",
+          name: "entries_content_type_slug_unique",
           fields: { contentTypeId: 1, slug: 1 },
+          unique: true,
           sparse: true
+        },
+        {
+          name: "entries_reviewer_queue_idx",
+          fields: { reviewerUserId: 1, status: 1, updatedAt: -1 }
+        },
+        {
+          name: "entries_scheduled_idx",
+          fields: { scheduledAt: 1, status: 1 }
         }
+      ]
+    },
+    {
+      name: "entry_revisions",
+      schemaVersion: 1,
+      indexes: [
+        { name: "entry_revisions_id_unique", fields: { id: 1 }, unique: true },
+        {
+          name: "entry_revisions_entry_number_unique",
+          fields: { entryId: 1, revisionNumber: -1 },
+          unique: true
+        },
+        { name: "entry_revisions_entry_created_idx", fields: { entryId: 1, createdAt: -1 } }
       ]
     }
   ],

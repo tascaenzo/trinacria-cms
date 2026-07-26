@@ -24,6 +24,7 @@ const RESERVED_FIELD_KEYS = new Set([
 ]);
 
 export class ContentTypeValidationError extends Error {
+  readonly code = "validation_error";
   constructor(message: string) {
     super(message);
     this.name = "ContentTypeValidationError";
@@ -101,6 +102,7 @@ export class ContentTypesService {
 
   async listContentTypes(options?: {
     status?: ContentTypeRecord["status"];
+    deleted?: boolean;
     limit?: number;
     offset?: number;
   }) {
@@ -114,6 +116,18 @@ export class ContentTypesService {
     return this.repository.update(id, parsed);
   }
 
+  async deleteContentType(id: string) {
+    return this.repository.softDelete(id);
+  }
+
+  async restoreContentType(id: string) {
+    return this.repository.restore(id);
+  }
+
+  async permanentlyDeleteContentType(id: string) {
+    return this.repository.hardDelete(id);
+  }
+
   private assertFieldsAreValid(fields: readonly ContentTypeField[]) {
     const fieldKeys = new Set<string>();
     for (const field of fields) {
@@ -122,6 +136,19 @@ export class ContentTypesService {
       }
       if (fieldKeys.has(field.key)) {
         throw new ContentTypeValidationError(`Field key "${field.key}" is duplicated`);
+      }
+      const config = field.config as
+        | { options?: readonly string[]; targetContentTypeId?: string }
+        | undefined;
+      if (field.type === "select" && !config?.options?.length) {
+        throw new ContentTypeValidationError(
+          `Select field "${field.key}" must define at least one option`
+        );
+      }
+      if (field.type === "relation" && !config?.targetContentTypeId) {
+        throw new ContentTypeValidationError(
+          `Relation field "${field.key}" must define a target content type`
+        );
       }
       fieldKeys.add(field.key);
     }

@@ -43,6 +43,9 @@ export class ContentTypesController extends HttpController {
       .get("/v1/editorial/content-types", this.listContentTypes, {
         middlewares: [this.authenticated, this.canRead]
       })
+      .get("/v1/editorial/content-types/deleted", this.listDeletedContentTypes, {
+        middlewares: [this.authenticated, this.canManage]
+      })
       .get("/v1/editorial/content-types/:id", this.getContentType, {
         middlewares: [this.authenticated, this.canRead]
       })
@@ -50,6 +53,15 @@ export class ContentTypesController extends HttpController {
         middlewares: [this.authenticated, this.canManage]
       })
       .patch("/v1/editorial/content-types/:id", this.updateContentType, {
+        middlewares: [this.authenticated, this.canManage]
+      })
+      .post("/v1/editorial/content-types/:id/restore", this.restoreContentType, {
+        middlewares: [this.authenticated, this.canManage]
+      })
+      .delete("/v1/editorial/content-types/:id/permanent", this.permanentlyDeleteContentType, {
+        middlewares: [this.authenticated, this.canManage]
+      })
+      .delete("/v1/editorial/content-types/:id", this.deleteContentType, {
         middlewares: [this.authenticated, this.canManage]
       })
       .build();
@@ -61,12 +73,19 @@ export class ContentTypesController extends HttpController {
         ...(ctx.query.status === "active" || ctx.query.status === "archived"
           ? { status: ctx.query.status }
           : {}),
-        ...(parseQueryNumber(ctx.query.limit) !== undefined
-          ? { limit: parseQueryNumber(ctx.query.limit) }
-          : {}),
-        ...(parseQueryNumber(ctx.query.offset) !== undefined
-          ? { offset: parseQueryNumber(ctx.query.offset) }
-          : {})
+        ...paginationFromQuery(ctx.query)
+      });
+      return responder.list(contentTypes);
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private listDeletedContentTypes = async (ctx: HttpContext) => {
+    try {
+      const contentTypes = await this.contentTypes.listContentTypes({
+        deleted: true,
+        ...paginationFromQuery(ctx.query)
       });
       return responder.list(contentTypes);
     } catch (error) {
@@ -108,6 +127,52 @@ export class ContentTypesController extends HttpController {
     } catch (error) {
       return responder.fromError(error);
     }
+  };
+
+  private deleteContentType = async (ctx: HttpContext) => {
+    if (!ctx.params.id) return responder.invalidRequest("Missing content type id");
+    try {
+      const deleted = await this.contentTypes.deleteContentType(ctx.params.id);
+      return deleted
+        ? responder.success(deleted)
+        : responder.notFound(`Content type "${ctx.params.id}" not found`);
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private restoreContentType = async (ctx: HttpContext) => {
+    if (!ctx.params.id) return responder.invalidRequest("Missing content type id");
+    try {
+      const restored = await this.contentTypes.restoreContentType(ctx.params.id);
+      return restored
+        ? responder.success(restored)
+        : responder.notFound(`Deleted content type "${ctx.params.id}" not found`);
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private permanentlyDeleteContentType = async (ctx: HttpContext) => {
+    if (!ctx.params.id) return responder.invalidRequest("Missing content type id");
+    try {
+      const deleted = await this.contentTypes.permanentlyDeleteContentType(ctx.params.id);
+      return deleted
+        ? responder.success({ id: ctx.params.id, permanentlyDeleted: true })
+        : responder.notFound(`Deleted content type "${ctx.params.id}" not found`);
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+}
+
+function paginationFromQuery(query: Record<string, string | string[]>) {
+  const limit = parseQueryNumber(query.limit);
+  const offset = parseQueryNumber(query.offset);
+
+  return {
+    ...(limit !== undefined ? { limit } : {}),
+    ...(offset !== undefined ? { offset } : {})
   };
 }
 

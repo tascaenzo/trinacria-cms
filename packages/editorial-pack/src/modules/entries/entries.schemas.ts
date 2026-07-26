@@ -1,5 +1,4 @@
 import { defineEntity, s, type Infer } from "@trinacria-cms/kernel";
-import { EntryRevisionRecordSchema } from "../revisions/revisions.schemas.js";
 
 export const EntryStatusSchema = s.string({
   trim: true,
@@ -23,6 +22,7 @@ export const EntryRecordSchema = s.object(
     id: s.string({ trim: true, minLength: 1 }),
     contentTypeId: s.string({ trim: true, minLength: 1 }),
     ownerUserId: s.string({ trim: true, minLength: 1 }),
+    reviewerUserId: s.string({ trim: true, minLength: 1 }).optional(),
     title: s.string({ trim: true, minLength: 1, maxLength: 240 }).optional(),
     slug: s
       .string({
@@ -36,7 +36,9 @@ export const EntryRecordSchema = s.object(
     body: FreeformObjectSchema.optional(),
     data: FreeformObjectSchema,
     status: EntryStatusSchema,
-    revisions: s.array(EntryRevisionRecordSchema, { unique: false }).optional(),
+    scheduledAt: s.dateTimeString().optional(),
+    publishedAt: s.dateTimeString().optional(),
+    version: s.number({ int: true, min: 1 }).optional(),
     createdAt: s.dateTimeString(),
     updatedAt: s.dateTimeString()
   },
@@ -58,6 +60,13 @@ export const ENTRIES_ENTITY = defineEntity({
       fields: { ownerUserId: 1, status: 1, updatedAt: -1 },
       name: "entries_owner_status_updated_idx"
     },
-    { fields: { contentTypeId: 1, slug: 1 }, sparse: true, name: "entries_content_type_slug_idx" }
+    {
+      fields: { contentTypeId: 1, slug: 1 },
+      unique: true,
+      sparse: true,
+      name: "entries_content_type_slug_unique"
+    },
+    { fields: { reviewerUserId: 1, status: 1, updatedAt: -1 }, name: "entries_reviewer_queue_idx" },
+    { fields: { scheduledAt: 1, status: 1 }, name: "entries_scheduled_idx" }
   ] as const
 });

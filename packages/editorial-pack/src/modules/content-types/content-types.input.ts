@@ -22,7 +22,6 @@ export const CreateContentTypeInputSchema = s.object(
     taxonomyIds: s.array(s.string({ trim: true, minLength: 1 }), { unique: true }).optional(),
     workflowId: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
     workflow: ContentWorkflowSchema.optional(),
-    showInMainNavigation: s.boolean().optional(),
     ownershipScope: ContentTypeOwnershipScopeSchema.optional()
   },
   { strict: true }
@@ -44,7 +43,6 @@ export const UpdateContentTypeInputSchema = s.object(
     clearWorkflow: s.boolean().optional(),
     workflow: ContentWorkflowSchema.optional(),
     clearWorkflowDefinition: s.boolean().optional(),
-    showInMainNavigation: s.boolean().optional(),
     ownershipScope: ContentTypeOwnershipScopeSchema.optional()
   },
   { strict: true }

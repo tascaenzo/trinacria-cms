@@ -26,7 +26,6 @@ export class ContentTypesRepository {
       taxonomyIds: input.taxonomyIds ?? [],
       ...(input.workflowId ? { workflowId: input.workflowId } : {}),
       ...(input.workflow ? { workflow: input.workflow } : {}),
-      showInMainNavigation: input.showInMainNavigation ?? false,
       ownershipScope: input.ownershipScope ?? "inherit",
       createdByUserId: input.createdByUserId.trim(),
       createdAt: now,
@@ -35,9 +34,15 @@ export class ContentTypesRepository {
     return ContentTypeRecordSchema.parse(record);
   }
 
-  async findById(id: string): Promise<ContentTypeRecord | null> {
+  async findById(
+    id: string,
+    options: { includeDeleted?: boolean } = {}
+  ): Promise<ContentTypeRecord | null> {
     return this.repository().findOne({
-      filter: { id: id.trim() },
+      filter: {
+        id: id.trim(),
+        ...(options.includeDeleted ? {} : { deletedAt: { $exists: false } })
+      },
       parse: (value: unknown) => ContentTypeRecordSchema.parse(value)
     });
   }
@@ -50,10 +55,19 @@ export class ContentTypesRepository {
   }
 
   async list(
-    options: { status?: ContentTypeRecord["status"]; limit?: number; offset?: number } = {}
+    options: {
+      status?: ContentTypeRecord["status"];
+      deleted?: boolean;
+      limit?: number;
+      offset?: number;
+    } = {}
   ) {
+    const filter: Record<string, unknown> = {
+      deletedAt: { $exists: options.deleted === true }
+    };
+    if (options.status) filter.status = options.status;
     return this.repository().findMany({
-      ...(options.status ? { filter: { status: options.status } } : {}),
+      filter,
       limit: options.limit,
       offset: options.offset,
       sort: { updatedAt: "desc" },
@@ -75,13 +89,36 @@ export class ContentTypesRepository {
     if (input.clearWorkflow) patch.workflowId = undefined;
     if (input.workflow !== undefined) patch.workflow = input.workflow;
     if (input.clearWorkflowDefinition) patch.workflow = undefined;
-    if (input.showInMainNavigation !== undefined) {
-      patch.showInMainNavigation = input.showInMainNavigation;
-    }
     if (input.ownershipScope !== undefined) patch.ownershipScope = input.ownershipScope;
 
-    const updated = await this.repository().updateOne({ filter: { id: id.trim() } }, patch);
+    const updated = await this.repository().updateOne(
+      { filter: { id: id.trim(), deletedAt: { $exists: false } } },
+      patch
+    );
     return updated ? ContentTypeRecordSchema.parse(updated) : null;
+  }
+
+  async softDelete(id: string): Promise<ContentTypeRecord | null> {
+    const deletedAt = new Date().toISOString();
+    const updated = await this.repository().updateOne(
+      { filter: { id: id.trim(), deletedAt: { $exists: false } } },
+      { deletedAt, updatedAt: deletedAt }
+    );
+    return updated ? ContentTypeRecordSchema.parse(updated) : null;
+  }
+
+  async restore(id: string): Promise<ContentTypeRecord | null> {
+    const updated = await this.repository().updateOne(
+      { filter: { id: id.trim(), deletedAt: { $exists: true } } },
+      { deletedAt: undefined, updatedAt: new Date().toISOString() }
+    );
+    return updated ? ContentTypeRecordSchema.parse(updated) : null;
+  }
+
+  async hardDelete(id: string): Promise<boolean> {
+    return this.repository().deleteOne({
+      filter: { id: id.trim(), deletedAt: { $exists: true } }
+    });
   }
 
   private repository() {

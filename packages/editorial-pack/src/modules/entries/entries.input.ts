@@ -24,7 +24,9 @@ export const CreateEntryInputSchema = s.object(
       })
       .optional(),
     body: FreeformObjectSchema.optional(),
-    data: FreeformObjectSchema
+    data: FreeformObjectSchema,
+    reviewerUserId: s.string({ trim: true, minLength: 1 }).optional(),
+    scheduledAt: s.dateTimeString().optional()
   },
   { strict: true }
 );
@@ -47,7 +49,13 @@ export const UpdateEntryInputSchema = s.object(
     clearSlug: s.boolean().optional(),
     body: FreeformObjectSchema.optional(),
     clearBody: s.boolean().optional(),
-    data: FreeformObjectSchema.optional()
+    data: FreeformObjectSchema.optional(),
+    reviewerUserId: s.string({ trim: true, minLength: 1 }).optional(),
+    clearReviewer: s.boolean().optional(),
+    scheduledAt: s.dateTimeString().optional(),
+    clearScheduledAt: s.boolean().optional(),
+    /** Optimistic locking token returned by GET/create. */
+    expectedVersion: s.number({ int: true, min: 1 }).optional()
   },
   { strict: true }
 );

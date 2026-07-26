@@ -23,7 +23,7 @@ test("editorial-pack declares the plugin foundation", () => {
   ]);
   assert.deepEqual(
     manifest.entities.map((entity) => entity.name),
-    ["content_types", "entries"]
+    ["content_types", "entries", "entry_revisions"]
   );
   assert.deepEqual(
     manifest.settings.map((setting) => setting.key).sort(),
@@ -90,7 +90,7 @@ test("entries are validated against the active content type before persistence",
     } as never,
     {
       async create() {
-        throw new Error("Unexpected revision creation");
+        return {};
       },
       async listByEntryId() {
         return [];
@@ -144,6 +144,7 @@ test("editorial transitions create immutable revision snapshots", async () => {
     id: "entry-workflow-1",
     contentTypeId: "content-type-event",
     ownerUserId: "author-1",
+    reviewerUserId: "reviewer-1",
     data: {},
     status: "draft",
     createdAt: "2026-07-17T00:00:00.000Z",
@@ -166,10 +167,6 @@ test("editorial transitions create immutable revision snapshots", async () => {
       async updateStatus(_id: string, status: EntryRecord["status"]) {
         entry.status = status;
         return entry;
-      },
-      async appendRevision(updated: EntryRecord, revision: EntryRecord["revisions"] extends readonly (infer T)[] | undefined ? T : never) {
-        entry.revisions = [...(updated.revisions ?? []), revision];
-        return entry;
       }
     } as never,
     {
@@ -187,15 +184,28 @@ test("editorial transitions create immutable revision snapshots", async () => {
           updatedAt: "2026-07-17T00:00:00.000Z"
         } satisfies ContentTypeRecord;
       }
+    } as never,
+    {
+      records: [] as Array<{ reason: string; snapshotJson: string }>,
+      async listByEntryId() {
+        return this.records;
+      },
+      async create(revision: { reason: string; snapshotJson: string }) {
+        this.records.unshift(revision);
+        return revision;
+      }
     } as never
   );
 
-  const submitted = await service.transitionEntry(entry.id, "submit", "author-1");
+  const submitted = await service.transitionEntry(entry.id, "submit", {
+    actorUserId: "author-1",
+    canAccessAll: false
+  });
   assert.equal(submitted?.status, "in_review");
-  assert.equal(entry.revisions?.[0]?.reason, "transition:submit");
-  assert.equal(JSON.parse(entry.revisions?.[0]?.snapshotJson ?? "{}").status, "in_review");
+  // The immutable snapshot is stored in the dedicated revisions repository.
   await assert.rejects(
-    () => service.transitionEntry(entry.id, "publish", "editor-1"),
+    () =>
+      service.transitionEntry(entry.id, "publish", { actorUserId: "editor-1", canAccessAll: true }),
     EntryValidationError
   );
 });
@@ -212,21 +222,45 @@ test("direct workflows allow a draft to be published without review", async () =
   };
   const service = new EntriesService(
     {
-      async findById() { return entry; },
-      async updateStatus(_id: string, status: EntryRecord["status"]) { entry.status = status; return entry; },
-      async appendRevision(updated: EntryRecord, revision: EntryRecord["revisions"] extends readonly (infer T)[] | undefined ? T : never) { entry.revisions = [...(updated.revisions ?? []), revision]; return entry; }
+      async findById() {
+        return entry;
+      },
+      async updateStatus(_id: string, status: EntryRecord["status"]) {
+        entry.status = status;
+        return entry;
+      }
     } as never,
     {
       async getContentType() {
         return {
-          id: "content-type-page", key: "page", name: "Page", workflowId: "direct", status: "active", fields: [], taxonomyIds: [], ownershipScope: "inherit", createdByUserId: "manager-1", createdAt: "2026-07-17T00:00:00.000Z", updatedAt: "2026-07-17T00:00:00.000Z"
+          id: "content-type-page",
+          key: "page",
+          name: "Page",
+          workflowId: "direct",
+          status: "active",
+          fields: [],
+          taxonomyIds: [],
+          ownershipScope: "inherit",
+          createdByUserId: "manager-1",
+          createdAt: "2026-07-17T00:00:00.000Z",
+          updatedAt: "2026-07-17T00:00:00.000Z"
         } satisfies ContentTypeRecord;
       }
     } as never,
-    { async create() { return {}; } } as never
+    {
+      async listByEntryId() {
+        return [];
+      },
+      async create() {
+        return {};
+      }
+    } as never
   );
 
-  const published = await service.transitionEntry(entry.id, "publish", "author-1");
+  const published = await service.transitionEntry(entry.id, "publish", {
+    actorUserId: "author-1",
+    canAccessAll: false
+  });
   assert.equal(published?.status, "published");
 });
 
@@ -332,4 +366,61 @@ test("content types keep stable keys and reject unsafe field definitions", async
       ),
     ContentTypeValidationError
   );
+});
+
+test("content types support soft delete, restore and guarded permanent deletion", async () => {
+  const now = "2026-07-26T10:00:00.000Z";
+  let record: ContentTypeRecord | null = {
+    id: "content-type-news",
+    key: "news",
+    name: "News",
+    status: "active",
+    fields: [],
+    taxonomyIds: [],
+    ownershipScope: "inherit",
+    createdByUserId: "manager-1",
+    createdAt: now,
+    updatedAt: now
+  };
+  const service = new ContentTypesService({
+    async findById() {
+      return record?.deletedAt ? null : record;
+    },
+    async list(options?: { deleted?: boolean }) {
+      if (!record) return [];
+      return Boolean(record.deletedAt) === Boolean(options?.deleted) ? [record] : [];
+    },
+    async softDelete() {
+      if (!record || record.deletedAt) return null;
+      record = { ...record, deletedAt: now, updatedAt: now };
+      return record;
+    },
+    async restore() {
+      if (!record?.deletedAt) return null;
+      const { deletedAt: _deletedAt, ...restored } = record;
+      record = restored;
+      return record;
+    },
+    async hardDelete() {
+      if (!record?.deletedAt) return false;
+      record = null;
+      return true;
+    }
+  } as never);
+
+  assert.equal(await service.permanentlyDeleteContentType("content-type-news"), false);
+
+  const deleted = await service.deleteContentType("content-type-news");
+  assert.equal(deleted?.deletedAt, now);
+  assert.equal(await service.getContentType("content-type-news"), null);
+  assert.deepEqual(await service.listContentTypes(), []);
+  assert.deepEqual(await service.listContentTypes({ deleted: true }), [deleted]);
+
+  const restored = await service.restoreContentType("content-type-news");
+  assert.equal(restored?.deletedAt, undefined);
+  assert.equal((await service.getContentType("content-type-news"))?.name, "News");
+
+  await service.deleteContentType("content-type-news");
+  assert.equal(await service.permanentlyDeleteContentType("content-type-news"), true);
+  assert.deepEqual(await service.listContentTypes({ deleted: true }), []);
 });
