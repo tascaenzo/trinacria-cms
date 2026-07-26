@@ -1,7 +1,0 @@
-node_modules/
-dist/
-coverage/
-package-lock.json
-docs/trinacria/
-packages/sdk/src/generated/
-**/storybook-static/

@@ -13,8 +13,10 @@
     "./theme.css": "./theme.css"
   },
   "scripts": {
+    "dev": "tsc -p tsconfig.build.json --watch",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "biome check .",
     "test": "node --import tsx --test src/**/*.test.tsx",
     "storybook": "HOME=.storybook-home storybook dev -p 6006 -c .storybook",
     "storybook:build": "HOME=.storybook-home storybook build -c .storybook"

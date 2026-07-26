@@ -1,6 +1,6 @@
 # Repository Versioning Policy
 
-This repository uses Changesets for package versioning and publishing.
+This document describes the intended versioning policy for publishable packages. Changesets and automated publishing are not currently configured in this CMS root.
 
 ## Strategy
 
@@ -9,14 +9,10 @@ This repository uses Changesets for package versioning and publishing.
 - Base branch: `main`
 - Non-published workspaces: `playground`, `api-prisma-postgresql`, `api-mongoose-mongodb`, `api-events-redis`, `api-events-rabbitmq`
 
-## Required workflow for package changes
+## Proposed workflow for package changes
 
 1. Implement the code changes.
-2. Add a changeset:
-
-```bash
-npm run changeset
-```
+2. Record the intended version impact until a release tool is introduced.
 
 3. Select affected package(s) and bump type:
 
@@ -24,29 +20,20 @@ npm run changeset
 - `minor`: backward-compatible features
 - `major`: breaking changes
 
-4. Commit code + changeset in the same PR.
+4. Commit the code and its release note in the same PR.
 
-## Release flow on `main`
+## Future release flow on `main`
 
-1. The `Release` workflow runs on pushes to `main`.
-2. If pending changesets exist, it opens/updates a release PR (`chore: release packages`).
-3. Merging that PR publishes packages to npm and creates tags.
-
-## Scripts
-
-- `npm run changeset`: create a changeset file
-- `npm run changeset:status`: inspect pending release state
-- `npm run version-packages`: apply bumps and update changelogs
-- `npm run release`: publish packages via Changesets
+When a release workflow is added, it should create a reviewable release PR, publish from `main`, and create package tags.
 
 ## Notes
 
-- `NPM_TOKEN` must be configured in GitHub repository secrets.
+- Do not run undocumented `changeset` or release commands: they are not defined in the current root `package.json`.
 - Changelog notes should be concise and user-facing.
 - For breaking changes, include migration notes in the changeset body.
 
 ## Related docs
 
-- [`1001 - Repository Release Scripts and Workflows`](./1001-repository-release-scripts-workflows.md)
+- [`1001 - Repository Commands and CI Workflow`](./1001-repository-release-scripts-workflows.md)
 - [`1003 - Repository Branching Workflow`](./1003-repository-branching-workflow.md)
 - [`1005 - Repository: Real active workflows`](./1005-repository-real-workflows.md)

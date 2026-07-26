@@ -20,13 +20,11 @@
     }
   },
   "scripts": {
-    "prebuild": "npm run build -w @trinacria-cms/kernel && npm run build -w @trinacria-cms/core-pack && npm run build -w @trinacria-cms/media-pack",
+    "dev": "tsc -p tsconfig.json --watch",
     "build": "tsc -p tsconfig.json",
-    "pretypecheck": "npm run build -w @trinacria-cms/kernel && npm run build -w @trinacria-cms/core-pack && npm run build -w @trinacria-cms/media-pack",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "pretest": "npm run build -w @trinacria-cms/kernel",
     "test": "node --import tsx --test test/**/*.test.ts",
-    "lint": "echo \"No lint config yet\""
+    "lint": "biome check ."
   },
   "dependencies": {
     "@trinacria-cms/core-pack": "0.1.0",

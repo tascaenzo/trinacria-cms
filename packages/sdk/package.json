@@ -12,12 +12,13 @@
     }
   },
   "scripts": {
+    "dev": "tsc -p tsconfig.json --watch",
     "snapshot:openapi": "node ./scripts/snapshot-openapi.mjs",
     "generate": "node ./scripts/generate-sdk.mjs ./openapi/trinacria-cms.openapi.json ./src/generated",
     "check:generated": "node ./scripts/check-generated.mjs",
-    "build": "npm run generate && tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --import tsx --test test/**/*.test.ts",
-    "lint": "echo \"No lint config yet\""
+    "lint": "biome check ."
   }
 }

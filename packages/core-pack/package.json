@@ -24,14 +24,12 @@
     }
   },
   "scripts": {
-    "prebuild": "npm run build -w @trinacria-cms/kernel",
-    "dev": "tsx watch src/index.ts",
+    "dev": "tsc -p tsconfig.json --watch",
+    "dev:runtime": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
-    "pretypecheck": "npm run build -w @trinacria-cms/kernel",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "pretest": "npm run build -w @trinacria-cms/kernel",
     "test": "node --import tsx --test test/**/*.test.ts",
-    "lint": "echo \"No lint config yet\""
+    "lint": "biome check ."
   },
   "dependencies": {
     "@trinacria-cms/kernel": "0.1.0",

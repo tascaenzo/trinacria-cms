@@ -35,6 +35,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -49,13 +51,13 @@ jobs:
         run: npm run format
 
       - name: Lint
-        run: npm run lint
+        run: npm run lint:affected
 
       - name: Typecheck
-        run: npm run typecheck
+        run: npm run typecheck:affected
 
       - name: Build
-        run: npm run build
+        run: npm run build:affected
 
       - name: Storybook build
         run: npm run storybook:build
@@ -84,10 +86,13 @@ jobs:
           exit 1
 
       - name: Unit tests
-        run: npm run test
+        run: npm run test:affected
 
       - name: Integration tests
-        run: npm run test:integration
+        run: npm run test:integration:affected
+
+      - name: Workspace dependency graph
+        run: npm run dependencies:check
 
       - name: Install E2E browser
         run: npx playwright install --with-deps chromium

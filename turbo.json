@@ -1,0 +1,76 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "globalDependencies": ["biome.json", "tsconfig.base.json", "package-lock.json"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "env": ["NODE_ENV"],
+      "outputs": ["dist/**"]
+    },
+    "@trinacria-cms/sdk#build": {
+      "dependsOn": ["^build", "generate"],
+      "env": ["NODE_ENV"],
+      "outputs": ["dist/**"]
+    },
+    "generate": {
+      "outputs": ["src/generated/**"]
+    },
+    "@trinacria-cms/backoffice#build": {
+      "dependsOn": ["^build"],
+      "env": [
+        "NODE_ENV",
+        "VITE_BACKOFFICE_BASE_PATH",
+        "VITE_CMS_API_BASE_URL",
+        "VITE_CMS_PROXY_TARGET"
+      ],
+      "outputs": ["dist/**"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "lint": {
+      "outputs": []
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "env": ["NODE_ENV"],
+      "outputs": []
+    },
+    "test:integration": {
+      "dependsOn": ["^build"],
+      "env": [
+        "NODE_ENV",
+        "MONGO_URI",
+        "TRINACRIA_RUN_MONGO_INTEGRATION",
+        "TRINACRIA_RUN_S3_INTEGRATION",
+        "TRINACRIA_S3_ENDPOINT",
+        "TRINACRIA_S3_ACCESS_KEY",
+        "TRINACRIA_S3_SECRET_KEY",
+        "TRINACRIA_S3_BUCKET"
+      ],
+      "outputs": []
+    },
+    "storybook:build": {
+      "dependsOn": ["^build"],
+      "outputs": ["storybook-static/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "env": [
+        "NODE_ENV",
+        "VITE_BACKOFFICE_BASE_PATH",
+        "VITE_CMS_API_BASE_URL",
+        "VITE_CMS_PROXY_TARGET",
+        "MONGO_URI",
+        "TRINACRIA_RUN_MONGO_INTEGRATION",
+        "TRINACRIA_RUN_S3_INTEGRATION",
+        "TRINACRIA_S3_ENDPOINT",
+        "TRINACRIA_S3_ACCESS_KEY",
+        "TRINACRIA_S3_SECRET_KEY",
+        "TRINACRIA_S3_BUCKET"
+      ]
+    }
+  }
+}

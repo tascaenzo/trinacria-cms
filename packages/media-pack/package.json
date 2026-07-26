@@ -20,14 +20,12 @@
     }
   },
   "scripts": {
-    "prebuild": "npm run build -w @trinacria-cms/kernel && npm run build -w @trinacria-cms/core-pack && npm run build -w @trinacria-cms/sdk && npm run build -w @trinacria-cms/trinacria-ui",
+    "dev": "tsc -p tsconfig.json --watch",
     "build": "tsc -p tsconfig.json",
-    "pretypecheck": "npm run build -w @trinacria-cms/kernel && npm run build -w @trinacria-cms/core-pack && npm run build -w @trinacria-cms/sdk && npm run build -w @trinacria-cms/trinacria-ui",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "pretest": "npm run build -w @trinacria-cms/kernel",
     "test": "node --import tsx --test test/**/*.test.ts",
     "test:integration": "node --import tsx --test test/**/*.integration.test.ts",
-    "lint": "echo \"No lint config yet\""
+    "lint": "biome check ."
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1089.0",
