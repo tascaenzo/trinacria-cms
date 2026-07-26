@@ -6,13 +6,21 @@ import {
 } from "../runtime/backoffice-navigation-state.js";
 
 export function useBackofficeRouteState(defaultRouteId = "dashboard") {
-  const [activeRouteId, setActiveRouteId] = useState<string>(
-    readBackofficeNavigationState().routeId ?? defaultRouteId
-  );
+  const [navigationState, setNavigationState] = useState(() => {
+    const current = readBackofficeNavigationState();
+    return {
+      routeId: current.routeId ?? defaultRouteId,
+      params: current.params.toString()
+    };
+  });
 
   useEffect(() => {
     function handleNavigationChange() {
-      setActiveRouteId(readBackofficeNavigationState().routeId ?? defaultRouteId);
+      const current = readBackofficeNavigationState();
+      setNavigationState({
+        routeId: current.routeId ?? defaultRouteId,
+        params: current.params.toString()
+      });
     }
 
     const navigationEventName = getBackofficeNavigationEventName();
@@ -26,8 +34,7 @@ export function useBackofficeRouteState(defaultRouteId = "dashboard") {
 
   const navigateTo = useCallback((routeId: string, params?: URLSearchParams) => {
     writeBackofficeNavigationState(routeId, params);
-    setActiveRouteId(routeId);
   }, []);
 
-  return [activeRouteId, navigateTo] as const;
+  return [navigationState.routeId, navigationState.params, navigateTo] as const;
 }

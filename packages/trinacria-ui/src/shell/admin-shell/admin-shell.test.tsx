@@ -106,3 +106,44 @@ test("AdminShell can hide navigation items from sidebar without removing active 
     restoreDom();
   }
 });
+
+test("AdminShell keeps a contextual navigation item active on detail routes", async () => {
+  const restoreDom = installDom();
+  const contextualNavigation = [
+    {
+      id: "article",
+      routeId: "editorial-entries",
+      title: "Article",
+      params: { modelId: "article" }
+    },
+    {
+      id: "page",
+      routeId: "editorial-entries",
+      title: "Page",
+      params: { modelId: "page" }
+    }
+  ];
+
+  try {
+    const view = await renderClient(
+      <AdminShell
+        title="Content editor"
+        activeRouteId="editorial-entry-detail"
+        activeNavigationParams="entryId=entry-1&modelId=page"
+        navigation={contextualNavigation}
+        onNavigate={() => undefined}
+      >
+        Content
+      </AdminShell>
+    );
+
+    const pageButton = document.querySelector<HTMLButtonElement>('button[title="Page"]');
+    const articleButton = document.querySelector<HTMLButtonElement>('button[title="Article"]');
+    assert.ok(pageButton?.className.includes("bg-(--color-interactive-selected)"));
+    assert.equal(articleButton?.className.includes("bg-(--color-interactive-selected)"), false);
+
+    await view.unmount();
+  } finally {
+    restoreDom();
+  }
+});

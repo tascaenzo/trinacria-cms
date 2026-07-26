@@ -32,7 +32,6 @@ import { MfaLoginPage, MfaRecoveryCodesPage } from "./pages/mfa-login-page.js";
 import { BackofficeShellStatus } from "./backoffice-app/backoffice-shell-status.js";
 import { BackofficeUserMenu } from "./backoffice-app/backoffice-user-menu.js";
 import { useBackofficeRouteState } from "./backoffice-app/use-backoffice-route-state.js";
-import { readBackofficeNavigationState } from "./runtime/backoffice-navigation-state.js";
 import { useBackofficeShellRuntime } from "./backoffice-app/use-backoffice-shell-runtime.js";
 import { useAuthenticatedRoleLabel } from "./backoffice-app/use-authenticated-role-label.js";
 import {
@@ -79,7 +78,7 @@ function createIdleFormActionState<T>(): FormActionState<T> {
  */
 export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
   const [locale, setLocale] = useState<SupportedLocale>(() => readBackofficeLocale());
-  const [activeRouteId, navigateTo] = useBackofficeRouteState();
+  const [activeRouteId, activeNavigationParams, navigateTo] = useBackofficeRouteState();
   const [authUser, setAuthUser] = useState<AuthenticatedUser | null>(null);
   const [installationStatus, setInstallationStatus] = useState<InstallationStatus | null>(null);
   const [bootstrapError, setBootstrapError] = useState<SdkErrorDetails | null>(null);
@@ -585,7 +584,7 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
   return renderWithI18n(
     <AdminShell
       activeRouteId={activeRoute?.id ?? ""}
-      activeNavigationParams={readBackofficeNavigationState().params.toString()}
+      activeNavigationParams={activeNavigationParams}
       navigation={registry.navigation}
       hiddenNavigationIds={USER_MENU_NAVIGATION_IDS}
       onNavigate={navigateTo}

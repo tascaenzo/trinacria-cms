@@ -99,9 +99,14 @@ export function AdminShell({
   }
 
   function isNavigationItemActive(item: AdminShellNavigationItem) {
-    if (item.routeId !== activeRouteId) return false;
     const itemParams = new URLSearchParams(item.params);
-    return itemParams.toString() === activeNavigationParams;
+    const currentParams = new URLSearchParams(activeNavigationParams);
+
+    if (item.routeId === activeRouteId && itemParams.size === 0) {
+      return currentParams.size === 0;
+    }
+    if (itemParams.size === 0) return false;
+    return Array.from(itemParams).every(([key, value]) => currentParams.get(key) === value);
   }
 
   const activeNavigation =
