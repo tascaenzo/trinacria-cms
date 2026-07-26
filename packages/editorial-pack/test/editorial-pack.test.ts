@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { validatePluginManifest } from "@trinacria-cms/kernel";
+import { CmsSdkHttpError } from "@trinacria-cms/sdk";
 import {
   EDITORIAL_PACK_MANIFEST,
   EDITORIAL_PACK_PERMISSION_KEY_LIST,
@@ -17,6 +18,7 @@ import {
   supportsEditorialReview,
   type EditorialEntryContentType
 } from "../src/admin/entries/entries.types.js";
+import { toEditorialDisplayError } from "../src/admin/lib/editorial-admin-errors.js";
 
 test("editorial-pack declares the plugin foundation", () => {
   const manifest = validatePluginManifest(EDITORIAL_PACK_MANIFEST);
@@ -70,6 +72,26 @@ test("review boards expose only configured workflow transitions", () => {
   assert.equal(supportsEditorialReview(directModel), false);
   assert.equal(getTransitionToStatus(draft, "in_review", reviewModel)?.id, "submit");
   assert.equal(getTransitionToStatus(draft, "published", reviewModel), null);
+});
+
+test("editorial errors expose domain validation messages returned by the API", () => {
+  const error = new CmsSdkHttpError({
+    status: 400,
+    method: "POST",
+    url: "/v1/editorial/entries/entry-1/transition",
+    headers: {},
+    data: {
+      error: {
+        code: "validation_error",
+        message: "Assegna un revisore prima di inviare il contenuto in revisione."
+      }
+    }
+  });
+
+  assert.equal(
+    toEditorialDisplayError(error, "Non è stato possibile aggiornare il workflow."),
+    "Assegna un revisore prima di inviare il contenuto in revisione."
+  );
 });
 
 test("entries are validated against the active content type before persistence", async () => {
