@@ -74,4 +74,5 @@ export function assertRequesterOwnsSettingKey(
     });
   }
 }
+
 import { createSettingsOwnerAccessError } from "./settings.errors.js";

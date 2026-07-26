@@ -1,26 +1,26 @@
 import {
-  createPluginApiResponder,
-  HttpController,
-  parseQueryNumber,
-  type AuthzService,
-  type HttpContext,
-  type HttpMiddleware
-} from "@trinacria-cms/kernel";
-import {
   createJwtAuthMiddleware,
   getAuthenticatedUser,
   type JwtAuthService
 } from "@trinacria-cms/core-pack";
+import {
+  type AuthzService,
+  createPluginApiResponder,
+  type HttpContext,
+  HttpController,
+  type HttpMiddleware,
+  parseQueryNumber
+} from "@trinacria-cms/kernel";
 import { EDITORIAL_PACK_PLUGIN_ID } from "../../plugin/editorial-pack.constants.js";
 import {
   CreateEntryInputSchema,
   TransitionEntryInputSchema,
   UpdateEntryInputSchema
 } from "./entries.input.js";
-import {
+import type {
+  EditorialTransition,
   EntriesService,
-  type EntryAccessScope,
-  type EditorialTransition
+  EntryAccessScope
 } from "./services/entries.service.js";
 
 const responder = createPluginApiResponder(EDITORIAL_PACK_PLUGIN_ID);

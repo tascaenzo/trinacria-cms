@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { Button, Dialog, Icon, Input } from "@trinacria-cms/trinacria-ui";
+import { useState } from "react";
 import type { ContentWorkflow, ContentWorkflowState } from "../editorial-admin.types.js";
 
 const STATE_LIBRARY = [

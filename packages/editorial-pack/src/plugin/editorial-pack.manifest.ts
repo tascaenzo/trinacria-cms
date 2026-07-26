@@ -7,17 +7,17 @@ import {
   defineSecurity
 } from "@trinacria-cms/kernel/plugin-api";
 import { EDITORIAL_PACK_SETTING_DEFINITIONS } from "../modules/settings/editorial-pack-settings.js";
-import { EDITORIAL_PACK_ADMIN_MANIFEST } from "./editorial-pack-admin.manifest.js";
 import { EDITORIAL_PACK_PLUGIN_ID } from "./editorial-pack.constants.js";
 import {
+  EDITORIAL_PACK_AUTHOR_ROLE,
   EDITORIAL_PACK_CAPABILITY_LIST,
   EDITORIAL_PACK_CONTENT_MANAGER_ROLE,
   EDITORIAL_PACK_PERMISSION_DEFINITIONS,
   EDITORIAL_PACK_PERMISSION_KEY_LIST,
   EDITORIAL_PACK_PERMISSION_KEYS,
-  EDITORIAL_PACK_REVIEWER_ROLE,
-  EDITORIAL_PACK_AUTHOR_ROLE
+  EDITORIAL_PACK_REVIEWER_ROLE
 } from "./editorial-pack.security.js";
+import { EDITORIAL_PACK_ADMIN_MANIFEST } from "./editorial-pack-admin.manifest.js";
 
 const entryEventPayloadSchema = {
   type: "object",

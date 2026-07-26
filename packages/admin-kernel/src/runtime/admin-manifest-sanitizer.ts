@@ -1,8 +1,8 @@
 export {
-  sanitizeAdminExtensionManifest,
-  validateAdminActionDefinition,
-  validateAdminEndpointBinding,
   type AdminEndpointPolicyOptions,
   type AdminEndpointPolicyResult,
-  type AdminEndpointSurface
+  type AdminEndpointSurface,
+  sanitizeAdminExtensionManifest,
+  validateAdminActionDefinition,
+  validateAdminEndpointBinding
 } from "./admin-endpoint-policy.js";

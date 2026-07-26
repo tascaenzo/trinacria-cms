@@ -1,8 +1,8 @@
-import type { AdminDashboardWidgetDefinition } from "./widget.js";
 import type { AdminNavigationItem } from "./navigation.js";
-import type { AdminResourceDefinition } from "./resource.js";
 import type { AdminRouteDefinition } from "./page.js";
+import type { AdminResourceDefinition } from "./resource.js";
 import type { AdminSettingsSectionDefinition } from "./settings.js";
+import type { AdminDashboardWidgetDefinition } from "./widget.js";
 
 /** Runtime plugin state used by the admin shell. */
 export interface AdminRuntimePluginInfo {

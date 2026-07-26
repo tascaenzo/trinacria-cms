@@ -1,16 +1,16 @@
 import type { MediaAssetRecord } from "../media.schemas.js";
-import {
-  MediaAssetsRepository,
-  type CreateMediaAssetInput,
-  type ReplaceMediaAssetAccessInput
-} from "../repositories/media-assets.repository.js";
-import { MediaDirectoriesRepository } from "../repositories/media-directories.repository.js";
-import { MediaDomainEventsService } from "./media-domain-events.service.js";
 import type {
   MediaAssetReference,
   MediaAssetsService as MediaAssetsServiceContract,
   MediaAssetUseResult
 } from "../media-storage.types.js";
+import type {
+  CreateMediaAssetInput,
+  MediaAssetsRepository,
+  ReplaceMediaAssetAccessInput
+} from "../repositories/media-assets.repository.js";
+import type { MediaDirectoriesRepository } from "../repositories/media-directories.repository.js";
+import type { MediaDomainEventsService } from "./media-domain-events.service.js";
 
 export class MediaAssetsService implements MediaAssetsServiceContract {
   constructor(

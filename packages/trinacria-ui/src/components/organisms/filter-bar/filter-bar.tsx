@@ -1,5 +1,5 @@
-import { Panel } from "../../primitives/panel/panel.js";
 import { cn } from "../../../utils/class-names.js";
+import { Panel } from "../../primitives/panel/panel.js";
 import type { FilterBarProps } from "./filter-bar.types.js";
 
 export function FilterBar({ actions, children, className, summary, ...props }: FilterBarProps) {

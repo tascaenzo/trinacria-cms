@@ -10,11 +10,13 @@ import type {
   PluginManifestEventSubscription,
   PluginManifestSetting
 } from "./plugin-manifest.js";
+
 export type {
+  PluginAccessAuthorizationResult as PluginEventSubscriptionAuthorizationResult,
   PluginEventSubscriptionAuthorizationRequest,
-  PluginEventSubscriptionAuthorizer,
-  PluginAccessAuthorizationResult as PluginEventSubscriptionAuthorizationResult
+  PluginEventSubscriptionAuthorizer
 } from "./plugin-access-policy.js";
+
 import type { ApplicationContext, ModuleDefinition } from "@trinacria/core";
 import type { EventEnvelope } from "@trinacria/events";
 

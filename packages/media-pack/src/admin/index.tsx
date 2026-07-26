@@ -1,12 +1,4 @@
 import {
-  MediaStorageSettings,
-  type MediaStorageSettingsContext
-} from "./media-storage-settings.js";
-import {
-  MediaUploadPolicySettings,
-  type MediaUploadPolicySettingsContext
-} from "./media-upload-policy-settings.js";
-import {
   FileManager,
   MediaFileManager,
   type MediaFileManagerContext
@@ -16,6 +8,14 @@ import {
   MediaFileManagerWidget,
   type MediaFileManagerWidgetContext
 } from "./media-file-manager-widget.js";
+import {
+  MediaStorageSettings,
+  type MediaStorageSettingsContext
+} from "./media-storage-settings.js";
+import {
+  MediaUploadPolicySettings,
+  type MediaUploadPolicySettingsContext
+} from "./media-upload-policy-settings.js";
 
 /** React renderers intentionally live with the Media feature, not in the shell. */
 export const MEDIA_PACK_ADMIN_RENDERERS = {
@@ -42,9 +42,11 @@ export const MEDIA_PACK_ADMIN_RENDERERS = {
   }
 };
 
-export { MediaStorageSettings };
-export { MediaUploadPolicySettings };
-export { MediaFileManager };
-export { FileManager };
-export { MediaFileManagerModalDemo };
-export { MediaFileManagerWidget };
+export {
+  FileManager,
+  MediaFileManager,
+  MediaFileManagerModalDemo,
+  MediaFileManagerWidget,
+  MediaStorageSettings,
+  MediaUploadPolicySettings
+};

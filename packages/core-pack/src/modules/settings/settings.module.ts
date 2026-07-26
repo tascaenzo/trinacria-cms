@@ -1,39 +1,39 @@
 import {
-  classProvider,
   CORE_TOKENS,
+  classProvider,
   defineModule,
+  type EntityRegistry,
   factoryProvider,
-  httpProvider,
-  type EntityRegistry
+  httpProvider
 } from "@trinacria-cms/kernel";
-import { CorePackAuthModule } from "../auth/auth.module.js";
 import { createJwtAuthMiddleware } from "../auth/auth.middleware.js";
-import type { JwtAuthService } from "../auth/services/auth.service.js";
+import { CorePackAuthModule } from "../auth/auth.module.js";
 import { CORE_PACK_JWT_AUTH_SERVICE_TOKEN } from "../auth/auth.tokens.js";
-import { SettingsController } from "./settings.controller.js";
-import { SettingsDefinitionsRepository } from "./definitions/settings-definitions.repository.js";
-import { EnvPluginAuthKeyProvider } from "./auth/plugin-auth-key-provider.js";
+import type { JwtAuthService } from "../auth/services/auth.service.js";
 import { SettingsPluginAuthService } from "./auth/plugin-auth.service.js";
-import { SettingsSecretsCryptoService } from "./secrets/settings-secrets-crypto.service.js";
-import { SettingsSecretsRepository } from "./secrets/settings-secrets.repository.js";
-import { SETTINGS_ENTITY } from "./schemas/settings.schemas.js";
-import { SettingsService } from "./services/settings.service.js";
-import { SettingsValuesRepository } from "./values/settings-values.repository.js";
+import { EnvPluginAuthKeyProvider } from "./auth/plugin-auth-key-provider.js";
+import { CorePackRuntimeConfigModule } from "./config/runtime-config.module.js";
+import { SettingsDefinitionsRepository } from "./definitions/settings-definitions.repository.js";
 import { SettingsPluginAccessPolicyService } from "./plugin-access/plugin-access-policy.service.js";
+import { SETTINGS_ENTITY } from "./schemas/settings.schemas.js";
+import { SettingsSecretsRepository } from "./secrets/settings-secrets.repository.js";
+import { SettingsSecretsCryptoService } from "./secrets/settings-secrets-crypto.service.js";
+import { SettingsService } from "./services/settings.service.js";
+import { SettingsController } from "./settings.controller.js";
 import {
+  RUNTIME_CONFIG_SERVICE_TOKEN,
   SETTINGS_CONTROLLER_TOKEN,
   SETTINGS_DEFINITIONS_REPOSITORY_TOKEN,
   SETTINGS_ENTITY_REGISTRATION_TOKEN,
+  SETTINGS_PLUGIN_ACCESS_POLICY_SERVICE_TOKEN,
   SETTINGS_PLUGIN_AUTH_KEY_PROVIDER_TOKEN,
   SETTINGS_PLUGIN_AUTH_SERVICE_TOKEN,
-  SETTINGS_PLUGIN_ACCESS_POLICY_SERVICE_TOKEN,
   SETTINGS_SECRETS_CRYPTO_SERVICE_TOKEN,
   SETTINGS_SECRETS_REPOSITORY_TOKEN,
   SETTINGS_SERVICE_TOKEN,
-  SETTINGS_VALUES_REPOSITORY_TOKEN,
-  RUNTIME_CONFIG_SERVICE_TOKEN
+  SETTINGS_VALUES_REPOSITORY_TOKEN
 } from "./settings.tokens.js";
-import { CorePackRuntimeConfigModule } from "./config/runtime-config.module.js";
+import { SettingsValuesRepository } from "./values/settings-values.repository.js";
 
 /**
  * Settings module wiring over a single unified settings collection.

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import { SettingsPage } from "../pages/settings-page.js";
 import type { AdminRouteDefinition } from "../contracts.js";
 import { renderDeclarativeAdminPage } from "../declarative/components/declarative-page.js";
+import { SettingsPage } from "../pages/settings-page.js";
 import type { AdminPageRenderContext } from "../runtime/admin-route-runtime.js";
 
 export const OFFICIAL_CORE_ROUTE_META: Record<

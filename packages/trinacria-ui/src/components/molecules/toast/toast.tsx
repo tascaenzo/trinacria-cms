@@ -1,11 +1,11 @@
 import {
   createContext,
+  type ReactNode,
   useContext,
   useEffect,
   useMemo,
   useRef,
-  useState,
-  type ReactNode
+  useState
 } from "react";
 import { createPortal } from "react-dom";
 import { Notification, NotificationStack } from "../notification/notification.js";

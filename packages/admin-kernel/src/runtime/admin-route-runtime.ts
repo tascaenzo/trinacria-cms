@@ -1,6 +1,7 @@
+import type { ReactNode } from "react";
 import type {
-  AdminActionDefinition,
   AdminAccessGuard,
+  AdminActionDefinition,
   AdminDashboardWidgetDefinition,
   AdminNavigationItem,
   AdminPluginContribution,
@@ -10,12 +11,11 @@ import type {
   AdminRuntimePluginInfo,
   AdminSettingsSectionDefinition
 } from "../contracts.js";
-import type { ReactNode } from "react";
 import type { Locale, TranslateFn } from "../lib/i18n.js";
 import {
   type AdminRendererRegistryInput,
-  resolveAdminPageRenderer,
   resolveAdminDashboardWidgetRenderer,
+  resolveAdminPageRenderer,
   resolveAdminSettingsSectionRenderer
 } from "./admin-renderers.js";
 
@@ -70,19 +70,15 @@ export interface RenderableAdminSettingsSection extends AdminSettingsSectionDefi
  * Renderable contributions are what the React backoffice mounts after the base
  * contract has been adapted to a real UI framework.
  */
-export interface RenderableAdminContribution extends Omit<
-  AdminPluginContribution,
-  "routes" | "widgets" | "settings"
-> {
+export interface RenderableAdminContribution
+  extends Omit<AdminPluginContribution, "routes" | "widgets" | "settings"> {
   routes: readonly RenderableAdminRoute[];
   widgets?: readonly RenderableAdminDashboardWidget[];
   settings?: readonly RenderableAdminSettingsSection[];
 }
 
-export interface RenderableAdminRegistrySnapshot extends Omit<
-  AdminRegistrySnapshot,
-  "routes" | "widgets" | "settings"
-> {
+export interface RenderableAdminRegistrySnapshot
+  extends Omit<AdminRegistrySnapshot, "routes" | "widgets" | "settings"> {
   routes: readonly RenderableAdminRoute[];
   widgets: readonly RenderableAdminDashboardWidget[];
   settings: readonly RenderableAdminSettingsSection[];

@@ -1,13 +1,13 @@
 import type { EventBus } from "@trinacria/events";
 import {
   CORE_PACK_USER_CREATED_EVENT,
-  CORE_PACK_USER_INVITED_EVENT,
   CORE_PACK_USER_INVITE_ACCEPTED_EVENT,
+  CORE_PACK_USER_INVITED_EVENT,
   CORE_PACK_USER_PROFILE_UPDATED_EVENT,
   CORE_PACK_USER_STATUS_CHANGED_EVENT,
   type CorePackUserCreatedPayload,
-  type CorePackUserInvitedPayload,
   type CorePackUserInviteAcceptedPayload,
+  type CorePackUserInvitedPayload,
   type CorePackUserProfileUpdatedPayload,
   type CorePackUserStatusChangedPayload
 } from "../events/user-events.catalog.js";

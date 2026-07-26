@@ -1,20 +1,20 @@
 import {
   createPluginDbScope,
-  isValidPermissionKey,
   type DbAdapter,
+  isValidPermissionKey,
   type PluginDbScope
 } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import type { CacheService } from "../../cache/services/cache.service.js";
 import {
-  CreatePermissionInputSchema,
   type CreatePermissionInput,
+  CreatePermissionInputSchema,
   type UpdatePermissionInput,
   UpdatePermissionInputSchema,
   type UpdatePermissionStatusInput,
   UpdatePermissionStatusInputSchema
 } from "../dto/permissions.input.dto.js";
-import { PermissionRecordSchema, type PermissionRecord } from "../permissions.schemas.js";
+import { type PermissionRecord, PermissionRecordSchema } from "../permissions.schemas.js";
 
 const PERMISSIONS_ENTITY_NAME = "permissions";
 const CACHE_NAMESPACE = "permissions";

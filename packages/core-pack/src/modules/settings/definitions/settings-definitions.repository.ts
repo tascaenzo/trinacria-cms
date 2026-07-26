@@ -1,10 +1,10 @@
 import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
-import {
-  SettingDefinitionRecordSchema,
-  type SettingDefinitionRecord
-} from "../schemas/settings.schemas.js";
 import type { JsonValue } from "../_shared/settings-json.js";
+import {
+  type SettingDefinitionRecord,
+  SettingDefinitionRecordSchema
+} from "../schemas/settings.schemas.js";
 
 const SETTINGS_ENTITY_NAME = "settings";
 const DEFINITION_KIND = "definition" as const;

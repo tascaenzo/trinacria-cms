@@ -1,4 +1,4 @@
-import { useId, useRef, type KeyboardEvent } from "react";
+import { type KeyboardEvent, useId, useRef } from "react";
 import { cn } from "../../../utils/class-names.js";
 import type { TabsProps } from "./tabs.types.js";
 

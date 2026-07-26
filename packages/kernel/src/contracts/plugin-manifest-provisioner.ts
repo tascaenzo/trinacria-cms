@@ -9,7 +9,10 @@ import type { PluginTranslationSource } from "./plugin-runtime.js";
  * and reverse that work before it is unregistered.
  */
 export interface PluginManifestProvisioner {
-  provision(manifest: PluginManifest, i18nSources?: readonly PluginTranslationSource[]): Promise<void>;
+  provision(
+    manifest: PluginManifest,
+    i18nSources?: readonly PluginTranslationSource[]
+  ): Promise<void>;
   deprovision(manifest: PluginManifest): Promise<void>;
   defer?(manifest: PluginManifest): Promise<void> | void;
   provisionDeferred?(): Promise<void>;

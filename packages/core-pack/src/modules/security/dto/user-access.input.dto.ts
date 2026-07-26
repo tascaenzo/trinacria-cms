@@ -1,4 +1,4 @@
-import { s, type Infer } from "@trinacria-cms/kernel";
+import { type Infer, s } from "@trinacria-cms/kernel";
 
 /**
  * DTO schema for assigning a role to an existing user.

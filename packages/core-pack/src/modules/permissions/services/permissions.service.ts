@@ -1,11 +1,11 @@
+import { CORE_PACK_PERMISSION_KEY_LIST } from "../../../plugin/core-pack.security.js";
 import type {
   CreatePermissionInput,
   UpdatePermissionInput,
   UpdatePermissionStatusInput
 } from "../dto/permissions.input.dto.js";
-import { type PermissionRecord } from "../permissions.schemas.js";
-import { PermissionsRepository } from "../repositories/permissions.repository.js";
-import { CORE_PACK_PERMISSION_KEY_LIST } from "../../../plugin/core-pack.security.js";
+import type { PermissionRecord } from "../permissions.schemas.js";
+import type { PermissionsRepository } from "../repositories/permissions.repository.js";
 
 const CORE_PACK_DEFAULT_PERMISSION_KEYS = new Set<string>(CORE_PACK_PERMISSION_KEY_LIST);
 

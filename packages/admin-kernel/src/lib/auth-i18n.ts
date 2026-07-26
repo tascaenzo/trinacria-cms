@@ -1,6 +1,6 @@
 import { CORE_PACK_ADMIN_I18N } from "@trinacria-cms/core-pack/i18n";
-import type { SdkErrorDetails } from "./sdk-errors.js";
 import { defineI18nBundle, type TranslateFn } from "./i18n.js";
+import type { SdkErrorDetails } from "./sdk-errors.js";
 
 export type SupportedLocale = "en" | "it";
 

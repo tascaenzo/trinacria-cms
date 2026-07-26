@@ -1,4 +1,4 @@
-import { isValidPermissionPattern, s, type Infer } from "@trinacria-cms/kernel";
+import { type Infer, isValidPermissionPattern, s } from "@trinacria-cms/kernel";
 import {
   RolePolicyRuleConditionSchema,
   RolePolicyRuleEffectSchema

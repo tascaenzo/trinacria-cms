@@ -1,33 +1,21 @@
 import {
-  classProvider,
-  CORE_TOKENS,
-  defineModule,
-  factoryProvider,
-  httpProvider,
-  type EntityRegistry,
-  type ModuleDefinition
-} from "@trinacria-cms/kernel";
-import {
+  CORE_PACK_JWT_AUTH_SERVICE_TOKEN,
   CorePackAuthModule,
   CorePackRuntimeConfigModule,
-  CorePackSettingsModule,
   CorePackSecurityModule,
-  CORE_PACK_JWT_AUTH_SERVICE_TOKEN,
+  CorePackSettingsModule,
   RUNTIME_CONFIG_SERVICE_TOKEN,
   SETTINGS_SERVICE_TOKEN
 } from "@trinacria-cms/core-pack";
-import { MediaAssetsController } from "./media-assets.controller.js";
-import { MediaUploadController } from "./media-upload.controller.js";
-import { MediaProviderRegistry } from "./media-provider-registry.service.js";
-import { LocalDiskMediaStorageProvider } from "./providers/local-disk-media-storage.provider.js";
-import { MediaAssetsRepository } from "./repositories/media-assets.repository.js";
-import { MediaDirectoriesRepository } from "./repositories/media-directories.repository.js";
-import { MediaUploadsRepository } from "./repositories/media-uploads.repository.js";
-import { MediaAssetsService } from "./services/media-assets.service.js";
-import { MediaDirectoriesService } from "./services/media-directories.service.js";
-import { MediaUploadsService } from "./services/media-uploads.service.js";
-import { MediaStorageConfigService } from "./services/media-storage-config.service.js";
-import { MediaDomainEventsService } from "./services/media-domain-events.service.js";
+import {
+  CORE_TOKENS,
+  classProvider,
+  defineModule,
+  type EntityRegistry,
+  factoryProvider,
+  httpProvider,
+  type ModuleDefinition
+} from "@trinacria-cms/kernel";
 import {
   MEDIA_ACL_ENTRIES_ENTITY,
   MEDIA_ASSETS_ENTITY,
@@ -35,21 +23,33 @@ import {
   MEDIA_UPLOADS_ENTITY
 } from "./media.schemas.js";
 import {
+  MEDIA_ASSETS_CONTROLLER_TOKEN,
   MEDIA_ASSETS_REPOSITORY_TOKEN,
   MEDIA_ASSETS_SERVICE_TOKEN,
-  MEDIA_ASSETS_CONTROLLER_TOKEN,
   MEDIA_DIRECTORIES_REPOSITORY_TOKEN,
   MEDIA_DIRECTORIES_SERVICE_TOKEN,
   MEDIA_DOMAIN_EVENTS_SERVICE_TOKEN,
   MEDIA_ENTITY_REGISTRATION_TOKEN,
   MEDIA_LOCAL_DISK_PROVIDER_TOKEN,
-  MEDIA_UPLOAD_CONTROLLER_TOKEN,
-  MEDIA_UPLOADS_REPOSITORY_TOKEN,
-  MEDIA_UPLOADS_SERVICE_TOKEN,
   MEDIA_PROVIDER_REGISTRY_INITIALIZATION_TOKEN,
   MEDIA_PROVIDER_REGISTRY_TOKEN,
-  MEDIA_STORAGE_CONFIG_SERVICE_TOKEN
+  MEDIA_STORAGE_CONFIG_SERVICE_TOKEN,
+  MEDIA_UPLOAD_CONTROLLER_TOKEN,
+  MEDIA_UPLOADS_REPOSITORY_TOKEN,
+  MEDIA_UPLOADS_SERVICE_TOKEN
 } from "./media.tokens.js";
+import { MediaAssetsController } from "./media-assets.controller.js";
+import { MediaProviderRegistry } from "./media-provider-registry.service.js";
+import { MediaUploadController } from "./media-upload.controller.js";
+import { LocalDiskMediaStorageProvider } from "./providers/local-disk-media-storage.provider.js";
+import { MediaAssetsRepository } from "./repositories/media-assets.repository.js";
+import { MediaDirectoriesRepository } from "./repositories/media-directories.repository.js";
+import { MediaUploadsRepository } from "./repositories/media-uploads.repository.js";
+import { MediaAssetsService } from "./services/media-assets.service.js";
+import { MediaDirectoriesService } from "./services/media-directories.service.js";
+import { MediaDomainEventsService } from "./services/media-domain-events.service.js";
+import { MediaStorageConfigService } from "./services/media-storage-config.service.js";
+import { MediaUploadsService } from "./services/media-uploads.service.js";
 
 export const MediaPackMediaModule: ModuleDefinition = defineModule({
   name: "MediaPackMediaModule",

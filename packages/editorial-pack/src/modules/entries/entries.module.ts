@@ -1,38 +1,43 @@
 import {
-  classProvider,
-  CORE_TOKENS,
-  defineModule,
-  factoryProvider,
-  httpProvider,
-  type EntityRegistry,
-  type ModuleDefinition
-} from "@trinacria-cms/kernel";
-import {
-  CorePackAuthModule,
-  CorePackSettingsModule,
-  CorePackSecurityModule,
   CORE_PACK_JWT_AUTH_SERVICE_TOKEN,
+  CorePackAuthModule,
+  CorePackSecurityModule,
+  CorePackSettingsModule,
   SETTINGS_SERVICE_TOKEN
 } from "@trinacria-cms/core-pack";
+import {
+  CORE_TOKENS,
+  classProvider,
+  defineModule,
+  type EntityRegistry,
+  factoryProvider,
+  httpProvider,
+  type ModuleDefinition
+} from "@trinacria-cms/kernel";
 import { EditorialContentTypesModule } from "../content-types/content-types.module.js";
 import { CONTENT_TYPES_SERVICE_TOKEN } from "../content-types/content-types.tokens.js";
+import { RevisionsRepository } from "../revisions/revisions.repository.js";
+import { ENTRY_REVISIONS_ENTITY } from "../revisions/revisions.schemas.js";
+import { REVISIONS_REPOSITORY_TOKEN } from "../revisions/revisions.tokens.js";
 import { EntriesController } from "./entries.controller.js";
 import { ENTRIES_ENTITY } from "./entries.schemas.js";
-import { EntriesRepository } from "./repositories/entries.repository.js";
-import { EntriesService } from "./services/entries.service.js";
-import { ENTRY_REVISIONS_ENTITY } from "../revisions/revisions.schemas.js";
-import { RevisionsRepository } from "../revisions/revisions.repository.js";
-import { REVISIONS_REPOSITORY_TOKEN } from "../revisions/revisions.tokens.js";
 import {
   ENTRIES_CONTROLLER_TOKEN,
   ENTRIES_ENTITY_REGISTRATION_TOKEN,
   ENTRIES_REPOSITORY_TOKEN,
   ENTRIES_SERVICE_TOKEN
 } from "./entries.tokens.js";
+import { EntriesRepository } from "./repositories/entries.repository.js";
+import { EntriesService } from "./services/entries.service.js";
 
 export const EditorialEntriesModule: ModuleDefinition = defineModule({
   name: "EditorialEntriesModule",
-  imports: [CorePackAuthModule, CorePackSecurityModule, CorePackSettingsModule, EditorialContentTypesModule],
+  imports: [
+    CorePackAuthModule,
+    CorePackSecurityModule,
+    CorePackSettingsModule,
+    EditorialContentTypesModule
+  ],
   providers: [
     factoryProvider(
       ENTRIES_ENTITY_REGISTRATION_TOKEN,

@@ -1,4 +1,4 @@
-import { Redis } from "ioredis";
+import type { Redis } from "ioredis";
 import type { CacheAdapter } from "./cache-adapter.js";
 
 export class RedisCacheAdapter implements CacheAdapter {

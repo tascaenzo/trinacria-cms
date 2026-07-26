@@ -1,15 +1,15 @@
 import type {
   AdminAccessGuard,
   AdminActionDefinition,
+  AdminDashboardWidgetDefinition,
   AdminExtensionManifest,
   AdminJsonDataBinding,
   AdminNavigationItem,
   AdminResourceDefinition,
   AdminRouteDefinition,
   AdminRuntimePluginInfo,
-  AdminSettingsSectionKind,
   AdminSettingsSectionDefinition,
-  AdminDashboardWidgetDefinition
+  AdminSettingsSectionKind
 } from "../contracts.js";
 import { cms } from "./cms-sdk.js";
 

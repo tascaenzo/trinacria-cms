@@ -1,14 +1,14 @@
-import { definePluginBackofficeModule, type BackofficeModule } from "@trinacria-cms/admin-kernel";
+import { type BackofficeModule, definePluginBackofficeModule } from "@trinacria-cms/admin-kernel";
 import { CORE_PACK_ADMIN_MANIFEST } from "@trinacria-cms/core-pack/admin-manifest";
-import { EDITORIAL_PACK_ADMIN_MANIFEST } from "@trinacria-cms/editorial-pack/admin-manifest";
 import {
   EDITORIAL_PACK_ADMIN_RENDERERS,
   loadEditorialContentNavigation
 } from "@trinacria-cms/editorial-pack/admin";
-import { EMAIL_PACK_ADMIN_MANIFEST } from "@trinacria-cms/email-pack/admin-manifest";
+import { EDITORIAL_PACK_ADMIN_MANIFEST } from "@trinacria-cms/editorial-pack/admin-manifest";
 import { EMAIL_PACK_ADMIN_RENDERERS } from "@trinacria-cms/email-pack/admin";
-import { MEDIA_PACK_ADMIN_MANIFEST } from "@trinacria-cms/media-pack/admin-manifest";
+import { EMAIL_PACK_ADMIN_MANIFEST } from "@trinacria-cms/email-pack/admin-manifest";
 import { MEDIA_PACK_ADMIN_RENDERERS } from "@trinacria-cms/media-pack/admin";
+import { MEDIA_PACK_ADMIN_MANIFEST } from "@trinacria-cms/media-pack/admin-manifest";
 
 /**
  * Monorepo-local extension point for plugin admin modules. Custom plugins can

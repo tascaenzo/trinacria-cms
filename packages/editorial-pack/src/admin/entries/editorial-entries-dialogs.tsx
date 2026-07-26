@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
 import { Button, Dialog, Input, Select } from "@trinacria-cms/trinacria-ui";
+import { useEffect, useState } from "react";
 import {
-  formatEditorialDate,
   type EditorialEntry,
   type EditorialEntryContentType,
-  type EntryRevision
+  type EntryRevision,
+  formatEditorialDate
 } from "./entries.types.js";
 
 export function CreateEditorialEntryDialog({

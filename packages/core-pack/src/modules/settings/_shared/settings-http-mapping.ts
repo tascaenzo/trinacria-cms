@@ -1,4 +1,4 @@
-import { parseJsonValue, type JsonValue } from "./settings-json.js";
+import { type JsonValue, parseJsonValue } from "./settings-json.js";
 
 /**
  * Reads an optional JSON payload field from raw body and validates it.

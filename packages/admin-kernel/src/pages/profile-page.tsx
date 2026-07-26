@@ -1,4 +1,10 @@
-import { useActionState, useCallback, useEffect, useMemo, useState } from "react";
+import type {
+  BeginMfaEnrollmentResponse,
+  GetAuthenticatedUserResponse,
+  GetMfaStatusResponse,
+  ListUserEffectivePermissionsResponse,
+  ListUserRolesResponse
+} from "@trinacria-cms/sdk";
 import {
   Badge,
   Button,
@@ -12,29 +18,27 @@ import {
   Input,
   Select
 } from "@trinacria-cms/trinacria-ui";
-import type {
-  GetAuthenticatedUserResponse,
-  BeginMfaEnrollmentResponse,
-  GetMfaStatusResponse,
-  ListUserEffectivePermissionsResponse,
-  ListUserRolesResponse
-} from "@trinacria-cms/sdk";
-import { ErrorBanner, EmptyState } from "../components/resource-feedback.js";
-import { MfaEnrollmentActions, MfaEnrollmentWizard, type MfaEnrollmentStep } from "../components/mfa-enrollment-wizard.js";
+import { useActionState, useCallback, useEffect, useMemo, useState } from "react";
 import { JsonPreviewAction } from "../components/json-preview-action.js";
-import { formatDateTime } from "../lib/formatting.js";
+import {
+  MfaEnrollmentActions,
+  type MfaEnrollmentStep,
+  MfaEnrollmentWizard
+} from "../components/mfa-enrollment-wizard.js";
+import { EmptyState, ErrorBanner } from "../components/resource-feedback.js";
 import { normalizeLocale } from "../lib/auth-i18n.js";
-import { downloadMfaRecoveryCodes, printMfaRecoveryCodes } from "../lib/mfa-recovery-codes.js";
+import { formatDateTime } from "../lib/formatting.js";
 import { useI18n } from "../lib/i18n.js";
+import { downloadMfaRecoveryCodes, printMfaRecoveryCodes } from "../lib/mfa-recovery-codes.js";
 import { toDisplayError } from "../lib/sdk-errors.js";
-import { formatUserName } from "../lib/user-formatting.js";
-import { cms } from "../runtime/cms-sdk.js";
 import { translateStatusLabel } from "../lib/ui-translations.js";
+import { formatUserName } from "../lib/user-formatting.js";
 import {
   type AsyncActionState,
   createIdleAsyncActionState,
   readRequiredString
 } from "../runtime/action-state.js";
+import { cms } from "../runtime/cms-sdk.js";
 
 type ProfileUser = GetAuthenticatedUserResponse["data"];
 type ProfileRole = ListUserRolesResponse["data"][number];
@@ -361,21 +365,38 @@ export function ProfilePage() {
                 <div className="space-y-1">
                   <p className="text-sm text-[color:var(--color-ink-muted)]">
                     {mfaStatus?.mode === "disabled"
-                      ? t("profile.mfa.disabled", "Two-factor authentication is currently disabled by your administrator.")
+                      ? t(
+                          "profile.mfa.disabled",
+                          "Two-factor authentication is currently disabled by your administrator."
+                        )
                       : mfaStatus?.enabled
-                        ? t("profile.mfa.enabled", "Your account is protected with an authenticator app.")
+                        ? t(
+                            "profile.mfa.enabled",
+                            "Your account is protected with an authenticator app."
+                          )
                         : mfaStatus?.mode === "required"
-                          ? t("profile.mfa.required", "Two-factor authentication is required. Set it up before your next login.")
-                          : t("profile.mfa.optional", "Add an authenticator app for stronger account protection.")}
+                          ? t(
+                              "profile.mfa.required",
+                              "Two-factor authentication is required. Set it up before your next login."
+                            )
+                          : t(
+                              "profile.mfa.optional",
+                              "Add an authenticator app for stronger account protection."
+                            )}
                   </p>
                   {mfaStatus?.enabled && mfaStatus.mode === "required" ? (
                     <p className="text-sm font-medium text-[color:var(--color-ink-muted)]">
-                      {t("profile.mfa.required_cannot_disable", "This factor cannot be disabled while the administrator requires 2FA.")}
+                      {t(
+                        "profile.mfa.required_cannot_disable",
+                        "This factor cannot be disabled while the administrator requires 2FA."
+                      )}
                     </p>
                   ) : null}
                   {mfaStatus?.enabledAt ? (
                     <p className="text-sm text-[color:var(--color-ink-muted)]">
-                      {t("profile.mfa.enabled_since", "Enabled on")} {formatDateTime(mfaStatus.enabledAt)} · {mfaStatus.recoveryCodesRemaining} {t("profile.mfa.recovery_remaining", "recovery codes remaining")}
+                      {t("profile.mfa.enabled_since", "Enabled on")}{" "}
+                      {formatDateTime(mfaStatus.enabledAt)} · {mfaStatus.recoveryCodesRemaining}{" "}
+                      {t("profile.mfa.recovery_remaining", "recovery codes remaining")}
                     </p>
                   ) : null}
                   <Badge tone={mfaStatus?.enabled ? "success" : "warning"}>
@@ -390,7 +411,11 @@ export function ProfilePage() {
                   </Button>
                 ) : null}
                 {mfaStatus?.enabled && mfaStatus.mode !== "required" ? (
-                  <Button type="button" variant="secondary" onClick={() => setIsMfaDisableDialogOpen(true)}>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setIsMfaDisableDialogOpen(true)}
+                  >
                     {t("profile.mfa.disable", "Disable 2FA")}
                   </Button>
                 ) : null}
@@ -524,7 +549,10 @@ export function ProfilePage() {
             closeVariant="icon"
             closeLabel={t("common.actions.close", "Close")}
             title={t("profile.mfa.setup.title", "Set up two-factor authentication")}
-            description={t("profile.mfa.setup.description", "Add the key to your authenticator app, then confirm the generated code.")}
+            description={t(
+              "profile.mfa.setup.description",
+              "Add the key to your authenticator app, then confirm the generated code."
+            )}
             width="md"
             variant="drawer"
             footer={
@@ -566,7 +594,10 @@ export function ProfilePage() {
             closeVariant="icon"
             closeLabel={t("common.actions.close", "Close")}
             title={t("profile.mfa.recovery.title", "Save your recovery codes")}
-            description={t("profile.mfa.recovery.description", "Each code works once and will not be shown again.")}
+            description={t(
+              "profile.mfa.recovery.description",
+              "Each code works once and will not be shown again."
+            )}
             width="md"
             variant="drawer"
           >
@@ -574,14 +605,24 @@ export function ProfilePage() {
               {t("auth.mfa.recovery.progress", "Step 4 of 4")}
             </p>
             <div className="grid grid-cols-2 gap-2 rounded-[var(--radius-control)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-muted)] p-4 font-mono text-sm">
-              {mfaRecoveryCodes?.map((code) => <code key={code}>{code}</code>)}
+              {mfaRecoveryCodes?.map((code) => (
+                <code key={code}>{code}</code>
+              ))}
             </div>
             {mfaRecoveryCodes ? (
               <div className="mt-4 flex flex-wrap gap-2">
-                <Button type="button" variant="secondary" onClick={() => downloadMfaRecoveryCodes(mfaRecoveryCodes)}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => downloadMfaRecoveryCodes(mfaRecoveryCodes)}
+                >
                   {t("auth.mfa.recovery.download", "Download recovery codes (.txt)")}
                 </Button>
-                <Button type="button" variant="secondary" onClick={() => printMfaRecoveryCodes(mfaRecoveryCodes)}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => printMfaRecoveryCodes(mfaRecoveryCodes)}
+                >
                   {t("auth.mfa.recovery.print", "Print recovery codes")}
                 </Button>
               </div>
@@ -590,11 +631,21 @@ export function ProfilePage() {
               checked={hasSavedRecoveryCodes}
               onChange={(event) => setHasSavedRecoveryCodes(event.currentTarget.checked)}
               className="mt-4"
-              label={t("auth.mfa.recovery.confirm_label", "I have saved these recovery codes in a safe place")}
-              description={t("auth.mfa.recovery.confirm_description", "You must confirm this before continuing to the backoffice.")}
+              label={t(
+                "auth.mfa.recovery.confirm_label",
+                "I have saved these recovery codes in a safe place"
+              )}
+              description={t(
+                "auth.mfa.recovery.confirm_description",
+                "You must confirm this before continuing to the backoffice."
+              )}
             />
             <div className="mt-4 flex justify-end">
-              <Button type="button" disabled={!hasSavedRecoveryCodes} onClick={() => setMfaRecoveryCodes(null)}>
+              <Button
+                type="button"
+                disabled={!hasSavedRecoveryCodes}
+                onClick={() => setMfaRecoveryCodes(null)}
+              >
                 {t("common.actions.continue", "Continue")}
               </Button>
             </div>
@@ -606,18 +657,47 @@ export function ProfilePage() {
             closeVariant="icon"
             closeLabel={t("common.actions.close", "Close")}
             title={t("profile.mfa.disable", "Disable 2FA")}
-            description={t("profile.mfa.disable_description", "Confirm your password and a current authenticator or recovery code.")}
+            description={t(
+              "profile.mfa.disable_description",
+              "Confirm your password and a current authenticator or recovery code."
+            )}
             width="md"
             variant="drawer"
           >
             <form action={submitMfaDisable} className="grid gap-4">
-              {mfaDisableState.ok ? <FeedbackBanner tone="success" message={t("profile.mfa.disabled_success", "Two-factor authentication disabled.")} /> : null}
+              {mfaDisableState.ok ? (
+                <FeedbackBanner
+                  tone="success"
+                  message={t("profile.mfa.disabled_success", "Two-factor authentication disabled.")}
+                />
+              ) : null}
               {mfaDisableState.error ? <ErrorBanner message={mfaDisableState.error} /> : null}
-              <Input label={t("profile.password.current", "Current password")} name="currentPassword" type="password" autoComplete="current-password" required />
-              <Input label={t("profile.mfa.code", "Authentication code")} name="code" autoComplete="one-time-code" required />
+              <Input
+                label={t("profile.password.current", "Current password")}
+                name="currentPassword"
+                type="password"
+                autoComplete="current-password"
+                required
+              />
+              <Input
+                label={t("profile.mfa.code", "Authentication code")}
+                name="code"
+                autoComplete="one-time-code"
+                required
+              />
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="secondary" onClick={() => setIsMfaDisableDialogOpen(false)}>{t("common.actions.cancel", "Cancel")}</Button>
-                <Button type="submit" disabled={isMfaDisablePending}>{isMfaDisablePending ? t("common.actions.updating") : t("profile.mfa.disable", "Disable 2FA")}</Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setIsMfaDisableDialogOpen(false)}
+                >
+                  {t("common.actions.cancel", "Cancel")}
+                </Button>
+                <Button type="submit" disabled={isMfaDisablePending}>
+                  {isMfaDisablePending
+                    ? t("common.actions.updating")
+                    : t("profile.mfa.disable", "Disable 2FA")}
+                </Button>
               </div>
             </form>
           </Dialog>

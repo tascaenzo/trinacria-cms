@@ -1,9 +1,9 @@
 import { s } from "@trinacria/schema";
 import {
-  isValidPermissionKey,
-  isValidPermissionPattern,
   isPermissionOwnedByPlugin,
-  isPermissionPatternOwnedByPlugin
+  isPermissionPatternOwnedByPlugin,
+  isValidPermissionKey,
+  isValidPermissionPattern
 } from "../plugin-namespace/permission-key.js";
 
 export const securityPermissionSchema = s.object(

@@ -3,8 +3,8 @@ import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import type { CacheService } from "../../cache/services/cache.service.js";
 import {
   INSTALLATION_STATE_KEY,
-  InstallationStateRecordSchema,
-  type InstallationStateRecord
+  type InstallationStateRecord,
+  InstallationStateRecordSchema
 } from "../installation.schemas.js";
 
 const SETTINGS_ENTITY_NAME = "settings";

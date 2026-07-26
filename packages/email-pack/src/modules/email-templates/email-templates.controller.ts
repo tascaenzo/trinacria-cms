@@ -1,13 +1,12 @@
 import {
-  type KernelAdminRouteGuard,
   createPluginApiResponder,
+  type HttpContext,
   HttpController,
+  type KernelAdminRouteGuard,
   parseQueryNumber,
-  toOpenApiSchema,
-  type HttpContext
+  toOpenApiSchema
 } from "@trinacria-cms/kernel";
 import { EMAIL_PACK_PLUGIN_ID } from "../../plugin/email-pack.constants.js";
-import type { EmailTemplatesService } from "./services/email-templates.service.js";
 import {
   PreviewEmailTemplateInputSchema,
   UpsertEmailTemplateInputSchema
@@ -17,6 +16,7 @@ import {
   ListEmailTemplatesResponseOpenApiSchema,
   PreviewEmailTemplateResponseOpenApiSchema
 } from "./dto/email-templates.response.dto.js";
+import type { EmailTemplatesService } from "./services/email-templates.service.js";
 
 const responder = createPluginApiResponder(EMAIL_PACK_PLUGIN_ID);
 

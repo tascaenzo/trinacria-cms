@@ -1,4 +1,4 @@
-import { s, type Infer } from "@trinacria-cms/kernel";
+import { type Infer, s } from "@trinacria-cms/kernel";
 
 /**
  * Embedded assignment payload stored inside a user document.

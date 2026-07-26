@@ -1,7 +1,12 @@
-import { useState } from "react";
 import { Button, Stepper } from "@trinacria-cms/trinacria-ui";
+import { useState } from "react";
 import { ContentTypeFieldComposer } from "./content-type-detail/content-type-field-composer.js";
 import { workflowFromPreset } from "./content-type-detail/content-workflow-presets.js";
+import {
+  hasDuplicateFieldKey,
+  moveField,
+  upsertField
+} from "./content-types/content-field-collection.js";
 import {
   ConfigurationStep,
   CREATE_STEPS,
@@ -11,13 +16,8 @@ import {
   ReviewStep
 } from "./content-types/content-model-create-steps.js";
 import {
-  hasDuplicateFieldKey,
-  moveField,
-  upsertField
-} from "./content-types/content-field-collection.js";
-import {
-  useCreateContentType,
-  type CreateContentTypeDraft
+  type CreateContentTypeDraft,
+  useCreateContentType
 } from "./content-types/use-content-types.js";
 import type { CmsClient, ContentTypeField, EditorialNavigator } from "./editorial-admin.types.js";
 

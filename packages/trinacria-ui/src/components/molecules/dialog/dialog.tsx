@@ -1,16 +1,16 @@
 import {
+  type KeyboardEvent as ReactKeyboardEvent,
   useEffect,
   useId,
   useRef,
-  useState,
-  type KeyboardEvent as ReactKeyboardEvent
+  useState
 } from "react";
+import { cn } from "../../../utils/class-names.js";
 import { Button } from "../../atoms/button/button.js";
 import { Icon } from "../../atoms/icon/icon.js";
 import { Eyebrow } from "../../primitives/eyebrow/eyebrow.js";
 import { OverlaySurface } from "../../primitives/overlay-surface/overlay-surface.js";
 import { BodyText } from "../../primitives/text/text.js";
-import { cn } from "../../../utils/class-names.js";
 import type { DialogProps } from "./dialog.types.js";
 
 function getFocusableElements(container: HTMLElement | null): HTMLElement[] {
@@ -57,8 +57,13 @@ export function Dialog({
     }
 
     function onKeyDown(event: KeyboardEvent) {
-      const visibleDialogs = document.querySelectorAll<HTMLElement>('[role="dialog"][aria-modal="true"]');
-      if (event.key === "Escape" && visibleDialogs.item(visibleDialogs.length - 1) === dialogRef.current) {
+      const visibleDialogs = document.querySelectorAll<HTMLElement>(
+        '[role="dialog"][aria-modal="true"]'
+      );
+      if (
+        event.key === "Escape" &&
+        visibleDialogs.item(visibleDialogs.length - 1) === dialogRef.current
+      ) {
         event.preventDefault();
         event.stopImmediatePropagation();
         onClose();

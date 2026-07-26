@@ -6,5 +6,5 @@ export * from "./module.js";
 export * from "./runtime/admin-endpoint-policy.js";
 export * from "./runtime/admin-extension-manifest.js";
 export * from "./runtime/admin-manifest-sanitizer.js";
-export * from "./runtime/plugin-admin-manifest-adapter.js";
 export * from "./runtime/admin-route-runtime.js";
+export * from "./runtime/plugin-admin-manifest-adapter.js";

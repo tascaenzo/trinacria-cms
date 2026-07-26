@@ -1,6 +1,6 @@
 import type { PluginManifest, PluginTranslationSource } from "@trinacria-cms/kernel";
-import { CacheService } from "../cache/services/cache.service.js";
-import { I18nMessagesRepository } from "./i18n-messages.repository.js";
+import type { CacheService } from "../cache/services/cache.service.js";
+import type { I18nMessagesRepository } from "./i18n-messages.repository.js";
 
 const CACHE_NAMESPACE = "i18n_messages";
 const CACHE_TTL_SECONDS = 300;
@@ -53,7 +53,11 @@ export class I18nMessagesService {
   }
 
   /** Resolves English first and overlays the requested locale with a single indexed collection. */
-  async resolveLocale(locale: string, namespace?: string, surface?: string): Promise<{
+  async resolveLocale(
+    locale: string,
+    namespace?: string,
+    surface?: string
+  ): Promise<{
     locale: string;
     fallbackLocale: "en";
     namespace?: string;
@@ -72,7 +76,11 @@ export class I18nMessagesService {
       const selectedMessages =
         normalizedLocale === "en"
           ? fallbackMessages
-          : await this.messages.listByLocale(normalizedLocale, normalizedNamespace, normalizedSurface);
+          : await this.messages.listByLocale(
+              normalizedLocale,
+              normalizedNamespace,
+              normalizedSurface
+            );
       const messages: Record<string, string> = {};
 
       for (const message of fallbackMessages) messages[message.key] = message.value;
@@ -98,7 +106,9 @@ export class I18nMessagesService {
     const declarations = manifest.i18n?.namespaces ?? [];
     if (declarations.length === 0) {
       if (sources.length > 0) {
-        throw new Error(`Plugin "${manifest.id}" ships i18n assets without an i18n manifest declaration`);
+        throw new Error(
+          `Plugin "${manifest.id}" ships i18n assets without an i18n manifest declaration`
+        );
       }
       return [];
     }
@@ -107,7 +117,9 @@ export class I18nMessagesService {
     for (const source of sources) {
       const byLocale = sourceById.get(source.source) ?? new Map<string, PluginTranslationSource>();
       if (byLocale.has(source.locale)) {
-        throw new Error(`Plugin "${manifest.id}" declares duplicate i18n asset "${source.source}:${source.locale}"`);
+        throw new Error(
+          `Plugin "${manifest.id}" declares duplicate i18n asset "${source.source}:${source.locale}"`
+        );
       }
       byLocale.set(source.locale, source);
       sourceById.set(source.source, byLocale);
@@ -117,7 +129,9 @@ export class I18nMessagesService {
     for (const declaration of declarations) {
       const byLocale = sourceById.get(declaration.source);
       if (!byLocale) {
-        throw new Error(`Plugin "${manifest.id}" is missing i18n assets for source "${declaration.source}"`);
+        throw new Error(
+          `Plugin "${manifest.id}" is missing i18n assets for source "${declaration.source}"`
+        );
       }
 
       for (const locale of declaration.locales) {

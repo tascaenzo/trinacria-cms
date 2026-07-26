@@ -60,7 +60,7 @@ export const EDITORIAL_PACK_ADMIN_MANIFEST: PluginManifestAdmin = defineAdmin({
       componentRef: "editorial-pack:entry-detail",
       requiredPermission: EDITORIAL_PACK_PERMISSION_KEYS.ENTRIES_READ,
       order: 84
-    }),
+    })
   ],
   navigation: [
     defineAdminNavigation({
@@ -71,7 +71,7 @@ export const EDITORIAL_PACK_ADMIN_MANIFEST: PluginManifestAdmin = defineAdmin({
       group: "Editoriale",
       requiredPermission: EDITORIAL_PACK_PERMISSION_KEYS.ENTRIES_READ,
       order: 70
-    }),
+    })
   ],
   resources: [
     defineAdminResource({

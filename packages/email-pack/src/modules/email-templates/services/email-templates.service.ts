@@ -1,7 +1,7 @@
 import { EMAIL_PACK_DEFAULT_EMAIL_TEMPLATES } from "../email-template-defaults.js";
 import type { EmailTemplateRecord } from "../email-templates.schemas.js";
-import { EmailTemplatesRepository } from "../repositories/email-templates.repository.js";
-import type { RenderedEmailTemplate, RenderEmailTemplateInput } from "../email-templates.types.js";
+import type { RenderEmailTemplateInput, RenderedEmailTemplate } from "../email-templates.types.js";
+import type { EmailTemplatesRepository } from "../repositories/email-templates.repository.js";
 
 const DEFAULT_LOCALE = "it";
 const TEMPLATE_VARIABLE_PATTERN = /\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g;

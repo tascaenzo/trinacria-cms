@@ -1,8 +1,8 @@
 import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import {
-  AuthFlowTokenRecordSchema,
   type AuthFlowTokenRecord,
+  AuthFlowTokenRecordSchema,
   type AuthFlowTokenType
 } from "../auth-flow-tokens.schemas.js";
 

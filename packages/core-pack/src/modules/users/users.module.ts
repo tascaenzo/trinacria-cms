@@ -1,19 +1,21 @@
-import {
-  classProvider,
-  CORE_TOKENS,
-  defineModule,
-  factoryProvider,
-  httpProvider,
-  type EntityRegistry
-} from "@trinacria-cms/kernel";
 import { EVENT_BUS_TOKEN } from "@trinacria/events";
+import {
+  CORE_TOKENS,
+  classProvider,
+  defineModule,
+  type EntityRegistry,
+  factoryProvider,
+  httpProvider
+} from "@trinacria-cms/kernel";
 import { CorePackAuthModule } from "../auth/auth.module.js";
-import { CORE_PACK_JWT_AUTH_SERVICE_TOKEN } from "../auth/auth.tokens.js";
-import { CORE_PACK_AUTH_USER_FLOWS_SERVICE_TOKEN } from "../auth/auth.tokens.js";
-import { UsersController } from "./users.controller.js";
-import { USERS_ENTITY } from "./users.schemas.js";
+import {
+  CORE_PACK_AUTH_USER_FLOWS_SERVICE_TOKEN,
+  CORE_PACK_JWT_AUTH_SERVICE_TOKEN
+} from "../auth/auth.tokens.js";
 import { UsersRepository } from "./repositories/users.repository.js";
 import { UsersService } from "./services/users.service.js";
+import { UsersController } from "./users.controller.js";
+import { USERS_ENTITY } from "./users.schemas.js";
 import {
   USERS_CONTROLLER_TOKEN,
   USERS_ENTITY_REGISTRATION_TOKEN,

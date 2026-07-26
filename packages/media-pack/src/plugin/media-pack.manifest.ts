@@ -7,7 +7,6 @@ import {
   defineSecurity
 } from "@trinacria-cms/kernel/plugin-api";
 import { MEDIA_PACK_SETTING_DEFINITIONS } from "../modules/media/media-settings.js";
-import { MEDIA_PACK_ADMIN_MANIFEST } from "./media-pack-admin.manifest.js";
 import { MEDIA_PACK_PLUGIN_ID } from "./media-pack.constants.js";
 import {
   MEDIA_PACK_CAPABILITY_LIST,
@@ -15,6 +14,7 @@ import {
   MEDIA_PACK_PERMISSION_KEY_LIST,
   MEDIA_PACK_PERMISSION_KEYS
 } from "./media-pack.security.js";
+import { MEDIA_PACK_ADMIN_MANIFEST } from "./media-pack-admin.manifest.js";
 
 export const MEDIA_PACK_MANIFEST: PluginManifest = definePluginManifest({
   id: MEDIA_PACK_PLUGIN_ID,

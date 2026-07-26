@@ -1,20 +1,18 @@
 import {
-  classProvider,
+  CORE_PACK_JWT_AUTH_SERVICE_TOKEN,
+  CorePackAuthModule,
+  CorePackSecurityModule
+} from "@trinacria-cms/core-pack";
+import {
   CORE_TOKENS,
+  classProvider,
   defineModule,
+  type EntityRegistry,
   factoryProvider,
   httpProvider,
-  type EntityRegistry,
   type ModuleDefinition
 } from "@trinacria-cms/kernel";
-import {
-  CorePackAuthModule,
-  CorePackSecurityModule,
-  CORE_PACK_JWT_AUTH_SERVICE_TOKEN
-} from "@trinacria-cms/core-pack";
 import { ContentTypesController } from "./content-types.controller.js";
-import { ContentTypesRepository } from "./repositories/content-types.repository.js";
-import { ContentTypesService } from "./services/content-types.service.js";
 import { CONTENT_TYPES_ENTITY } from "./content-types.schemas.js";
 import {
   CONTENT_TYPES_CONTROLLER_TOKEN,
@@ -22,6 +20,8 @@ import {
   CONTENT_TYPES_REPOSITORY_TOKEN,
   CONTENT_TYPES_SERVICE_TOKEN
 } from "./content-types.tokens.js";
+import { ContentTypesRepository } from "./repositories/content-types.repository.js";
+import { ContentTypesService } from "./services/content-types.service.js";
 
 export const EditorialContentTypesModule: ModuleDefinition = defineModule({
   name: "EditorialContentTypesModule",

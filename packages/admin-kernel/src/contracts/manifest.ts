@@ -1,8 +1,8 @@
-import type { AdminDashboardWidgetDefinition } from "./widget.js";
 import type { AdminNavigationItem } from "./navigation.js";
-import type { AdminResourceDefinition } from "./resource.js";
 import type { AdminRouteDefinition } from "./page.js";
+import type { AdminResourceDefinition } from "./resource.js";
 import type { AdminSettingsSectionDefinition } from "./settings.js";
+import type { AdminDashboardWidgetDefinition } from "./widget.js";
 
 /**
  * A plugin contribution is the frontend equivalent of a backend manifest: it

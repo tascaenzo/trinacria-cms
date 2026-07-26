@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { MEDIA_PACK_PLUGIN_ID } from "../../../plugin/media-pack.constants.js";
-import { MediaDirectoryRecordSchema, type MediaDirectoryRecord } from "../media.schemas.js";
+import { type MediaDirectoryRecord, MediaDirectoryRecordSchema } from "../media.schemas.js";
 
 const DIRECTORIES_ENTITY_NAME = "directories";
 

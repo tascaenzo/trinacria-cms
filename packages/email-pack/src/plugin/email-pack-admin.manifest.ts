@@ -1,7 +1,4 @@
-import {
-  defineAdmin,
-  defineAdminSettingsSection
-} from "@trinacria-cms/kernel/plugin-api";
+import { defineAdmin, defineAdminSettingsSection } from "@trinacria-cms/kernel/plugin-api";
 import { EMAIL_PACK_PERMISSION_KEYS } from "./email-pack.security.js";
 
 export const EMAIL_PACK_ADMIN_MANIFEST = defineAdmin({

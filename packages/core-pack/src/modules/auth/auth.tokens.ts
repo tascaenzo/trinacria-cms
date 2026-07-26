@@ -1,13 +1,13 @@
 import { createToken } from "@trinacria-cms/kernel";
-import { AuthBlacklistRepository } from "./repositories/auth-blacklist.repository.js";
-import { AuthController } from "./auth.controller.js";
-import { AuthLoginAttemptRepository } from "./repositories/auth-login-attempt.repository.js";
-import { AuthMfaRepository } from "./repositories/auth-mfa.repository.js";
-import { AuthFlowTokensRepository } from "./repositories/auth-flow-tokens.repository.js";
-import { AuthUserFlowsService } from "./services/auth-user-flows.service.js";
-import { AuthUsersRepository } from "./repositories/auth-users.repository.js";
-import { JwtAuthService } from "./services/auth.service.js";
-import { AuthMfaService } from "./services/auth-mfa.service.js";
+import type { AuthController } from "./auth.controller.js";
+import type { AuthBlacklistRepository } from "./repositories/auth-blacklist.repository.js";
+import type { AuthFlowTokensRepository } from "./repositories/auth-flow-tokens.repository.js";
+import type { AuthLoginAttemptRepository } from "./repositories/auth-login-attempt.repository.js";
+import type { AuthMfaRepository } from "./repositories/auth-mfa.repository.js";
+import type { AuthUsersRepository } from "./repositories/auth-users.repository.js";
+import type { JwtAuthService } from "./services/auth.service.js";
+import type { AuthMfaService } from "./services/auth-mfa.service.js";
+import type { AuthUserFlowsService } from "./services/auth-user-flows.service.js";
 
 export const CORE_PACK_AUTH_USERS_REPOSITORY_TOKEN = createToken<AuthUsersRepository>(
   "CORE_PACK_AUTH_USERS_REPOSITORY"

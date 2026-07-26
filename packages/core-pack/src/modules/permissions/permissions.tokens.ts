@@ -1,7 +1,7 @@
 import { createCapabilityToken, createToken } from "@trinacria-cms/kernel";
-import { PermissionsController } from "./permissions.controller.js";
-import { PermissionsRepository } from "./repositories/permissions.repository.js";
-import { PermissionsService } from "./services/permissions.service.js";
+import type { PermissionsController } from "./permissions.controller.js";
+import type { PermissionsRepository } from "./repositories/permissions.repository.js";
+import type { PermissionsService } from "./services/permissions.service.js";
 
 export const PERMISSIONS_REPOSITORY_TOKEN = createToken<PermissionsRepository>(
   "CORE_PACK_PERMISSIONS_REPOSITORY"

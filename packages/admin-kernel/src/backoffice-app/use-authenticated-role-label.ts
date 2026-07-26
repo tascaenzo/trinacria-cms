@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
 import type { GetAuthenticatedUserResponse } from "@trinacria-cms/sdk";
+import { useEffect, useState } from "react";
 import type { TranslateFn } from "../lib/i18n.js";
 import { cms } from "../runtime/cms-sdk.js";
 

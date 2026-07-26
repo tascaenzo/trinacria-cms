@@ -1,7 +1,7 @@
 import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
-import { SettingValueRecordSchema, type SettingValueRecord } from "../schemas/settings.schemas.js";
 import type { JsonValue } from "../_shared/settings-json.js";
+import { type SettingValueRecord, SettingValueRecordSchema } from "../schemas/settings.schemas.js";
 
 const SETTINGS_ENTITY_NAME = "settings";
 const VALUE_KIND = "value" as const;

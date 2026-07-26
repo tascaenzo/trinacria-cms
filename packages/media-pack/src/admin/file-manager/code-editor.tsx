@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { Icon } from "@trinacria-cms/trinacria-ui";
+import { type KeyboardEvent, useMemo, useRef, useState } from "react";
 
 interface CodeEditorProps {
   ariaLabel: string;

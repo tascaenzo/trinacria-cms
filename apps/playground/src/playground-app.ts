@@ -1,14 +1,14 @@
-import {
-  EVENT_BUS_TOKEN,
-  createInMemoryPluginRuntimeStore,
-  startCmsApp,
-  type CmsStarterHandle,
-  type KernelPluginDefinition,
-  type PluginDiscoverySource
-} from "@trinacria-cms/kernel";
 import { createCorePackMongoGlobalProviders, createCorePackPlugin } from "@trinacria-cms/core-pack";
 import { createEditorialPackPlugin } from "@trinacria-cms/editorial-pack";
 import { createEmailPackPlugin } from "@trinacria-cms/email-pack";
+import {
+  type CmsStarterHandle,
+  createInMemoryPluginRuntimeStore,
+  EVENT_BUS_TOKEN,
+  type KernelPluginDefinition,
+  type PluginDiscoverySource,
+  startCmsApp
+} from "@trinacria-cms/kernel";
 import { createMediaPackPlugin } from "@trinacria-cms/media-pack";
 import {
   applyProductionSecurityDefaults,

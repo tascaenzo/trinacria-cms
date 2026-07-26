@@ -1,6 +1,6 @@
-import { Card } from "../card/card.js";
-import { Icon } from "../../atoms/icon/icon.js";
 import { cn } from "../../../utils/class-names.js";
+import { Icon } from "../../atoms/icon/icon.js";
+import { Card } from "../card/card.js";
 import type { StatCardProps } from "./stat-card.types.js";
 
 export function StatCard({

@@ -1,7 +1,7 @@
 export {
   MobileRecordCard,
-  MobileRecordField,
-  MobileRecordList,
   type MobileRecordCardProps,
-  type MobileRecordFieldProps
+  MobileRecordField,
+  type MobileRecordFieldProps,
+  MobileRecordList
 } from "@trinacria-cms/trinacria-ui";

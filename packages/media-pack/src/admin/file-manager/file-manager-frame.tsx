@@ -1,16 +1,16 @@
 import {
-  useEffect,
-  useRef,
-  useState,
   type CSSProperties,
   type KeyboardEvent,
   type ReactNode,
-  type RefObject
+  type RefObject,
+  useEffect,
+  useRef,
+  useState
 } from "react";
+import type { FileManagerViewMode, MediaAsset, MediaDirectory } from "./file-manager.types.js";
 import { FileManagerBrowser } from "./file-manager-browser.js";
 import { FileManagerSidebar } from "./file-manager-sidebar.js";
-import { FileManagerToolbar, type FileManagerSort } from "./file-manager-toolbar.js";
-import type { FileManagerViewMode, MediaAsset, MediaDirectory } from "./file-manager.types.js";
+import { type FileManagerSort, FileManagerToolbar } from "./file-manager-toolbar.js";
 
 interface FileManagerFrameProps {
   assets: readonly MediaAsset[];

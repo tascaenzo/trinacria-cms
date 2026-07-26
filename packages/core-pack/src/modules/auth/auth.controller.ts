@@ -1,42 +1,43 @@
 import {
   createPluginApiResponder,
-  HttpController,
-  response,
-  toOpenApiSchema,
   type HttpContext,
-  type HttpMiddleware
+  HttpController,
+  type HttpMiddleware,
+  response,
+  toOpenApiSchema
 } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import { CORE_PACK_OPENAPI_TAGS } from "../openapi-tags.js";
-import {
-  buildLoginSetCookieHeaders,
-  buildLogoutClearCookieHeaders,
-  extractRefreshTokenFromCookie
-} from "./auth-session.js";
+import type { UserRecord } from "../users/users.schemas.js";
 import {
   createJwtAuthMiddleware,
   extractAuthToken,
   getAuthenticatedUser
 } from "./auth.middleware.js";
 import {
+  buildLoginSetCookieHeaders,
+  buildLogoutClearCookieHeaders,
+  extractRefreshTokenFromCookie
+} from "./auth-session.js";
+import {
+  AcceptUserInviteInputSchema,
   AuthErrorResponseSchema,
   AuthLogoutResponseSchema,
+  AuthMeResponseSchema,
   AuthMfaEnrollmentConfirmationResponseSchema,
   AuthMfaEnrollmentSetupResponseSchema,
   AuthMfaLoginSessionResponseSchema,
   AuthMfaStatusResponseSchema,
-  AuthMeResponseSchema,
   AuthPasswordLoginResponseSchema,
   AuthSessionResponseSchema,
-  AcceptUserInviteInputSchema,
   ChangeAuthenticatedUserPasswordInputSchema,
   CompleteMfaLoginInputSchema,
   CompletePasswordResetInputSchema,
   ConfirmEmailVerificationInputSchema,
+  DisableMfaInputSchema,
   LoginWithPasswordInputSchema,
   MfaChallengeInputSchema,
   MfaCodeInputSchema,
-  DisableMfaInputSchema,
   PublicRegistrationInputSchema,
   RequestEmailVerificationInputSchema,
   RequestPasswordResetInputSchema,
@@ -44,7 +45,6 @@ import {
 } from "./dto/index.js";
 import type { JwtAuthService } from "./services/auth.service.js";
 import type { AuthUserFlowsService } from "./services/auth-user-flows.service.js";
-import type { UserRecord } from "../users/users.schemas.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
 
@@ -94,8 +94,14 @@ export class AuthController extends HttpController {
           operationId: "completeMfaLogin",
           requestBody: { required: true, schema: toOpenApiSchema(CompleteMfaLoginInputSchema) },
           responses: {
-            200: { description: "Authenticated session token", schema: toOpenApiSchema(AuthMfaLoginSessionResponseSchema) },
-            401: { description: "Authentication failed", schema: toOpenApiSchema(AuthErrorResponseSchema) }
+            200: {
+              description: "Authenticated session token",
+              schema: toOpenApiSchema(AuthMfaLoginSessionResponseSchema)
+            },
+            401: {
+              description: "Authentication failed",
+              schema: toOpenApiSchema(AuthErrorResponseSchema)
+            }
           }
         }
       })
@@ -106,8 +112,14 @@ export class AuthController extends HttpController {
           operationId: "beginLoginMfaEnrollment",
           requestBody: { required: true, schema: toOpenApiSchema(MfaChallengeInputSchema) },
           responses: {
-            200: { description: "Authenticator setup data", schema: toOpenApiSchema(AuthMfaEnrollmentSetupResponseSchema) },
-            401: { description: "Authentication failed", schema: toOpenApiSchema(AuthErrorResponseSchema) }
+            200: {
+              description: "Authenticator setup data",
+              schema: toOpenApiSchema(AuthMfaEnrollmentSetupResponseSchema)
+            },
+            401: {
+              description: "Authentication failed",
+              schema: toOpenApiSchema(AuthErrorResponseSchema)
+            }
           }
         }
       })
@@ -118,8 +130,14 @@ export class AuthController extends HttpController {
           operationId: "completeLoginMfaEnrollment",
           requestBody: { required: true, schema: toOpenApiSchema(CompleteMfaLoginInputSchema) },
           responses: {
-            200: { description: "Authenticated session token and recovery codes", schema: toOpenApiSchema(AuthMfaLoginSessionResponseSchema) },
-            401: { description: "Authentication failed", schema: toOpenApiSchema(AuthErrorResponseSchema) }
+            200: {
+              description: "Authenticated session token and recovery codes",
+              schema: toOpenApiSchema(AuthMfaLoginSessionResponseSchema)
+            },
+            401: {
+              description: "Authentication failed",
+              schema: toOpenApiSchema(AuthErrorResponseSchema)
+            }
           }
         }
       })
@@ -279,7 +297,9 @@ export class AuthController extends HttpController {
           tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
           operationId: "getMfaStatus",
           security: [{ bearerAuth: [] }],
-          responses: { 200: { description: "MFA status", schema: toOpenApiSchema(AuthMfaStatusResponseSchema) } }
+          responses: {
+            200: { description: "MFA status", schema: toOpenApiSchema(AuthMfaStatusResponseSchema) }
+          }
         }
       })
       .post("/v1/auth/mfa/enrollment", this.beginMfaEnrollment, {
@@ -289,7 +309,12 @@ export class AuthController extends HttpController {
           tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
           operationId: "beginMfaEnrollment",
           security: [{ bearerAuth: [] }],
-          responses: { 200: { description: "Authenticator setup data", schema: toOpenApiSchema(AuthMfaEnrollmentSetupResponseSchema) } }
+          responses: {
+            200: {
+              description: "Authenticator setup data",
+              schema: toOpenApiSchema(AuthMfaEnrollmentSetupResponseSchema)
+            }
+          }
         }
       })
       .post("/v1/auth/mfa/enrollment/confirm", this.confirmMfaEnrollment, {
@@ -300,7 +325,12 @@ export class AuthController extends HttpController {
           operationId: "confirmMfaEnrollment",
           security: [{ bearerAuth: [] }],
           requestBody: { required: true, schema: toOpenApiSchema(MfaCodeInputSchema) },
-          responses: { 200: { description: "Recovery codes", schema: toOpenApiSchema(AuthMfaEnrollmentConfirmationResponseSchema) } }
+          responses: {
+            200: {
+              description: "Recovery codes",
+              schema: toOpenApiSchema(AuthMfaEnrollmentConfirmationResponseSchema)
+            }
+          }
         }
       })
       .delete("/v1/auth/mfa", this.disableMfa, {
@@ -311,7 +341,13 @@ export class AuthController extends HttpController {
           operationId: "disableMfa",
           security: [{ bearerAuth: [] }],
           requestBody: { required: true, schema: toOpenApiSchema(DisableMfaInputSchema) },
-          responses: { 200: { description: "MFA disabled" }, 401: { description: "Authentication failed", schema: toOpenApiSchema(AuthErrorResponseSchema) } }
+          responses: {
+            200: { description: "MFA disabled" },
+            401: {
+              description: "Authentication failed",
+              schema: toOpenApiSchema(AuthErrorResponseSchema)
+            }
+          }
         }
       })
       .post("/v1/auth/logout", this.logout, {
@@ -348,7 +384,9 @@ export class AuthController extends HttpController {
   private completeMfaLogin = async (ctx: HttpContext) => {
     try {
       const payload = CompleteMfaLoginInputSchema.parse(ctx.body);
-      return this.respondWithSession(await this.auth.completeMfaLogin(payload.challengeId, payload.code));
+      return this.respondWithSession(
+        await this.auth.completeMfaLogin(payload.challengeId, payload.code)
+      );
     } catch (error) {
       return responder.fromError(error);
     }
@@ -393,7 +431,9 @@ export class AuthController extends HttpController {
   private confirmMfaEnrollment = async (ctx: HttpContext) => {
     try {
       const payload = MfaCodeInputSchema.parse(ctx.body);
-      return responder.success(await this.auth.confirmMfaEnrollment(getAuthenticatedUser(ctx).id, payload.code));
+      return responder.success(
+        await this.auth.confirmMfaEnrollment(getAuthenticatedUser(ctx).id, payload.code)
+      );
     } catch (error) {
       return responder.fromError(error);
     }

@@ -1,7 +1,7 @@
+import type { ModuleDefinition } from "@trinacria/core";
 import { factoryProvider, TrinacriaApp } from "@trinacria/core";
 import { createEventsPlugin } from "@trinacria/events";
 import { createHttpPlugin } from "@trinacria/http";
-import type { ModuleDefinition } from "@trinacria/core";
 import type { CmsStarterHandle, CmsStarterOptions } from "../contracts/cms-starter.js";
 import type {
   PluginDiscoveryService,
@@ -94,28 +94,24 @@ function registerSecurePayloadStoreProvider(app: TrinacriaApp): void {
   }
 
   app.registerGlobalProvider(
-    factoryProvider(
-      CORE_TOKENS.SECURE_EVENT_PAYLOAD_STORE,
-      async () => {
-        const dbAdapter = await app.resolve(CORE_TOKENS.DB_ADAPTER);
-        if (app.hasToken(CORE_TOKENS.ENTITY_REGISTRY)) {
-          const registry = await app.resolve(CORE_TOKENS.ENTITY_REGISTRY);
-          registry.register(SECURE_EVENT_PAYLOADS_ENTITY);
-        }
-        const authorizer = app.hasToken(CORE_TOKENS.SECURE_EVENT_PAYLOAD_AUTHORIZER)
-          ? await app.resolve(CORE_TOKENS.SECURE_EVENT_PAYLOAD_AUTHORIZER)
-          : null;
-        return new SecureEventPayloadsService(
-          new SecureEventPayloadsRepository(dbAdapter),
-          new SecureEventPayloadCrypto({
-            masterKey: process.env.CMS_SECURE_PAYLOAD_MASTER_KEY,
-            keyVersion: process.env.CMS_SECURE_PAYLOAD_KEY_VERSION
-          }),
-          authorizer
-        );
-      },
-      []
-    )
+    factoryProvider(CORE_TOKENS.SECURE_EVENT_PAYLOAD_STORE, async () => {
+      const dbAdapter = await app.resolve(CORE_TOKENS.DB_ADAPTER);
+      if (app.hasToken(CORE_TOKENS.ENTITY_REGISTRY)) {
+        const registry = await app.resolve(CORE_TOKENS.ENTITY_REGISTRY);
+        registry.register(SECURE_EVENT_PAYLOADS_ENTITY);
+      }
+      const authorizer = app.hasToken(CORE_TOKENS.SECURE_EVENT_PAYLOAD_AUTHORIZER)
+        ? await app.resolve(CORE_TOKENS.SECURE_EVENT_PAYLOAD_AUTHORIZER)
+        : null;
+      return new SecureEventPayloadsService(
+        new SecureEventPayloadsRepository(dbAdapter),
+        new SecureEventPayloadCrypto({
+          masterKey: process.env.CMS_SECURE_PAYLOAD_MASTER_KEY,
+          keyVersion: process.env.CMS_SECURE_PAYLOAD_KEY_VERSION
+        }),
+        authorizer
+      );
+    }, [])
   );
 }
 

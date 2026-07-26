@@ -1,28 +1,28 @@
 import {
-  apiError,
-  createPluginApiResponder,
-  getRequestHeader,
-  HttpController,
-  response,
-  s,
-  toOpenApiSchema,
-  type AuthzService,
-  type HttpContext,
-  type HttpMiddleware
-} from "@trinacria-cms/kernel";
-import {
   createJwtAuthMiddleware,
   getAuthenticatedUser,
   type JwtAuthService
 } from "@trinacria-cms/core-pack";
+import {
+  type AuthzService,
+  apiError,
+  createPluginApiResponder,
+  getRequestHeader,
+  type HttpContext,
+  HttpController,
+  type HttpMiddleware,
+  response,
+  s,
+  toOpenApiSchema
+} from "@trinacria-cms/kernel";
 import { MEDIA_PACK_PLUGIN_ID } from "../../plugin/media-pack.constants.js";
-import { MediaUploadError, MediaUploadsService } from "./services/media-uploads.service.js";
 import {
   MediaApiErrorResponseSchema,
   MediaAssetResponseSchema,
   MediaUploadSessionResponseSchema,
   StartedMediaUploadResponseSchema
 } from "./media-api.schemas.js";
+import { MediaUploadError, type MediaUploadsService } from "./services/media-uploads.service.js";
 
 const responder = createPluginApiResponder(MEDIA_PACK_PLUGIN_ID);
 
@@ -194,9 +194,9 @@ export function createMediaPermissionMiddleware(
 function isAsyncByteIterable(value: unknown): value is AsyncIterable<Uint8Array> {
   return Boolean(
     value &&
-    typeof value === "object" &&
-    Symbol.asyncIterator in value &&
-    typeof (value as AsyncIterable<Uint8Array>)[Symbol.asyncIterator] === "function"
+      typeof value === "object" &&
+      Symbol.asyncIterator in value &&
+      typeof (value as AsyncIterable<Uint8Array>)[Symbol.asyncIterator] === "function"
   );
 }
 

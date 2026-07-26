@@ -2,8 +2,8 @@ import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinac
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import {
   EmbeddedUserRoleSchema,
-  UserRoleRecordSchema,
-  type UserRoleRecord
+  type UserRoleRecord,
+  UserRoleRecordSchema
 } from "./user-roles.schemas.js";
 
 const USERS_ENTITY_NAME = "users";

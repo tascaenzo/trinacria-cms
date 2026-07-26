@@ -1,8 +1,8 @@
+import type { PluginManifest } from "../../contracts/plugin-manifest.js";
 import type {
   PluginContributionCatalogSnapshot,
   PluginContributionSnapshot
 } from "../../contracts/plugin-runtime.js";
-import type { PluginManifest } from "../../contracts/plugin-manifest.js";
 import { PluginManifestError } from "../../errors/plugin-errors.js";
 import { buildContributionKey } from "../plugin-namespace/plugin-namespace.js";
 

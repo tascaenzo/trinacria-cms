@@ -1,5 +1,5 @@
 import { Badge, Button, Card, FeedbackBanner } from "@trinacria-cms/trinacria-ui";
-import { ErrorBanner, EmptyState } from "../../components/resource-feedback.js";
+import { EmptyState, ErrorBanner } from "../../components/resource-feedback.js";
 import { formatDateTime } from "../../lib/formatting.js";
 import type { TranslateFn } from "../../lib/i18n.js";
 import type {

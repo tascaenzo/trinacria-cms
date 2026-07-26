@@ -1,18 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
 import { Button, Dialog } from "@trinacria-cms/trinacria-ui";
+import { useEffect, useMemo, useState } from "react";
+import { EmptyState, ErrorBanner } from "../../components/resource-feedback.js";
+import { useI18n } from "../../lib/i18n.js";
+import { toDisplayError } from "../../lib/sdk-errors.js";
 import type {
   AdminSettingsSectionRenderContext,
   RenderableAdminSettingsSection
 } from "../../runtime/admin-route-runtime.js";
-import { ErrorBanner, EmptyState } from "../../components/resource-feedback.js";
 import {
-  writeBackofficeNavigationState,
+  getBackofficeNavigationEventName,
   getBackofficeRouteStateParam,
-  getBackofficeNavigationEventName
+  writeBackofficeNavigationState
 } from "../../runtime/backoffice-navigation-state.js";
 import { cms } from "../../runtime/cms-sdk.js";
-import { toDisplayError } from "../../lib/sdk-errors.js";
-import { useI18n } from "../../lib/i18n.js";
+import { SettingsSectionForm, SettingsWorkspaceSidebar } from "./settings-page.components.js";
+import { useSettingsDefinitions, useSettingsSectionDrafts } from "./settings-page.hooks.js";
 import {
   filterRecordsForSettingsSection,
   formatSettingFormLabel,
@@ -20,8 +22,6 @@ import {
   isVisibleSettingsSection,
   parseSettingFormValue
 } from "./settings-page.utils.js";
-import { SettingsSectionForm, SettingsWorkspaceSidebar } from "./settings-page.components.js";
-import { useSettingsDefinitions, useSettingsSectionDrafts } from "./settings-page.hooks.js";
 
 export interface SettingsPageProps {
   sectionContext?: Omit<AdminSettingsSectionRenderContext, "section">;

@@ -1,8 +1,8 @@
 import { DropdownMenu, DropdownMenuItem, IconButton } from "@trinacria-cms/trinacria-ui";
 import {
-  getEntryActions,
   type EditorialEntry,
   type EditorialEntryContentType,
+  getEntryActions,
   type TransitionAction
 } from "./entries.types.js";
 

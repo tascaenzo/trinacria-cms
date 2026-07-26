@@ -1,15 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@trinacria-cms/trinacria-ui";
-import { ErrorBanner, EmptyState } from "../../../components/resource-feedback.js";
+import { useEffect, useMemo, useState } from "react";
+import { EmptyState, ErrorBanner } from "../../../components/resource-feedback.js";
 import type { TranslateFn } from "../../../lib/i18n.js";
 import { toDisplayError } from "../../../lib/sdk-errors.js";
-import { cms } from "../../../runtime/cms-sdk.js";
 import type { AdminSettingsSectionRenderContext } from "../../../runtime/admin-route-runtime.js";
+import { cms } from "../../../runtime/cms-sdk.js";
 import { toEditableSettingInput } from "../settings-page.utils.js";
 import {
   getPluginGrantId,
-  parsePluginAccessGrantDrafts,
-  type PluginAccessGrantDraft
+  type PluginAccessGrantDraft,
+  parsePluginAccessGrantDrafts
 } from "../utils/plugin-permission-grants.js";
 
 const PLUGIN_ACCESS_GRANTS_SETTING_KEY = "core-pack:security:plugin_access_grants";

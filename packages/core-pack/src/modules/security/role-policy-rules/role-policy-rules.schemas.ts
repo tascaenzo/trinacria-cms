@@ -1,11 +1,11 @@
-import { isValidPermissionPattern, s, type Infer } from "@trinacria-cms/kernel";
+import { type Infer, isValidPermissionPattern, s } from "@trinacria-cms/kernel";
 import {
   EmbeddedRolePolicyRuleSchema,
   RolePolicyRuleConditionSchema,
   RolePolicyRuleEffectSchema
 } from "../../roles/roles.schemas.js";
 
-export { RolePolicyRuleEffectSchema, RolePolicyRuleConditionSchema, EmbeddedRolePolicyRuleSchema };
+export { EmbeddedRolePolicyRuleSchema, RolePolicyRuleConditionSchema, RolePolicyRuleEffectSchema };
 
 /**
  * API-facing record for policy rules returned by REST endpoints.

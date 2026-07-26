@@ -1,11 +1,11 @@
 import type { KernelPluginDefinition } from "@trinacria-cms/kernel/contracts";
-import { MediaPackRootModule } from "../modules/media-pack-root.module.js";
 import {
   MEDIA_DOMAIN_EVENTS_SERVICE_TOKEN,
   MEDIA_UPLOADS_SERVICE_TOKEN,
   type MediaDomainEventsService,
   type MediaUploadsService
 } from "../modules/media/index.js";
+import { MediaPackRootModule } from "../modules/media-pack-root.module.js";
 import { MEDIA_PACK_MANIFEST } from "./media-pack.manifest.js";
 
 export function createMediaPackPlugin(): KernelPluginDefinition {

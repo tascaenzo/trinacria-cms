@@ -1,11 +1,12 @@
 import {
+  type KeyboardEvent as ReactKeyboardEvent,
   useEffect,
   useMemo,
   useRef,
-  useState,
-  type KeyboardEvent as ReactKeyboardEvent
+  useState
 } from "react";
 import { cn } from "../../../utils/class-names.js";
+import { OverlaySurface } from "../../primitives/overlay-surface/overlay-surface.js";
 import {
   buildFormControlAria,
   FormControlShell,
@@ -13,7 +14,6 @@ import {
   useFormControlIds
 } from "../form-control/form-control.js";
 import { Icon } from "../icon/icon.js";
-import { OverlaySurface } from "../../primitives/overlay-surface/overlay-surface.js";
 import type { DatePickerProps } from "./date-picker.types.js";
 import {
   buildCalendar,

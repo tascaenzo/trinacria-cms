@@ -1,7 +1,7 @@
+import { cn } from "../../../utils/class-names.js";
 import { ErrorBanner } from "../../molecules/feedback/feedback.js";
 import { Panel } from "../../primitives/panel/panel.js";
 import { BodyText } from "../../primitives/text/text.js";
-import { cn } from "../../../utils/class-names.js";
 import type { FormSectionProps } from "./form-section.types.js";
 
 export function FormSection({

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
 import { MEDIA_PACK_PLUGIN_ID } from "../../../plugin/media-pack.constants.js";
-import { MediaUploadSessionRecordSchema, type MediaUploadSessionRecord } from "../media.schemas.js";
+import { type MediaUploadSessionRecord, MediaUploadSessionRecordSchema } from "../media.schemas.js";
 
 const UPLOADS_ENTITY_NAME = "uploads";
 

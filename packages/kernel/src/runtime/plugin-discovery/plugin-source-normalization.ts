@@ -1,8 +1,8 @@
 import { isAbsolute, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import type { KernelPluginDefinition } from "../../contracts/plugin-runtime.js";
 import type { PluginDiscoverySource } from "../../contracts/plugin-discovery.js";
 import type { PluginManifest } from "../../contracts/plugin-manifest.js";
+import type { KernelPluginDefinition } from "../../contracts/plugin-runtime.js";
 import { PluginManifestError } from "../../errors/plugin-errors.js";
 import { validatePluginManifest } from "../plugin-manifest/plugin-manifest-validation.js";
 

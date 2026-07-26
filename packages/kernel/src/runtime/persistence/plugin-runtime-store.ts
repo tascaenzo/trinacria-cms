@@ -1,18 +1,18 @@
 import { s } from "@trinacria/schema";
 import type { DbAdapter } from "../../contracts/db-adapter.js";
-import type {
-  PersistedPluginRuntimeRecord,
-  PluginRuntimeStore
-} from "../../contracts/plugin-runtime-store.js";
 import type { PluginManifest } from "../../contracts/plugin-manifest.js";
 import type {
   PluginRuntimeDiagnostic,
   PluginRuntimeRecord
 } from "../../contracts/plugin-runtime.js";
-import { DbAdapterError } from "../../errors/db-errors.js";
+import type {
+  PersistedPluginRuntimeRecord,
+  PluginRuntimeStore
+} from "../../contracts/plugin-runtime-store.js";
 import { CoreError } from "../../errors/core-error.js";
-import { defineEntity, type EntityRegistry } from "./entity-registry.js";
+import { DbAdapterError } from "../../errors/db-errors.js";
 import { validatePluginManifest } from "../plugin-manifest/plugin-manifest-validation.js";
+import { defineEntity, type EntityRegistry } from "./entity-registry.js";
 
 const PluginRuntimeStateSchema = s.enum([
   "registered",

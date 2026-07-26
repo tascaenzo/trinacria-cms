@@ -14,15 +14,15 @@ import {
   MobileRecordList
 } from "@trinacria-cms/trinacria-ui";
 import type { ReactNode } from "react";
+import { EditorialEntriesHeader } from "./editorial-entries-header.js";
+import { EditorialEntryActionsMenu } from "./editorial-entry-actions-menu.js";
 import {
-  formatEditorialDate,
-  getEntryStatusMeta,
   type EditorialEntry,
   type EditorialEntryContentType,
+  formatEditorialDate,
+  getEntryStatusMeta,
   type TransitionAction
 } from "./entries.types.js";
-import { EditorialEntryActionsMenu } from "./editorial-entry-actions-menu.js";
-import { EditorialEntriesHeader } from "./editorial-entries-header.js";
 
 interface EditorialEntriesListProps {
   actionEntryId: string | null;

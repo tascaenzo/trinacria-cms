@@ -7,10 +7,10 @@ import type {
 import type { KernelPluginDefinition } from "../../contracts/plugin-runtime.js";
 import { PluginManifestError } from "../../errors/plugin-errors.js";
 import {
-  resolveEntrypoint,
   defaultImporter,
+  errorToMessage,
   normalizeDiscoveredPlugin,
-  errorToMessage
+  resolveEntrypoint
 } from "./plugin-source-normalization.js";
 
 export interface ConfiguredPluginDiscoveryServiceOptions {

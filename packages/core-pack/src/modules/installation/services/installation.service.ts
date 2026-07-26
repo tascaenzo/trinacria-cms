@@ -1,19 +1,19 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import type { PluginManifestProvisioner } from "@trinacria-cms/kernel";
 import type { EventBus } from "@trinacria/events";
-import { CORE_PACK_MANIFEST } from "../../../plugin/core-pack.manifest.js";
+import type { PluginManifestProvisioner } from "@trinacria-cms/kernel";
 import { CORE_PACK_ADMIN_I18N_SOURCES } from "../../../admin-i18n/index.js";
+import { CORE_PACK_MANIFEST } from "../../../plugin/core-pack.manifest.js";
 import { CORE_PACK_ADMIN_ROLE } from "../../../plugin/core-pack.security.js";
-import { SettingsService } from "../../settings/services/settings.service.js";
-import { UserAccessService } from "../../security/user-access/user-access.service.js";
+import type { UserAccessService } from "../../security/user-access/user-access.service.js";
+import type { SettingsService } from "../../settings/services/settings.service.js";
+import type { UsersRepository } from "../../users/repositories/users.repository.js";
 import { UserLifecycleEventPublisher } from "../../users/services/user-lifecycle-event-publisher.js";
-import { UsersRepository } from "../../users/repositories/users.repository.js";
 import type { UserRecord } from "../../users/users.schemas.js";
 import type { InstallBootstrapInput } from "../dto/installation.input.dto.js";
-import { InstallationStateRepository } from "../repositories/installation-state.repository.js";
-import { LocalCredentialsRepository } from "../repositories/local-credentials.repository.js";
-import { PasswordHashingService } from "./password-hashing.service.js";
+import type { InstallationStateRepository } from "../repositories/installation-state.repository.js";
+import type { LocalCredentialsRepository } from "../repositories/local-credentials.repository.js";
+import type { PasswordHashingService } from "./password-hashing.service.js";
 
 export interface InstallationStatus {
   installed: boolean;

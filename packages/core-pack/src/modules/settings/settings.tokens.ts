@@ -1,14 +1,14 @@
 import { createCapabilityToken, createToken } from "@trinacria-cms/kernel";
-import type { RuntimeConfigService } from "./config/runtime-config.service.js";
-import { SettingsController } from "./settings.controller.js";
-import { SettingsDefinitionsRepository } from "./definitions/settings-definitions.repository.js";
+import type { SettingsPluginAuthService } from "./auth/plugin-auth.service.js";
 import type { PluginAuthKeyProvider } from "./auth/plugin-auth-key-provider.js";
-import { SettingsPluginAuthService } from "./auth/plugin-auth.service.js";
-import { SettingsSecretsCryptoService } from "./secrets/settings-secrets-crypto.service.js";
-import { SettingsSecretsRepository } from "./secrets/settings-secrets.repository.js";
-import { SettingsService } from "./services/settings.service.js";
-import { SettingsValuesRepository } from "./values/settings-values.repository.js";
-import { SettingsPluginAccessPolicyService } from "./plugin-access/plugin-access-policy.service.js";
+import type { RuntimeConfigService } from "./config/runtime-config.service.js";
+import type { SettingsDefinitionsRepository } from "./definitions/settings-definitions.repository.js";
+import type { SettingsPluginAccessPolicyService } from "./plugin-access/plugin-access-policy.service.js";
+import type { SettingsSecretsRepository } from "./secrets/settings-secrets.repository.js";
+import type { SettingsSecretsCryptoService } from "./secrets/settings-secrets-crypto.service.js";
+import type { SettingsService } from "./services/settings.service.js";
+import type { SettingsController } from "./settings.controller.js";
+import type { SettingsValuesRepository } from "./values/settings-values.repository.js";
 
 export const SETTINGS_DEFINITIONS_REPOSITORY_TOKEN = createToken<SettingsDefinitionsRepository>(
   "CORE_PACK_SETTINGS_DEFINITIONS_REPOSITORY"

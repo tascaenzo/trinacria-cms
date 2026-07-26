@@ -1,6 +1,6 @@
 import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
-import { BodyText } from "../../primitives/text/text.js";
 import { cn } from "../../../utils/class-names.js";
+import { BodyText } from "../../primitives/text/text.js";
 import type {
   DataTableBodyProps,
   DataTableCellProps,

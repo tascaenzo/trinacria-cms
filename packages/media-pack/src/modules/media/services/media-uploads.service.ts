@@ -1,14 +1,14 @@
 import type { MediaAssetRecord, MediaUploadSessionRecord } from "../media.schemas.js";
-import { MediaProviderRegistry } from "../media-provider-registry.service.js";
-import { type CreateMediaAssetInput } from "../repositories/media-assets.repository.js";
-import {
-  MediaUploadsRepository,
-  type CreateMediaUploadSessionInput
-} from "../repositories/media-uploads.repository.js";
+import type { MediaProviderRegistry } from "../media-provider-registry.service.js";
 import type { CreateMediaStorageUploadResult } from "../media-storage.types.js";
-import { MediaAssetsService } from "./media-assets.service.js";
-import { MediaStorageConfigService } from "./media-storage-config.service.js";
-import { MediaDomainEventsService } from "./media-domain-events.service.js";
+import type { CreateMediaAssetInput } from "../repositories/media-assets.repository.js";
+import type {
+  CreateMediaUploadSessionInput,
+  MediaUploadsRepository
+} from "../repositories/media-uploads.repository.js";
+import type { MediaAssetsService } from "./media-assets.service.js";
+import type { MediaDomainEventsService } from "./media-domain-events.service.js";
+import type { MediaStorageConfigService } from "./media-storage-config.service.js";
 
 const UPLOAD_EXPIRY_MS = 15 * 60_000;
 const UPLOAD_RECORD_RETENTION_MS = 24 * 60 * 60_000;

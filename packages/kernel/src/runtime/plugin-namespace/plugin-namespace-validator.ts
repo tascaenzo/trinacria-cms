@@ -1,14 +1,14 @@
 import type { PluginManifest } from "../../contracts/plugin-manifest.js";
 import type {
-  ContributionIndex,
   CollisionRule,
+  ContributionIndex,
   NamespaceValidationResult,
   NamespaceValidator
 } from "./plugin-namespace.js";
 import {
+  DEFAULT_COLLISION_POLICY,
   isReservedPluginId,
-  isValidPluginId,
-  DEFAULT_COLLISION_POLICY
+  isValidPluginId
 } from "./plugin-namespace.js";
 
 function normalizeContributionKey(pluginId: string, localName: string): string {

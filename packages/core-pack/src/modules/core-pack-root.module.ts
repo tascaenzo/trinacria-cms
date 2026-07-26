@@ -1,11 +1,11 @@
 import { defineModule } from "@trinacria-cms/kernel";
 import { CorePackAuthModule } from "./auth/auth.module.js";
 import { CorePackCacheModule } from "./cache/cache.module.js";
+import { CorePackI18nModule } from "./i18n/i18n.module.js";
 import { CorePackInstallationModule } from "./installation/installation.module.js";
-import { CorePackUsersModule } from "./users/users.module.js";
 import { CorePackSecurityModule } from "./security/security.module.js";
 import { CorePackSettingsModule } from "./settings/settings.module.js";
-import { CorePackI18nModule } from "./i18n/i18n.module.js";
+import { CorePackUsersModule } from "./users/users.module.js";
 
 /**
  * Root module importing all baseline core-pack domains.

@@ -1,15 +1,24 @@
 import {
   createPluginApiResponder,
+  type HttpContext,
   HttpController,
   type HttpMiddleware,
   parsePathParam,
   parseQueryNumber,
-  toOpenApiSchema,
-  type HttpContext
+  toOpenApiSchema
 } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
-import { CORE_PACK_OPENAPI_TAGS } from "../openapi-tags.js";
 import type { JwtAuthService } from "../auth/services/auth.service.js";
+import { CORE_PACK_OPENAPI_TAGS } from "../openapi-tags.js";
+import { readOptionalJsonField } from "./_shared/settings-http-mapping.js";
+import { parseJsonValue } from "./_shared/settings-json.js";
+import { getOwnerPluginIdFromSettingKey } from "./_shared/settings-key.js";
+import { getAuthenticatedPluginId } from "./auth/plugin-auth.middleware.js";
+import type { SettingsPluginAuthService } from "./auth/plugin-auth.service.js";
+import {
+  createSettingsAccessMiddleware,
+  getSettingsAccessMode
+} from "./auth/settings-access.middleware.js";
 import {
   ExportedPluginSettingsResponseOpenApiSchema,
   ExportPluginSettingsParamSchema,
@@ -18,32 +27,23 @@ import {
   ListSettingsGroupsResponseOpenApiSchema,
   ResolvedSettingValueResponseOpenApiSchema,
   RevealedSettingSecretResponseOpenApiSchema,
-  SettingKeyParamSchema,
   SettingDefinitionResponseOpenApiSchema,
+  SettingKeyParamSchema,
   SettingSecretMetadataResponseOpenApiSchema,
-  SettingValueResponseOpenApiSchema,
+  SettingsErrorResponseSchema,
   SettingsGroupParamSchema,
   SettingsGroupSnapshotResponseOpenApiSchema,
   SettingsGroupUpdateResultResponseOpenApiSchema,
-  SettingsErrorResponseSchema,
+  SettingValueResponseOpenApiSchema,
   UpsertSettingDefinitionBodyOpenApiSchema,
   UpsertSettingDefinitionInputSchema,
-  UpsertSettingsGroupValuesBodyOpenApiSchema,
-  UpsertSettingsGroupValuesInputSchema,
   UpsertSettingSecretBodyOpenApiSchema,
   UpsertSettingSecretInputSchema,
+  UpsertSettingsGroupValuesBodyOpenApiSchema,
+  UpsertSettingsGroupValuesInputSchema,
   UpsertSettingValueBodyOpenApiSchema,
   UpsertSettingValueInputSchema
 } from "./dto/index.js";
-import { readOptionalJsonField } from "./_shared/settings-http-mapping.js";
-import { parseJsonValue } from "./_shared/settings-json.js";
-import { getOwnerPluginIdFromSettingKey } from "./_shared/settings-key.js";
-import { getAuthenticatedPluginId } from "./auth/plugin-auth.middleware.js";
-import { SettingsPluginAuthService } from "./auth/plugin-auth.service.js";
-import {
-  createSettingsAccessMiddleware,
-  getSettingsAccessMode
-} from "./auth/settings-access.middleware.js";
 import type { SettingsService } from "./services/settings.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);

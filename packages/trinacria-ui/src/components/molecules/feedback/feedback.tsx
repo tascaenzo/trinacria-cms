@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
+import { cn } from "../../../utils/class-names.js";
 import { Panel } from "../../primitives/panel/panel.js";
 import { BodyText } from "../../primitives/text/text.js";
-import { cn } from "../../../utils/class-names.js";
 import type { EmptyStateProps, FeedbackBannerProps } from "./feedback.types.js";
 
 export function FeedbackBanner({

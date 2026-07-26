@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { Button, Dialog, Icon, Input } from "@trinacria-cms/trinacria-ui";
+import { useState } from "react";
 import type { EditorialContentType } from "../editorial-admin.types.js";
 
 export interface ContentModelDeleteRequest {

@@ -1,8 +1,8 @@
 import type { AdminExtensionManifest, SafeAdminExtensionManifest } from "../contracts.js";
 import { renderDeclarativeAdminPage } from "../declarative/index.js";
 import {
-  sanitizeAdminExtensionManifest,
-  type AdminEndpointPolicyOptions
+  type AdminEndpointPolicyOptions,
+  sanitizeAdminExtensionManifest
 } from "./admin-manifest-sanitizer.js";
 import type { RenderableAdminContribution } from "./admin-route-runtime.js";
 

@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
 import { Button, Icon, Input, Select, Textarea } from "@trinacria-cms/trinacria-ui";
+import type { ReactNode } from "react";
 import { ContentTypeDetailSection } from "../content-type-detail/content-type-detail-section.js";
 import { ContentTypeFieldList } from "../content-type-detail/content-type-field-list.js";
 import { ContentTypeWorkflowEditor } from "../content-type-detail/content-type-workflow-editor.js";

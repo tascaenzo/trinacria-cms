@@ -1,5 +1,4 @@
 import type { HttpContext } from "@trinacria-cms/kernel";
-import type { PluginAuthKeyProvider } from "./plugin-auth-key-provider.js";
 import type { RuntimeConfigService } from "../config/runtime-config.service.js";
 import {
   buildPluginRequestSignature,
@@ -7,6 +6,7 @@ import {
   PLUGIN_AUTH_HEADERS,
   signaturesEqual
 } from "./plugin-auth.js";
+import type { PluginAuthKeyProvider } from "./plugin-auth-key-provider.js";
 
 export interface SettingsPluginAuthServiceOptions {
   maxSkewSeconds?: number;

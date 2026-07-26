@@ -1,4 +1,4 @@
-import { createContext, createElement, useContext, type ReactNode } from "react";
+import { createContext, createElement, type ReactNode, useContext } from "react";
 
 export type Locale = string;
 export type TranslationDictionary = Readonly<Record<string, string>>;

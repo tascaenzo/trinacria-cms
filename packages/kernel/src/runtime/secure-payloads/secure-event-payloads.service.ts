@@ -7,8 +7,8 @@ import type {
   SecureEventPayloadStore
 } from "../../contracts/secure-event-payloads.js";
 import { CoreError } from "../../errors/core-error.js";
-import { SecureEventPayloadCrypto } from "./secure-event-payloads.crypto.js";
-import { SecureEventPayloadsRepository } from "./secure-event-payloads.repository.js";
+import type { SecureEventPayloadCrypto } from "./secure-event-payloads.crypto.js";
+import type { SecureEventPayloadsRepository } from "./secure-event-payloads.repository.js";
 
 const DEFAULT_MAX_CLAIMS = 1;
 const DEFAULT_TTL_MS = 15 * 60_000;

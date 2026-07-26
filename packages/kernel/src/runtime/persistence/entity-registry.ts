@@ -1,5 +1,5 @@
-import { DbAdapterError } from "../../errors/db-errors.js";
 import type { Schema } from "@trinacria/schema";
+import { DbAdapterError } from "../../errors/db-errors.js";
 
 export interface EntityIndexDefinition {
   fields: Record<string, 1 | -1>;

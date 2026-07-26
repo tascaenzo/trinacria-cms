@@ -1,5 +1,5 @@
-import { startTransition, type FormEvent, type MouseEvent, useRef, useState } from "react";
 import { Button, Input, Select } from "@trinacria-cms/trinacria-ui";
+import { type FormEvent, type MouseEvent, startTransition, useRef, useState } from "react";
 import { AuthScreenLayout } from "../components/auth-screen-layout.js";
 import { useI18n } from "../lib/i18n.js";
 

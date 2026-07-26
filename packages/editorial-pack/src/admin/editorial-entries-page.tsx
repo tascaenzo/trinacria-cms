@@ -1,18 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
 import { ResourcePage, Tabs } from "@trinacria-cms/trinacria-ui";
+import { useEffect, useMemo, useState } from "react";
+import type { CmsClient, EditorialNavigator } from "./editorial-admin.types.js";
 import {
   CreateEditorialEntryDialog,
   EntryRevisionsDialog
 } from "./entries/editorial-entries-dialogs.js";
 import { EditorialEntriesList } from "./entries/editorial-entries-list.js";
 import { EditorialReviewBoard } from "./entries/editorial-review-board.js";
-import { useEditorialEntries } from "./entries/use-editorial-entries.js";
 import {
-  supportsEditorialReview,
   type EditorialEntry,
-  type EntryRevision
+  type EntryRevision,
+  supportsEditorialReview
 } from "./entries/entries.types.js";
-import type { CmsClient, EditorialNavigator } from "./editorial-admin.types.js";
+import { useEditorialEntries } from "./entries/use-editorial-entries.js";
 
 export interface EditorialEntriesPageContext {
   cms: CmsClient;

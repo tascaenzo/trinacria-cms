@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import { Badge, Button, Checkbox, Input } from "@trinacria-cms/trinacria-ui";
 import type { createCmsSdkClient } from "@trinacria-cms/sdk";
+import { Badge, Button, Checkbox, Input } from "@trinacria-cms/trinacria-ui";
+import { useEffect, useMemo, useState } from "react";
 
 type CmsClient = ReturnType<typeof createCmsSdkClient>;
 
