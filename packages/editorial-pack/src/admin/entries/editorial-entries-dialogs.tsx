@@ -9,12 +9,14 @@ import {
 
 export function CreateEditorialEntryDialog({
   contentTypes,
+  initialContentTypeId,
   isCreating,
   onClose,
   onCreate,
   open
 }: {
   contentTypes: readonly EditorialEntryContentType[];
+  initialContentTypeId?: string;
   isCreating: boolean;
   onClose: () => void;
   onCreate: (contentTypeId: string, title: string) => Promise<EditorialEntry | null>;
@@ -22,10 +24,13 @@ export function CreateEditorialEntryDialog({
 }) {
   const [contentTypeId, setContentTypeId] = useState("");
   const [title, setTitle] = useState("");
-  useEffect(
-    () => setContentTypeId((current) => current || contentTypes[0]?.id || ""),
-    [contentTypes]
-  );
+  useEffect(() => {
+    const initialContentType = contentTypes.find((item) => item.id === initialContentTypeId);
+    setContentTypeId((current) => {
+      const currentContentType = contentTypes.find((item) => item.id === current);
+      return initialContentType?.id ?? currentContentType?.id ?? contentTypes[0]?.id ?? "";
+    });
+  }, [contentTypes, initialContentTypeId]);
   const create = async () => {
     if (contentTypeId && (await onCreate(contentTypeId, title))) {
       setTitle("");
@@ -124,50 +129,6 @@ export function EntryRevisionsDialog({
           Non esistono ancora revisioni per questo contenuto.
         </p>
       )}
-    </Dialog>
-  );
-}
-export function SaveEditorialViewDialog({
-  onClose,
-  onSave,
-  open
-}: {
-  onClose: () => void;
-  onSave: (name: string) => void;
-  open: boolean;
-}) {
-  const [name, setName] = useState("");
-  const save = () => {
-    if (!name.trim()) return;
-    onSave(name.trim());
-    setName("");
-    onClose();
-  };
-  return (
-    <Dialog
-      open={open}
-      title="Salva questa vista"
-      description="Conserva filtri e modalità di visualizzazione."
-      closeLabel="Chiudi"
-      closeVariant="icon"
-      onClose={onClose}
-      footer={
-        <>
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Annulla
-          </Button>
-          <Button type="button" disabled={!name.trim()} onClick={save}>
-            Salva vista
-          </Button>
-        </>
-      }
-    >
-      <Input
-        label="Nome della vista"
-        placeholder="Le mie bozze"
-        value={name}
-        onChange={(event) => setName(event.currentTarget.value)}
-      />
     </Dialog>
   );
 }

@@ -1,10 +1,4 @@
-import type {
-  ContentWorkflow,
-  ContentWorkflowState,
-  EditorialContentType
-} from "../editorial-admin.types.js";
-
-export type { ContentWorkflowState } from "../editorial-admin.types.js";
+import type { ContentWorkflow, EditorialContentType } from "../editorial-admin.types.js";
 
 export type EntryStatus = string;
 
@@ -22,15 +16,6 @@ export interface EntryRevision {
   revisionNumber: number;
   reason: string;
   createdAt: string;
-}
-
-export interface SavedEditorialView {
-  id: string;
-  name: string;
-  status: "all" | string;
-  contentTypeId: string;
-  search: string;
-  mode: "list" | "board";
 }
 
 export interface TransitionAction {
@@ -78,18 +63,6 @@ const DIRECT_WORKFLOW: ContentWorkflow = {
 export function getWorkflow(contentType?: EditorialEntryContentType): ContentWorkflow {
   if (contentType?.workflow) return contentType.workflow;
   return contentType?.workflowId === "direct" ? DIRECT_WORKFLOW : REVIEW_WORKFLOW;
-}
-
-export function getWorkflowStates(
-  contentTypes: readonly EditorialEntryContentType[]
-): readonly ContentWorkflowState[] {
-  const states = new Map<string, ContentWorkflowState>();
-  for (const contentType of contentTypes) {
-    for (const state of getWorkflow(contentType).states) {
-      if (!states.has(state.key)) states.set(state.key, state);
-    }
-  }
-  return Array.from(states.values());
 }
 
 export function getEntryStatusMeta(status: EntryStatus, contentType?: EditorialEntryContentType) {
