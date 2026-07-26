@@ -14,5 +14,7 @@ export interface AdminNavigationItem {
   groupKey?: string;
   badge?: string;
   order?: number;
+  /** Optional query parameters to apply when opening the route. */
+  params?: Readonly<Record<string, string>>;
   guards?: readonly AdminAccessGuard[];
 }

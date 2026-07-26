@@ -1,0 +1,17 @@
+import { Meta, Canvas } from "@storybook/addon-docs/blocks";
+import * as Stories from "./tabs.stories";
+
+<Meta of={Stories} />
+
+# Tabs
+
+Navigazione tra viste correlate della stessa risorsa. Il contenuto attivo è collegato semanticamente al tab selezionato e i conteggi sono opzionali.
+
+<Canvas of={Stories.Default} />
+
+## Comportamento
+
+- Usa i tasti freccia, Home ed End per spostarti tra i tab disponibili.
+- Mantieni poche sezioni con etichette brevi e stabili.
+- Usa i conteggi soltanto quando aiutano a capire lo stato della risorsa.
+- Non usare i tab come sostituti della navigazione principale del backoffice.

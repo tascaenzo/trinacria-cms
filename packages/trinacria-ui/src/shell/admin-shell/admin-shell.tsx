@@ -43,6 +43,7 @@ function toNavigationGroupId(group: string): string {
  */
 export function AdminShell({
   activeRouteId,
+  activeNavigationParams = "",
   children,
   headerActions,
   hideHeader = false,
@@ -92,12 +93,26 @@ export function AdminShell({
     ]) as Array<[string, AdminShellNavigationItem[]]>;
   }, [hiddenNavigationIdSet, navigation]);
 
-  const activeNavigation = navigation.find((item) => item.routeId === activeRouteId) ?? null;
-
-  function handleNavigate(routeId: string) {
-    onNavigate(routeId);
+  function handleNavigate(item: AdminShellNavigationItem) {
+    onNavigate(item.routeId, item.params ? new URLSearchParams(item.params) : undefined);
     setIsMobileSidebarOpen(false);
   }
+
+  function isNavigationItemActive(item: AdminShellNavigationItem) {
+    const itemParams = new URLSearchParams(item.params);
+    const currentParams = new URLSearchParams(activeNavigationParams);
+
+    if (item.routeId === activeRouteId && itemParams.size === 0) {
+      return currentParams.size === 0;
+    }
+    if (itemParams.size === 0) return false;
+    return Array.from(itemParams).every(([key, value]) => currentParams.get(key) === value);
+  }
+
+  const activeNavigation =
+    navigation.find((item) => isNavigationItemActive(item)) ??
+    navigation.find((item) => item.routeId === activeRouteId) ??
+    null;
 
   function toggleGroup(group: string) {
     setCollapsedGroups((current) => ({
@@ -179,14 +194,14 @@ export function AdminShell({
                     ) : null}
                     <div id={groupId} className={cn("space-y-1", isGroupCollapsed && "hidden")}>
                       {items.map((item) => {
-                        const isActive = item.routeId === activeRouteId;
+                        const isActive = isNavigationItemActive(item);
 
                         return (
                           <button
                             key={item.id}
                             type="button"
                             title={item.title}
-                            onClick={() => handleNavigate(item.routeId)}
+                            onClick={() => handleNavigate(item)}
                             className={cn(
                               "group flex h-9 w-full items-center gap-2 rounded-md px-2 text-sm transition",
                               isSidebarCollapsed ? "lg:justify-center lg:px-0" : "justify-between",

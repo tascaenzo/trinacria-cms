@@ -27,7 +27,9 @@ export function defineAdminNavigation(
   return {
     id: input.id,
     label: input.label,
+    ...(input.icon !== undefined ? { icon: input.icon } : {}),
     ...(input.path !== undefined ? { path: input.path } : {}),
+    ...(input.group !== undefined ? { group: input.group } : {}),
     ...(input.requiredPermission !== undefined
       ? { requiredPermission: input.requiredPermission }
       : {}),

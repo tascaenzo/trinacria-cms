@@ -184,7 +184,11 @@ export interface PluginManifestI18n {
 export interface PluginManifestAdminNavigation {
   id: string;
   label: string;
+  /** Presentation hint rendered by compatible admin shells. */
+  icon?: string;
   path?: string;
+  /** Collapsible sidebar section used to group related plugin navigation. */
+  group?: string;
   requiredPermission?: string;
   order?: number;
 }

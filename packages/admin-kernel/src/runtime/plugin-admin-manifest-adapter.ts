@@ -20,7 +20,9 @@ interface PluginAdminRouteDeclaration {
 interface PluginAdminNavigationDeclaration {
   id: string;
   label: string;
+  icon?: string;
   path?: string;
+  group?: string;
   requiredPermission?: string;
   order?: number;
 }
@@ -106,6 +108,8 @@ export function createAdminExtensionManifestFromPluginAdmin(
         id: item.id,
         routeId: item.path ? (routeIdByPath.get(item.path) ?? item.id) : item.id,
         title: item.label,
+        icon: item.icon,
+        group: item.group,
         order: item.order,
         guards: toGuards(input.pluginId, item.requiredPermission)
       })),
