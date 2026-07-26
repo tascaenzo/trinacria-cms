@@ -17,7 +17,7 @@ export function CreateEditorialEntryDialog({
   contentTypes: readonly EditorialEntryContentType[];
   isCreating: boolean;
   onClose: () => void;
-  onCreate: (contentTypeId: string, title: string) => Promise<boolean>;
+  onCreate: (contentTypeId: string, title: string) => Promise<EditorialEntry | null>;
   open: boolean;
 }) {
   const [contentTypeId, setContentTypeId] = useState("");
@@ -39,6 +39,7 @@ export function CreateEditorialEntryDialog({
       description="Verrà creata una bozza."
       closeLabel="Chiudi"
       closeVariant="icon"
+      variant="drawer"
       onClose={() => !isCreating && onClose()}
       footer={
         <>

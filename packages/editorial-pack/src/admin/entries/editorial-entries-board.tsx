@@ -1,19 +1,19 @@
-import { Button } from "@trinacria-cms/trinacria-ui";
 import {
   formatEditorialDate,
-  getEntryActions,
   getWorkflowStates,
   type EditorialEntry,
   type EditorialEntryContentType,
   type ContentWorkflowState,
   type TransitionAction
 } from "./entries.types.js";
+import { EditorialEntryActionsMenu } from "./editorial-entry-actions-menu.js";
 
 export function EditorialEntriesBoard({
   entries,
   contentTypeById,
   locale,
   actionEntryId,
+  onEdit,
   onRevisions,
   onTransition
 }: {
@@ -21,6 +21,7 @@ export function EditorialEntriesBoard({
   contentTypeById: ReadonlyMap<string, EditorialEntryContentType>;
   locale: string;
   actionEntryId: string | null;
+  onEdit: (entry: EditorialEntry) => void;
   onRevisions: (entry: EditorialEntry) => void;
   onTransition: (entry: EditorialEntry, action: TransitionAction) => void;
 }) {
@@ -39,6 +40,7 @@ export function EditorialEntriesBoard({
           locale={locale}
           actionEntryId={actionEntryId}
           onRevisions={onRevisions}
+          onEdit={onEdit}
           onTransition={onTransition}
         />
       ))}
@@ -52,6 +54,7 @@ function BoardColumn({
   locale,
   actionEntryId,
   onRevisions,
+  onEdit,
   onTransition
 }: {
   entries: readonly EditorialEntry[];
@@ -60,6 +63,7 @@ function BoardColumn({
   locale: string;
   actionEntryId: string | null;
   onRevisions: (entry: EditorialEntry) => void;
+  onEdit: (entry: EditorialEntry) => void;
   onTransition: (entry: EditorialEntry, action: TransitionAction) => void;
 }) {
   return (
@@ -79,6 +83,7 @@ function BoardColumn({
             locale={locale}
             isActing={actionEntryId === entry.id}
             onRevisions={() => onRevisions(entry)}
+            onEdit={() => onEdit(entry)}
             onTransition={onTransition}
           />
         ))}
@@ -97,6 +102,7 @@ function BoardEntry({
   locale,
   isActing,
   onRevisions,
+  onEdit,
   onTransition
 }: {
   entry: EditorialEntry;
@@ -104,31 +110,30 @@ function BoardEntry({
   locale: string;
   isActing: boolean;
   onRevisions: () => void;
+  onEdit: () => void;
   onTransition: (entry: EditorialEntry, action: TransitionAction) => void;
 }) {
-  const action = getEntryActions(entry.status, contentType)[0];
   return (
     <article className="rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-panel)] p-3 shadow-[var(--shadow-sm)]">
-      <p className="truncate text-sm font-medium text-[color:var(--color-ink)]">
+      <button
+        type="button"
+        className="max-w-full truncate text-left text-sm font-medium text-[color:var(--color-ink)] hover:underline"
+        onClick={onEdit}
+      >
         {entry.title ?? "Senza titolo"}
-      </p>
+      </button>
       <p className="mt-1 text-xs text-[color:var(--color-ink-subtle)]">
         {contentType?.name ?? "Modello rimosso"} · {formatEditorialDate(entry.updatedAt, locale)}
       </p>
-      <div className="mt-3 flex justify-between gap-2">
-        <Button type="button" variant="ghost" size="sm" onClick={onRevisions}>
-          Cronologia
-        </Button>
-        {action ? (
-          <Button
-            type="button"
-            size="sm"
-            disabled={isActing}
-            onClick={() => onTransition(entry, action)}
-          >
-            {isActing ? "…" : action.label}
-          </Button>
-        ) : null}
+      <div className="mt-3 flex justify-end">
+        <EditorialEntryActionsMenu
+          entry={entry}
+          contentType={contentType}
+          isActing={isActing}
+          onEdit={onEdit}
+          onRevisions={onRevisions}
+          onTransition={onTransition}
+        />
       </div>
     </article>
   );

@@ -12,9 +12,19 @@ import { EDITORIAL_PACK_PERMISSION_KEYS } from "./editorial-pack.security.js";
 export const EDITORIAL_PACK_ADMIN_MANIFEST: PluginManifestAdmin = defineAdmin({
   routes: [
     defineAdminRoute({
+      id: "editorial-overview",
+      path: "/editorial",
+      label: "Overview",
+      componentRef: "editorial-pack:overview",
+      requiredPermission: EDITORIAL_PACK_PERMISSION_KEYS.ENTRIES_READ,
+      order: 79
+    }),
+    // This shared renderer is intentionally not a static destination: each active
+    // content model contributes its own menu item through dynamic navigation.
+    defineAdminRoute({
       id: "editorial-entries",
       path: "/editorial/entries",
-      label: "Content",
+      label: "Content model entries",
       componentRef: "editorial-pack:entries",
       requiredPermission: EDITORIAL_PACK_PERMISSION_KEYS.ENTRIES_READ,
       order: 80
@@ -35,24 +45,33 @@ export const EDITORIAL_PACK_ADMIN_MANIFEST: PluginManifestAdmin = defineAdmin({
       requiredPermission: EDITORIAL_PACK_PERMISSION_KEYS.CONTENT_TYPES_READ,
       order: 82
     }),
+    defineAdminRoute({
+      id: "editorial-content-type-create",
+      path: "/editorial/content-types/create",
+      label: "New content model",
+      componentRef: "editorial-pack:content-type-create",
+      requiredPermission: EDITORIAL_PACK_PERMISSION_KEYS.CONTENT_TYPES_MANAGE,
+      order: 83
+    }),
+    defineAdminRoute({
+      id: "editorial-entry-detail",
+      path: "/editorial/entries/detail",
+      label: "Content editor",
+      componentRef: "editorial-pack:entry-detail",
+      requiredPermission: EDITORIAL_PACK_PERMISSION_KEYS.ENTRIES_READ,
+      order: 84
+    }),
   ],
   navigation: [
     defineAdminNavigation({
-      id: "nav-editorial-entries",
-      path: "/editorial/entries",
-      label: "Content",
+      id: "nav-editorial-overview",
+      path: "/editorial",
+      label: "Panoramica",
+      icon: "layout-dashboard",
       group: "Editoriale",
       requiredPermission: EDITORIAL_PACK_PERMISSION_KEYS.ENTRIES_READ,
-      order: 80
+      order: 70
     }),
-    defineAdminNavigation({
-      id: "nav-editorial-content-types",
-      path: "/editorial/content-types",
-      label: "Content models",
-      group: "Editoriale",
-      requiredPermission: EDITORIAL_PACK_PERMISSION_KEYS.CONTENT_TYPES_READ,
-      order: 81
-    })
   ],
   resources: [
     defineAdminResource({

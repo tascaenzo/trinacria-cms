@@ -58,16 +58,16 @@ export function useEditorialEntries(cms: CmsClient) {
     try {
       setIsCreating(true);
       setError(null);
-      await cms.request({
+      const response = await cms.request<{ data: EditorialEntry }>({
         method: "POST",
         path: "/v1/editorial/entries",
         body: { contentTypeId, ...(title.trim() ? { title: title.trim() } : {}), data: {} }
       });
       await refresh();
-      return true;
+      return response.data;
     } catch (currentError) {
       setError(toEditorialDisplayError(currentError, "Non è stato possibile creare la bozza."));
-      return false;
+      return null;
     } finally {
       setIsCreating(false);
     }

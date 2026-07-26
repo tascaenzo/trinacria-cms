@@ -2,6 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Button, Icon, Input, Select } from "@trinacria-cms/trinacria-ui";
 import { EditorialEntriesBoard } from "./entries/editorial-entries-board.js";
 import {
+  EditorialContentViewsToolbar,
+  type EditorialViewMode
+} from "./entries/editorial-content-views-toolbar.js";
+import {
   CreateEditorialEntryDialog,
   EntryRevisionsDialog,
   SaveEditorialViewDialog
@@ -18,22 +22,26 @@ import {
   type EntryRevision,
   type SavedEditorialView
 } from "./entries/entries.types.js";
-import type { CmsClient } from "./editorial-admin.types.js";
+import type { CmsClient, EditorialNavigator } from "./editorial-admin.types.js";
 
 export interface EditorialEntriesPageContext {
   cms: CmsClient;
   locale?: string;
+  navigateToRoute?: EditorialNavigator;
 }
-type ViewMode = "list" | "board";
 const NAVIGATION_EVENT = "trinacria-cms:backoffice-navigation";
 
 /** Composes the content desk; requests and reusable views live in entries/. */
-export function EditorialEntriesPage({ cms, locale = "it-IT" }: EditorialEntriesPageContext) {
+export function EditorialEntriesPage({
+  cms,
+  locale = "it-IT",
+  navigateToRoute
+}: EditorialEntriesPageContext) {
   const desk = useEditorialEntries(cms);
   const [statusFilter, setStatusFilter] = useState<"all" | string>("all");
   const [typeFilter, setTypeFilter] = useState(readContentTypeFilter);
   const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [viewMode, setViewMode] = useState<EditorialViewMode>("list");
   const [savedViews, setSavedViews] = useState<readonly SavedEditorialView[]>([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSaveViewOpen, setIsSaveViewOpen] = useState(false);
@@ -51,6 +59,12 @@ export function EditorialEntriesPage({ cms, locale = "it-IT" }: EditorialEntries
       window.removeEventListener("popstate", syncContentTypeFilter);
     };
   }, []);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("create") === "1" && desk.activeContentTypes.length) {
+      setIsCreateOpen(true);
+    }
+  }, [desk.activeContentTypes.length]);
   const filteredEntries = useMemo(() => {
     const normalizedSearch = search.trim().toLocaleLowerCase();
     return desk.entries.filter(
@@ -145,7 +159,7 @@ export function EditorialEntriesPage({ cms, locale = "it-IT" }: EditorialEntries
         </div>
       ) : null}
       <section className="mt-6" aria-label="Elenco contenuti">
-        <ContentViewsToolbar
+        <EditorialContentViewsToolbar
           statusFilter={statusFilter}
           viewMode={viewMode}
           savedViews={savedViews}
@@ -159,7 +173,6 @@ export function EditorialEntriesPage({ cms, locale = "it-IT" }: EditorialEntries
         <div className="mt-4 grid gap-3 rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel)] p-4 md:grid-cols-[minmax(0,1fr)_180px_180px]">
           <Input
             label="Cerca"
-            placeholder="Cerca per titolo"
             value={search}
             onChange={(event) => setSearch(event.currentTarget.value)}
           />
@@ -196,6 +209,12 @@ export function EditorialEntriesPage({ cms, locale = "it-IT" }: EditorialEntries
             actionEntryId={desk.actionEntryId}
             isLoading={desk.isLoading}
             onRevisions={(entry) => void openRevisions(entry)}
+            onEdit={(entry) =>
+              navigateToRoute?.(
+                "editorial-entry-detail",
+                new URLSearchParams({ entryId: entry.id })
+              )
+            }
             onTransition={desk.transition}
           />
         ) : (
@@ -205,6 +224,12 @@ export function EditorialEntriesPage({ cms, locale = "it-IT" }: EditorialEntries
             locale={locale}
             actionEntryId={desk.actionEntryId}
             onRevisions={(entry) => void openRevisions(entry)}
+            onEdit={(entry) =>
+              navigateToRoute?.(
+                "editorial-entry-detail",
+                new URLSearchParams({ entryId: entry.id })
+              )
+            }
             onTransition={desk.transition}
           />
         )}
@@ -214,7 +239,16 @@ export function EditorialEntriesPage({ cms, locale = "it-IT" }: EditorialEntries
         contentTypes={desk.activeContentTypes}
         isCreating={desk.isCreating}
         onClose={() => setIsCreateOpen(false)}
-        onCreate={desk.create}
+        onCreate={async (contentTypeId, title) => {
+          const created = await desk.create(contentTypeId, title);
+          if (created) {
+            navigateToRoute?.(
+              "editorial-entry-detail",
+              new URLSearchParams({ entryId: created.id })
+            );
+          }
+          return created;
+        }}
       />
       <EntryRevisionsDialog
         entry={revisionEntry}
@@ -236,98 +270,4 @@ function readContentTypeFilter() {
   return typeof window === "undefined"
     ? "all"
     : (new URLSearchParams(window.location.search).get("modelId") ?? "all");
-}
-function ContentViewsToolbar({
-  statusFilter,
-  viewMode,
-  savedViews,
-  workflowStates,
-  onSetStatus,
-  onSetMode,
-  onApplyView,
-  onRemoveView,
-  onSaveView
-}: {
-  statusFilter: "all" | string;
-  viewMode: ViewMode;
-  savedViews: readonly SavedEditorialView[];
-  workflowStates: readonly { key: string; label: string }[];
-  onSetStatus: (status: "all" | string) => void;
-  onSetMode: (mode: ViewMode) => void;
-  onApplyView: (view: SavedEditorialView) => void;
-  onRemoveView: (id: string) => void;
-  onSaveView: () => void;
-}) {
-  const presets: ReadonlyArray<{ label: string; value: "all" | string }> = [
-    { label: "Tutti", value: "all" },
-    ...workflowStates.map((state) => ({ label: state.label, value: state.key }))
-  ];
-  return (
-    <div className="flex flex-col gap-4 rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel)] p-4 shadow-[var(--shadow-sm)]">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div
-          className="flex flex-wrap gap-1 rounded-lg bg-[color:var(--color-surface-subtle)] p-1"
-          aria-label="Viste preimpostate"
-        >
-          {presets.map((view) => (
-            <button
-              key={view.value}
-              type="button"
-              className={`rounded-md px-3 py-1.5 text-sm transition-colors ${statusFilter === view.value ? "bg-[color:var(--color-panel)] font-medium text-[color:var(--color-ink)] shadow-[var(--shadow-sm)]" : "text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)]"}`}
-              onClick={() => onSetStatus(view.value)}
-            >
-              {view.label}
-            </button>
-          ))}
-        </div>
-        <div className="flex items-center gap-1">
-          <Button
-            type="button"
-            variant={viewMode === "list" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => onSetMode("list")}
-          >
-            Elenco
-          </Button>
-          <Button
-            type="button"
-            variant={viewMode === "board" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => onSetMode("board")}
-          >
-            Board
-          </Button>
-          <Button type="button" variant="ghost" size="sm" onClick={onSaveView}>
-            <Icon name="bookmark" />
-            Salva vista
-          </Button>
-        </div>
-      </div>
-      {savedViews.length ? (
-        <div className="flex flex-wrap items-center gap-2 border-t border-[color:var(--color-border)] pt-3">
-          <span className="text-xs font-medium uppercase tracking-[0.08em] text-[color:var(--color-ink-subtle)]">
-            Le mie viste
-          </span>
-          {savedViews.map((view) => (
-            <span
-              key={view.id}
-              className="inline-flex items-center rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface)] pl-3 text-sm text-[color:var(--color-ink-muted)]"
-            >
-              <button type="button" className="py-1.5" onClick={() => onApplyView(view)}>
-                {view.name}
-              </button>
-              <button
-                type="button"
-                className="px-2 py-1.5 text-[color:var(--color-ink-subtle)] hover:text-[color:var(--color-ink)]"
-                aria-label={`Elimina vista ${view.name}`}
-                onClick={() => onRemoveView(view.id)}
-              >
-                ×
-              </button>
-            </span>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
 }

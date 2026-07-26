@@ -1,12 +1,11 @@
-import { Button } from "@trinacria-cms/trinacria-ui";
 import {
   formatEditorialDate,
-  getEntryActions,
   getEntryStatusMeta,
   type EditorialEntry,
   type EditorialEntryContentType,
   type TransitionAction
 } from "./entries.types.js";
+import { EditorialEntryActionsMenu } from "./editorial-entry-actions-menu.js";
 
 export function EditorialEntriesList({
   entries,
@@ -14,6 +13,7 @@ export function EditorialEntriesList({
   locale,
   actionEntryId,
   isLoading,
+  onEdit,
   onRevisions,
   onTransition
 }: {
@@ -22,6 +22,7 @@ export function EditorialEntriesList({
   locale: string;
   actionEntryId: string | null;
   isLoading: boolean;
+  onEdit: (entry: EditorialEntry) => void;
   onRevisions: (entry: EditorialEntry) => void;
   onTransition: (entry: EditorialEntry, action: TransitionAction) => void;
 }) {
@@ -45,6 +46,7 @@ export function EditorialEntriesList({
               locale={locale}
               isActing={actionEntryId === entry.id}
               onRevisions={() => onRevisions(entry)}
+              onEdit={() => onEdit(entry)}
               onTransition={onTransition}
             />
           ))}
@@ -61,7 +63,8 @@ function EntryRow({
   locale,
   isActing,
   onTransition,
-  onRevisions
+  onRevisions,
+  onEdit
 }: {
   entry: EditorialEntry;
   contentType?: EditorialEntryContentType;
@@ -69,18 +72,27 @@ function EntryRow({
   isActing: boolean;
   onTransition: (entry: EditorialEntry, action: TransitionAction) => void;
   onRevisions: () => void;
+  onEdit: () => void;
 }) {
-  const action = getEntryActions(entry.status, contentType)[0];
   const statusMeta = getEntryStatusMeta(entry.status, contentType);
   return (
     <li className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-[color:var(--color-border)] px-5 py-4 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_150px_130px_150px]">
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium text-[color:var(--color-ink)]">
+        <button
+          type="button"
+          className="max-w-full truncate text-left text-sm font-medium text-[color:var(--color-ink)] hover:underline"
+          onClick={onEdit}
+        >
           {entry.title ?? "Senza titolo"}
-        </p>
+        </button>
         <p className="mt-1 truncate text-xs text-[color:var(--color-ink-subtle)]">
           Aggiornato {formatEditorialDate(entry.updatedAt, locale)}
         </p>
+        <span
+          className={`mt-2 inline-flex w-fit rounded-full px-2 py-1 text-[11px] font-medium sm:hidden ${statusMeta.className}`}
+        >
+          {statusMeta.label}
+        </span>
       </div>
       <span className="hidden truncate text-sm text-[color:var(--color-ink-muted)] sm:block">
         {contentType?.name ?? "Modello rimosso"}
@@ -90,20 +102,15 @@ function EntryRow({
       >
         {statusMeta.label}
       </span>
-      <div className="flex justify-end gap-1">
-        <Button type="button" variant="ghost" size="sm" onClick={onRevisions}>
-          Cronologia
-        </Button>
-        {action ? (
-          <Button
-            type="button"
-            size="sm"
-            disabled={isActing}
-            onClick={() => onTransition(entry, action)}
-          >
-            {isActing ? "…" : action.label}
-          </Button>
-        ) : null}
+      <div className="flex justify-end">
+        <EditorialEntryActionsMenu
+          entry={entry}
+          contentType={contentType}
+          isActing={isActing}
+          onEdit={onEdit}
+          onRevisions={onRevisions}
+          onTransition={onTransition}
+        />
       </div>
     </li>
   );
