@@ -1,76 +1,47 @@
 import { useCallback, useEffect, useState } from "react";
-import type {
-  CmsClient,
-  ContentTypeField,
-  ContentWorkflow,
-  EditorialContentType
+import {
+  CONTENT_MODEL_ICON_OPTIONS,
+  type CmsClient,
+  type ContentTypeField,
+  type ContentWorkflow,
+  type EditorialContentType
 } from "../editorial-admin.types.js";
+import {
+  hasDuplicateFieldKey,
+  moveField,
+  upsertField
+} from "../content-types/content-field-collection.js";
 import { toEditorialDisplayError } from "../lib/editorial-admin-errors.js";
+import { workflowFromPreset } from "./content-workflow-presets.js";
 
-const REVIEW_WORKFLOW: ContentWorkflow = {
-  preset: "review",
-  states: [
-    { key: "draft", label: "Bozza", initial: true },
-    { key: "in_review", label: "In revisione", initial: false },
-    { key: "approved", label: "Approvato", initial: false },
-    { key: "published", label: "Pubblicato", initial: false }
-  ],
-  transitions: [
-    { key: "submit", label: "Invia in revisione", from: "draft", to: "in_review" },
-    { key: "approve", label: "Approva", from: "in_review", to: "approved" },
-    {
-      key: "request_changes",
-      label: "Richiedi modifiche",
-      from: "in_review",
-      to: "draft"
-    },
-    { key: "publish", label: "Pubblica", from: "approved", to: "published" },
-    {
-      key: "unpublish",
-      label: "Rimuovi dalla pubblicazione",
-      from: "published",
-      to: "draft"
-    }
-  ]
-};
+type ModelIcon = (typeof CONTENT_MODEL_ICON_OPTIONS)[number]["value"];
 
-const DIRECT_WORKFLOW: ContentWorkflow = {
-  preset: "direct",
-  states: [
-    { key: "draft", label: "Bozza", initial: true },
-    { key: "published", label: "Pubblicato", initial: false }
-  ],
-  transitions: [
-    { key: "publish", label: "Pubblica", from: "draft", to: "published" },
-    {
-      key: "unpublish",
-      label: "Rimuovi dalla pubblicazione",
-      from: "published",
-      to: "draft"
-    }
-  ]
-};
-
-export function workflowFromPreset(preset: "review" | "direct"): ContentWorkflow {
-  const source = preset === "direct" ? DIRECT_WORKFLOW : REVIEW_WORKFLOW;
-  return {
-    ...source,
-    states: source.states.map((state) => ({ ...state })),
-    transitions: source.transitions.map((transition) => ({ ...transition }))
-  };
+interface ModelDraft {
+  name: string;
+  description: string;
+  icon: ModelIcon;
+  workflow: ContentWorkflow;
+  fields: readonly ContentTypeField[];
 }
+
+const EMPTY_DRAFT: ModelDraft = {
+  name: "",
+  description: "",
+  icon: "file-text",
+  workflow: workflowFromPreset("review"),
+  fields: []
+};
 
 export function useContentTypeDetail(cms: CmsClient, modelId: string | null) {
   const [model, setModel] = useState<EditorialContentType | null>(null);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [workflow, setWorkflow] = useState<ContentWorkflow>(() => workflowFromPreset("review"));
-  const [showInMainNavigation, setShowInMainNavigation] = useState(false);
-  const [fields, setFields] = useState<readonly ContentTypeField[]>([]);
+  const [draft, setDraft] = useState<ModelDraft>(EMPTY_DRAFT);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+
+  const updateDraft = (next: Partial<ModelDraft>) =>
+    setDraft((current) => ({ ...current, ...next }));
 
   const load = useCallback(async () => {
     if (!modelId) {
@@ -78,6 +49,7 @@ export function useContentTypeDetail(cms: CmsClient, modelId: string | null) {
       setIsLoading(false);
       return;
     }
+
     try {
       setIsLoading(true);
       setError(null);
@@ -86,14 +58,7 @@ export function useContentTypeDetail(cms: CmsClient, modelId: string | null) {
         path: `/v1/editorial/content-types/${modelId}`
       });
       setModel(response.data);
-      setName(response.data.name);
-      setDescription(response.data.description ?? "");
-      setWorkflow(
-        response.data.workflow ??
-          workflowFromPreset(response.data.workflowId === "direct" ? "direct" : "review")
-      );
-      setShowInMainNavigation(Boolean(response.data.showInMainNavigation));
-      setFields(response.data.fields);
+      setDraft(toModelDraft(response.data));
     } catch (currentError) {
       setModel(null);
       setError(toEditorialDisplayError(currentError, "Non è stato possibile caricare il modello."));
@@ -101,21 +66,30 @@ export function useContentTypeDetail(cms: CmsClient, modelId: string | null) {
       setIsLoading(false);
     }
   }, [cms, modelId]);
+
   useEffect(() => {
     void load();
   }, [load]);
 
+  const rejectDuplicateField = (key: string) => {
+    setError(`La chiave "${key}" è già in uso in questo modello.`);
+    return false;
+  };
+
   const addField = (field: ContentTypeField) => {
-    if (fields.some((current) => current.key === field.key)) {
-      setError(`La chiave "${field.key}" è già in uso in questo modello.`);
-      return false;
-    }
+    if (hasDuplicateFieldKey(draft.fields, field.key)) return rejectDuplicateField(field.key);
     setError(null);
-    setFields((current) => [...current, field]);
+    updateDraft({ fields: upsertField(draft.fields, field) });
     return true;
   };
-  const removeField = (key: string) =>
-    setFields((current) => current.filter((field) => field.key !== key));
+
+  const updateField = (key: string, field: ContentTypeField) => {
+    if (hasDuplicateFieldKey(draft.fields, field.key, key)) return rejectDuplicateField(field.key);
+    setError(null);
+    updateDraft({ fields: upsertField(draft.fields, field, key) });
+    return true;
+  };
+
   const save = async () => {
     if (!model) return false;
     try {
@@ -126,16 +100,17 @@ export function useContentTypeDetail(cms: CmsClient, modelId: string | null) {
         method: "PATCH",
         path: `/v1/editorial/content-types/${model.id}`,
         body: {
-          name: name.trim(),
-          ...(description.trim()
-            ? { description: description.trim() }
+          name: draft.name.trim(),
+          ...(draft.description.trim()
+            ? { description: draft.description.trim() }
             : { clearDescription: true }),
-          workflow,
-          showInMainNavigation,
-          fields
+          icon: draft.icon,
+          workflow: draft.workflow,
+          fields: draft.fields
         }
       });
       setModel(response.data);
+      setDraft(toModelDraft(response.data));
       setMessage("Modello salvato.");
       window.dispatchEvent(new Event("trinacria-cms:editorial-navigation-updated"));
       return true;
@@ -146,23 +121,39 @@ export function useContentTypeDetail(cms: CmsClient, modelId: string | null) {
       setIsSaving(false);
     }
   };
+
   return {
     model,
-    name,
-    description,
-    workflow,
-    showInMainNavigation,
-    fields,
+    ...draft,
     error,
     message,
     isLoading,
     isSaving,
-    setName,
-    setDescription,
-    setWorkflow,
-    setShowInMainNavigation,
+    setName: (name: string) => updateDraft({ name }),
+    setDescription: (description: string) => updateDraft({ description }),
+    setIcon: (icon: ModelIcon) => updateDraft({ icon }),
+    setWorkflow: (workflow: ContentWorkflow) => updateDraft({ workflow }),
     addField,
-    removeField,
+    updateField,
+    removeField: (key: string) =>
+      updateDraft({ fields: draft.fields.filter((field) => field.key !== key) }),
+    moveField: (key: string, direction: "up" | "down") =>
+      updateDraft({ fields: moveField(draft.fields, key, direction) }),
     save
   };
+}
+
+function toModelDraft(model: EditorialContentType): ModelDraft {
+  return {
+    name: model.name,
+    description: model.description ?? "",
+    icon: isModelIcon(model.icon) ? model.icon : "file-text",
+    workflow:
+      model.workflow ?? workflowFromPreset(model.workflowId === "direct" ? "direct" : "review"),
+    fields: model.fields
+  };
+}
+
+function isModelIcon(icon?: string): icon is ModelIcon {
+  return CONTENT_MODEL_ICON_OPTIONS.some((option) => option.value === icon);
 }
