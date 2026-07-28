@@ -36,7 +36,7 @@ interface MediaDirectory {
   inheritAcl: boolean;
 }
 
-interface MediaAsset {
+export interface MediaAsset {
   id: string;
   directoryId?: string;
   displayName: string;
@@ -48,6 +48,11 @@ interface MediaAsset {
   status: string;
   visibility: Visibility;
   updatedAt: string;
+}
+
+export interface MediaFileManagerSelection {
+  asset: MediaAsset;
+  url: string;
 }
 
 interface MediaShare {
@@ -65,10 +70,14 @@ type DeleteTarget =
 export interface MediaFileManagerContext {
   cms: CmsClient;
   apiBaseUrl?: string;
+  acceptedMimeTypes?: readonly string[];
   presentation?: "page" | "modal";
+  selectionMode?: "manage" | "single";
   open?: boolean;
   onClose?: () => void;
-  t: (key: string, fallback?: string) => string;
+  onSelect?: (selection: MediaFileManagerSelection) => void;
+  selectLabel?: string;
+  t?: (key: string, fallback?: string) => string;
 }
 
 const EMPTY_SHARE = {
@@ -79,11 +88,15 @@ const EMPTY_SHARE = {
 };
 
 export function MediaFileManager({
+  acceptedMimeTypes,
   apiBaseUrl = "/cms",
   cms,
   onClose = () => undefined,
+  onSelect,
   open = true,
-  presentation = "page"
+  presentation = "page",
+  selectLabel = "Usa media",
+  selectionMode = "manage"
 }: MediaFileManagerContext) {
   const [directories, setDirectories] = useState<readonly MediaDirectory[]>([]);
   const [assets, setAssets] = useState<readonly MediaAsset[]>([]);
@@ -134,13 +147,14 @@ export function MediaFileManager({
       .filter(
         (asset) =>
           asset.status !== "deleted" &&
+          matchesAcceptedMimeType(asset.mimeType, acceptedMimeTypes) &&
           (!query ||
             asset.displayName.toLowerCase().includes(query) ||
             asset.originalFilename.toLowerCase().includes(query) ||
             asset.mimeType.toLowerCase().includes(query))
       )
       .sort((left, right) => sortMediaItems(left, right, sort));
-  }, [assets, search, sort]);
+  }, [acceptedMimeTypes, assets, search, sort]);
   const visibleDirectories = useMemo(() => {
     const query = search.trim().toLowerCase();
     return directories
@@ -153,8 +167,9 @@ export function MediaFileManager({
   }, [currentDirectoryId, directories, search, sort]);
 
   useEffect(() => {
+    if (presentation === "modal" && !open) return;
     void loadFileManager();
-  }, [currentDirectoryId]);
+  }, [currentDirectoryId, open, presentation]);
 
   async function loadFileManager() {
     try {
@@ -232,6 +247,22 @@ export function MediaFileManager({
     },
     [apiBaseUrl, cms]
   );
+
+  async function selectAsset(asset: MediaAsset | null) {
+    if (!asset || !onSelect) return;
+    try {
+      setIsSaving(true);
+      setError(null);
+      const url = await resolveAssetPreview(asset.id);
+      if (!url) throw new Error("Non è stato possibile ottenere l’anteprima del media.");
+      onSelect({ asset, url });
+      onClose();
+    } catch (currentError) {
+      setError(toDisplayError(currentError));
+    } finally {
+      setIsSaving(false);
+    }
+  }
 
   async function createDirectory(nameOverride?: string) {
     const name = (nameOverride ?? "").trim();
@@ -564,7 +595,9 @@ export function MediaFileManager({
         onCreateCsv={openCreateCsvDialog}
         onDetailsVisibleChange={setDetailsVisible}
         onNavigate={navigateToDirectory}
-        onOpenAsset={setContentAsset}
+        onOpenAsset={(asset) =>
+          selectionMode === "single" ? void selectAsset(asset) : setContentAsset(asset)
+        }
         onAssetContextMenu={(asset, event) => openContextMenu(event, asset)}
         onBackgroundContextMenu={(event) => openContextMenu(event)}
         onSearchChange={setSearch}
@@ -689,12 +722,33 @@ export function MediaFileManager({
       <>
         <Dialog
           open={open}
-          title="File manager"
-          description="Gestisci file, cartelle e condivisioni."
+          title={selectionMode === "single" ? "Seleziona un media" : "File manager"}
+          description={
+            selectionMode === "single"
+              ? "Scegli un file dalla libreria media."
+              : "Gestisci file, cartelle e condivisioni."
+          }
           closeLabel="Chiudi"
           closeVariant="icon"
           onClose={onClose}
           width="fullscreen"
+          footer={
+            selectionMode === "single" ? (
+              <div className="flex w-full items-center justify-end gap-2">
+                <Button type="button" variant="secondary" onClick={onClose}>
+                  Annulla
+                </Button>
+                <Button
+                  type="button"
+                  disabled={!selectedAsset}
+                  isLoading={isSaving}
+                  onClick={() => void selectAsset(selectedAsset)}
+                >
+                  {selectLabel}
+                </Button>
+              </div>
+            ) : undefined
+          }
         >
           {workspace}
         </Dialog>
@@ -713,6 +767,14 @@ export function MediaFileManager({
 
 /** Alias intended for consumers that embed the reusable Media file manager. */
 export const FileManager = MediaFileManager;
+
+function matchesAcceptedMimeType(mimeType: string, acceptedMimeTypes?: readonly string[]) {
+  if (!acceptedMimeTypes?.length) return true;
+  return acceptedMimeTypes.some((accepted) => {
+    if (accepted.endsWith("/*")) return mimeType.startsWith(accepted.slice(0, -1));
+    return mimeType === accepted;
+  });
+}
 
 function DirectoryInspector({
   directory,
