@@ -1,4 +1,5 @@
 import type { createCmsSdkClient } from "@trinacria-cms/sdk";
+import type { EntryBody } from "../modules/entries/structured-document.contract.js";
 
 export type CmsClient = ReturnType<typeof createCmsSdkClient>;
 
@@ -82,7 +83,7 @@ export interface EditorialEntryRecord {
   reviewerUserId?: string;
   title?: string;
   slug?: string;
-  body?: Record<string, unknown>;
+  body?: EntryBody;
   data: Record<string, unknown>;
   status: string;
   scheduledAt?: string;

@@ -6,10 +6,15 @@ import {
   EDITORIAL_PACK_MANIFEST,
   EDITORIAL_PACK_PERMISSION_KEY_LIST,
   EDITORIAL_PACK_SETTING_DEFINITIONS,
+  CreateEntryInputSchema,
   ContentTypeValidationError,
   ContentTypesService,
   EntriesService,
   EntryValidationError,
+  StructuredDocumentSchema,
+  moveStructuredContentBlock,
+  moveStructuredContentBlockToContainer,
+  toStructuredDocument,
   type EntryRecord,
   type ContentTypeRecord
 } from "../src/index.js";
@@ -92,6 +97,238 @@ test("editorial errors expose domain validation messages returned by the API", (
     toEditorialDisplayError(error, "Non è stato possibile aggiornare il workflow."),
     "Assegna un revisore prima di inviare il contenuto in revisione."
   );
+});
+
+test("structured documents accept the V1 block catalog and reject duplicate blocks", () => {
+  const body = StructuredDocumentSchema.parse({
+    version: 1,
+    blocks: [
+      {
+        id: "intro",
+        type: "paragraph",
+        version: 1,
+        appearance: { textColor: "blue", backgroundColor: "yellow" },
+        data: { text: "Introduzione" }
+      },
+      {
+        id: "image-1",
+        type: "image",
+        version: 1,
+        data: { src: "", assetId: "media-cover-1", alt: "Copertina" }
+      },
+      {
+        id: "points",
+        type: "list",
+        version: 1,
+        data: { style: "bulleted", items: ["Primo", "Secondo"] }
+      },
+      {
+        id: "facts",
+        type: "table",
+        version: 1,
+        data: {
+          hasHeader: true,
+          rows: [
+            ["Nome", "Valore"],
+            ["Autore", "Trinacria"]
+          ]
+        }
+      },
+      {
+        id: "two-columns",
+        type: "layout",
+        version: 1,
+        data: {
+          columns: [
+            {
+              id: "left-column",
+              blocks: [
+                {
+                  id: "nested-layout",
+                  type: "layout",
+                  version: 1,
+                  data: {
+                    columns: [
+                      {
+                        id: "nested-left",
+                        blocks: [
+                          {
+                            id: "nested-copy",
+                            type: "paragraph",
+                            version: 1,
+                            data: { text: "Contenuto annidato" }
+                          }
+                        ]
+                      },
+                      { id: "nested-right", blocks: [] }
+                    ]
+                  }
+                }
+              ]
+            },
+            { id: "right-column", blocks: [] }
+          ]
+        }
+      }
+    ]
+  });
+
+  assert.equal(body.blocks.length, 5);
+  assert.throws(() =>
+    StructuredDocumentSchema.parse({
+      version: 1,
+      blocks: [
+        { id: "same", type: "paragraph", version: 1, data: { text: "Uno" } },
+        { id: "same", type: "heading", version: 1, data: { text: "Due", level: 2 } }
+      ]
+    })
+  );
+  assert.throws(() =>
+    StructuredDocumentSchema.parse({
+      version: 1,
+      blocks: [
+        {
+          id: "broken-table",
+          type: "table",
+          version: 1,
+          data: { hasHeader: false, rows: [["A", "B"], ["C"]] }
+        }
+      ]
+    })
+  );
+
+  const nestedLayout = (depth: number): unknown =>
+    depth === 0
+      ? {
+          id: "deep-copy",
+          type: "paragraph",
+          version: 1,
+          data: { text: "Profondità controllata" }
+        }
+      : {
+          id: `layout-depth-${depth}`,
+          type: "layout",
+          version: 1,
+          data: {
+            columns: [
+              { id: `depth-${depth}-left`, blocks: [nestedLayout(depth - 1)] },
+              { id: `depth-${depth}-right`, blocks: [] }
+            ]
+          }
+        };
+
+  assert.doesNotThrow(() =>
+    StructuredDocumentSchema.parse({ version: 1, blocks: [nestedLayout(3)] })
+  );
+  assert.throws(() =>
+    StructuredDocumentSchema.parse({ version: 1, blocks: [nestedLayout(4)] })
+  );
+  assert.throws(() =>
+    StructuredDocumentSchema.parse({
+      version: 1,
+      blocks: [
+        { id: "duplicate-deep", type: "paragraph", version: 1, data: { text: "Root" } },
+        {
+          id: "duplicate-layout",
+          type: "layout",
+          version: 1,
+          data: {
+            columns: [
+              {
+                id: "duplicate-left",
+                blocks: [
+                  {
+                    id: "duplicate-deep",
+                    type: "paragraph",
+                    version: 1,
+                    data: { text: "Nested" }
+                  }
+                ]
+              },
+              { id: "duplicate-right", blocks: [] }
+            ]
+          }
+        }
+      ]
+    })
+  );
+});
+
+test("legacy text bodies stay readable and are upgraded on the next save", () => {
+  const document = toStructuredDocument({ text: "Contenuto già esistente" });
+
+  assert.deepEqual(document, {
+    version: 1,
+    blocks: [
+      {
+        id: "legacy-body-1",
+        type: "paragraph",
+        version: 1,
+        data: { text: "Contenuto già esistente" }
+      }
+    ]
+  });
+  const parsed = CreateEntryInputSchema.parse({ contentTypeId: "article", data: {}, body: document });
+  assert.equal(parsed.body?.version, 1);
+  assert.equal(parsed.body && "blocks" in parsed.body ? parsed.body.blocks[0]?.id : null, "legacy-body-1");
+});
+
+test("structured blocks can be reordered through document insertion points", () => {
+  const document = {
+    version: 1,
+    blocks: [
+      { id: "a", type: "paragraph", version: 1, data: { text: "A" } },
+      { id: "b", type: "paragraph", version: 1, data: { text: "B" } },
+      { id: "c", type: "paragraph", version: 1, data: { text: "C" } }
+    ]
+  } as const;
+
+  assert.deepEqual(
+    moveStructuredContentBlock(document, "a", 3).blocks.map((block) => block.id),
+    ["b", "c", "a"]
+  );
+  assert.deepEqual(
+    moveStructuredContentBlock(document, "c", 0).blocks.map((block) => block.id),
+    ["c", "a", "b"]
+  );
+});
+
+test("structured documents preserve inline marks and move blocks across layout columns", () => {
+  const parsed = StructuredDocumentSchema.parse({
+    version: 1,
+    blocks: [
+      {
+        id: "intro",
+        type: "paragraph",
+        version: 1,
+        data: {
+          text: "Leggi la guida",
+          inline: [
+            { text: "Leggi ", bold: true },
+            { text: "la guida", link: { href: "https://example.test/guida" } }
+          ]
+        }
+      },
+      {
+        id: "layout",
+        type: "layout",
+        version: 1,
+        data: {
+          columns: [
+            { id: "left", blocks: [] },
+            { id: "right", blocks: [{ id: "nested", type: "paragraph", version: 1, data: { text: "Dentro" } }] }
+          ]
+        }
+      }
+    ]
+  });
+  assert.equal(parsed.blocks[0]?.type, "paragraph");
+  const moved = moveStructuredContentBlockToContainer(parsed, "intro", "left", 0);
+  assert.equal(moved.blocks[0]?.type, "layout");
+  const layout = moved.blocks[0];
+  assert.equal(layout?.type, "layout");
+  assert.deepEqual(layout?.type === "layout" ? layout.data.columns[0]?.blocks.map((block) => block.id) : [], ["intro"]);
+  assert.deepEqual(layout?.type === "layout" ? layout.data.columns[1]?.blocks.map((block) => block.id) : [], ["nested"]);
 });
 
 test("entries are validated against the active content type before persistence", async () => {
@@ -263,6 +500,51 @@ test("editorial transitions create immutable revision snapshots", async () => {
       service.transitionEntry(entry.id, "publish", { actorUserId: "editor-1", canAccessAll: true }),
     EntryValidationError
   );
+});
+
+test("ordinary saves do not create revisions while explicit snapshots do", async () => {
+  const entry: EntryRecord = {
+    id: "entry-snapshot-1",
+    contentTypeId: "content-type-page",
+    ownerUserId: "author-1",
+    title: "Bozza",
+    data: {},
+    status: "draft",
+    version: 1,
+    createdAt: "2026-07-17T00:00:00.000Z",
+    updatedAt: "2026-07-17T00:00:00.000Z"
+  };
+  const revisions = {
+    records: [] as Array<{ reason: string; snapshotJson: string }>,
+    async listByEntryId() {
+      return this.records;
+    },
+    async create(revision: { reason: string; snapshotJson: string }) {
+      this.records.unshift(revision);
+      return revision;
+    }
+  };
+  const service = new EntriesService(
+    {
+      async findById() {
+        return entry;
+      },
+      async update() {
+        entry.title = "Salvata";
+        return entry;
+      }
+    } as never,
+    {} as never,
+    revisions as never
+  );
+  const scope = { actorUserId: "author-1", canAccessAll: false };
+
+  await service.updateEntry(entry.id, { title: "Salvata" }, scope);
+  assert.equal(revisions.records.length, 0);
+
+  await service.createRevisionSnapshot(entry.id, scope);
+  assert.equal(revisions.records.length, 1);
+  assert.equal(revisions.records[0]?.reason, "snapshot");
 });
 
 test("direct workflows allow a draft to be published without review", async () => {
