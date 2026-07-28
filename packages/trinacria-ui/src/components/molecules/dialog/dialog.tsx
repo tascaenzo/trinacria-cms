@@ -36,7 +36,9 @@ export function Dialog({
   closeLabel = "Close",
   closeShortcutLabel = "Esc",
   closeVariant = "button",
+  chrome = "standard",
   footer,
+  headerActions,
   onClose,
   open,
   title,
@@ -142,7 +144,9 @@ export function Dialog({
         variant === "modal" && "duration-200 ease-out",
         variant === "drawer" && "duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
         variant === "modal" &&
+          chrome === "standard" &&
           "flex items-start justify-center px-3 py-3 sm:items-center sm:px-4 sm:py-6",
+        variant === "modal" && chrome === "workspace" && "flex items-stretch justify-center p-0",
         variant === "drawer" && "flex items-stretch justify-end",
         isActive
           ? "bg-[color:var(--color-overlay)] backdrop-blur-[2px]"
@@ -170,6 +174,9 @@ export function Dialog({
           variant === "modal" &&
             width === "fullscreen" &&
             "flex h-[calc(100vh-2rem)] max-w-[calc(100vw-2rem)] flex-col",
+          variant === "modal" &&
+            chrome === "workspace" &&
+            "!h-screen !max-h-none !max-w-none !rounded-none !border-0 !shadow-none",
           variant === "drawer" &&
             "ml-auto flex h-full max-w-[640px] flex-col rounded-none border-y-0 border-r-0",
           variant === "modal" &&
@@ -180,45 +187,78 @@ export function Dialog({
             (isActive ? "translate-x-0 opacity-100" : "translate-x-full opacity-0")
         )}
       >
-        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4 sm:px-6 sm:py-5">
+        <header
+          className={cn(
+            "flex shrink-0 justify-between border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)]",
+            chrome === "standard" && "items-start gap-4 px-4 py-4 sm:px-6 sm:py-5",
+            chrome === "workspace" && "h-12 items-center gap-3 px-3 sm:px-4"
+          )}
+        >
           <div className="min-w-0">
-            {eyebrow ? <Eyebrow className="tracking-[0.18em]">{eyebrow}</Eyebrow> : null}
+            {eyebrow && chrome === "standard" ? (
+              <Eyebrow className="tracking-[0.18em]">{eyebrow}</Eyebrow>
+            ) : null}
             <h2
               id={titleId}
               className={cn(
-                "text-lg font-semibold leading-7 text-[color:var(--color-ink)]",
-                eyebrow ? "mt-2" : undefined
+                "text-[color:var(--color-ink)]",
+                chrome === "standard" && "text-lg font-semibold leading-7",
+                chrome === "standard" && eyebrow ? "mt-2" : undefined,
+                chrome === "workspace" && "truncate text-sm font-medium"
               )}
             >
-              {title}
+              {chrome === "workspace" && eyebrow ? (
+                <>
+                  <span className="text-[color:var(--color-ink-subtle)]">{eyebrow}</span>
+                  <span aria-hidden="true" className="mx-2 text-[color:var(--color-border-strong)]">
+                    /
+                  </span>
+                </>
+              ) : null}
+              <span>{title}</span>
             </h2>
-            {description ? (
+            {description && chrome === "standard" ? (
               <BodyText id={descriptionId} className="mt-2 max-w-2xl">
                 {description}
               </BodyText>
             ) : null}
+            {description && chrome === "workspace" ? (
+              <span id={descriptionId} className="sr-only">
+                {description}
+              </span>
+            ) : null}
           </div>
-          {closeVariant === "icon" ? (
-            <div className="flex shrink-0 items-center gap-2">
-              <kbd className="hidden rounded border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] px-1.5 py-0.5 text-[10px] font-medium leading-none text-[color:var(--color-ink-subtle)] shadow-[var(--shadow-sm)] sm:inline-flex">
-                {closeShortcutLabel}
-              </kbd>
-              <button
+          <div className="flex shrink-0 items-center gap-2">
+            {headerActions}
+            {closeVariant === "icon" || chrome === "workspace" ? (
+              <>
+                {chrome === "standard" ? (
+                  <kbd className="hidden rounded border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] px-1.5 py-0.5 text-[10px] font-medium leading-none text-[color:var(--color-ink-subtle)] shadow-[var(--shadow-sm)] sm:inline-flex">
+                    {closeShortcutLabel}
+                  </kbd>
+                ) : null}
+                <button
+                  ref={closeButtonRef}
+                  type="button"
+                  onClick={onClose}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[color:var(--color-ink-muted)] transition hover:bg-[color:var(--color-interactive-hover)] hover:text-[color:var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-focus)]"
+                  aria-label={closeLabel}
+                  title={closeLabel}
+                >
+                  <Icon name="x" className="h-4 w-4" />
+                </button>
+              </>
+            ) : (
+              <Button
                 ref={closeButtonRef}
-                type="button"
+                variant="secondary"
+                className="shrink-0"
                 onClick={onClose}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[color:var(--color-ink-muted)] transition hover:bg-[color:var(--color-interactive-hover)] hover:text-[color:var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-focus)]"
-                aria-label={closeLabel}
-                title={closeLabel}
               >
-                <Icon name="x" className="h-4 w-4" />
-              </button>
-            </div>
-          ) : (
-            <Button ref={closeButtonRef} variant="secondary" className="shrink-0" onClick={onClose}>
-              {closeLabel}
-            </Button>
-          )}
+                {closeLabel}
+              </Button>
+            )}
+          </div>
         </header>
         <div
           className={cn(
