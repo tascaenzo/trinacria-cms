@@ -1,4 +1,5 @@
 import { defineEntity, type Infer, s } from "@trinacria-cms/kernel";
+import { EntryBodySchema } from "./structured-document.js";
 
 export const EntryStatusSchema = s.string({
   trim: true,
@@ -33,7 +34,7 @@ export const EntryRecordSchema = s.object(
         pattern: /^[a-z0-9]+(?:-[a-z0-9]+)*$/
       })
       .optional(),
-    body: FreeformObjectSchema.optional(),
+    body: EntryBodySchema.optional(),
     data: FreeformObjectSchema,
     status: EntryStatusSchema,
     scheduledAt: s.dateTimeString().optional(),

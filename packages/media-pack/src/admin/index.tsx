@@ -42,6 +42,11 @@ export const MEDIA_PACK_ADMIN_RENDERERS = {
   }
 };
 
+export type {
+  MediaAsset,
+  MediaFileManagerContext,
+  MediaFileManagerSelection
+} from "./media-file-manager.js";
 export {
   FileManager,
   MediaFileManager,

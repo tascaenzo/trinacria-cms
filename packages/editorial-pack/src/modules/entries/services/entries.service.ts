@@ -134,7 +134,6 @@ export class EntriesService {
         "Il contenuto è stato modificato da un altro utente. Aggiorna e riprova."
       );
     }
-    await this.createRevision(updated, "updated", scope.actorUserId);
     return updated;
   }
 
@@ -194,6 +193,15 @@ export class EntriesService {
     if (!entry) return null;
     if (scope) this.assertEntryAccess(entry, scope);
     return this.revisions.listByEntryId(entryId);
+  }
+
+  /** Saves an intentional restore point; ordinary and automatic saves do not create revisions. */
+  async createRevisionSnapshot(id: string, scope: EntryAccessScope) {
+    const entry = await this.repository.findById(id);
+    if (!entry) return null;
+    this.assertEntryAccess(entry, scope);
+    await this.createRevision(entry, "snapshot", scope.actorUserId);
+    return entry;
   }
 
   async getTransitionPermission(

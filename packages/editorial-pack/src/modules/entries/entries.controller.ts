@@ -65,6 +65,9 @@ export class EntriesController extends HttpController {
       .get("/v1/editorial/entries/:id/revisions", this.listRevisions, {
         middlewares: [this.authenticated]
       })
+      .post("/v1/editorial/entries/:id/revisions", this.createRevisionSnapshot, {
+        middlewares: [this.authenticated]
+      })
       .post("/v1/editorial/entries/:id/revisions/:revisionId/restore", this.restoreRevision, {
         middlewares: [this.authenticated]
       })
@@ -190,6 +193,19 @@ export class EntriesController extends HttpController {
       );
       return restored
         ? responder.success(restored)
+        : responder.notFound(`Entry "${ctx.params.id}" not found`);
+    } catch (error) {
+      return responder.fromError(error);
+    }
+  };
+
+  private createRevisionSnapshot = async (ctx: HttpContext) => {
+    if (!ctx.params.id) return responder.invalidRequest("Missing entry id");
+    try {
+      await this.require(ctx, "update");
+      const entry = await this.entries.createRevisionSnapshot(ctx.params.id, await this.scope(ctx));
+      return entry
+        ? responder.success(entry)
         : responder.notFound(`Entry "${ctx.params.id}" not found`);
     } catch (error) {
       return responder.fromError(error);

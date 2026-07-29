@@ -1,4 +1,5 @@
 import { type Infer, s } from "@trinacria-cms/kernel";
+import { EntryBodySchema } from "./structured-document.js";
 
 const JsonScalarSchema = s.union([s.string(), s.number(), s.boolean()]);
 const JsonObjectSchema = s.record(s.string({ trim: true, minLength: 1 }), JsonScalarSchema);
@@ -23,7 +24,7 @@ export const CreateEntryInputSchema = s.object(
         pattern: /^[a-z0-9]+(?:-[a-z0-9]+)*$/
       })
       .optional(),
-    body: FreeformObjectSchema.optional(),
+    body: EntryBodySchema.optional(),
     data: FreeformObjectSchema,
     reviewerUserId: s.string({ trim: true, minLength: 1 }).optional(),
     scheduledAt: s.dateTimeString().optional()
@@ -47,7 +48,7 @@ export const UpdateEntryInputSchema = s.object(
       })
       .optional(),
     clearSlug: s.boolean().optional(),
-    body: FreeformObjectSchema.optional(),
+    body: EntryBodySchema.optional(),
     clearBody: s.boolean().optional(),
     data: FreeformObjectSchema.optional(),
     reviewerUserId: s.string({ trim: true, minLength: 1 }).optional(),
