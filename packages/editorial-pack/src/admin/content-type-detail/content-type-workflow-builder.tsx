@@ -1,4 +1,12 @@
-import { Button, Dialog, Icon, Input } from "@trinacria-cms/trinacria-ui";
+import {
+  Button,
+  Dialog,
+  Icon,
+  IconButton,
+  Input,
+  Panel,
+  SelectableCard
+} from "@trinacria-cms/trinacria-ui";
 import { useState } from "react";
 import type { ContentWorkflow, ContentWorkflowState } from "../editorial-admin.types.js";
 
@@ -185,7 +193,7 @@ function WorkflowStateLibrary({
   states: readonly ContentWorkflowState[];
 }) {
   return (
-    <aside className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel)] p-4">
+    <Panel as="aside" className="p-4" tone="soft">
       <h4 className="text-sm font-semibold text-[color:var(--color-ink)]">Fasi disponibili</h4>
       <p className="mt-1 text-xs leading-5 text-[color:var(--color-ink-muted)]">
         Trascina una fase nel flusso.
@@ -194,18 +202,18 @@ function WorkflowStateLibrary({
         {STATE_LIBRARY.map((state) => {
           const isAdded = states.some((item) => item.key === state.key);
           return (
-            <button
+            <SelectableCard
               key={state.key}
-              type="button"
+              padding="sm"
               draggable={!disabled && !isAdded}
               disabled={disabled || isAdded}
               onDragStart={() => onDragStart({ ...state, initial: false })}
               onDragEnd={onDragEnd}
-              className="flex items-center justify-between rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 text-left text-sm font-medium text-[color:var(--color-ink)] transition hover:border-[color:var(--color-border-strong)] disabled:cursor-not-allowed disabled:opacity-45"
+              className="flex items-center justify-between text-sm font-medium"
             >
               {state.label}
               <Icon name="grip-vertical" className="text-[color:var(--color-ink-subtle)]" />
-            </button>
+            </SelectableCard>
           );
         })}
       </div>
@@ -230,7 +238,7 @@ function WorkflowStateLibrary({
           </Button>
         </div>
       </div>
-    </aside>
+    </Panel>
   );
 }
 
@@ -252,8 +260,9 @@ function WorkflowBoard({
   states: readonly ContentWorkflowState[];
 }) {
   return (
-    <div
-      className="min-h-72 overflow-x-auto rounded-xl border-2 border-dashed border-[color:var(--color-border-strong)] bg-[color:var(--color-surface-subtle)] p-5"
+    <Panel
+      className="min-h-72 overflow-x-auto border-2 p-5"
+      tone="dashed"
       onDragOver={(event) => event.preventDefault()}
       onDrop={() => onDrop()}
     >
@@ -293,7 +302,7 @@ function WorkflowBoard({
           Trascina qui la prima fase del workflow.
         </div>
       )}
-    </div>
+    </Panel>
   );
 }
 
@@ -352,16 +361,15 @@ function WorkflowStateCard({
           Trascina per riordinare
         </span>
       </button>
-      <button
-        type="button"
+      <IconButton
+        icon="x"
         disabled={disabled || statesCount <= 1}
         onClick={() => onRemove(state.key)}
-        className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-md bg-[color:var(--color-surface)] text-[color:var(--color-ink-muted)] shadow-[var(--shadow-sm)] transition hover:text-[color:var(--color-danger-ink)] disabled:cursor-not-allowed disabled:opacity-40"
-        aria-label={`Rimuovi ${state.label}`}
+        className="absolute right-2 top-2 bg-[color:var(--color-surface)]"
+        label={`Rimuovi ${state.label}`}
+        size="sm"
         title="Rimuovi fase"
-      >
-        <Icon name="x" className="h-4 w-4" />
-      </button>
+      />
     </div>
   );
 }

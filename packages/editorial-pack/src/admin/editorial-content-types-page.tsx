@@ -1,4 +1,4 @@
-import { ResourcePage, Tabs } from "@trinacria-cms/trinacria-ui";
+import { ErrorBanner, Panel, ResourcePage, Tabs } from "@trinacria-cms/trinacria-ui";
 import { useState } from "react";
 import {
   ContentModelDeleteDialog,
@@ -38,10 +38,10 @@ export function EditorialContentTypesPage({
       : permanentlyDeleteContentType(request.model);
 
   return (
-    <main className="mx-auto w-full max-w-7xl px-5 py-6 sm:px-8">
+    <main className="w-full py-2">
       <ResourcePage feedback={error ? <ErrorMessage message={error} /> : undefined}>
         {isLoading ? (
-          <div className="h-64 animate-pulse rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] shadow-[var(--shadow-surface)]" />
+          <Panel aria-hidden="true" className="h-64 animate-pulse" elevation="sm" />
         ) : (
           <Tabs
             ariaLabel="Stato dei modelli"
@@ -80,12 +80,5 @@ export function EditorialContentTypesPage({
 }
 
 function ErrorMessage({ message }: { message: string }) {
-  return (
-    <p
-      role="alert"
-      className="rounded-lg border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] p-3 text-sm text-[color:var(--color-danger-ink)]"
-    >
-      {message}
-    </p>
-  );
+  return <ErrorBanner message={message} />;
 }

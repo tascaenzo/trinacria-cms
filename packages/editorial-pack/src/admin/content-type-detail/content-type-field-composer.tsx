@@ -1,4 +1,4 @@
-import { Button, Dialog, Input, Select, Switch } from "@trinacria-cms/trinacria-ui";
+import { Button, Dialog, Input, Panel, Select, Switch } from "@trinacria-cms/trinacria-ui";
 import { useEffect, useState } from "react";
 import type { ContentFieldType, ContentTypeField } from "../editorial-admin.types.js";
 
@@ -86,7 +86,7 @@ export function ContentTypeFieldComposer({
             Annulla
           </Button>
           <Button type="button" disabled={isSaving || !canSubmit} onClick={submit}>
-            {field ? "Salva campo" : "Crea campo"}
+            {field ? "Salva" : "Crea campo"}
           </Button>
         </>
       }
@@ -105,7 +105,7 @@ export function ContentTypeFieldComposer({
           <Input label="Slug" value={draft.key} readOnly />
         </div>
 
-        <section className="rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-panel)] p-4">
+        <Panel as="section" className="p-4" tone="soft">
           <h3 className="text-sm font-semibold text-[color:var(--color-ink)]">Formato del campo</h3>
           <div className="mt-4 grid gap-4">
             <Select
@@ -137,7 +137,7 @@ export function ContentTypeFieldComposer({
               />
             ) : null}
           </div>
-        </section>
+        </Panel>
 
         <section className="rounded-lg bg-[color:var(--color-surface-subtle)] p-4">
           <h3 className="text-sm font-semibold text-[color:var(--color-ink)]">

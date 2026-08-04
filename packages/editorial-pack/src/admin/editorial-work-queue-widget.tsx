@@ -1,20 +1,30 @@
 import type { createCmsSdkClient } from "@trinacria-cms/sdk";
-import { Button, Icon } from "@trinacria-cms/trinacria-ui";
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardHeading,
+  ErrorBanner,
+  Icon,
+  IconButton
+} from "@trinacria-cms/trinacria-ui";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 type CmsClient = ReturnType<typeof createCmsSdkClient>;
 interface Entry {
+  contentTypeId: string;
+  createdAt: string;
   id: string;
-  title?: string;
   status: string;
-  updatedAt: string;
+  title?: string;
 }
 interface Envelope<T> {
   data: T;
 }
 export interface EditorialWorkQueueWidgetContext {
   cms: CmsClient;
-  navigateToRoute?: (id: string) => void;
+  navigateToRoute?: (id: string, params?: URLSearchParams) => void;
 }
 
 export function EditorialWorkQueueWidget({
@@ -22,16 +32,21 @@ export function EditorialWorkQueueWidget({
   navigateToRoute
 }: EditorialWorkQueueWidgetContext) {
   const [entries, setEntries] = useState<readonly Entry[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const load = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       const result = await cms.request<Envelope<readonly Entry[]>>({
         method: "GET",
         path: "/v1/editorial/entries",
-        query: { limit: 20, offset: 0 }
+        query: { limit: 100, offset: 0 }
       });
       setEntries(result.data);
+    } catch {
+      setEntries([]);
+      setError("Non è stato possibile caricare la coda editoriale.");
     } finally {
       setLoading(false);
     }
@@ -43,54 +58,199 @@ export function EditorialWorkQueueWidget({
     () => ({
       draft: entries.filter((e) => e.status === "draft").length,
       review: entries.filter((e) => e.status === "in_review").length,
+      approved: entries.filter((e) => e.status === "approved").length,
       published: entries.filter((e) => e.status === "published").length
     }),
     [entries]
   );
+  const createdRecently = entries.filter((entry) =>
+    isCreatedInLastDays(entry.createdAt, 30)
+  ).length;
+  const recentEntries = [...entries]
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
+    .slice(0, 4);
+  const workflowTotal = Math.max(entries.length, 1);
+  const openEntry = (entry: Entry) =>
+    navigateToRoute?.(
+      "editorial-entry-detail",
+      new URLSearchParams({ entryId: entry.id, modelId: entry.contentTypeId })
+    );
+
   return (
-    <article className="flex h-full min-h-[280px] flex-col overflow-hidden rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel)] shadow-[var(--shadow-sm)]">
-      <header className="flex items-center justify-between border-b border-[color:var(--color-border)] px-5 py-4">
-        <div>
-          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)]">
-            Editoriale
-          </p>
-          <h3 className="mt-1 text-base font-semibold">Coda di lavoro</h3>
-        </div>
-        <Button variant="ghost" size="sm" onClick={() => void load()} disabled={loading}>
-          <Icon name="refresh-cw" className={loading ? "animate-spin" : undefined} />
-        </Button>
-      </header>
-      <div className="grid grid-cols-3 divide-x divide-[color:var(--color-border)] border-b border-[color:var(--color-border)]">
-        {[
-          ["Bozze", counts.draft],
-          ["Revisioni", counts.review],
-          ["Pubblicati", counts.published]
-        ].map(([label, value]) => (
-          <div key={String(label)} className="px-4 py-3">
-            <p className="text-xs text-[color:var(--color-ink-subtle)]">{label}</p>
-            <p className="mt-1 text-2xl font-semibold">{loading ? "…" : value}</p>
+    <Card className="h-full min-h-[360px]" padding="none" elevation="none">
+      <CardHeader>
+        <CardHeading
+          icon="file-text"
+          title="Attività editoriale"
+          description="Articoli recenti e stato del workflow"
+          actions={
+            <>
+              <IconButton
+                type="button"
+                variant="ghost"
+                size="sm"
+                icon="refresh-cw"
+                label="Aggiorna coda editoriale"
+                disabled={loading}
+                onClick={() => void load()}
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => navigateToRoute?.("editorial-entries")}
+              >
+                Apri desk
+                <Icon name="arrow-right" />
+              </Button>
+            </>
+          }
+        />
+      </CardHeader>
+      <CardContent className="p-0">
+        {error ? (
+          <div className="p-5">
+            <ErrorBanner message={error} />
           </div>
-        ))}
+        ) : (
+          <div className="grid min-h-0 lg:grid-cols-[minmax(0,1.45fr)_minmax(17rem,0.65fr)]">
+            <section className="px-5 py-4">
+              <div>
+                <p className="text-sm font-medium text-[color:var(--color-ink)]">
+                  Articoli creati di recente
+                </p>
+                <p className="mt-0.5 text-xs text-[color:var(--color-ink-muted)]">
+                  Apri un articolo per continuare a lavorarci.
+                </p>
+              </div>
+              {recentEntries.length ? (
+                <div className="mt-3 divide-y divide-[color:var(--color-border)] border-t border-[color:var(--color-border)]">
+                  {recentEntries.map((entry) => (
+                    <Button
+                      key={entry.id}
+                      type="button"
+                      variant="ghost"
+                      className="grid h-auto w-full grid-cols-[minmax(0,1fr)_auto] items-center justify-stretch gap-4 rounded-none border-0 py-3 text-left shadow-none focus:ring-inset"
+                      onClick={() => openEntry(entry)}
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-medium text-[color:var(--color-ink)]">
+                          {entry.title ?? "Senza titolo"}
+                        </span>
+                        <span className="mt-0.5 block text-xs text-[color:var(--color-ink-muted)]">
+                          Creato il {formatDate(entry.createdAt)}
+                        </span>
+                      </span>
+                      <span className="flex items-center gap-3">
+                        <EntryStatus status={entry.status} />
+                        <Icon
+                          name="chevron-right"
+                          className="text-[color:var(--color-ink-subtle)]"
+                        />
+                      </span>
+                    </Button>
+                  ))}
+                </div>
+              ) : (
+                <p className="py-8 text-sm text-[color:var(--color-ink-muted)]">
+                  {loading ? "Caricamento articoli…" : "Non ci sono ancora articoli."}
+                </p>
+              )}
+            </section>
+
+            <aside className="border-t border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] px-5 py-4 lg:border-l lg:border-t-0">
+              <p className="text-xs font-medium text-[color:var(--color-ink-muted)]">
+                Creati negli ultimi 30 giorni
+              </p>
+              <p className="mt-1 text-3xl font-semibold tabular-nums text-[color:var(--color-ink)]">
+                {loading ? "…" : createdRecently}
+              </p>
+
+              <div className="mt-5 border-t border-[color:var(--color-border)] pt-4">
+                <p className="text-sm font-medium text-[color:var(--color-ink)]">Flusso attuale</p>
+                <div className="mt-4 grid gap-3">
+                  <WorkflowRow
+                    label="Bozze"
+                    value={loading ? null : counts.draft}
+                    total={workflowTotal}
+                  />
+                  <WorkflowRow
+                    label="In revisione"
+                    value={loading ? null : counts.review}
+                    total={workflowTotal}
+                  />
+                  <WorkflowRow
+                    label="Approvati"
+                    value={loading ? null : counts.approved}
+                    total={workflowTotal}
+                  />
+                  <WorkflowRow
+                    label="Pubblicati"
+                    value={loading ? null : counts.published}
+                    total={workflowTotal}
+                  />
+                </div>
+              </div>
+            </aside>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function WorkflowRow({
+  label,
+  total,
+  value
+}: {
+  label: string;
+  total: number;
+  value: number | null;
+}) {
+  const percentage = value === null ? 0 : Math.min(100, (value / total) * 100);
+
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-3 text-xs">
+        <span className="text-[color:var(--color-ink-muted)]">{label}</span>
+        <span className="font-semibold tabular-nums text-[color:var(--color-ink)]">
+          {value ?? "…"}
+        </span>
       </div>
-      <div className="min-h-0 flex-1 px-5 py-3">
-        {entries.slice(0, 4).map((entry) => (
-          <button
-            key={entry.id}
-            className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-left hover:bg-[color:var(--color-panel-soft)]"
-            onClick={() => navigateToRoute?.("editorial-entries")}
-          >
-            <span className="truncate text-sm font-medium">{entry.title ?? "Senza titolo"}</span>
-            <span className="ml-3 text-xs text-[color:var(--color-ink-subtle)]">
-              {entry.status}
-            </span>
-          </button>
-        ))}
+      <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-[color:var(--color-surface-subtle)]">
+        <span
+          className="block h-full rounded-full bg-[color:var(--color-accent)]"
+          style={{ width: `${percentage}%` }}
+        />
       </div>
-      <footer className="border-t border-[color:var(--color-border)] p-3">
-        <Button size="sm" variant="ghost" onClick={() => navigateToRoute?.("editorial-entries")}>
-          Apri contenuti <Icon name="arrow-right" />
-        </Button>
-      </footer>
-    </article>
+    </div>
+  );
+}
+
+function EntryStatus({ status }: { status: string }) {
+  const label =
+    status === "draft"
+      ? "Bozza"
+      : status === "in_review"
+        ? "In revisione"
+        : status === "approved"
+          ? "Approvato"
+          : status === "published"
+            ? "Pubblicato"
+            : status;
+  return (
+    <span className="text-[11px] font-medium text-[color:var(--color-ink-muted)]">{label}</span>
+  );
+}
+
+function isCreatedInLastDays(value: string, days: number) {
+  const createdAt = new Date(value).getTime();
+  return Number.isFinite(createdAt) && createdAt >= Date.now() - days * 24 * 60 * 60 * 1000;
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("it-IT", { day: "2-digit", month: "short" }).format(
+    new Date(value)
   );
 }

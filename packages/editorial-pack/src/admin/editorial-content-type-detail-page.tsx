@@ -1,4 +1,12 @@
-import { Button, Icon, Input, Select, Textarea } from "@trinacria-cms/trinacria-ui";
+import {
+  Button,
+  ErrorBanner,
+  Icon,
+  Input,
+  Panel,
+  Select,
+  Textarea
+} from "@trinacria-cms/trinacria-ui";
 import { useEffect, useState } from "react";
 import { ContentTypeDetailSection } from "./content-type-detail/content-type-detail-section.js";
 import { ContentTypeFieldComposer } from "./content-type-detail/content-type-field-composer.js";
@@ -63,8 +71,7 @@ export function EditorialContentTypeDetailPage({
         </p>
       </header>
 
-      {detail.error ? <FeedbackMessage message={detail.error} tone="danger" /> : null}
-      {detail.message ? <FeedbackMessage message={detail.message} tone="success" /> : null}
+      {detail.error ? <ErrorBanner className="mt-5" message={detail.error} /> : null}
 
       <div className="mt-6 grid gap-6">
         <ContentTypeDetailSection
@@ -148,7 +155,7 @@ export function EditorialContentTypeDetailPage({
           disabled={detail.isSaving || !detail.name.trim()}
           onClick={() => void detail.save()}
         >
-          {detail.isSaving ? "Salvataggio…" : "Salva modello"}
+          {detail.isSaving ? "Salvataggio…" : "Salva"}
         </Button>
       </div>
 
@@ -163,23 +170,10 @@ export function EditorialContentTypeDetailPage({
   );
 }
 
-function FeedbackMessage({ message, tone }: { message: string; tone: "danger" | "success" }) {
-  return tone === "danger" ? (
-    <p
-      role="alert"
-      className="mt-5 rounded-lg border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] p-3 text-sm text-[color:var(--color-danger-ink)]"
-    >
-      {message}
-    </p>
-  ) : (
-    <p className="mt-5 text-sm font-medium text-[color:var(--color-success-ink)]">{message}</p>
-  );
-}
-
 function LoadingDetail() {
   return (
     <main className="mx-auto w-full max-w-6xl px-5 py-6 sm:px-8">
-      <div className="h-72 animate-pulse rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel)]" />
+      <Panel aria-hidden="true" className="h-72 animate-pulse" />
     </main>
   );
 }

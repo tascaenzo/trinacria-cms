@@ -1,4 +1,4 @@
-import { ResourcePage, Tabs } from "@trinacria-cms/trinacria-ui";
+import { ErrorBanner, ResourcePage, Tabs } from "@trinacria-cms/trinacria-ui";
 import { useEffect, useMemo, useState } from "react";
 import type { CmsClient, EditorialNavigator } from "./editorial-admin.types.js";
 import {
@@ -125,7 +125,7 @@ export function EditorialEntriesPage({
     );
 
   return (
-    <main className="mx-auto w-full max-w-7xl px-5 py-6 sm:px-8">
+    <main className="w-full py-2">
       <ResourcePage feedback={desk.error ? <ErrorMessage message={desk.error} /> : undefined}>
         {hasReviewView ? (
           <Tabs
@@ -175,12 +175,5 @@ function readContentTypeFilter() {
 }
 
 function ErrorMessage({ message }: { message: string }) {
-  return (
-    <p
-      role="alert"
-      className="rounded-lg border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] p-3 text-sm text-[color:var(--color-danger-ink)]"
-    >
-      {message}
-    </p>
-  );
+  return <ErrorBanner message={message} />;
 }

@@ -1,3 +1,4 @@
+import { useToast } from "@trinacria-cms/trinacria-ui";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CmsClient } from "../editorial-admin.types.js";
 import { toEditorialDisplayError } from "../lib/editorial-admin-errors.js";
@@ -9,6 +10,7 @@ import type {
 } from "./entries.types.js";
 
 export function useEditorialEntries(cms: CmsClient) {
+  const { pushToast } = useToast();
   const [entries, setEntries] = useState<readonly EditorialEntry[]>([]);
   const [contentTypes, setContentTypes] = useState<readonly EditorialEntryContentType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -64,9 +66,25 @@ export function useEditorialEntries(cms: CmsClient) {
         body: { contentTypeId, ...(title.trim() ? { title: title.trim() } : {}), data: {} }
       });
       await refresh();
+      pushToast({
+        tone: "success",
+        title: "Contenuti editoriali",
+        description: "Bozza creata.",
+        duration: 4000
+      });
       return response.data;
     } catch (currentError) {
-      setError(toEditorialDisplayError(currentError, "Non è stato possibile creare la bozza."));
+      const message = toEditorialDisplayError(
+        currentError,
+        "Non è stato possibile creare la bozza."
+      );
+      setError(message);
+      pushToast({
+        tone: "danger",
+        title: "Operazione non riuscita",
+        description: message,
+        duration: 0
+      });
       return null;
     } finally {
       setIsCreating(false);
@@ -82,10 +100,24 @@ export function useEditorialEntries(cms: CmsClient) {
         body: { transitionId: action.id }
       });
       await refresh();
+      pushToast({
+        tone: "success",
+        title: "Workflow editoriale",
+        description: "Stato aggiornato.",
+        duration: 4000
+      });
     } catch (currentError) {
-      setError(
-        toEditorialDisplayError(currentError, "Non è stato possibile aggiornare il workflow.")
+      const message = toEditorialDisplayError(
+        currentError,
+        "Non è stato possibile aggiornare il workflow."
       );
+      setError(message);
+      pushToast({
+        tone: "danger",
+        title: "Operazione non riuscita",
+        description: message,
+        duration: 0
+      });
     } finally {
       setActionEntryId(null);
     }

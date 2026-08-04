@@ -1,3 +1,4 @@
+import { FormSection } from "@trinacria-cms/trinacria-ui";
 import type { ReactNode } from "react";
 
 export function ContentTypeDetailSection({
@@ -12,11 +13,8 @@ export function ContentTypeDetailSection({
   headerAddon?: ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel)] p-5 shadow-[var(--shadow-sm)]">
-      {headerAddon ? <div className="mb-7">{headerAddon}</div> : null}
-      <h2 className="text-base font-semibold text-[color:var(--color-ink)]">{title}</h2>
-      <p className="mt-1 text-sm leading-5 text-[color:var(--color-ink-muted)]">{description}</p>
-      <div className="mt-5">{children}</div>
-    </section>
+    <FormSection actions={headerAddon} description={description} title={title}>
+      {children}
+    </FormSection>
   );
 }

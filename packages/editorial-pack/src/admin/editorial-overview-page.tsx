@@ -1,5 +1,24 @@
-import { Button, Icon, StatCard, SummaryGrid } from "@trinacria-cms/trinacria-ui";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Button,
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeadCell,
+  DataTableHeaderRow,
+  DataTablePrimaryCell,
+  DataTableRow,
+  DataTableTable,
+  EmptyState,
+  ErrorBanner,
+  MobileRecordCard,
+  MobileRecordField,
+  MobileRecordList,
+  PageHeader,
+  Panel,
+  ResourcePage
+} from "@trinacria-cms/trinacria-ui";
+import { useCallback, useEffect, useState } from "react";
 import type {
   CmsClient,
   EditorialContentType,
@@ -33,7 +52,7 @@ export function EditorialOverviewPage({ cms, navigateToRoute }: EditorialOvervie
       setIsLoading(true);
       setError(null);
       const user = await cms.auth.getAuthenticatedUser();
-      const [entryResult, modelResult, permissionResult] = await Promise.all([
+      const [entryResult, contentTypeResult, permissionResult] = await Promise.all([
         cms.request<{ data: readonly EditorialEntryRecord[] }>({
           method: "GET",
           path: "/v1/editorial/entries",
@@ -47,7 +66,7 @@ export function EditorialOverviewPage({ cms, navigateToRoute }: EditorialOvervie
         cms.security.listUserEffectivePermissions({ path: { id: user.data.id } })
       ]);
       setEntries(entryResult.data);
-      setContentTypes(modelResult.data);
+      setContentTypes(contentTypeResult.data);
       setCanManageModels(permissionResult.data.includes("editorial-pack:content-types:manage"));
     } catch (currentError) {
       setError(
@@ -63,16 +82,8 @@ export function EditorialOverviewPage({ cms, navigateToRoute }: EditorialOvervie
 
   useEffect(() => void load(), [load]);
 
-  const counts = useMemo(
-    () => ({
-      draft: entries.filter((entry) => entry.status === "draft").length,
-      review: entries.filter((entry) => entry.status === "in_review").length,
-      published: entries.filter((entry) => entry.status === "published").length,
-      models: contentTypes.filter((model) => model.status === "active").length
-    }),
-    [contentTypes, entries]
-  );
   const recentEntries = entries.slice(0, 6);
+  const contentTypeById = new Map(contentTypes.map((contentType) => [contentType.id, contentType]));
   const openEntry = (entry: EditorialEntryRecord) =>
     navigateToRoute?.(
       "editorial-entry-detail",
@@ -80,120 +91,355 @@ export function EditorialOverviewPage({ cms, navigateToRoute }: EditorialOvervie
     );
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-5 py-6 sm:px-8">
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-[0.1em] text-[color:var(--color-ink-subtle)]">
-            Editoriale
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold text-[color:var(--color-ink)]">Panoramica</h1>
-          <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
-            Stato dei contenuti e accesso rapido alle attività principali.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {canManageModels ? (
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={() => navigateToRoute?.("editorial-content-types")}
-            >
-              <Icon name="layers" />
-              Modelli
-            </Button>
-          ) : null}
-          <Button type="button" size="sm" onClick={() => navigateToRoute?.("editorial-entries")}>
-            <Icon name="plus" />
-            Nuovo contenuto
-          </Button>
-        </div>
-      </header>
-
-      {error ? (
-        <p
-          role="alert"
-          className="mt-5 rounded-lg border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] p-3 text-sm text-[color:var(--color-danger-ink)]"
-        >
-          {error}
-        </p>
-      ) : null}
-
-      <SummaryGrid className="mt-6" aria-label="Riepilogo editoriale">
-        <StatCard label="Bozze" value={counts.draft} icon="file-text" />
-        <StatCard label="In revisione" value={counts.review} icon="circle-alert" tone="warning" />
-        <StatCard label="Pubblicati" value={counts.published} icon="check" tone="success" />
-        <StatCard label="Modelli attivi" value={counts.models} icon="layers" />
-      </SummaryGrid>
-
-      <RecentEntries
-        entries={recentEntries}
-        isLoading={isLoading}
-        onOpen={openEntry}
-        onShowAll={() => navigateToRoute?.("editorial-entries")}
-      />
+    <main className="w-full py-2">
+      <ResourcePage
+        header={
+          <PageHeader
+            title="Panoramica editoriale"
+            description="Consulta prima i modelli disponibili, poi riprendi il lavoro sui contenuti aggiornati di recente."
+          />
+        }
+        feedback={error ? <ErrorBanner message={error} /> : undefined}
+      >
+        <ContentTypesOverview
+          canManageModels={canManageModels}
+          contentTypes={contentTypes}
+          isLoading={isLoading}
+          onManageModels={() => navigateToRoute?.("editorial-content-types")}
+          onOpen={(contentType) =>
+            navigateToRoute?.(
+              "editorial-content-type",
+              new URLSearchParams({ modelId: contentType.id })
+            )
+          }
+        />
+        <RecentEntries
+          contentTypeById={contentTypeById}
+          entries={recentEntries}
+          isLoading={isLoading}
+          onOpen={openEntry}
+          onShowAll={() => navigateToRoute?.("editorial-entries")}
+        />
+      </ResourcePage>
     </main>
   );
 }
 
+function ContentTypesOverview({
+  canManageModels,
+  contentTypes,
+  isLoading,
+  onManageModels,
+  onOpen
+}: {
+  canManageModels: boolean;
+  contentTypes: readonly EditorialContentType[];
+  isLoading: boolean;
+  onManageModels: () => void;
+  onOpen: (contentType: EditorialContentType) => void;
+}) {
+  const header = (
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="grid min-w-0 gap-1">
+        <span className="text-sm font-semibold leading-6 text-[color:var(--color-ink)]">
+          Modelli
+        </span>
+        <span className="text-xs font-normal leading-5 text-[color:var(--color-ink-muted)]">
+          I modelli definiscono struttura, campi e workflow dei contenuti editoriali.
+        </span>
+      </div>
+      {canManageModels ? (
+        <Button type="button" variant="secondary" size="sm" onClick={onManageModels}>
+          Gestisci modelli
+        </Button>
+      ) : null}
+    </div>
+  );
+
+  return (
+    <DataTable
+      mobile={
+        <div className="grid gap-3 md:hidden">
+          <Panel className="p-4">{header}</Panel>
+          {isLoading ? (
+            <Panel aria-hidden="true" className="h-40 animate-pulse" />
+          ) : contentTypes.length ? (
+            <MobileRecordList>
+              {contentTypes.map((contentType) => (
+                <MobileRecordCard
+                  key={contentType.id}
+                  title={contentType.name}
+                  subtitle={contentType.key}
+                  badges={<ContentTypeStatus status={contentType.status} />}
+                  actions={
+                    canManageModels ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onOpen(contentType)}
+                      >
+                        Gestisci
+                      </Button>
+                    ) : undefined
+                  }
+                >
+                  <MobileRecordField label="Aggiornato" value={formatDate(contentType.updatedAt)} />
+                </MobileRecordCard>
+              ))}
+            </MobileRecordList>
+          ) : (
+            <EmptyState text="Non ci sono ancora modelli configurati." />
+          )}
+        </div>
+      }
+    >
+      <DataTableTable>
+        <DataTableHead>
+          <DataTableHeaderRow>
+            <DataTableHeadCell
+              colSpan={4}
+              className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4 shadow-[inset_0_-1px_0_var(--color-border)]"
+            >
+              {header}
+            </DataTableHeadCell>
+          </DataTableHeaderRow>
+          <DataTableHeaderRow>
+            <DataTableHeadCell>Modello</DataTableHeadCell>
+            <DataTableHeadCell>Stato</DataTableHeadCell>
+            <DataTableHeadCell>Aggiornato</DataTableHeadCell>
+            <DataTableHeadCell className="text-right">Azioni</DataTableHeadCell>
+          </DataTableHeaderRow>
+        </DataTableHead>
+        <DataTableBody>
+          {isLoading ? (
+            [0, 1, 2].map((item) => (
+              <DataTableRow key={item}>
+                <DataTableCell colSpan={4} className="p-0">
+                  <div className="h-[73px] animate-pulse bg-[color:var(--color-panel)]" />
+                </DataTableCell>
+              </DataTableRow>
+            ))
+          ) : contentTypes.length ? (
+            contentTypes.map((contentType) => (
+              <DataTableRow
+                key={contentType.id}
+                role={canManageModels ? "button" : undefined}
+                tabIndex={canManageModels ? 0 : undefined}
+                className={canManageModels ? "cursor-pointer" : undefined}
+                onClick={canManageModels ? () => onOpen(contentType) : undefined}
+                onKeyDown={
+                  canManageModels
+                    ? (event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          onOpen(contentType);
+                        }
+                      }
+                    : undefined
+                }
+              >
+                <DataTablePrimaryCell meta={contentType.key}>
+                  {contentType.name}
+                </DataTablePrimaryCell>
+                <DataTableCell>
+                  <ContentTypeStatus status={contentType.status} />
+                </DataTableCell>
+                <DataTableCell className="text-[color:var(--color-ink-muted)]">
+                  {formatDate(contentType.updatedAt)}
+                </DataTableCell>
+                <DataTableCell>
+                  {canManageModels ? (
+                    <div className="flex justify-end" onClick={(event) => event.stopPropagation()}>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onOpen(contentType)}
+                      >
+                        Gestisci
+                      </Button>
+                    </div>
+                  ) : null}
+                </DataTableCell>
+              </DataTableRow>
+            ))
+          ) : (
+            <DataTableRow>
+              <DataTableCell colSpan={4} className="p-0">
+                <p className="p-5 text-sm text-[color:var(--color-ink-muted)]">
+                  Non ci sono ancora modelli configurati.
+                </p>
+              </DataTableCell>
+            </DataTableRow>
+          )}
+        </DataTableBody>
+      </DataTableTable>
+    </DataTable>
+  );
+}
+
 function RecentEntries({
+  contentTypeById,
   entries,
   isLoading,
   onOpen,
   onShowAll
 }: {
+  contentTypeById: ReadonlyMap<string, EditorialContentType>;
   entries: readonly EditorialEntryRecord[];
   isLoading: boolean;
   onOpen: (entry: EditorialEntryRecord) => void;
   onShowAll: () => void;
 }) {
   return (
-    <section className="mt-7 rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel)]">
-      <header className="flex items-center justify-between border-b border-[color:var(--color-border)] px-5 py-4">
-        <div>
-          <h2 className="font-semibold text-[color:var(--color-ink)]">Contenuti recenti</h2>
-          <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
-            Apri un contenuto per continuare a lavorarci.
-          </p>
+    <DataTable
+      mobile={
+        <div className="grid gap-3 md:hidden">
+          <Panel className="p-4">
+            <RecentEntriesHeader onShowAll={onShowAll} />
+          </Panel>
+          {isLoading ? (
+            <Panel aria-hidden="true" className="h-40 animate-pulse" />
+          ) : entries.length ? (
+            <MobileRecordList>
+              {entries.map((entry) => (
+                <MobileRecordCard
+                  key={entry.id}
+                  title={entry.title ?? "Senza titolo"}
+                  subtitle={entry.slug ?? "Senza slug"}
+                  badges={<EntryStatus status={entry.status} />}
+                  actions={
+                    <Button type="button" variant="ghost" size="sm" onClick={() => onOpen(entry)}>
+                      Apri
+                    </Button>
+                  }
+                >
+                  <MobileRecordField label="Aggiornato" value={formatDate(entry.updatedAt)} />
+                  <MobileRecordField
+                    label="Modello"
+                    value={contentTypeById.get(entry.contentTypeId)?.name ?? "Modello rimosso"}
+                  />
+                </MobileRecordCard>
+              ))}
+            </MobileRecordList>
+          ) : (
+            <EmptyState text="Non ci sono ancora contenuti." />
+          )}
         </div>
+      }
+    >
+      <DataTableTable>
+        <DataTableHead>
+          <DataTableHeaderRow>
+            <DataTableHeadCell
+              colSpan={5}
+              className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4 shadow-[inset_0_-1px_0_var(--color-border)]"
+            >
+              <RecentEntriesHeader onShowAll={onShowAll} />
+            </DataTableHeadCell>
+          </DataTableHeaderRow>
+          <DataTableHeaderRow>
+            <DataTableHeadCell>Contenuto</DataTableHeadCell>
+            <DataTableHeadCell>Modello</DataTableHeadCell>
+            <DataTableHeadCell>Stato</DataTableHeadCell>
+            <DataTableHeadCell>Aggiornato</DataTableHeadCell>
+            <DataTableHeadCell className="text-right">Azioni</DataTableHeadCell>
+          </DataTableHeaderRow>
+        </DataTableHead>
+        <DataTableBody>
+          {isLoading ? (
+            [0, 1, 2].map((item) => (
+              <DataTableRow key={item}>
+                <DataTableCell colSpan={5} className="p-0">
+                  <div className="h-[73px] animate-pulse bg-[color:var(--color-panel)]" />
+                </DataTableCell>
+              </DataTableRow>
+            ))
+          ) : entries.length ? (
+            entries.map((entry) => (
+              <DataTableRow
+                key={entry.id}
+                role="button"
+                tabIndex={0}
+                className="cursor-pointer"
+                onClick={() => onOpen(entry)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onOpen(entry);
+                  }
+                }}
+              >
+                <DataTablePrimaryCell meta={entry.slug ?? "Senza slug"}>
+                  {entry.title ?? "Senza titolo"}
+                </DataTablePrimaryCell>
+                <DataTableCell className="text-[color:var(--color-ink-muted)]">
+                  {contentTypeById.get(entry.contentTypeId)?.name ?? "Modello rimosso"}
+                </DataTableCell>
+                <DataTableCell>
+                  <EntryStatus status={entry.status} />
+                </DataTableCell>
+                <DataTableCell className="text-[color:var(--color-ink-muted)]">
+                  {formatDate(entry.updatedAt)}
+                </DataTableCell>
+                <DataTableCell>
+                  <div className="flex justify-end" onClick={(event) => event.stopPropagation()}>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => onOpen(entry)}>
+                      Apri
+                    </Button>
+                  </div>
+                </DataTableCell>
+              </DataTableRow>
+            ))
+          ) : (
+            <DataTableRow>
+              <DataTableCell colSpan={5} className="p-0">
+                <p className="p-5 text-sm text-[color:var(--color-ink-muted)]">
+                  Non ci sono ancora contenuti.
+                </p>
+              </DataTableCell>
+            </DataTableRow>
+          )}
+        </DataTableBody>
+      </DataTableTable>
+    </DataTable>
+  );
+}
+
+function RecentEntriesHeader({ onShowAll }: { onShowAll: () => void }) {
+  return (
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="grid min-w-0 gap-1">
+        <span className="text-sm font-semibold leading-6 text-[color:var(--color-ink)]">
+          Ultimi contenuti
+        </span>
+        <span className="text-xs font-normal leading-5 text-[color:var(--color-ink-muted)]">
+          Gli ultimi sei contenuti aggiornati. Apri un contenuto per continuare a lavorarci.
+        </span>
+      </div>
+      <div className="flex flex-wrap items-center justify-end gap-2">
         <Button type="button" variant="ghost" size="sm" onClick={onShowAll}>
           Vedi tutti
         </Button>
-      </header>
+      </div>
+    </div>
+  );
+}
 
-      {isLoading ? (
-        <div className="h-52 animate-pulse bg-[color:var(--color-surface-subtle)]" />
-      ) : entries.length ? (
-        <ul>
-          {entries.map((entry) => (
-            <li
-              key={entry.id}
-              className="flex items-center justify-between gap-4 border-b border-[color:var(--color-border)] px-5 py-3 last:border-0"
-            >
-              <div className="min-w-0">
-                <button
-                  type="button"
-                  className="max-w-full truncate text-left text-sm font-medium text-[color:var(--color-ink)] hover:underline"
-                  onClick={() => onOpen(entry)}
-                >
-                  {entry.title ?? "Senza titolo"}
-                </button>
-                <p className="mt-1 text-xs text-[color:var(--color-ink-subtle)]">
-                  {STATUS_LABELS[entry.status] ?? entry.status} · {formatDate(entry.updatedAt)}
-                </p>
-              </div>
-              <Button type="button" variant="ghost" size="sm" onClick={() => onOpen(entry)}>
-                Apri
-              </Button>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="p-5 text-sm text-[color:var(--color-ink-muted)]">
-          Non ci sono ancora contenuti.
-        </p>
-      )}
-    </section>
+function ContentTypeStatus({ status }: { status: EditorialContentType["status"] }) {
+  return (
+    <span className="inline-flex rounded-full bg-[color:var(--color-panel-soft)] px-2 py-1 text-[11px] font-medium text-[color:var(--color-ink-muted)]">
+      {status === "active" ? "Attivo" : "Archiviato"}
+    </span>
+  );
+}
+
+function EntryStatus({ status }: { status: string }) {
+  return (
+    <span className="inline-flex rounded-full bg-[color:var(--color-panel-soft)] px-2 py-1 text-[11px] font-medium text-[color:var(--color-ink-muted)]">
+      {STATUS_LABELS[status] ?? status}
+    </span>
   );
 }
 

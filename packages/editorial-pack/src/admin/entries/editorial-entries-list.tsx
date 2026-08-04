@@ -9,9 +9,11 @@ import {
   DataTablePrimaryCell,
   DataTableRow,
   DataTableTable,
+  EmptyState,
   MobileRecordCard,
   MobileRecordField,
-  MobileRecordList
+  MobileRecordList,
+  Panel
 } from "@trinacria-cms/trinacria-ui";
 import type { ReactNode } from "react";
 import { EditorialEntriesHeader } from "./editorial-entries-header.js";
@@ -162,9 +164,9 @@ function MobileEntriesList({
 }: EditorialEntriesListProps & { header: ReactNode }) {
   return (
     <div className="grid gap-3 md:hidden">
-      <div className="rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4 shadow-[var(--shadow-surface)]">
+      <Panel className="p-4" elevation="sm">
         {header}
-      </div>
+      </Panel>
       {isLoading ? (
         <MobileEntriesSkeleton />
       ) : entries.length ? (
@@ -199,9 +201,7 @@ function MobileEntriesList({
           })}
         </MobileRecordList>
       ) : (
-        <div className="rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] shadow-[var(--shadow-surface)]">
-          <EmptyEntries canCreate={canCreate} onCreate={onCreate} />
-        </div>
+        <EmptyEntries canCreate={canCreate} onCreate={onCreate} />
       )}
     </div>
   );
@@ -231,10 +231,7 @@ function MobileEntriesSkeleton() {
   return (
     <div className="grid gap-3">
       {[0, 1, 2].map((item) => (
-        <div
-          key={item}
-          className="h-32 animate-pulse rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)]"
-        />
+        <Panel aria-hidden="true" key={item} className="h-32 animate-pulse" />
       ))}
     </div>
   );
@@ -242,18 +239,17 @@ function MobileEntriesSkeleton() {
 
 function EmptyEntries({ canCreate, onCreate }: { canCreate: boolean; onCreate: () => void }) {
   return (
-    <div className="grid min-h-56 place-items-center p-6 text-center">
-      <div>
-        <h2 className="font-semibold text-[color:var(--color-ink)]">Nessun contenuto</h2>
-        <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
-          Crea la prima bozza per iniziare il lavoro editoriale.
-        </p>
-        {canCreate ? (
+    <EmptyState
+      className="min-h-56 place-items-center text-center"
+      title="Nessun contenuto"
+      text="Crea la prima bozza per iniziare il lavoro editoriale."
+      action={
+        canCreate ? (
           <Button type="button" className="mt-4" onClick={onCreate}>
             Nuovo contenuto
           </Button>
-        ) : null}
-      </div>
-    </div>
+        ) : undefined
+      }
+    />
   );
 }

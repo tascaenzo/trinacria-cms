@@ -21,11 +21,11 @@ export function EditorialDocumentPreview({
   title: string;
 }) {
   return (
-    <article className="mx-auto w-full max-w-3xl px-5 pb-32 pt-16 sm:px-10 sm:pt-20">
-      <h1 className="px-12 text-4xl font-bold leading-tight tracking-tight text-[color:var(--color-ink)] sm:text-5xl">
+    <article className="mx-auto w-full max-w-3xl px-6 pb-28 pt-14 sm:px-10 sm:pt-20">
+      <h1 className="text-4xl font-bold leading-[1.08] tracking-[-0.035em] text-[color:var(--color-ink)] sm:text-5xl">
         {title || "Senza titolo"}
       </h1>
-      <div className="mt-10 px-12">
+      <div className="mt-10">
         <PreviewBlocks apiBaseUrl={apiBaseUrl} blocks={document.blocks} cms={cms} />
       </div>
     </article>
@@ -41,8 +41,16 @@ function PreviewBlocks({
   blocks: readonly StructuredContentBlock[];
   cms: CmsClient;
 }) {
+  if (!blocks.length) {
+    return (
+      <p className="py-12 text-center text-sm text-[color:var(--color-ink-muted)]">
+        Il documento non contiene ancora blocchi.
+      </p>
+    );
+  }
+
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-5">
       {blocks.map((block) => (
         <PreviewBlock apiBaseUrl={apiBaseUrl} block={block} cms={cms} key={block.id} />
       ))}
@@ -60,11 +68,16 @@ function PreviewBlock({
   cms: CmsClient;
 }) {
   const style = blockAppearanceStyle(block.appearance);
-  const shellClass = block.appearance?.backgroundColor ? "rounded-md px-3 py-2" : "px-1 py-0.5";
+  const shellClass = block.appearance?.backgroundColor
+    ? "rounded-[var(--radius-control)] px-4 py-3"
+    : "";
 
   if (block.type === "paragraph") {
     return (
-      <p className={`${shellClass} text-base leading-7`} style={style}>
+      <p
+        className={`${shellClass} text-[1.0625rem] leading-8 text-[color:var(--color-ink)]`}
+        style={style}
+      >
         <InlineTextPreview value={block.data} />
       </p>
     );
@@ -74,15 +87,21 @@ function PreviewBlock({
     const size =
       block.data.level === 2 ? "text-3xl" : block.data.level === 3 ? "text-2xl" : "text-xl";
     return (
-      <Heading className={`${shellClass} font-semibold leading-tight ${size}`} style={style}>
+      <Heading
+        className={`${shellClass} font-semibold leading-[1.15] tracking-[-0.025em] text-[color:var(--color-ink)] ${size}`}
+        style={style}
+      >
         <InlineTextPreview value={block.data} />
       </Heading>
     );
   }
   if (block.type === "quote") {
     return (
-      <blockquote className={`${shellClass} border-l-4 border-current pl-4`} style={style}>
-        <p className="text-lg italic leading-7">
+      <blockquote
+        className={`${shellClass} border-l-4 border-[color:var(--color-accent-border)] pl-5 text-[color:var(--color-ink)]`}
+        style={style}
+      >
+        <p className="text-lg italic leading-8">
           <InlineTextPreview value={block.data} />
         </p>
         {block.data.citation ? (
@@ -98,7 +117,7 @@ function PreviewBlock({
     const List = block.data.style === "numbered" ? "ol" : "ul";
     return (
       <List
-        className={`${shellClass} grid gap-1 pl-7 leading-7 ${block.data.style === "numbered" ? "list-decimal" : "list-disc"}`}
+        className={`${shellClass} grid gap-2 pl-7 text-[1.0625rem] leading-8 text-[color:var(--color-ink)] ${block.data.style === "numbered" ? "list-decimal" : "list-disc"}`}
         style={style}
       >
         {block.data.items.map((item, index) => (
@@ -110,12 +129,12 @@ function PreviewBlock({
   if (block.type === "table") {
     return (
       <div className={`${shellClass} overflow-x-auto`} style={style}>
-        <table className="w-full min-w-[32rem] border-collapse text-sm">
+        <table className="w-full min-w-[32rem] border-collapse text-sm text-[color:var(--color-ink)]">
           <tbody>
             {block.data.rows.map((row, rowIndex) => (
               <tr key={`${block.id}-preview-row-${rowIndex}`}>
                 {row.map((cell, columnIndex) => {
-                  const className = `border border-current/20 px-3 py-2 text-left ${
+                  const className = `border border-[color:var(--color-border)] px-3 py-2.5 text-left ${
                     block.data.hasHeader && rowIndex === 0 ? "font-semibold" : "font-normal"
                   }`;
                   return block.data.hasHeader && rowIndex === 0 ? (
@@ -138,7 +157,7 @@ function PreviewBlock({
   if (block.type === "layout") {
     return (
       <div
-        className={`${shellClass} grid gap-5`}
+        className={`${shellClass} grid gap-6`}
         style={{
           ...style,
           gridTemplateColumns: "repeat(auto-fit, minmax(min(14rem, 100%), 1fr))"
@@ -189,20 +208,23 @@ function PreviewImage({
   }, [apiBaseUrl, block.data.assetId, block.data.src, cms]);
 
   return (
-    <figure className={block.appearance?.backgroundColor ? "rounded-md p-3" : ""} style={style}>
+    <figure
+      className={block.appearance?.backgroundColor ? "rounded-[var(--radius-control)] p-4" : ""}
+      style={style}
+    >
       {src ? (
         <img
           src={src}
           alt={block.data.alt}
-          className="max-h-[38rem] w-full rounded-md object-contain"
+          className="max-h-[38rem] w-full rounded-[var(--radius-control)] object-contain"
         />
       ) : (
-        <div className="flex min-h-48 items-center justify-center rounded-md bg-[color:var(--color-surface-subtle)] opacity-70">
+        <div className="flex min-h-48 items-center justify-center rounded-[var(--radius-control)] bg-[color:var(--color-panel-soft)] text-[color:var(--color-ink-subtle)]">
           <Icon name="image" className="h-6 w-6" />
         </div>
       )}
       {block.data.caption ? (
-        <figcaption className="mt-2 text-center text-sm opacity-70">
+        <figcaption className="mt-3 text-center text-sm text-[color:var(--color-ink-muted)]">
           {block.data.caption}
         </figcaption>
       ) : null}
