@@ -1,4 +1,4 @@
-import { Icon } from "@trinacria-cms/trinacria-ui";
+import { Button, Icon } from "@trinacria-cms/trinacria-ui";
 import type { MediaDirectory } from "./file-manager.types.js";
 
 interface FileManagerSidebarProps {
@@ -92,14 +92,15 @@ function DirectoryRow({
   onClick: () => void;
 }) {
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
       onClick={onClick}
       style={{ paddingLeft: `${10 + depth * 16}px` }}
-      className={`flex h-8 w-full items-center gap-2 rounded-md pr-2 text-left text-sm transition ${active ? "bg-[color:var(--color-interactive-soft)] font-medium text-[color:var(--color-ink)]" : "text-[color:var(--color-ink-muted)] hover:bg-[color:var(--color-interactive-hover)] hover:text-[color:var(--color-ink)]"}`}
+      className={`h-8 w-full justify-start gap-2 border-transparent pr-2 text-left text-sm shadow-none ${active ? "bg-[color:var(--color-panel-strong)] font-medium text-[color:var(--color-ink)]" : "text-[color:var(--color-ink-muted)]"}`}
     >
       <Icon name={icon} className="h-4 w-4 shrink-0 text-[color:var(--color-ink-subtle)]" />
       <span className="truncate">{label}</span>
-    </button>
+    </Button>
   );
 }

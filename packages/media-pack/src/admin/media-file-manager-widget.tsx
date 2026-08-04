@@ -1,5 +1,12 @@
 import type { createCmsSdkClient } from "@trinacria-cms/sdk";
-import { Button, Icon } from "@trinacria-cms/trinacria-ui";
+import {
+  Button,
+  Card,
+  CardHeader,
+  EmptyState,
+  ErrorBanner,
+  Icon
+} from "@trinacria-cms/trinacria-ui";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 type CmsClient = ReturnType<typeof createCmsSdkClient>;
@@ -74,41 +81,43 @@ export function MediaFileManagerWidget({
     assets.length === PAGE_LIMIT ? `${activeAssets.length}+` : String(activeAssets.length);
 
   return (
-    <article className="flex h-full min-h-[290px] min-w-0 flex-col overflow-hidden rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel)] shadow-[var(--shadow-sm)]">
-      <header className="flex items-start justify-between gap-4 border-b border-[color:var(--color-border)] px-5 py-4">
-        <div className="min-w-0">
-          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)]">
-            Libreria
-          </p>
-          <h3 className="mt-1 truncate text-base font-semibold text-[color:var(--color-ink)]">
-            File manager
-          </h3>
+    <Card className="flex h-full min-h-[290px] min-w-0 flex-col" padding="none">
+      <CardHeader>
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)]">
+              Libreria
+            </p>
+            <h3 className="mt-1 truncate text-base font-semibold text-[color:var(--color-ink)]">
+              File manager
+            </h3>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              iconOnly
+              aria-label="Aggiorna media"
+              title="Aggiorna"
+              disabled={isLoading}
+              onClick={() => void loadAssets()}
+            >
+              <Icon name="refresh-cw" className={isLoading ? "animate-spin" : undefined} />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={!canOpenFileManager}
+              onClick={() => navigateToRoute?.("media-assets")}
+            >
+              Apri
+              <Icon name="arrow-right" />
+            </Button>
+          </div>
         </div>
-        <div className="flex shrink-0 items-center gap-1">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            iconOnly
-            aria-label="Aggiorna media"
-            title="Aggiorna"
-            disabled={isLoading}
-            onClick={() => void loadAssets()}
-          >
-            <Icon name="refresh-cw" className={isLoading ? "animate-spin" : undefined} />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            disabled={!canOpenFileManager}
-            onClick={() => navigateToRoute?.("media-assets")}
-          >
-            Apri
-            <Icon name="arrow-right" />
-          </Button>
-        </div>
-      </header>
+      </CardHeader>
 
       <div className="grid grid-cols-3 divide-x divide-[color:var(--color-border)] border-b border-[color:var(--color-border)] bg-[color:var(--color-surface-subtle)]">
         <MediaMetric label="Media" value={isLoading ? "…" : totalLabel} />
@@ -127,28 +136,32 @@ export function MediaFileManagerWidget({
         </div>
 
         {error ? (
-          <div className="grid min-h-28 place-items-center rounded-lg border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] p-4 text-center">
-            <div>
-              <p className="text-sm font-medium text-[color:var(--color-danger-ink)]">{error}</p>
-              <Button
-                className="mt-2"
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => void loadAssets()}
-              >
-                Riprova
-              </Button>
-            </div>
-          </div>
+          <ErrorBanner
+            className="grid min-h-28 place-items-center text-center"
+            message={
+              <div>
+                <p className="text-sm font-medium">{error}</p>
+                <Button
+                  className="mt-2"
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void loadAssets()}
+                >
+                  Riprova
+                </Button>
+              </div>
+            }
+          />
         ) : recentAssets.length > 0 ? (
           <ul className="grid gap-1" aria-label="Media modificati di recente">
             {recentAssets.map((asset) => (
               <li key={asset.id}>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
                   disabled={!canOpenFileManager}
-                  className="grid w-full min-w-0 grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-3 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-[color:var(--color-surface-subtle)] disabled:cursor-default disabled:hover:bg-transparent"
+                  className="grid h-auto w-full min-w-0 grid-cols-[36px_minmax(0,1fr)_auto] items-center justify-stretch gap-3 border-transparent px-2 py-1.5 text-left shadow-none disabled:cursor-default"
                   onClick={() => navigateToRoute?.("media-assets")}
                 >
                   <span className="grid h-9 w-9 place-items-center rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-ink-muted)]">
@@ -163,20 +176,17 @@ export function MediaFileManagerWidget({
                     </span>
                   </span>
                   <VisibilityDot visibility={asset.visibility} />
-                </button>
+                </Button>
               </li>
             ))}
           </ul>
         ) : (
-          <div className="grid min-h-28 place-items-center rounded-lg border border-dashed border-[color:var(--color-border-strong)] p-4 text-center">
-            <div>
-              <Icon name="folder-open" className="mx-auto text-[color:var(--color-ink-subtle)]" />
-              <p className="mt-2 text-sm font-medium text-[color:var(--color-ink)]">
-                {isLoading ? "Caricamento media…" : "La libreria è vuota"}
-              </p>
-              {!isLoading && canOpenFileManager ? (
+          <EmptyState
+            className="min-h-28 place-items-center p-4 text-center"
+            text={isLoading ? "Caricamento media…" : "La libreria è vuota"}
+            action={
+              !isLoading && canOpenFileManager ? (
                 <Button
-                  className="mt-2"
                   type="button"
                   variant="secondary"
                   size="sm"
@@ -184,12 +194,12 @@ export function MediaFileManagerWidget({
                 >
                   Apri file manager
                 </Button>
-              ) : null}
-            </div>
-          </div>
+              ) : undefined
+            }
+          />
         )}
       </div>
-    </article>
+    </Card>
   );
 }
 

@@ -1,4 +1,4 @@
-import { Button, Icon, Input, Select } from "@trinacria-cms/trinacria-ui";
+import { Button, Icon, IconButton, Input, Select } from "@trinacria-cms/trinacria-ui";
 import type { FileManagerViewMode } from "./file-manager.types.js";
 
 export type FileManagerSort = "name" | "updated" | "size";
@@ -72,14 +72,19 @@ export function FileManagerToolbar({
         </div>
       </div>
       <div className="flex min-w-0 items-center gap-3">
-        <button
+        <Button
           type="button"
+          variant="ghost"
           aria-pressed={detailsVisible}
           onClick={() => onDetailsVisibleChange(!detailsVisible)}
-          className={`inline-flex h-9 items-center gap-2 rounded-md px-2 text-sm font-medium transition ${detailsVisible ? "bg-[color:var(--color-interactive-soft)] text-[color:var(--color-action-primary-ink)]" : "text-[color:var(--color-ink-muted)] hover:bg-[color:var(--color-interactive-hover)]"}`}
+          className={
+            detailsVisible
+              ? "bg-[color:var(--color-panel-strong)] text-[color:var(--color-ink)]"
+              : "text-[color:var(--color-ink-muted)]"
+          }
         >
           <Icon name="panel-right" className="h-4 w-4" /> Dettagli
-        </button>
+        </Button>
         <Input
           aria-label="Cerca media"
           placeholder="Cerca"
@@ -104,14 +109,17 @@ function ToolButton({
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
+    <IconButton
+      icon={icon}
       aria-label={label}
       aria-pressed={active}
+      label={label}
       onClick={onClick}
-      className={`grid h-8 w-8 place-items-center transition ${active ? "bg-[color:var(--color-action-primary-bg)] text-[color:var(--color-action-primary-ink)]" : "text-[color:var(--color-ink-muted)] hover:bg-[color:var(--color-interactive-hover)]"}`}
-    >
-      <Icon name={icon} className="h-4 w-4" />
-    </button>
+      size="sm"
+      variant="ghost"
+      className={
+        active ? "bg-[color:var(--color-panel-strong)] text-[color:var(--color-ink)]" : undefined
+      }
+    />
   );
 }

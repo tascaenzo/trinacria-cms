@@ -1,4 +1,4 @@
-import { Icon } from "@trinacria-cms/trinacria-ui";
+import { Button, Icon } from "@trinacria-cms/trinacria-ui";
 import type { MediaAsset } from "./file-manager.types.js";
 
 export interface FileManagerContextMenuState {
@@ -103,14 +103,15 @@ function ContextMenuItem({
   onClick: () => void;
 }) {
   return (
-    <button
+    <Button
       type="button"
       role="menuitem"
+      variant="ghost"
       onClick={onClick}
-      className={`flex h-9 w-full items-center gap-2 rounded-lg px-3 text-left text-sm transition ${danger ? "text-red-700 hover:bg-red-50" : "text-slate-700 hover:bg-slate-100"}`}
+      className={`h-9 w-full justify-start gap-2 border-transparent px-3 text-left text-sm shadow-none ${danger ? "text-[color:var(--color-danger-ink)] hover:bg-[color:var(--color-danger-bg)]" : "text-[color:var(--color-ink-muted)]"}`}
     >
       <Icon name={icon} className="h-4 w-4" />
       <span>{label}</span>
-    </button>
+    </Button>
   );
 }

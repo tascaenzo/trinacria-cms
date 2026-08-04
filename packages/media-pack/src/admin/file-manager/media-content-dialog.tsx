@@ -1,5 +1,5 @@
 import type { createCmsSdkClient } from "@trinacria-cms/sdk";
-import { Button, Dialog, Icon } from "@trinacria-cms/trinacria-ui";
+import { Button, Dialog, ErrorBanner, Icon, IconButton } from "@trinacria-cms/trinacria-ui";
 import { useEffect, useMemo, useState } from "react";
 import { CodeEditor } from "./code-editor.js";
 import { type CsvDocument, CsvEditor, parseCsv, serializeCsv } from "./csv-editor.js";
@@ -127,7 +127,7 @@ export function MediaContentDialog({
           disabled={!isDirty || isSaving || isLoading}
           onClick={() => void save()}
         >
-          {isSaving ? "Salvataggio…" : "Salva contenuto"}
+          {isSaving ? "Salvataggio…" : "Salva"}
         </Button>
       ) : null}
     </>
@@ -160,14 +160,7 @@ export function MediaContentDialog({
               />
             </div>
           ) : null}
-          {error ? (
-            <div
-              role="alert"
-              className="m-4 rounded-md border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] p-3 text-sm text-[color:var(--color-danger-ink)]"
-            >
-              {error}
-            </div>
-          ) : null}
+          {error ? <ErrorBanner className="m-4" message={error} /> : null}
           <div className="min-h-0 flex-1">
             {isLoading ? (
               <LoadingState />
@@ -298,29 +291,29 @@ function ImageViewer({
             : "Anteprima originale"}
         </span>
         <div className="flex items-center gap-1">
-          <button
-            type="button"
-            aria-label="Riduci zoom"
-            className="grid h-8 w-8 place-items-center rounded hover:bg-[color:var(--color-interactive-hover)]"
+          <IconButton
+            icon="minus"
+            label="Riduci zoom"
+            size="sm"
+            variant="ghost"
             onClick={() => onZoomChange(Math.max(0.25, zoom - 0.25))}
-          >
-            <Icon name="minus" className="h-4 w-4" />
-          </button>
-          <button
+          />
+          <Button
             type="button"
-            className="min-w-16 rounded px-2 py-1 text-xs hover:bg-[color:var(--color-interactive-hover)]"
+            size="sm"
+            variant="ghost"
+            className="min-w-16"
             onClick={() => onZoomChange(1)}
           >
             {Math.round(zoom * 100)}%
-          </button>
-          <button
-            type="button"
-            aria-label="Aumenta zoom"
-            className="grid h-8 w-8 place-items-center rounded hover:bg-[color:var(--color-interactive-hover)]"
+          </Button>
+          <IconButton
+            icon="plus"
+            label="Aumenta zoom"
+            size="sm"
+            variant="ghost"
             onClick={() => onZoomChange(Math.min(4, zoom + 0.25))}
-          >
-            <Icon name="plus" className="h-4 w-4" />
-          </button>
+          />
         </div>
       </div>
       <div className="grid min-h-0 flex-1 place-items-center overflow-auto bg-[linear-gradient(45deg,var(--color-border)_25%,transparent_25%),linear-gradient(-45deg,var(--color-border)_25%,transparent_25%),linear-gradient(45deg,transparent_75%,var(--color-border)_75%),linear-gradient(-45deg,transparent_75%,var(--color-border)_75%)] bg-[length:24px_24px] bg-[position:0_0,0_12px,12px_-12px,-12px_0px] p-8">
@@ -345,14 +338,20 @@ function ViewButton({
   onClick: () => void;
 }) {
   return (
-    <button
+    <Button
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`rounded-md px-3 py-1.5 text-sm font-medium ${active ? "bg-[color:var(--color-interactive-soft)] text-[color:var(--color-action-primary-ink)]" : "text-[color:var(--color-ink-muted)] hover:bg-[color:var(--color-interactive-hover)]"}`}
+      size="sm"
+      variant="ghost"
+      className={
+        active
+          ? "bg-[color:var(--color-panel-strong)] text-[color:var(--color-ink)]"
+          : "text-[color:var(--color-ink-muted)]"
+      }
     >
       {label}
-    </button>
+    </Button>
   );
 }
 function LoadingState() {

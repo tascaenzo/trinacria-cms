@@ -26,7 +26,6 @@ interface FileManagerFrameProps {
   inspector: ReactNode;
   isLoading: boolean;
   isSaving: boolean;
-  message: string | null;
   onAssetContextMenu: (asset: MediaAsset, event: React.MouseEvent<HTMLButtonElement>) => void;
   onBackgroundContextMenu: (event: React.MouseEvent<HTMLElement>) => void;
   onCreateFolder: () => void;
@@ -111,7 +110,7 @@ export function FileManagerFrame(props: FileManagerFrameProps) {
   return (
     <section
       ref={frameRef}
-      className={`flex h-full min-h-[36rem] flex-col overflow-hidden bg-[color:var(--color-surface)] ${props.embedded ? "" : "rounded-xl border border-[color:var(--color-border)] shadow-[var(--shadow-sm)]"}`}
+      className={`flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--color-surface)] ${props.embedded ? "" : "rounded-xl border border-[color:var(--color-border)] shadow-[var(--shadow-sm)]"}`}
     >
       <FileManagerToolbar
         detailsVisible={props.detailsVisible}
@@ -159,7 +158,6 @@ export function FileManagerFrame(props: FileManagerFrameProps) {
           currentDirectory={props.currentDirectory}
           error={props.error}
           isLoading={props.isLoading}
-          message={props.message}
           onNavigate={props.onNavigate}
           onOpenAsset={props.onOpenAsset}
           onAssetContextMenu={props.onAssetContextMenu}

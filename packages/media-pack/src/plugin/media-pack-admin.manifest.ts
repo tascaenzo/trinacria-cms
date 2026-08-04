@@ -3,29 +3,12 @@ import {
   defineAdmin,
   defineAdminNavigation,
   defineAdminRoute,
-  defineAdminSettingsSection,
-  defineAdminWidget
+  defineAdminSettingsSection
 } from "@trinacria-cms/kernel/plugin-api";
 import { MEDIA_PACK_PERMISSION_KEYS } from "./media-pack.security.js";
 
 /** Declarative admin contribution; a host can attach richer picker components later. */
 export const MEDIA_PACK_ADMIN_MANIFEST: PluginManifestAdmin = defineAdmin({
-  widgets: [
-    defineAdminWidget({
-      id: "media-file-manager",
-      label: "File manager",
-      componentRef: "media-pack:file-manager-widget",
-      requiredPermission: MEDIA_PACK_PERMISSION_KEYS.ASSETS_READ,
-      layout: {
-        defaultColumnSpan: 2,
-        defaultRowSpan: 2,
-        minColumnSpan: 2,
-        maxColumnSpan: 4,
-        minRowSpan: 2,
-        maxRowSpan: 3
-      }
-    })
-  ],
   routes: [
     defineAdminRoute({
       id: "media-assets",
@@ -34,14 +17,6 @@ export const MEDIA_PACK_ADMIN_MANIFEST: PluginManifestAdmin = defineAdmin({
       requiredPermission: MEDIA_PACK_PERMISSION_KEYS.ASSETS_READ,
       componentRef: "media-pack:file-manager",
       order: 70
-    }),
-    defineAdminRoute({
-      id: "media-picker-demo",
-      path: "/media/picker-demo",
-      label: "Selettore media",
-      requiredPermission: MEDIA_PACK_PERMISSION_KEYS.ASSETS_READ,
-      componentRef: "media-pack:file-manager-modal-demo",
-      order: 71
     })
   ],
   navigation: [
@@ -51,13 +26,6 @@ export const MEDIA_PACK_ADMIN_MANIFEST: PluginManifestAdmin = defineAdmin({
       label: "Media",
       requiredPermission: MEDIA_PACK_PERMISSION_KEYS.ASSETS_READ,
       order: 70
-    }),
-    defineAdminNavigation({
-      id: "nav-media-picker-demo",
-      path: "/media/picker-demo",
-      label: "Selettore media",
-      requiredPermission: MEDIA_PACK_PERMISSION_KEYS.ASSETS_READ,
-      order: 71
     })
   ],
   settingsSections: [
