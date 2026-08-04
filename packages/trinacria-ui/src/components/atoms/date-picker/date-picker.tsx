@@ -26,7 +26,13 @@ import {
   toDateKey
 } from "./date-picker.utils.js";
 
-const WEEKDAY_LABELS = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
+function getWeekdayLabels(locale: string) {
+  const formatter = new Intl.DateTimeFormat(locale, { weekday: "short" });
+  return Array.from({ length: 7 }, (_, index) => {
+    const label = formatter.format(new Date(2021, 7, 2 + index)).replace(".", "");
+    return `${label.slice(0, 1).toLocaleUpperCase(locale)}${label.slice(1)}`;
+  });
+}
 
 function useControllableDate(
   value?: string,
@@ -58,22 +64,29 @@ export function DatePicker({
   "aria-invalid": ariaInvalid,
   "aria-label": ariaLabel,
   className,
+  clearLabel = "Azzera data",
+  clearText = "Azzera",
   defaultValue,
   disabled = false,
   error,
   hint,
   id,
   label,
+  locale = "it-IT",
   max,
   min,
+  name,
+  nextMonthLabel = "Mese successivo",
   onValueChange,
   placeholder = "Seleziona una data",
+  previousMonthLabel = "Mese precedente",
   value,
+  weekdayLabels,
   ...props
 }: DatePickerProps) {
   const [selectedValue, setSelectedValue] = useControllableDate(value, defaultValue, onValueChange);
   const selectedDate = parseDateKey(selectedValue);
-  const ids = useFormControlIds(id);
+  const ids = useFormControlIds(id, name);
   const popupId = `${ids.controlId}-popup`;
   const monthLabelId = `${ids.controlId}-month`;
   const [isOpen, setIsOpen] = useState(false);
@@ -129,7 +142,11 @@ export function DatePicker({
       calendar.slice(rowIndex * 7, rowIndex * 7 + 7)
     );
   }, [calendar]);
-  const displayValue = formatDateLabel(selectedValue);
+  const resolvedWeekdayLabels = useMemo(
+    () => (weekdayLabels?.length === 7 ? weekdayLabels : getWeekdayLabels(locale)),
+    [locale, weekdayLabels]
+  );
+  const displayValue = formatDateLabel(selectedValue, locale);
 
   useEffect(() => {
     if (!isOpen) {
@@ -237,6 +254,9 @@ export function DatePicker({
       labelId={ids.labelId}
     >
       <div ref={containerRef} {...props}>
+        {name ? (
+          <input type="hidden" name={name} value={selectedValue} disabled={disabled} />
+        ) : null}
         <div className="relative">
           <button
             ref={triggerRef}
@@ -267,10 +287,10 @@ export function DatePicker({
             <button
               type="button"
               onClick={() => setSelectedValue("")}
-              className="absolute right-9 top-1/2 -translate-y-1/2 text-xs font-medium uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)]"
-              aria-label="Reset date"
+              className="absolute right-9 top-1/2 -translate-y-1/2 rounded-sm px-1 text-xs font-medium uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-focus)]"
+              aria-label={clearLabel}
             >
-              reset
+              {clearText}
             </button>
           ) : null}
 
@@ -287,7 +307,7 @@ export function DatePicker({
                   type="button"
                   onClick={() => setVisibleMonth((current) => shiftMonth(current, -1))}
                   className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[color:var(--color-border)] text-[color:var(--color-ink-muted)] hover:bg-[color:var(--color-interactive-hover)] hover:text-[color:var(--color-ink)]"
-                  aria-label="Mese precedente"
+                  aria-label={previousMonthLabel}
                 >
                   <Icon name="chevron-left" />
                 </button>
@@ -295,13 +315,13 @@ export function DatePicker({
                   id={monthLabelId}
                   className="text-sm font-semibold capitalize text-[color:var(--color-ink)]"
                 >
-                  {monthLabel(visibleMonth)}
+                  {monthLabel(visibleMonth, locale)}
                 </div>
                 <button
                   type="button"
                   onClick={() => setVisibleMonth((current) => shiftMonth(current, 1))}
                   className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[color:var(--color-border)] text-[color:var(--color-ink-muted)] hover:bg-[color:var(--color-interactive-hover)] hover:text-[color:var(--color-ink)]"
-                  aria-label="Mese successivo"
+                  aria-label={nextMonthLabel}
                 >
                   <Icon name="chevron-right" />
                 </button>
@@ -312,7 +332,7 @@ export function DatePicker({
                   role="row"
                   className="grid grid-cols-7 gap-1 text-center text-[11px] font-medium uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)]"
                 >
-                  {WEEKDAY_LABELS.map((weekday) => (
+                  {resolvedWeekdayLabels.map((weekday) => (
                     <span key={weekday} role="columnheader" className="py-2">
                       {weekday}
                     </span>
@@ -341,12 +361,12 @@ export function DatePicker({
                             disabled={isDisabled}
                             aria-selected={isSelected}
                             aria-current={isToday ? "date" : undefined}
-                            aria-label={formatDateAriaLabel(key)}
+                            aria-label={formatDateAriaLabel(key, locale)}
                             onClick={() => selectDay(key)}
                             onKeyDown={(event) => handleDayKeyDown(event, cell.date)}
                             onFocus={() => setFocusedKey(key)}
                             className={cn(
-                              "inline-flex h-10 items-center justify-center rounded-sm text-sm transition",
+                              "inline-flex h-10 items-center justify-center rounded-sm text-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-focus)]",
                               cell.inCurrentMonth
                                 ? "text-[color:var(--color-ink)]"
                                 : "text-[color:var(--color-ink-subtle)]",

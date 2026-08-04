@@ -142,7 +142,7 @@ Priorita residua: chiusa
 
 Stato:
 
-- parzialmente chiuso
+- chiuso con guardrail automatici
 
 Componenti coinvolti:
 
@@ -155,15 +155,16 @@ Problema:
 Esito:
 
 - corrette le story che usavano `bg-white`, radius ad hoc e stati errore hardcoded nei casi intercettati
-- resta una regola di review: nuove story devono preferire componenti e token del DS
+- lo script `check-trinacria-ui-stories.mjs` verifica la copertura Storybook e documentale
+- `@storybook/addon-a11y` verifica semanticamente ogni story
 
-Priorita residua: bassa
+Priorita residua: chiusa
 
 ### F7. Il sistema form non ha ancora regole accessibili complete per tastiera e focus management
 
 Stato:
 
-- parzialmente chiuso
+- chiuso per i contratti del componente; resta la validazione manuale sui flussi applicativi
 
 Componenti coinvolti:
 
@@ -182,8 +183,44 @@ Esito:
 - `DatePicker` ha roving focus su calendario, `aria-selected`, `aria-current`, grid roles ed Escape
 - `TimePicker` ripristina focus al trigger e usa `aria-expanded`/`aria-controls`
 - `NumberInput` e stato riallineato agli altri controlli con id stabili e descrizioni aria
+- `Combobox`, `DropdownMenu` e `AdminShell` gestiscono tab order, `Escape` e restore focus
+- feedback, tabelle e paginazione espongono landmark e live region coerenti
+- test `axe-core` e interattivi coprono i componenti base
 
-Priorita residua: media, limitata a test automatici a11y e verifica screen reader reale
+Priorita residua: bassa, limitata alla verifica periodica con screen reader reale
+
+### F8. Contrasto e accenti nel tema scuro
+
+Stato:
+
+- chiuso
+
+Problema originale:
+
+- gli accenti chiari sovrascrivevano i token del tema scuro producendo testo e hover con contrasto insufficiente
+- testo secondario, bordo forte e focus ring erano sotto la soglia prevista in alcune combinazioni
+
+Esito:
+
+- aggiunti override dark dedicati per ocean, forest e trinacria
+- riallineati `ink-subtle`, `border-strong` e `focus`
+- introdotto un test della matrice di contrasto per tutte le otto combinazioni tema/accento
+
+Priorita residua: chiusa
+
+### F9. API e componenti duplicati
+
+Stato:
+
+- chiuso
+
+Esito:
+
+- i controlli base accettano `ReactNode`, `containerClassName` e inoltrano il ref al controllo nativo
+- gli id non derivano piu dal `name`, evitando collisioni nei gruppi ripetuti
+- `SummaryCard` compone il pattern canonico `StatCard` ed e marcata deprecated per il nuovo codice
+- `secondary` e `outline` hanno gerarchie visive distinte
+- card e sezioni espongono il livello heading quando vengono annidate
 
 ## Azioni consigliate
 
@@ -197,15 +234,15 @@ Priorita residua: media, limitata a test automatici a11y e verifica screen reade
 
 - completato: overlay e auth surfaces riallineati ai token
 - completato: story intercettate riallineate ai token
-- da valutare in futuro: test visuali sistematici su Storybook
+- completato: addon accessibilita su Storybook e matrice tema/accento verificabile
 
 ### Sprint 3
 
-- completato in parte: focus trap, roving focus e aria base sui controlli complessi
-- definire una checklist di review DS obbligatoria per nuovi componenti
+- completato: focus trap, roving focus e aria sui controlli complessi
+- completato: checklist di review DS e test automatici di regressione
 
 ## Esito
 
 Il sistema non e disordinato: ha gia una direzione chiara.
 
-Il rischio principale rimasto non e la coerenza visiva, ma la mancanza di test automatici visuali e a11y che impediscano regressioni mentre il sistema cresce.
+Il package e ora coerente nei contratti base, nella matrice cromatica e nei pattern di interazione. Il rischio residuo principale e la validazione periodica dei flussi completi con tecnologie assistive reali, che non puo essere sostituita integralmente dai test automatici.

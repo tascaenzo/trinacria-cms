@@ -15,3 +15,16 @@ test("Panel renders tone elevation and radius classes", () => {
   assert.match(markup, /shadow-surface/);
   assert.match(markup, /radius-overlay/);
 });
+
+test("Panel custom tone leaves surface colors to composed components", () => {
+  const markup = renderToStaticMarkup(<Panel tone="custom">Content</Panel>);
+
+  assert.doesNotMatch(markup, /color-surface/);
+  assert.doesNotMatch(markup, /color-panel-soft/);
+});
+
+test("Panel preserves the requested semantic element", () => {
+  const markup = renderToStaticMarkup(<Panel as="section">Content</Panel>);
+
+  assert.match(markup, /^<section/);
+});

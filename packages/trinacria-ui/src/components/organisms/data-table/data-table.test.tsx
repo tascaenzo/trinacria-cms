@@ -35,6 +35,8 @@ test("DataTable renders table composition or empty state", () => {
   const empty = renderToStaticMarkup(<DataTable empty={<p>No records</p>} />);
 
   assert.match(table, /<table/);
+  assert.doesNotMatch(table, /class="hidden overflow-x-auto/);
+  assert.match(table, /<th[^>]*scope="col"/);
   assert.match(table, /Settings/);
   assert.match(table, /core/);
   assert.match(empty, /No records/);

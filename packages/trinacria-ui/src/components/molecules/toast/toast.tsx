@@ -61,7 +61,8 @@ export function ToastProvider({
 
   function pushToast(toast: ToastInput) {
     const id = toast.id ?? createToastId();
-    const duration = toast.duration ?? 5000;
+    // Interactive actions must remain available until the user dismisses them.
+    const duration = toast.duration ?? (toast.action ? 0 : 5000);
     const nextToast: ToastRecord = { ...toast, id };
 
     clearToastTimeout(id);

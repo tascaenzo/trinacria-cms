@@ -6,4 +6,5 @@ export interface DetailSectionProps
   description?: ReactNode;
   actions?: ReactNode;
   eyebrow?: ReactNode;
+  headingLevel?: 2 | 3 | 4;
 }

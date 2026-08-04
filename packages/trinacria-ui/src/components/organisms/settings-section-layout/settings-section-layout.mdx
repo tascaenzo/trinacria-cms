@@ -1,0 +1,18 @@
+import { Meta, Canvas } from "@storybook/addon-docs/blocks";
+import * as Stories from "./settings-section-layout.stories";
+
+<Meta of={Stories} />
+
+# Settings section layout
+
+Layout condiviso per form e strumenti del workspace impostazioni. Mantiene
+header, canvas, larghezza, scroll e barra azioni coerenti tra package diversi.
+
+<Canvas of={Stories.Default} />
+
+## Linee guida
+
+- Usa `form` per i normali form a una o due colonne.
+- Usa `wide` per tabelle, permessi e strumenti specialistici.
+- Usa `full` soltanto per editor complessi con anteprima o navigazione interna.
+- Colloca `Salva` e `Ripristina` in `actions`; usa `headerActions` per azioni non persistenti.

@@ -21,3 +21,20 @@ test("FormSection renders form metadata and content", () => {
   assert.match(markup, /Invalid/);
   assert.match(markup, /Save/);
 });
+
+test("FormSection supports nested heading hierarchy", () => {
+  const markup = renderToStaticMarkup(<FormSection headingLevel={3} title="Delivery" />);
+
+  assert.match(markup, /<h3[^>]*>Delivery<\/h3>/);
+});
+
+test("FormSection supports an open form layout without a panel", () => {
+  const markup = renderToStaticMarkup(
+    <FormSection variant="plain" title="Identity">
+      <input />
+    </FormSection>
+  );
+
+  assert.match(markup, /<section/);
+  assert.doesNotMatch(markup, /rounded-/);
+});

@@ -10,15 +10,29 @@ export function FormSection({
   className,
   description,
   error,
+  headingLevel = 2,
   title,
+  variant = "panel",
   ...props
 }: FormSectionProps) {
-  return (
-    <Panel className={cn("grid gap-4 p-5", className)} radius="lg" {...props}>
-      <div className="space-y-1.5">
-        <h2 className="text-lg font-semibold text-[color:var(--color-ink)]">{title}</h2>
-        {description ? <BodyText>{description}</BodyText> : null}
-      </div>
+  const Heading = headingLevel === 3 ? "h3" : "h2";
+  const content = (
+    <>
+      {title || description ? (
+        <div className="space-y-1.5">
+          {title ? (
+            <Heading
+              className={cn(
+                "font-semibold text-[color:var(--color-ink)]",
+                variant === "plain" ? "text-base" : "text-lg"
+              )}
+            >
+              {title}
+            </Heading>
+          ) : null}
+          {description ? <BodyText>{description}</BodyText> : null}
+        </div>
+      ) : null}
       {error ? <ErrorBanner message={error} /> : null}
       <div className="grid gap-4">{children}</div>
       {actions ? (
@@ -26,6 +40,20 @@ export function FormSection({
           {actions}
         </div>
       ) : null}
+    </>
+  );
+
+  if (variant === "plain") {
+    return (
+      <section className={cn("grid gap-5", className)} {...props}>
+        {content}
+      </section>
+    );
+  }
+
+  return (
+    <Panel className={cn("grid gap-4 p-5", className)} radius="lg" {...props}>
+      {content}
     </Panel>
   );
 }

@@ -30,6 +30,9 @@ const preview: Preview = {
     }
   },
   parameters: {
+    a11y: {
+      test: "error"
+    },
     controls: {
       matchers: {
         color: /(background|color)$/i,
@@ -52,7 +55,7 @@ const preview: Preview = {
         data-trinacria-admin-theme
         data-theme={context.globals.theme}
         data-accent={context.globals.accent}
-        className="min-h-screen bg-[color:var(--color-canvas)] p-6"
+        style={{ background: "var(--color-canvas)", minHeight: "100vh", padding: "1.5rem" }}
       >
         <Story />
       </div>

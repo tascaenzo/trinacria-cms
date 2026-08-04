@@ -6,7 +6,10 @@ import {
 } from "../form-control/form-control.js";
 import type { TextareaProps } from "./textarea.types.js";
 
-export function Textarea({ className, error, hint, label, id, ...props }: TextareaProps) {
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
+  { className, containerClassName, error, hint, label, id, ...props },
+  ref
+) {
   const ids = useFormControlIds(id, props.name);
   const aria = buildFormControlAria({
     describedBy: props["aria-describedby"],
@@ -18,6 +21,7 @@ export function Textarea({ className, error, hint, label, id, ...props }: Textar
 
   return (
     <FormControlShell
+      className={containerClassName}
       controlId={ids.controlId}
       error={error}
       errorId={ids.errorId}
@@ -28,6 +32,7 @@ export function Textarea({ className, error, hint, label, id, ...props }: Textar
       labelId={ids.labelId}
     >
       <textarea
+        ref={ref}
         {...props}
         id={ids.controlId}
         aria-invalid={error ? true : props["aria-invalid"]}
@@ -42,4 +47,6 @@ export function Textarea({ className, error, hint, label, id, ...props }: Textar
       />
     </FormControlShell>
   );
-}
+});
+
+import { forwardRef } from "react";

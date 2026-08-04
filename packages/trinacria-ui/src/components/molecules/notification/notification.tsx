@@ -22,7 +22,7 @@ export function Notification({
   "aria-live": ariaLive,
   className,
   description,
-  dismissLabel = "Dismiss notification",
+  dismissLabel = "Chiudi notifica",
   icon,
   meta,
   onDismiss,
@@ -39,29 +39,26 @@ export function Notification({
     <Panel
       aria-live={resolvedAriaLive}
       className={cn(
-        "rounded-md px-4 py-3",
+        "rounded-md px-4 py-3 shadow-[var(--shadow-notification)]",
         tone === "neutral" &&
-          "border-[color:var(--color-neutral-border)] bg-[color:var(--color-panel-soft)] text-[color:var(--color-neutral-ink)]",
+          "border-[color:var(--color-neutral-border)] bg-[color:var(--color-notification-neutral-bg)] text-[color:var(--color-neutral-ink)]",
         tone === "info" &&
-          "border-[color:var(--color-info-border)] bg-[color:var(--color-info-bg)] text-[color:var(--color-info-ink)]",
+          "border-[color:var(--color-info-border)] bg-[color:var(--color-notification-info-bg)] text-[color:var(--color-info-ink)]",
         tone === "success" &&
-          "border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] text-[color:var(--color-success-ink)]",
+          "border-[color:var(--color-success-border)] bg-[color:var(--color-notification-success-bg)] text-[color:var(--color-success-ink)]",
         tone === "warning" &&
-          "border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-bg)] text-[color:var(--color-warning-ink)]",
+          "border-[color:var(--color-warning-border)] bg-[color:var(--color-notification-warning-bg)] text-[color:var(--color-warning-ink)]",
         tone === "danger" &&
-          "border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] text-[color:var(--color-danger-ink)]",
+          "border-[color:var(--color-danger-border)] bg-[color:var(--color-notification-danger-bg)] text-[color:var(--color-danger-ink)]",
         className
       )}
       radius="lg"
       role={resolvedRole}
+      tone="custom"
       {...props}
     >
       <div className="flex items-start gap-3">
-        {resolvedIcon ? (
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-[color:rgb(255_255_255/0.58)]">
-            <Icon name={resolvedIcon} className="h-[18px] w-[18px]" />
-          </div>
-        ) : null}
+        {resolvedIcon ? <Icon name={resolvedIcon} className="mt-1 h-5 w-5 shrink-0" /> : null}
         <div className="min-w-0 flex-1">
           {(title || meta) && (
             <div className="flex flex-wrap items-start justify-between gap-2">

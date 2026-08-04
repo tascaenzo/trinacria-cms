@@ -18,3 +18,11 @@ test("Switch preserves aria wiring without referencing a missing hint id", () =>
   assert.match(markup, /aria-describedby="external-description enabled-description enabled-error"/);
   assert.doesNotMatch(markup, /enabled-hint/);
 });
+
+test("Switch supports a compact visual control with an accessible label", () => {
+  const markup = renderToStaticMarkup(<Switch compact label="Enable notifications" />);
+
+  assert.match(markup, /inline-flex items-center border-0/);
+  assert.match(markup, /<span class="grid gap-1 sr-only">/);
+  assert.match(markup, />Enable notifications</);
+});

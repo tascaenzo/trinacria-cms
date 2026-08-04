@@ -8,6 +8,6 @@ test("DatePicker does not render a reset action while disabled", () => {
   const enabledMarkup = renderToStaticMarkup(<DatePicker defaultValue="2026-04-11" />);
   const disabledMarkup = renderToStaticMarkup(<DatePicker defaultValue="2026-04-11" disabled />);
 
-  assert.match(enabledMarkup, /Reset date/);
-  assert.doesNotMatch(disabledMarkup, /Reset date/);
+  assert.match(enabledMarkup, /Azzera data/);
+  assert.doesNotMatch(disabledMarkup, /Azzera data/);
 });

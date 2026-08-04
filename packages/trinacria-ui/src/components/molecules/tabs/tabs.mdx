@@ -5,7 +5,11 @@ import * as Stories from "./tabs.stories";
 
 # Tabs
 
-Navigazione tra viste correlate della stessa risorsa. Il contenuto attivo è collegato semanticamente al tab selezionato e i conteggi sono opzionali.
+Navigazione minimale tra viste correlate della stessa risorsa. Il contenitore
+usa una superficie neutra compatta e distinta dal canvas, mentre il tab attivo emerge su una superficie
+chiara con un'ombra appena percettibile, secondo il modello visuale di shadcn.
+I conteggi restano testo compatto e il contenuto attivo è collegato
+semanticamente al tab selezionato.
 
 <Canvas of={Stories.Default} />
 

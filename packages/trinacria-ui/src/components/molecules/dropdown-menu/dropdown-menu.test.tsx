@@ -133,3 +133,34 @@ test("DropdownMenu does not force trigger width for regular portal content", asy
     restoreDom();
   }
 });
+
+test("DropdownMenu restores focus to its trigger after selection", async () => {
+  const restoreDom = installDom();
+  const triggerRef = React.createRef<HTMLButtonElement>();
+
+  try {
+    const view = await renderClient(
+      <DropdownMenu trigger={<button ref={triggerRef}>Azioni</button>}>
+        <DropdownMenuItem>Modifica</DropdownMenuItem>
+      </DropdownMenu>
+    );
+
+    await React.act(async () => {
+      triggerRef.current?.click();
+      await new Promise((resolve) => window.setTimeout(resolve, 0));
+    });
+    const item = document.body.querySelector<HTMLButtonElement>('[role="menuitem"]');
+    assert.ok(item);
+
+    await React.act(async () => {
+      item.click();
+      await new Promise((resolve) => window.setTimeout(resolve, 0));
+    });
+
+    assert.equal(document.body.querySelector('[role="menu"]'), null);
+    assert.equal(document.activeElement, triggerRef.current);
+    await view.unmount();
+  } finally {
+    restoreDom();
+  }
+});

@@ -50,3 +50,13 @@ test("FormControlSurface reflects disabled and error state classes", () => {
   assert.match(className, /color-danger-bg/);
   assert.match(markup, /cursor-not-allowed/);
 });
+
+test("form controls use quiet hover and focus borders", () => {
+  const className = formControlClassName();
+
+  assert.match(className, /color-border\)/);
+  assert.match(className, /hover:border-\[color:var\(--color-accent-border\)\]/);
+  assert.match(className, /focus:border-\[color:var\(--color-border-strong\)\]/);
+  assert.match(className, /focus:ring-1/);
+  assert.doesNotMatch(className, /focus:ring-2/);
+});

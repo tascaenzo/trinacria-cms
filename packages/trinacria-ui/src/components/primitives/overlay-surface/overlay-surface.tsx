@@ -8,10 +8,12 @@ export const OverlaySurface = forwardRef<HTMLDivElement, OverlaySurfaceProps>(
       <div
         ref={ref}
         className={cn(
-          "border border-[color:var(--color-border)] bg-[color:var(--color-surface)]",
-          variant === "popover" && "rounded-[var(--radius-overlay)] shadow-[var(--shadow-popover)]",
-          variant === "modal" && "rounded-[var(--radius-overlay)] shadow-[var(--shadow-overlay)]",
-          variant === "drawer" && "shadow-[var(--shadow-drawer)]",
+          "bg-[color:var(--color-surface)]",
+          variant === "popover" &&
+            "border border-[color:var(--color-border)] rounded-[var(--radius-overlay)] shadow-[var(--shadow-popover)]",
+          variant === "modal" &&
+            "border border-transparent rounded-[var(--radius-overlay)] shadow-[var(--shadow-overlay)]",
+          variant === "drawer" && "border-0 shadow-[var(--shadow-drawer)]",
           className
         )}
         {...props}

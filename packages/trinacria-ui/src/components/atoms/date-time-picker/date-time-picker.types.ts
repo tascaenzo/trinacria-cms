@@ -11,4 +11,6 @@ export interface DateTimePickerProps
   onValueChange?: (value: string) => void;
   disabled?: boolean;
   minuteStep?: number;
+  dateLabel?: string;
+  timeLabel?: string;
 }

@@ -10,6 +10,7 @@ import {
   type Ref,
   useContext,
   useEffect,
+  useId,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -60,6 +61,7 @@ export function DropdownMenu({
   className,
   contentClassName,
   defaultOpen,
+  menuLabel,
   onOpenChange,
   open,
   side = "bottom",
@@ -67,6 +69,13 @@ export function DropdownMenu({
   ...props
 }: PropsWithChildren<DropdownMenuProps>) {
   const [isOpen, setIsOpen] = useControllableState(open, defaultOpen ?? false, onOpenChange);
+  const generatedId = useId().replace(/:/g, "");
+  const generatedTriggerId = `dropdown-trigger-${generatedId}`;
+  const triggerId =
+    isValidElement(trigger) && typeof (trigger.props as { id?: unknown }).id === "string"
+      ? ((trigger.props as { id: string }).id ?? generatedTriggerId)
+      : generatedTriggerId;
+  const menuId = `dropdown-menu-${generatedId}`;
   const shouldMatchTriggerWidth =
     typeof contentClassName === "string" && contentClassName.split(/\s+/).includes("w-full");
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -212,7 +221,10 @@ export function DropdownMenu({
 
   const contextValue = useMemo<DropdownMenuContextValue>(
     () => ({
-      closeMenu: () => setIsOpen(false)
+      closeMenu: () => {
+        setIsOpen(false);
+        window.requestAnimationFrame(() => triggerRef.current?.focus());
+      }
     }),
     [setIsOpen]
   );
@@ -226,6 +238,8 @@ export function DropdownMenu({
         triggerRef={triggerRef}
         focusFirstItem={focusFirstItem}
         focusLastItem={focusLastItem}
+        menuId={menuId}
+        triggerId={triggerId}
       />
       {isOpen
         ? renderMenuPortal(
@@ -236,7 +250,10 @@ export function DropdownMenu({
               >
                 <div
                   ref={menuRef}
+                  id={menuId}
                   role="menu"
+                  aria-label={menuLabel}
+                  aria-labelledby={menuLabel ? undefined : triggerId}
                   className="grid gap-1 outline-none"
                   onKeyDown={handleMenuKeyDown}
                 >
@@ -264,7 +281,9 @@ function DropdownTrigger({
   trigger,
   triggerRef,
   focusFirstItem,
-  focusLastItem
+  focusLastItem,
+  menuId,
+  triggerId
 }: {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
@@ -272,6 +291,8 @@ function DropdownTrigger({
   triggerRef: { current: HTMLElement | null };
   focusFirstItem: () => void;
   focusLastItem: () => void;
+  menuId: string;
+  triggerId: string;
 }) {
   if (isValidElement(trigger)) {
     const element = trigger as ReactElement<{
@@ -279,6 +300,8 @@ function DropdownTrigger({
       onKeyDown?: (event: ReactKeyboardEvent<HTMLElement>) => void;
       "aria-expanded"?: boolean;
       "aria-haspopup"?: string;
+      "aria-controls"?: string;
+      id?: string;
       ref?: Ref<HTMLElement>;
     }>;
     const composedTriggerRef = composeRefs(element.props.ref, (node: HTMLElement | null) => {
@@ -288,6 +311,8 @@ function DropdownTrigger({
     return cloneElement(element, {
       "aria-expanded": isOpen,
       "aria-haspopup": "menu",
+      "aria-controls": menuId,
+      id: element.props.id ?? triggerId,
       ref: composedTriggerRef,
       onClick: (event: MouseEvent<HTMLElement>) => {
         element.props.onClick?.(event);
@@ -321,8 +346,10 @@ function DropdownTrigger({
     <button
       ref={triggerRef as never}
       type="button"
+      id={triggerId}
       aria-expanded={isOpen}
       aria-haspopup="menu"
+      aria-controls={menuId}
       onClick={() => setIsOpen(!isOpen)}
       onKeyDown={(event) => {
         if (event.key === "ArrowDown" || event.key === "Enter" || event.key === " ") {
@@ -391,7 +418,7 @@ export function DropdownMenuItem({
       type="button"
       role="menuitem"
       className={cn(
-        "flex w-full items-start gap-3 rounded-[var(--radius-control)] px-3 py-2 text-left text-sm transition focus:outline-none focus:ring-2 focus:ring-[color:var(--color-overlay-soft)]",
+        "flex w-full items-start gap-3 rounded-[var(--radius-control)] px-3 py-2 text-left text-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-focus)]",
         tone === "neutral" &&
           "text-[color:var(--color-ink-muted)] hover:bg-[color:var(--color-interactive-hover)] hover:text-[color:var(--color-ink)] focus:bg-[color:var(--color-interactive-hover)] focus:text-[color:var(--color-ink)]",
         tone === "danger" &&

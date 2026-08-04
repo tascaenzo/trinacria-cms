@@ -5,14 +5,17 @@ import { BodyText } from "../../primitives/text/text.js";
 import type { EmptyStateProps, FeedbackBannerProps } from "./feedback.types.js";
 
 export function FeedbackBanner({
+  "aria-live": ariaLive,
   className,
   message,
+  role,
   title,
   tone = "neutral",
   ...props
 }: FeedbackBannerProps) {
   return (
     <Panel
+      aria-live={ariaLive ?? (tone === "danger" || tone === "warning" ? "assertive" : "polite")}
       className={cn(
         "rounded-md px-4 py-3 text-sm",
         tone === "neutral" &&
@@ -28,6 +31,8 @@ export function FeedbackBanner({
         className
       )}
       radius="lg"
+      role={role ?? (tone === "danger" || tone === "warning" ? "alert" : "status")}
+      tone="custom"
       {...props}
     >
       {title ? <p className="font-semibold">{title}</p> : null}

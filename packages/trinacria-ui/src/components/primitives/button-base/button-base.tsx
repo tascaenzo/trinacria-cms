@@ -34,7 +34,7 @@ function getButtonVariantClassName(variant: ButtonVariant) {
   }
 
   if (variant === "outline") {
-    return "border-[color:var(--color-action-secondary-border)] bg-[color:var(--color-action-secondary-bg)] text-[color:var(--color-action-secondary-ink)] hover:bg-[color:var(--color-action-secondary-hover)]";
+    return "border-[color:var(--color-border-strong)] bg-transparent text-[color:var(--color-action-secondary-ink)] shadow-none hover:bg-[color:var(--color-action-secondary-hover)]";
   }
 
   if (variant === "ghost") {

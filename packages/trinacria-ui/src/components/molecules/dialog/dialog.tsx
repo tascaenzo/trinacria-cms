@@ -22,7 +22,11 @@ function getFocusableElements(container: HTMLElement | null): HTMLElement[] {
     container.querySelectorAll<HTMLElement>(
       'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
     )
-  ).filter((element) => !element.hasAttribute("aria-hidden"));
+  ).filter((element) => {
+    if (element.closest('[hidden], [aria-hidden="true"], [inert]')) return false;
+    const style = window.getComputedStyle(element);
+    return style.display !== "none" && style.visibility !== "hidden";
+  });
 }
 
 /**
@@ -33,7 +37,7 @@ export function Dialog({
   children,
   description,
   eyebrow,
-  closeLabel = "Close",
+  closeLabel = "Chiudi",
   closeShortcutLabel = "Esc",
   closeVariant = "button",
   chrome = "standard",
@@ -107,9 +111,15 @@ export function Dialog({
   }, [open, variant]);
 
   function handleKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    const visibleDialogs = document.querySelectorAll<HTMLElement>(
+      '[role="dialog"][aria-modal="true"]'
+    );
+    if (visibleDialogs.item(visibleDialogs.length - 1) !== dialogRef.current) return;
+
     if (event.key !== "Tab") {
       return;
     }
+    event.stopPropagation();
 
     const focusables = getFocusableElements(dialogRef.current);
     if (focusables.length === 0) {
@@ -177,8 +187,7 @@ export function Dialog({
           variant === "modal" &&
             chrome === "workspace" &&
             "!h-screen !max-h-none !max-w-none !rounded-none !border-0 !shadow-none",
-          variant === "drawer" &&
-            "ml-auto flex h-full max-w-[640px] flex-col rounded-none border-y-0 border-r-0",
+          variant === "drawer" && "ml-auto flex h-full max-w-[640px] flex-col rounded-none",
           variant === "modal" &&
             (isActive
               ? "translate-y-0 scale-100 opacity-100"

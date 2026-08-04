@@ -15,6 +15,7 @@ test("Pagination guards invalid pageSize and totalItems without throwing", () =>
     />
   );
 
-  assert.match(markup, /0-0 of 0/);
+  assert.match(markup, /0-0 di 0/);
+  assert.match(markup, /<nav[^>]*aria-label="Paginazione"/);
   assert.match(markup, /value="1"/);
 });

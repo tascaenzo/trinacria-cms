@@ -31,6 +31,7 @@
   --shadow-overlay: var(--shadow-lg);
   --shadow-popover: 0 24px 80px rgba(15, 23, 42, 0.16);
   --shadow-drawer: -24px 0 80px rgba(15, 23, 42, 0.18);
+  --shadow-notification: 0 8px 24px rgba(15, 23, 42, 0.1);
 
   --color-canvas: #ffffff;
   --color-surface: #ffffff;
@@ -39,12 +40,12 @@
   --color-panel-strong: #edf1f5;
 
   --color-border: #dce3eb;
-  --color-border-strong: #c8d2de;
+  --color-border-strong: #8794a5;
 
   --color-ink: #1f2937;
   --color-ink-soft: #111827;
   --color-ink-muted: #5b6472;
-  --color-ink-subtle: #7a8391;
+  --color-ink-subtle: #667085;
   --color-ink-inverse: #f8fafc;
 
   --color-accent: #1f2937;
@@ -100,6 +101,12 @@
   --color-danger-bg: #fdf0eb;
   --color-danger-border: #f1c1ad;
   --color-danger-ink: #9b3a22;
+
+  --color-notification-neutral-bg: #fbfcfd;
+  --color-notification-info-bg: #f3f8ff;
+  --color-notification-success-bg: #f1f8f2;
+  --color-notification-warning-bg: #fff9eb;
+  --color-notification-danger-bg: #fdf4f0;
 }
 
 [data-trinacria-admin-theme][data-theme="dark"] {
@@ -110,7 +117,7 @@
   --color-panel-strong: #1f2a3d;
 
   --color-border: #243246;
-  --color-border-strong: #334155;
+  --color-border-strong: #5b6d83;
 
   --color-ink: #e5edf7;
   --color-ink-soft: #f8fafc;
@@ -122,6 +129,7 @@
   --color-accent-soft: #172033;
   --color-accent-border: #334155;
   --color-accent-ink: #e5edf7;
+  --color-focus: #94a3b8;
 
   --color-action-primary-bg: #e5edf7;
   --color-action-primary-border: #e5edf7;
@@ -168,6 +176,13 @@
   --color-danger-bg: #3a1720;
   --color-danger-border: #be123c;
   --color-danger-ink: #fecdd3;
+
+  --color-notification-neutral-bg: #172033;
+  --color-notification-info-bg: #132139;
+  --color-notification-success-bg: #132820;
+  --color-notification-warning-bg: #30220f;
+  --color-notification-danger-bg: #351922;
+  --shadow-notification: 0 10px 28px rgba(2, 6, 23, 0.3);
 }
 
 [data-trinacria-admin-theme][data-accent="ocean"] {
@@ -227,6 +242,71 @@
   --color-danger-ink: #a04224;
 }
 
+/* Accent palettes need dedicated dark values: the light accent tokens would
+   otherwise override dark surfaces while leaving dark-theme ink in place. */
+[data-trinacria-admin-theme][data-theme="dark"][data-accent="ocean"] {
+  --color-accent: #7dd3fc;
+  --color-accent-soft: #102a3d;
+  --color-accent-border: #256b91;
+  --color-accent-ink: #bae6fd;
+  --color-focus: #38bdf8;
+  --color-action-primary-bg: #7dd3fc;
+  --color-action-primary-border: #7dd3fc;
+  --color-action-primary-ink: #0f172a;
+  --color-action-primary-hover: #38bdf8;
+  --color-action-secondary-hover: #162f46;
+  --color-action-ghost-hover: #162f46;
+  --color-interactive-hover: #162f46;
+  --color-interactive-selected: #7dd3fc;
+  --color-interactive-selected-ink: #0f172a;
+  --color-interactive-soft: #21445c;
+}
+
+[data-trinacria-admin-theme][data-theme="dark"][data-accent="forest"] {
+  --color-accent: #86efac;
+  --color-accent-soft: #122d20;
+  --color-accent-border: #2f7a4b;
+  --color-accent-ink: #bbf7d0;
+  --color-focus: #4ade80;
+  --color-action-primary-bg: #86efac;
+  --color-action-primary-border: #86efac;
+  --color-action-primary-ink: #0f172a;
+  --color-action-primary-hover: #4ade80;
+  --color-action-secondary-hover: #173925;
+  --color-action-ghost-hover: #173925;
+  --color-interactive-hover: #173925;
+  --color-interactive-selected: #86efac;
+  --color-interactive-selected-ink: #0f172a;
+  --color-interactive-soft: #245336;
+}
+
+[data-trinacria-admin-theme][data-theme="dark"][data-accent="trinacria"] {
+  --color-focus: #f0a184;
+  --color-accent: #f0a184;
+  --color-accent-soft: #3a211c;
+  --color-accent-border: #9a4d31;
+  --color-accent-ink: #fdc7b5;
+  --color-action-primary-bg: #f0a184;
+  --color-action-primary-border: #f0a184;
+  --color-action-primary-ink: #0f172a;
+  --color-action-primary-hover: #e98967;
+  --color-action-secondary-hover: #3b241f;
+  --color-action-ghost-hover: #3b241f;
+  --color-interactive-hover: #3b241f;
+  --color-interactive-selected: #f0a184;
+  --color-interactive-selected-ink: #0f172a;
+  --color-interactive-soft: #5a3025;
+  --color-info-bg: #10203c;
+  --color-info-border: #1d4ed8;
+  --color-info-ink: #bfdbfe;
+  --color-warning-bg: #33210d;
+  --color-warning-border: #b45309;
+  --color-warning-ink: #fde68a;
+  --color-danger-bg: #3a1720;
+  --color-danger-border: #be123c;
+  --color-danger-ink: #fecdd3;
+}
+
 html {
   background: var(--color-canvas);
   color-scheme: light;
@@ -265,4 +345,19 @@ button:not(:disabled),
 
 #root {
   min-height: 100vh;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-trinacria-admin-theme] *,
+  [data-trinacria-admin-theme] *::before,
+  [data-trinacria-admin-theme] *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: Accessibility preferences must override utility classes. */
+    scroll-behavior: auto !important;
+    /* biome-ignore lint/complexity/noImportantStyles: Accessibility preferences must override utility classes. */
+    animation-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: Accessibility preferences must override utility classes. */
+    animation-iteration-count: 1 !important;
+    /* biome-ignore lint/complexity/noImportantStyles: Accessibility preferences must override utility classes. */
+    transition-duration: 0.01ms !important;
+  }
 }

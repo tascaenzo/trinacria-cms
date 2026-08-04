@@ -34,12 +34,21 @@ const tokenGroups = [
     items: ["--color-info-bg", "--color-success-bg", "--color-warning-bg", "--color-danger-bg"]
   },
   {
+    title: "Notification surfaces",
+    items: [
+      "--color-notification-info-bg",
+      "--color-notification-success-bg",
+      "--color-notification-warning-bg",
+      "--color-notification-danger-bg"
+    ]
+  },
+  {
     title: "Radii",
     items: ["--radius-control", "--radius-panel", "--radius-overlay", "--radius-pill"]
   },
   {
     title: "Shadows",
-    items: ["--shadow-surface", "--shadow-overlay"]
+    items: ["--shadow-surface", "--shadow-overlay", "--shadow-notification"]
   }
 ];
 

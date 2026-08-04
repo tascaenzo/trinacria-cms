@@ -22,6 +22,12 @@ export const States: Story = {
         description="Conserva i record eliminati per audit e ripristino."
         error="Questa opzione richiede un piano storage compatibile."
       />
+      <div className="flex items-center justify-between rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4">
+        <span className="text-sm font-medium text-[color:var(--color-ink)]">
+          Controllo compatto
+        </span>
+        <Switch compact label="Controllo compatto" defaultChecked />
+      </div>
     </div>
   )
 };

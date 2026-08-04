@@ -11,4 +11,11 @@ export interface TimePickerProps
   onValueChange?: (value: string) => void;
   disabled?: boolean;
   minuteStep?: number;
+  name?: string;
+  popupLabel?: string;
+  hourLabel?: string;
+  minuteLabel?: string;
+  clearLabel?: string;
+  clearText?: string;
+  confirmLabel?: string;
 }
