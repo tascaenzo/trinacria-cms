@@ -1,6 +1,6 @@
 # Audit UI backoffice
 
-Data: 2026-07-29  
+Data: 2026-07-29
 Ambito: `admin-kernel`, `editorial-pack`, `media-pack`, `email-pack` e host `apps/backoffice`.
 
 ## Esito
