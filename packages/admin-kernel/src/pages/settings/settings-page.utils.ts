@@ -97,12 +97,13 @@ export function toEditableSettingInput(value: unknown): string {
 }
 
 export function groupSettingRecordsForForm(
-  records: readonly SettingDefinitionRecord[]
+  records: readonly SettingDefinitionRecord[],
+  translate?: (key: string, fallback: string) => string
 ): Array<{ title: string; records: SettingDefinitionRecord[] }> {
   const groups = new Map<string, SettingDefinitionRecord[]>();
 
   for (const record of records.filter(isVisibleSettingDefinition)) {
-    const title = getSettingFormGroupTitle(record);
+    const title = getSettingFormGroupTitle(record, translate);
     groups.set(title, [...(groups.get(title) ?? []), record]);
   }
 
@@ -112,25 +113,41 @@ export function groupSettingRecordsForForm(
   }));
 }
 
-export function getSettingFormGroupTitle(record: SettingDefinitionRecord): string {
+export function getSettingFormGroupTitle(
+  record: SettingDefinitionRecord,
+  translate?: (key: string, fallback: string) => string
+): string {
   const key = record.key.toLowerCase();
   const category = record.category?.toLowerCase();
+  const label = (translationKey: string, fallback: string, defaultLabel: string) =>
+    translate?.(translationKey, fallback) ?? defaultLabel;
 
-  if (category === "site") return "Site details";
-  if (category === "internationalization") return "Localization";
-  if (category === "branding") return "Brand identity";
-  if (category === "email") return "Email delivery";
-  if (category === "user_flows") return "User lifecycle";
-  if (category === "security") return "Secrets and encryption";
-  if (key.includes(":login_")) return "Login protection";
-  if (key.includes(":jwt_cookie_")) return "Cookies";
-  if (key.includes(":jwt_") || key.includes("strict_jwt")) return "Session tokens";
-  if (key.includes(":plugin_auth:")) return "Plugin request signing";
-  if (key.includes("redis_url") || key.includes("redis_prefix")) return "Redis connection";
-  if (key.includes("redis_retry") || key.includes("redis_max_retries")) return "Redis retry policy";
-  if (category === "cache") return "Cache runtime";
-  if (category === "auth") return "Authentication";
-  return "Settings";
+  if (category === "site") return label("settings.group.site", "Dettagli del sito", "Site details");
+  if (category === "internationalization")
+    return label("settings.group.localization", "Localizzazione", "Localization");
+  if (category === "branding")
+    return label("settings.group.branding", "Identità visiva", "Brand identity");
+  if (category === "email") return label("settings.group.email", "Invio email", "Email delivery");
+  if (category === "user_flows")
+    return label("settings.group.user_flows", "Ciclo di vita utenti", "User lifecycle");
+  if (category === "security")
+    return label("settings.group.security", "Segreti e crittografia", "Secrets and encryption");
+  if (key.includes(":login_"))
+    return label("settings.group.login", "Protezione accessi", "Login protection");
+  if (key.includes(":jwt_cookie_")) return label("settings.group.cookies", "Cookie", "Cookies");
+  if (key.includes(":jwt_") || key.includes("strict_jwt"))
+    return label("settings.group.sessions", "Token di sessione", "Session tokens");
+  if (key.includes(":plugin_auth:"))
+    return label("settings.group.plugin_auth", "Firma richieste plugin", "Plugin request signing");
+  if (key.includes("redis_url") || key.includes("redis_prefix"))
+    return label("settings.group.redis", "Connessione Redis", "Redis connection");
+  if (key.includes("redis_retry") || key.includes("redis_max_retries"))
+    return label("settings.group.redis_retry", "Tentativi Redis", "Redis retry policy");
+  if (category === "cache")
+    return label("settings.group.cache", "Cache applicativa", "Cache runtime");
+  if (category === "auth")
+    return label("settings.group.authentication", "Autenticazione", "Authentication");
+  return label("settings.group.default", "Impostazioni", "Settings");
 }
 
 export function getSettingValueKind(

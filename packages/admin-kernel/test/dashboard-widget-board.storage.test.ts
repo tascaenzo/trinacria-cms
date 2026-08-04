@@ -16,6 +16,7 @@ const widgets = [
 test("dashboard widget layout preserves user order and visibility while adding new plugin widgets", () => {
   const layout = normalizeDashboardWidgetLayout(
     {
+      version: 2,
       order: ["email-pack:delivery", "removed-pack:widget"],
       hidden: ["email-pack:delivery", "removed-pack:widget"],
       dimensions: {
@@ -34,6 +35,7 @@ test("dashboard widget layout preserves user order and visibility while adding n
 test("dashboard widget layout respects plugin resizing boundaries", () => {
   const layout = normalizeDashboardWidgetLayout(
     {
+      version: 2,
       dimensions: {
         "email-pack:delivery": { columnSpan: 4, rowSpan: 99 }
       }
@@ -42,6 +44,21 @@ test("dashboard widget layout respects plugin resizing boundaries", () => {
   );
 
   assert.deepEqual(layout.dimensions["email-pack:delivery"], { columnSpan: 3, rowSpan: 3 });
+});
+
+test("dashboard widget layout adopts new defaults when the stored layout is outdated", () => {
+  const layout = normalizeDashboardWidgetLayout(
+    {
+      version: 1,
+      dimensions: {
+        "email-pack:delivery": { columnSpan: 1, rowSpan: 3 }
+      }
+    },
+    widgets
+  );
+
+  assert.equal(layout.version, 2);
+  assert.deepEqual(layout.dimensions["email-pack:delivery"], { columnSpan: 2, rowSpan: 1 });
 });
 
 test("dashboard widget drag reorder only moves visible widgets", () => {

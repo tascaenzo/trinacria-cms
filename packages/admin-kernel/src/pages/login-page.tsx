@@ -1,4 +1,11 @@
-import { Button, FieldDescription, FieldGroup, Input } from "@trinacria-cms/trinacria-ui";
+import {
+  Button,
+  ErrorBanner,
+  FieldDescription,
+  FieldGroup,
+  Input,
+  Panel
+} from "@trinacria-cms/trinacria-ui";
 import { useEffect, useState } from "react";
 import { useI18n } from "../lib/i18n.js";
 
@@ -28,7 +35,7 @@ export function LoginPage({ action, isSubmitting, state }: LoginPageProps) {
     <div className="min-h-svh bg-[color:var(--color-panel-soft)]">
       <div className="mx-auto flex min-h-svh w-full max-w-5xl items-center justify-center px-4 py-8 sm:px-6 md:px-8 md:py-12">
         <section className="w-full max-w-md md:max-w-[430px]">
-          <div className="space-y-6 md:rounded-[var(--radius-overlay)] md:border md:border-[color:var(--color-border)] md:bg-[color:var(--color-surface)] md:p-8 md:shadow-[var(--shadow-overlay)]">
+          <Panel className="space-y-6 p-6 shadow-[var(--shadow-overlay)] sm:p-8" radius="xl">
             <div className="space-y-6">
               <div className="space-y-2">
                 <h2 className="text-3xl font-semibold text-[color:var(--color-ink-soft)]">
@@ -79,16 +86,7 @@ export function LoginPage({ action, isSubmitting, state }: LoginPageProps) {
                     required
                   />
 
-                  {hasError ? (
-                    <FieldDescription
-                      id="login-form-error"
-                      role="alert"
-                      aria-live="polite"
-                      className="rounded-[var(--radius-control)] border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] px-4 py-3 text-[color:var(--color-danger-ink)]"
-                    >
-                      {state.error}
-                    </FieldDescription>
-                  ) : null}
+                  {hasError ? <ErrorBanner id="login-form-error" message={state.error} /> : null}
 
                   <Button
                     type="submit"
@@ -104,7 +102,7 @@ export function LoginPage({ action, isSubmitting, state }: LoginPageProps) {
                 </FieldGroup>
               </form>
             </div>
-          </div>
+          </Panel>
         </section>
       </div>
     </div>

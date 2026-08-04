@@ -1,4 +1,11 @@
-import { Badge } from "@trinacria-cms/trinacria-ui";
+import {
+  Badge,
+  FormSection,
+  Panel,
+  SettingsSectionLayout,
+  Switch,
+  useToast
+} from "@trinacria-cms/trinacria-ui";
 import { useEffect, useMemo, useState } from "react";
 import { EmptyState, ErrorBanner } from "../../../components/resource-feedback.js";
 import type { TranslateFn } from "../../../lib/i18n.js";
@@ -58,33 +65,26 @@ export function PluginPermissionCenterSection({ section, t }: AdminSettingsSecti
 
   if (isLoading) {
     return (
-      <div className="p-6">
+      <SettingsSectionLayout title={section.title} description={section.summary}>
         <EmptyState text={t("settings.empty.loading_value", "Caricamento valore...")} />
-      </div>
+      </SettingsSectionLayout>
     );
   }
 
   return (
-    <div className="min-h-0 overflow-auto px-6 py-4 sm:px-8 sm:py-6">
-      <div className="mx-auto grid max-w-4xl gap-6">
-        <div className="grid gap-1">
-          <h3 className="text-xl font-semibold text-[color:var(--color-ink)]">{section.title}</h3>
-          {section.summary ? (
-            <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink-muted)]">
-              {section.summary}
-            </p>
-          ) : null}
-        </div>
-        {error ? <ErrorBanner message={error} /> : null}
-        <PluginPermissionCenter
-          draftValue={draftValue}
-          isSaving={false}
-          onChange={setDraftValue}
-          settingKey={settingKey}
-          t={t}
-        />
-      </div>
-    </div>
+    <SettingsSectionLayout
+      title={section.title}
+      description={section.summary}
+      feedback={error ? <ErrorBanner message={error} /> : undefined}
+    >
+      <PluginPermissionCenter
+        draftValue={draftValue}
+        isSaving={false}
+        onChange={setDraftValue}
+        settingKey={settingKey}
+        t={t}
+      />
+    </SettingsSectionLayout>
   );
 }
 
@@ -96,8 +96,8 @@ export function PluginPermissionCenter({
   t
 }: PluginPermissionCenterProps) {
   const [localError, setLocalError] = useState<string | null>(null);
-  const [localMessage, setLocalMessage] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const { pushToast } = useToast();
   const grants = useMemo(() => parsePluginAccessGrantDrafts(draftValue), [draftValue]);
 
   async function updateGrant(
@@ -120,36 +120,42 @@ export function PluginPermissionCenter({
     try {
       setIsUpdating(true);
       setLocalError(null);
-      setLocalMessage(null);
       await cms.settings.upsertSettingValue({
         path: { key: settingKey },
         body: { value: next, updatedBy: "backoffice" }
       });
-      setLocalMessage(t("settings.plugin_permissions.saved", "Permissione aggiornata."));
+      const message = t("settings.plugin_permissions.saved", "Permissione aggiornata.");
+      pushToast({
+        tone: "success",
+        title: "Permessi plugin",
+        description: message,
+        duration: 4000
+      });
     } catch (error) {
-      setLocalError(toDisplayError(error));
+      const message = toDisplayError(error);
+      setLocalError(message);
+      pushToast({
+        tone: "danger",
+        title: "Salvataggio non riuscito",
+        description: message,
+        duration: 0
+      });
     } finally {
       setIsUpdating(false);
     }
   }
 
   return (
-    <section className="grid gap-4">
-      <div>
-        <h4 className="text-sm font-semibold text-[color:var(--color-ink)]">
-          {t("settings.plugin_permissions.access_requests", "Richieste accesso plugin")}
-        </h4>
-        <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
-          {t(
-            "settings.plugin_permissions.access_requests_summary",
-            "Abilita o disabilita l'accesso dei plugin a eventi sensibili e payload sicuri."
-          )}
-        </p>
-      </div>
+    <FormSection
+      headingLevel={3}
+      variant="plain"
+      title={t("settings.plugin_permissions.access_requests", "Richieste accesso plugin")}
+      description={t(
+        "settings.plugin_permissions.access_requests_summary",
+        "Abilita o disabilita l'accesso dei plugin a eventi sensibili e payload sicuri."
+      )}
+    >
       {localError ? <ErrorBanner message={localError} /> : null}
-      {localMessage ? (
-        <p className="text-sm font-medium text-[color:var(--color-success-ink)]">{localMessage}</p>
-      ) : null}
       {grants.length === 0 ? (
         <EmptyState
           text={t("settings.plugin_permissions.empty", "Nessuna richiesta registrata.")}
@@ -159,9 +165,10 @@ export function PluginPermissionCenter({
           {grants.map((grant) => {
             const isApproved = grant.status === "approved";
             return (
-              <article
+              <Panel
+                as="article"
                 key={getPluginGrantId(grant)}
-                className="grid gap-4 rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
+                className="grid gap-4 p-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
               >
                 <div className="grid min-w-0 gap-2">
                   <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -195,28 +202,22 @@ export function PluginPermissionCenter({
                       ? t("settings.plugin_permissions.enabled", "Abilitato")
                       : t("settings.plugin_permissions.disabled", "Disabilitato")}
                   </Badge>
-                  <label className="relative inline-flex cursor-pointer items-center">
-                    <input
-                      checked={isApproved}
-                      className="peer sr-only"
-                      disabled={isSaving || isUpdating}
-                      role="switch"
-                      type="checkbox"
-                      aria-label={`${grant.consumerPluginId} ${grant.eventName}`}
-                      onChange={(event) =>
-                        void updateGrant(grant, event.currentTarget.checked ? "approved" : "denied")
-                      }
-                    />
-                    <span className="h-7 w-12 rounded-full bg-[color:var(--color-interactive-soft)] transition peer-checked:bg-[color:var(--color-action-primary-bg)] peer-focus:ring-2 peer-focus:ring-[color:var(--color-overlay-soft)] peer-disabled:opacity-60" />
-                    <span className="pointer-events-none absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-[color:var(--color-surface)] shadow-sm transition peer-checked:translate-x-5" />
-                  </label>
+                  <Switch
+                    compact
+                    checked={isApproved}
+                    disabled={isSaving || isUpdating}
+                    label={`${grant.consumerPluginId} ${grant.eventName}`}
+                    onChange={(event) =>
+                      void updateGrant(grant, event.currentTarget.checked ? "approved" : "denied")
+                    }
+                  />
                 </div>
-              </article>
+              </Panel>
             );
           })}
         </div>
       )}
-    </section>
+    </FormSection>
   );
 }
 

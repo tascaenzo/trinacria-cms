@@ -13,10 +13,13 @@ import {
   Dialog,
   DropdownMenu,
   DropdownMenuItem,
-  FeedbackBanner,
   Icon,
   Input,
-  Select
+  Panel,
+  PropertyItem,
+  PropertyList,
+  Select,
+  useToast
 } from "@trinacria-cms/trinacria-ui";
 import { useActionState, useCallback, useEffect, useMemo, useState } from "react";
 import { JsonPreviewAction } from "../components/json-preview-action.js";
@@ -48,6 +51,7 @@ type MfaEnrollmentSetup = BeginMfaEnrollmentResponse["data"];
 
 export function ProfilePage() {
   const { locale, setLocale, t } = useI18n();
+  const { pushToast } = useToast();
   const [user, setUser] = useState<ProfileUser | null>(null);
   const [roles, setRoles] = useState<readonly ProfileRole[]>([]);
   const [permissions, setPermissions] = useState<ProfilePermissions>([]);
@@ -194,6 +198,78 @@ export function ProfilePage() {
     createIdleAsyncActionState()
   );
 
+  useEffect(() => {
+    if (profileState.ok) {
+      pushToast({
+        tone: "success",
+        title: t("profile.edit.title", "Profilo"),
+        description: t("profile.edit.success", "Profilo aggiornato."),
+        duration: 4000
+      });
+    } else if (profileState.error) {
+      pushToast({
+        tone: "danger",
+        title: t("common.feedback.save_error", "Salvataggio non riuscito"),
+        description: profileState.error,
+        duration: 0
+      });
+    }
+  }, [profileState, pushToast, t]);
+
+  useEffect(() => {
+    if (passwordState.ok) {
+      pushToast({
+        tone: "success",
+        title: t("profile.password.title", "Password"),
+        description: t("profile.password.success", "Password modificata."),
+        duration: 4000
+      });
+    } else if (passwordState.error) {
+      pushToast({
+        tone: "danger",
+        title: t("common.feedback.save_error", "Salvataggio non riuscito"),
+        description: passwordState.error,
+        duration: 0
+      });
+    }
+  }, [passwordState, pushToast, t]);
+
+  useEffect(() => {
+    if (mfaConfirmState.ok) {
+      pushToast({
+        tone: "success",
+        title: t("profile.mfa.title", "Sicurezza account"),
+        description: t("profile.mfa.enable_success", "Autenticazione a due fattori attivata."),
+        duration: 4000
+      });
+    } else if (mfaConfirmState.error) {
+      pushToast({
+        tone: "danger",
+        title: t("common.feedback.save_error", "Salvataggio non riuscito"),
+        description: mfaConfirmState.error,
+        duration: 0
+      });
+    }
+  }, [mfaConfirmState, pushToast, t]);
+
+  useEffect(() => {
+    if (mfaDisableState.ok) {
+      pushToast({
+        tone: "success",
+        title: t("profile.mfa.title", "Sicurezza account"),
+        description: t("profile.mfa.disabled_success", "Autenticazione a due fattori disattivata."),
+        duration: 4000
+      });
+    } else if (mfaDisableState.error) {
+      pushToast({
+        tone: "danger",
+        title: t("common.feedback.save_error", "Salvataggio non riuscito"),
+        description: mfaDisableState.error,
+        duration: 0
+      });
+    }
+  }, [mfaDisableState, pushToast, t]);
+
   const beginMfaEnrollment = useCallback(async () => {
     setMfaDialogError(null);
     setMfaEnrollmentStep(1);
@@ -202,9 +278,16 @@ export function ProfilePage() {
       setMfaSetup(response.data);
       setMfaRecoveryCodes(null);
     } catch (currentError) {
-      setMfaDialogError(toDisplayError(currentError));
+      const message = toDisplayError(currentError);
+      setMfaDialogError(message);
+      pushToast({
+        tone: "danger",
+        title: t("profile.mfa.title", "Sicurezza account"),
+        description: message,
+        duration: 0
+      });
     }
-  }, []);
+  }, [pushToast, t]);
 
   return (
     <div className="grid gap-4">
@@ -288,16 +371,13 @@ export function ProfilePage() {
                     <DropdownMenu
                       align="end"
                       trigger={
-                        <button
-                          type="button"
-                          className="inline-flex h-9 items-center gap-2 rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 text-sm font-medium text-[color:var(--color-ink)] shadow-sm transition hover:bg-[color:var(--color-interactive-hover)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-focus)]"
-                        >
+                        <Button type="button" variant="secondary">
                           {t("profile.actions.title", "Actions")}
                           <Icon
                             name="more-horizontal"
                             className="h-4 w-4 text-[color:var(--color-ink-muted)]"
                           />
-                        </button>
+                        </Button>
                       }
                     >
                       <DropdownMenuItem
@@ -313,17 +393,17 @@ export function ProfilePage() {
                     </DropdownMenu>
                   </div>
                 </div>
-                <dl className="grid gap-3 md:grid-cols-2">
-                  <ProfileDetail
+                <PropertyList columns={2}>
+                  <PropertyItem
                     label={t("common.form.first_name", "First name")}
                     value={user.firstName}
                   />
-                  <ProfileDetail
+                  <PropertyItem
                     label={t("common.form.last_name", "Last name")}
                     value={user.lastName}
                   />
-                  <ProfileDetail label={t("profile.details.email", "Email")} value={user.email} />
-                  <ProfileDetail
+                  <PropertyItem label={t("profile.details.email", "Email")} value={user.email} />
+                  <PropertyItem
                     label={t("profile.details.language", "Lingua")}
                     value={
                       user.locale === "it"
@@ -331,7 +411,7 @@ export function ProfilePage() {
                         : t("profile.language.english", "English")
                     }
                   />
-                  <ProfileDetail
+                  <PropertyItem
                     label={t("profile.roles.title", "Assigned roles")}
                     value={
                       roles.length > 0
@@ -339,19 +419,19 @@ export function ProfilePage() {
                         : "-"
                     }
                   />
-                  <ProfileDetail
+                  <PropertyItem
                     label={t("profile.metrics.permissions", "Permissions")}
                     value={String(permissions.length)}
                   />
-                  <ProfileDetail
+                  <PropertyItem
                     label={t("profile.details.created", "Created")}
                     value={formatDateTime(user.createdAt)}
                   />
-                  <ProfileDetail
+                  <PropertyItem
                     label={t("profile.details.updated", "Updated")}
                     value={formatDateTime(user.updatedAt)}
                   />
-                </dl>
+                </PropertyList>
               </div>
             </Card>
           </section>
@@ -437,12 +517,6 @@ export function ProfilePage() {
             variant="drawer"
           >
             <form action={submitProfile} className="grid gap-4">
-              {profileState.ok ? (
-                <FeedbackBanner
-                  tone="success"
-                  message={t("profile.edit.success", "Profile updated.")}
-                />
-              ) : null}
               {profileState.error ? <ErrorBanner message={profileState.error} /> : null}
               <Input
                 label={t("common.form.first_name", "First name")}
@@ -476,8 +550,8 @@ export function ProfilePage() {
                 </Button>
                 <Button type="submit" disabled={isProfilePending}>
                   {isProfilePending
-                    ? t("common.actions.updating")
-                    : t("profile.edit.submit", "Save profile")}
+                    ? t("common.actions.saving", "Salvataggio...")
+                    : t("common.actions.save", "Salva")}
                 </Button>
               </div>
             </form>
@@ -497,12 +571,6 @@ export function ProfilePage() {
             variant="drawer"
           >
             <form action={submitPassword} className="grid gap-4">
-              {passwordState.ok ? (
-                <FeedbackBanner
-                  tone="success"
-                  message={t("profile.password.success", "Password changed.")}
-                />
-              ) : null}
               {passwordState.error ? <ErrorBanner message={passwordState.error} /> : null}
               <Input
                 label={t("profile.password.current", "Current password")}
@@ -533,8 +601,8 @@ export function ProfilePage() {
                 </Button>
                 <Button type="submit" disabled={isPasswordPending}>
                   {isPasswordPending
-                    ? t("common.actions.updating")
-                    : t("profile.password.submit", "Change password")}
+                    ? t("common.actions.saving", "Salvataggio...")
+                    : t("common.actions.save", "Salva")}
                 </Button>
               </div>
             </form>
@@ -604,11 +672,11 @@ export function ProfilePage() {
             <p className="mb-4 text-xs font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
               {t("auth.mfa.recovery.progress", "Step 4 of 4")}
             </p>
-            <div className="grid grid-cols-2 gap-2 rounded-[var(--radius-control)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-muted)] p-4 font-mono text-sm">
+            <Panel className="grid grid-cols-2 gap-2 p-4 font-mono text-sm" tone="soft">
               {mfaRecoveryCodes?.map((code) => (
                 <code key={code}>{code}</code>
               ))}
-            </div>
+            </Panel>
             {mfaRecoveryCodes ? (
               <div className="mt-4 flex flex-wrap gap-2">
                 <Button
@@ -665,12 +733,6 @@ export function ProfilePage() {
             variant="drawer"
           >
             <form action={submitMfaDisable} className="grid gap-4">
-              {mfaDisableState.ok ? (
-                <FeedbackBanner
-                  tone="success"
-                  message={t("profile.mfa.disabled_success", "Two-factor authentication disabled.")}
-                />
-              ) : null}
               {mfaDisableState.error ? <ErrorBanner message={mfaDisableState.error} /> : null}
               <Input
                 label={t("profile.password.current", "Current password")}
@@ -709,25 +771,18 @@ export function ProfilePage() {
 
 function ProfileMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)]/75 p-4 shadow-sm backdrop-blur">
+    <Panel
+      className="rounded-2xl bg-[color:var(--color-surface)]/75 p-4 backdrop-blur"
+      elevation="sm"
+      tone="custom"
+    >
       <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
         {label}
       </p>
       <p className="mt-2 truncate text-xl font-semibold tracking-[-0.04em] text-[color:var(--color-ink)]">
         {value}
       </p>
-    </div>
-  );
-}
-
-function ProfileDetail({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-muted)] px-4 py-3">
-      <dt className="text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
-        {label}
-      </dt>
-      <dd className="mt-1 break-all text-sm font-medium text-[color:var(--color-ink)]">{value}</dd>
-    </div>
+    </Panel>
   );
 }
 

@@ -1,4 +1,11 @@
-import { Button, FieldDescription, FieldGroup, Input } from "@trinacria-cms/trinacria-ui";
+import {
+  Button,
+  ErrorBanner,
+  FieldDescription,
+  FieldGroup,
+  Input,
+  Panel
+} from "@trinacria-cms/trinacria-ui";
 import { type ReactNode, useState } from "react";
 import { useI18n } from "../lib/i18n.js";
 import { MfaQrCode } from "./mfa-qr-code.js";
@@ -100,14 +107,14 @@ export function MfaEnrollmentWizard({
               {t("auth.mfa.setup.show_manual", "Can't scan the QR code?")}
             </Button>
           ) : (
-            <div className="rounded-[var(--radius-control)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-muted)] p-3">
+            <Panel className="p-3" tone="soft">
               <p className="text-xs font-medium text-[color:var(--color-ink-muted)]">
                 {t("auth.mfa.enroll.manual_label", "Manual setup key")}
               </p>
               <code className="mt-2 block break-all text-sm text-[color:var(--color-ink)]">
                 {setup.manualKey}
               </code>
-            </div>
+            </Panel>
           )}
           {showActions ? (
             <MfaEnrollmentActions
@@ -135,14 +142,7 @@ export function MfaEnrollmentWizard({
         >
           <form id={confirmationFormId} action={action}>
             <FieldGroup className="gap-4">
-              {error ? (
-                <FieldDescription
-                  role="alert"
-                  className="rounded-[var(--radius-control)] border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] px-4 py-3 text-[color:var(--color-danger-ink)]"
-                >
-                  {error}
-                </FieldDescription>
-              ) : null}
+              {error ? <ErrorBanner message={error} /> : null}
               <Input
                 name="code"
                 label={t("auth.mfa.code_label", "Authentication code")}

@@ -1,4 +1,4 @@
-import { Button, Dialog } from "@trinacria-cms/trinacria-ui";
+import { Button, Dialog, useToast } from "@trinacria-cms/trinacria-ui";
 import { useEffect, useMemo, useState } from "react";
 import { EmptyState, ErrorBanner } from "../../components/resource-feedback.js";
 import { useI18n } from "../../lib/i18n.js";
@@ -30,6 +30,7 @@ export interface SettingsPageProps {
 
 export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProps = {}) {
   const { t } = useI18n();
+  const { pushToast } = useToast();
   const [isInspectOpen] = useState(true);
 
   const [activeSectionId, setActiveSectionId] = useState<string | null>(() => {
@@ -39,9 +40,12 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
   const { error, isLoading, records, refresh } = useSettingsDefinitions();
   const visibleRecords = useMemo(() => records.filter(isVisibleSettingDefinition), [records]);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [isCustomSectionDirty, setIsCustomSectionDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isMfaRequiredConfirmationOpen, setIsMfaRequiredConfirmationOpen] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<
+    { type: "section"; sectionId: string } | { type: "close" } | null
+  >(null);
 
   useEffect(() => {
     function handleNavigationChange() {
@@ -60,10 +64,9 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
     };
   }, []);
 
-  const handleSelectSection = (sectionId: string) => {
+  const activateSection = (sectionId: string) => {
     setActiveSectionId(sectionId);
     setSaveError(null);
-    setSaveMessage(null);
     const params = new URLSearchParams();
     params.set("section", sectionId);
     writeBackofficeNavigationState("settings", params);
@@ -78,7 +81,6 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
     try {
       setIsSaving(true);
       setSaveError(null);
-      setSaveMessage(null);
 
       const updates = editableRecords.map((record) => {
         if (record.secret) {
@@ -136,16 +138,30 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
         })
       );
 
-      setSaveMessage(t("settings.form.saved", "Impostazioni salvate."));
+      const message = t("settings.form.saved", "Impostazioni salvate.");
+      pushToast({
+        tone: "success",
+        title: t("official.route.settings.title", "Impostazioni"),
+        description: message,
+        duration: 4000
+      });
+      markSectionDraftsSaved();
       void refresh();
     } catch (currentError) {
-      setSaveError(toDisplayError(currentError));
+      const message = toDisplayError(currentError);
+      setSaveError(message);
+      pushToast({
+        tone: "danger",
+        title: t("common.feedback.save_error", "Salvataggio non riuscito"),
+        description: message,
+        duration: 0
+      });
     } finally {
       setIsSaving(false);
     }
   }
 
-  function closeSettingsWorkspace() {
+  function closeSettingsWorkspaceImmediately() {
     writeBackofficeNavigationState("dashboard");
   }
 
@@ -170,13 +186,63 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
     () => (selectedSection ? filterRecordsForSettingsSection(visibleRecords, selectedSection) : []),
     [selectedSection, visibleRecords]
   );
-  const { isSectionValuesLoading, sectionDraftValues, sectionValueErrors, setSectionDraftValues } =
-    useSettingsSectionDrafts(selectedSectionRecords, t);
+  const {
+    isSectionDirty,
+    isSectionValuesLoading,
+    markSectionDraftsSaved,
+    resetSectionDraftValues,
+    sectionDraftValues,
+    sectionValueErrors,
+    setSectionDraftValues
+  } = useSettingsSectionDrafts(selectedSectionRecords, t);
+  const hasUnsavedChanges = isSectionDirty || isCustomSectionDirty;
+
+  useEffect(() => {
+    setIsCustomSectionDirty(false);
+  }, [selectedSection?.id]);
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    const preventUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", preventUnload);
+    return () => window.removeEventListener("beforeunload", preventUnload);
+  }, [hasUnsavedChanges]);
+
+  function handleSelectSection(sectionId: string) {
+    if (sectionId === selectedSection?.id) return;
+    if (hasUnsavedChanges) {
+      setPendingNavigation({ type: "section", sectionId });
+      return;
+    }
+    activateSection(sectionId);
+  }
+
+  function closeSettingsWorkspace() {
+    if (hasUnsavedChanges) {
+      setPendingNavigation({ type: "close" });
+      return;
+    }
+    closeSettingsWorkspaceImmediately();
+  }
+
+  function discardChangesAndContinue() {
+    const navigation = pendingNavigation;
+    resetSectionDraftValues();
+    setIsCustomSectionDirty(false);
+    setPendingNavigation(null);
+    if (navigation?.type === "section") {
+      activateSection(navigation.sectionId);
+    } else if (navigation?.type === "close") {
+      closeSettingsWorkspaceImmediately();
+    }
+  }
 
   function handleSectionDraftValueChange(recordKey: string, value: string) {
     setSectionDraftValues((current) => ({ ...current, [recordKey]: value }));
     setSaveError(null);
-    setSaveMessage(null);
   }
 
   return (
@@ -184,7 +250,10 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
       <Dialog
         open={isInspectOpen}
         title={t("official.route.settings.title", "Impostazioni")}
-        description={selectedSection?.summary ?? selectedSection?.title}
+        description={t(
+          "settings.workspace.summary",
+          "Configura il backoffice e le funzionalità installate."
+        )}
         closeLabel={t("common.actions.close")}
         closeShortcutLabel="Esc"
         closeVariant="icon"
@@ -198,7 +267,7 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
         ) : null}
         {isLoading ? <EmptyState text={t("settings.empty.loading_definitions")} /> : null}
         {!isLoading ? (
-          <div className="grid h-full min-h-0 bg-[color:var(--color-surface)] lg:grid-cols-[320px_minmax(0,1fr)]">
+          <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] bg-[color:var(--color-panel-soft)] lg:grid-cols-[288px_minmax(0,1fr)] lg:grid-rows-1">
             <SettingsWorkspaceSidebar
               onSelectSection={handleSelectSection}
               sections={operationalSettings}
@@ -206,16 +275,21 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
               t={t}
             />
 
-            <section className="min-h-0 bg-[color:var(--color-surface)]">
+            <section className="min-h-0">
               <SettingsSectionForm
                 draftValues={sectionDraftValues}
                 editableRecords={selectedSectionRecords}
+                isDirty={isSectionDirty}
                 isLoading={isSectionValuesLoading}
                 isSaving={isSaving}
                 onDraftValueChange={handleSectionDraftValueChange}
+                onCustomDirtyChange={setIsCustomSectionDirty}
+                onReset={() => {
+                  resetSectionDraftValues();
+                  setSaveError(null);
+                }}
                 onSave={() => void saveSettingsSection()}
                 saveError={saveError}
-                saveMessage={saveMessage}
                 section={selectedSection}
                 sectionContext={sectionContext}
                 t={t}
@@ -224,6 +298,27 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
             </section>
           </div>
         ) : null}
+      </Dialog>
+
+      <Dialog
+        open={pendingNavigation !== null}
+        onClose={() => setPendingNavigation(null)}
+        title={t("settings.unsaved.title", "Modifiche non salvate")}
+        description={t(
+          "settings.unsaved.summary",
+          "Salva le modifiche oppure scartale prima di lasciare questa sezione."
+        )}
+        width="md"
+        variant="modal"
+      >
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button type="button" variant="secondary" onClick={() => setPendingNavigation(null)}>
+            {t("common.actions.cancel", "Annulla")}
+          </Button>
+          <Button type="button" onClick={discardChangesAndContinue}>
+            {t("common.actions.discard", "Scarta modifiche")}
+          </Button>
+        </div>
       </Dialog>
 
       <Dialog
@@ -265,7 +360,7 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
                 void saveSettingsSection(true);
               }}
             >
-              {t("settings.mfa_required.confirm", "Require 2FA")}
+              {t("common.actions.save", "Salva")}
             </Button>
           </div>
         </div>

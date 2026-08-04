@@ -129,6 +129,15 @@ test("groupSettingRecordsForForm assigns readable groups from visible category a
   );
 });
 
+test("groupSettingRecordsForForm localizes group labels when a translator is provided", () => {
+  const groups = groupSettingRecordsForForm(
+    [setting({ key: "core-pack:site:name", category: "site" })],
+    (_key, fallback) => fallback
+  );
+
+  assert.equal(groups[0]?.title, "Dettagli del sito");
+});
+
 test("settings value helpers infer and parse typed form values", () => {
   const numberSetting = setting({
     key: "core-pack:login:max_attempts",

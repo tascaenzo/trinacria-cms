@@ -1,4 +1,11 @@
-import { Badge, Button, Card, KeyValueItem, KeyValuePanel } from "@trinacria-cms/trinacria-ui";
+import {
+  Badge,
+  Button,
+  Card,
+  KeyValueItem,
+  KeyValuePanel,
+  Panel
+} from "@trinacria-cms/trinacria-ui";
 import { JsonPreviewAction } from "../../components/json-preview-action.js";
 import type { DeclarativeAction, DeclarativeActionContext } from "../types.js";
 import { formatEndpoint } from "../utils/formatting.js";
@@ -16,10 +23,7 @@ export function DeclarativeActionsPanel({
     <Card eyebrow="Actions" title={title}>
       <div className="grid gap-3">
         {actions.map((action) => (
-          <div
-            key={action.id}
-            className="grid gap-3 rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4"
-          >
+          <Panel key={action.id} className="grid gap-3 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
@@ -48,7 +52,7 @@ export function DeclarativeActionsPanel({
                 value={action.input.schema}
               />
             ) : null}
-          </div>
+          </Panel>
         ))}
       </div>
     </Card>

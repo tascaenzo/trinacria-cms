@@ -16,7 +16,8 @@ import {
   InfoCard,
   MobileRecordCard,
   MobileRecordField,
-  MobileRecordList
+  MobileRecordList,
+  Panel
 } from "@trinacria-cms/trinacria-ui";
 import { useMemo } from "react";
 import type { AdminJsonDataBinding, AdminResourceDefinition } from "../../contracts.js";
@@ -74,7 +75,7 @@ export function DeclarativeResourceTable({
       mobile={
         tableFields.length > 0 ? (
           <div className="grid gap-3 md:hidden">
-            <div className="rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4 shadow-[var(--shadow-surface)]">
+            <Panel className="p-4" elevation="sm">
               <TableHeaderContent
                 globalActions={globalActions}
                 onPrepareAction={onPrepareAction}
@@ -82,7 +83,7 @@ export function DeclarativeResourceTable({
                 resource={resource}
                 t={t}
               />
-            </div>
+            </Panel>
             <MobileRecordList>
               {displayRecords.length > 0 ? (
                 displayRecords.map((record, index) => (

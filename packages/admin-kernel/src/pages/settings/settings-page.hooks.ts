@@ -1,4 +1,4 @@
-import { useActionState, useCallback, useEffect, useState } from "react";
+import { useActionState, useCallback, useEffect, useMemo, useState } from "react";
 import type { TranslateFn } from "../../lib/i18n.js";
 import { getSdkErrorDetails, toDisplayError } from "../../lib/sdk-errors.js";
 import {
@@ -199,6 +199,7 @@ export function useSettingsSectionDrafts(
   t: TranslateFn
 ) {
   const [sectionDraftValues, setSectionDraftValues] = useState<SettingDraftValues>({});
+  const [initialSectionValues, setInitialSectionValues] = useState<SettingDraftValues>({});
   const [sectionValueErrors, setSectionValueErrors] = useState<SettingValueErrors>({});
   const [isSectionValuesLoading, setIsSectionValuesLoading] = useState(false);
 
@@ -238,6 +239,7 @@ export function useSettingsSectionDrafts(
 
       if (isCancelled) return;
       setSectionDraftValues(nextDrafts);
+      setInitialSectionValues(nextDrafts);
       setSectionValueErrors(nextErrors);
       setIsSectionValuesLoading(false);
     }
@@ -249,8 +251,37 @@ export function useSettingsSectionDrafts(
     };
   }, [selectedSectionRecords, t]);
 
+  const isSectionDirty = useMemo(
+    () =>
+      Object.keys({ ...initialSectionValues, ...sectionDraftValues }).some(
+        (key) => initialSectionValues[key] !== sectionDraftValues[key]
+      ),
+    [initialSectionValues, sectionDraftValues]
+  );
+
+  const resetSectionDraftValues = useCallback(() => {
+    setSectionDraftValues({ ...initialSectionValues });
+    setSectionValueErrors({});
+  }, [initialSectionValues]);
+
+  const markSectionDraftsSaved = useCallback(() => {
+    setSectionDraftValues((current) => {
+      const committed = Object.fromEntries(
+        selectedSectionRecords.map((record) => [
+          record.key,
+          record.secret ? "" : (current[record.key] ?? "")
+        ])
+      );
+      setInitialSectionValues(committed);
+      return committed;
+    });
+  }, [selectedSectionRecords]);
+
   return {
+    isSectionDirty,
     isSectionValuesLoading,
+    markSectionDraftsSaved,
+    resetSectionDraftValues,
     sectionDraftValues,
     sectionValueErrors,
     setSectionDraftValues

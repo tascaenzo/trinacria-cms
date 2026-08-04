@@ -1,4 +1,4 @@
-import { InfoCard } from "@trinacria-cms/trinacria-ui";
+import { Card, CardContent, CardHeader, CardHeading, useToast } from "@trinacria-cms/trinacria-ui";
 import { useCallback, useEffect, useState } from "react";
 import { DeclarativeDashboardWidgetPanel } from "../declarative/index.js";
 import { toDisplayError } from "../lib/sdk-errors.js";
@@ -42,7 +42,7 @@ export function DashboardPage({
   return (
     <DashboardWidgetBoard
       canCustomize={canCustomizeDashboard}
-      heading="Overview"
+      heading="Panoramica"
       isLayoutLoading={isLayoutLoading}
       isSaving={isSaving}
       layoutValue={layoutValue}
@@ -76,7 +76,7 @@ function DashboardWidgetSlot({
   }
 
   if (widget.kind === "card") {
-    return <InfoCard title={widget.title} className="h-full bg-[color:var(--color-surface)]" />;
+    return <FallbackDashboardWidget widget={widget} />;
   }
 
   if (widget.mode === "declarative" || widget.kind) {
@@ -84,11 +84,35 @@ function DashboardWidgetSlot({
   }
 
   return (
-    <InfoCard
-      title={widget.title}
-      description={widget.summary}
-      className="bg-[color:var(--color-surface)]"
-    />
+    <Card className="h-full" padding="none" elevation="none">
+      <CardHeader>
+        <CardHeading icon="puzzle" title={widget.title} description={widget.summary} />
+      </CardHeader>
+      {!widget.summary ? (
+        <CardContent>
+          <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
+            Il plugin non ha configurato contenuti per questo widget.
+          </p>
+        </CardContent>
+      ) : null}
+    </Card>
+  );
+}
+
+function FallbackDashboardWidget({ widget }: { widget: RenderableAdminDashboardWidget }) {
+  return (
+    <Card className="h-full" padding="none" elevation="none">
+      <CardHeader>
+        <CardHeading icon="layout-dashboard" title={widget.title} description={widget.summary} />
+      </CardHeader>
+      {!widget.summary ? (
+        <CardContent>
+          <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
+            Nessun riepilogo disponibile.
+          </p>
+        </CardContent>
+      ) : null}
+    </Card>
   );
 }
 
@@ -120,6 +144,7 @@ function useGlobalDashboardLayout(cms: AdminPageRenderContext["cms"] | undefined
   const [isLoading, setIsLoading] = useState(Boolean(cms));
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const { pushToast } = useToast();
 
   useEffect(() => {
     let isCancelled = false;
@@ -167,6 +192,7 @@ function useGlobalDashboardLayout(cms: AdminPageRenderContext["cms"] | undefined
           path: { key: GLOBAL_DASHBOARD_WIDGET_LAYOUT_SETTING_KEY },
           body: {
             value: {
+              version: layout.version,
               order: [...layout.order],
               hidden: [...layout.hidden],
               dimensions: { ...layout.dimensions }
@@ -176,15 +202,28 @@ function useGlobalDashboardLayout(cms: AdminPageRenderContext["cms"] | undefined
         });
         setLayoutValue(layout);
         setLayoutVersion((current) => current + 1);
+        pushToast({
+          tone: "success",
+          title: "Layout salvato",
+          description: "La nuova panoramica è disponibile per tutti gli amministratori.",
+          duration: 4000
+        });
         return true;
       } catch (error) {
-        setSaveError(toDisplayError(error));
+        const message = toDisplayError(error);
+        setSaveError(message);
+        pushToast({
+          tone: "danger",
+          title: "Salvataggio non riuscito",
+          description: message,
+          duration: 0
+        });
         return false;
       } finally {
         setIsSaving(false);
       }
     },
-    [cms]
+    [cms, pushToast]
   );
 
   return { isLoading, isSaving, layoutValue, layoutVersion, saveError, saveLayout };

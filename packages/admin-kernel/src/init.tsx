@@ -1,3 +1,4 @@
+import { ToastProvider } from "@trinacria-cms/trinacria-ui";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BackofficeApp } from "./backoffice-app.js";
@@ -30,7 +31,9 @@ export function mountBackoffice(container: Element, options: MountBackofficeOpti
   const root = ReactDOM.createRoot(container);
   root.render(
     <React.StrictMode>
-      <BackofficeApp modules={options.modules} />
+      <ToastProvider>
+        <BackofficeApp modules={options.modules} />
+      </ToastProvider>
     </React.StrictMode>
   );
 

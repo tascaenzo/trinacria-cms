@@ -55,6 +55,8 @@ export interface AdminDashboardWidgetRenderContext extends Omit<AdminPageRenderC
 }
 
 export interface AdminSettingsSectionRenderContext extends Omit<AdminPageRenderContext, "route"> {
+  /** Reports unsaved local state to the shared settings workspace. */
+  onDirtyChange?: (isDirty: boolean) => void;
   section: RenderableAdminSettingsSection;
 }
 

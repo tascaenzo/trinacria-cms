@@ -1,4 +1,11 @@
-import { Button, Icon } from "@trinacria-cms/trinacria-ui";
+import {
+  Button,
+  EmptyState,
+  ErrorBanner,
+  Icon,
+  IconButton,
+  PageHeader
+} from "@trinacria-cms/trinacria-ui";
 import { type DragEvent, type ReactNode, useEffect, useMemo, useState } from "react";
 import {
   type DashboardWidgetDimension,
@@ -17,6 +24,7 @@ export interface DashboardWidgetBoardItem extends DashboardWidgetLayoutItem {
 
 export interface DashboardWidgetBoardProps {
   canCustomize?: boolean;
+  description?: string;
   heading?: string;
   isLayoutLoading?: boolean;
   isSaving?: boolean;
@@ -42,6 +50,7 @@ const ROW_SPAN_CLASSES = ["", "md:row-span-1", "md:row-span-2", "md:row-span-3"]
  */
 export function DashboardWidgetBoard({
   canCustomize = false,
+  description,
   heading,
   isLayoutLoading = false,
   isSaving = false,
@@ -81,6 +90,9 @@ export function DashboardWidgetBoard({
     .filter((key) => !layout.hidden.includes(key))
     .map((key) => itemByKey.get(key))
     .filter((item): item is DashboardWidgetBoardItem => Boolean(item));
+  const hiddenItems = layout.hidden
+    .map((key) => itemByKey.get(key))
+    .filter((item): item is DashboardWidgetBoardItem => Boolean(item));
 
   function updateLayout(
     updater: (current: DashboardWidgetLayoutState) => DashboardWidgetLayoutState
@@ -114,6 +126,14 @@ export function DashboardWidgetBoard({
     });
   }
 
+  function moveWidget(key: string, delta: -1 | 1) {
+    const currentIndex = visibleItems.findIndex((item) => item.key === key);
+    const target = visibleItems[currentIndex + delta];
+    if (target) {
+      updateLayout((current) => reorderDashboardWidgets(current, key, target.key));
+    }
+  }
+
   function handleDragStart(event: DragEvent<HTMLElement>, key: string) {
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", key);
@@ -137,6 +157,7 @@ export function DashboardWidgetBoard({
     if (!onSaveLayout) return;
     if (await onSaveLayout(layout)) {
       setIsDirty(false);
+      setIsEditing(false);
     }
   }
 
@@ -146,28 +167,19 @@ export function DashboardWidgetBoard({
   }
 
   return (
-    <section aria-label="Plugin widgets" className="grid gap-3">
+    <section aria-label="Widget della dashboard" className="grid gap-5">
       {heading || canCustomize ? (
-        <div className="flex items-center justify-between gap-3">
-          {heading ? (
-            <h2 className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--color-ink)]">
-              {heading}
-            </h2>
-          ) : (
-            <span />
-          )}
-          {canCustomize ? (
-            <div className="flex items-center gap-1">
-              {isEditing ? (
+        <PageHeader
+          className="border-b-0 pb-0"
+          title={heading ?? "Dashboard"}
+          description={description}
+          actions={
+            canCustomize ? (
+              isEditing ? (
                 <>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    disabled={!isDirty || isSaving || isLayoutLoading}
-                    isLoading={isSaving}
-                    onClick={() => void saveLayout()}
-                  >
-                    Salva
+                  <Button variant="ghost" size="sm" disabled={isSaving} onClick={resetLayout}>
+                    <Icon name="refresh-cw" />
+                    Ripristina
                   </Button>
                   <Button
                     variant="ghost"
@@ -177,57 +189,82 @@ export function DashboardWidgetBoard({
                   >
                     Annulla
                   </Button>
+                  <Button
+                    size="sm"
+                    disabled={!isDirty || isSaving || isLayoutLoading}
+                    isLoading={isSaving}
+                    onClick={() => void saveLayout()}
+                  >
+                    Salva
+                  </Button>
+                  <IconButton
+                    variant="ghost"
+                    size="sm"
+                    icon="x"
+                    label="Esci dalla modifica dashboard"
+                    aria-pressed={isEditing}
+                    onClick={() => {
+                      discardLayoutChanges();
+                      setIsEditing(false);
+                    }}
+                  />
                 </>
-              ) : null}
-              {isEditing ? (
+              ) : (
                 <Button
-                  variant="ghost"
+                  variant="secondary"
                   size="sm"
-                  iconOnly
-                  aria-label="Ripristina layout dashboard"
-                  title="Ripristina layout"
-                  onClick={resetLayout}
+                  disabled={isLayoutLoading}
+                  onClick={() => setIsEditing(true)}
                 >
-                  <Icon name="refresh-cw" />
+                  <Icon name="settings-2" />
+                  Personalizza
                 </Button>
-              ) : null}
-              <Button
-                variant="ghost"
-                size="sm"
-                iconOnly
-                aria-label={
-                  isEditing ? "Esci dalla modifica dashboard" : "Modifica layout dashboard"
-                }
-                title={isEditing ? "Fine modifica" : "Modifica layout"}
-                aria-pressed={isEditing}
-                disabled={isLayoutLoading}
-                onClick={() => setIsEditing((current) => !current)}
-              >
-                <Icon name={isEditing ? "x" : "settings-2"} />
-              </Button>
-            </div>
-          ) : null}
-        </div>
+              )
+            ) : undefined
+          }
+        />
       ) : null}
 
       {isEditing ? (
-        <div className="rounded-lg border border-dashed border-[color:var(--color-border-strong)] bg-[color:var(--color-surface-subtle)] px-3 py-2 text-sm leading-6 text-[color:var(--color-ink-muted)]">
-          Trascina i widget dalla maniglia. Usa i controlli sul widget per modificarne larghezza,
-          altezza o visibilità, poi salva per applicare il layout a tutti gli utenti.
+        <div className="flex items-start gap-3 border-y border-[color:var(--color-border)] py-3 text-sm leading-6 text-[color:var(--color-ink-muted)]">
+          <Icon name="grip-vertical" className="mt-1 text-[color:var(--color-accent)]" />
+          <p>Trascina i widget, modifica larghezza e altezza, quindi salva il layout condiviso.</p>
+        </div>
+      ) : null}
+      {isEditing && hiddenItems.length ? (
+        <div className="flex flex-col gap-3 border-b border-[color:var(--color-border)] pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-medium text-[color:var(--color-ink)]">Widget nascosti</p>
+            <p className="text-xs text-[color:var(--color-ink-muted)]">
+              Riattiva solo gli elementi che vuoi mostrare.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {hiddenItems.map((item) => (
+              <Button
+                key={item.key}
+                variant="secondary"
+                size="sm"
+                onClick={() => toggleWidget(item.key, true)}
+              >
+                <Icon name="eye" />
+                {item.title}
+              </Button>
+            ))}
+          </div>
         </div>
       ) : null}
       {isLayoutLoading ? (
-        <p className="text-sm text-[color:var(--color-ink-muted)]">
-          Caricamento layout condiviso...
+        <p className="flex items-center gap-2 text-sm text-[color:var(--color-ink-muted)]">
+          <Icon name="loader-circle" className="animate-spin" />
+          Caricamento layout condiviso…
         </p>
       ) : null}
-      {saveError ? (
-        <p className="text-sm font-medium text-[color:var(--color-danger-ink)]">{saveError}</p>
-      ) : null}
+      {saveError ? <ErrorBanner message={saveError} /> : null}
 
       {visibleItems.length > 0 ? (
         <div className="grid auto-rows-[minmax(144px,auto)] gap-4 md:grid-cols-4">
-          {visibleItems.map((item) => {
+          {visibleItems.map((item, index) => {
             const dimension = layout.dimensions[item.key];
             return (
               <section
@@ -235,11 +272,11 @@ export function DashboardWidgetBoard({
                 draggable={isEditing}
                 aria-label={item.title}
                 className={[
-                  "relative min-w-0",
+                  "min-w-0",
                   COLUMN_SPAN_CLASSES[dimension.columnSpan],
                   ROW_SPAN_CLASSES[dimension.rowSpan],
                   isEditing
-                    ? "cursor-move rounded-xl bg-[color:var(--color-surface-subtle)] p-1 outline outline-1 outline-dashed outline-[color:var(--color-border-strong)]"
+                    ? "cursor-move overflow-hidden rounded-[var(--radius-surface)] border border-dashed border-[color:var(--color-border-strong)] bg-[color:var(--color-surface-subtle)] p-2"
                     : "",
                   draggedKey === item.key ? "opacity-45" : ""
                 ].join(" ")}
@@ -251,21 +288,22 @@ export function DashboardWidgetBoard({
                 onDrop={(event) => handleDrop(event, item.key)}
               >
                 {isEditing ? (
-                  <span
-                    title="Trascina questo widget per cambiarne posizione"
-                    className="absolute left-3 top-3 z-10 flex h-7 items-center gap-1 rounded-md bg-[color:var(--color-surface)] px-2 text-xs font-medium text-[color:var(--color-ink-muted)] shadow-[var(--shadow-surface)]"
-                  >
-                    <Icon name="grip-vertical" />
-                    Trascina
-                  </span>
-                ) : null}
-                {isEditing ? (
-                  <WidgetControls
-                    dimension={dimension}
-                    layout={item.layout}
-                    onResize={(axis, delta) => updateDimension(item.key, axis, delta)}
-                    onHide={() => toggleWidget(item.key, false)}
-                  />
+                  <div className="mb-2 flex flex-col justify-between gap-2 px-1 pb-2 sm:flex-row sm:items-center">
+                    <div className="flex min-w-0 items-center gap-2 text-xs font-medium text-[color:var(--color-ink-muted)]">
+                      <Icon name="grip-vertical" className="text-[color:var(--color-accent)]" />
+                      <span className="truncate">{item.title}</span>
+                    </div>
+                    <WidgetControls
+                      dimension={dimension}
+                      layout={item.layout}
+                      moveDownDisabled={index === visibleItems.length - 1}
+                      moveUpDisabled={index === 0}
+                      onMoveDown={() => moveWidget(item.key, 1)}
+                      onMoveUp={() => moveWidget(item.key, -1)}
+                      onResize={(axis, delta) => updateDimension(item.key, axis, delta)}
+                      onHide={() => toggleWidget(item.key, false)}
+                    />
+                  </div>
                 ) : null}
                 {item.content}
               </section>
@@ -273,9 +311,24 @@ export function DashboardWidgetBoard({
           })}
         </div>
       ) : (
-        <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
-          Nessun widget è visibile. Ripristina il layout dalle impostazioni.
-        </p>
+        <EmptyState
+          title="Nessun widget visibile"
+          text="Ripristina il layout per tornare alla configurazione predefinita."
+          action={
+            canCustomize ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setIsEditing(true);
+                  resetLayout();
+                }}
+              >
+                Ripristina layout
+              </Button>
+            ) : undefined
+          }
+        />
       )}
     </section>
   );
@@ -284,12 +337,20 @@ export function DashboardWidgetBoard({
 function WidgetControls({
   dimension,
   layout,
+  moveDownDisabled,
+  moveUpDisabled,
   onHide,
+  onMoveDown,
+  onMoveUp,
   onResize
 }: {
   dimension: DashboardWidgetDimension;
   layout?: DashboardWidgetLayoutDefinition;
+  moveDownDisabled: boolean;
+  moveUpDisabled: boolean;
   onHide: () => void;
+  onMoveDown: () => void;
+  onMoveUp: () => void;
   onResize: (axis: keyof DashboardWidgetDimension, delta: number) => void;
 }) {
   const minColumn = layout?.minColumnSpan ?? 1;
@@ -298,13 +359,31 @@ function WidgetControls({
   const maxRow = layout?.maxRowSpan ?? 3;
 
   return (
-    <div className="absolute right-3 top-3 z-10 flex items-center gap-1 rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-1 shadow-[var(--shadow-surface)]">
+    <div className="flex flex-wrap items-center gap-1 sm:justify-end">
       <span
-        className="px-1 text-[10px] font-medium tabular-nums text-[color:var(--color-ink-subtle)]"
+        className="mr-1 text-[10px] font-medium tabular-nums text-[color:var(--color-ink-subtle)]"
         title="Dimensione attuale"
       >
         {dimension.columnSpan} × {dimension.rowSpan}
       </span>
+      <div className="flex items-center border-l border-[color:var(--color-border)] pl-1 md:hidden">
+        <IconButton
+          variant="ghost"
+          size="sm"
+          icon="chevron-up"
+          label="Sposta widget prima"
+          disabled={moveUpDisabled}
+          onClick={onMoveUp}
+        />
+        <IconButton
+          variant="ghost"
+          size="sm"
+          icon="chevron-down"
+          label="Sposta widget dopo"
+          disabled={moveDownDisabled}
+          onClick={onMoveDown}
+        />
+      </div>
       <ControlPair
         label="Larghezza"
         decreaseDisabled={dimension.columnSpan <= Math.min(minColumn, maxColumn)}
@@ -319,9 +398,13 @@ function WidgetControls({
         onDecrease={() => onResize("rowSpan", -1)}
         onIncrease={() => onResize("rowSpan", 1)}
       />
-      <ControlButton label="Nascondi widget" onClick={onHide}>
-        <Icon name="eye-off" />
-      </ControlButton>
+      <IconButton
+        variant="ghost"
+        size="sm"
+        icon="eye-off"
+        label="Nascondi widget"
+        onClick={onHide}
+      />
     </div>
   );
 }
@@ -340,49 +423,26 @@ function ControlPair({
   onIncrease: () => void;
 }) {
   return (
-    <div className="flex items-center border-l border-[color:var(--color-border)] pl-1">
+    <div className="flex items-center border-l border-[color:var(--color-border)] pl-2">
       <span className="mr-1 text-[10px] font-semibold text-[color:var(--color-ink-subtle)]">
         {label}
       </span>
-      <ControlButton
+      <IconButton
+        variant="ghost"
+        size="sm"
+        icon="minus"
         label={`Riduci ${label.toLowerCase()}`}
         disabled={decreaseDisabled}
         onClick={onDecrease}
-      >
-        <Icon name="minus" className="h-3 w-3" />
-      </ControlButton>
-      <ControlButton
+      />
+      <IconButton
+        variant="ghost"
+        size="sm"
+        icon="plus"
         label={`Aumenta ${label.toLowerCase()}`}
         disabled={increaseDisabled}
         onClick={onIncrease}
-      >
-        <Icon name="plus" className="h-3 w-3" />
-      </ControlButton>
+      />
     </div>
-  );
-}
-
-function ControlButton({
-  children,
-  disabled,
-  label,
-  onClick
-}: {
-  children: ReactNode;
-  disabled?: boolean;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      disabled={disabled}
-      className="flex h-6 w-6 items-center justify-center rounded text-[10px] font-semibold text-[color:var(--color-ink-muted)] hover:bg-[color:var(--color-surface-subtle)] hover:text-[color:var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-35"
-      onClick={onClick}
-    >
-      {children}
-    </button>
   );
 }

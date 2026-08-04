@@ -1,4 +1,12 @@
-import { Badge, Button, Card, FeedbackBanner } from "@trinacria-cms/trinacria-ui";
+import {
+  Badge,
+  Button,
+  Card,
+  DetailSection,
+  FeedbackBanner,
+  PropertyItem,
+  PropertyList
+} from "@trinacria-cms/trinacria-ui";
 import { EmptyState, ErrorBanner } from "../../components/resource-feedback.js";
 import { formatDateTime } from "../../lib/formatting.js";
 import type { TranslateFn } from "../../lib/i18n.js";
@@ -31,23 +39,23 @@ export function PluginDetail({
   return (
     <Card eyebrow={t("plugins.detail.eyebrow")} title={plugin.id}>
       <div className="grid gap-5 text-sm">
-        <dl className="grid gap-3 sm:grid-cols-3">
-          <DetailItem label={t("plugins.detail.version")} value={plugin.version} />
-          <DetailItem label={t("plugins.detail.requires_core")} value={plugin.requiresCore} />
-          <DetailItem
+        <PropertyList columns={3}>
+          <PropertyItem label={t("plugins.detail.version")} value={plugin.version} />
+          <PropertyItem label={t("plugins.detail.requires_core")} value={plugin.requiresCore} />
+          <PropertyItem
             label={t("plugins.detail.source")}
             value={plugin.source ? `${plugin.source.type} · ${plugin.source.name}` : undefined}
           />
-          <DetailItem label={t("plugins.table.state")} value={plugin.state} />
-          <DetailItem
+          <PropertyItem label={t("plugins.table.state")} value={plugin.state} />
+          <PropertyItem
             label={t("plugins.detail.loaded_at")}
             value={formatDateTime(plugin.loadedAt)}
           />
-          <DetailItem
+          <PropertyItem
             label={t("plugins.detail.failure_count")}
             value={String(plugin.failureCount)}
           />
-        </dl>
+        </PropertyList>
 
         {plugin.statusReason ? (
           <FeedbackBanner
@@ -161,31 +169,5 @@ function OperationButton({
     >
       {isRunning ? t("plugins.actions.running") : label}
     </Button>
-  );
-}
-
-function DetailSection({
-  title,
-  children
-}: {
-  readonly title: string;
-  readonly children: React.ReactNode;
-}) {
-  return (
-    <section className="grid gap-3 border-t border-[color:var(--color-border)] pt-4">
-      <h3 className="font-medium text-[color:var(--color-ink)]">{title}</h3>
-      {children}
-    </section>
-  );
-}
-
-function DetailItem({ label, value }: { readonly label: string; readonly value?: string }) {
-  return (
-    <div>
-      <dt className="text-xs font-medium uppercase tracking-wide text-[color:var(--color-ink-muted)]">
-        {label}
-      </dt>
-      <dd className="mt-1 text-[color:var(--color-ink)]">{value || "—"}</dd>
-    </div>
   );
 }

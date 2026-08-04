@@ -1,4 +1,4 @@
-import { Badge, Button, Card } from "@trinacria-cms/trinacria-ui";
+import { Badge, Button, Card, SelectableCard } from "@trinacria-cms/trinacria-ui";
 import { EmptyState, ErrorBanner } from "../../components/resource-feedback.js";
 import type { TranslateFn } from "../../lib/i18n.js";
 import type { PluginSnapshot } from "./plugin-operations.types.js";
@@ -42,14 +42,10 @@ export function PluginInventory({
         {plugins.map((plugin) => {
           const isSelected = plugin.id === selectedPluginId;
           return (
-            <button
+            <SelectableCard
               key={plugin.id}
-              type="button"
-              className={`grid w-full gap-3 rounded-xl border p-4 text-left transition ${
-                isSelected
-                  ? "border-[color:var(--color-action-primary-bg)] bg-[color:var(--color-action-primary-bg)]/5"
-                  : "border-[color:var(--color-border)] bg-[color:var(--color-surface)] hover:border-[color:var(--color-border-strong)]"
-              }`}
+              selected={isSelected}
+              className="grid gap-3"
               onClick={() => onSelect(plugin.id)}
             >
               <div className="flex items-start justify-between gap-3">
@@ -72,7 +68,7 @@ export function PluginInventory({
                   {plugin.dependencies.length} {t("plugins.table.dependencies").toLowerCase()}
                 </span>
               </div>
-            </button>
+            </SelectableCard>
           );
         })}
       </div>
