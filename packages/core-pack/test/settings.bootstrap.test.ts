@@ -43,7 +43,12 @@ test("core-pack settings bootstrap provisions the canonical seed catalog", async
   assert.equal(siteName?.value, "Trinacria CMS");
   assert.equal(timezone?.value, "Europe/Rome");
   assert.ok(Array.isArray(pluginAccessGrants?.value));
-  assert.deepEqual(dashboardLayout?.value, { order: [], hidden: [], dimensions: {} });
+  assert.deepEqual(dashboardLayout?.value, {
+    version: 2,
+    order: [],
+    hidden: [],
+    dimensions: {}
+  });
   assert.equal(backofficeTheme?.value, "light");
   assert.equal(backofficeAccent?.value, "neutral");
 });

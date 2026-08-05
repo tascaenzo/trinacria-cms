@@ -1,4 +1,11 @@
-import { Badge, Icon } from "@trinacria-cms/trinacria-ui";
+import {
+  Badge,
+  Button,
+  EmptyState,
+  ErrorBanner,
+  Icon,
+  IconButton
+} from "@trinacria-cms/trinacria-ui";
 import { useEffect, useRef, useState } from "react";
 import type { FileManagerViewMode, MediaAsset, MediaDirectory } from "./file-manager.types.js";
 
@@ -9,7 +16,6 @@ interface FileManagerBrowserProps {
   currentDirectory: MediaDirectory | null;
   error: string | null;
   isLoading: boolean;
-  message: string | null;
   onNavigate: (directoryId: string | null) => void;
   onOpenAsset: (asset: MediaAsset) => void;
   onAssetContextMenu: (asset: MediaAsset, event: React.MouseEvent<HTMLButtonElement>) => void;
@@ -28,7 +34,6 @@ export function FileManagerBrowser({
   currentDirectory,
   error,
   isLoading,
-  message,
   onNavigate,
   onOpenAsset,
   onAssetContextMenu,
@@ -48,8 +53,7 @@ export function FileManagerBrowser({
         <Breadcrumbs breadcrumbs={breadcrumbs} onNavigate={onNavigate} />
       </div>
       <div className="p-4 sm:p-5">
-        {error ? <Message tone="error">{error}</Message> : null}
-        {message ? <Message tone="success">{message}</Message> : null}
+        {error ? <ErrorBanner className="mb-4" message={error} /> : null}
         {isLoading ? (
           <p className="p-3 text-sm text-[color:var(--color-ink-muted)]">Caricamento media…</p>
         ) : null}
@@ -92,28 +96,30 @@ function Breadcrumbs({
       className="flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden text-sm"
       aria-label="Percorso cartella"
     >
-      <button
-        type="button"
-        aria-label="Tutti i media"
-        className="grid h-7 w-7 shrink-0 place-items-center rounded text-[color:var(--color-ink-muted)] hover:bg-[color:var(--color-interactive-hover)]"
+      <IconButton
+        icon="house"
+        label="Tutti i media"
+        size="sm"
+        variant="ghost"
+        className="h-7 w-7 shrink-0"
         onClick={() => onNavigate(null)}
-      >
-        <Icon name="house" className="h-4 w-4" />
-      </button>
+      />
       {breadcrumbs.map((directory) => (
         <span key={directory.id} className="flex min-w-0 items-center gap-1 overflow-hidden">
           <Icon
             name="chevron-right"
             className="h-3.5 w-3.5 shrink-0 text-[color:var(--color-ink-subtle)]"
           />
-          <button
+          <Button
             type="button"
+            size="sm"
+            variant="ghost"
             title={directory.name}
-            className="min-w-0 truncate rounded px-1 py-0.5 text-[color:var(--color-ink-muted)] hover:bg-[color:var(--color-interactive-hover)] hover:text-[color:var(--color-ink)]"
+            className="h-auto min-w-0 truncate border-transparent px-1 py-0.5 text-[color:var(--color-ink-muted)] shadow-none"
             onClick={() => onNavigate(directory.id)}
           >
             {directory.name}
-          </button>
+          </Button>
         </span>
       ))}
     </nav>
@@ -150,15 +156,16 @@ function FileCollection({
       }
     >
       {directories.map((directory) => (
-        <button
+        <Button
           key={directory.id}
           type="button"
+          variant="ghost"
           title={directory.name}
           onClick={() => onNavigate(directory.id)}
           className={
             viewMode === "icons"
-              ? "grid min-h-28 min-w-0 content-start justify-items-center gap-2 overflow-hidden rounded-md p-3 text-center hover:bg-[color:var(--color-interactive-hover)]"
-              : "grid w-full min-w-0 grid-cols-[38px_minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-md px-3 py-2 text-left hover:bg-[color:var(--color-interactive-hover)]"
+              ? "grid h-auto min-h-28 min-w-0 content-start justify-items-center gap-2 overflow-hidden border-transparent p-3 text-center shadow-none"
+              : "grid h-auto w-full min-w-0 grid-cols-[38px_minmax(0,1fr)_auto] items-center justify-stretch gap-3 overflow-hidden border-transparent px-3 py-2 text-left shadow-none"
           }
         >
           <FolderGlyph large={viewMode === "icons"} />
@@ -177,20 +184,22 @@ function FileCollection({
               </Badge>
             </span>
           ) : null}
-        </button>
+        </Button>
       ))}
       {assets.map((asset) => (
-        <button
+        <Button
           key={asset.id}
           type="button"
+          variant="ghost"
+          aria-pressed={selectedAssetId === asset.id}
           title={asset.displayName}
           onClick={() => onSelect(asset.id)}
           onDoubleClick={() => onOpen(asset)}
           onContextMenu={(event) => onContextMenu(asset, event)}
           className={
             viewMode === "icons"
-              ? `grid min-h-28 min-w-0 content-start justify-items-center gap-2 overflow-hidden rounded-md p-3 text-center ${selectedAssetId === asset.id ? "bg-[color:var(--color-interactive-soft)] outline outline-1 outline-[color:var(--color-focus)]" : "hover:bg-[color:var(--color-interactive-hover)]"}`
-              : `grid w-full min-w-0 grid-cols-[38px_minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-md px-3 py-2 text-left ${selectedAssetId === asset.id ? "bg-[color:var(--color-interactive-soft)]" : "hover:bg-[color:var(--color-interactive-hover)]"}`
+              ? `grid h-auto min-h-28 min-w-0 content-start justify-items-center gap-2 overflow-hidden border-transparent p-3 text-center shadow-none ${selectedAssetId === asset.id ? "bg-[color:var(--color-panel-strong)]" : ""}`
+              : `grid h-auto w-full min-w-0 grid-cols-[38px_minmax(0,1fr)_auto] items-center justify-stretch gap-3 overflow-hidden border-transparent px-3 py-2 text-left shadow-none ${selectedAssetId === asset.id ? "bg-[color:var(--color-panel-strong)]" : ""}`
           }
         >
           <MediaGlyph
@@ -215,7 +224,7 @@ function FileCollection({
               </Badge>
             </span>
           ) : null}
-        </button>
+        </Button>
       ))}
     </div>
   );
@@ -310,26 +319,11 @@ function LazyImageThumbnail({
 }
 function EmptyFolder({ currentDirectory }: { currentDirectory: MediaDirectory | null }) {
   return (
-    <div className="grid min-h-72 place-items-center border border-dashed border-[color:var(--color-border)] p-8 text-center">
-      <div>
-        <Icon name="folder-open" className="mx-auto h-9 w-9 text-[color:var(--color-ink-subtle)]" />
-        <p className="mt-3 text-sm font-semibold text-[color:var(--color-ink)]">
-          {currentDirectory ? "Cartella vuota" : "Nessun media"}
-        </p>
-        <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
-          Crea una cartella o carica un file dalla barra degli strumenti.
-        </p>
-      </div>
-    </div>
-  );
-}
-function Message({ children, tone }: { children: React.ReactNode; tone: "error" | "success" }) {
-  return (
-    <p
-      className={`mb-4 rounded-md border p-3 text-sm ${tone === "error" ? "border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] text-[color:var(--color-danger-ink)]" : "border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] text-[color:var(--color-success-ink)]"}`}
-    >
-      {children}
-    </p>
+    <EmptyState
+      className="min-h-72 place-items-center text-center"
+      title={currentDirectory ? "Cartella vuota" : "Nessun media"}
+      text="Crea una cartella o carica un file dalla barra degli strumenti."
+    />
   );
 }
 function formatBytes(value: number) {

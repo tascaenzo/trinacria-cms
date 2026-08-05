@@ -1,4 +1,4 @@
-import { Button, Stepper } from "@trinacria-cms/trinacria-ui";
+import { Button, ErrorBanner, Stepper } from "@trinacria-cms/trinacria-ui";
 import { useState } from "react";
 import { ContentTypeFieldComposer } from "./content-type-detail/content-type-field-composer.js";
 import { workflowFromPreset } from "./content-type-detail/content-workflow-presets.js";
@@ -178,12 +178,5 @@ function contentModelSlugFromName(name: string) {
 }
 
 function ErrorMessage({ message }: { message: string }) {
-  return (
-    <p
-      role="alert"
-      className="mt-6 rounded-lg border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] p-3 text-sm text-[color:var(--color-danger-ink)]"
-    >
-      {message}
-    </p>
-  );
+  return <ErrorBanner className="mt-6" message={message} />;
 }

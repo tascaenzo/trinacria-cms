@@ -1,4 +1,4 @@
-import { Button, Dialog, InfoCard } from "@trinacria-cms/trinacria-ui";
+import { Button, Dialog, InfoCard, useToast } from "@trinacria-cms/trinacria-ui";
 import { useEffect, useState } from "react";
 import type { TranslateFn } from "../../lib/i18n.js";
 import { toDisplayError } from "../../lib/sdk-errors.js";
@@ -30,6 +30,7 @@ export function useDeclarativeActionController({
   onSuccess?: () => void;
   t?: TranslateFn;
 }) {
+  const { pushToast } = useToast();
   const [selectedAction, setSelectedAction] = useState<DeclarativeAction | null>(null);
   const [actionContext, setActionContext] = useState<DeclarativeActionContext | undefined>();
   const [draftFields, setDraftFields] = useState<Record<string, DraftFieldValue>>({});
@@ -108,9 +109,16 @@ export function useDeclarativeActionController({
       selectedAction.policy
     );
     if (!policyResult.ok) {
+      const message = policyResult.reason ?? "Declarative action rejected by admin security policy";
       setActionState({
         status: "error",
-        error: policyResult.reason ?? "Declarative action rejected by admin security policy"
+        error: message
+      });
+      pushToast({
+        tone: "danger",
+        title: translate("common.feedback.action_error", "Operazione non riuscita"),
+        description: message,
+        duration: 0
       });
       return;
     }
@@ -119,7 +127,14 @@ export function useDeclarativeActionController({
     try {
       body = createActionBodyFromFields(selectedAction, draftFields);
     } catch (error) {
-      setActionState({ status: "error", error: toDisplayError(error) });
+      const message = toDisplayError(error);
+      setActionState({ status: "error", error: message });
+      pushToast({
+        tone: "danger",
+        title: translate("common.feedback.save_error", "Salvataggio non riuscito"),
+        description: message,
+        duration: 0
+      });
       return;
     }
 
@@ -137,10 +152,29 @@ export function useDeclarativeActionController({
         body
       });
       setActionState({ status: "success", response });
+      pushToast({
+        tone: "success",
+        title: selectedAction.title,
+        description:
+          selectedAction.intent === "update"
+            ? translate("common.feedback.saved", "Modifiche salvate.")
+            : translate("common.feedback.action_success", "Operazione completata."),
+        duration: 4000
+      });
       onSuccess?.();
       setSelectedAction(null);
     } catch (error) {
-      setActionState({ status: "error", error: toDisplayError(error) });
+      const message = toDisplayError(error);
+      setActionState({ status: "error", error: message });
+      pushToast({
+        tone: "danger",
+        title:
+          selectedAction.intent === "update"
+            ? translate("common.feedback.save_error", "Salvataggio non riuscito")
+            : translate("common.feedback.action_error", "Operazione non riuscita"),
+        description: message,
+        duration: 0
+      });
     }
   }
 
@@ -171,8 +205,12 @@ export function useDeclarativeActionController({
               onClick={executeAction}
             >
               {actionState.status === "submitting"
-                ? translate("common.actions.working", "Working...")
-                : (selectedAction?.title ?? translate("common.actions.save", "Save"))}
+                ? selectedAction?.intent === "update"
+                  ? translate("common.actions.saving", "Salvataggio...")
+                  : translate("common.actions.working", "Operazione in corso...")
+                : selectedAction?.intent === "update"
+                  ? translate("common.actions.save", "Salva")
+                  : (selectedAction?.title ?? translate("common.actions.confirm", "Conferma"))}
             </Button>
           </>
         }

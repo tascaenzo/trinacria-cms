@@ -8,7 +8,9 @@ const meta = {
   args: {
     items: [
       { value: "available", label: "Disponibili", count: 8 },
-      { value: "deleted", label: "Eliminati", count: 2 }
+      { value: "review", label: "In revisione", count: 3 },
+      { value: "deleted", label: "Eliminati", count: 2 },
+      { value: "archived", label: "Archiviati", disabled: true }
     ],
     value: "available",
     onValueChange: () => undefined,
@@ -24,7 +26,7 @@ export const Default: Story = {
     const [value, setValue] = useState(args.value);
     return (
       <Tabs {...args} value={value} onValueChange={setValue}>
-        <div className="py-5 text-sm text-[color:var(--color-ink-muted)]">
+        <div className="pt-5 text-sm text-[color:var(--color-ink-muted)]">
           Contenuto della sezione {value}.
         </div>
       </Tabs>

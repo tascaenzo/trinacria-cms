@@ -10,15 +10,17 @@ export function DetailSection({
   className,
   description,
   eyebrow,
+  headingLevel = 2,
   title,
   ...props
 }: DetailSectionProps) {
+  const Heading = `h${headingLevel}` as "h2" | "h3" | "h4";
   return (
     <Panel className={cn("grid gap-4 p-5", className)} radius="lg" {...props}>
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div className="space-y-1.5">
           {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-          <h2 className="text-lg font-semibold text-[color:var(--color-ink)]">{title}</h2>
+          <Heading className="text-lg font-semibold text-[color:var(--color-ink)]">{title}</Heading>
           {description ? <BodyText>{description}</BodyText> : null}
         </div>
         {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}

@@ -19,11 +19,14 @@ export interface ComboboxProps extends Omit<HTMLAttributes<HTMLDivElement>, "onC
   placeholder?: string;
   searchPlaceholder?: string;
   emptyText?: string;
-  label?: string;
-  hint?: string;
-  error?: string;
+  label?: ReactNode;
+  hint?: ReactNode;
+  error?: ReactNode;
   id?: string;
   name?: string;
   disabled?: boolean;
   allowClear?: boolean;
+  clearLabel?: string;
+  closeOptionsLabel?: string;
+  openOptionsLabel?: string;
 }

@@ -1,5 +1,17 @@
 import type { createCmsSdkClient } from "@trinacria-cms/sdk";
-import { Button, Checkbox, Dialog, Icon, Input, Select } from "@trinacria-cms/trinacria-ui";
+import {
+  Button,
+  Checkbox,
+  Dialog,
+  EmptyState,
+  Icon,
+  Input,
+  Panel,
+  PropertyItem,
+  PropertyList,
+  Select,
+  useToast
+} from "@trinacria-cms/trinacria-ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { serializeCsv } from "./file-manager/csv-editor.js";
 import {
@@ -109,7 +121,6 @@ export function MediaFileManager({
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<FileManagerContextMenuState | null>(null);
   const [isTextDialogOpen, setIsTextDialogOpen] = useState(false);
   const [textFileName, setTextFileName] = useState("untitled.txt");
@@ -128,6 +139,7 @@ export function MediaFileManager({
   const [contentAsset, setContentAsset] = useState<MediaAsset | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewUrlCacheRef = useRef(new Map<string, { expiresAtMs: number; url: string }>());
+  const { pushToast } = useToast();
 
   const selectedAsset = useMemo(
     () => assets.find((asset) => asset.id === selectedAssetId) ?? null,
@@ -166,6 +178,22 @@ export function MediaFileManager({
       .sort((left, right) => sortMediaItems(left, right, sort));
   }, [currentDirectoryId, directories, search, sort]);
 
+  function reportActionSuccess(description: string) {
+    pushToast({ tone: "success", title: "Media", description, duration: 4000 });
+  }
+
+  function reportActionError(currentError: unknown) {
+    const message = toDisplayError(currentError);
+    setError(message);
+    pushToast({
+      tone: "danger",
+      title: "Operazione media non riuscita",
+      description: message,
+      duration: 0
+    });
+    return message;
+  }
+
   useEffect(() => {
     if (presentation === "modal" && !open) return;
     void loadFileManager();
@@ -185,7 +213,7 @@ export function MediaFileManager({
         nextAssets.some((asset) => asset.id === current) ? current : null
       );
     } catch (currentError) {
-      setError(toDisplayError(currentError));
+      reportActionError(currentError);
     } finally {
       setIsLoading(false);
     }
@@ -258,7 +286,7 @@ export function MediaFileManager({
       onSelect({ asset, url });
       onClose();
     } catch (currentError) {
-      setError(toDisplayError(currentError));
+      reportActionError(currentError);
     } finally {
       setIsSaving(false);
     }
@@ -275,10 +303,10 @@ export function MediaFileManager({
         path: "/v1/media/directories",
         body: { name, ...(currentDirectoryId ? { parentId: currentDirectoryId } : {}) }
       });
-      setMessage("Cartella creata.");
+      reportActionSuccess("Cartella creata.");
       await loadFileManager();
     } catch (currentError) {
-      setError(toDisplayError(currentError));
+      reportActionError(currentError);
     } finally {
       setIsSaving(false);
     }
@@ -301,10 +329,10 @@ export function MediaFileManager({
           : current.filter((asset) => asset.id !== updatedAsset.id)
       );
       if (!remainsInCurrentDirectory) setSelectedAssetId(null);
-      setMessage("Media aggiornato.");
+      reportActionSuccess("Media aggiornato.");
       await loadFileManager();
     } catch (currentError) {
-      setError(toDisplayError(currentError));
+      reportActionError(currentError);
     } finally {
       setIsSaving(false);
     }
@@ -319,10 +347,10 @@ export function MediaFileManager({
         path: `/v1/media/assets/${encodeURIComponent(asset.id)}`
       });
       setSelectedAssetId(null);
-      setMessage("Media eliminato.");
+      reportActionSuccess("Media eliminato.");
       await loadFileManager();
     } catch (currentError) {
-      setError(toDisplayError(currentError));
+      reportActionError(currentError);
     } finally {
       setIsSaving(false);
     }
@@ -342,10 +370,10 @@ export function MediaFileManager({
         path: `/v1/media/directories/${encodeURIComponent(directoryId)}`,
         body
       });
-      setMessage("Cartella aggiornata.");
+      reportActionSuccess("Cartella aggiornata.");
       await loadFileManager();
     } catch (currentError) {
-      setError(toDisplayError(currentError));
+      reportActionError(currentError);
     } finally {
       setIsSaving(false);
     }
@@ -360,9 +388,9 @@ export function MediaFileManager({
         path: `/v1/media/directories/${encodeURIComponent(directory.id)}`
       });
       setCurrentDirectoryId(directory.parentId ?? null);
-      setMessage("Cartella eliminata.");
+      reportActionSuccess("Cartella eliminata.");
     } catch (currentError) {
-      setError(toDisplayError(currentError));
+      reportActionError(currentError);
     } finally {
       setIsSaving(false);
     }
@@ -373,16 +401,17 @@ export function MediaFileManager({
     try {
       setIsSaving(true);
       setError(null);
-      setMessage(null);
       for (const file of Array.from(files)) {
         await transferFile(file);
       }
       if (fileInputRef.current) fileInputRef.current.value = "";
-      setMessage(files.length === 1 ? "Media caricato." : `${files.length} media caricati.`);
+      reportActionSuccess(
+        files.length === 1 ? "Media caricato." : `${files.length} media caricati.`
+      );
       await loadFileManager();
       return true;
     } catch (currentError) {
-      setError(toDisplayError(currentError));
+      reportActionError(currentError);
       return false;
     } finally {
       setIsSaving(false);
@@ -438,11 +467,11 @@ export function MediaFileManager({
       previewUrlCacheRef.current.delete(asset.id);
       setAssets((current) => current.map((entry) => (entry.id === updated.id ? updated : entry)));
       setContentAsset(updated);
-      setMessage("Contenuto salvato.");
+      reportActionSuccess("Contenuto salvato.");
       await loadFileManager();
       return true;
     } catch (currentError) {
-      setError(toDisplayError(currentError));
+      reportActionError(currentError);
       return false;
     } finally {
       setIsSaving(false);
@@ -507,13 +536,12 @@ export function MediaFileManager({
       setError(null);
       const created = await transferFile(new File([content], filename, { type: "text/csv" }));
       setIsCsvDialogOpen(false);
-      setMessage("File CSV creato.");
+      reportActionSuccess("File CSV creato.");
       await loadFileManager();
       setContentAsset(created);
     } catch (currentError) {
-      const nextError = toDisplayError(currentError);
+      const nextError = reportActionError(currentError);
       setCsvCreateError(nextError);
-      setError(nextError);
     } finally {
       setIsSaving(false);
     }
@@ -575,7 +603,12 @@ export function MediaFileManager({
   );
 
   const workspace = (
-    <div className="relative h-full" onClick={() => setContextMenu(null)}>
+    <div
+      className={
+        presentation === "page" ? "relative h-[calc(100dvh-6rem)] min-h-[32rem]" : "relative h-full"
+      }
+      onClick={() => setContextMenu(null)}
+    >
       <FileManagerFrame
         assets={visibleAssets}
         breadcrumbs={breadcrumbs}
@@ -590,7 +623,6 @@ export function MediaFileManager({
         inspector={inspector}
         isLoading={isLoading}
         isSaving={isSaving}
-        message={message}
         onCreateFolder={openCreateDirectoryDialog}
         onCreateCsv={openCreateCsvDialog}
         onDetailsVisibleChange={setDetailsVisible}
@@ -1139,7 +1171,7 @@ function AssetInspector({
                 setIsEditOpen(false);
               }}
             >
-              Salva modifiche
+              Salva
             </Button>
           </>
         }
@@ -1260,14 +1292,12 @@ function AssetInspector({
                 <p className="text-xs text-[color:var(--color-ink-muted)]">Caricamento regole…</p>
               ) : null}
               {shares.length === 0 && !isLoadingShares ? (
-                <p className="rounded-md border border-dashed border-[color:var(--color-border)] p-3 text-xs text-[color:var(--color-ink-muted)]">
-                  Nessuna condivisione specifica.
-                </p>
+                <EmptyState className="p-3" text="Nessuna condivisione specifica." />
               ) : null}
               {shares.map((entry) => (
-                <div
+                <Panel
                   key={entry.id}
-                  className="min-w-0 rounded-md border border-[color:var(--color-border)] p-3 text-xs text-[color:var(--color-ink-muted)]"
+                  className="min-w-0 p-3 text-xs text-[color:var(--color-ink-muted)]"
                 >
                   <div className="flex min-w-0 items-start justify-between gap-2">
                     <div className="min-w-0">
@@ -1279,16 +1309,18 @@ function AssetInspector({
                         {entry.expiresAt ? ` · fino al ${formatDate(entry.expiresAt)}` : ""}
                       </p>
                     </div>
-                    <button
+                    <Button
                       type="button"
+                      size="sm"
+                      variant="ghost"
                       disabled={disabled || isLoadingShares}
-                      className="shrink-0 text-[color:var(--color-danger-ink)] hover:underline"
+                      className="shrink-0 text-[color:var(--color-danger-ink)]"
                       onClick={() => setShareToRevoke(entry)}
                     >
                       Revoca
-                    </button>
+                    </Button>
                   </div>
-                </div>
+                </Panel>
               ))}
             </div>
           </section>
@@ -1375,27 +1407,19 @@ function PreviewSurface({
     );
   }
   return (
-    <div className="mt-5 h-44 overflow-hidden rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)]">
+    <Panel className="mt-5 h-44 overflow-hidden p-0" tone="soft">
       {content}
-    </div>
+    </Panel>
   );
 }
 
 function CompactProperties({ items }: { items: readonly { label: string; value: string }[] }) {
   return (
-    <dl className="mt-5 divide-y divide-[color:var(--color-border)] rounded-md border border-[color:var(--color-border)]">
+    <PropertyList className="mt-5" variant="linear">
       {items.map((item) => (
-        <div key={item.label} className="flex items-start justify-between gap-4 px-3 py-2.5">
-          <dt className="text-xs text-[color:var(--color-ink-muted)]">{item.label}</dt>
-          <dd
-            className="min-w-0 truncate text-right text-xs font-medium text-[color:var(--color-ink)]"
-            title={item.value}
-          >
-            {item.value}
-          </dd>
-        </div>
+        <PropertyItem key={item.label} label={item.label} value={item.value} />
       ))}
-    </dl>
+    </PropertyList>
   );
 }
 

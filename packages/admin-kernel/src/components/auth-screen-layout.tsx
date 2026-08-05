@@ -1,4 +1,4 @@
-import { Badge, Icon } from "@trinacria-cms/trinacria-ui";
+import { Badge, Icon, Panel } from "@trinacria-cms/trinacria-ui";
 import type { PropsWithChildren, ReactNode } from "react";
 import { useI18n } from "../lib/i18n.js";
 
@@ -55,9 +55,9 @@ export function AuthScreenLayout({
               </div>
             </div>
 
-            <div className="rounded-[var(--radius-overlay)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-6 shadow-[var(--shadow-md)] sm:p-7">
+            <Panel className="p-6 shadow-[var(--shadow-md)] sm:p-7" radius="xl">
               {children}
-            </div>
+            </Panel>
 
             {footer ? (
               <div className="text-center text-sm leading-6 text-[color:var(--color-ink-subtle)]">
@@ -72,7 +72,7 @@ export function AuthScreenLayout({
 
   return (
     <div className="min-h-screen bg-[color:var(--color-canvas)] p-3 sm:p-4 lg:p-6">
-      <div className="mx-auto grid min-h-[calc(100vh-1.5rem)] max-w-[1540px] overflow-hidden rounded-[var(--radius-xl)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] shadow-[var(--shadow-md)] lg:grid-cols-[1.08fr_0.92fr]">
+      <Panel className="mx-auto grid min-h-[calc(100vh-1.5rem)] max-w-[1540px] overflow-hidden rounded-[var(--radius-xl)] shadow-[var(--shadow-md)] lg:grid-cols-[1.08fr_0.92fr]">
         <section className="relative overflow-hidden bg-[color:var(--color-code-surface)] px-6 py-8 text-[color:var(--color-code-ink)] sm:px-8 sm:py-10 lg:px-10 lg:py-12">
           <div className="absolute inset-y-0 right-0 hidden w-px bg-[color:var(--color-overlay-soft)] lg:block" />
           <div className="relative flex h-full flex-col justify-between gap-8">
@@ -109,9 +109,10 @@ export function AuthScreenLayout({
               {hasHeroMetrics ? (
                 <div className="grid gap-3 sm:grid-cols-3">
                   {heroMetrics?.map((metric) => (
-                    <div
+                    <Panel
                       key={metric.label}
-                      className="rounded-sm border border-[color:var(--color-border-strong)] bg-[color:var(--color-overlay-soft)] px-4 py-4"
+                      className="rounded-sm border-[color:var(--color-border-strong)] bg-[color:var(--color-overlay-soft)] px-4 py-4"
+                      tone="custom"
                     >
                       <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--color-code-subtle)]">
                         {metric.label}
@@ -119,7 +120,7 @@ export function AuthScreenLayout({
                       <p className="mt-3 text-2xl font-semibold text-[color:var(--color-code-ink)]">
                         {metric.value}
                       </p>
-                    </div>
+                    </Panel>
                   ))}
                 </div>
               ) : null}
@@ -128,9 +129,10 @@ export function AuthScreenLayout({
             {hasHeroHighlights ? (
               <div className="grid gap-3 xl:grid-cols-2">
                 {heroHighlights?.map((highlight) => (
-                  <div
+                  <Panel
                     key={highlight.title}
-                    className="rounded-sm border border-[color:var(--color-border-strong)] bg-[color:var(--color-overlay-soft)] p-4"
+                    className="rounded-sm border-[color:var(--color-border-strong)] bg-[color:var(--color-overlay-soft)] p-4"
+                    tone="custom"
                   >
                     <div className="flex items-start gap-3">
                       <span className="inline-flex h-10 w-10 items-center justify-center rounded-sm bg-[color:var(--color-overlay-soft)] text-[color:var(--color-code-ink)]">
@@ -145,7 +147,7 @@ export function AuthScreenLayout({
                         </p>
                       </div>
                     </div>
-                  </div>
+                  </Panel>
                 ))}
               </div>
             ) : null}
@@ -177,16 +179,16 @@ export function AuthScreenLayout({
               </div>
             </div>
 
-            <div className="rounded-[var(--radius-overlay)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-6 shadow-[var(--shadow-md)] sm:p-7">
+            <Panel className="p-6 shadow-[var(--shadow-md)] sm:p-7" radius="xl">
               {children}
-            </div>
+            </Panel>
 
             {footer ? (
               <div className="text-sm leading-6 text-[color:var(--color-ink-subtle)]">{footer}</div>
             ) : null}
           </div>
         </section>
-      </div>
+      </Panel>
     </div>
   );
 }

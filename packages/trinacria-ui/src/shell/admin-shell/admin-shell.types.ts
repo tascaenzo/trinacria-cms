@@ -29,4 +29,9 @@ export interface AdminShellProps extends PropsWithChildren {
   headerActions?: ReactNode;
   sidebarFooter?: ReactNode;
   hideHeader?: boolean;
+  navigationLabel?: string;
+  openSidebarLabel?: string;
+  closeSidebarLabel?: string;
+  expandSidebarLabel?: string;
+  collapseSidebarLabel?: string;
 }

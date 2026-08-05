@@ -1,4 +1,4 @@
-import { Button, Select } from "@trinacria-cms/trinacria-ui";
+import { Button, Panel, Select } from "@trinacria-cms/trinacria-ui";
 import { useState } from "react";
 import type { ContentWorkflow } from "../editorial-admin.types.js";
 import {
@@ -84,17 +84,19 @@ export function ContentTypeWorkflowEditor({
 
 function WorkflowPreview({ workflow }: { workflow: ContentWorkflow }) {
   return (
-    <section className="overflow-hidden rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface-subtle)]">
+    <Panel as="section" className="overflow-hidden p-0" tone="soft">
       <div className="overflow-x-auto p-4 sm:p-5">
         <div className="flex min-h-32 min-w-max items-center">
           {workflow.states.map((state, index) => (
             <div key={state.key} className="flex items-center">
-              <div
-                className={`w-40 rounded-xl border p-4 shadow-[var(--shadow-sm)] ${
+              <Panel
+                className={`w-40 p-4 ${
                   state.initial
                     ? "border-[color:var(--color-accent-border)] bg-[color:var(--color-accent-soft)]"
                     : "border-[color:var(--color-border)] bg-[color:var(--color-panel)]"
                 }`}
+                elevation="sm"
+                tone="custom"
               >
                 <span className="text-sm font-semibold text-[color:var(--color-ink)]">
                   {state.label}
@@ -102,12 +104,12 @@ function WorkflowPreview({ workflow }: { workflow: ContentWorkflow }) {
                 <span className="mt-2 block text-xs text-[color:var(--color-ink-muted)]">
                   {state.initial ? "Punto di partenza" : "Fase del flusso"}
                 </span>
-              </div>
+              </Panel>
               {index < workflow.states.length - 1 ? <WorkflowConnector /> : null}
             </div>
           ))}
         </div>
       </div>
-    </section>
+    </Panel>
   );
 }

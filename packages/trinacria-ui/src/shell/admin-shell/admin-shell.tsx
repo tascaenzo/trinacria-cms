@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "../../components/atoms/icon/icon.js";
 import { cn } from "../../utils/class-names.js";
 import {
@@ -14,6 +14,19 @@ import type {
 } from "./admin-shell.types.js";
 
 const EMPTY_HIDDEN_NAVIGATION_IDS: readonly string[] = [];
+
+function getFocusableElements(container: HTMLElement | null) {
+  if (!container) return [];
+  return Array.from(
+    container.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )
+  ).filter((element) => {
+    if (element.closest('[hidden], [aria-hidden="true"], [inert]')) return false;
+    const style = window.getComputedStyle(element);
+    return style.display !== "none" && style.visibility !== "hidden";
+  });
+}
 
 /**
  * The UI package only needs the shape required by the shell renderer. The full
@@ -45,11 +58,16 @@ export function AdminShell({
   activeRouteId,
   activeNavigationParams = "",
   children,
+  closeSidebarLabel = "Chiudi navigazione",
+  collapseSidebarLabel = "Comprimi navigazione",
+  expandSidebarLabel = "Espandi navigazione",
   headerActions,
   hideHeader = false,
   hiddenNavigationIds = EMPTY_HIDDEN_NAVIGATION_IDS,
   navigation,
+  navigationLabel = "Navigazione principale",
   onNavigate,
+  openSidebarLabel = "Apri navigazione",
   sidebarFooter,
   statusBadges = [],
   subtitle,
@@ -57,9 +75,13 @@ export function AdminShell({
 }: AdminShellProps) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => readSidebarState());
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(() =>
     readCollapsedGroups()
   );
+  const sidebarRef = useRef<HTMLElement | null>(null);
+  const mobileCloseButtonRef = useRef<HTMLButtonElement | null>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     writeSidebarState(isSidebarCollapsed);
@@ -68,6 +90,60 @@ export function AdminShell({
   useEffect(() => {
     writeCollapsedGroups(collapsedGroups);
   }, [collapsedGroups]);
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+
+    const mediaQuery = window.matchMedia("(max-width: 1023px)");
+    const syncViewport = () => {
+      setIsMobileViewport(mediaQuery.matches);
+      if (!mediaQuery.matches) setIsMobileSidebarOpen(false);
+    };
+    syncViewport();
+    mediaQuery.addEventListener("change", syncViewport);
+    return () => mediaQuery.removeEventListener("change", syncViewport);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobileViewport || !isMobileSidebarOpen) return;
+
+    previousFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const frame = window.requestAnimationFrame(() => mobileCloseButtonRef.current?.focus());
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setIsMobileSidebarOpen(false);
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusables = getFocusableElements(sidebarRef.current);
+      if (!focusables.length) {
+        event.preventDefault();
+        return;
+      }
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      previousFocusRef.current?.focus();
+    };
+  }, [isMobileSidebarOpen, isMobileViewport]);
 
   const hiddenNavigationIdSet = useMemo(() => new Set(hiddenNavigationIds), [hiddenNavigationIds]);
 
@@ -129,11 +205,14 @@ export function AdminShell({
             "fixed inset-0 z-40 bg-(--color-overlay) backdrop-blur-sm transition lg:hidden",
             isMobileSidebarOpen ? "opacity-100" : "pointer-events-none opacity-0"
           )}
-          aria-hidden={!isMobileSidebarOpen}
+          aria-hidden="true"
           onClick={() => setIsMobileSidebarOpen(false)}
         />
 
         <aside
+          ref={sidebarRef}
+          aria-hidden={isMobileViewport && !isMobileSidebarOpen ? true : undefined}
+          inert={isMobileViewport && !isMobileSidebarOpen ? true : undefined}
           className={cn(
             "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-(--color-border) bg-(--color-panel) transition-all duration-200",
             isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
@@ -154,17 +233,18 @@ export function AdminShell({
               <p className="truncate text-xs text-(--color-ink-subtle)">Admin dashboard</p>
             </div>
             <button
+              ref={mobileCloseButtonRef}
               type="button"
               onClick={() => setIsMobileSidebarOpen(false)}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-(--color-ink-muted) transition hover:bg-(--color-interactive-hover) hover:text-(--color-ink) lg:hidden"
-              aria-label="Close sidebar"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-(--color-ink-muted) transition hover:bg-(--color-interactive-hover) hover:text-(--color-ink) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--color-focus) lg:hidden"
+              aria-label={closeSidebarLabel}
             >
               <Icon name="x" />
             </button>
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto px-2 py-3">
-            <nav className="space-y-5">
+            <nav className="space-y-5" aria-label={navigationLabel}>
               {groups.map(([group, items], groupIndex) => {
                 const groupId = group
                   ? `admin-shell-nav-group-${groupIndex}-${toNavigationGroupId(group)}`
@@ -181,7 +261,7 @@ export function AdminShell({
                         aria-controls={groupId}
                         onClick={() => toggleGroup(group)}
                         className={cn(
-                          "flex w-full items-center justify-between gap-2 rounded-md px-2 pb-1 pt-1 text-left text-[11px] font-medium uppercase tracking-[0.14em] text-(--color-ink-subtle) transition hover:bg-(--color-interactive-hover) hover:text-(--color-ink-muted)",
+                          "flex w-full items-center justify-between gap-2 rounded-md px-2 pb-1 pt-1 text-left text-[11px] font-medium uppercase tracking-[0.14em] text-(--color-ink-subtle) transition hover:bg-(--color-interactive-hover) hover:text-(--color-ink-muted) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--color-focus)",
                           isSidebarCollapsed && "lg:hidden"
                         )}
                       >
@@ -201,9 +281,10 @@ export function AdminShell({
                             key={item.id}
                             type="button"
                             title={item.title}
+                            aria-current={isActive ? "page" : undefined}
                             onClick={() => handleNavigate(item)}
                             className={cn(
-                              "group flex h-9 w-full items-center gap-2 rounded-md px-2 text-sm transition",
+                              "group flex h-9 w-full items-center gap-2 rounded-md px-2 text-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-(--color-focus)",
                               isSidebarCollapsed ? "lg:justify-center lg:px-0" : "justify-between",
                               isActive
                                 ? "bg-(--color-interactive-selected) text-(--color-interactive-selected-ink)"
@@ -272,16 +353,16 @@ export function AdminShell({
               <button
                 type="button"
                 onClick={() => setIsMobileSidebarOpen(true)}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-(--color-ink-muted) transition hover:bg-(--color-interactive-hover) hover:text-(--color-ink) lg:hidden"
-                aria-label="Open sidebar"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-(--color-ink-muted) transition hover:bg-(--color-interactive-hover) hover:text-(--color-ink) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--color-focus) lg:hidden"
+                aria-label={openSidebarLabel}
               >
                 <Icon name="panel-left" />
               </button>
               <button
                 type="button"
                 onClick={() => setIsSidebarCollapsed((current) => !current)}
-                className="hidden h-8 w-8 items-center justify-center rounded-md text-(--color-ink-muted) transition hover:bg-(--color-interactive-hover) hover:text-(--color-ink) lg:inline-flex"
-                aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                className="hidden h-8 w-8 items-center justify-center rounded-md text-(--color-ink-muted) transition hover:bg-(--color-interactive-hover) hover:text-(--color-ink) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--color-focus) lg:inline-flex"
+                aria-label={isSidebarCollapsed ? expandSidebarLabel : collapseSidebarLabel}
               >
                 <Icon name="panel-left" />
               </button>

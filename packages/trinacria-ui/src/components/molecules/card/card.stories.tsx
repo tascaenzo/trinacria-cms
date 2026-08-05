@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Button } from "../../atoms/button/button.js";
-import { Card, CardActions, CardContent, CardDescription, CardHeader, CardTitle } from "./card.js";
+import { Card, CardActions, CardContent, CardHeader, CardHeading } from "./card.js";
 
 const meta = { title: "Layout/Surface/Card", component: Card } satisfies Meta<typeof Card>;
 export default meta;
@@ -9,10 +9,13 @@ type Story = StoryObj<typeof meta>;
 export const Composition: Story = {
   render: () => (
     <div className="max-w-2xl">
-      <Card>
+      <Card padding="none">
         <CardHeader>
-          <CardTitle>Plugin catalog</CardTitle>
-          <CardDescription>Snapshot operativo del runtime plugin.</CardDescription>
+          <CardHeading
+            icon="package"
+            title="Plugin catalog"
+            description="Snapshot operativo del runtime plugin."
+          />
         </CardHeader>
         <CardContent>
           <p className="text-sm text-[color:var(--color-ink-muted)]">

@@ -1,5 +1,13 @@
 import type { createCmsSdkClient } from "@trinacria-cms/sdk";
-import { Button, Input, Select } from "@trinacria-cms/trinacria-ui";
+import {
+  Button,
+  FeedbackBanner,
+  FormSection,
+  Input,
+  Select,
+  SettingsSectionLayout,
+  useToast
+} from "@trinacria-cms/trinacria-ui";
 import { useEffect, useState } from "react";
 
 type CmsClient = ReturnType<typeof createCmsSdkClient>;
@@ -17,6 +25,7 @@ const SETTINGS = {
 
 export interface MediaStorageSettingsContext {
   cms: CmsClient;
+  onDirtyChange?: (isDirty: boolean) => void;
   t: (key: string, fallback?: string) => string;
 }
 
@@ -40,12 +49,13 @@ const DEFAULT_DRAFT: StorageDraft = {
   s3SecretKey: ""
 };
 
-export function MediaStorageSettings({ cms, t }: MediaStorageSettingsContext) {
+export function MediaStorageSettings({ cms, onDirtyChange, t }: MediaStorageSettingsContext) {
   const [draft, setDraft] = useState<StorageDraft>(DEFAULT_DRAFT);
+  const [savedDraft, setSavedDraft] = useState<StorageDraft>(DEFAULT_DRAFT);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const { pushToast } = useToast();
 
   const provider = normalizeProviderId(draft.provider);
 
@@ -56,7 +66,6 @@ export function MediaStorageSettings({ cms, t }: MediaStorageSettingsContext) {
   function updateDraft(update: Partial<StorageDraft>) {
     setDraft((current) => ({ ...current, ...update }));
     setError(null);
-    setMessage(null);
   }
 
   async function loadSettings() {
@@ -70,14 +79,16 @@ export function MediaStorageSettings({ cms, t }: MediaStorageSettingsContext) {
         readValue(SETTINGS.s3Bucket, DEFAULT_DRAFT.s3Bucket),
         readValue(SETTINGS.s3Region, DEFAULT_DRAFT.s3Region)
       ]);
-      setDraft({
+      const nextDraft = {
         ...DEFAULT_DRAFT,
         provider: providerValue,
         localRoot,
         s3Endpoint,
         s3Bucket,
         s3Region
-      });
+      };
+      setDraft(nextDraft);
+      setSavedDraft(nextDraft);
     } catch (currentError) {
       setError(toDisplayError(currentError));
     } finally {
@@ -98,7 +109,6 @@ export function MediaStorageSettings({ cms, t }: MediaStorageSettingsContext) {
     try {
       setIsSaving(true);
       setError(null);
-      setMessage(null);
       validateDraft(draft, provider);
 
       const valueUpdates: Promise<unknown>[] = [];
@@ -124,10 +134,26 @@ export function MediaStorageSettings({ cms, t }: MediaStorageSettingsContext) {
       await Promise.all(valueUpdates);
       // Activate the provider only after its configuration has been persisted.
       await writeValue(SETTINGS.provider, draft.provider.trim());
-      setDraft((current) => ({ ...current, s3AccessKey: "", s3SecretKey: "" }));
-      setMessage(t("settings.media.storage.saved", "Archiviazione media aggiornata."));
+      setDraft((current) => {
+        const committed = { ...current, s3AccessKey: "", s3SecretKey: "" };
+        setSavedDraft(committed);
+        return committed;
+      });
+      pushToast({
+        tone: "success",
+        title: t("common.actions.save", "Salva"),
+        description: t("settings.media.storage.saved", "Archiviazione media aggiornata."),
+        duration: 4000
+      });
     } catch (currentError) {
-      setError(toDisplayError(currentError));
+      const message = toDisplayError(currentError);
+      setError(message);
+      pushToast({
+        tone: "danger",
+        title: "Salvataggio non riuscito",
+        description: message,
+        duration: 0
+      });
     } finally {
       setIsSaving(false);
     }
@@ -147,151 +173,149 @@ export function MediaStorageSettings({ cms, t }: MediaStorageSettingsContext) {
     });
   }
 
+  const isDirty = JSON.stringify(draft) !== JSON.stringify(savedDraft);
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
+  useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
+
   return (
-    <section className="flex h-full min-h-0 flex-col">
-      <div className="min-h-0 flex-1 overflow-auto px-6 py-4 sm:px-8 sm:py-6">
-        <div className="mx-auto grid max-w-4xl gap-6">
-          <header className="grid gap-2">
-            <h3 className="text-xl font-semibold text-[color:var(--color-ink)]">
-              {t("settings.media.storage.title", "Archiviazione media")}
-            </h3>
-            <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
-              {t(
-                "settings.media.storage.summary",
-                "Scegli dove conservare i nuovi file. I campi disponibili cambiano in base al provider selezionato."
-              )}
-            </p>
-          </header>
-
-          {error ? (
-            <p className="rounded-md border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-surface)] p-3 text-sm text-[color:var(--color-danger-ink)]">
-              {error}
-            </p>
-          ) : null}
-          {message ? (
-            <p className="text-sm font-medium text-[color:var(--color-success-ink)]">{message}</p>
-          ) : null}
-
-          <section className="grid gap-4 rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4">
-            <Select
-              label={t("settings.media.storage.provider", "Provider di archiviazione")}
-              hint={t(
-                "settings.media.storage.provider_hint",
-                "Il provider viene applicato ai nuovi caricamenti."
-              )}
-              value={provider === "custom" ? draft.provider : provider}
-              disabled={isLoading || isSaving}
-              onChange={(event) => updateDraft({ provider: event.currentTarget.value })}
-            >
-              {provider === "custom" ? (
-                <option value={draft.provider}>{draft.provider}</option>
-              ) : null}
-              <option value="local-disk">Disco locale</option>
-              <option value="s3-compatible">S3 compatibile</option>
-            </Select>
-          </section>
-
-          {!isLoading && provider === "local-disk" ? (
-            <section className="grid gap-4 rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4">
-              <div>
-                <h4 className="text-sm font-semibold text-[color:var(--color-ink)]">
-                  Disco locale
-                </h4>
-                <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
-                  I file vengono salvati nel filesystem dell&apos;istanza CMS.
-                </p>
-              </div>
-              <Input
-                label={t("settings.media.storage.local_root", "Cartella dei media")}
-                value={draft.localRoot}
-                readOnly={isSaving}
-                onChange={(event) => updateDraft({ localRoot: event.currentTarget.value })}
-              />
-            </section>
-          ) : null}
-
-          {!isLoading && provider === "s3-compatible" ? (
-            <section className="grid gap-4 rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4">
-              <div>
-                <h4 className="text-sm font-semibold text-[color:var(--color-ink)]">
-                  S3 compatibile
-                </h4>
-                <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
-                  Configura bucket e credenziali del provider compatibile con le API S3.
-                </p>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <Input
-                  label="Endpoint"
-                  value={draft.s3Endpoint}
-                  readOnly={isSaving}
-                  onChange={(event) => updateDraft({ s3Endpoint: event.currentTarget.value })}
-                />
-                <Input
-                  label="Bucket"
-                  value={draft.s3Bucket}
-                  readOnly={isSaving}
-                  onChange={(event) => updateDraft({ s3Bucket: event.currentTarget.value })}
-                />
-                <Input
-                  label="Region"
-                  value={draft.s3Region}
-                  readOnly={isSaving}
-                  onChange={(event) => updateDraft({ s3Region: event.currentTarget.value })}
-                />
-                <Input
-                  label="Access key"
-                  value={draft.s3AccessKey}
-                  type="password"
-                  placeholder="Lascia vuoto per mantenere il valore"
-                  readOnly={isSaving}
-                  autoComplete="new-password"
-                  onChange={(event) => updateDraft({ s3AccessKey: event.currentTarget.value })}
-                />
-                <Input
-                  className="md:col-span-2"
-                  label="Secret key"
-                  value={draft.s3SecretKey}
-                  type="password"
-                  placeholder="Lascia vuoto per mantenere il valore"
-                  readOnly={isSaving}
-                  autoComplete="new-password"
-                  onChange={(event) => updateDraft({ s3SecretKey: event.currentTarget.value })}
-                />
-              </div>
-            </section>
-          ) : null}
-
-          {!isLoading && provider === "custom" ? (
-            <section className="rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4 text-sm text-[color:var(--color-ink-muted)]">
-              Questo provider è configurato dall&apos;ambiente che lo ha registrato. Le impostazioni
-              specifiche vengono mostrate dalla relativa funzionalità quando disponibili.
-            </section>
-          ) : null}
-        </div>
-      </div>
-      <footer className="shrink-0 border-t border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 pb-2 pt-3 sm:px-5">
-        <div className="mx-auto flex max-w-4xl justify-end gap-2">
+    <SettingsSectionLayout
+      title={t("settings.media.storage.title", "Archiviazione media")}
+      description={t(
+        "settings.media.storage.summary",
+        "Scegli dove conservare i nuovi file. I campi disponibili cambiano in base al provider selezionato."
+      )}
+      feedback={error ? <FeedbackBanner tone="danger" message={error} /> : undefined}
+      headerActions={
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={isLoading || isSaving}
+          onClick={() => void loadSettings()}
+        >
+          {t("common.actions.refresh", "Aggiorna")}
+        </Button>
+      }
+      actions={
+        <>
           <Button
             type="button"
             variant="secondary"
-            disabled={isLoading || isSaving}
-            onClick={() => void loadSettings()}
+            disabled={isLoading || isSaving || !isDirty}
+            onClick={() => {
+              setDraft({ ...savedDraft });
+              setError(null);
+            }}
           >
-            {t("common.actions.refresh", "Aggiorna")}
+            {t("common.actions.reset", "Ripristina")}
           </Button>
           <Button
             type="button"
-            disabled={isLoading || isSaving}
+            disabled={isLoading || isSaving || !isDirty}
+            isLoading={isSaving}
             onClick={() => void saveSettings()}
           >
-            {isSaving
-              ? t("common.actions.saving", "Salvataggio...")
-              : t("common.actions.save", "Salva")}
+            {t("common.actions.save", "Salva")}
           </Button>
-        </div>
-      </footer>
-    </section>
+        </>
+      }
+    >
+      <FormSection
+        headingLevel={3}
+        variant="plain"
+        title={t("settings.media.storage.provider", "Provider di archiviazione")}
+        description={t(
+          "settings.media.storage.provider_hint",
+          "Il provider viene applicato ai nuovi caricamenti."
+        )}
+      >
+        <Select
+          label={t("settings.media.storage.provider", "Provider")}
+          value={provider === "custom" ? draft.provider : provider}
+          disabled={isLoading || isSaving}
+          onChange={(event) => updateDraft({ provider: event.currentTarget.value })}
+        >
+          {provider === "custom" ? <option value={draft.provider}>{draft.provider}</option> : null}
+          <option value="local-disk">Disco locale</option>
+          <option value="s3-compatible">S3 compatibile</option>
+        </Select>
+      </FormSection>
+
+      {!isLoading && provider === "local-disk" ? (
+        <FormSection
+          headingLevel={3}
+          variant="plain"
+          title="Disco locale"
+          description="I file vengono salvati nel filesystem dell'istanza CMS."
+        >
+          <Input
+            label={t("settings.media.storage.local_root", "Cartella dei media")}
+            value={draft.localRoot}
+            disabled={isSaving}
+            onChange={(event) => updateDraft({ localRoot: event.currentTarget.value })}
+          />
+        </FormSection>
+      ) : null}
+
+      {!isLoading && provider === "s3-compatible" ? (
+        <FormSection
+          headingLevel={3}
+          variant="plain"
+          title="S3 compatibile"
+          description="Configura bucket e credenziali del provider compatibile con le API S3."
+        >
+          <div className="grid gap-4 md:grid-cols-2">
+            <Input
+              label="Endpoint"
+              value={draft.s3Endpoint}
+              disabled={isSaving}
+              onChange={(event) => updateDraft({ s3Endpoint: event.currentTarget.value })}
+            />
+            <Input
+              label="Bucket"
+              value={draft.s3Bucket}
+              disabled={isSaving}
+              onChange={(event) => updateDraft({ s3Bucket: event.currentTarget.value })}
+            />
+            <Input
+              label="Region"
+              value={draft.s3Region}
+              disabled={isSaving}
+              onChange={(event) => updateDraft({ s3Region: event.currentTarget.value })}
+            />
+            <Input
+              label="Access key"
+              value={draft.s3AccessKey}
+              type="password"
+              placeholder="Lascia vuoto per mantenere il valore"
+              disabled={isSaving}
+              autoComplete="new-password"
+              onChange={(event) => updateDraft({ s3AccessKey: event.currentTarget.value })}
+            />
+            <Input
+              className="md:col-span-2"
+              label="Secret key"
+              value={draft.s3SecretKey}
+              type="password"
+              placeholder="Lascia vuoto per mantenere il valore"
+              disabled={isSaving}
+              autoComplete="new-password"
+              onChange={(event) => updateDraft({ s3SecretKey: event.currentTarget.value })}
+            />
+          </div>
+        </FormSection>
+      ) : null}
+
+      {!isLoading && provider === "custom" ? (
+        <FeedbackBanner
+          tone="info"
+          message="Questo provider è configurato dall'ambiente che lo ha registrato. Le impostazioni specifiche vengono mostrate dalla relativa funzionalità quando disponibili."
+        />
+      ) : null}
+    </SettingsSectionLayout>
   );
 }
 

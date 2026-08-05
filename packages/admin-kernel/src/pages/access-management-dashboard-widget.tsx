@@ -1,5 +1,13 @@
 import type { PermissionsApi, RolesApi, UsersApi } from "@trinacria-cms/sdk";
-import { Button, Icon } from "@trinacria-cms/trinacria-ui";
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardHeading,
+  ErrorBanner,
+  Icon
+} from "@trinacria-cms/trinacria-ui";
 import { useEffect, useMemo, useState } from "react";
 import type { AdminDashboardWidgetRenderContext } from "../runtime/admin-route-runtime.js";
 
@@ -77,94 +85,95 @@ export function AccessManagementDashboardWidget({
   }
 
   return (
-    <article className="grid h-full min-h-[290px] gap-5 rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel)] p-5 shadow-[var(--shadow-sm)]">
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)]">
-            Accessi
-          </p>
-          <h3 className="mt-1 text-base font-semibold text-[color:var(--color-ink)]">
-            Utenti, ruoli e permessi
-          </h3>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={!routeAvailable("users")}
-          onClick={() => navigate("users")}
-        >
-          Apri utenti
-          <Icon name="arrow-right" />
-        </Button>
-      </header>
-
-      {error ? (
-        <p className="text-sm leading-6 text-[color:var(--color-danger-ink)]">{error}</p>
-      ) : (
-        <>
-          <div className="grid divide-y divide-[color:var(--color-border)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-            <AccessMetric
-              label="Utenti"
-              value={
-                isLoading ? "…" : hasMoreUsers ? `${PAGE_LIMIT}+` : String(snapshot.users.length)
-              }
-              detail={isLoading ? "" : `${activeUsers} attivi`}
-              onClick={routeAvailable("users") ? () => navigate("users") : undefined}
-            />
-            <AccessMetric
-              label="Ruoli"
-              value={isLoading ? "…" : String(snapshot.roles.length)}
-              detail={isLoading ? "" : `${activeRoles} attivi`}
-              onClick={routeAvailable("roles") ? () => navigate("roles") : undefined}
-            />
-            <AccessMetric
-              label="Permessi"
-              value={isLoading ? "…" : String(snapshot.permissions.length)}
-              detail={isLoading ? "" : `${activePermissions} attivi`}
-              onClick={routeAvailable("permissions") ? () => navigate("permissions") : undefined}
-            />
-          </div>
-
-          <section className="grid gap-3">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-medium text-[color:var(--color-ink)]">
-                  Nuove registrazioni
-                </p>
-                <p className="text-xs text-[color:var(--color-ink-muted)]">Ultime 6 settimane</p>
-              </div>
-              {hasMoreUsers ? (
-                <span className="text-xs text-[color:var(--color-ink-subtle)]">
-                  Ultimi 200 utenti
-                </span>
-              ) : null}
-            </div>
-            <div
-              className="grid h-20 grid-cols-6 items-end gap-2"
-              aria-label="Andamento registrazioni utenti"
+    <Card className="h-full min-h-[290px]" padding="none" elevation="none">
+      <CardHeader>
+        <CardHeading
+          icon="users"
+          title="Gestione accessi"
+          description="Utenti, ruoli e autorizzazioni"
+          actions={
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={!routeAvailable("users")}
+              onClick={() => navigate("users")}
             >
-              {registrationTrend.map((bucket) => (
-                <div
-                  key={bucket.label}
-                  className="grid h-full grid-rows-[1fr_auto] gap-1 text-center"
-                >
-                  <div className="flex items-end rounded-sm bg-[color:var(--color-surface-subtle)]">
-                    <span
-                      title={`${bucket.label}: ${bucket.count} registrazioni`}
-                      className="w-full rounded-sm bg-[color:var(--color-accent)] transition-[height]"
-                      style={{ height: `${Math.max(6, bucket.height)}%` }}
-                    />
-                  </div>
-                  <span className="text-[10px] text-[color:var(--color-ink-subtle)]">
-                    {bucket.label}
-                  </span>
-                </div>
-              ))}
+              Gestisci
+              <Icon name="arrow-right" />
+            </Button>
+          }
+        />
+      </CardHeader>
+
+      <CardContent className="grid gap-5">
+        {error ? (
+          <ErrorBanner message={error} />
+        ) : (
+          <>
+            <div className="-mx-5 -mt-5 grid divide-y divide-[color:var(--color-border)] border-b border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+              <AccessMetric
+                label="Utenti"
+                value={
+                  isLoading ? "…" : hasMoreUsers ? `${PAGE_LIMIT}+` : String(snapshot.users.length)
+                }
+                detail={isLoading ? "" : `${activeUsers} attivi`}
+                onClick={routeAvailable("users") ? () => navigate("users") : undefined}
+              />
+              <AccessMetric
+                label="Ruoli"
+                value={isLoading ? "…" : String(snapshot.roles.length)}
+                detail={isLoading ? "" : `${activeRoles} attivi`}
+                onClick={routeAvailable("roles") ? () => navigate("roles") : undefined}
+              />
+              <AccessMetric
+                label="Permessi"
+                value={isLoading ? "…" : String(snapshot.permissions.length)}
+                detail={isLoading ? "" : `${activePermissions} attivi`}
+                onClick={routeAvailable("permissions") ? () => navigate("permissions") : undefined}
+              />
             </div>
-          </section>
-        </>
-      )}
-    </article>
+
+            <section className="grid gap-3">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium text-[color:var(--color-ink)]">
+                    Nuove registrazioni
+                  </p>
+                  <p className="text-xs text-[color:var(--color-ink-muted)]">Ultime 6 settimane</p>
+                </div>
+                {hasMoreUsers ? (
+                  <span className="text-xs text-[color:var(--color-ink-subtle)]">
+                    Ultimi 200 utenti
+                  </span>
+                ) : null}
+              </div>
+              <div
+                className="grid h-20 grid-cols-6 items-end gap-2"
+                aria-label="Andamento registrazioni utenti"
+              >
+                {registrationTrend.map((bucket) => (
+                  <div
+                    key={bucket.label}
+                    className="grid h-full grid-rows-[1fr_auto] gap-1 text-center"
+                  >
+                    <div className="flex items-end rounded-sm bg-[color:var(--color-surface-subtle)]">
+                      <span
+                        title={`${bucket.label}: ${bucket.count} registrazioni`}
+                        className="w-full rounded-sm bg-[color:var(--color-accent)] transition-[height]"
+                        style={{ height: `${Math.max(6, bucket.height)}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] text-[color:var(--color-ink-subtle)]">
+                      {bucket.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -181,24 +190,27 @@ function AccessMetric({
 }) {
   const content = (
     <>
-      <p className="text-xs font-medium text-[color:var(--color-ink-muted)]">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-        {value}
-      </p>
-      <p className="mt-1 text-xs text-[color:var(--color-ink-subtle)]">{detail}</p>
+      <span className="text-xs font-medium text-[color:var(--color-ink-muted)]">{label}</span>
+      <span className="mt-2 flex items-baseline justify-between gap-3">
+        <span className="text-2xl font-semibold tabular-nums text-[color:var(--color-ink)]">
+          {value}
+        </span>
+        <span className="text-xs text-[color:var(--color-ink-subtle)]">{detail}</span>
+      </span>
     </>
   );
 
   return onClick ? (
-    <button
+    <Button
       type="button"
-      className="px-3 py-2 text-left first:pl-0 last:pr-0 hover:text-[color:var(--color-accent-ink)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-focus)]"
+      variant="ghost"
+      className="h-auto w-full flex-col items-stretch rounded-none border-0 px-5 py-4 text-left shadow-none focus:ring-inset"
       onClick={onClick}
     >
       {content}
-    </button>
+    </Button>
   ) : (
-    <div className="px-3 py-2 first:pl-0 last:pr-0">{content}</div>
+    <div className="px-5 py-4">{content}</div>
   );
 }
 
@@ -210,13 +222,7 @@ function buildRegistrationTrend(users: readonly UserRecord[]) {
     start.setHours(0, 0, 0, 0);
     const end = new Date(start);
     end.setDate(start.getDate() + 7);
-    return {
-      start,
-      end,
-      label: index === 5 ? "Ora" : `-${5 - index}w`,
-      count: 0,
-      height: 0
-    };
+    return { start, end, label: index === 5 ? "Ora" : `-${5 - index}w`, count: 0, height: 0 };
   });
 
   for (const user of users) {

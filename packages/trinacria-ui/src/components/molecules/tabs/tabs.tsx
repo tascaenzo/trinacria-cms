@@ -42,7 +42,7 @@ export function Tabs({
       <div
         role="tablist"
         aria-label={ariaLabel}
-        className="flex gap-6 overflow-x-auto border-b border-[color:var(--color-border)]"
+        className="flex w-fit max-w-full gap-1 overflow-x-auto rounded-[var(--radius-md)] bg-[color:var(--color-panel-strong)] p-1"
       >
         {items.map((item) => {
           const isActive = item.value === activeItem?.value;
@@ -62,10 +62,10 @@ export function Tabs({
               tabIndex={isActive ? 0 : -1}
               disabled={item.disabled}
               className={cn(
-                "relative inline-flex min-h-11 shrink-0 items-center gap-2 border-b-2 px-0.5 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-focus)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                "inline-flex h-8 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-[var(--radius-sm)] px-3 text-sm font-medium transition-[color,background-color,box-shadow] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-focus)] focus-visible:ring-offset-1 focus-visible:ring-offset-[color:var(--color-panel-strong)] disabled:cursor-not-allowed disabled:opacity-45",
                 isActive
-                  ? "border-[color:var(--color-accent)] text-[color:var(--color-ink)]"
-                  : "border-transparent text-[color:var(--color-ink-muted)] hover:border-[color:var(--color-border-strong)] hover:text-[color:var(--color-ink)]"
+                  ? "bg-[color:var(--color-surface)] text-[color:var(--color-ink)] shadow-[var(--shadow-sm)]"
+                  : "text-[color:var(--color-ink-muted)] hover:bg-[color:var(--color-surface)]/50 hover:text-[color:var(--color-ink)]"
               )}
               onClick={() => onValueChange(item.value)}
               onKeyDown={(event) => selectAdjacentTab(event, item.value)}
@@ -74,10 +74,10 @@ export function Tabs({
               {item.count !== undefined ? (
                 <span
                   className={cn(
-                    "min-w-5 rounded-full px-1.5 py-0.5 text-center text-[11px] font-semibold leading-4",
+                    "text-[11px] font-medium leading-none tabular-nums",
                     isActive
-                      ? "bg-[color:var(--color-accent-soft)] text-[color:var(--color-accent-ink)]"
-                      : "bg-[color:var(--color-surface-subtle)] text-[color:var(--color-ink-subtle)]"
+                      ? "text-[color:var(--color-ink-muted)]"
+                      : "text-[color:var(--color-ink-subtle)]"
                   )}
                 >
                   {item.count}

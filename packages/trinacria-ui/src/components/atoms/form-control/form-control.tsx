@@ -2,9 +2,11 @@ import { useId } from "react";
 import { cn } from "../../../utils/class-names.js";
 import type { FormControlShellProps, FormControlSurfaceProps } from "./form-control.types.js";
 
-export function useFormControlIds(id?: string, name?: string) {
+export function useFormControlIds(id?: string, _name?: string) {
   const reactId = useId().replace(/:/g, "");
-  const baseId = id ?? name ?? `field-${reactId}`;
+  // `name` is a submission key and is commonly reused by repeated controls.
+  // Only an explicit id may opt out of React's instance-unique identifier.
+  const baseId = id ?? `field-${reactId}`;
 
   return {
     controlId: baseId,
@@ -55,16 +57,17 @@ export function formControlClassName(options?: {
     multiline
       ? "min-h-28 w-full rounded-[var(--radius-control)] border bg-[color:var(--color-surface)] px-3 py-2.5 text-sm"
       : "h-10 w-full rounded-[var(--radius-control)] border bg-[color:var(--color-surface)] px-3 text-sm",
-    "border-[color:var(--color-border-strong)] text-[color:var(--color-ink)] outline-none transition placeholder:text-[color:var(--color-ink-subtle)]",
+    "border-[color:var(--color-border)] text-[color:var(--color-ink)] outline-none transition placeholder:text-[color:var(--color-ink-subtle)]",
+    !disabled && !error && "hover:border-[color:var(--color-accent-border)]",
     withFocusWithin
-      ? "focus-within:border-[color:var(--color-focus)] focus-within:ring-2 focus-within:ring-[color:var(--color-overlay-soft)]"
-      : "focus:border-[color:var(--color-focus)] focus:ring-2 focus:ring-[color:var(--color-overlay-soft)]",
+      ? "focus-within:border-[color:var(--color-border-strong)] focus-within:ring-1 focus-within:ring-[color:var(--color-accent-border)]"
+      : "focus:border-[color:var(--color-border-strong)] focus:ring-1 focus:ring-[color:var(--color-accent-border)]",
     disabled &&
       "cursor-not-allowed bg-[color:var(--color-panel-soft)] text-[color:var(--color-ink-subtle)]",
     Boolean(error) &&
       (withFocusWithin
-        ? "border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] focus-within:border-[color:var(--color-danger-ink)] focus-within:ring-[color:var(--color-danger-border)]"
-        : "border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] focus:border-[color:var(--color-danger-ink)] focus:ring-[color:var(--color-danger-border)]"),
+        ? "border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] focus-within:border-[color:var(--color-danger-ink)] focus-within:ring-1 focus-within:ring-[color:var(--color-danger-border)]"
+        : "border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] focus:border-[color:var(--color-danger-ink)] focus:ring-1 focus:ring-[color:var(--color-danger-border)]"),
     className
   );
 }

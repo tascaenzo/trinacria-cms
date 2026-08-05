@@ -7,7 +7,10 @@ import {
 import { Icon } from "../icon/icon.js";
 import type { SelectProps } from "./select.types.js";
 
-export function Select({ children, className, error, hint, label, id, ...props }: SelectProps) {
+export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
+  { children, className, containerClassName, error, hint, label, id, ...props },
+  ref
+) {
   const ids = useFormControlIds(id, props.name);
   const aria = buildFormControlAria({
     describedBy: props["aria-describedby"],
@@ -19,6 +22,7 @@ export function Select({ children, className, error, hint, label, id, ...props }
 
   return (
     <FormControlShell
+      className={containerClassName}
       controlId={ids.controlId}
       error={error}
       errorId={ids.errorId}
@@ -30,6 +34,7 @@ export function Select({ children, className, error, hint, label, id, ...props }
     >
       <div className="relative">
         <select
+          ref={ref}
           {...props}
           id={ids.controlId}
           aria-invalid={error ? true : props["aria-invalid"]}
@@ -49,4 +54,6 @@ export function Select({ children, className, error, hint, label, id, ...props }
       </div>
     </FormControlShell>
   );
-}
+});
+
+import { forwardRef } from "react";

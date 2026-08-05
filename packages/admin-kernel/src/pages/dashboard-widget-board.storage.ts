@@ -23,6 +23,7 @@ export interface DashboardWidgetLayoutItem {
 }
 
 export interface DashboardWidgetLayoutState {
+  version: number;
   order: readonly string[];
   hidden: readonly string[];
   dimensions: Readonly<Record<string, DashboardWidgetDimension>>;
@@ -30,6 +31,7 @@ export interface DashboardWidgetLayoutState {
 
 /** Global CMS setting shared by every backoffice operator. */
 export const GLOBAL_DASHBOARD_WIDGET_LAYOUT_SETTING_KEY = "core-pack:dashboard:widget_layout";
+export const DASHBOARD_WIDGET_LAYOUT_VERSION = 2;
 
 /**
  * Removes obsolete plugin widgets, appends newly discovered ones, and clamps
@@ -51,10 +53,11 @@ export function normalizeDashboardWidgetLayout(
 
   const hidden = dedupe(readStringArray(raw.hidden).filter((key) => itemByKey.has(key)));
   const rawDimensions = isRecord(raw.dimensions) ? raw.dimensions : {};
+  const useStoredDimensions = raw.version === DASHBOARD_WIDGET_LAYOUT_VERSION;
   const dimensions: Record<string, DashboardWidgetDimension> = {};
 
   for (const item of items) {
-    const storedDimension = rawDimensions[item.key];
+    const storedDimension = useStoredDimensions ? rawDimensions[item.key] : undefined;
     const current = isRecord(storedDimension) ? storedDimension : {};
     dimensions[item.key] = {
       columnSpan: clampColumnSpan(current.columnSpan, item.layout),
@@ -62,7 +65,7 @@ export function normalizeDashboardWidgetLayout(
     };
   }
 
-  return { order, hidden, dimensions };
+  return { version: DASHBOARD_WIDGET_LAYOUT_VERSION, order, hidden, dimensions };
 }
 
 export function reorderDashboardWidgets(

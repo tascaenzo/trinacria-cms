@@ -1,11 +1,13 @@
 import {
   Badge,
   Button,
-  Card,
   DropdownMenu,
   DropdownMenuItem,
   IconButton,
-  JsonViewDialog
+  JsonViewDialog,
+  Panel,
+  PropertyItem,
+  PropertyList
 } from "@trinacria-cms/trinacria-ui";
 import { type ReactNode, useState } from "react";
 import type { AdminResourceDefinition, AdminResourceFieldDefinition } from "../../contracts.js";
@@ -60,76 +62,70 @@ export function DeclarativeResourceDetail({
 
   return (
     <>
-      <Card className="overflow-hidden p-0">
-        <div className="flex flex-col gap-3 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex min-w-0 items-center gap-3">
-            <IconButton
-              icon="chevron-left"
-              label={t("common.actions.back", "Back")}
-              size="sm"
-              variant="ghost"
-              onClick={onBack}
-            />
-            <div className="min-w-0">
-              <p className="text-xs font-medium text-[color:var(--color-ink-muted)]">
-                {detail.title ?? resource.title}
-              </p>
-              <h2 className="break-words text-lg font-semibold text-[color:var(--color-ink)]">
-                {title}
-              </h2>
+      <Panel
+        className="overflow-hidden border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-0"
+        radius="lg"
+      >
+        <header className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] shadow-[inset_0_-1px_0_var(--color-border)]">
+          <div className="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between md:py-4">
+            <div className="flex min-w-0 items-start gap-3">
+              <IconButton
+                icon="chevron-left"
+                label={t("common.actions.back", "Back")}
+                size="sm"
+                variant="ghost"
+                onClick={onBack}
+              />
+              <div className="grid min-w-0 gap-1">
+                <h2 className="break-words text-sm font-semibold leading-6 text-[color:var(--color-ink)]">
+                  {title}
+                </h2>
+                <span className="text-xs font-medium leading-5 text-[color:var(--color-ink-muted)]">
+                  {detail.title ?? resource.title}
+                </span>
+              </div>
             </div>
-          </div>
-          {showJson || recordActions.length ? (
-            <div className="flex justify-end">
-              <DropdownMenu
-                trigger={
-                  <Button type="button" variant="secondary" size="sm">
-                    {t("common.actions.menu", "Actions")}
-                  </Button>
-                }
-                contentClassName="min-w-[220px]"
-              >
-                {showJson ? (
-                  <DropdownMenuItem
-                    icon="file-json"
-                    title={t("common.actions.inspect_json", "Inspect JSON")}
-                    onClick={() => setIsJsonOpen(true)}
-                  />
-                ) : null}
-                {recordActions.map((action) => (
-                  <DropdownMenuItem
-                    key={action.id}
-                    icon={getActionIcon(action.intent)}
-                    title={action.title}
-                    tone={action.intent === "delete" ? "danger" : "neutral"}
-                    onClick={() => onPrepareAction?.(action, { record })}
-                  />
-                ))}
-              </DropdownMenu>
-            </div>
-          ) : null}
-        </div>
-
-        <div className="-mx-px overflow-x-auto">
-          <table className="min-w-full border-separate border-spacing-0 text-sm">
-            <tbody>
-              {fields.map((field) => (
-                <tr
-                  key={field.key}
-                  className="[&>td]:border-b [&>td]:border-[color:var(--color-border)] last:[&>td]:border-b-0"
+            {showJson || recordActions.length ? (
+              <div className="flex w-full justify-end border-t border-[color:var(--color-border)] pt-3 md:ml-auto md:w-auto md:border-t-0 md:pt-0">
+                <DropdownMenu
+                  trigger={
+                    <Button type="button" variant="secondary" size="sm">
+                      {t("common.actions.menu", "Actions")}
+                    </Button>
+                  }
+                  contentClassName="min-w-[220px]"
                 >
-                  <td className="w-56 bg-[color:var(--color-panel-soft)] px-4 py-3 align-top text-xs font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
-                    {field.label}
-                  </td>
-                  <td className="px-4 py-3 align-top text-[color:var(--color-ink)]">
-                    {formatDetailFieldValue(record, field, t)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+                  {showJson ? (
+                    <DropdownMenuItem
+                      icon="file-json"
+                      title={t("common.actions.inspect_json", "Inspect JSON")}
+                      onClick={() => setIsJsonOpen(true)}
+                    />
+                  ) : null}
+                  {recordActions.map((action) => (
+                    <DropdownMenuItem
+                      key={action.id}
+                      icon={getActionIcon(action.intent)}
+                      title={action.title}
+                      tone={action.intent === "delete" ? "danger" : "neutral"}
+                      onClick={() => onPrepareAction?.(action, { record })}
+                    />
+                  ))}
+                </DropdownMenu>
+              </div>
+            ) : null}
+          </div>
+        </header>
+        <PropertyList variant="key-value">
+          {fields.map((field) => (
+            <PropertyItem
+              key={field.key}
+              label={field.label}
+              value={formatDetailFieldValue(record, field, t)}
+            />
+          ))}
+        </PropertyList>
+      </Panel>
 
       {showJson ? (
         <JsonViewDialog
@@ -251,19 +247,21 @@ function TagList({ value, limit }: { value: unknown; limit: number }) {
         </Badge>
       ))}
       {canToggle ? (
-        <button
+        <Button
           type="button"
           aria-label={isExpanded ? "Collapse tags" : "Show all tags"}
           title={isExpanded ? "Collapse tags" : tags.slice(limit).join(", ")}
+          size="sm"
+          variant="outline"
           className={
             isExpanded
-              ? "inline-flex h-6 w-6 items-center justify-center rounded-full border border-[color:var(--color-accent-border)] bg-[color:var(--color-accent-soft)] text-xs font-semibold text-[color:var(--color-accent-ink)] transition hover:border-[color:var(--color-border-strong)]"
-              : "inline-flex items-center rounded-[var(--radius-badge)] border border-[color:var(--color-neutral-border)] bg-[color:var(--color-neutral-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--color-neutral-ink)] transition hover:border-[color:var(--color-border-strong)] hover:bg-[color:var(--color-panel-soft)]"
+              ? "h-6 w-6 rounded-full border-[color:var(--color-accent-border)] bg-[color:var(--color-accent-soft)] p-0 text-xs text-[color:var(--color-accent-ink)]"
+              : "h-6 rounded-[var(--radius-badge)] border-[color:var(--color-neutral-border)] bg-[color:var(--color-neutral-bg)] px-2 py-0.5 text-xs text-[color:var(--color-neutral-ink)]"
           }
           onClick={() => setIsExpanded((current) => !current)}
         >
           {isExpanded ? "-" : `+${hiddenCount}`}
-        </button>
+        </Button>
       ) : null}
     </div>
   );

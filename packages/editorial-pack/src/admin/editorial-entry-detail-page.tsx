@@ -1,4 +1,19 @@
-import { Button, Dialog, Icon, Input, Select, Switch, Textarea } from "@trinacria-cms/trinacria-ui";
+import {
+  Button,
+  Dialog,
+  DropdownMenu,
+  DropdownMenuItem,
+  ErrorBanner,
+  FormSection,
+  Icon,
+  IconButton,
+  Input,
+  Panel,
+  Select,
+  Switch,
+  Textarea,
+  useToast
+} from "@trinacria-cms/trinacria-ui";
 import { useCallback, useEffect, useState } from "react";
 import {
   clearDraftRecovery,
@@ -71,6 +86,7 @@ export function EditorialEntryDetailPage({
   const [isCloseConfirmationOpen, setIsCloseConfirmationOpen] = useState(false);
   const [recoveryDraft, setRecoveryDraft] = useState<EntryDraft | null>(null);
   const [previewDevice, setPreviewDevice] = useState<PreviewDevice>("desktop");
+  const { pushToast } = useToast();
   const showEditorialError = useCallback((currentError: unknown, fallback: string) => {
     setError(toEditorialDisplayError(currentError, fallback));
   }, []);
@@ -144,19 +160,31 @@ export function EditorialEntryDetailPage({
         setEntry(response.data);
         markSaved(toEntryDraft(response.data));
         clearDraftRecovery(response.data.id);
-        if (mode === "manual") setMessage("Modifiche salvate.");
+        if (mode === "manual") {
+          const message = "Modifiche salvate.";
+          setMessage(message);
+          pushToast({ tone: "success", title: "Contenuto", description: message, duration: 4000 });
+        }
         return true;
       } catch (currentError) {
-        setError(
-          toEditorialDisplayError(currentError, "Non è stato possibile salvare il contenuto.")
+        const message = toEditorialDisplayError(
+          currentError,
+          "Non è stato possibile salvare il contenuto."
         );
+        setError(message);
+        pushToast({
+          tone: "danger",
+          title: "Salvataggio non riuscito",
+          description: message,
+          duration: 0
+        });
         return false;
       } finally {
         setIsSaving(false);
         setIsAutosaving(false);
       }
     },
-    [cms, contentType, entry, resetDraft]
+    [cms, contentType, entry, pushToast, resetDraft]
   );
 
   const autosave = useCallback(() => void save("auto"), [save]);
@@ -196,7 +224,9 @@ export function EditorialEntryDetailPage({
       resetDraft(toEntryDraft(restored));
       clearDraftRecovery(restored.id);
       revisions.setIsOpen(false);
-      setMessage(`Ripristinata la revisione ${revision.revisionNumber}.`);
+      const message = `Ripristinata la revisione ${revision.revisionNumber}.`;
+      setMessage(message);
+      pushToast({ tone: "success", title: "Contenuto", description: message, duration: 4000 });
     }
   };
 
@@ -237,21 +267,12 @@ export function EditorialEntryDetailPage({
           </Button>
         </header>
 
-        {error ? <Feedback tone="danger">{error}</Feedback> : null}
-        {message ? <Feedback tone="success">{message}</Feedback> : null}
+        {error ? <ErrorBanner className="mt-5" message={error} /> : null}
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
           <div className="grid gap-6">
-            <section className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel)] p-5">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-base font-semibold text-[color:var(--color-ink)]">
-                    Corpo dell’articolo
-                  </h2>
-                  <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
-                    Titolo e contenuto si modificano nell’editor dedicato.
-                  </p>
-                </div>
+            <FormSection
+              actions={
                 <Button
                   type="button"
                   size="sm"
@@ -262,41 +283,39 @@ export function EditorialEntryDetailPage({
                   <Icon name="pencil" />
                   Apri editor
                 </Button>
-              </div>
+              }
+            >
               <button
                 type="button"
-                className="mt-5 block w-full rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface-subtle)] p-5 text-left transition hover:border-[color:var(--color-ink-subtle)] hover:bg-[color:var(--color-interactive-hover)]"
+                className="group block w-full text-left"
                 onClick={openContentEditor}
               >
                 <span className="block text-xl font-semibold text-[color:var(--color-ink)]">
                   {draft.title || "Senza titolo"}
                 </span>
-                <span className="mt-2 line-clamp-2 block text-sm leading-6 text-[color:var(--color-ink-muted)]">
-                  {documentPlainText(draft.body) || "Il documento non contiene ancora testo."}
+                <span className="relative mt-3 block max-h-24 overflow-hidden">
+                  <span className="block text-sm leading-6 text-[color:var(--color-ink-muted)]">
+                    {documentPlainText(draft.body) || "Il documento non contiene ancora testo."}
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[color:var(--color-panel)] to-transparent"
+                  />
                 </span>
-                <span className="mt-4 block text-xs text-[color:var(--color-ink-subtle)]">
-                  {draft.body.blocks.length} {draft.body.blocks.length === 1 ? "blocco" : "blocchi"}
+                <span className="mt-3 flex items-center justify-between gap-3 text-xs text-[color:var(--color-ink-subtle)]">
+                  <span>
+                    {draft.body.blocks.length}{" "}
+                    {draft.body.blocks.length === 1 ? "blocco" : "blocchi"}
+                  </span>
+                  <span className="font-medium text-[color:var(--color-ink-muted)] group-hover:text-[color:var(--color-ink)]">
+                    Continua nell’editor →
+                  </span>
                 </span>
               </button>
-            </section>
+            </FormSection>
 
-            <section className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel)] p-5">
-              <h2 className="text-base font-semibold text-[color:var(--color-ink)]">Dati base</h2>
-              <div className="mt-4 grid gap-4">
-                <Input
-                  label="Slug"
-                  value={draft.slug}
-                  readOnly={isSaving}
-                  onChange={(event) => updateDraft({ slug: event.currentTarget.value })}
-                />
-              </div>
-            </section>
-
-            <section className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel)] p-5">
-              <h2 className="text-base font-semibold text-[color:var(--color-ink)]">
-                Campi del modello
-              </h2>
-              <div className="mt-4 grid gap-4">
+            <FormSection title="Campi del modello">
+              <div className="grid gap-4">
                 {contentType.fields.length ? (
                   contentType.fields.map((field) => (
                     <DynamicField
@@ -315,43 +334,48 @@ export function EditorialEntryDetailPage({
                   </p>
                 )}
               </div>
-            </section>
+            </FormSection>
           </div>
 
-          <aside className="h-fit rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel)] p-5">
-            <h2 className="text-base font-semibold text-[color:var(--color-ink)]">
-              Pianificazione
-            </h2>
-            <div className="mt-4 grid gap-4">
+          <aside className="h-fit lg:sticky lg:top-6">
+            <FormSection title="Dati base">
               <Input
-                label="ID revisore"
-                value={draft.reviewerUserId}
+                label="Slug"
+                value={draft.slug}
                 readOnly={isSaving}
-                onChange={(event) => updateDraft({ reviewerUserId: event.currentTarget.value })}
+                onChange={(event) => updateDraft({ slug: event.currentTarget.value })}
               />
-              <Input
-                label="Pubblica non prima di"
-                type="datetime-local"
-                value={draft.scheduledAt}
-                readOnly={isSaving}
-                onChange={(event) => updateDraft({ scheduledAt: event.currentTarget.value })}
-              />
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                onClick={() => {
-                  setError(null);
-                  void revisions.load();
-                }}
-              >
-                <Icon name="history" className="h-4 w-4" /> Cronologia
-              </Button>
-              <p className="rounded-lg bg-[color:var(--color-surface-subtle)] p-3 text-xs text-[color:var(--color-ink-muted)]">
-                Stato corrente: <strong>{entry.status}</strong>. Salva prima di eseguire una
-                transizione dal desk.
-              </p>
-            </div>
+              <div className="grid gap-4 border-t border-[color:var(--color-border)] pt-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-[color:var(--color-ink)]">
+                    Pubblicazione
+                  </h3>
+                  <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
+                    Stato corrente: <strong>{entry.status}</strong>. Salva prima di eseguire una
+                    transizione dal desk.
+                  </p>
+                </div>
+                <Input
+                  label="Pubblica non prima di"
+                  type="datetime-local"
+                  value={draft.scheduledAt}
+                  readOnly={isSaving}
+                  onChange={(event) => updateDraft({ scheduledAt: event.currentTarget.value })}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  className="w-fit"
+                  onClick={() => {
+                    setError(null);
+                    void revisions.load();
+                  }}
+                >
+                  <Icon name="history" className="h-4 w-4" /> Cronologia
+                </Button>
+              </div>
+            </FormSection>
           </aside>
         </div>
       </main>
@@ -385,23 +409,25 @@ export function EditorialEntryDetailPage({
       >
         <div className="min-h-full bg-[color:var(--color-panel)]">
           {isPreviewMode ? (
-            <div
-              className={`mx-auto min-h-full transition-[width] ${previewDeviceClass(previewDevice)}`}
-            >
-              {resolvePublicPreviewUrl(previewUrl, entry, draft) ? (
-                <iframe
-                  className="min-h-[calc(100vh-8rem)] w-full border-0 bg-white"
-                  src={resolvePublicPreviewUrl(previewUrl, entry, draft) ?? undefined}
-                  title="Anteprima sito"
-                />
-              ) : (
-                <EditorialDocumentPreview
-                  apiBaseUrl={apiBaseUrl}
-                  cms={cms}
-                  document={draft.body}
-                  title={draft.title}
-                />
-              )}
+            <div className="min-h-full bg-[color:var(--color-surface)]">
+              <div
+                className={`mx-auto min-h-[calc(100vh-8rem)] w-full bg-[color:var(--color-surface)] transition-[width] ${previewDeviceClass(previewDevice)}`}
+              >
+                {resolvePublicPreviewUrl(previewUrl, entry, draft) ? (
+                  <iframe
+                    className="min-h-[calc(100vh-8rem)] w-full border-0 bg-white"
+                    src={resolvePublicPreviewUrl(previewUrl, entry, draft) ?? undefined}
+                    title="Anteprima sito"
+                  />
+                ) : (
+                  <EditorialDocumentPreview
+                    apiBaseUrl={apiBaseUrl}
+                    cms={cms}
+                    document={draft.body}
+                    title={draft.title}
+                  />
+                )}
+              </div>
             </div>
           ) : (
             <>
@@ -427,7 +453,7 @@ export function EditorialEntryDetailPage({
               </div>
               {error ? (
                 <div className="mx-auto w-full max-w-3xl px-5 sm:px-10">
-                  <Feedback tone="danger">{error}</Feedback>
+                  <ErrorBanner className="mt-5" message={error} />
                 </div>
               ) : null}
               <EditorialBlockEditor
@@ -441,7 +467,7 @@ export function EditorialEntryDetailPage({
           )}
           {isPreviewMode && error ? (
             <div className="mx-auto w-full max-w-3xl px-5 sm:px-10">
-              <Feedback tone="danger">{error}</Feedback>
+              <ErrorBanner className="mt-5" message={error} />
             </div>
           ) : null}
         </div>
@@ -568,80 +594,97 @@ function EditorialEditorToolbar({
   previewDevice: PreviewDevice;
 }) {
   const status = isSaving
-    ? { label: "Salvataggio", tone: "bg-amber-500" }
+    ? { label: "Salvataggio" }
     : isDirty
-      ? { label: "Modifiche", tone: "bg-amber-500" }
-      : { label: message ? "Salvato" : "Bozza", tone: "bg-emerald-500" };
+      ? { label: "Modifiche" }
+      : { label: message ? "Salvato" : "Bozza" };
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="hidden items-center rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-panel)] p-0.5 shadow-[var(--shadow-sm)] sm:flex">
-        <Button
+    <div className="flex items-center gap-1.5">
+      <div className="hidden items-center gap-0.5 border-r border-[color:var(--color-border)] pr-1.5 sm:flex">
+        <IconButton
           type="button"
           size="sm"
           variant="ghost"
-          iconOnly
-          aria-label="Annulla"
+          icon="undo-2"
+          label="Annulla"
           title="Annulla (⌘Z)"
           disabled={!canUndo || isSaving}
           onClick={onUndo}
-        >
-          <Icon name="arrow-left" className="h-4 w-4" />
-        </Button>
-        <Button
+        />
+        <IconButton
           type="button"
           size="sm"
           variant="ghost"
-          iconOnly
-          aria-label="Ripristina"
+          icon="redo-2"
+          label="Ripristina"
           title="Ripristina (⌘⇧Z)"
           disabled={!canRedo || isSaving}
           onClick={onRedo}
-        >
-          <Icon name="arrow-right" className="h-4 w-4" />
-        </Button>
+        />
       </div>
 
-      <div className="flex items-center rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-panel)] p-0.5 shadow-[var(--shadow-sm)]">
+      <Button
+        type="button"
+        size="sm"
+        variant={isPreviewMode ? "secondary" : "ghost"}
+        className="gap-1.5 px-2.5"
+        onClick={onTogglePreview}
+      >
+        <Icon name={isPreviewMode ? "pencil" : "eye"} className="h-4 w-4" />
+        <span className="hidden sm:inline">{isPreviewMode ? "Modifica" : "Anteprima"}</span>
+      </Button>
+      {isPreviewMode ? (
+        <DropdownMenu
+          trigger={
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="hidden gap-1 px-2 sm:inline-flex"
+            >
+              {previewDeviceLabel(previewDevice)}
+              <Icon name="chevron-down" className="h-3.5 w-3.5" />
+            </Button>
+          }
+        >
+          <DropdownMenuItem icon="columns-3" onClick={() => onPreviewDeviceChange("desktop")}>
+            Desktop
+          </DropdownMenuItem>
+          <DropdownMenuItem icon="file-text" onClick={() => onPreviewDeviceChange("tablet")}>
+            Tablet
+          </DropdownMenuItem>
+          <DropdownMenuItem icon="file" onClick={() => onPreviewDeviceChange("mobile")}>
+            Mobile
+          </DropdownMenuItem>
+        </DropdownMenu>
+      ) : null}
+
+      <div className="flex items-center border-l border-[color:var(--color-border)] pl-1.5">
+        <span aria-live="polite" className="sr-only">
+          {status.label}
+        </span>
         <Button
           type="button"
           size="sm"
-          variant={isPreviewMode ? "secondary" : "ghost"}
-          className="gap-1.5 px-2.5"
-          onClick={onTogglePreview}
+          variant={isDirty ? "primary" : "secondary"}
+          className="min-w-[5.75rem] shadow-none"
+          isLoading={isSaving}
+          disabled={isSaving || !isDirty}
+          onClick={onSave}
         >
-          <Icon name={isPreviewMode ? "pencil" : "eye"} className="h-4 w-4" />
-          <span className="hidden sm:inline">{isPreviewMode ? "Modifica" : "Anteprima"}</span>
-        </Button>
-        {isPreviewMode ? (
-          <select
-            aria-label="Larghezza anteprima"
-            className="ml-0.5 hidden h-7 border-l border-[color:var(--color-border)] bg-transparent pl-2 pr-1 text-xs font-medium text-[color:var(--color-ink-muted)] outline-none sm:block"
-            value={previewDevice}
-            onChange={(event) => onPreviewDeviceChange(event.currentTarget.value as PreviewDevice)}
-          >
-            <option value="desktop">Desktop</option>
-            <option value="tablet">Tablet</option>
-            <option value="mobile">Mobile</option>
-          </select>
-        ) : null}
-      </div>
-
-      <div className="flex items-center gap-2 border-l border-[color:var(--color-border)] pl-2">
-        <span
-          aria-live="polite"
-          className="hidden items-center gap-1.5 text-xs font-medium text-[color:var(--color-ink-muted)] lg:flex"
-        >
-          <span className={`h-1.5 w-1.5 rounded-full ${status.tone}`} />
-          {status.label}
-        </span>
-        <Button type="button" size="sm" isLoading={isSaving} disabled={isSaving} onClick={onSave}>
-          <Icon name="save" className="h-4 w-4" />
-          <span className="hidden sm:inline">Salva</span>
+          {!isSaving ? <Icon name={isDirty ? "save" : "check"} className="h-4 w-4" /> : null}
+          <span>{isSaving ? "Salvataggio" : isDirty ? "Salva" : "Salvato"}</span>
         </Button>
       </div>
     </div>
   );
+}
+
+function previewDeviceLabel(device: PreviewDevice) {
+  if (device === "mobile") return "Mobile";
+  if (device === "tablet") return "Tablet";
+  return "Desktop";
 }
 
 function DynamicField({
@@ -728,26 +771,11 @@ function parseJsonOrText(value: string): unknown {
   }
 }
 
-function Feedback({ tone, children }: { tone: "danger" | "success"; children: string }) {
-  return (
-    <p
-      role={tone === "danger" ? "alert" : undefined}
-      className={`mt-5 rounded-lg p-3 text-sm ${
-        tone === "danger"
-          ? "border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] text-[color:var(--color-danger-ink)]"
-          : "bg-[color:var(--color-success-bg)] text-[color:var(--color-success-ink)]"
-      }`}
-    >
-      {children}
-    </p>
-  );
-}
-
 function previewDeviceClass(device: PreviewDevice) {
   if (device === "mobile")
-    return "max-w-[24rem] border-x border-[color:var(--color-border)] shadow-[var(--shadow-lg)]";
+    return "max-w-[26rem] border-x border-[color:var(--color-border)] px-3 py-4";
   if (device === "tablet")
-    return "max-w-[52rem] border-x border-[color:var(--color-border)] shadow-[var(--shadow-lg)]";
+    return "max-w-[56rem] border-x border-[color:var(--color-border)] px-5 py-5";
   return "max-w-none";
 }
 
@@ -765,7 +793,7 @@ function resolvePublicPreviewUrl(
 function LoadingEditor() {
   return (
     <main className="mx-auto w-full max-w-5xl px-5 py-6 sm:px-8">
-      <div className="h-96 animate-pulse rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-panel)]" />
+      <Panel aria-hidden="true" className="h-96 animate-pulse" />
     </main>
   );
 }

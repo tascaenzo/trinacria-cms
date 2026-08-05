@@ -1,4 +1,5 @@
 import {
+  ArrowLeft,
   ArrowRight,
   Bell,
   CalendarDays,
@@ -55,6 +56,7 @@ import {
   Plug,
   Plus,
   Puzzle,
+  Redo2,
   RefreshCw,
   Save,
   Search,
@@ -65,6 +67,7 @@ import {
   Sparkles,
   Trash2,
   TriangleAlert,
+  Undo2,
   Upload,
   UserRound,
   Users,
@@ -75,6 +78,7 @@ import { cn } from "../../../utils/class-names.js";
 import type { IconProps } from "./icon.types.js";
 
 const ICONS: Record<string, LucideIcon> = {
+  "arrow-left": ArrowLeft,
   "arrow-right": ArrowRight,
   bell: Bell,
   "calendar-days": CalendarDays,
@@ -131,6 +135,7 @@ const ICONS: Record<string, LucideIcon> = {
   plus: Plus,
   puzzle: Puzzle,
   "refresh-cw": RefreshCw,
+  "redo-2": Redo2,
   save: Save,
   search: Search,
   server: Server,
@@ -140,6 +145,7 @@ const ICONS: Record<string, LucideIcon> = {
   "shield-check": ShieldCheck,
   "trash-2": Trash2,
   "triangle-alert": TriangleAlert,
+  "undo-2": Undo2,
   upload: Upload,
   "user-round": UserRound,
   users: Users,

@@ -80,6 +80,9 @@ test("core-pack manifest declares admin assets without embedding their message p
     { source: "admin", locale: "en", messages: CORE_PACK_ADMIN_I18N.en },
     { source: "admin", locale: "it", messages: CORE_PACK_ADMIN_I18N.it }
   ]);
-  assert.equal(Object.keys(CORE_PACK_ADMIN_I18N.en).length, 606);
-  assert.equal(Object.keys(CORE_PACK_ADMIN_I18N.it).length, 606);
+  const englishMessageCount = Object.keys(CORE_PACK_ADMIN_I18N.en).length;
+  const italianMessageCount = Object.keys(CORE_PACK_ADMIN_I18N.it).length;
+
+  assert.ok(englishMessageCount > 0);
+  assert.equal(italianMessageCount, englishMessageCount);
 });

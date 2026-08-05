@@ -12,4 +12,11 @@ export interface DatePickerProps
   disabled?: boolean;
   min?: string;
   max?: string;
+  name?: string;
+  clearLabel?: string;
+  clearText?: string;
+  previousMonthLabel?: string;
+  nextMonthLabel?: string;
+  locale?: string;
+  weekdayLabels?: readonly string[];
 }

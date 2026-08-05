@@ -5,7 +5,17 @@ import { Icon } from "../icon/icon.js";
 import type { SearchFieldProps } from "./search-field.types.js";
 
 export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(function SearchField(
-  { className, clearLabel = "Clear search", disabled, onChange, onKeyDown, value, ...props },
+  {
+    "aria-label": ariaLabel,
+    className,
+    clearLabel = "Cancella ricerca",
+    disabled,
+    onChange,
+    onKeyDown,
+    searchLabel = "Cerca",
+    value,
+    ...props
+  },
   ref
 ) {
   const hasValue = typeof value === "string" ? value.length > 0 : false;
@@ -18,6 +28,7 @@ export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(functi
       <Icon name="search" className="h-4 w-4 text-[color:var(--color-ink-subtle)]" />
       <input
         ref={ref}
+        aria-label={ariaLabel ?? searchLabel}
         type="search"
         value={value}
         disabled={disabled}
@@ -30,7 +41,8 @@ export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(functi
         <button
           type="button"
           aria-label={clearLabel}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-sm text-[color:var(--color-ink-subtle)] transition hover:bg-[color:var(--color-panel-soft)] hover:text-[color:var(--color-ink)]"
+          disabled={disabled}
+          className="inline-flex h-7 w-7 items-center justify-center rounded-sm text-[color:var(--color-ink-subtle)] transition hover:bg-[color:var(--color-panel-soft)] hover:text-[color:var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-focus)] disabled:cursor-not-allowed disabled:opacity-50"
           onClick={() => {
             onChange?.({
               target: { value: "" },

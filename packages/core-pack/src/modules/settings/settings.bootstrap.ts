@@ -108,6 +108,7 @@ export const CORE_PACK_SETTING_DEFINITION_SEEDS: readonly CorePackSettingDefinit
       description:
         "Shared backoffice dashboard widget order, visibility, and grid dimensions managed by administrators.",
       defaultValue: {
+        version: 2,
         order: [],
         hidden: [],
         dimensions: {}
@@ -115,6 +116,7 @@ export const CORE_PACK_SETTING_DEFINITION_SEEDS: readonly CorePackSettingDefinit
       schema: {
         type: "object",
         properties: {
+          version: { type: "integer" },
           order: { type: "array", items: { type: "string" } },
           hidden: { type: "array", items: { type: "string" } },
           dimensions: { type: "object", additionalProperties: { type: "object" } }

@@ -2,6 +2,7 @@ import { cn } from "../../../utils/class-names.js";
 import type { PanelProps } from "./panel.types.js";
 
 export function Panel({
+  as: Component = "div",
   children,
   className,
   elevation = "none",
@@ -10,7 +11,7 @@ export function Panel({
   ...props
 }: PanelProps) {
   return (
-    <div
+    <Component
       className={cn(
         "border",
         radius === "lg" && "rounded-[var(--radius-panel)]",
@@ -25,6 +26,6 @@ export function Panel({
       {...props}
     >
       {children}
-    </div>
+    </Component>
   );
 }

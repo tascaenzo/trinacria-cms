@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { FormControlShell, FormControlSurface } from "./form-control.js";
+import { FormControlShell, FormControlSurface, formControlClassName } from "./form-control.js";
 
 const meta = {
   title: "Forms/Infrastructure/FormControl",
@@ -15,10 +15,7 @@ export const Overview: Story = {
         label="API key label"
         hint="Nome interno visibile solo agli amministratori."
       >
-        <input
-          className="h-10 w-full rounded-[var(--radius-control)] border border-[color:var(--color-border-strong)] bg-[color:var(--color-surface)] px-3 text-sm text-[color:var(--color-ink)] outline-none"
-          defaultValue="Public integration"
-        />
+        <input className={formControlClassName()} defaultValue="Public integration" />
       </FormControlShell>
 
       <FormControlShell label="Numeric field" error="Il valore non e valido.">

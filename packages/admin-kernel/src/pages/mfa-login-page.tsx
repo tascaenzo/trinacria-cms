@@ -1,4 +1,12 @@
-import { Button, Checkbox, FieldDescription, FieldGroup, Input } from "@trinacria-cms/trinacria-ui";
+import {
+  Button,
+  Checkbox,
+  ErrorBanner,
+  FieldDescription,
+  FieldGroup,
+  Input,
+  Panel
+} from "@trinacria-cms/trinacria-ui";
 import { useEffect, useState } from "react";
 import { MfaEnrollmentWizard } from "../components/mfa-enrollment-wizard.js";
 import { useI18n } from "../lib/i18n.js";
@@ -33,7 +41,7 @@ export function MfaLoginPage({
     <div className="min-h-svh bg-[color:var(--color-panel-soft)]">
       <div className="mx-auto flex min-h-svh w-full max-w-5xl items-center justify-center px-4 py-8 sm:px-6 md:px-8 md:py-12">
         <section className="w-full max-w-md md:max-w-[430px]">
-          <div className="space-y-6 md:rounded-[var(--radius-overlay)] md:border md:border-[color:var(--color-border)] md:bg-[color:var(--color-surface)] md:p-8 md:shadow-[var(--shadow-overlay)]">
+          <Panel className="space-y-6 p-6 shadow-[var(--shadow-overlay)] sm:p-8" radius="xl">
             <div className="space-y-2">
               <p className="text-xs font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
                 {t("auth.mfa.recovery.progress", "Step 4 of 4")}
@@ -85,15 +93,7 @@ export function MfaLoginPage({
                     aria-describedby={error ? "mfa-form-error" : undefined}
                     aria-invalid={Boolean(error)}
                   />
-                  {error ? (
-                    <FieldDescription
-                      id="mfa-form-error"
-                      role="alert"
-                      className="rounded-[var(--radius-control)] border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] px-4 py-3 text-[color:var(--color-danger-ink)]"
-                    >
-                      {error}
-                    </FieldDescription>
-                  ) : null}
+                  {error ? <ErrorBanner id="mfa-form-error" message={error} /> : null}
                   <Button
                     type="submit"
                     disabled={isSubmitting || (isEnrollment && !setup)}
@@ -111,7 +111,7 @@ export function MfaLoginPage({
                 </FieldGroup>
               </form>
             ) : null}
-          </div>
+          </Panel>
         </section>
       </div>
     </div>
@@ -131,7 +131,7 @@ export function MfaRecoveryCodesPage({
     <div className="min-h-svh bg-[color:var(--color-panel-soft)]">
       <div className="mx-auto flex min-h-svh w-full max-w-5xl items-center justify-center px-4 py-8 sm:px-6 md:px-8 md:py-12">
         <section className="w-full max-w-md md:max-w-[430px]">
-          <div className="space-y-6 md:rounded-[var(--radius-overlay)] md:border md:border-[color:var(--color-border)] md:bg-[color:var(--color-surface)] md:p-8 md:shadow-[var(--shadow-overlay)]">
+          <Panel className="space-y-6 p-6 shadow-[var(--shadow-overlay)] sm:p-8" radius="xl">
             <div className="space-y-2">
               <h2 className="text-3xl font-semibold text-[color:var(--color-ink-soft)]">
                 {t("auth.mfa.recovery.title", "Save your recovery codes")}
@@ -143,11 +143,14 @@ export function MfaRecoveryCodesPage({
                 )}
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-2 rounded-[var(--radius-control)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-muted)] p-4 font-mono text-sm text-[color:var(--color-ink)]">
+            <Panel
+              className="grid grid-cols-2 gap-2 p-4 font-mono text-sm text-[color:var(--color-ink)]"
+              tone="soft"
+            >
               {recoveryCodes.map((code) => (
                 <code key={code}>{code}</code>
               ))}
-            </div>
+            </Panel>
             <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
@@ -184,7 +187,7 @@ export function MfaRecoveryCodesPage({
             >
               {t("auth.mfa.recovery.continue", "I saved my recovery codes")}
             </Button>
-          </div>
+          </Panel>
         </section>
       </div>
     </div>

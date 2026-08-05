@@ -1,4 +1,12 @@
-import { Button, Icon, Input, Select, Textarea } from "@trinacria-cms/trinacria-ui";
+import {
+  Button,
+  FormSection,
+  Icon,
+  Input,
+  Select,
+  SettingsSectionLayout,
+  Textarea
+} from "@trinacria-cms/trinacria-ui";
 import { useEffect, useMemo, useState } from "react";
 import { EmptyState, ErrorBanner } from "../../components/resource-feedback.js";
 import type { TranslateFn } from "../../lib/i18n.js";
@@ -42,8 +50,27 @@ export function SettingsWorkspaceSidebar({
   }, [selectedGroupId]);
 
   return (
-    <aside className="min-h-0 overflow-auto border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] lg:border-b-0 lg:border-r">
-      <div className="px-6 py-4">
+    <aside className="min-h-0 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] lg:overflow-auto lg:border-b-0 lg:border-r">
+      <div className="p-4 lg:hidden">
+        <Select
+          label={t("settings.navigation.section", "Sezione")}
+          value={selectedSection?.id ?? ""}
+          disabled={sections.length === 0}
+          onChange={(event) => onSelectSection(event.currentTarget.value)}
+        >
+          {groups.map((group) => (
+            <optgroup key={group.id} label={group.label}>
+              {group.sections.map((section) => (
+                <option key={`${section.pluginId}:${section.id}`} value={section.id}>
+                  {getCompactSectionLabel(section, t)}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </Select>
+      </div>
+
+      <div className="hidden px-6 py-4 lg:block">
         <p className="text-xs font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
           {t("official.route.settings.title", "Impostazioni")}
         </p>
@@ -52,7 +79,7 @@ export function SettingsWorkspaceSidebar({
         </p>
       </div>
 
-      <div className="px-6 py-4">
+      <div className="hidden px-6 py-4 lg:block">
         {sections.length === 0 ? (
           <EmptyState text={t("settings.overview.not_configured")} />
         ) : (
@@ -62,8 +89,9 @@ export function SettingsWorkspaceSidebar({
               const groupContentId = `settings-group-${group.id}`;
               return (
                 <section key={group.id} className="grid gap-1">
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
                     aria-expanded={!isCollapsed}
                     aria-controls={groupContentId}
                     onClick={() =>
@@ -72,7 +100,7 @@ export function SettingsWorkspaceSidebar({
                         [group.id]: !isCollapsed
                       }))
                     }
-                    className="flex min-h-10 w-full items-center gap-2 rounded-lg px-2 text-left text-xs font-semibold uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)] transition hover:bg-[color:var(--color-interactive-hover)] hover:text-[color:var(--color-ink-muted)]"
+                    className="min-h-10 w-full justify-start gap-2 border-transparent px-2 text-left text-xs font-semibold uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)] shadow-none"
                   >
                     <Icon name={group.icon} className="h-4 w-4" />
                     <span className="min-w-0 flex-1 truncate">{group.label}</span>
@@ -80,7 +108,7 @@ export function SettingsWorkspaceSidebar({
                       name={isCollapsed ? "chevron-right" : "chevron-down"}
                       className="h-3.5 w-3.5"
                     />
-                  </button>
+                  </Button>
                   <div id={groupContentId} className={isCollapsed ? "hidden" : "grid gap-1 pl-2"}>
                     {group.sections.map((section) => (
                       <SettingsSectionNavigationItem
@@ -115,14 +143,15 @@ function SettingsSectionNavigationItem({
 }) {
   const label = getCompactSectionLabel(section, t);
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
       onClick={() => onSelect(section.id)}
       title={section.title}
       aria-label={section.title}
-      className={`flex h-10 w-full items-center gap-3 rounded-md px-3 text-left transition ${
+      className={`h-10 w-full justify-start gap-3 border-transparent px-3 text-left shadow-none ${
         isSelected
-          ? "bg-[color:var(--color-interactive-selected)] text-[color:var(--color-interactive-selected-ink)]"
+          ? "bg-[color:var(--color-panel-strong)] text-[color:var(--color-ink)]"
           : "text-[color:var(--color-ink-muted)] hover:bg-[color:var(--color-interactive-hover)] hover:text-[color:var(--color-ink)]"
       }`}
     >
@@ -130,7 +159,7 @@ function SettingsSectionNavigationItem({
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[13px] font-medium">{label}</span>
       </span>
-    </button>
+    </Button>
   );
 }
 
@@ -260,12 +289,14 @@ function getSettingsSectionGroup(
 interface SettingsSectionFormProps {
   draftValues: SettingDraftValues;
   editableRecords: readonly SettingDefinitionRecord[];
+  isDirty: boolean;
   isLoading: boolean;
   isSaving: boolean;
   onDraftValueChange: (recordKey: string, value: string) => void;
+  onCustomDirtyChange: (isDirty: boolean) => void;
+  onReset: () => void;
   onSave: () => void;
   saveError: string | null;
-  saveMessage: string | null;
   section: RenderableAdminSettingsSection | null;
   sectionContext?: Omit<AdminSettingsSectionRenderContext, "section">;
   t: TranslateFn;
@@ -275,12 +306,14 @@ interface SettingsSectionFormProps {
 export function SettingsSectionForm({
   draftValues,
   editableRecords,
+  isDirty,
   isLoading,
   isSaving,
   onDraftValueChange,
+  onCustomDirtyChange,
+  onReset,
   onSave,
   saveError,
-  saveMessage,
   section,
   sectionContext,
   t,
@@ -288,17 +321,20 @@ export function SettingsSectionForm({
 }: SettingsSectionFormProps) {
   if (!section) {
     return (
-      <div className="flex min-h-full items-center justify-center rounded-lg border border-dashed border-[color:var(--color-border-strong)] bg-[color:var(--color-surface)] p-8">
-        <EmptyState text={t("settings.overview.not_configured")} />
-      </div>
+      <EmptyState
+        className="min-h-full place-items-center p-8 text-center"
+        text={t("settings.overview.not_configured")}
+      />
     );
   }
 
   if (section.render && sectionContext) {
-    return <>{section.render({ ...sectionContext, section })}</>;
+    return (
+      <>{section.render({ ...sectionContext, section, onDirtyChange: onCustomDirtyChange })}</>
+    );
   }
 
-  const groupedRecords = groupSettingRecordsForForm(editableRecords);
+  const groupedRecords = groupSettingRecordsForForm(editableRecords, t);
   const editableRecordsCount = editableRecords.filter(
     (record) => record.mutable && record.status === "active"
   ).length;
@@ -311,72 +347,64 @@ export function SettingsSectionForm({
         onSave();
       }}
     >
-      <div className="min-h-0 flex-1 overflow-auto px-6 py-4 sm:px-8 sm:py-6">
-        <div className="mx-auto grid max-w-4xl gap-6">
-          <div className="grid gap-1">
-            <h3 className="text-xl font-semibold text-[color:var(--color-ink)]">{section.title}</h3>
-            {section.summary ? (
-              <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink-muted)]">
-                {section.summary}
-              </p>
-            ) : null}
-          </div>
+      <SettingsSectionLayout
+        title={section.title}
+        description={section.summary}
+        feedback={saveError ? <ErrorBanner message={saveError} /> : undefined}
+        actions={
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={isSaving || isLoading || !isDirty}
+              onClick={onReset}
+            >
+              {t("common.actions.reset", "Ripristina")}
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSaving || isLoading || !isDirty || editableRecordsCount === 0}
+            >
+              {isSaving
+                ? t("common.actions.saving", "Salvataggio...")
+                : t("common.actions.save", "Salva")}
+            </Button>
+          </>
+        }
+      >
+        {isLoading ? <EmptyState text={t("settings.empty.loading_value")} /> : null}
 
-          {isLoading ? <EmptyState text={t("settings.empty.loading_value")} /> : null}
-          {saveError ? <ErrorBanner message={saveError} /> : null}
-          {saveMessage ? (
-            <p className="text-sm font-medium text-[color:var(--color-success-ink)]">
-              {saveMessage}
-            </p>
-          ) : null}
+        {!isLoading && groupedRecords.length === 0 ? (
+          <EmptyState text={t("settings.module.no_settings")} />
+        ) : null}
 
-          {!isLoading && groupedRecords.length === 0 ? (
-            <EmptyState text={t("settings.module.no_settings")} />
-          ) : null}
-
-          {!isLoading
-            ? groupedRecords.map((group) => (
-                <section key={group.title} className="grid gap-4">
-                  <div>
-                    <h4 className="text-sm font-semibold text-[color:var(--color-ink)]">
-                      {group.title}
-                    </h4>
-                  </div>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {group.records.map((record) => (
-                      <div
-                        key={record.id}
-                        className={getSettingValueKind(record) === "json" ? "md:col-span-2" : ""}
-                      >
-                        <SettingValueField
-                          draftValue={
-                            draftValues[record.key] ??
-                            toEditableSettingInput(record.defaultValue ?? null)
-                          }
-                          error={valueErrors[record.key]}
-                          isSaving={isSaving}
-                          onChange={(value) => onDraftValueChange(record.key, value)}
-                          record={record}
-                          t={t}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              ))
-            : null}
-        </div>
-      </div>
-
-      <div className="shrink-0 border-t border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 pb-2 pt-3 sm:px-5">
-        <div className="mx-auto flex max-w-4xl justify-end">
-          <Button type="submit" disabled={isSaving || isLoading || editableRecordsCount === 0}>
-            {isSaving
-              ? t("common.actions.saving", "Salvataggio...")
-              : t("common.actions.save", "Salva")}
-          </Button>
-        </div>
-      </div>
+        {!isLoading
+          ? groupedRecords.map((group) => (
+              <FormSection key={group.title} headingLevel={3} variant="plain" title={group.title}>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {group.records.map((record) => (
+                    <div
+                      key={record.id}
+                      className={getSettingValueKind(record) === "json" ? "md:col-span-2" : ""}
+                    >
+                      <SettingValueField
+                        draftValue={
+                          draftValues[record.key] ??
+                          toEditableSettingInput(record.defaultValue ?? null)
+                        }
+                        error={valueErrors[record.key]}
+                        isSaving={isSaving}
+                        onChange={(value) => onDraftValueChange(record.key, value)}
+                        record={record}
+                        t={t}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </FormSection>
+            ))
+          : null}
+      </SettingsSectionLayout>
     </form>
   );
 }
@@ -400,7 +428,7 @@ function SettingValueField({
 }: SettingValueFieldProps) {
   const enumOptions = getSettingEnumOptions(record.schema);
   const valueKind = getSettingValueKind(record);
-  const isDisabled = !record.mutable || isSaving;
+  const isReadOnly = !record.mutable;
   const label = formatSettingFormLabel(record);
 
   if (record.secret) {
@@ -411,9 +439,13 @@ function SettingValueField({
         error={error}
         type="password"
         value={draftValue}
-        placeholder={t("settings.form.secret_placeholder", "Leave empty to keep current secret")}
+        placeholder={t(
+          "settings.form.secret_placeholder",
+          "Lascia vuoto per mantenere il valore attuale"
+        )}
         autoComplete="new-password"
-        readOnly={isDisabled}
+        disabled={isSaving}
+        readOnly={isReadOnly}
         onChange={(event) => onChange(event.currentTarget.value)}
       />
     );
@@ -426,12 +458,12 @@ function SettingValueField({
         hint={record.description}
         error={error}
         value={draftValue}
-        disabled={isDisabled}
+        disabled={isReadOnly || isSaving}
         onChange={(event) => onChange(event.currentTarget.value)}
       >
         {enumOptions.map((option) => (
           <option key={option} value={option}>
-            {option}
+            {formatSettingOptionLabel(option, t)}
           </option>
         ))}
       </Select>
@@ -445,10 +477,10 @@ function SettingValueField({
         hint={record.description}
         error={error}
         value={draftValue === "true" ? "true" : "false"}
-        disabled={isDisabled}
+        disabled={isReadOnly || isSaving}
         onChange={(event) => onChange(event.currentTarget.value)}
       >
-        <option value="true">{t("common.boolean.true", "Si")}</option>
+        <option value="true">{t("common.boolean.true", "Sì")}</option>
         <option value="false">{t("common.boolean.false", "No")}</option>
       </Select>
     );
@@ -461,7 +493,8 @@ function SettingValueField({
         hint={record.description}
         error={error}
         value={draftValue}
-        readOnly={isDisabled}
+        disabled={isSaving}
+        readOnly={isReadOnly}
         onChange={(event) => onChange(event.target.value)}
       />
     );
@@ -474,10 +507,28 @@ function SettingValueField({
       error={error}
       type={valueKind === "number" ? "number" : "text"}
       value={draftValue}
-      readOnly={isDisabled}
+      disabled={isSaving}
+      readOnly={isReadOnly}
       onChange={(event) => onChange(event.currentTarget.value)}
     />
   );
+}
+
+function formatSettingOptionLabel(option: string, t: TranslateFn) {
+  const fallbacks: Record<string, string> = {
+    active: "Attivo",
+    disabled: "Disabilitato",
+    enabled: "Abilitato",
+    invite_only: "Solo su invito",
+    optional: "Facoltativo",
+    private: "Privato",
+    public: "Pubblico",
+    required: "Obbligatorio"
+  };
+  const fallback =
+    fallbacks[option] ??
+    option.replace(/[-_]/g, " ").replace(/^./, (character) => character.toUpperCase());
+  return t(`settings.option.${option}`, fallback);
 }
 
 function getSectionIcon(sectionId: string) {

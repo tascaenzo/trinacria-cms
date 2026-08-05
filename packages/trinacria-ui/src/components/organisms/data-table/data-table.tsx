@@ -24,7 +24,8 @@ export function DataTable({
       {mobile}
       <div
         className={cn(
-          "hidden overflow-x-auto rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] shadow-[var(--shadow-surface)] md:block",
+          "overflow-x-auto rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] shadow-[var(--shadow-surface)]",
+          Boolean(mobile) && "hidden md:block",
           className
         )}
         {...props}
@@ -87,6 +88,7 @@ export function DataTableHeadCell({ children, className, ...props }: DataTableHe
         "px-4 py-3 text-xs font-medium leading-5 text-[color:var(--color-ink-subtle)]",
         className
       )}
+      scope={props.scope ?? "col"}
       {...props}
     >
       {children}

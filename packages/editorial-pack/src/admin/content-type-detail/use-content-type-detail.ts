@@ -1,3 +1,4 @@
+import { useToast } from "@trinacria-cms/trinacria-ui";
 import { useCallback, useEffect, useState } from "react";
 import {
   hasDuplicateFieldKey,
@@ -33,10 +34,10 @@ const EMPTY_DRAFT: ModelDraft = {
 };
 
 export function useContentTypeDetail(cms: CmsClient, modelId: string | null) {
+  const { pushToast } = useToast();
   const [model, setModel] = useState<EditorialContentType | null>(null);
   const [draft, setDraft] = useState<ModelDraft>(EMPTY_DRAFT);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -95,7 +96,6 @@ export function useContentTypeDetail(cms: CmsClient, modelId: string | null) {
     try {
       setIsSaving(true);
       setError(null);
-      setMessage(null);
       const response = await cms.request<{ data: EditorialContentType }>({
         method: "PATCH",
         path: `/v1/editorial/content-types/${model.id}`,
@@ -111,11 +111,26 @@ export function useContentTypeDetail(cms: CmsClient, modelId: string | null) {
       });
       setModel(response.data);
       setDraft(toModelDraft(response.data));
-      setMessage("Modello salvato.");
+      pushToast({
+        tone: "success",
+        title: "Modello di contenuto",
+        description: "Modello salvato.",
+        duration: 4000
+      });
       window.dispatchEvent(new Event("trinacria-cms:editorial-navigation-updated"));
       return true;
     } catch (currentError) {
-      setError(toEditorialDisplayError(currentError, "Non è stato possibile salvare il modello."));
+      const message = toEditorialDisplayError(
+        currentError,
+        "Non è stato possibile salvare il modello."
+      );
+      setError(message);
+      pushToast({
+        tone: "danger",
+        title: "Salvataggio non riuscito",
+        description: message,
+        duration: 0
+      });
       return false;
     } finally {
       setIsSaving(false);
@@ -126,7 +141,6 @@ export function useContentTypeDetail(cms: CmsClient, modelId: string | null) {
     model,
     ...draft,
     error,
-    message,
     isLoading,
     isSaving,
     setName: (name: string) => updateDraft({ name }),

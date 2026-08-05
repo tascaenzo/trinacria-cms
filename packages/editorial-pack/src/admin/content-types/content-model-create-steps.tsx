@@ -1,4 +1,12 @@
-import { Button, Icon, Input, Select, Textarea } from "@trinacria-cms/trinacria-ui";
+import {
+  Button,
+  EmptyState,
+  ErrorBanner,
+  Icon,
+  Input,
+  Select,
+  Textarea
+} from "@trinacria-cms/trinacria-ui";
 import type { ReactNode } from "react";
 import { ContentTypeDetailSection } from "../content-type-detail/content-type-detail-section.js";
 import { ContentTypeFieldList } from "../content-type-detail/content-type-field-list.js";
@@ -92,14 +100,7 @@ export function FieldsStep({
       description="Aggiungi i dati che la redazione dovrà compilare per questo modello."
       headerAddon={progress}
     >
-      {error ? (
-        <p
-          role="alert"
-          className="mb-4 rounded-lg border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] p-3 text-sm text-[color:var(--color-danger-ink)]"
-        >
-          {error}
-        </p>
-      ) : null}
+      {error ? <ErrorBanner className="mb-4" message={error} /> : null}
       {fields.length ? (
         <>
           <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
@@ -121,23 +122,17 @@ export function FieldsStep({
           />
         </>
       ) : (
-        <div className="grid min-h-56 place-items-center rounded-xl border border-dashed border-[color:var(--color-border-strong)] bg-[color:var(--color-surface-subtle)] p-6 text-center">
-          <div>
-            <span className="mx-auto grid h-11 w-11 place-items-center rounded-xl bg-[color:var(--color-panel)] text-[color:var(--color-accent-ink)] shadow-[var(--shadow-sm)]">
-              <Icon name="file-plus-2" className="h-5 w-5" />
-            </span>
-            <h3 className="mt-4 text-sm font-semibold text-[color:var(--color-ink)]">
-              Inizia dai campi del contenuto
-            </h3>
-            <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
-              Aggiungi il primo dato che la redazione dovrà compilare.
-            </p>
+        <EmptyState
+          className="min-h-56 place-items-center text-center"
+          title="Inizia dai campi del contenuto"
+          text="Aggiungi il primo dato che la redazione dovrà compilare."
+          action={
             <Button className="mt-5" type="button" size="sm" disabled={disabled} onClick={onNew}>
               <Icon name="plus" />
               Aggiungi il primo campo
             </Button>
-          </div>
-        </div>
+          }
+        />
       )}
     </ContentTypeDetailSection>
   );

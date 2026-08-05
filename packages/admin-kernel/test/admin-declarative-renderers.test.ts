@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { ToastProvider } from "@trinacria-cms/trinacria-ui";
 import { createElement, Fragment } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
@@ -63,7 +64,11 @@ const baseContext: AdminPageRenderContext = {
 
 test("renderDeclarativeAdminPage renders a resource table from manifest metadata", () => {
   const markup = renderToStaticMarkup(
-    createElement(Fragment, null, renderDeclarativeAdminPage(baseContext))
+    createElement(
+      ToastProvider,
+      null,
+      createElement(Fragment, null, renderDeclarativeAdminPage(baseContext))
+    )
   );
 
   assert.doesNotMatch(markup, /Products schema/);
@@ -122,32 +127,37 @@ test("DeclarativeResourceTable renders array fields as compact tags", () => {
 
 test("DeclarativeSettingsSectionPanel renders readonly fields inferred from JSON schema", () => {
   const markup = renderToStaticMarkup(
-    createElement(DeclarativeSettingsSectionPanel, {
-      section: {
-        id: "seo",
-        pluginId: "seo-pack",
-        mode: "declarative",
-        kind: "form",
-        title: "SEO",
-        summary: "Search settings",
-        data: {
-          endpoint: { method: "GET", path: "/admin/seo/settings" },
-          schema: {
-            type: "object",
-            properties: {
-              titleTemplate: { type: "string", title: "Title template" },
-              noindex: { type: "boolean", title: "No index" }
+    createElement(
+      ToastProvider,
+      null,
+      createElement(DeclarativeSettingsSectionPanel, {
+        section: {
+          id: "seo",
+          pluginId: "seo-pack",
+          mode: "declarative",
+          kind: "form",
+          title: "SEO",
+          summary: "Search settings",
+          data: {
+            endpoint: { method: "GET", path: "/admin/seo/settings" },
+            schema: {
+              type: "object",
+              properties: {
+                titleTemplate: { type: "string", title: "Title template" },
+                noindex: { type: "boolean", title: "No index" }
+              }
             }
           }
         }
-      }
-    })
+      })
+    )
   );
 
   assert.match(markup, /SEO/);
   assert.match(markup, /Title template/);
   assert.match(markup, /No index/);
   assert.match(markup, /GET \/admin\/seo\/settings/);
+  assert.match(markup, /color-panel-soft/);
 });
 
 test("DeclarativeDashboardWidgetPanel renders metric widgets from data binding", () => {

@@ -96,9 +96,9 @@ export const EDITORIAL_PACK_ADMIN_MANIFEST: PluginManifestAdmin = defineAdmin({
       componentRef: "editorial-pack:work-queue",
       requiredPermission: EDITORIAL_PACK_PERMISSION_KEYS.ENTRIES_READ,
       layout: {
-        defaultColumnSpan: 2,
-        defaultRowSpan: 1,
-        minColumnSpan: 1,
+        defaultColumnSpan: 4,
+        defaultRowSpan: 2,
+        minColumnSpan: 2,
         maxColumnSpan: 4,
         minRowSpan: 1,
         maxRowSpan: 2

@@ -9,6 +9,7 @@ export interface DropdownMenuProps extends HTMLAttributes<HTMLDivElement> {
   open?: boolean;
   defaultOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
+  menuLabel?: string;
 }
 
 export interface DropdownMenuItemProps

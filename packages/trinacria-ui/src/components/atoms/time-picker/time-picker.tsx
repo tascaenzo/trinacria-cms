@@ -48,15 +48,22 @@ export function TimePicker({
   "aria-invalid": ariaInvalid,
   "aria-label": ariaLabel,
   className,
+  clearLabel = "Azzera orario",
+  clearText = "Azzera",
+  confirmLabel = "Conferma",
   defaultValue,
   disabled = false,
   error,
   hint,
+  hourLabel = "Ore",
   id,
   label,
+  minuteLabel = "Minuti",
   minuteStep = 5,
+  name,
   onValueChange,
   placeholder = "Seleziona un orario",
+  popupLabel = "Selettore orario",
   value,
   ...props
 }: TimePickerProps) {
@@ -67,7 +74,7 @@ export function TimePicker({
   const [internalValue, setInternalValue] = useState(defaultValue ?? "");
   const currentValue = value ?? internalValue;
   const parsed = parseTime(currentValue) ?? { hour: 9, minute: 0 };
-  const ids = useFormControlIds(id);
+  const ids = useFormControlIds(id, name);
   const popupId = `${ids.controlId}-popup`;
   const popupTitleId = `${ids.controlId}-popup-title`;
   const [hour, setHour] = useState(parsed.hour);
@@ -158,6 +165,7 @@ export function TimePicker({
       labelId={ids.labelId}
     >
       <div ref={containerRef} {...props}>
+        {name ? <input type="hidden" name={name} value={currentValue} disabled={disabled} /> : null}
         <div className="relative">
           <button
             ref={triggerRef}
@@ -196,18 +204,18 @@ export function TimePicker({
                   id={popupTitleId}
                   className="text-sm font-semibold text-[color:var(--color-ink)]"
                 >
-                  Selettore orario
+                  {popupLabel}
                 </div>
                 <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3">
                   <label className="grid gap-2">
                     <span className="text-xs font-medium uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)]">
-                      Ore
+                      {hourLabel}
                     </span>
                     <select
                       ref={hourSelectRef}
                       value={pad(hour)}
                       onChange={(event) => setHour(Number(event.target.value))}
-                      className="h-10 rounded-sm border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 text-sm text-[color:var(--color-ink)]"
+                      className={formControlClassName()}
                     >
                       {Array.from({ length: 24 }, (_, item) => (
                         <option key={item} value={pad(item)}>
@@ -221,12 +229,12 @@ export function TimePicker({
                   </span>
                   <label className="grid gap-2">
                     <span className="text-xs font-medium uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)]">
-                      Minuti
+                      {minuteLabel}
                     </span>
                     <select
                       value={pad(minute)}
                       onChange={(event) => setMinute(Number(event.target.value))}
-                      className="h-10 rounded-sm border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 text-sm text-[color:var(--color-ink)]"
+                      className={formControlClassName()}
                     >
                       {minuteOptions.map((item) => (
                         <option key={item} value={pad(item)}>
@@ -246,10 +254,10 @@ export function TimePicker({
                       onValueChange?.("");
                       closeAndRestoreFocus();
                     }}
-                    className="text-xs font-medium uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)]"
-                    aria-label="Reset time"
+                    className="rounded-sm px-1 text-xs font-medium uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-focus)]"
+                    aria-label={clearLabel}
                   >
-                    reset
+                    {clearText}
                   </button>
                   <Button
                     size="sm"
@@ -258,7 +266,7 @@ export function TimePicker({
                       closeAndRestoreFocus();
                     }}
                   >
-                    Conferma
+                    {confirmLabel}
                   </Button>
                 </div>
               </div>

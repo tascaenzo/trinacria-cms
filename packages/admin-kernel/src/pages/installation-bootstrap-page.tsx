@@ -1,4 +1,4 @@
-import { Button, Input, Select } from "@trinacria-cms/trinacria-ui";
+import { Button, ErrorBanner, Input, Select } from "@trinacria-cms/trinacria-ui";
 import { type FormEvent, type MouseEvent, startTransition, useRef, useState } from "react";
 import { AuthScreenLayout } from "../components/auth-screen-layout.js";
 import { useI18n } from "../lib/i18n.js";
@@ -335,15 +335,7 @@ export function InstallationBootstrapPage({
         {currentStep === "admin" && renderAdminStep()}
         {currentStep === "review" && renderReviewStep()}
 
-        {localError || state.error ? (
-          <p
-            role="alert"
-            aria-live="polite"
-            className="rounded-[var(--radius-control)] border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] px-4 py-3 text-sm text-[color:var(--color-danger-ink)]"
-          >
-            {localError ?? state.error}
-          </p>
-        ) : null}
+        {localError || state.error ? <ErrorBanner message={localError ?? state.error} /> : null}
 
         <div className="flex items-center justify-between gap-3">
           {!isFirstStep ? (

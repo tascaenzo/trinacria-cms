@@ -7,16 +7,20 @@ import {
 } from "../form-control/form-control.js";
 import type { NumberInputProps } from "./number-input.types.js";
 
-export function NumberInput({
-  className,
-  error,
-  hint,
-  label,
-  id,
-  prefix,
-  suffix,
-  ...props
-}: NumberInputProps) {
+export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(function NumberInput(
+  {
+    className,
+    containerClassName,
+    error,
+    hint,
+    label,
+    id,
+    prefix,
+    suffix,
+    ...props
+  }: NumberInputProps,
+  ref
+) {
   const ids = useFormControlIds(id, props.name);
   const aria = buildFormControlAria({
     describedBy: props["aria-describedby"],
@@ -28,6 +32,7 @@ export function NumberInput({
 
   return (
     <FormControlShell
+      className={containerClassName}
       controlId={ids.controlId}
       error={error}
       errorId={ids.errorId}
@@ -48,6 +53,7 @@ export function NumberInput({
           </span>
         ) : null}
         <input
+          ref={ref}
           {...props}
           id={ids.controlId}
           type="number"
@@ -68,4 +74,6 @@ export function NumberInput({
       </FormControlSurface>
     </FormControlShell>
   );
-}
+});
+
+import { forwardRef } from "react";

@@ -14,6 +14,8 @@ test("Feedback components render status copy", () => {
   );
 
   assert.match(banner, /Problem/);
+  assert.match(banner, /role="alert"/);
+  assert.match(banner, /aria-live="assertive"/);
   assert.match(banner, /color-danger-bg/);
   assert.match(error, /Broken/);
   assert.match(empty, /No data/);

@@ -1,4 +1,4 @@
-import { Badge } from "@trinacria-cms/trinacria-ui";
+import { Badge, Button } from "@trinacria-cms/trinacria-ui";
 import { useState } from "react";
 import type { AdminResourceDefinition } from "../../contracts.js";
 import { formatDateTime } from "../../lib/formatting.js";
@@ -103,14 +103,16 @@ function TagList({ value, limit }: { value: unknown; limit: number }) {
         </Badge>
       ))}
       {canToggle ? (
-        <button
+        <Button
           type="button"
           aria-label={isExpanded ? "Collapse tags" : "Show all tags"}
           title={isExpanded ? "Collapse tags" : tags.slice(limit).join(", ")}
+          size="sm"
+          variant="outline"
           className={
             isExpanded
-              ? "inline-flex h-6 w-6 items-center justify-center rounded-full border border-[color:var(--color-accent-border)] bg-[color:var(--color-accent-soft)] text-xs font-semibold text-[color:var(--color-accent-ink)] transition hover:border-[color:var(--color-border-strong)]"
-              : "inline-flex items-center rounded-[var(--radius-badge)] border border-[color:var(--color-neutral-border)] bg-[color:var(--color-neutral-bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--color-neutral-ink)] transition hover:border-[color:var(--color-border-strong)] hover:bg-[color:var(--color-panel-soft)]"
+              ? "h-6 w-6 rounded-full border-[color:var(--color-accent-border)] bg-[color:var(--color-accent-soft)] p-0 text-xs text-[color:var(--color-accent-ink)]"
+              : "h-6 rounded-[var(--radius-badge)] border-[color:var(--color-neutral-border)] bg-[color:var(--color-neutral-bg)] px-2 py-0.5 text-xs text-[color:var(--color-neutral-ink)]"
           }
           onClick={(event) => {
             event.stopPropagation();
@@ -119,7 +121,7 @@ function TagList({ value, limit }: { value: unknown; limit: number }) {
           onKeyDown={(event) => event.stopPropagation()}
         >
           {isExpanded ? "-" : `+${hiddenCount}`}
-        </button>
+        </Button>
       ) : null}
     </div>
   );

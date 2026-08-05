@@ -1,4 +1,4 @@
-import { Card, InfoCard, StatCard } from "@trinacria-cms/trinacria-ui";
+import { Card, CardContent, CardHeader, CardHeading, StatCard } from "@trinacria-cms/trinacria-ui";
 import type { RenderableAdminDashboardWidget } from "../../runtime/admin-route-runtime.js";
 import { useDeclarativeData } from "../hooks/use-declarative-data.js";
 import { formatCellValue, formatEndpoint } from "../utils/formatting.js";
@@ -31,25 +31,37 @@ export function DeclarativeDashboardWidgetPanel({
 
   if (widget.kind === "list" || widget.kind === "chart") {
     return (
-      <Card eyebrow={widget.pluginId} title={widget.title}>
-        <div className="grid gap-4">
-          <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
-            {widget.summary ?? "Declarative dashboard widget generated from plugin metadata."}
-          </p>
+      <Card className="h-full" padding="none" elevation="none">
+        <CardHeader>
+          <CardHeading
+            icon={widget.kind === "list" ? "list" : "layout-dashboard"}
+            title={widget.title}
+            description={widget.summary ?? "Widget generato dai metadati del plugin dichiarativo."}
+          />
+        </CardHeader>
+        <CardContent>
           {widget.data ? (
             <DeclarativeDataBinding binding={widget.data} dataState={dataState} />
-          ) : null}
-        </div>
+          ) : (
+            <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
+              Nessuna sorgente dati configurata.
+            </p>
+          )}
+        </CardContent>
       </Card>
     );
   }
 
   return (
-    <InfoCard
-      eyebrow={widget.pluginId}
-      title={widget.title}
-      description={widget.summary ?? endpoint}
-      className="bg-[color:var(--color-surface)]"
-    />
+    <Card className="h-full" padding="none" elevation="none">
+      <CardHeader>
+        <CardHeading icon="puzzle" title={widget.title} description={widget.summary} />
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
+          {endpoint ?? "Nessun dettaglio aggiuntivo disponibile."}
+        </p>
+      </CardContent>
+    </Card>
   );
 }

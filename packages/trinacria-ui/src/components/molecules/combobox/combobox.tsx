@@ -24,26 +24,32 @@ function optionDomId(controlId: string, option: ComboboxOption, index: number) {
 }
 
 export function Combobox({
+  "aria-describedby": ariaDescribedBy,
+  "aria-label": ariaLabel,
+  "aria-labelledby": ariaLabelledBy,
   allowClear = false,
   className,
+  clearLabel = "Cancella selezione",
+  closeOptionsLabel = "Chiudi opzioni",
   defaultValue,
   disabled = false,
-  emptyText = "No results found.",
+  emptyText = "Nessun risultato.",
   error,
   hint,
   id,
   label,
   name,
   onValueChange,
+  openOptionsLabel = "Apri opzioni",
   options,
-  placeholder = "Select an option",
-  searchPlaceholder = "Search...",
+  placeholder = "Seleziona un'opzione",
+  searchPlaceholder = "Cerca...",
   value,
   ...props
 }: ComboboxProps) {
   const ids = useFormControlIds(id, name);
   const aria = buildFormControlAria({
-    describedBy: undefined,
+    describedBy: ariaDescribedBy,
     error,
     errorId: ids.errorId,
     hint,
@@ -92,8 +98,8 @@ export function Combobox({
     : -1;
 
   useEffect(() => {
-    setQuery(selectedOption?.label ?? "");
-  }, [selectedOption]);
+    if (!isOpen) setQuery(selectedOption?.label ?? "");
+  }, [isOpen, selectedOption]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -155,7 +161,25 @@ export function Combobox({
       (event.key === "ArrowDown" || event.key === "ArrowUp" || event.key === "Enter")
     ) {
       event.preventDefault();
+      setQuery("");
       setIsOpen(true);
+      return;
+    }
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setIsOpen(false);
+      setQuery(selectedOption?.label ?? "");
+      return;
+    }
+
+    if (
+      allowClear &&
+      selectedValue &&
+      query.length === 0 &&
+      (event.key === "Backspace" || event.key === "Delete")
+    ) {
+      setSelectedValue("");
       return;
     }
 
@@ -176,12 +200,6 @@ export function Combobox({
     if (event.key === "Enter") {
       event.preventDefault();
       commitSelection(enabledOptions[activeIndex] ?? enabledOptions[0]);
-    }
-
-    if (event.key === "Escape") {
-      event.preventDefault();
-      setIsOpen(false);
-      setQuery(selectedOption?.label ?? "");
     }
   }
 
@@ -205,6 +223,8 @@ export function Combobox({
           ref={inputRef}
           id={ids.controlId}
           role="combobox"
+          aria-label={ariaLabel}
+          aria-labelledby={ariaLabelledBy ?? (label ? ids.labelId : undefined)}
           autoComplete="off"
           aria-autocomplete="list"
           aria-controls={`${ids.controlId}-listbox`}
@@ -227,7 +247,7 @@ export function Combobox({
           })}
           onFocus={() => {
             setIsOpen(true);
-            setQuery(selectedOption?.label ?? "");
+            setQuery("");
           }}
           onChange={(event) => {
             setQuery(event.target.value);
@@ -244,7 +264,8 @@ export function Combobox({
           {allowClear && selectedValue ? (
             <button
               type="button"
-              aria-label="Clear selection"
+              aria-label={clearLabel}
+              tabIndex={-1}
               disabled={disabled}
               onClick={() => {
                 setSelectedValue("");
@@ -252,7 +273,7 @@ export function Combobox({
                 setIsOpen(false);
                 inputRef.current?.focus();
               }}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] text-[color:var(--color-ink-subtle)] transition hover:bg-[color:var(--color-action-ghost-hover)] hover:text-[color:var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-overlay-soft)]"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] text-[color:var(--color-ink-subtle)] transition hover:bg-[color:var(--color-action-ghost-hover)] hover:text-[color:var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-focus)]"
             >
               <Icon name="x" className="h-4 w-4" />
             </button>
@@ -260,13 +281,21 @@ export function Combobox({
 
           <button
             type="button"
-            aria-label={isOpen ? "Close options" : "Open options"}
+            aria-label={isOpen ? closeOptionsLabel : openOptionsLabel}
+            tabIndex={-1}
             disabled={disabled}
+            onMouseDown={(event) => event.preventDefault()}
             onClick={() => {
-              setIsOpen((current) => !current);
-              inputRef.current?.focus();
+              if (isOpen) {
+                setIsOpen(false);
+                setQuery(selectedOption?.label ?? "");
+              } else {
+                setQuery("");
+                setIsOpen(true);
+                inputRef.current?.focus();
+              }
             }}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] text-[color:var(--color-ink-subtle)] transition hover:bg-[color:var(--color-action-ghost-hover)] hover:text-[color:var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-overlay-soft)]"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] text-[color:var(--color-ink-subtle)] transition hover:bg-[color:var(--color-action-ghost-hover)] hover:text-[color:var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-focus)]"
           >
             <Icon
               name="chevron-down"
@@ -296,6 +325,7 @@ export function Combobox({
                       id={optionDomId(ids.controlId, option, index)}
                       type="button"
                       role="option"
+                      tabIndex={-1}
                       aria-selected={isSelected}
                       disabled={option.disabled}
                       onMouseEnter={() => {
@@ -308,7 +338,7 @@ export function Combobox({
                       }}
                       onClick={() => commitSelection(option)}
                       className={cn(
-                        "flex w-full items-start gap-3 rounded-[var(--radius-control)] px-3 py-2 text-left transition focus:outline-none focus:ring-2 focus:ring-[color:var(--color-overlay-soft)]",
+                        "flex w-full items-start gap-3 rounded-[var(--radius-control)] px-3 py-2 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-focus)]",
                         option.disabled && "cursor-not-allowed opacity-50",
                         !option.disabled &&
                           !isSelected &&

@@ -41,6 +41,7 @@ function formatDateTimeLabel(value?: string | null): string | null {
 
 export function DateTimePicker({
   className,
+  dateLabel = "Data",
   defaultValue,
   disabled = false,
   error,
@@ -50,6 +51,7 @@ export function DateTimePicker({
   minuteStep,
   name,
   onValueChange,
+  timeLabel = "Ora",
   value,
   ...props
 }: DateTimePickerProps) {
@@ -92,14 +94,18 @@ export function DateTimePicker({
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_220px]">
         <DatePicker
           id={`${ids.controlId}-date`}
-          aria-label="Data"
+          aria-label={dateLabel}
+          aria-describedby={aria.describedBy}
+          aria-invalid={error ? true : undefined}
           value={parts.date}
           onValueChange={(nextDate) => update(nextDate, parts.time)}
           disabled={disabled}
         />
         <TimePicker
           id={`${ids.controlId}-time`}
-          aria-label="Ora"
+          aria-label={timeLabel}
+          aria-describedby={aria.describedBy}
+          aria-invalid={error ? true : undefined}
           value={parts.time}
           onValueChange={(nextTime) => update(parts.date, nextTime)}
           disabled={disabled}

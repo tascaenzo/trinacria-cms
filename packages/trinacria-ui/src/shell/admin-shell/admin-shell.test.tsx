@@ -140,7 +140,64 @@ test("AdminShell keeps a contextual navigation item active on detail routes", as
     const pageButton = document.querySelector<HTMLButtonElement>('button[title="Page"]');
     const articleButton = document.querySelector<HTMLButtonElement>('button[title="Article"]');
     assert.ok(pageButton?.className.includes("bg-(--color-interactive-selected)"));
+    assert.equal(pageButton?.getAttribute("aria-current"), "page");
     assert.equal(articleButton?.className.includes("bg-(--color-interactive-selected)"), false);
+
+    await view.unmount();
+  } finally {
+    restoreDom();
+  }
+});
+
+test("AdminShell makes the closed mobile navigation inert and restores focus on Escape", async () => {
+  const restoreDom = installDom();
+
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    value: () => ({
+      matches: true,
+      media: "(max-width: 1023px)",
+      onchange: null,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      dispatchEvent: () => true
+    })
+  });
+
+  try {
+    const view = await renderClient(
+      <AdminShell
+        title="Impostazioni"
+        activeRouteId="settings"
+        navigation={navigation}
+        onNavigate={() => undefined}
+      >
+        Contenuto
+      </AdminShell>
+    );
+    const openButton = view.container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Apri navigazione"]'
+    );
+    const aside = view.container.querySelector("aside");
+    assert.ok(openButton);
+    assert.equal(aside?.getAttribute("aria-hidden"), "true");
+    assert.equal(aside?.hasAttribute("inert"), true);
+
+    await React.act(async () => {
+      openButton.focus();
+      openButton.click();
+      await new Promise((resolve) => window.setTimeout(resolve, 0));
+    });
+    assert.equal(aside?.hasAttribute("aria-hidden"), false);
+
+    await React.act(async () => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+      await new Promise((resolve) => window.setTimeout(resolve, 0));
+    });
+    assert.equal(aside?.getAttribute("aria-hidden"), "true");
+    assert.equal(document.activeElement, openButton);
 
     await view.unmount();
   } finally {

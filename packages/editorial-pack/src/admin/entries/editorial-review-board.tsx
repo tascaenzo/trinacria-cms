@@ -1,4 +1,4 @@
-import { Icon } from "@trinacria-cms/trinacria-ui";
+import { Button, EmptyState, Icon, Panel } from "@trinacria-cms/trinacria-ui";
 import { type DragEvent, useState } from "react";
 import { EditorialEntriesHeader } from "./editorial-entries-header.js";
 import { EditorialEntryActionsMenu } from "./editorial-entry-actions-menu.js";
@@ -58,7 +58,7 @@ export function EditorialReviewBoard(props: EditorialReviewBoardProps) {
   };
 
   return (
-    <section className="overflow-hidden rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] shadow-[var(--shadow-surface)]">
+    <Panel as="section" className="overflow-hidden p-0" elevation="sm">
       <header className="border-b border-[color:var(--color-border)] px-4 py-4">
         <EditorialEntriesHeader
           title={props.title}
@@ -78,9 +78,11 @@ export function EditorialReviewBoard(props: EditorialReviewBoardProps) {
             const isDropTarget = canDrop && dropTarget === state.key;
 
             return (
-              <section
+              <Panel
+                as="section"
                 key={state.key}
-                className={`w-80 shrink-0 rounded-xl border bg-[color:var(--color-panel)] transition ${
+                tone="custom"
+                className={`w-80 shrink-0 bg-[color:var(--color-panel)] transition ${
                   isDropTarget
                     ? "border-[color:var(--color-accent)] ring-2 ring-[color:var(--color-accent-soft)]"
                     : "border-[color:var(--color-border)]"
@@ -130,17 +132,18 @@ export function EditorialReviewBoard(props: EditorialReviewBoardProps) {
                       />
                     ))
                   ) : (
-                    <p className="self-start rounded-lg border border-dashed border-[color:var(--color-border)] p-4 text-center text-xs text-[color:var(--color-ink-subtle)]">
-                      Nessun contenuto in questa fase
-                    </p>
+                    <EmptyState
+                      className="self-start p-4 text-center"
+                      text="Nessun contenuto in questa fase"
+                    />
                   )}
                 </div>
-              </section>
+              </Panel>
             );
           })}
         </div>
       </div>
-    </section>
+    </Panel>
   );
 }
 
@@ -169,11 +172,13 @@ function ReviewCard({
   const canMove = getEntryActions(entry.status, contentType).length > 0 && !isActing;
 
   return (
-    <article
+    <Panel
+      as="article"
       draggable={canMove}
-      className={`rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-3 shadow-[var(--shadow-sm)] transition hover:border-[color:var(--color-border-strong)] ${
+      className={`p-3 transition hover:border-[color:var(--color-border-strong)] ${
         canMove ? "cursor-grab active:cursor-grabbing" : ""
       }`}
+      elevation="sm"
       onDragStart={(event) => {
         event.dataTransfer.effectAllowed = "move";
         event.dataTransfer.setData("text/plain", entry.id);
@@ -182,14 +187,19 @@ function ReviewCard({
       onDragEnd={onDragEnd}
     >
       <div className="flex items-start justify-between gap-3">
-        <button type="button" className="min-w-0 flex-1 text-left" onClick={onEdit}>
+        <Button
+          type="button"
+          variant="ghost"
+          className="h-auto min-w-0 flex-1 justify-start border-0 bg-transparent p-0 text-left shadow-none hover:bg-transparent"
+          onClick={onEdit}
+        >
           <span className="block truncate text-sm font-semibold text-[color:var(--color-ink)]">
             {entry.title ?? "Senza titolo"}
           </span>
           <span className="mt-1 block truncate text-xs text-[color:var(--color-ink-subtle)]">
             {contentType?.name ?? "Modello rimosso"}
           </span>
-        </button>
+        </Button>
         <EditorialEntryActionsMenu
           entry={entry}
           contentType={contentType}
@@ -208,7 +218,7 @@ function ReviewCard({
           {canMove ? <Icon name="grip-vertical" className="h-3.5 w-3.5" /> : null}
         </span>
       </div>
-    </article>
+    </Panel>
   );
 }
 
@@ -216,9 +226,11 @@ function BoardSkeleton() {
   return (
     <div className="grid gap-3">
       {[0, 1].map((item) => (
-        <div
+        <Panel
+          aria-hidden="true"
           key={item}
-          className="h-28 animate-pulse rounded-lg bg-[color:var(--color-surface-subtle)]"
+          className="h-28 animate-pulse bg-[color:var(--color-surface-subtle)]"
+          tone="soft"
         />
       ))}
     </div>

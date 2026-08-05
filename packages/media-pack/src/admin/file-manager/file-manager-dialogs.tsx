@@ -1,4 +1,4 @@
-import { Button, Dialog, Input, Select, Textarea } from "@trinacria-cms/trinacria-ui";
+import { Button, Dialog, ErrorBanner, Input, Select, Textarea } from "@trinacria-cms/trinacria-ui";
 import { useEffect, useState } from "react";
 import type { MediaAsset, MediaDirectory } from "./file-manager.types.js";
 
@@ -115,14 +115,7 @@ export function CreateCsvDialog({
       }
     >
       <div className="grid gap-4">
-        {error ? (
-          <p
-            role="alert"
-            className="rounded-md border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] p-3 text-sm text-[color:var(--color-danger-ink)]"
-          >
-            {error}
-          </p>
-        ) : null}
+        {error ? <ErrorBanner message={error} /> : null}
         <Input
           label="Nome file"
           hint="L’estensione .csv viene aggiunta automaticamente."

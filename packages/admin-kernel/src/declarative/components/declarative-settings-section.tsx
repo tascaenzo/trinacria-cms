@@ -1,4 +1,11 @@
-import { Card, FormSection, InfoCard, Input, Textarea } from "@trinacria-cms/trinacria-ui";
+import {
+  Card,
+  FormSection,
+  InfoCard,
+  Input,
+  SettingsSectionLayout,
+  Textarea
+} from "@trinacria-cms/trinacria-ui";
 import { useMemo } from "react";
 import type { RenderableAdminSettingsSection } from "../../runtime/admin-route-runtime.js";
 import { useDeclarativeActionController } from "../hooks/use-declarative-action-controller.js";
@@ -26,16 +33,12 @@ export function DeclarativeSettingsSectionPanel({
   );
 
   return (
-    <div className="grid gap-4">
-      <InfoCard
-        eyebrow={section.pluginId}
-        title={section.title}
-        description={section.summary}
-        className="bg-[color:var(--color-panel)]"
-      />
+    <SettingsSectionLayout title={section.title} description={section.summary} width="wide">
       {section.kind === "form" || formFields.length > 0 ? (
         <FormSection
-          title={section.title}
+          headingLevel={3}
+          variant="plain"
+          title="Configurazione"
           description={
             section.summary ?? "Settings form generated from the plugin manifest schema."
           }
@@ -81,7 +84,7 @@ export function DeclarativeSettingsSectionPanel({
         />
       ) : null}
       {actionController.dialog}
-    </div>
+    </SettingsSectionLayout>
   );
 }
 

@@ -16,6 +16,18 @@ function ToastDemo() {
   return (
     <div className="flex flex-wrap gap-3">
       <Button
+        variant="secondary"
+        onClick={() =>
+          pushToast({
+            tone: "info",
+            title: "Aggiornamento disponibile",
+            description: "È disponibile una nuova versione del plugin."
+          })
+        }
+      >
+        Info toast
+      </Button>
+      <Button
         onClick={() =>
           pushToast({
             tone: "success",
@@ -38,6 +50,19 @@ function ToastDemo() {
         }
       >
         Persistent toast
+      </Button>
+      <Button
+        variant="secondary"
+        onClick={() =>
+          pushToast({
+            tone: "danger",
+            title: "Salvataggio non riuscito",
+            description: "Controlla la connessione e riprova.",
+            duration: 0
+          })
+        }
+      >
+        Error toast
       </Button>
       <Button variant="ghost" onClick={dismissAll}>
         Clear all

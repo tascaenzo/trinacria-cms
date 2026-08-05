@@ -55,7 +55,7 @@ export function RadioGroup({
               aria-describedby={
                 option.description ? `${ids.controlId}-${option.value}-description` : undefined
               }
-              className="mt-0.5 h-4 w-4 border-[color:var(--color-border-strong)] bg-[color:var(--color-surface)] text-[color:var(--color-action-primary-bg)] focus:ring-2 focus:ring-[color:var(--color-overlay-soft)]"
+              className="mt-0.5 h-4 w-4 border-[color:var(--color-border-strong)] bg-[color:var(--color-surface)] text-[color:var(--color-action-primary-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--color-focus)]"
             />
             <span className="grid gap-1">
               <span className="text-sm font-medium text-[color:var(--color-ink)]">

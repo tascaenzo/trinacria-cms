@@ -49,13 +49,17 @@ function buildPages(
 
 export function Pagination({
   className,
-  nextLabel = "Next",
+  mobilePageLabel = (current, total) => `Pagina ${current} di ${total}`,
+  nextLabel = "Successiva",
   onPageChange,
   onPageSizeChange,
   page,
   pageSize,
   pageSizeOptions = [10, 25, 50, 100],
-  previousLabel = "Previous",
+  pageLabel = (item) => `Vai a pagina ${item}`,
+  pageSizeLabel = "Righe per pagina",
+  paginationLabel = "Paginazione",
+  previousLabel = "Precedente",
   siblingCount = 1,
   summaryLabel,
   totalItems,
@@ -76,10 +80,11 @@ export function Pagination({
   const canGoNext = currentPage < totalPages;
   const summary =
     summaryLabel?.({ end, start, totalItems: safeTotalItems }) ??
-    `${start}-${end} of ${safeTotalItems}`;
+    `${start}-${end} di ${safeTotalItems}`;
 
   return (
-    <div
+    <nav
+      aria-label={paginationLabel}
       className={cn(
         "flex flex-col gap-3 border-t border-(--color-border) pt-4 md:flex-row md:items-center md:justify-between",
         className
@@ -91,13 +96,13 @@ export function Pagination({
         {onPageSizeChange ? (
           <div className="w-full sm:w-35">
             <Select
-              aria-label="Rows per page"
+              aria-label={pageSizeLabel}
               value={safePageSize}
               onChange={(event) => onPageSizeChange(Number(event.target.value))}
             >
               {(safePageSizeOptions.length ? safePageSizeOptions : [safePageSize]).map((option) => (
                 <option key={option} value={option}>
-                  {option} / page
+                  {option} / pagina
                 </option>
               ))}
             </Select>
@@ -121,6 +126,7 @@ export function Pagination({
             item === "ellipsis" ? (
               <span
                 key={`ellipsis-${index}`}
+                aria-hidden="true"
                 className="inline-flex h-8 min-w-8 items-center justify-center px-2 text-xs font-medium text-(--color-ink-subtle)"
               >
                 ...
@@ -131,6 +137,7 @@ export function Pagination({
                 variant={item === currentPage ? "primary" : "ghost"}
                 size="sm"
                 onClick={() => onPageChange?.(Number(item))}
+                aria-label={pageLabel(item)}
                 aria-current={item === currentPage ? "page" : undefined}
                 className="min-w-8 px-2.5"
               >
@@ -141,7 +148,7 @@ export function Pagination({
         </div>
 
         <div className="inline-flex items-center rounded-(--radius-control) border border-(--color-border) bg-(--color-panel-soft) px-3 py-1 text-xs font-medium text-(--color-ink-muted) md:hidden">
-          Page {currentPage} / {totalPages}
+          {mobilePageLabel(currentPage, totalPages)}
         </div>
 
         <ButtonBase
@@ -154,6 +161,6 @@ export function Pagination({
           <Icon name="chevron-right" className="h-4 w-4" />
         </ButtonBase>
       </div>
-    </div>
+    </nav>
   );
 }

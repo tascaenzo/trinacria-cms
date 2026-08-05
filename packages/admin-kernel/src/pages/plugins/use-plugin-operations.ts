@@ -1,3 +1,4 @@
+import { useToast } from "@trinacria-cms/trinacria-ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toDisplayError } from "../../lib/sdk-errors.js";
 import { cms } from "../../runtime/cms-sdk.js";
@@ -10,6 +11,7 @@ import { reconcileSelectedPluginId } from "./plugin-operations-utils.js";
  * newer plugin selection.
  */
 export function usePluginOperations({ includeEvents = true }: { includeEvents?: boolean } = {}) {
+  const { pushToast } = useToast();
   const [plugins, setPlugins] = useState<readonly PluginSnapshot[]>([]);
   const [selectedPluginId, setSelectedPluginId] = useState<string | null>(null);
   const [events, setEvents] = useState<
@@ -97,15 +99,28 @@ export function usePluginOperations({ includeEvents = true }: { includeEvents?: 
           refreshPlugins(),
           includeEvents ? refreshEvents(pluginId) : Promise.resolve()
         ]);
+        pushToast({
+          tone: "success",
+          title: "Plugin aggiornato",
+          description: `${pluginId}: ${pluginOperationLabel(operation)}.`,
+          duration: 4000
+        });
         return response.data;
       } catch (error) {
-        setOperationError(toDisplayError(error));
+        const message = toDisplayError(error);
+        setOperationError(message);
+        pushToast({
+          tone: "danger",
+          title: "Operazione non riuscita",
+          description: message,
+          duration: 0
+        });
         return null;
       } finally {
         setIsRunningOperation(null);
       }
     },
-    [includeEvents, refreshEvents, refreshPlugins]
+    [includeEvents, pushToast, refreshEvents, refreshPlugins]
   );
 
   useEffect(() => {
@@ -148,4 +163,19 @@ export function usePluginOperations({ includeEvents = true }: { includeEvents?: 
     refresh,
     executeOperation
   };
+}
+
+function pluginOperationLabel(operation: PluginOperation) {
+  switch (operation) {
+    case "enable":
+      return "abilitazione completata";
+    case "disable":
+      return "disabilitazione completata";
+    case "load":
+      return "caricamento completato";
+    case "unload":
+      return "rimozione dal runtime completata";
+    case "reload":
+      return "ricaricamento completato";
+  }
 }

@@ -11,8 +11,8 @@ import {
   DataTableRow,
   DataTableTable,
   Dialog,
-  FeedbackBanner,
-  Input
+  Input,
+  SettingsSectionLayout
 } from "@trinacria-cms/trinacria-ui";
 import { type FormEvent, useState } from "react";
 import { EmptyState, ErrorBanner } from "../../../components/resource-feedback.js";
@@ -29,7 +29,6 @@ interface PendingOperation {
 export function PluginManagementSettingsSection({ section, t }: AdminSettingsSectionRenderContext) {
   const [pendingOperation, setPendingOperation] = useState<PendingOperation | null>(null);
   const [disableReason, setDisableReason] = useState("");
-  const [success, setSuccess] = useState<string | null>(null);
   const {
     plugins,
     isInventoryLoading,
@@ -41,15 +40,8 @@ export function PluginManagementSettingsSection({ section, t }: AdminSettingsSec
   } = usePluginOperations({ includeEvents: false });
 
   async function runOperation(plugin: PluginSnapshot, operation: PluginOperation, reason?: string) {
-    setSuccess(null);
     const response = await executeOperation(plugin.id, operation, reason);
-    if (response) {
-      setSuccess(
-        `${t("plugins.operations." + response.operation, response.operation)} · ${response.plugin.id}`
-      );
-      return true;
-    }
-    return false;
+    return Boolean(response);
   }
 
   function requestOperation(plugin: PluginSnapshot, operation: PluginOperation) {
@@ -76,29 +68,25 @@ export function PluginManagementSettingsSection({ section, t }: AdminSettingsSec
   }
 
   return (
-    <div className="min-h-0 overflow-auto px-6 py-4 sm:px-8 sm:py-6">
-      <div className="mx-auto grid max-w-6xl gap-5">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h3 className="text-xl font-semibold text-[color:var(--color-ink)]">{section.title}</h3>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-[color:var(--color-ink-muted)]">
-              {section.summary ?? "Gestisci lo stato dei plugin disponibili nel runtime."}
-            </p>
-          </div>
+    <>
+      <SettingsSectionLayout
+        title={section.title}
+        description={section.summary ?? "Gestisci lo stato dei plugin disponibili nel runtime."}
+        width="wide"
+        headerActions={
           <Button variant="secondary" onClick={() => void refresh()}>
             {t("common.actions.refresh", "Aggiorna")}
           </Button>
-        </div>
-
-        {success ? (
-          <FeedbackBanner
-            tone="success"
-            title={t("plugins.feedback.operation_success", "Operazione completata.")}
-            message={success}
-          />
-        ) : null}
-        {inventoryError ? <ErrorBanner message={inventoryError} /> : null}
-        {operationError ? <ErrorBanner message={operationError} /> : null}
+        }
+        feedback={
+          inventoryError || operationError ? (
+            <div className="grid gap-3">
+              {inventoryError ? <ErrorBanner message={inventoryError} /> : null}
+              {operationError ? <ErrorBanner message={operationError} /> : null}
+            </div>
+          ) : undefined
+        }
+      >
         {isInventoryLoading ? (
           <EmptyState text={t("plugins.empty.loading", "Caricamento plugin...")} />
         ) : null}
@@ -167,7 +155,7 @@ export function PluginManagementSettingsSection({ section, t }: AdminSettingsSec
             </DataTableTable>
           </DataTable>
         ) : null}
-      </div>
+      </SettingsSectionLayout>
 
       <Dialog
         open={pendingOperation !== null}
@@ -210,6 +198,6 @@ export function PluginManagementSettingsSection({ section, t }: AdminSettingsSec
           </div>
         </form>
       </Dialog>
-    </div>
+    </>
   );
 }

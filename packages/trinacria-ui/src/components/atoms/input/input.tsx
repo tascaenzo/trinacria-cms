@@ -10,7 +10,10 @@ import type { InputProps } from "./input.types.js";
  * Input follows a compact admin-focused styling with restrained radius and
  * subtle focus treatment inspired by modern dashboard UIs.
  */
-export function Input({ className, error, hint, label, id, ...props }: InputProps) {
+export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
+  { className, containerClassName, error, hint, label, id, ...props },
+  ref
+) {
   const ids = useFormControlIds(id, props.name);
   const aria = buildFormControlAria({
     describedBy: props["aria-describedby"],
@@ -22,6 +25,7 @@ export function Input({ className, error, hint, label, id, ...props }: InputProp
 
   return (
     <FormControlShell
+      className={containerClassName}
       controlId={ids.controlId}
       error={error}
       errorId={ids.errorId}
@@ -32,6 +36,7 @@ export function Input({ className, error, hint, label, id, ...props }: InputProp
       labelId={ids.labelId}
     >
       <input
+        ref={ref}
         {...props}
         id={ids.controlId}
         aria-invalid={error ? true : props["aria-invalid"]}
@@ -41,4 +46,6 @@ export function Input({ className, error, hint, label, id, ...props }: InputProp
       />
     </FormControlShell>
   );
-}
+});
+
+import { forwardRef } from "react";

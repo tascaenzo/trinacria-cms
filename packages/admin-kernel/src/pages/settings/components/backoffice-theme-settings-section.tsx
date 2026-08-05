@@ -1,4 +1,11 @@
-import { Button, Select } from "@trinacria-cms/trinacria-ui";
+import {
+  Button,
+  FormSection,
+  Panel,
+  Select,
+  SettingsSectionLayout,
+  useToast
+} from "@trinacria-cms/trinacria-ui";
 import { useEffect, useState } from "react";
 import { EmptyState, ErrorBanner } from "../../../components/resource-feedback.js";
 import {
@@ -15,15 +22,25 @@ import type { AdminSettingsSectionRenderContext } from "../../../runtime/admin-r
 
 export function BackofficeThemeSettingsSection({
   cms,
+  onDirtyChange,
   section,
   t
 }: AdminSettingsSectionRenderContext) {
   const [theme, setTheme] = useState<BackofficeTheme>("light");
   const [accent, setAccent] = useState<BackofficeAccent>("neutral");
+  const [savedTheme, setSavedTheme] = useState<BackofficeTheme>("light");
+  const [savedAccent, setSavedAccent] = useState<BackofficeAccent>("neutral");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const { pushToast } = useToast();
+  const isDirty = theme !== savedTheme || accent !== savedAccent;
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
+  useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -37,8 +54,12 @@ export function BackofficeThemeSettingsSection({
           cms.settings.getSettingValueByKey({ path: { key: BACKOFFICE_ACCENT_SETTING_KEY } })
         ]);
         if (isCancelled) return;
-        setTheme(normalizeBackofficeTheme(themeResponse.data?.value));
-        setAccent(normalizeBackofficeAccent(accentResponse.data?.value));
+        const nextTheme = normalizeBackofficeTheme(themeResponse.data?.value);
+        const nextAccent = normalizeBackofficeAccent(accentResponse.data?.value);
+        setTheme(nextTheme);
+        setAccent(nextAccent);
+        setSavedTheme(nextTheme);
+        setSavedAccent(nextAccent);
       } catch (currentError) {
         if (!isCancelled) {
           setError(toDisplayError(currentError));
@@ -60,7 +81,6 @@ export function BackofficeThemeSettingsSection({
     try {
       setIsSaving(true);
       setError(null);
-      setMessage(null);
       await Promise.all([
         cms.settings.upsertSettingValue({
           path: { key: BACKOFFICE_THEME_SETTING_KEY },
@@ -72,9 +92,23 @@ export function BackofficeThemeSettingsSection({
         })
       ]);
       applyBackofficeTheme(theme, accent);
-      setMessage(t("settings.backoffice_theme.saved", "Tema del backoffice salvato."));
+      setSavedTheme(theme);
+      setSavedAccent(accent);
+      pushToast({
+        tone: "success",
+        title: t("common.actions.save", "Salva"),
+        description: t("settings.backoffice_theme.saved", "Tema del backoffice salvato."),
+        duration: 4000
+      });
     } catch (currentError) {
-      setError(toDisplayError(currentError));
+      const message = toDisplayError(currentError);
+      setError(message);
+      pushToast({
+        tone: "danger",
+        title: "Salvataggio non riuscito",
+        description: message,
+        duration: 0
+      });
     } finally {
       setIsSaving(false);
     }
@@ -82,27 +116,51 @@ export function BackofficeThemeSettingsSection({
 
   if (isLoading) {
     return (
-      <div className="p-6">
+      <SettingsSectionLayout title={section.title} description={section.summary}>
         <EmptyState text={t("settings.empty.loading_value", "Caricamento valore...")} />
-      </div>
+      </SettingsSectionLayout>
     );
   }
 
   return (
-    <div className="min-h-0 overflow-auto px-6 py-4 sm:px-8 sm:py-6">
-      <div className="mx-auto grid max-w-2xl gap-6">
-        <div className="grid gap-1">
-          <h3 className="text-xl font-semibold text-[color:var(--color-ink)]">{section.title}</h3>
-          <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink-muted)]">
-            {section.summary}
-          </p>
-        </div>
-
-        {error ? <ErrorBanner message={error} /> : null}
-        {message ? (
-          <p className="text-sm font-medium text-[color:var(--color-success-ink)]">{message}</p>
-        ) : null}
-
+    <SettingsSectionLayout
+      title={section.title}
+      description={section.summary}
+      feedback={error ? <ErrorBanner message={error} /> : undefined}
+      actions={
+        <>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={isSaving || !isDirty}
+            onClick={() => {
+              setTheme(savedTheme);
+              setAccent(savedAccent);
+              setError(null);
+            }}
+          >
+            {t("common.actions.reset", "Ripristina")}
+          </Button>
+          <Button
+            type="button"
+            isLoading={isSaving}
+            disabled={isSaving || !isDirty}
+            onClick={() => void saveThemeSettings()}
+          >
+            {t("common.actions.save", "Salva")}
+          </Button>
+        </>
+      }
+    >
+      <FormSection
+        headingLevel={3}
+        variant="plain"
+        title={t("settings.backoffice_theme.appearance", "Aspetto")}
+        description={t(
+          "settings.backoffice_theme.appearance_hint",
+          "Scegli il tema e il colore principale usati da tutti gli operatori."
+        )}
+      >
         <div className="grid gap-4 sm:grid-cols-2">
           <Select
             label={t("settings.backoffice_theme.mode", "Modalità")}
@@ -127,33 +185,32 @@ export function BackofficeThemeSettingsSection({
             <option value="forest">{t("settings.backoffice_theme.forest", "Foresta")}</option>
           </Select>
         </div>
+      </FormSection>
 
-        <div
+      <FormSection
+        headingLevel={3}
+        variant="plain"
+        title={t("settings.backoffice_theme.preview", "Anteprima")}
+        description={t(
+          "settings.backoffice_theme.preview_hint",
+          "La scelta verrà applicata a tutto il backoffice dopo il salvataggio."
+        )}
+      >
+        <Panel
           data-trinacria-admin-theme="preview"
           data-theme={theme}
           data-accent={accent}
-          className="rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4"
+          className="p-4"
         >
-          <p className="text-sm font-semibold text-[color:var(--color-ink)]">
-            {t("settings.backoffice_theme.preview", "Anteprima")}
-          </p>
+          <p className="text-sm font-semibold text-[color:var(--color-ink)]">Trinacria CMS</p>
           <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
-            {t(
-              "settings.backoffice_theme.preview_hint",
-              "La scelta verrà applicata a tutto il backoffice dopo il salvataggio."
-            )}
+            {t("settings.backoffice_theme.preview_copy", "Esempio di contenuto del backoffice.")}
           </p>
           <Button className="mt-4" disabled>
             {t("settings.backoffice_theme.example_action", "Azione principale")}
           </Button>
-        </div>
-
-        <div className="flex justify-end border-t border-[color:var(--color-border)] pt-4">
-          <Button isLoading={isSaving} disabled={isSaving} onClick={() => void saveThemeSettings()}>
-            {t("common.actions.save", "Salva")}
-          </Button>
-        </div>
-      </div>
-    </div>
+        </Panel>
+      </FormSection>
+    </SettingsSectionLayout>
   );
 }

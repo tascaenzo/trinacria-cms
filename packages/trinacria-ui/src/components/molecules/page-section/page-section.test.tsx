@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { ActionBar, PageHeader } from "./page-section.js";
+import { ActionBar, ContentSection, PageHeader } from "./page-section.js";
 
 test("PageHeader and ActionBar render page chrome", () => {
   const markup = renderToStaticMarkup(
@@ -14,6 +14,9 @@ test("PageHeader and ActionBar render page chrome", () => {
         actions={<button>New</button>}
       />
       <ActionBar>Filters</ActionBar>
+      <ContentSection title="Document" description="Linear content">
+        Content
+      </ContentSection>
     </>
   );
 
@@ -21,4 +24,5 @@ test("PageHeader and ActionBar render page chrome", () => {
   assert.match(markup, /Users/);
   assert.match(markup, /Manage users/);
   assert.match(markup, /Filters/);
+  assert.match(markup, /Linear content/);
 });

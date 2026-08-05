@@ -27,3 +27,23 @@ export const Overview: Story = {
     </PropertyList>
   )
 };
+
+export const LinearRecordDetail: Story = {
+  render: () => (
+    <PropertyList variant="linear">
+      <PropertyItem label="Email" value="operator@trinacria.test" />
+      <PropertyItem label="Ruolo" value="Amministratore" />
+      <PropertyItem label="Stato" value="Attivo" />
+    </PropertyList>
+  )
+};
+
+export const KeyValueRecordDetail: Story = {
+  render: () => (
+    <PropertyList variant="key-value">
+      <PropertyItem label="Email" value="operator@trinacria.test" />
+      <PropertyItem label="Ruolo" value="Amministratore" />
+      <PropertyItem label="Stato" value="Attivo" />
+    </PropertyList>
+  )
+};

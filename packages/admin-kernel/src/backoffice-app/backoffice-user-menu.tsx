@@ -1,4 +1,5 @@
 import {
+  Button,
   DropdownMenu,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -39,9 +40,10 @@ export function BackofficeUserMenu({
       className="w-full"
       contentClassName="w-56"
       trigger={
-        <button
+        <Button
           type="button"
-          className="flex w-full min-w-0 items-center gap-3 rounded-md px-2.5 py-2 text-left transition hover:bg-[color:var(--color-interactive-hover)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-focus)]"
+          variant="ghost"
+          className="h-auto w-full min-w-0 justify-start gap-3 border-transparent px-2.5 py-2 text-left shadow-none"
         >
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-action-primary-bg)] text-[color:var(--color-action-primary-ink)]">
             <Icon name="user-round" className="h-4 w-4" />
@@ -58,7 +60,7 @@ export function BackofficeUserMenu({
             name="chevron-down"
             className={`h-4 w-4 shrink-0 text-[color:var(--color-ink-subtle)] transition ${isOpen ? "rotate-180" : ""}`}
           />
-        </button>
+        </Button>
       }
     >
       <DropdownMenuLabel>
