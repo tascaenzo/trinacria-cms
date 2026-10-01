@@ -1,7 +1,6 @@
 import {
   type CSSProperties,
   cloneElement,
-  createContext,
   isValidElement,
   type MouseEvent,
   type PropsWithChildren,
@@ -20,6 +19,7 @@ import { createPortal } from "react-dom";
 import { useControllableState } from "../../../hooks/use-controllable-state.js";
 import { useThemePortalContainer } from "../../../hooks/use-theme-portal-container.js";
 import { cn } from "../../../utils/class-names.js";
+import { focusMenuItem, navigateMenu } from "../../../utils/menu-navigation.js";
 import { Icon } from "../../atoms/icon/icon.js";
 import { OverlaySurface } from "../../primitives/overlay-surface/overlay-surface.js";
 import { BodyText } from "../../primitives/text/text.js";
@@ -28,12 +28,7 @@ import type {
   DropdownMenuLabelProps,
   DropdownMenuProps
 } from "./dropdown-menu.types.js";
-
-interface DropdownMenuContextValue {
-  closeMenu: () => void;
-}
-
-const DropdownMenuContext = createContext<DropdownMenuContextValue | null>(null);
+import { MenuActionContext } from "./menu-context.js";
 
 function assignRef<T>(ref: Ref<T> | undefined, value: T | null) {
   if (!ref) {
@@ -85,38 +80,12 @@ export function DropdownMenu({
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [menuStyle, setMenuStyle] = useState<CSSProperties | undefined>();
 
-  function getEnabledItems() {
-    if (!menuRef.current) {
-      return [];
-    }
-
-    return Array.from(
-      menuRef.current.querySelectorAll<HTMLButtonElement>('[role="menuitem"]:not(:disabled)')
-    );
-  }
-
-  function focusItem(index: number) {
-    const items = getEnabledItems();
-
-    if (items.length === 0) {
-      return;
-    }
-
-    items[(index + items.length) % items.length]?.focus();
-  }
-
   function focusFirstItem() {
-    focusItem(0);
+    focusMenuItem(menuRef.current, 0);
   }
 
   function focusLastItem() {
-    const items = getEnabledItems();
-
-    if (items.length === 0) {
-      return;
-    }
-
-    items[items.length - 1]?.focus();
+    focusMenuItem(menuRef.current, -1);
   }
 
   useEffect(() => {
@@ -188,40 +157,14 @@ export function DropdownMenu({
   }, [align, isOpen, shouldMatchTriggerWidth, side]);
 
   function handleMenuKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
-    const items = getEnabledItems();
-
-    if (items.length === 0) {
-      return;
-    }
-
-    const currentIndex = items.findIndex((item) => item === document.activeElement);
-
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-      focusItem(currentIndex + 1);
-    }
-
-    if (event.key === "ArrowUp") {
-      event.preventDefault();
-      focusItem(currentIndex <= 0 ? items.length - 1 : currentIndex - 1);
-    }
-
-    if (event.key === "Home") {
-      event.preventDefault();
-      focusFirstItem();
-    }
-
-    if (event.key === "End") {
-      event.preventDefault();
-      focusLastItem();
-    }
-
     if (event.key === "Tab") {
       setIsOpen(false);
+      return;
     }
+    navigateMenu(menuRef.current, event);
   }
 
-  const contextValue = useMemo<DropdownMenuContextValue>(
+  const contextValue = useMemo(
     () => ({
       closeMenu: () => {
         setIsOpen(false);
@@ -245,7 +188,7 @@ export function DropdownMenu({
       />
       {isOpen && portalContainer
         ? createPortal(
-            <DropdownMenuContext.Provider value={contextValue}>
+            <MenuActionContext.Provider value={contextValue}>
               <OverlaySurface
                 className={cn("fixed z-50 min-w-[220px] p-2", contentClassName)}
                 style={menuStyle}
@@ -262,7 +205,7 @@ export function DropdownMenu({
                   {children}
                 </div>
               </OverlaySurface>
-            </DropdownMenuContext.Provider>,
+            </MenuActionContext.Provider>,
             portalContainer
           )
         : null}
@@ -289,6 +232,14 @@ function DropdownTrigger({
   menuId: string;
   triggerId: string;
 }) {
+  function handleKeyDown(event: ReactKeyboardEvent<HTMLElement>) {
+    if (event.defaultPrevented) return;
+    if (!["ArrowDown", "ArrowUp", "Enter", " "].includes(event.key)) return;
+    event.preventDefault();
+    setIsOpen(true);
+    window.requestAnimationFrame(event.key === "ArrowUp" ? focusLastItem : focusFirstItem);
+  }
+
   if (isValidElement(trigger)) {
     const element = trigger as ReactElement<{
       onClick?: (event: MouseEvent<HTMLElement>) => void;
@@ -318,47 +269,23 @@ function DropdownTrigger({
       onKeyDown: (event: ReactKeyboardEvent<HTMLElement>) => {
         element.props.onKeyDown?.(event);
 
-        if (event.defaultPrevented) {
-          return;
-        }
-
-        if (event.key === "ArrowDown" || event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          setIsOpen(true);
-          window.requestAnimationFrame(() => focusFirstItem());
-        }
-
-        if (event.key === "ArrowUp") {
-          event.preventDefault();
-          setIsOpen(true);
-          window.requestAnimationFrame(() => focusLastItem());
-        }
+        handleKeyDown(event);
       }
     });
   }
 
   return (
     <button
-      ref={triggerRef as never}
+      ref={(node) => {
+        triggerRef.current = node;
+      }}
       type="button"
       id={triggerId}
       aria-expanded={isOpen}
       aria-haspopup="menu"
       aria-controls={menuId}
       onClick={() => setIsOpen(!isOpen)}
-      onKeyDown={(event) => {
-        if (event.key === "ArrowDown" || event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          setIsOpen(true);
-          window.requestAnimationFrame(() => focusFirstItem());
-        }
-
-        if (event.key === "ArrowUp") {
-          event.preventDefault();
-          setIsOpen(true);
-          window.requestAnimationFrame(() => focusLastItem());
-        }
-      }}
+      onKeyDown={handleKeyDown}
       className="inline-flex items-center gap-2 rounded-(--radius-control) border border-(--color-action-secondary-border) bg-(--color-action-secondary-bg) px-3 py-2 text-sm font-medium text-(--color-action-secondary-ink) shadow-(--shadow-surface) transition hover:bg-(--color-action-secondary-hover) focus:outline-hidden focus:ring-2 focus:ring-(--color-focus) focus:ring-offset-2 focus:ring-offset-(--color-surface)"
     >
       {trigger}
@@ -396,7 +323,7 @@ export function DropdownMenuItem({
   tone = "neutral",
   ...props
 }: PropsWithChildren<DropdownMenuItemProps>) {
-  const context = useContext(DropdownMenuContext);
+  const context = useContext(MenuActionContext);
 
   function handleClick(event: MouseEvent<HTMLButtonElement>) {
     onClick?.(event);

@@ -1,7 +1,16 @@
-import { type PropsWithChildren, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  type PropsWithChildren,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import { createPortal } from "react-dom";
 import { useThemePortalContainer } from "../../../hooks/use-theme-portal-container.js";
+import { focusMenuItem, navigateMenu } from "../../../utils/menu-navigation.js";
 import { OverlaySurface } from "../../primitives/overlay-surface/overlay-surface.js";
+import { MenuActionContext } from "../dropdown-menu/menu-context.js";
 import type { ContextMenuProps } from "./context-menu.types.js";
 
 export {
@@ -22,6 +31,7 @@ export function ContextMenu({
   const portalContainer = useThemePortalContainer(anchorRef);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
+  const contextValue = useMemo(() => ({ closeMenu: () => closeRef.current() }), []);
   const [position, setPosition] = useState({ left: x, top: y });
   useLayoutEffect(() => {
     if (!portalContainer) return;
@@ -34,7 +44,7 @@ export function ContextMenu({
   useEffect(() => {
     if (!portalContainer) return;
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    ref.current?.querySelector<HTMLButtonElement>('[role="menuitem"]:not(:disabled)')?.focus();
+    focusMenuItem(ref.current, 0);
     const dismiss = (event: MouseEvent) => {
       if (event.target instanceof Node && !ref.current?.contains(event.target)) closeRef.current();
     };
@@ -57,11 +67,6 @@ export function ContextMenu({
       className="fixed z-[70] w-56 p-1"
       style={position}
       onContextMenu={(event) => event.preventDefault()}
-      onClick={(event) => {
-        const target = event.target;
-        if (target instanceof HTMLElement && target.closest('[role="menuitem"]:not(:disabled)'))
-          closeRef.current();
-      }}
       onKeyDown={(event) => {
         if (event.key === "Escape" || event.key === "Tab") {
           if (event.key === "Escape") {
@@ -71,25 +76,7 @@ export function ContextMenu({
           closeRef.current();
           return;
         }
-        const items = Array.from(
-          ref.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]:not(:disabled)') ?? []
-        );
-        if (!items.length) return;
-        const current = items.findIndex((item) => item === document.activeElement);
-        const next =
-          event.key === "ArrowDown"
-            ? (current + 1) % items.length
-            : event.key === "ArrowUp"
-              ? (current - 1 + items.length) % items.length
-              : event.key === "Home"
-                ? 0
-                : event.key === "End"
-                  ? items.length - 1
-                  : null;
-        if (next !== null) {
-          event.preventDefault();
-          items[next]?.focus();
-        }
+        navigateMenu(ref.current, event);
       }}
     >
       {children}
@@ -98,7 +85,12 @@ export function ContextMenu({
   return (
     <>
       <span ref={anchorRef} hidden />
-      {portalContainer ? createPortal(menu, portalContainer) : null}
+      {portalContainer
+        ? createPortal(
+            <MenuActionContext.Provider value={contextValue}>{menu}</MenuActionContext.Provider>,
+            portalContainer
+          )
+        : null}
     </>
   );
 }
