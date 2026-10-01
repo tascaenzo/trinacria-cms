@@ -96,7 +96,7 @@ conservano il tema, link e azioni distruttive usano componenti comuni; toolbar e
 sono verificate anche su mobile.
 
 La verifica dell’intervento UI ha registrato 463 test ordinari e 17/17 scenari Chromium.
-Il riepilogo corrente sopra include la verifica delle dipendenze: 464 test ordinari e
+La verifica delle dipendenze sopra ha registrato 464 test ordinari e
 11 integrazioni Mongo/S3/Redis. I conteggi dei task e del changelog conservano il risultato
 della rispettiva fase. Bundle principale circa 400 kB.
 
@@ -111,3 +111,15 @@ dichiarazioni CSS. Check, build e Storybook verdi; toolbar, login e menu verific
 Riferimenti operativi: [guida UI](trinacria-ui-design-system.md),
 [audit backoffice](backoffice-ui-audit.md) e
 [task Tailwind](../workflow/tasks/done/2026-10-01-tailwind-compatibility.md).
+
+## Semplificazione interna dei menu — 1 ottobre 2026
+
+DropdownMenu e ContextMenu condividono la navigazione delle voci e il contratto di selezione.
+Eliminati i gestori duplicati nel trigger dropdown e il cast `as never` del ref.
+ContextMenu rispetta ora `closeOnSelect={false}` e le selezioni annullate con `preventDefault()`.
+API pubbliche, tema e layout sono conservati.
+
+Ultima verifica ordinaria: 470 test passati, di cui 96 in trinacria-ui; check completo,
+build e Storybook verdi. Sei test aggiunti coprono navigazione, selezione persistente/annullata
+e trigger standard/custom. Le integrazioni Mongo/S3/Redis e i 17 scenari Chromium restano
+quelli registrati nella verifica precedente: non sono stati rieseguiti per questo refactor.

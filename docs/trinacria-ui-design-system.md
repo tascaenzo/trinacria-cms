@@ -116,7 +116,10 @@ ToolbarSelect è riservato alle opzioni compatte degli editor.
 
 ContextMenu conserva il tema del contenitore, limita le coordinate alla viewport e gestisce
 focus, frecce, Home/End, Escape e clic esterno. Nel file manager si apre anche con Shift+F10.
-DropdownMenu conserva anch'esso i token delle UI incorporate.
+DropdownMenu conserva anch'esso i token delle UI incorporate. I due menu condividono
+le regole di navigazione e selezione. `closeOnSelect={false}` e `event.preventDefault()`
+nel callback della voce mantengono il menu aperto; la gestione della posizione e il ritorno
+del focus restano responsabilità del rispettivo contenitore.
 
 L'host include nel build Tailwind tutti i domini, incluso email-pack. I colori fissi sono ammessi
 per contenuti esterni e preview di documenti, non per il chrome del CMS. Il guardrail verifica

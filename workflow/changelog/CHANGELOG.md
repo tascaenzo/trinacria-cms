@@ -3,6 +3,14 @@
 Tutte le milestone significative sono documentate qui.
 Il formato si ispira a [Keep a Changelog](https://keepachangelog.com/).
 
+## Semplificazione menu UI — completata (2026-10-01)
+
+- Navigazione e contratto di selezione condivisi tra dropdown e menu contestuale.
+- Handler del trigger unificato, rimosso il cast ref `as never`.
+- ContextMenu rispetta selezioni persistenti e annullate; ArrowUp senza voce attiva
+  raggiunge l’ultima azione abilitata.
+- Check completo: 470 test ordinari, inclusi 96 UI; build e Storybook verdi.
+
 ## Allineamento documentazione — completato (2026-10-01)
 
 - README e indici collegano stato corrente, UI/Tailwind e operazioni editoriali.

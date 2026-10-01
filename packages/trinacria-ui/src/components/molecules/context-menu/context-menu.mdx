@@ -5,6 +5,6 @@ import * as Stories from "./context-menu.stories";
 
 # ContextMenu
 
-Menu di azioni ancorato a coordinate viewport, con clamp ai bordi, focus iniziale, frecce, Home/End ed Escape. `ContextMenuItem` e `ContextMenuSeparator` riusano le primitive DropdownMenu. Un item attivo chiude il menu; il dominio esegue l’azione e controlla il montaggio con `onClose`. Il portal mantiene il contenitore del tema. Per apertura da tastiera usare ContextMenu o Shift+F10 sul trigger.
+Menu di azioni ancorato a coordinate viewport, con clamp ai bordi, focus iniziale, frecce, Home/End ed Escape. `ContextMenuItem` e `ContextMenuSeparator` riusano le primitive DropdownMenu. Un item attivo chiude il menu salvo `closeOnSelect={false}` o `event.preventDefault()` nel proprio `onClick`; il dominio esegue l’azione e controlla il montaggio con `onClose`. Il portal mantiene il contenitore del tema. Per apertura da tastiera usare ContextMenu o Shift+F10 sul trigger.
 
 <Canvas of={Stories.FileActions} />
