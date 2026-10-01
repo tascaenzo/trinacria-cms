@@ -1,0 +1,10 @@
+import { Meta, Canvas } from "@storybook/addon-docs/blocks";
+import * as Stories from "./context-menu.stories";
+
+<Meta of={Stories} />
+
+# ContextMenu
+
+Menu di azioni ancorato a coordinate viewport, con clamp ai bordi, focus iniziale, frecce, Home/End ed Escape. `ContextMenuItem` e `ContextMenuSeparator` riusano le primitive DropdownMenu. Un item attivo chiude il menu; il dominio esegue l’azione e controlla il montaggio con `onClose`. Il portal mantiene il contenitore del tema. Per apertura da tastiera usare ContextMenu o Shift+F10 sul trigger.
+
+<Canvas of={Stories.FileActions} />

@@ -219,11 +219,13 @@ function VisibilityDot({ visibility }: { visibility: MediaWidgetAsset["visibilit
     visibility === "public" ? "Pubblico" : visibility === "restricted" ? "Limitato" : "Privato";
   const tone =
     visibility === "public"
-      ? "bg-emerald-500"
+      ? "bg-[color:var(--color-success-ink)]"
       : visibility === "restricted"
-        ? "bg-amber-500"
-        : "bg-slate-400";
-  return <span className={`h-2 w-2 rounded-full ${tone}`} title={label} aria-label={label} />;
+        ? "bg-[color:var(--color-warning-ink)]"
+        : "bg-[color:var(--color-ink-subtle)]";
+  return (
+    <span className={`h-2 w-2 rounded-full ${tone}`} title={label} role="img" aria-label={label} />
+  );
 }
 
 function getAssetIcon(mimeType: string) {

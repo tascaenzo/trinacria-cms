@@ -29,6 +29,9 @@ function getButtonSizeClassName(size: ButtonSize, iconOnly: boolean) {
 }
 
 function getButtonVariantClassName(variant: ButtonVariant) {
+  if (variant === "danger") {
+    return "border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] text-[color:var(--color-danger-ink)] shadow-none hover:brightness-95";
+  }
   if (variant === "secondary") {
     return "border-[color:var(--color-action-secondary-border)] bg-[color:var(--color-action-secondary-bg)] text-[color:var(--color-action-secondary-ink)] hover:bg-[color:var(--color-action-secondary-hover)]";
   }

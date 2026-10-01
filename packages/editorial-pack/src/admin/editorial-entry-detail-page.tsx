@@ -8,6 +8,7 @@ import {
   Icon,
   IconButton,
   Input,
+  PageCanvas,
   Panel,
   Select,
   Switch,
@@ -184,7 +185,7 @@ export function EditorialEntryDetailPage({
         setIsAutosaving(false);
       }
     },
-    [cms, contentType, entry, pushToast, resetDraft]
+    [cms, contentType, draftRef, entry, markSaved, pushToast]
   );
 
   const autosave = useCallback(() => void save("auto"), [save]);
@@ -242,7 +243,7 @@ export function EditorialEntryDetailPage({
 
   return (
     <>
-      <main className="mx-auto w-full max-w-5xl px-5 py-6 sm:px-8">
+      <PageCanvas width="form">
         <header className="flex items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-2">
             <Button
@@ -378,7 +379,7 @@ export function EditorialEntryDetailPage({
             </FormSection>
           </aside>
         </div>
-      </main>
+      </PageCanvas>
 
       <Dialog
         open={isContentEditorOpen}
@@ -792,15 +793,15 @@ function resolvePublicPreviewUrl(
 
 function LoadingEditor() {
   return (
-    <main className="mx-auto w-full max-w-5xl px-5 py-6 sm:px-8">
+    <PageCanvas width="form">
       <Panel aria-hidden="true" className="h-96 animate-pulse" />
-    </main>
+    </PageCanvas>
   );
 }
 
 function MissingEditor({ error, onBack }: { error: string | null; onBack: () => void }) {
   return (
-    <main className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-8">
+    <PageCanvas width="document">
       <Button type="button" variant="ghost" onClick={onBack}>
         <Icon name="arrow-left" />
         Torna ai contenuti
@@ -809,7 +810,7 @@ function MissingEditor({ error, onBack }: { error: string | null; onBack: () => 
       <p className="mt-2 text-sm text-[color:var(--color-ink-muted)]">
         {error ?? "Scegli un contenuto dal desk editoriale."}
       </p>
-    </main>
+    </PageCanvas>
   );
 }
 

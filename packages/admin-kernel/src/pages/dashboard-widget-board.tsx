@@ -70,10 +70,12 @@ export function DashboardWidgetBoard({
   const [isDirty, setIsDirty] = useState(false);
   const [draggedKey, setDraggedKey] = useState<string | null>(null);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: The signature refreshes the layout when widget metadata changes.
   useEffect(() => {
     setLayout((previous) => normalizeDashboardWidgetLayout(previous, items));
   }, [items, widgetSignature]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Persisted layout versions deliberately reset customization state.
   useEffect(() => {
     setLayout(normalizeDashboardWidgetLayout(layoutValue, items));
     setIsDirty(false);
@@ -276,7 +278,7 @@ export function DashboardWidgetBoard({
                   COLUMN_SPAN_CLASSES[dimension.columnSpan],
                   ROW_SPAN_CLASSES[dimension.rowSpan],
                   isEditing
-                    ? "cursor-move overflow-hidden rounded-[var(--radius-surface)] border border-dashed border-[color:var(--color-border-strong)] bg-[color:var(--color-surface-subtle)] p-2"
+                    ? "cursor-move overflow-hidden rounded-(--radius-surface) border border-dashed border-(--color-border-strong) bg-[color:var(--color-surface-subtle)] p-2"
                     : "",
                   draggedKey === item.key ? "opacity-45" : ""
                 ].join(" ")}

@@ -1,0 +1,10 @@
+import { Meta, Canvas } from "@storybook/addon-docs/blocks";
+import * as Stories from "./page-canvas.stories";
+
+<Meta of={Stories} />
+
+# PageCanvas
+
+Spaziatura pagina centralizzata. `width="full"` per liste e panoramiche; `form` per dettagli e form; `document` per testo e messaggi concentrati. È un div e non aggiunge un secondo landmark main dentro la shell.
+
+<Canvas of={Stories.Form} />

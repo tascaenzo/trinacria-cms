@@ -9,7 +9,7 @@ import {
   SettingsSectionLayout,
   useToast
 } from "@trinacria-cms/trinacria-ui";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 
 type CmsClient = ReturnType<typeof createCmsSdkClient>;
 
@@ -104,8 +104,9 @@ export function MediaUploadPolicySettings({
     [mimeTypes]
   );
 
+  const loadPolicyEffect = useEffectEvent(() => loadPolicy());
   useEffect(() => {
-    void loadPolicy();
+    void loadPolicyEffect();
   }, []);
 
   async function loadPolicy() {

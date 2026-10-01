@@ -1,4 +1,4 @@
-import { Button, Dialog, Icon, Input } from "@trinacria-cms/trinacria-ui";
+import { Button, Dialog, FeedbackBanner, Icon, Input } from "@trinacria-cms/trinacria-ui";
 import { useState } from "react";
 import type { EditorialContentType } from "../editorial-admin.types.js";
 
@@ -52,11 +52,7 @@ export function ContentModelDeleteDialog({
             type="button"
             isLoading={isMutating}
             disabled={!canConfirm}
-            className={
-              isPermanent
-                ? "border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-ink)] text-white hover:opacity-90"
-                : undefined
-            }
+            variant={isPermanent ? "danger" : "primary"}
             onClick={() => void confirm()}
           >
             <Icon name="trash-2" />
@@ -67,11 +63,10 @@ export function ContentModelDeleteDialog({
     >
       {isPermanent ? (
         <div className="grid gap-5">
-          <Notice tone="danger" icon="triangle-alert">
-            Verranno cancellati per sempre la struttura dei campi e il workflow associato a questo
-            modello. I contenuti già creati resteranno memorizzati, ma non saranno più accessibili
-            dalla redazione.
-          </Notice>
+          <FeedbackBanner
+            tone="warning"
+            message="La cancellazione è consentita solo per modelli senza contenuti. La struttura dei campi e il workflow verranno cancellati definitivamente."
+          />
           <Input
             label={request ? `Scrivi “${request.model.name}” per confermare` : "Nome del modello"}
             value={confirmationName}
@@ -81,49 +76,12 @@ export function ContentModelDeleteDialog({
           />
         </div>
       ) : (
-        <Notice tone="neutral" icon="info">
-          Il modello non sarà più disponibile nel menu editoriale e non potrà essere modificato
-          finché non verrà ripristinato.
-        </Notice>
+        <FeedbackBanner
+          tone="info"
+          message="Il modello non sarà più disponibile nel menu editoriale e non potrà essere modificato finché non verrà ripristinato. I modelli con contenuti non possono essere eliminati."
+        />
       )}
     </Dialog>
-  );
-}
-
-function Notice({
-  children,
-  icon,
-  tone
-}: {
-  children: string;
-  icon: "info" | "triangle-alert";
-  tone: "neutral" | "danger";
-}) {
-  const isDanger = tone === "danger";
-  return (
-    <div
-      className={`flex gap-3 rounded-lg border p-4 ${
-        isDanger
-          ? "border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)]"
-          : "border-[color:var(--color-border)] bg-[color:var(--color-surface-subtle)]"
-      }`}
-    >
-      <Icon
-        name={icon}
-        className={
-          isDanger
-            ? "mt-0.5 text-[color:var(--color-danger-ink)]"
-            : "mt-0.5 text-[color:var(--color-ink-subtle)]"
-        }
-      />
-      <p
-        className={`text-sm leading-6 ${
-          isDanger ? "text-[color:var(--color-danger-ink)]" : "text-[color:var(--color-ink-muted)]"
-        }`}
-      >
-        {children}
-      </p>
-    </div>
   );
 }
 

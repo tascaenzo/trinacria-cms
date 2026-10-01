@@ -1,6 +1,7 @@
 import {
   createContext,
   type ReactNode,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -32,7 +33,7 @@ export function ToastProvider({
   const timeoutsRef = useRef<Map<string, number>>(new Map());
   const safeMaxVisible = Number.isFinite(maxVisible) && maxVisible > 0 ? Math.floor(maxVisible) : 0;
 
-  function clearToastTimeout(id: string) {
+  const clearToastTimeout = useCallback((id: string) => {
     const timeout = timeoutsRef.current.get(id);
 
     if (!timeout) {
@@ -41,7 +42,7 @@ export function ToastProvider({
 
     window.clearTimeout(timeout);
     timeoutsRef.current.delete(id);
-  }
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -54,47 +55,53 @@ export function ToastProvider({
     };
   }, []);
 
-  function dismissToast(id: string) {
-    clearToastTimeout(id);
-    setToasts((current) => current.filter((toast) => toast.id !== id));
-  }
+  const dismissToast = useCallback(
+    (id: string) => {
+      clearToastTimeout(id);
+      setToasts((current) => current.filter((toast) => toast.id !== id));
+    },
+    [clearToastTimeout]
+  );
 
-  function pushToast(toast: ToastInput) {
-    const id = toast.id ?? createToastId();
-    // Interactive actions must remain available until the user dismisses them.
-    const duration = toast.duration ?? (toast.action ? 0 : 5000);
-    const nextToast: ToastRecord = { ...toast, id };
+  const pushToast = useCallback(
+    (toast: ToastInput) => {
+      const id = toast.id ?? createToastId();
+      // Interactive actions must remain available until the user dismisses them.
+      const duration = toast.duration ?? (toast.action ? 0 : 5000);
+      const nextToast: ToastRecord = { ...toast, id };
 
-    clearToastTimeout(id);
-    setToasts((current) => {
-      const nextToasts =
-        safeMaxVisible > 0
-          ? [nextToast, ...current.filter((currentToast) => currentToast.id !== id)].slice(
-              0,
-              safeMaxVisible
-            )
-          : [];
-      const visibleIds = new Set(nextToasts.map((currentToast) => currentToast.id));
+      clearToastTimeout(id);
+      setToasts((current) => {
+        const nextToasts =
+          safeMaxVisible > 0
+            ? [nextToast, ...current.filter((currentToast) => currentToast.id !== id)].slice(
+                0,
+                safeMaxVisible
+              )
+            : [];
+        const visibleIds = new Set(nextToasts.map((currentToast) => currentToast.id));
 
-      for (const currentToast of current) {
-        if (!visibleIds.has(currentToast.id)) {
-          clearToastTimeout(currentToast.id);
+        for (const currentToast of current) {
+          if (!visibleIds.has(currentToast.id)) {
+            clearToastTimeout(currentToast.id);
+          }
         }
+
+        return nextToasts;
+      });
+
+      if (safeMaxVisible > 0 && duration > 0 && typeof window !== "undefined") {
+        const timeout = window.setTimeout(() => {
+          dismissToast(id);
+        }, duration);
+
+        timeoutsRef.current.set(id, timeout);
       }
 
-      return nextToasts;
-    });
-
-    if (safeMaxVisible > 0 && duration > 0 && typeof window !== "undefined") {
-      const timeout = window.setTimeout(() => {
-        dismissToast(id);
-      }, duration);
-
-      timeoutsRef.current.set(id, timeout);
-    }
-
-    return id;
-  }
+      return id;
+    },
+    [clearToastTimeout, dismissToast, safeMaxVisible]
+  );
 
   const contextValue = useMemo<ToastContextValue>(
     () => ({
@@ -109,7 +116,7 @@ export function ToastProvider({
         setToasts([]);
       }
     }),
-    [toasts]
+    [dismissToast, pushToast, toasts]
   );
 
   return (
@@ -153,7 +160,9 @@ export function ToastViewport({
         placement.endsWith("right") ? "right-0" : "left-0"
       ].join(" ")}
     >
-      <NotificationStack className="pointer-events-auto">{children}</NotificationStack>
+      <NotificationStack className="pointer-events-none [&_button]:pointer-events-auto [&_a]:pointer-events-auto">
+        {children}
+      </NotificationStack>
     </div>
   );
 }

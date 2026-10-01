@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import axe from "axe-core";
 import React from "react";
+import { IconTile } from "./components/atoms/icon-tile/icon-tile.js";
+import { Toolbar, ToolbarButton, ToolbarSelect } from "./components/molecules/toolbar/toolbar.js";
 import { Input } from "./components/atoms/input/input.js";
 import { Select } from "./components/atoms/select/select.js";
 import { Disclosure } from "./components/molecules/disclosure/disclosure.js";
@@ -35,6 +37,8 @@ test("core form, feedback, table and pagination primitives pass axe semantics", 
         <Disclosure summary="Impostazioni avanzate">
           <p>Configurazione opzionale</p>
         </Disclosure>
+        <Toolbar label="Azioni"><ToolbarButton label="Duplica" icon="copy" /><ToolbarSelect label="Livello"><option>H2</option></ToolbarSelect></Toolbar>
+        <IconTile icon="folder" label="Cartella" />
         <SelectableCard selected>Editorial pack</SelectableCard>
         <DataTable>
           <DataTableTable>

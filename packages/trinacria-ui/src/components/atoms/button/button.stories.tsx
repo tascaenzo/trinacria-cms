@@ -13,6 +13,7 @@ export const Variants: Story = {
       <Button variant="secondary">Secondary</Button>
       <Button variant="outline">Outline</Button>
       <Button variant="ghost">Ghost</Button>
+      <Button variant="danger">Elimina</Button>
     </div>
   )
 };

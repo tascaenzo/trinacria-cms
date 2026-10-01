@@ -114,6 +114,7 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
     canCustomizeDashboard,
     capabilityIndex,
     isShellLoading,
+    isShellReady,
     registry,
     runtimePlugins,
     shellError
@@ -424,6 +425,7 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
   }, []);
 
   useEffect(() => {
+    if (isBootstrappingApp || !isShellReady) return;
     const fallbackRouteId = registry.routes[0]?.id;
     if (
       fallbackRouteId &&
@@ -432,7 +434,7 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
     ) {
       navigateTo(fallbackRouteId);
     }
-  }, [activeRouteId, navigateTo, registry.routes]);
+  }, [activeRouteId, isBootstrappingApp, isShellReady, navigateTo, registry.routes]);
 
   const activeRoute =
     registry.routes.find((route) => route.id === activeRouteId) ?? registry.routes[0] ?? null;

@@ -18,6 +18,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { useControllableState } from "../../../hooks/use-controllable-state.js";
+import { useThemePortalContainer } from "../../../hooks/use-theme-portal-container.js";
 import { cn } from "../../../utils/class-names.js";
 import { Icon } from "../../atoms/icon/icon.js";
 import { OverlaySurface } from "../../primitives/overlay-surface/overlay-surface.js";
@@ -79,6 +80,7 @@ export function DropdownMenu({
   const shouldMatchTriggerWidth =
     typeof contentClassName === "string" && contentClassName.split(/\s+/).includes("w-full");
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const portalContainer = useThemePortalContainer(rootRef);
   const triggerRef = useRef<HTMLElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [menuStyle, setMenuStyle] = useState<CSSProperties | undefined>();
@@ -241,8 +243,8 @@ export function DropdownMenu({
         menuId={menuId}
         triggerId={triggerId}
       />
-      {isOpen
-        ? renderMenuPortal(
+      {isOpen && portalContainer
+        ? createPortal(
             <DropdownMenuContext.Provider value={contextValue}>
               <OverlaySurface
                 className={cn("fixed z-50 min-w-[220px] p-2", contentClassName)}
@@ -260,19 +262,12 @@ export function DropdownMenu({
                   {children}
                 </div>
               </OverlaySurface>
-            </DropdownMenuContext.Provider>
+            </DropdownMenuContext.Provider>,
+            portalContainer
           )
         : null}
     </div>
   );
-}
-
-function renderMenuPortal(menu: ReactElement) {
-  if (typeof document === "undefined") {
-    return menu;
-  }
-
-  return createPortal(menu, document.body);
 }
 
 function DropdownTrigger({

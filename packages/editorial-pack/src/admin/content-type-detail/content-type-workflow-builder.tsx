@@ -329,7 +329,9 @@ function WorkflowStateCard({
 }) {
   return (
     <div className="relative">
-      <button
+      <SelectableCard
+        selected={state.initial}
+        disabled={disabled}
         type="button"
         draggable={!disabled}
         onDragStart={() => onDragStart(state.key)}
@@ -339,13 +341,7 @@ function WorkflowStateCard({
           event.stopPropagation();
           onDrop(state.key);
         }}
-        className={`w-48 rounded-xl border p-4 text-left shadow-[var(--shadow-sm)] transition ${
-          isDragging ? "scale-[0.98] opacity-55" : ""
-        } ${
-          state.initial
-            ? "border-[color:var(--color-accent-border)] bg-[color:var(--color-accent-soft)]"
-            : "border-[color:var(--color-border)] bg-[color:var(--color-panel)]"
-        }`}
+        className={`w-48 ${isDragging ? "scale-[0.98] opacity-55" : ""}`}
       >
         <span className="grid h-7 w-7 place-items-center rounded-full bg-[color:var(--color-surface)] text-xs font-semibold text-[color:var(--color-ink-subtle)]">
           {index + 1}
@@ -360,7 +356,7 @@ function WorkflowStateCard({
           <Icon name="grip-vertical" className="h-3.5 w-3.5" />
           Trascina per riordinare
         </span>
-      </button>
+      </SelectableCard>
       <IconButton
         icon="x"
         disabled={disabled || statesCount <= 1}

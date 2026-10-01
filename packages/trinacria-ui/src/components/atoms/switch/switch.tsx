@@ -45,12 +45,14 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(function Switch(
         ) : null}
       </span>
       <span className="relative inline-flex shrink-0">
+        for role=switch, including uncontrolled usage.
         <input
           ref={ref}
           {...props}
           id={ids.controlId}
           type="checkbox"
           role="switch"
+          aria-checked={props.checked}
           aria-invalid={error ? true : props["aria-invalid"]}
           aria-describedby={aria.describedBy}
           aria-errormessage={aria.errorMessage}

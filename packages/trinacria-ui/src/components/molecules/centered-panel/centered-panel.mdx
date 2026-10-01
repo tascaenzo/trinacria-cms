@@ -1,0 +1,10 @@
+import { Meta, Canvas } from "@storybook/addon-docs/blocks";
+import * as Stories from "./centered-panel.stories";
+
+<Meta of={Stories} />
+
+# CenteredPanel
+
+Canvas centrato con pannello, titolo e descrizione condivisi per accesso, MFA e recupero. La logica dei form rimane nel dominio. Il titolo è il heading h1 della schermata.
+
+<Canvas of={Stories.Login} />

@@ -197,6 +197,7 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
   } = useSettingsSectionDrafts(selectedSectionRecords, t);
   const hasUnsavedChanges = isSectionDirty || isCustomSectionDirty;
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Switching sections resets the dirty marker without capturing the previous section.
   useEffect(() => {
     setIsCustomSectionDirty(false);
   }, [selectedSection?.id]);

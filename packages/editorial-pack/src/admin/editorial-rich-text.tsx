@@ -1,10 +1,11 @@
-import { Icon } from "@trinacria-cms/trinacria-ui";
+import { Button, Dialog, Icon, Input, Toolbar, ToolbarButton } from "@trinacria-cms/trinacria-ui";
 import {
   type CSSProperties,
   type ReactNode,
   type TextareaHTMLAttributes,
   useEffect,
-  useRef
+  useRef,
+  useState
 } from "react";
 import type { InlineText, RichTextData } from "../modules/entries/structured-document.contract.js";
 
@@ -18,7 +19,9 @@ export function InlineTextPreview({ value }: { value: RichTextData }) {
         let content: ReactNode = segment.text;
         if (segment.code)
           content = (
-            <code className="rounded bg-black/5 px-1 py-0.5 font-mono text-[0.9em]">{content}</code>
+            <code className="rounded bg-[color:var(--color-panel-soft)] px-1 py-0.5 font-mono text-[0.9em]">
+              {content}
+            </code>
           );
         if (segment.italic) content = <em>{content}</em>;
         if (segment.bold) content = <strong>{content}</strong>;
@@ -64,6 +67,9 @@ export function RichTextEditor({
   value: RichTextData;
 }) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [linkSelection, setLinkSelection] = useState<{ start: number; end: number } | null>(null);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkError, setLinkError] = useState<string | null>(null);
   useEffect(() => {
     if (autoFocus) inputRef.current?.focus();
   }, [autoFocus]);
@@ -76,37 +82,104 @@ export function RichTextEditor({
     });
     requestAnimationFrame(() => input.focus());
   };
-  const applyLink = () => {
+  const openLinkDialog = () => {
     const input = inputRef.current;
-    if (!input || input.selectionStart === input.selectionEnd || typeof window === "undefined")
+    if (!input || input.selectionStart === input.selectionEnd) return;
+    setLinkSelection({ start: input.selectionStart, end: input.selectionEnd });
+    setLinkUrl("");
+    setLinkError(null);
+  };
+  const applyLink = () => {
+    if (!linkSelection || disabled) return;
+    const link = parseLink(linkUrl.trim());
+    if (!link) {
+      setLinkError("Inserisci un URL http/https, mailto, un percorso interno o entry:<id>.");
       return;
-    const raw = window.prompt("Incolla un URL oppure scrivi entry:<id> per un riferimento interno");
-    if (!raw?.trim()) return;
-    const link = parseLink(raw.trim());
-    if (!link) return;
+    }
     onChange({
       text: value.text,
-      inline: applyInlineFormat(value, input.selectionStart, input.selectionEnd, { link })
+      inline: applyInlineFormat(value, linkSelection.start, linkSelection.end, { link })
     });
-    requestAnimationFrame(() => input.focus());
+    setLinkSelection(null);
+    requestAnimationFrame(() => inputRef.current?.focus());
   };
 
   return (
     <div className="group/rich-text relative">
-      <div className="absolute -top-7 left-1 z-20 hidden items-center gap-0.5 rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-panel)] p-0.5 shadow-[var(--shadow-sm)] group-focus-within/rich-text:flex">
-        <FormatButton label="Grassetto" onClick={() => applyMark("bold")}>
+      <Toolbar
+        label="Formattazione testo"
+        hiddenUntilFocus
+        className="absolute -top-24 left-1 z-20 sm:-top-10 group-focus-within/rich-text:flex"
+      >
+        <ToolbarButton
+          disabled={disabled}
+          onMouseDown={(event) => event.preventDefault()}
+          label="Grassetto"
+          onClick={() => applyMark("bold")}
+        >
           B
-        </FormatButton>
-        <FormatButton label="Corsivo" onClick={() => applyMark("italic")}>
+        </ToolbarButton>
+        <ToolbarButton
+          disabled={disabled}
+          onMouseDown={(event) => event.preventDefault()}
+          label="Corsivo"
+          onClick={() => applyMark("italic")}
+        >
           <em>I</em>
-        </FormatButton>
-        <FormatButton label="Codice" onClick={() => applyMark("code")}>
+        </ToolbarButton>
+        <ToolbarButton
+          disabled={disabled}
+          onMouseDown={(event) => event.preventDefault()}
+          label="Codice"
+          onClick={() => applyMark("code")}
+        >
           <span className="font-mono">&lt;/&gt;</span>
-        </FormatButton>
-        <FormatButton label="Aggiungi link" onClick={applyLink}>
+        </ToolbarButton>
+        <ToolbarButton
+          disabled={disabled}
+          onMouseDown={(event) => event.preventDefault()}
+          label="Aggiungi link"
+          onClick={openLinkDialog}
+        >
           <Icon className="h-3.5 w-3.5" name="link" />
-        </FormatButton>
-      </div>
+        </ToolbarButton>
+      </Toolbar>
+      <Dialog
+        open={linkSelection !== null}
+        title="Aggiungi link"
+        description="Collega il testo selezionato a una pagina o a un contenuto."
+        closeLabel="Chiudi"
+        closeVariant="icon"
+        onClose={() => setLinkSelection(null)}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setLinkSelection(null)}>
+              Annulla
+            </Button>
+            <Button disabled={disabled || !linkUrl.trim()} onClick={applyLink}>
+              Inserisci link
+            </Button>
+          </>
+        }
+      >
+        <Input
+          label="Destinazione link"
+          placeholder="https:// oppure entry:<id>"
+          value={linkUrl}
+          error={linkError}
+          disabled={disabled}
+          onChange={(event) => {
+            setLinkUrl(event.currentTarget.value);
+            setLinkError(null);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              applyLink();
+            }
+          }}
+        />
+      </Dialog>
       <textarea
         ref={inputRef}
         aria-label={ariaLabel}
@@ -120,28 +193,6 @@ export function RichTextEditor({
         onKeyDown={onKeyDown}
       />
     </div>
-  );
-}
-
-function FormatButton({
-  children,
-  label,
-  onClick
-}: {
-  children: ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      aria-label={label}
-      className="flex h-6 min-w-6 items-center justify-center rounded px-1 text-xs text-[color:var(--color-ink-muted)] hover:bg-[color:var(--color-interactive-hover)] hover:text-[color:var(--color-ink)]"
-      type="button"
-      onMouseDown={(event) => event.preventDefault()}
-      onClick={onClick}
-    >
-      {children}
-    </button>
   );
 }
 

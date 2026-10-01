@@ -195,12 +195,7 @@ export function useDeclarativeActionController({
             </Button>
             <Button
               type="button"
-              variant="primary"
-              className={
-                selectedAction?.intent === "delete"
-                  ? "border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] text-[color:var(--color-danger-ink)]"
-                  : undefined
-              }
+              variant={selectedAction?.intent === "delete" ? "danger" : "primary"}
               disabled={actionState.status === "submitting"}
               onClick={executeAction}
             >

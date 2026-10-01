@@ -12,6 +12,7 @@ export function useDeclarativeData(
   const [state, setState] = useState<DeclarativeDataState>({ status: "idle" });
   const [reloadToken, setReloadToken] = useState(0);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Refetch explicitly invalidates the current request.
   useEffect(() => {
     if (!endpoint) {
       setState({ status: "idle" });
@@ -52,12 +53,7 @@ export function useDeclarativeData(
       isMounted = false;
       controller?.abort();
     };
-  }, [
-    binding?.policy?.allowedPathPrefixes?.join("|"),
-    endpoint?.method,
-    endpoint?.path,
-    reloadToken
-  ]);
+  }, [binding?.policy, endpoint, reloadToken]);
 
   return {
     ...state,

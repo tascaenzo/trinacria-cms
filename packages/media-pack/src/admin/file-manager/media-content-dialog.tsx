@@ -86,7 +86,7 @@ export function MediaContentDialog({
     return () => {
       cancelled = true;
     };
-  }, [apiBaseUrl, asset?.id, cms]);
+  }, [apiBaseUrl, asset, cms]);
 
   function close() {
     if (isDirty) setIsDiscardOpen(true);

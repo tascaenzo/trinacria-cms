@@ -26,8 +26,13 @@ interface FileManagerFrameProps {
   inspector: ReactNode;
   isLoading: boolean;
   isSaving: boolean;
-  onAssetContextMenu: (asset: MediaAsset, event: React.MouseEvent<HTMLButtonElement>) => void;
-  onBackgroundContextMenu: (event: React.MouseEvent<HTMLElement>) => void;
+  onAssetContextMenu: (
+    asset: MediaAsset,
+    event: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>
+  ) => void;
+  onBackgroundContextMenu: (
+    event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>
+  ) => void;
   onCreateFolder: () => void;
   onCreateCsv: () => void;
   onDetailsVisibleChange: (visible: boolean) => void;
@@ -110,7 +115,7 @@ export function FileManagerFrame(props: FileManagerFrameProps) {
   return (
     <section
       ref={frameRef}
-      className={`flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--color-surface)] ${props.embedded ? "" : "rounded-xl border border-[color:var(--color-border)] shadow-[var(--shadow-sm)]"}`}
+      className={`flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--color-surface)] ${props.embedded ? "" : "rounded-[var(--radius-panel)] border border-[color:var(--color-border)] shadow-[var(--shadow-surface)]"}`}
     >
       <FileManagerToolbar
         detailsVisible={props.detailsVisible}

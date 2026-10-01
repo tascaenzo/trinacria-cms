@@ -107,7 +107,7 @@ export function DatePicker({
     if (selectedDate) {
       setVisibleMonth(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
     }
-  }, [selectedValue, selectedDate]);
+  }, [selectedDate]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -157,6 +157,7 @@ export function DatePicker({
     setFocusedKey(candidate);
   }, [isOpen, selectedValue]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: A changed month replaces calendar DOM nodes and requires restoring focus.
   useEffect(() => {
     if (!isOpen) {
       return;

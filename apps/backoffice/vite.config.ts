@@ -19,6 +19,15 @@ export default defineConfig(({ mode }) => {
 
   return {
     base,
+    build: {
+      rolldownOptions: {
+        output: {
+          codeSplitting: {
+            groups: [{ name: "react-vendor", test: /node_modules\/(react|react-dom|scheduler)\// }]
+          }
+        }
+      }
+    },
     plugins: [react()],
     resolve: {
       alias: {

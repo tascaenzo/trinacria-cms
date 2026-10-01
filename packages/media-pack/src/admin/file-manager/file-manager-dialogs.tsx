@@ -147,6 +147,7 @@ export function CreateCsvDialog({
 }
 
 interface CreateFolderDialogProps {
+  error?: string | null;
   isSaving: boolean;
   name: string;
   onClose: () => void;
@@ -157,6 +158,7 @@ interface CreateFolderDialogProps {
 }
 
 export function CreateFolderDialog({
+  error,
   isSaving,
   name,
   onClose,
@@ -188,6 +190,7 @@ export function CreateFolderDialog({
         </>
       }
     >
+      {error ? <ErrorBanner message={error} /> : null}
       <Input
         label="Nome cartella"
         placeholder="Inserisci il nome"
@@ -281,12 +284,7 @@ export function ConfirmationDialog({
           <Button type="button" variant="secondary" onClick={onClose}>
             Annulla
           </Button>
-          <Button
-            type="button"
-            className="bg-[color:var(--color-danger-bg)] text-[color:var(--color-danger-ink)] hover:brightness-95"
-            disabled={isSaving}
-            onClick={onConfirm}
-          >
+          <Button type="button" variant="danger" disabled={isSaving} onClick={onConfirm}>
             {confirmLabel}
           </Button>
         </>
@@ -316,7 +314,7 @@ export function MoveAssetDialog({
 }: MoveAssetDialogProps) {
   const [destinationId, setDestinationId] = useState("");
 
-  useEffect(() => setDestinationId(asset?.directoryId ?? ""), [asset?.id]);
+  useEffect(() => setDestinationId(asset?.directoryId ?? ""), [asset?.directoryId]);
 
   return (
     <Dialog

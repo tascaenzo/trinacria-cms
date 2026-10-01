@@ -302,7 +302,7 @@ export function ProfilePage() {
               title={t("profile.title", "Your account")}
               className="overflow-hidden p-0"
             >
-              <div className="relative min-h-[280px] bg-[radial-gradient(circle_at_20%_10%,rgba(23,119,92,0.20),transparent_32%),linear-gradient(135deg,var(--color-surface),var(--color-canvas))] p-5">
+              <div className="relative min-h-[280px] bg-[radial-gradient(circle_at_20%_10%,color-mix(in_srgb,var(--color-accent-ink)_20%,transparent),transparent_32%),linear-gradient(135deg,var(--color-surface),var(--color-canvas))] p-5">
                 <div className="absolute right-0 top-0 h-40 w-40 rounded-bl-[5rem] bg-[color:var(--color-action-primary-bg)]/10" />
                 <div className="relative flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
                   <div className="flex items-center gap-4">
@@ -771,11 +771,7 @@ export function ProfilePage() {
 
 function ProfileMetric({ label, value }: { label: string; value: string }) {
   return (
-    <Panel
-      className="rounded-2xl bg-[color:var(--color-surface)]/75 p-4 backdrop-blur"
-      elevation="sm"
-      tone="custom"
-    >
+    <Panel className="p-4" elevation="sm" tone="custom">
       <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
         {label}
       </p>

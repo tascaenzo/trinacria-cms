@@ -18,8 +18,13 @@ interface FileManagerBrowserProps {
   isLoading: boolean;
   onNavigate: (directoryId: string | null) => void;
   onOpenAsset: (asset: MediaAsset) => void;
-  onAssetContextMenu: (asset: MediaAsset, event: React.MouseEvent<HTMLButtonElement>) => void;
-  onBackgroundContextMenu: (event: React.MouseEvent<HTMLElement>) => void;
+  onAssetContextMenu: (
+    asset: MediaAsset,
+    event: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>
+  ) => void;
+  onBackgroundContextMenu: (
+    event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>
+  ) => void;
   onSelectAsset: (assetId: string) => void;
   selectedAssetId: string | null;
   resolveAssetPreview: (assetId: string) => Promise<string | null>;
@@ -45,9 +50,14 @@ export function FileManagerBrowser({
 }: FileManagerBrowserProps) {
   const itemCount = assets.length + childDirectories.length;
   return (
-    <main
+    <section
+      aria-label="File media"
       className="min-w-0 overflow-auto bg-[color:var(--color-surface)]"
       onContextMenu={onBackgroundContextMenu}
+      onKeyDown={(event) => {
+        if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10"))
+          onBackgroundContextMenu(event);
+      }}
     >
       <div className="sticky top-0 z-10 flex h-12 items-center border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4">
         <Breadcrumbs breadcrumbs={breadcrumbs} onNavigate={onNavigate} />
@@ -80,7 +90,7 @@ export function FileManagerBrowser({
           {currentDirectory?.name ?? "Tutti i media"}
         </span>
       </footer>
-    </main>
+    </section>
   );
 }
 
@@ -145,7 +155,10 @@ function FileCollection({
   onNavigate: (directoryId: string) => void;
   onOpen: (asset: MediaAsset) => void;
   onSelect: (assetId: string) => void;
-  onContextMenu: (asset: MediaAsset, event: React.MouseEvent<HTMLButtonElement>) => void;
+  onContextMenu: (
+    asset: MediaAsset,
+    event: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>
+  ) => void;
 }) {
   return (
     <div
@@ -196,6 +209,10 @@ function FileCollection({
           onClick={() => onSelect(asset.id)}
           onDoubleClick={() => onOpen(asset)}
           onContextMenu={(event) => onContextMenu(asset, event)}
+          onKeyDown={(event) => {
+            if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10"))
+              onContextMenu(asset, event);
+          }}
           className={
             viewMode === "icons"
               ? `grid h-auto min-h-28 min-w-0 content-start justify-items-center gap-2 overflow-hidden border-transparent p-3 text-center shadow-none ${selectedAssetId === asset.id ? "bg-[color:var(--color-panel-strong)]" : ""}`

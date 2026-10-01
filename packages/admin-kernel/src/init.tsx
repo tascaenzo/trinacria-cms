@@ -31,7 +31,7 @@ export function mountBackoffice(container: Element, options: MountBackofficeOpti
   const root = ReactDOM.createRoot(container);
   root.render(
     <React.StrictMode>
-      <ToastProvider>
+      <ToastProvider placement="bottom-right">
         <BackofficeApp modules={options.modules} />
       </ToastProvider>
     </React.StrictMode>

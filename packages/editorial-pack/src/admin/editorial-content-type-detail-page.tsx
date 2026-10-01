@@ -3,6 +3,7 @@ import {
   ErrorBanner,
   Icon,
   Input,
+  PageCanvas,
   Panel,
   Select,
   Textarea
@@ -63,7 +64,7 @@ export function EditorialContentTypeDetailPage({
       : detail.addField(field);
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-5 py-6 sm:px-8">
+    <PageCanvas width="form">
       <header>
         <h1 className="text-xl font-semibold text-[color:var(--color-ink)]">{detail.model.name}</h1>
         <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
@@ -166,21 +167,21 @@ export function EditorialContentTypeDetailPage({
         onClose={() => setFieldEditor(null)}
         onSubmit={saveField}
       />
-    </main>
+    </PageCanvas>
   );
 }
 
 function LoadingDetail() {
   return (
-    <main className="mx-auto w-full max-w-6xl px-5 py-6 sm:px-8">
+    <PageCanvas width="form">
       <Panel aria-hidden="true" className="h-72 animate-pulse" />
-    </main>
+    </PageCanvas>
   );
 }
 
 function MissingDetail({ onBack }: { onBack: () => void }) {
   return (
-    <main className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-8">
+    <PageCanvas width="document">
       <Button type="button" variant="ghost" onClick={onBack}>
         <Icon name="arrow-left" />
         Torna ai modelli
@@ -191,7 +192,7 @@ function MissingDetail({ onBack }: { onBack: () => void }) {
       <p className="mt-2 text-sm text-[color:var(--color-ink-muted)]">
         Scegli un modello dall’elenco per configurarlo.
       </p>
-    </main>
+    </PageCanvas>
   );
 }
 

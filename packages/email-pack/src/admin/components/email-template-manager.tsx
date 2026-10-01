@@ -17,7 +17,7 @@ import {
   Textarea,
   useToast
 } from "@trinacria-cms/trinacria-ui";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 
 type CmsClient = ReturnType<typeof createCmsSdkClient>;
 type EmailTemplateRecord = Awaited<ReturnType<EmailApi["listEmailTemplates"]>>["data"][number];
@@ -64,8 +64,9 @@ export function EmailTemplateManager({ cms, onDirtyChange, t }: EmailTemplateMan
   const [previewMode, setPreviewMode] = useState<EmailPreviewMode>("html");
   const { pushToast } = useToast();
 
+  const loadTemplatesEffect = useEffectEvent(() => loadTemplates());
   useEffect(() => {
-    void loadTemplates();
+    void loadTemplatesEffect();
   }, []);
 
   const selectedTemplate = useMemo(

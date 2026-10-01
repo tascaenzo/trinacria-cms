@@ -63,7 +63,8 @@ test.describe.serial("production readiness baseline", () => {
     await page.getByRole("button", { name: "Initialise CMS" }).dispatchEvent("click");
 
     await expect(page.getByText(`${E2E_ADMIN.firstName} ${E2E_ADMIN.lastName}`)).toBeVisible();
-    await expect(page.getByText("Runtime health").first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Panoramica", exact: true })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Utenti, ruoli e permessi" })).toBeVisible();
   });
 
   test("returns the bearer access token without exposing the refresh token", async () => {
@@ -186,6 +187,19 @@ test.describe.serial("production readiness baseline", () => {
         "trinacria-e2e-only-jwt-secret-with-more-than-thirty-two-characters"
       );
       expect(serializedSettings).not.toContain(E2E_OBSERVABILITY_TOKEN);
+
+      // Plugin grants are deliberately hidden from Settings; their operational API remains covered.
+      const grantPath = `/v1/settings/values/${encodeURIComponent("core-pack:security:plugin_access_grants")}`;
+      const grantResponse = await adminClient.get(grantPath);
+      expect(grantResponse.status()).toBe(200);
+      const originalGrants = (await grantResponse.json()).data.value;
+      expect(Array.isArray(originalGrants)).toBe(true);
+      expect(originalGrants.length).toBeGreaterThan(0);
+      const changedGrants = originalGrants.map((grant: { status: string }, index: number) => index === 0
+        ? { ...grant, status: grant.status === "approved" ? "denied" : "approved" } : grant);
+      expect((await adminClient.put(grantPath, { data: { value: changedGrants, updatedBy: "e2e" } })).status()).toBe(200);
+      expect((await (await adminClient.get(grantPath)).json()).data.value).toEqual(changedGrants);
+      expect((await adminClient.put(grantPath, { data: { value: originalGrants, updatedBy: "e2e" } })).status()).toBe(200);
 
       const templatesResponse = await adminClient.get("/v1/email/templates");
       expect(templatesResponse.status()).toBe(200);
@@ -367,7 +381,7 @@ test.describe.serial("production readiness baseline", () => {
     }
   });
 
-  test("writes general settings, plugin grants and email templates from the backoffice", async ({
+  test("writes general settings and email templates from the backoffice", async ({
     page
   }) => {
     await loginThroughUi(page);
@@ -381,16 +395,6 @@ test.describe.serial("production readiness baseline", () => {
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect(page.getByText("Settings saved.")).toBeVisible();
 
-    await page.getByRole("button", { name: /Plugin permissions/ }).click();
-    const grantSwitch = page.getByRole("switch").first();
-    await expect(grantSwitch).toBeVisible();
-    const initiallyApproved = await grantSwitch.isChecked();
-    await grantSwitch.locator("..").click();
-    await expect(grantSwitch).toBeChecked({ checked: !initiallyApproved });
-    await expect(page.getByText("Permission updated.")).toBeVisible();
-    await grantSwitch.locator("..").click();
-    await expect(grantSwitch).toBeChecked({ checked: initiallyApproved });
-
     await page.getByRole("button", { name: /Email templates/ }).click();
     const subject = page.getByLabel("Oggetto email");
     await expect(subject).toBeVisible();
@@ -398,10 +402,10 @@ test.describe.serial("production readiness baseline", () => {
     await subject.fill(`${originalSubject} [E2E]`);
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect(page.getByText("Template salvato.")).toBeVisible();
-    await page.getByRole("button", { name: "Valida salvato" }).click();
+    await page.getByRole("button", { name: "Valida versione salvata" }).click();
     await expect(
       page.getByText(
-        "Validazione backend completata: il template salvato renderizza correttamente."
+        "Validazione completata: il template salvato viene renderizzato correttamente."
       )
     ).toBeVisible();
   });
@@ -495,6 +499,143 @@ test.describe.serial("production readiness baseline", () => {
     const restored = await smokeBackupAndRestoreE2eDatabase();
     expect(restored.collections).toBeGreaterThan(0);
     expect(restored.documents).toBeGreaterThan(0);
+  });
+  test("editorial saves expose loading, failure and success, and restore preserves publication state", async ({ page }) => {
+    const client = await createBearerClient(await loginAsAdmin());
+    try {
+      const modelResponse = await client.post("/v1/editorial/content-types", { data: {
+        key: "quality-page", name: "Quality Page", fields: [], workflowId: "direct"
+      } });
+      expect(modelResponse.status()).toBe(200);
+      const model = (await modelResponse.json()).data;
+      const created = await client.post("/v1/editorial/entries", { data: {
+        contentTypeId: model.id, title: "Quality Entry", data: {}
+      } });
+      expect(created.status()).toBe(200);
+      const entry = (await created.json()).data;
+      expect((await client.post("/v1/editorial/entries", { data: { contentTypeId: model.id, data: {} } })).status()).toBe(200);
+      expect((await client.patch(`/v1/editorial/content-types/${model.id}`, { data: { workflowId: "review" } })).status()).toBe(400);
+      await loginThroughUi(page);
+      await page.goto(`/editorial-entry-detail?entryId=${encodeURIComponent(entry.id)}`);
+      await page.getByLabel("Slug", { exact: true }).fill("quality-entry");
+      const failure = await holdMutation(page, `**/cms/v1/editorial/entries/${entry.id}`, "PATCH");
+      await page.getByRole("button", { name: "Salva", exact: true }).click();
+      await failure.started;
+      await expect(page.getByRole("button", { name: "Salvataggio…", exact: true })).toBeDisabled();
+      failure.release();
+      await expect(page.getByText("E2E richiesta rifiutata").first()).toBeVisible();
+      await page.unroute(`**/cms/v1/editorial/entries/${entry.id}`);
+      await page.getByRole("button", { name: "Salva", exact: true }).click();
+      await expect(page.getByText("Modifiche salvate.").first()).toBeVisible();
+      await page.getByRole("button", { name: "Apri editor", exact: true }).click();
+      const editor = page.getByRole("dialog", { name: "Quality Entry" });
+      await editor.getByLabel("Nuovo paragrafo", { exact: true }).fill("Testo con componenti condivisi");
+      await editor.getByLabel("Nuovo paragrafo", { exact: true }).press("Enter");
+      const paragraph = editor.getByLabel("Paragrafo", { exact: true });
+      await paragraph.focus();
+      await paragraph.selectText();
+      await editor.getByRole("button", { name: "Grassetto", exact: true }).click();
+      await expect(paragraph).toHaveValue("Testo con componenti condivisi");
+      await paragraph.selectText();
+      await editor.getByRole("button", { name: "Aggiungi link", exact: true }).click();
+      const linkDialog = page.getByRole("dialog", { name: "Aggiungi link", exact: true });
+      await linkDialog.getByLabel("Destinazione link").fill("javascript:alert(1)");
+      await linkDialog.getByRole("button", { name: "Inserisci link" }).click();
+      await expect(linkDialog.getByText("Inserisci un URL http/https, mailto, un percorso interno o entry:<id>.")).toBeVisible();
+      await linkDialog.getByLabel("Destinazione link").fill("https://example.com/editorial");
+      await linkDialog.getByRole("button", { name: "Inserisci link" }).click();
+      await expect(linkDialog).toBeHidden();
+      await expect(paragraph).toBeFocused();
+      await expect(editor).toHaveCSS("opacity", "1");
+      await editor.screenshot({ path: "/tmp/trinacria-editor-unified.png", animations: "disabled" });
+      await page.setViewportSize({ width: 390, height: 844 });
+      await paragraph.focus();
+      const textTools = editor.getByRole("group", { name: "Formattazione testo" });
+      const blockTools = editor.getByRole("group", { name: "Azioni blocco" });
+      await expect(textTools).toBeVisible();
+      await expect(blockTools).toBeVisible();
+      const textBox = (await textTools.boundingBox())!;
+      const blockBox = (await blockTools.boundingBox())!;
+      expect(textBox.y + textBox.height).toBeLessThanOrEqual(blockBox.y);
+      await editor.screenshot({ path: "/tmp/trinacria-editor-mobile.png", animations: "disabled" });
+      await page.setViewportSize({ width: 1280, height: 720 });
+      const editorSave = editor.getByRole("button", { name: "Salva", exact: true });
+      if (await editorSave.isEnabled()) await editorSave.click();
+      await expect.poll(async () => {
+        const current = await client.get(`/v1/editorial/entries/${entry.id}`);
+        return (await current.json()).data.body?.blocks[0]?.data.inline?.[0]?.link?.href === "https://example.com/editorial";
+      }).toBe(true);
+      await editor.getByRole("button", { name: "Chiudi editor", exact: true }).click();
+      const saved = await client.get(`/v1/editorial/entries/${entry.id}`);
+      expect(saved.status()).toBe(200);
+      const savedInline = (await saved.json()).data.body.blocks[0].data.inline[0];
+      expect(savedInline.bold).toBe(true);
+      expect(savedInline.link.href).toBe("https://example.com/editorial");
+      expect((await client.post(`/v1/editorial/entries/${entry.id}/publish`)).status()).toBe(200);
+      const revisions = (await (await client.get(`/v1/editorial/entries/${entry.id}/revisions`)).json()).data;
+      expect((await client.post(`/v1/editorial/entries/${entry.id}/unpublish`)).status()).toBe(200);
+      const restored = await client.post(`/v1/editorial/entries/${entry.id}/revisions/${revisions[0].id}/restore`);
+      expect(restored.status()).toBe(200);
+      expect((await restored.json()).data.status).toBe("draft");
+    } finally {
+      await client.dispose();
+    }
+  });
+
+  test("media browser uploads real bytes and reports a failed upload", async ({ page }) => {
+    await loginThroughUi(page);
+    await page.goto("/media-assets");
+    await expect(page.getByRole("button", { name: "Carica", exact: true })).toBeVisible();
+    const filename = "quality-upload.txt";
+    await page.locator('input[type="file"]').setInputFiles({ name: filename, mimeType: "text/plain", buffer: Buffer.from("Quality media content") });
+    await expect(page.getByText(filename, { exact: true }).first()).toBeVisible();
+    const fileTile = page.getByRole("button", { name: /quality-upload\.txt/ }).first();
+    await fileTile.focus();
+    await fileTile.press("Shift+F10");
+    const fileMenu = page.getByRole("menu", { name: /Azioni per quality-upload/ });
+    await expect(fileMenu).toBeVisible();
+    await expect(fileMenu.getByRole("menuitem", { name: "Apri", exact: true })).toBeFocused();
+    await page.keyboard.press("ArrowDown");
+    await expect(fileMenu.getByRole("menuitem", { name: "Mostra proprietà" })).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(fileMenu).toBeHidden();
+    await expect(fileTile).toBeFocused();
+    const client = await createBearerClient(await loginAsAdmin());
+    try {
+    const assetsResponse = await client.get("/v1/media/assets");
+    expect(assetsResponse.status()).toBe(200);
+    const asset = (await assetsResponse.json()).data.find((record: { originalFilename: string }) => record.originalFilename === filename);
+    expect(asset.status).toBe("ready");
+      const urlResponse = await client.post(`/v1/media/assets/${asset.id}/access-url`);
+      expect(urlResponse.status()).toBe(200);
+      const url = (await urlResponse.json()).data.url;
+      const bytes = await client.get(new URL(url, E2E_API_URL).toString());
+      expect(await bytes.text()).toBe("Quality media content");
+    } finally { await client.dispose(); }
+    const failure = await holdMutation(page, "**/cms/v1/media/uploads", "POST");
+    await page.locator('input[type="file"]').setInputFiles({ name: "quality-failed.txt", mimeType: "text/plain", buffer: Buffer.from("Rejected") });
+    await failure.started;
+    await expect(page.getByRole("button", { name: "Carica", exact: true })).toBeDisabled();
+    failure.release();
+    await expect(page.getByText("E2E richiesta rifiutata").first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "Carica", exact: true })).toBeEnabled();
+  });
+
+  test("media folder creation exposes loading, failure and retry success", async ({ page }) => {
+    await loginThroughUi(page);
+    await page.goto("/media-assets");
+    await page.getByRole("button", { name: "Nuova cartella", exact: true }).click();
+    await page.getByLabel("Nome cartella", { exact: true }).fill("Quality Folder");
+    const failure = await holdMutation(page, "**/cms/v1/media/directories", "POST");
+    await page.getByRole("button", { name: "Crea cartella", exact: true }).click();
+    await failure.started;
+    await expect(page.getByRole("button", { name: "Crea cartella", exact: true })).toBeDisabled();
+    failure.release();
+    await expect(page.getByText("E2E richiesta rifiutata").first()).toBeVisible();
+    await page.unroute("**/cms/v1/media/directories");
+    await page.getByRole("button", { name: "Crea cartella", exact: true }).click();
+    await expect(page.getByText("Cartella creata.").first()).toBeVisible();
+    await expect(page.getByText("Quality Folder", { exact: true }).first()).toBeVisible();
   });
 });
 
@@ -615,4 +756,19 @@ async function loginThroughUi(page: Page): Promise<void> {
   await page.locator('input[name="password"]').fill(E2E_ADMIN.password);
   await page.locator('button[type="submit"]').click();
   await expect(page.getByText(`${E2E_ADMIN.firstName} ${E2E_ADMIN.lastName}`)).toBeVisible();
+}
+
+/** Hold the request deterministically so loading feedback can be asserted without sleeps. */
+async function holdMutation(page: Page, pattern: string, method: string) {
+  let started!: () => void;
+  let release!: () => void;
+  const startedPromise = new Promise<void>((resolve) => { started = resolve; });
+  const released = new Promise<void>((resolve) => { release = resolve; });
+  await page.route(pattern, async (route) => {
+    if (route.request().method() !== method) return route.continue();
+    started();
+    await released;
+    await route.fulfill({ status: 400, json: { error: { code: "validation_error", message: "E2E richiesta rifiutata" } } });
+  });
+  return { started: startedPromise, release };
 }

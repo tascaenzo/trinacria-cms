@@ -8,7 +8,7 @@ import {
   SettingsSectionLayout,
   useToast
 } from "@trinacria-cms/trinacria-ui";
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 
 type CmsClient = ReturnType<typeof createCmsSdkClient>;
 type ProviderId = "local-disk" | "s3-compatible" | "custom";
@@ -59,8 +59,9 @@ export function MediaStorageSettings({ cms, onDirtyChange, t }: MediaStorageSett
 
   const provider = normalizeProviderId(draft.provider);
 
+  const loadSettingsEffect = useEffectEvent(() => loadSettings());
   useEffect(() => {
-    void loadSettings();
+    void loadSettingsEffect();
   }, []);
 
   function updateDraft(update: Partial<StorageDraft>) {

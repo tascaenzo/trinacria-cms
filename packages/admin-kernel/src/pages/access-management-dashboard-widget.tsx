@@ -149,7 +149,8 @@ export function AccessManagementDashboardWidget({
               </div>
               <div
                 className="grid h-20 grid-cols-6 items-end gap-2"
-                aria-label="Andamento registrazioni utenti"
+                role="img"
+                aria-label={`Andamento registrazioni utenti: ${registrationTrend.map((bucket) => `${bucket.label}: ${bucket.count}`).join(", ")}`}
               >
                 {registrationTrend.map((bucket) => (
                   <div

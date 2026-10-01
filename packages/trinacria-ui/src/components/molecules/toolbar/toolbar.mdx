@@ -1,0 +1,10 @@
+import { Meta, Canvas } from "@storybook/addon-docs/blocks";
+import * as Stories from "./toolbar.stories";
+
+<Meta of={Stories} />
+
+# Toolbar
+
+Azioni compatte per editor e inspector. `label` è obbligatoria; ogni controllo resta raggiungibile con Tab. `ToolbarButton` supporta icona, stato premuto, disabled e gli eventi nativi. `ToolbarSelect` serve per opzioni brevi; i form usano `Select`. Nei formattatori preservare la selezione con `onMouseDown={(event) => event.preventDefault()}`. `wrap` è facoltativo; `hiddenUntilFocus` richiede una classe di visibilità hover/focus nel contenitore.
+
+<Canvas of={Stories.Editor} />
