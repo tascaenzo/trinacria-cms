@@ -3,6 +3,12 @@
 Tutte le milestone significative sono documentate qui.
 Il formato si ispira a [Keep a Changelog](https://keepachangelog.com/).
 
+## Typecheck E2E su checkout pulito — completato (2026-10-01)
+
+- `e2e:typecheck` compila prima il playground e le dipendenze workspace richieste
+  dagli entrypoint browser/API, senza dipendere da artifact locali precedenti.
+- Riprodotto il problema in CI; verificato il comando senza `apps/playground/dist`.
+
 ## Semplificazione menu UI — completata (2026-10-01)
 
 - Navigazione e contratto di selezione condivisi tra dropdown e menu contestuale.

@@ -161,6 +161,9 @@ npm run storybook:build
 
 Run check, application build and Storybook build sequentially: SDK generation writes shared
 sources. `ui:guardrails` checks shared primitives, save labels, stories and Tailwind syntax.
+`npm run e2e:typecheck` first builds the playground and its workspace dependencies, so it
+also works on a clean checkout without pre-existing `dist` files.
+
 Integration tests require running Mongo, S3-compatible storage and Redis services. Enable
 `TRINACRIA_RUN_MONGO_INTEGRATION=1`, `TRINACRIA_RUN_S3_INTEGRATION=1` and
 `TRINACRIA_RUN_REDIS_INTEGRATION=1`; configure `TRINACRIA_MONGO_URI` (or `MONGO_URI`),

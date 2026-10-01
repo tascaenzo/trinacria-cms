@@ -29,7 +29,7 @@
     "e2e": "playwright test",
     "e2e:ci": "playwright test",
     "e2e:ui": "playwright test --ui",
-    "e2e:typecheck": "tsc -p test/e2e/tsconfig.json --noEmit",
+    "e2e:typecheck": "turbo run build --filter=@trinacria-cms/playground... && tsc -p test/e2e/tsconfig.json --noEmit",
     "sdk:snapshot": "npm run snapshot:openapi -w @trinacria-cms/sdk",
     "sdk:generate": "turbo run generate --filter=@trinacria-cms/sdk",
     "sdk:build": "turbo run build --filter=@trinacria-cms/sdk",
