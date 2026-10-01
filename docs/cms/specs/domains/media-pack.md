@@ -2,10 +2,14 @@
 
 ## Stato
 
-- Milestone: prossima milestone dominio, dopo `M6`
+- Milestone: dominio implementato; consolidamento qualità `M7`
 - Stato: `production-candidate-v0`
 - Scope: specifica low-level del primo plugin dominio di media
-- Ultimo aggiornamento: `2026-07-17`
+- Ultimo allineamento stato: `2026-10-01`
+
+Questa specifica conserva il contratto e gli obiettivi di dominio. Le capacità effettivamente
+presenti e i limiti della beta sono descritti nello [stato del progetto](../../../project-quality-status.md).
+La UI media adotta i componenti della [guida UI](../../../trinacria-ui-design-system.md).
 
 ## 1. Decisione
 

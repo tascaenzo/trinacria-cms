@@ -4,7 +4,9 @@ Modular headless CMS built on top of Trinacria, the underlying framework/library
 that provides the DI runtime, module lifecycle, HTTP integration and schema
 tooling used by this repository.
 
-Stato aggiornato: [analisi e consolidamento qualità](docs/project-quality-status.md).
+Stato aggiornato: [qualità e funzionalità presenti](docs/project-quality-status.md).
+UI e Tailwind: [guida del design system](docs/trinacria-ui-design-system.md) e
+[audit del backoffice](docs/backoffice-ui-audit.md).
 
 ## Vision
 
@@ -146,6 +148,8 @@ Operational endpoints:
 ## Quality checks
 
 ```bash
+npm run check
+npm run ui:guardrails
 npm run lint
 npm run format
 npm run build
@@ -154,6 +158,15 @@ npm run test
 npm run test:integration
 npm run storybook:build
 ```
+
+Run check, application build and Storybook build sequentially: SDK generation writes shared
+sources. `ui:guardrails` checks shared primitives, save labels, stories and Tailwind syntax.
+Integration tests require running Mongo, S3-compatible storage and Redis services. Enable
+`TRINACRIA_RUN_MONGO_INTEGRATION=1`, `TRINACRIA_RUN_S3_INTEGRATION=1` and
+`TRINACRIA_RUN_REDIS_INTEGRATION=1`; configure `TRINACRIA_MONGO_URI` (or `MONGO_URI`),
+`TRINACRIA_S3_ENDPOINT`, S3 credentials/bucket and `TRINACRIA_REDIS_URI` for dedicated test
+services. See [.github/workflows/ci.yml](.github/workflows/ci.yml) for the reproducible setup. Recorded results are in
+[project quality status](docs/project-quality-status.md).
 
 Install Chromium once and run the production-readiness browser/API suite:
 

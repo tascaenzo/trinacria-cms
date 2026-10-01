@@ -23,6 +23,7 @@ Component convention:
   - `src/components/primitives/**`: low-level presentation building blocks
   - `src/components/atoms/**`: isolated UI controls and small display elements
   - `src/components/molecules/**`: composed backoffice patterns built from atoms/primitives
+  - `src/components/organisms/**`: data tables and composed resource layouts
   - `src/shell/**`: application frame components
   - `src/foundations/**`: tokens and design foundations
 - every reusable unit lives in its own folder
@@ -43,3 +44,13 @@ Shared CMS patterns:
 - `IconTile`: semantic icon surfaces that follow light/dark/accent tokens.
 
 Usage and adoption rules: [design system guide](../../docs/trinacria-ui-design-system.md).
+
+Tailwind integration:
+
+- Tailwind 4.3 sources are declared in host CSS and `.storybook/storybook.css` with `@source`.
+- No `tailwind.config.ts` is used; shared visual tokens live in `theme.css`.
+- Use `bg-(--color-panel)`, `text-(--color-ink)` and `shadow-(--shadow-surface)`.
+- Use `wrap-break-word`, `bg-linear-to-*` and accessible `outline-hidden` where appropriate.
+- Destructive actions use `Button variant="danger"`.
+- Run `npm run ui:guardrails` and `npm run check` from the repository root. Build the app
+  and Storybook sequentially to avoid overlapping SDK generation.

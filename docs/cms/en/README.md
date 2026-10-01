@@ -32,6 +32,16 @@ Unified terminology glossary: [GLOSSARY.md](../GLOSSARY.md)
 18. [0017 - Cache system and authentication hardening](./0017-cache-and-auth-hardening.md)
 19. [0018 - Admin manifest and declarative backoffice](./0018-admin-manifest-and-declarative-backoffice.md)
 
+## Current implementation references
+
+The following operational references are currently available in Italian:
+
+- [Project status and verification](../../project-quality-status.md)
+- [Shared UI and Tailwind conventions](../../trinacria-ui-design-system.md)
+- [Editorial operations](../it/0023-editorial-operazioni.md)
+
+Use these for the current implementation; historical plans also contain future requirements.
+
 ## What this manual includes
 
 - Full project structure map (`packages/kernel`, `packages/core-pack`, `packages/sdk`, `apps/playground`, `apps/backoffice`).

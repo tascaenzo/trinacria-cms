@@ -36,6 +36,11 @@ Glossario terminologico unico: [GLOSSARY.md](../GLOSSARY.md)
 22. [0021 - Checklist hardening security](./0021-checklist-hardening-security.md)
 23. [0022 - Beta team onboarding: primo verticale prodotto](./0022-beta-team-onboarding.md)
 
+24. [0023 - Operazioni editoriali](./0023-editorial-operazioni.md)
+
+Per lo stato corrente consultare [qualità del progetto](../../project-quality-status.md).
+Per il frontend usare la [guida UI e Tailwind](../../trinacria-ui-design-system.md).
+
 ## Cosa trovi in questo manuale
 
 - Mappa completa della struttura codice reale (`packages/kernel`, `packages/core-pack`, `packages/sdk`, `apps/playground`, `apps/backoffice`).

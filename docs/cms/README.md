@@ -15,6 +15,17 @@ mescolata con le decisioni del CMS.
 - `en/`: manuale didattico e operativo in inglese.
 - `GLOSSARY.md`: terminologia canonica.
 
+## Stato corrente e guide operative
+
+- [Stato e qualità del progetto](../project-quality-status.md): funzionalità presenti, verifiche e limiti.
+- [Design system e Tailwind](../trinacria-ui-design-system.md): API UI e regole di adozione.
+- [Audit backoffice](../backoffice-ui-audit.md): interventi conclusi e copertura da estendere.
+- [Operazioni editoriali](it/0023-editorial-operazioni.md): modelli, workflow, restore e permessi.
+- [Dipendenze verificate](../dependency-audit-2026-10-01.md): versioni e risultati registrati.
+
+Le specifiche e i piani storici descrivono anche obiettivi futuri; lo stato corrente prevale
+quando si deve stabilire quali funzionalità sono effettivamente disponibili.
+
 ## Fonti di verita
 
 - Direzione CMS: [architecture/plugin-first-cms-direction.md](architecture/plugin-first-cms-direction.md)

@@ -8,7 +8,12 @@ Rendere la beta avanzata verificabile nei flussi di dominio e riallineare i pian
 
 ## Task
 
-- [x] `workflow/tasks/done/2026-10-01-project-quality-hardening.md`
+- [x] [Consolidamento qualità](../tasks/done/2026-10-01-project-quality-hardening.md)
+- [x] [Unificazione UI](../tasks/done/2026-10-01-cms-ui-consistency.md)
+- [x] [Compatibilità Tailwind](../tasks/done/2026-10-01-tailwind-compatibility.md)
+
+Il consolidamento backend conserva i propri risultati di verifica. Gli interventi UI/Tailwind
+successivi sono registrati separatamente; il riepilogo corrente è in `docs/project-quality-status.md`.
 
 ## Criterio di chiusura
 

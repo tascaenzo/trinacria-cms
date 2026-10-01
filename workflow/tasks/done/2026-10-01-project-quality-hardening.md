@@ -2,6 +2,12 @@
 
 Stato: `completed`
 
+Questo task registra il consolidamento iniziale. Per gli aggiornamenti successivi delle
+dipendenze, UI e Tailwind e i risultati complessivi consultare
+[stato del progetto](../../../docs/project-quality-status.md). I conteggi e l’audit qui sotto
+conservano il risultato della fase iniziale, precedente all’aggiornamento che ha risolto
+la segnalazione esbuild.
+
 ## Risultato
 
 - Ownership e assegnazione revisori applicate nel servizio e nei filtri prima della paginazione.

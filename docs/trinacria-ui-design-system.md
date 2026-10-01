@@ -20,7 +20,7 @@ It does not own:
 - runtime business logic
 - page-specific orchestration
 
-Those responsibilities stay in `packages/admin-kernel`.
+Those responsibilities stay in `packages/admin-kernel` or in the owning domain pack.
 
 ## Adoption rules
 
@@ -65,6 +65,7 @@ Taxonomy:
 - `src/components/primitives/**`: presentation primitives such as text, eyebrow and panel
 - `src/components/atoms/**`: small standalone UI units such as button, badge, input and icon
 - `src/components/molecules/**`: composed patterns such as card, dialog, feedback and page sections
+- `src/components/organisms/**`: resource tables and composed data layouts
 - `src/shell/**`: app frame structures like `AdminShell`
 - `src/foundations/**`: theme and token foundations
 
@@ -81,16 +82,18 @@ src/components/<component>/
 
 Foundations should use the same co-located documentation approach under `src/foundations/**`.
 
-## Current M3.5 extraction
+## Componenti disponibili e adozione attuale
 
-Promoted into `trinacria-ui` during M3.5:
+La fondazione introdotta in M3.5 comprende:
 
 - shared theme tokens
 - feedback blocks
 - mobile record patterns
 - page header and action bar primitives
 
-The next extraction target should be table wrappers and filter/action layouts reused by `users`, `roles`, `permissions`, `settings` and `plugins`.
+Le tabelle e i layout di risorsa sono già disponibili tramite `DataTable`, `ResourceTable`,
+`ResourcePage` e `PageHeader`. Per i nuovi flussi riusare questi componenti; promuovere
+un nuovo pattern solo quando le API esistenti non coprono una necessità ricorrente.
 
 ## Componenti unificati — 1 ottobre 2026
 
@@ -143,3 +146,37 @@ Il guardrail `check-tailwind-compatibility.mjs` impedisce la reintroduzione dell
 sintassi precedente ed è incluso in `npm run ui:guardrails` e nel check completo.
 
 Riferimento: [guida ufficiale alla migrazione](https://tailwindcss.com/docs/upgrade-guide).
+
+## Esempio di composizione
+
+Le API pubbliche sono esportate dalla radice del package. Il dominio conserva le callback
+che leggono o salvano dati; i componenti UI ricevono proprietà semplici.
+
+```tsx
+import { Button, PageCanvas, Toolbar, ToolbarButton } from "@trinacria-cms/trinacria-ui";
+
+<PageCanvas width="form">
+  <Toolbar label="Azioni contenuto" wrap>
+    <ToolbarButton label="Anteprima" icon="eye" onClick={openPreview} />
+  </Toolbar>
+  <Button variant="danger" onClick={openDeleteDialog}>Elimina</Button>
+</PageCanvas>
+```
+
+PageCanvas rende un `div`: il landmark principale appartiene alla shell. `full` è la
+larghezza predefinita, `form` usa `max-w-6xl`, `document` usa `max-w-3xl`.
+IconTile è decorativo senza `label`; specificare `label` solo se l'icona comunica informazioni
+non già presenti nel testo. ContextMenu riceve coordinate viewport e una callback `onClose`;
+il pack decide quali azioni sono consentite.
+
+## Verifiche per contribuire alla UI
+
+Dalla radice eseguire `npm run ui:guardrails` e `npm run check`, poi `npm run build`
+e `npm run storybook:build`. Eseguire build/check in sequenza: la generazione SDK modifica
+sorgenti condivise e non deve sovrapporsi a un altro processo di build/typecheck.
+Verificare i pattern interessati in tema light/dark e su viewport mobile. Le suite con servizi
+reali e gli E2E richiedono l'infrastruttura descritta nel README del progetto.
+
+I guardrail coprono controlli/superfici native, etichette di salvataggio, presenza delle stories,
+sintassi Tailwind e confini runtime dei pack. Le eccezioni per editor e preview documentali
+rimangono esplicite in `scripts/check-admin-ui-primitives.mjs`.

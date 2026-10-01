@@ -1,6 +1,7 @@
 # Stato e qualità del progetto — 1 ottobre 2026
 
-Questa è la fonte aggiornata per lo stato del checkout dopo il consolidamento di qualità.
+Questa è la fonte aggiornata per lo stato del checkout dopo il consolidamento di qualità,
+l’aggiornamento delle dipendenze, l’unificazione UI e la revisione Tailwind 4.3.
 Le milestone M1–M6 documentano risultati storici; non descrivono da sole Editorial e Media.
 
 ## Funzionalità presenti
@@ -42,7 +43,8 @@ il metodo generico `cms.request`; l'estensione dei metodi SDK generati resta un 
 9. Separati canvas, controlli, metadati e campi dell'editor a blocchi; separati file manager,
    inspector, tipi e utility. Facciate pubbliche conservate.
 10. Renderer dei domini caricati tramite React lazy/Suspense; runtime React separato in un chunk
-    riutilizzabile. Bundle principale circa 397 kB minificati contro i precedenti 794 kB.
+    riutilizzabile. Bundle principale circa 400 kB minificati dopo UI/Tailwind, contro i precedenti 794 kB
+    (397 kB al termine del solo consolidamento).
 11. React, SDK e UI diventano peer opzionali dei pack con dipendenze di sviluppo esplicite.
     `boundaries:check` vieta import runtime frontend nel grafo server e import delle implementazioni
     server nel codice admin. La separazione usa subpath pubblici nello stesso workspace.
@@ -93,6 +95,19 @@ workflow e file manager adottano superfici, azioni e colori condivisi. Menu inco
 conservano il tema, link e azioni distruttive usano componenti comuni; toolbar e notifiche
 sono verificate anche su mobile.
 
-Verifica successiva alle modifiche UI: 463 test ordinari passati, 17/17 scenari Chromium,
-check completo, build e Storybook verdi. Le integrazioni reali Mongo/S3 restano quelle
-verificate nel consolidamento precedente. Bundle principale circa 400 kB.
+La verifica dell’intervento UI ha registrato 463 test ordinari e 17/17 scenari Chromium.
+Il riepilogo corrente sopra include la verifica delle dipendenze: 464 test ordinari e
+11 integrazioni Mongo/S3/Redis. I conteggi dei task e del changelog conservano il risultato
+della rispettiva fase. Bundle principale circa 400 kB.
+
+## Compatibilità Tailwind 4.3
+
+La configurazione attiva usa `@import` e `@source`; eliminate le due configurazioni
+TypeScript non caricate. Uniformati i token a `utility-(--token)`, aggiornati gradienti,
+wrapping e outline accessibili. Le 98 conversioni distinte dei token producono le stesse
+dichiarazioni CSS. Check, build e Storybook verdi; toolbar, login e menu verificati a
+390 px nei temi light/dark. Il guardrail Tailwind è incluso in `npm run ui:guardrails`.
+
+Riferimenti operativi: [guida UI](trinacria-ui-design-system.md),
+[audit backoffice](backoffice-ui-audit.md) e
+[task Tailwind](../workflow/tasks/done/2026-10-01-tailwind-compatibility.md).

@@ -3,6 +3,10 @@
 Questo documento fissa la direzione architetturale scelta per Trinacria CMS prima
 di proseguire con la stesura del core e dei plugin dominio.
 
+> Documento di direzione architetturale: le sezioni di pianificazione conservano il contesto
+> della fondazione. Per il livello di implementazione attuale consultare
+> [stato e qualità](../../project-quality-status.md) e [mappa package](package-map.md).
+
 ## Decisione
 
 Trinacria CMS deve evolvere come una piattaforma **plugin-first**, piu vicina al

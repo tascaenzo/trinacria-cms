@@ -3,6 +3,15 @@
 Tutte le milestone significative sono documentate qui.
 Il formato si ispira a [Keep a Changelog](https://keepachangelog.com/).
 
+## Allineamento documentazione — completato (2026-10-01)
+
+- README e indici collegano stato corrente, UI/Tailwind e operazioni editoriali.
+- Guide aggiornate alle API pubbliche, configurazione CSS e guardrail effettivi.
+- Risultati storici distinti dal riepilogo corrente: 464 test e 11 integrazioni registrati
+  nell’aggiornamento delle dipendenze; le singole fasi conservano i propri conteggi.
+- Audit, specifiche e milestone collegati allo stato implementato senza dichiarare
+  concluse le capacità prodotto ancora previste.
+
 ## Compatibilità Tailwind 4.3 — completata (2026-10-01)
 
 - Sintassi dei token uniformata, gradienti e wrapping aggiornati; outline accessibile.
