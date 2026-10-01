@@ -1,3 +1,4 @@
+import { createPluginDbScope, type DbAdapter } from "@trinacria-cms/kernel";
 import {
   type CreateContentTypeInput,
   CreateContentTypeInputSchema,
@@ -32,7 +33,10 @@ export class ContentTypeValidationError extends Error {
 }
 
 export class ContentTypesService {
-  constructor(private readonly repository: ContentTypesRepository) {}
+  constructor(
+    private readonly repository: ContentTypesRepository,
+    private readonly db?: DbAdapter
+  ) {}
 
   async createContentType(
     input: CreateContentTypeInput,
@@ -113,10 +117,49 @@ export class ContentTypesService {
     const parsed = UpdateContentTypeInputSchema.parse(input);
     if (parsed.fields) this.assertFieldsAreValid(parsed.fields);
     if (parsed.workflow) this.assertWorkflowIsValid(parsed.workflow);
+    const current = await this.repository.findById(id);
+    if (!current) return null;
+    if (await this.hasEntries(id)) {
+      const nextFields = parsed.fields ?? current.fields;
+      const incompatible =
+        current.fields.some((field) => {
+          const next = nextFields.find((candidate) => candidate.key === field.key);
+          if (
+            !next ||
+            next.type !== field.type ||
+            next.multiple !== field.multiple ||
+            (!field.required && next.required)
+          )
+            return true;
+          if (field.type === "select") {
+            const before = (field.config as { options?: string[] } | undefined)?.options ?? [];
+            const after = (next.config as { options?: string[] } | undefined)?.options ?? [];
+            if (before.some((option) => !after.includes(option))) return true;
+          }
+          return (
+            field.type === "relation" &&
+            JSON.stringify(field.config) !== JSON.stringify(next.config)
+          );
+        }) ||
+        nextFields.some(
+          (field) => field.required && !current.fields.some((before) => before.key === field.key)
+        );
+      const workflowChanges =
+        (parsed.workflowId !== undefined && parsed.workflowId !== current.workflowId) ||
+        (parsed.clearWorkflow && !!current.workflowId) ||
+        (parsed.clearWorkflowDefinition && !!current.workflow) ||
+        (parsed.workflow !== undefined &&
+          JSON.stringify(parsed.workflow) !== JSON.stringify(current.workflow));
+      if (incompatible || workflowChanges)
+        throw new ContentTypeValidationError(
+          "Questo modello contiene entry: rimozione/cambio dei campi, nuovi campi obbligatori e cambi di workflow richiedono una migrazione esplicita."
+        );
+    }
     return this.repository.update(id, parsed);
   }
 
   async deleteContentType(id: string) {
+    await this.assertEmpty(id);
     return this.repository.softDelete(id);
   }
 
@@ -125,7 +168,21 @@ export class ContentTypesService {
   }
 
   async permanentlyDeleteContentType(id: string) {
+    await this.assertEmpty(id);
     return this.repository.hardDelete(id);
+  }
+
+  private async hasEntries(contentTypeId: string): Promise<boolean> {
+    if (!this.db) return false;
+    const entries = createPluginDbScope(this.db, "editorial-pack").repository("entries");
+    return !!(await entries.findOne({ filter: { contentTypeId } }));
+  }
+
+  private async assertEmpty(id: string) {
+    if (await this.hasEntries(id))
+      throw new ContentTypeValidationError(
+        "Elimina o migra le entry prima di eliminare il modello."
+      );
   }
 
   private assertFieldsAreValid(fields: readonly ContentTypeField[]) {
@@ -189,16 +246,7 @@ export class ContentTypesService {
   private async ensureDefaultContentType(input: CreateContentTypeInput) {
     const existing = await this.repository.findByKey(input.key);
     if (existing) {
-      // Upgrade only the system baseline, retaining custom fields and any user-owned model.
-      if (existing.createdByUserId === "system:editorial-pack") {
-        const missingFields = input.fields.filter(
-          (field) => !existing.fields.some((current) => current.key === field.key)
-        );
-        await this.repository.update(existing.id, {
-          ...(missingFields.length ? { fields: [...existing.fields, ...missingFields] } : {}),
-          ...(existing.workflowId ? {} : { workflowId: input.workflowId })
-        });
-      }
+      // Never reintroduce fields removed by an administrator during bootstrap.
       return;
     }
     await this.repository.create({ ...input, createdByUserId: "system:editorial-pack" });

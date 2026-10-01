@@ -38,7 +38,7 @@
     "typecheck": "turbo run typecheck && npm run e2e:typecheck",
     "test": "turbo run test",
     "test:integration": "turbo run test:integration",
-    "lint": "turbo run lint && npm run ui:guardrails",
+    "lint": "turbo run lint && npm run ui:guardrails && npm run boundaries:check",
     "ui:guardrails": "node scripts/check-admin-ui-primitives.mjs && node scripts/check-admin-save-actions.mjs && node scripts/check-trinacria-ui-stories.mjs",
     "turbo:affected": "node scripts/ci/run-affected-turbo.mjs",
     "lint:affected": "npm run turbo:affected -- lint",
@@ -50,15 +50,20 @@
     "format": "biome format .",
     "format:write": "biome format --write .",
     "dependencies:check": "node scripts/check-workspace-dependencies.mjs",
-    "check": "npm run format && npm run lint && npm run typecheck && npm run test && npm run dependencies:check",
-    "check:write": "biome check --write ."
+    "check": "npm run format && npm run lint && npm run typecheck && npm run test && npm run dependencies:check && npm run boundaries:check",
+    "check:write": "biome check --write .",
+    "boundaries:check": "node scripts/check-plugin-boundaries.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.5",
     "@playwright/test": "^1.61.1",
-    "@types/node": "^25.2.3",
-    "tsx": "^4.21.0",
+    "@types/node": "^24.19.0",
+    "tsx": "^4.23.15",
     "turbo": "^2.10.7",
     "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=24.21.0 <25",
+    "npm": ">=11.16.0 <12"
   }
 }

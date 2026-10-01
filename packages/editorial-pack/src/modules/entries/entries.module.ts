@@ -54,7 +54,8 @@ export const EditorialEntriesModule: ModuleDefinition = defineModule({
       ENTRIES_REPOSITORY_TOKEN,
       CONTENT_TYPES_SERVICE_TOKEN,
       REVISIONS_REPOSITORY_TOKEN,
-      SETTINGS_SERVICE_TOKEN
+      SETTINGS_SERVICE_TOKEN,
+      CORE_TOKENS.DB_ADAPTER
     ]),
     httpProvider(ENTRIES_CONTROLLER_TOKEN, EntriesController, [
       ENTRIES_SERVICE_TOKEN,

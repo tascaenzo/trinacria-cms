@@ -16,8 +16,10 @@ export function createEditorialPackPlugin(): KernelPluginDefinition {
       );
       await contentTypes.ensureDefaultContentTypes();
       const entries = await context.app.resolve<EntriesService>(ENTRIES_SERVICE_TOKEN);
-      entries.setPublisher(context.events);
+      entries.setPublisher(undefined);
+      // Bootstrap runs before the plugin reaches loaded state; lifecycle events start afterward.
       await entries.ensureDefaultBlogContent();
+      entries.setPublisher(context.events);
     }
   };
 }

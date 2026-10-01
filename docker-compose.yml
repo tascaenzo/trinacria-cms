@@ -3,6 +3,7 @@ services:
     image: mongo:7
     container_name: trinacria-mongo
     restart: unless-stopped
+    command: ["bash", "/opt/trinacria/mongo-start.sh"]
     ports:
       - "27017:27017"
     environment:
@@ -11,8 +12,15 @@ services:
       MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-trinacria_cms}
     volumes:
       - mongo_data:/data/db
+      - ./scripts/docker/mongo-start.sh:/opt/trinacria/mongo-start.sh:ro
     healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      test:
+        - CMD-SHELL
+        - >-
+          mongosh --quiet -u "$$MONGO_INITDB_ROOT_USERNAME" -p "$$MONGO_INITDB_ROOT_PASSWORD"
+          --authenticationDatabase admin --eval
+          'try { rs.status() } catch (e) { if (e.code === 94) rs.initiate({_id:"trinacria",members:[{_id:0,host:"localhost:27017"}]}); else throw e; }
+          if (!db.hello().isWritablePrimary) quit(1);'
       interval: 10s
       timeout: 5s
       retries: 6
@@ -31,6 +39,7 @@ services:
       ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_ROOT_USERNAME:-trinacria}
       ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_PASSWORD:-trinacria}
       ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_ROOT_USERNAME:-trinacria}:${MONGO_ROOT_PASSWORD:-trinacria}@mongo:27017/?authSource=admin&directConnection=true
       ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USER:-admin}
       ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD:-admin}
 

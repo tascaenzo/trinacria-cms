@@ -48,6 +48,6 @@ apps/playground/prisma/*.db-*
 .turbo/
 
 # Storybook
-apps/**/.storybook-home/
+**/.storybook-home/
 **/storybook-static/
 apps/**/storybook-static/

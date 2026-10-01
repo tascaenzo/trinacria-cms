@@ -29,17 +29,33 @@
   "dependencies": {
     "@trinacria-cms/core-pack": "0.1.0",
     "@trinacria-cms/kernel": "0.1.0",
-    "@trinacria-cms/sdk": "0.1.0",
-    "@trinacria-cms/trinacria-ui": "0.1.0",
-    "nodemailer": "^9.0.1"
+    "nodemailer": "^10.0.13"
   },
   "devDependencies": {
-    "@types/node": "^25.9.1",
-    "@types/react": "^19.2.2",
-    "@types/nodemailer": "^8.0.1"
+    "@types/node": "^24.19.0",
+    "@types/nodemailer": "^8.0.2",
+    "@types/react": "^19.3.0",
+    "@trinacria-cms/sdk": "0.1.0",
+    "@trinacria-cms/trinacria-ui": "0.1.0"
   },
   "peerDependencies": {
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "@trinacria-cms/sdk": "0.1.0",
+    "@trinacria-cms/trinacria-ui": "0.1.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "@trinacria-cms/sdk": {
+      "optional": true
+    },
+    "@trinacria-cms/trinacria-ui": {
+      "optional": true
+    }
   }
 }

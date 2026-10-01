@@ -16,16 +16,16 @@
     "@trinacria-cms/editorial-pack": "0.1.0",
     "@trinacria-cms/email-pack": "0.1.0",
     "@trinacria-cms/media-pack": "0.1.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.2.2",
-    "@types/react": "^19.2.2",
-    "@types/react-dom": "^19.2.2",
-    "@vitejs/plugin-react": "^6.0.2",
-    "postcss": "^8.4.49",
-    "tailwindcss": "^4.2.2",
-    "vite": "^8.0.8"
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "postcss": "^8.5.28",
+    "tailwindcss": "^4.3.3",
+    "vite": "^8.3.2"
   }
 }

@@ -8,25 +8,12 @@ on:
 jobs:
   quality:
     runs-on: ubuntu-latest
-    services:
-      mongo:
-        image: mongo:7
-        ports:
-          - 27017:27017
-        env:
-          MONGO_INITDB_ROOT_USERNAME: trinacria
-          MONGO_INITDB_ROOT_PASSWORD: trinacria
-          MONGO_INITDB_DATABASE: trinacria_cms
-        options: >-
-          --health-cmd "mongosh --quiet --eval \"db.adminCommand('ping').ok\""
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
-
     env:
       MONGO_URI: mongodb://trinacria:trinacria@127.0.0.1:27017/trinacria_cms?authSource=admin
       TRINACRIA_RUN_MONGO_INTEGRATION: "1"
       TRINACRIA_RUN_S3_INTEGRATION: "1"
+      TRINACRIA_RUN_REDIS_INTEGRATION: "1"
+      TRINACRIA_REDIS_URI: redis://127.0.0.1:6379
       TRINACRIA_S3_ENDPOINT: http://127.0.0.1:9000
       TRINACRIA_S3_ACCESS_KEY: trinacria
       TRINACRIA_S3_SECRET_KEY: trinacria-secret
@@ -41,8 +28,14 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version-file: ".nvmrc"
           cache: "npm"
+
+      - name: Setup npm
+        run: npm install --global npm@11.16.0
+
+      - name: Start Mongo replica set
+        run: docker compose up --detach --wait mongo
 
       - name: Install
         run: npm ci
@@ -74,6 +67,11 @@ jobs:
           minio/minio:RELEASE.2025-09-07T16-13-09Z
           server /data
 
+      - name: Start Redis
+        run: >-
+          docker run --detach --rm --name trinacria-redis
+          --publish 6379:6379 redis:7-alpine
+
       - name: Wait for S3-compatible storage
         run: |
           for attempt in {1..30}; do
@@ -90,6 +88,9 @@ jobs:
 
       - name: Integration tests
         run: npm run test:integration:affected
+
+      - name: Plugin package boundaries
+        run: npm run boundaries:check
 
       - name: Workspace dependency graph
         run: npm run dependencies:check

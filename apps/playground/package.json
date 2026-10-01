@@ -18,6 +18,6 @@
     "@trinacria-cms/example-team-onboarding-plugin": "0.1.0",
     "@trinacria-cms/kernel": "0.1.0",
     "@trinacria-cms/media-pack": "^0.1.0",
-    "dotenv": "^17.4.2"
+    "dotenv": "^18.0.5"
   }
 }

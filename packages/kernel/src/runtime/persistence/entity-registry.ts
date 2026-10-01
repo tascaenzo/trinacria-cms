@@ -5,6 +5,7 @@ export interface EntityIndexDefinition {
   fields: Record<string, 1 | -1>;
   unique?: boolean;
   sparse?: boolean;
+  partialFilter?: Record<string, unknown>;
   name?: string;
 }
 

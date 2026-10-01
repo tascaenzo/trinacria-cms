@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
 import type { SettingsService } from "@trinacria-cms/core-pack";
+import type { DbAdapter } from "@trinacria-cms/kernel";
 import type { ContentTypeRecord } from "../../content-types/content-types.schemas.js";
 import type { ContentTypesService } from "../../content-types/services/content-types.service.js";
-import type { RevisionsRepository } from "../../revisions/revisions.repository.js";
+import { RevisionsRepository } from "../../revisions/revisions.repository.js";
 import {
   type CreateEntryInput,
   CreateEntryInputSchema,
@@ -10,7 +11,8 @@ import {
   UpdateEntryInputSchema
 } from "../entries.input.js";
 import type { EntryRecord } from "../entries.schemas.js";
-import type { EntriesRepository } from "../repositories/entries.repository.js";
+import { EntryRecordSchema } from "../entries.schemas.js";
+import { EntriesRepository } from "../repositories/entries.repository.js";
 import { resolveEntryWorkflow } from "./entry-workflows.js";
 
 export class EntryValidationError extends Error {
@@ -39,6 +41,8 @@ export interface EditorialDomainEventPublisher {
 export interface EntryAccessScope {
   actorUserId: string;
   canAccessAll: boolean;
+  canReviewAssigned?: boolean;
+  canUseAuthorScope?: boolean;
 }
 
 export class EntriesService {
@@ -48,14 +52,16 @@ export class EntriesService {
     private readonly repository: EntriesRepository,
     private readonly contentTypes: ContentTypesService,
     private readonly revisions: RevisionsRepository,
-    private readonly settings?: SettingsService
+    private readonly settings?: SettingsService,
+    private readonly db?: DbAdapter
   ) {}
 
-  setPublisher(publisher: EditorialDomainEventPublisher): void {
+  setPublisher(publisher: EditorialDomainEventPublisher | undefined): void {
     this.publisher = publisher;
   }
 
   async createEntry(input: CreateEntryInput, ownerUserId: string): Promise<EntryRecord> {
+    if (this.db) return this.atomic((service) => service.createEntry(input, ownerUserId));
     const parsed = CreateEntryInputSchema.parse(input);
     const contentType = await this.requireActiveContentType(parsed.contentTypeId);
     this.validateData(contentType, parsed.data as Record<string, unknown>);
@@ -72,7 +78,7 @@ export class EntriesService {
 
   async getEntry(id: string, scope?: EntryAccessScope) {
     const entry = await this.repository.findById(id);
-    if (entry && scope) this.assertEntryAccess(entry, scope);
+    if (entry && scope) await this.assertEntryAccess(entry, scope);
     return entry;
   }
 
@@ -80,9 +86,22 @@ export class EntriesService {
     options: Parameters<EntriesRepository["list"]>[0] = {},
     scope?: EntryAccessScope
   ) {
-    return this.repository.list(
-      scope && !scope.canAccessAll ? { ...options, ownerUserId: scope.actorUserId } : options
-    );
+    if (!scope || scope.canAccessAll) return this.repository.list(options);
+    const types = await this.contentTypes.listContentTypes();
+    const unrestricted: string[] = [];
+    for (const type of types)
+      if (scope.canUseAuthorScope !== false && (await this.authorCanAccessAll(type)))
+        unrestricted.push(type.id);
+    return this.repository.list({
+      ...options,
+      accessFilter: {
+        $or: [
+          { ownerUserId: scope.actorUserId },
+          ...(scope.canReviewAssigned ? [{ reviewerUserId: scope.actorUserId }] : []),
+          ...(unrestricted.length ? [{ contentTypeId: { $in: unrestricted } }] : [])
+        ]
+      }
+    });
   }
 
   /** Seeds a small, immediately understandable blog only when the workspace is empty. */
@@ -119,7 +138,7 @@ export class EntriesService {
     const parsed = UpdateEntryInputSchema.parse(input);
     const entry = await this.repository.findById(id);
     if (!entry) return null;
-    this.assertEntryAccess(entry, scope);
+    await this.assertEntryAccess(entry, scope);
     if (parsed.data !== undefined) {
       const contentType = await this.requireActiveContentType(entry.contentTypeId);
       this.validateData(contentType, parsed.data as Record<string, unknown>);
@@ -127,7 +146,7 @@ export class EntriesService {
     const updated = await this.repository.update(
       entry.id,
       parsed,
-      parsed.expectedVersion ?? entry.version
+      parsed.expectedVersion ?? entry.version ?? 1
     );
     if (!updated) {
       throw new EntryValidationError(
@@ -137,10 +156,15 @@ export class EntriesService {
     return updated;
   }
 
-  async transitionEntry(id: string, transition: EditorialTransition, scope: EntryAccessScope) {
+  async transitionEntry(
+    id: string,
+    transition: EditorialTransition,
+    scope: EntryAccessScope
+  ): Promise<EntryRecord | null> {
+    if (this.db) return this.atomic((service) => service.transitionEntry(id, transition, scope));
     const entry = await this.repository.findById(id);
     if (!entry) return null;
-    this.assertEntryAccess(entry, scope);
+    await this.assertEntryAccess(entry, scope);
     const contentType = await this.requireContentTypeForExistingEntry(entry.contentTypeId);
     const configuredWorkflow = resolveEntryWorkflow(contentType);
     const configuredTransition = configuredWorkflow.transitions.find(
@@ -173,7 +197,7 @@ export class EntriesService {
       entry.id,
       configuredTransition.to,
       entry.status,
-      entry.version
+      entry.version ?? 1
     );
     if (!updated) {
       throw new EntryValidationError(
@@ -191,17 +215,21 @@ export class EntriesService {
   async listRevisions(entryId: string, scope?: EntryAccessScope) {
     const entry = await this.repository.findById(entryId);
     if (!entry) return null;
-    if (scope) this.assertEntryAccess(entry, scope);
+    if (scope) await this.assertEntryAccess(entry, scope);
     return this.revisions.listByEntryId(entryId);
   }
 
   /** Saves an intentional restore point; ordinary and automatic saves do not create revisions. */
-  async createRevisionSnapshot(id: string, scope: EntryAccessScope) {
+  async createRevisionSnapshot(id: string, scope: EntryAccessScope): Promise<EntryRecord | null> {
+    if (this.db) return this.atomic((service) => service.createRevisionSnapshot(id, scope));
     const entry = await this.repository.findById(id);
     if (!entry) return null;
-    this.assertEntryAccess(entry, scope);
-    await this.createRevision(entry, "snapshot", scope.actorUserId);
-    return entry;
+    await this.assertEntryAccess(entry, scope);
+    const locked = await this.repository.update(id, {}, entry.version ?? 1);
+    if (!locked)
+      throw new EntryValidationError("Il contenuto è stato modificato da un altro utente.");
+    await this.createRevision(locked, "snapshot", scope.actorUserId);
+    return locked;
   }
 
   async getTransitionPermission(
@@ -215,27 +243,37 @@ export class EntriesService {
       (candidate) => candidate.key === transition && candidate.from === entry.status
     );
     if (!configured) return null;
-    if (configured.requiredPermission) return configured.requiredPermission;
     if (configured.to === "published" || entry.status === "published") return "publish";
+    if (configured.requiredPermission) return configured.requiredPermission;
     if (transition === "request_changes") return "review";
     if (transition === "approve") return "approve";
     return "submit";
   }
 
-  async restoreRevision(id: string, revisionId: string, scope: EntryAccessScope) {
+  async restoreRevision(
+    id: string,
+    revisionId: string,
+    scope: EntryAccessScope
+  ): Promise<EntryRecord | null> {
+    if (this.db) return this.atomic((service) => service.restoreRevision(id, revisionId, scope));
     const entry = await this.repository.findById(id);
     if (!entry) return null;
-    this.assertEntryAccess(entry, scope);
-    const revisions = await this.revisions.listByEntryId(id, { limit: 200 });
-    const revision = revisions.find((candidate) => candidate.id === revisionId);
+    await this.assertEntryAccess(entry, scope);
+    const revision = await this.revisions.findById(id, revisionId);
     if (!revision) throw new EntryValidationError(`Revision "${revisionId}" does not exist`);
     let snapshot: EntryRecord;
     try {
-      snapshot = JSON.parse(revision.snapshotJson) as EntryRecord;
+      snapshot = EntryRecordSchema.parse(JSON.parse(revision.snapshotJson));
     } catch {
       throw new EntryValidationError("La revisione selezionata non è leggibile.");
     }
-    const restored = await this.repository.restore(entry.id, snapshot, entry.version);
+    const type = await this.requireActiveContentType(entry.contentTypeId);
+    if (snapshot.id !== entry.id || snapshot.contentTypeId !== entry.contentTypeId) {
+      throw new EntryValidationError("La revisione non appartiene a questo contenuto.");
+    }
+    this.validateData(type, snapshot.data as Record<string, unknown>);
+    // Restore content only: lifecycle, assignment and publication remain governed by transitions.
+    const restored = await this.repository.restore(entry.id, snapshot, entry.version ?? 1);
     if (!restored) {
       throw new EntryValidationError("Il contenuto è stato modificato da un altro utente.");
     }
@@ -246,7 +284,7 @@ export class EntriesService {
   async deleteEntry(id: string, scope: EntryAccessScope): Promise<boolean> {
     const entry = await this.repository.findById(id);
     if (!entry) return false;
-    this.assertEntryAccess(entry, scope);
+    await this.assertEntryAccess(entry, scope);
     return this.repository.delete(id);
   }
 
@@ -271,10 +309,51 @@ export class EntriesService {
     return contentType;
   }
 
-  private assertEntryAccess(entry: EntryRecord, scope: EntryAccessScope) {
-    if (!scope.canAccessAll && entry.ownerUserId !== scope.actorUserId) {
+  private async authorCanAccessAll(type: ContentTypeRecord): Promise<boolean> {
+    const setting = await this.settings?.getResolvedValueByKey(
+      "editorial-pack:access:author_scope"
+    );
+    const policy = setting?.value ?? "own_entries";
+    return (
+      policy === "all_entries" ||
+      (policy === "by_content_type" && type.ownershipScope === "all_entries")
+    );
+  }
+
+  private async assertEntryAccess(entry: EntryRecord, scope: EntryAccessScope) {
+    if (
+      scope.canAccessAll ||
+      entry.ownerUserId === scope.actorUserId ||
+      (scope.canReviewAssigned && entry.reviewerUserId === scope.actorUserId)
+    )
+      return;
+    const type = await this.requireContentTypeForExistingEntry(entry.contentTypeId);
+    if (scope.canUseAuthorScope === false || !(await this.authorCanAccessAll(type))) {
       throw new EntryAccessError("Non hai accesso a questo contenuto.");
     }
+  }
+
+  private async atomic<T>(work: (service: EntriesService) => Promise<T>): Promise<T> {
+    if (!this.db?.withTransaction)
+      throw new EntryValidationError("Editorial writes require MongoDB replica-set transactions");
+    const events: Array<{ name: string; payload: unknown }> = [];
+    const result = await this.db.withTransaction({ pluginId: "editorial-pack" }, async (db) => {
+      events.length = 0;
+      const service = new EntriesService(
+        new EntriesRepository(db),
+        this.contentTypes,
+        new RevisionsRepository(db),
+        this.settings
+      );
+      service.setPublisher({
+        emit: async (name, payload) => {
+          events.push({ name, payload });
+        }
+      });
+      return work(service);
+    });
+    for (const event of events) await this.publisher?.emit(event.name, event.payload);
+    return result;
   }
 
   private async createRevision(entry: EntryRecord, reason: string, actorUserId: string) {

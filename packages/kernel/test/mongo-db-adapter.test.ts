@@ -285,6 +285,11 @@ function createFakeConnection(options?: {
     async startSession() {
       sessionLog.push("start");
       return {
+        async withTransaction<T>(work: () => Promise<T>) {
+          sessionLog.push("begin");
+          try { const result = await work(); sessionLog.push("commit"); return result; }
+          catch (error) { sessionLog.push("abort"); throw error; }
+        },
         startTransaction() {
           sessionLog.push("begin");
         },
@@ -335,3 +340,49 @@ function applyMongoPatch(
     ...patch
   };
 }
+
+
+test("MongoDbAdapter carries partial filters and safely replaces legacy sparse indexes", async () => {
+  const connection = createFakeConnection();
+  const original = connection.collection.bind(connection);
+  const lifecycle: string[] = [];
+  const registry = new EntityRegistry();
+  registry.register({ entityName: "entries", schema: s.object({ id: s.string() }), indexes: [{
+    fields: { contentTypeId: 1, slug: 1 }, unique: true, partialFilter: { slug: { $type: "string" } }, name: "partial_slug"
+  }] });
+  const adapter = createMongoDbAdapter({ connection: {
+    ...connection,
+    collection(name: string) {
+      const records = original(name);
+      return { ...records,
+        createIndexes: async (indexes: unknown[]) => { lifecycle.push("create"); return records.createIndexes(indexes); },
+        indexes: async () => [{ name: "old_sparse_slug", key: { contentTypeId: 1 as const, slug: 1 as const }, unique: true, sparse: true }],
+        dropIndex: async (name: string) => { lifecycle.push(`drop:${name}`); }
+      };
+    }
+  }, entityRegistry: registry });
+  await adapter.ensureIndexes("editorial-pack", ["entries"]);
+  assert.deepEqual(connection.indexCalls[0]?.indexes, [{ key: { contentTypeId: 1, slug: 1 }, unique: true, partialFilterExpression: { slug: { $type: "string" } }, name: "partial_slug" }]);
+  assert.deepEqual(lifecycle, ["create", "drop:old_sparse_slug"]);
+});
+
+test("MongoDbAdapter scopes all transaction queries to one session and cleans up", async () => {
+  const connection = createFakeConnection();
+  const registry = new EntityRegistry();
+  registry.register({ entityName: "entries", schema: s.object({ id: s.string() }) });
+  const db = createMongoDbAdapter({ connection, entityRegistry: registry });
+  const value = await db.withTransaction({ pluginId: "editorial-pack" }, async (scoped) => {
+    await scoped.repository("entries", { pluginId: "editorial-pack" }).findMany({});
+    await scoped.repository("entries", { pluginId: "editorial-pack" }).findMany({});
+    assert.throws(() => scoped.repository("entries", { pluginId: "other-pack" }), /namespace/);
+    return 42;
+  });
+  assert.equal(value, 42);
+  const first = connection.queryLog[0]?.options as { session?: unknown };
+  const second = connection.queryLog[1]?.options as { session?: unknown };
+  assert.ok(first.session);
+  assert.equal(first.session, second.session);
+  assert.deepEqual(connection.sessionLog, ["start", "begin", "commit", "end"]);
+  await assert.rejects(db.withTransaction({ pluginId: "editorial-pack" }, async () => { throw new Error("injected"); }), /injected/);
+  assert.deepEqual(connection.sessionLog.slice(-4), ["start", "begin", "abort", "end"]);
+});

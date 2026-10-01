@@ -24,21 +24,39 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --import tsx --test test/**/*.test.ts",
-    "lint": "biome check ."
+    "lint": "biome check .",
+    "test:integration": "node --import tsx --test test/**/*.integration.test.ts"
   },
   "dependencies": {
     "@trinacria-cms/core-pack": "0.1.0",
     "@trinacria-cms/kernel": "0.1.0",
-    "@trinacria-cms/media-pack": "0.1.0",
+    "@trinacria-cms/media-pack": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.0",
+    "@types/react": "^19.3.0",
+    "mongoose": "^9.10.3",
     "@trinacria-cms/sdk": "0.1.0",
     "@trinacria-cms/trinacria-ui": "0.1.0"
   },
-  "devDependencies": {
-    "@types/node": "^25.9.1",
-    "@types/react": "^19.2.2"
-  },
   "peerDependencies": {
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "@trinacria-cms/sdk": "0.1.0",
+    "@trinacria-cms/trinacria-ui": "0.1.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "@trinacria-cms/sdk": {
+      "optional": true
+    },
+    "@trinacria-cms/trinacria-ui": {
+      "optional": true
+    }
   }
 }

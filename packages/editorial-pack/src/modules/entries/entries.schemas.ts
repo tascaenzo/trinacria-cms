@@ -64,8 +64,8 @@ export const ENTRIES_ENTITY = defineEntity({
     {
       fields: { contentTypeId: 1, slug: 1 },
       unique: true,
-      sparse: true,
-      name: "entries_content_type_slug_unique"
+      partialFilter: { slug: { $type: "string" } },
+      name: "entries_content_type_slug_present_unique"
     },
     { fields: { reviewerUserId: 1, status: 1, updatedAt: -1 }, name: "entries_reviewer_queue_idx" },
     { fields: { scheduledAt: 1, status: 1 }, name: "entries_scheduled_idx" }

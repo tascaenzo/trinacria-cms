@@ -48,9 +48,10 @@ export class EntriesRepository {
       status?: string;
       limit?: number;
       offset?: number;
+      accessFilter?: Record<string, unknown>;
     } = {}
   ) {
-    const filter: Record<string, unknown> = {};
+    const filter: Record<string, unknown> = { ...options.accessFilter };
     if (options.contentTypeId) filter.contentTypeId = options.contentTypeId.trim();
     if (options.ownerUserId) filter.ownerUserId = options.ownerUserId.trim();
     if (options.reviewerUserId) filter.reviewerUserId = options.reviewerUserId.trim();
@@ -86,7 +87,11 @@ export class EntriesRepository {
       {
         filter: {
           id: id.trim(),
-          ...(currentVersion !== undefined ? { version: currentVersion } : {})
+          ...(currentVersion === 1
+            ? { $or: [{ version: 1 }, { version: { $exists: false } }] }
+            : currentVersion !== undefined
+              ? { version: currentVersion }
+              : {})
         }
       },
       patch
@@ -106,7 +111,11 @@ export class EntriesRepository {
         filter: {
           id: id.trim(),
           status: currentStatus,
-          ...(currentVersion !== undefined ? { version: currentVersion } : {})
+          ...(currentVersion === 1
+            ? { $or: [{ version: 1 }, { version: { $exists: false } }] }
+            : currentVersion !== undefined
+              ? { version: currentVersion }
+              : {})
         }
       },
       {
@@ -132,7 +141,11 @@ export class EntriesRepository {
       {
         filter: {
           id: id.trim(),
-          ...(currentVersion !== undefined ? { version: currentVersion } : {})
+          ...(currentVersion === 1
+            ? { $or: [{ version: 1 }, { version: { $exists: false } }] }
+            : currentVersion !== undefined
+              ? { version: currentVersion }
+              : {})
         }
       },
       {
@@ -140,16 +153,6 @@ export class EntriesRepository {
         ...(snapshot.slug !== undefined ? { slug: snapshot.slug } : { slug: undefined }),
         ...(snapshot.body !== undefined ? { body: snapshot.body } : { body: undefined }),
         data: snapshot.data,
-        ...(snapshot.reviewerUserId
-          ? { reviewerUserId: snapshot.reviewerUserId }
-          : { reviewerUserId: undefined }),
-        ...(snapshot.scheduledAt
-          ? { scheduledAt: snapshot.scheduledAt }
-          : { scheduledAt: undefined }),
-        ...(snapshot.publishedAt
-          ? { publishedAt: snapshot.publishedAt }
-          : { publishedAt: undefined }),
-        status: snapshot.status,
         updatedAt: new Date().toISOString(),
         ...(currentVersion !== undefined ? { version: currentVersion + 1 } : {})
       }

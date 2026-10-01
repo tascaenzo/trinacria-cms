@@ -22,25 +22,25 @@
     "storybook:build": "HOME=.storybook-home storybook build -c .storybook"
   },
   "dependencies": {
-    "lucide-react": "^0.577.0"
+    "lucide-react": "^1.49.0"
   },
   "devDependencies": {
-    "@storybook/addon-a11y": "^10.4.0",
-    "@storybook/addon-docs": "10.4.0",
-    "@storybook/react-vite": "10.4.0",
-    "@tailwindcss/postcss": "^4.2.2",
-    "@types/jsdom": "^28.0.3",
-    "@types/node": "^25.9.1",
-    "@types/react": "^19.2.2",
-    "@types/react-dom": "^19.2.2",
-    "axe-core": "^4.11.0",
-    "jsdom": "^29.1.1",
-    "postcss": "^8.4.49",
-    "storybook": "10.4.0",
-    "tailwindcss": "^4.2.2"
+    "@storybook/addon-a11y": "10.6.1",
+    "@storybook/addon-docs": "10.6.1",
+    "@storybook/react-vite": "10.6.1",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/jsdom": "^30.0.0",
+    "@types/node": "^24.19.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "axe-core": "^4.13.0",
+    "jsdom": "^30.1.1",
+    "postcss": "^8.5.28",
+    "storybook": "10.6.1",
+    "tailwindcss": "^4.3.3"
   },
   "peerDependencies": {
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
   }
 }

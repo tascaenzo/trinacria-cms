@@ -11,6 +11,13 @@ export class RevisionsRepository {
     return EntryRevisionRecordSchema.parse(await this.repository().insertOne(revision));
   }
 
+  async findById(entryId: string, id: string): Promise<EntryRevisionRecord | null> {
+    return this.repository().findOne({
+      filter: { entryId, id },
+      parse: (value) => EntryRevisionRecordSchema.parse(value)
+    });
+  }
+
   async listByEntryId(entryId: string, options: { limit?: number; offset?: number } = {}) {
     return this.repository().findMany({
       filter: { entryId: entryId.trim() },
