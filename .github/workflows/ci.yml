@@ -58,14 +58,26 @@ jobs:
       - name: SDK generated check
         run: npm run sdk:check
 
+      - name: Setup Go for S3 test server
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.x"
+          cache: false
+
+      - name: Build S3-compatible test server
+        env:
+          GOBIN: ${{ runner.temp }}/minio-bin
+        # Official MinIO RELEASE.2025-09-07T16-13-09Z, pinned to its source commit.
+        run: go install github.com/minio/minio@07c3a429bfed433e49018cb0f78a52145d4bedeb
+
       - name: Start S3-compatible storage
-        run: >-
-          docker run --detach --rm --name trinacria-minio
-          --publish 9000:9000
-          --env MINIO_ROOT_USER=trinacria
-          --env MINIO_ROOT_PASSWORD=trinacria-secret
-          minio/minio:RELEASE.2025-09-07T16-13-09Z
-          server /data
+        env:
+          MINIO_ROOT_USER: trinacria
+          MINIO_ROOT_PASSWORD: trinacria-secret
+        run: |
+          mkdir -p "$RUNNER_TEMP/minio-data"
+          nohup "$RUNNER_TEMP/minio-bin/minio" server "$RUNNER_TEMP/minio-data" \
+            > "$RUNNER_TEMP/minio.log" 2>&1 &
 
       - name: Start Redis
         run: >-
@@ -80,7 +92,7 @@ jobs:
             fi
             sleep 1
           done
-          docker logs trinacria-minio
+          cat "$RUNNER_TEMP/minio.log"
           exit 1
 
       - name: Unit tests

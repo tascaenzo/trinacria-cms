@@ -3,6 +3,12 @@
 Tutte le milestone significative sono documentate qui.
 Il formato si ispira a [Keep a Changelog](https://keepachangelog.com/).
 
+## Servizio S3 della CI — completato (2026-10-01)
+
+- MinIO costruito dal commit ufficiale della release fissata, dopo il ritiro delle
+  immagini/binari precompilati usati dalla CI; dati e log restano temporanei nel runner.
+- Verificata la build sorgente e l’integrazione upload/lettura/cancellazione S3 locale.
+
 ## Typecheck E2E su checkout pulito — completato (2026-10-01)
 
 - `e2e:typecheck` compila prima il playground e le dipendenze workspace richieste

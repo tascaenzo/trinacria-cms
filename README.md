@@ -168,7 +168,11 @@ Integration tests require running Mongo, S3-compatible storage and Redis service
 `TRINACRIA_RUN_MONGO_INTEGRATION=1`, `TRINACRIA_RUN_S3_INTEGRATION=1` and
 `TRINACRIA_RUN_REDIS_INTEGRATION=1`; configure `TRINACRIA_MONGO_URI` (or `MONGO_URI`),
 `TRINACRIA_S3_ENDPOINT`, S3 credentials/bucket and `TRINACRIA_REDIS_URI` for dedicated test
-services. See [.github/workflows/ci.yml](.github/workflows/ci.yml) for the reproducible setup. Recorded results are in
+services. See [.github/workflows/ci.yml](.github/workflows/ci.yml) for the reproducible setup.
+The CI S3 test server builds the official MinIO release from the pinned source commit
+`07c3a429bfed433e49018cb0f78a52145d4bedeb`, then runs it against temporary storage. This
+avoids relying on the removed prebuilt container/binary downloads. Source reference:
+[MinIO release](https://github.com/minio/minio/tree/07c3a429bfed433e49018cb0f78a52145d4bedeb). Recorded results are in
 [project quality status](docs/project-quality-status.md).
 
 Install Chromium once and run the production-readiness browser/API suite:
