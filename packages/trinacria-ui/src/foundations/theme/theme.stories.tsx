@@ -57,35 +57,33 @@ export const Overview: Story = {
     <div className="grid gap-8">
       {tokenGroups.map((group) => (
         <section key={group.title} className="grid gap-3">
-          <h2 className="text-lg font-semibold text-[color:var(--color-ink)]">{group.title}</h2>
+          <h2 className="text-lg font-semibold text-(--color-ink)">{group.title}</h2>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {group.items.map((token) => (
               <div
                 key={token}
-                className="rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4"
+                className="rounded-(--radius-panel) border border-(--color-border) bg-(--color-surface) p-4"
               >
                 {token.startsWith("--color-") ? (
                   <div
-                    className="h-16 rounded-[var(--radius-control)] border border-[color:var(--color-border)]"
+                    className="h-16 rounded-(--radius-control) border border-(--color-border)"
                     style={{ backgroundColor: `var(${token})` }}
                   />
                 ) : token.startsWith("--radius-") ? (
                   <div className="flex h-16 items-center gap-3">
                     <div
-                      className="h-12 w-16 border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)]"
+                      className="h-12 w-16 border border-(--color-border) bg-(--color-panel-soft)"
                       style={{ borderRadius: `var(${token})` }}
                     />
-                    <code className="text-xs text-[color:var(--color-ink-muted)]">
-                      var({token})
-                    </code>
+                    <code className="text-xs text-(--color-ink-muted)">var({token})</code>
                   </div>
                 ) : (
                   <div
-                    className="h-16 rounded-[var(--radius-control)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)]"
+                    className="h-16 rounded-(--radius-control) border border-(--color-border) bg-(--color-surface)"
                     style={{ boxShadow: `var(${token})` }}
                   />
                 )}
-                <p className="mt-3 text-sm font-medium text-[color:var(--color-ink)]">{token}</p>
+                <p className="mt-3 text-sm font-medium text-(--color-ink)">{token}</p>
               </div>
             ))}
           </div>

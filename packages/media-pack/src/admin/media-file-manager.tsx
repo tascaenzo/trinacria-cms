@@ -549,7 +549,7 @@ export function MediaFileManager({
       onSave={(body) => void updateDirectory(currentDirectory.id, body)}
     />
   ) : (
-    <div className="flex h-full min-h-60 items-center justify-center p-8 text-center text-sm leading-6 text-[color:var(--color-ink-muted)]">
+    <div className="flex h-full min-h-60 items-center justify-center p-8 text-center text-sm leading-6 text-(--color-ink-muted)">
       Seleziona un file o una cartella per visualizzarne i dettagli.
     </div>
   );

@@ -45,29 +45,29 @@ export function BackofficeUserMenu({
           variant="ghost"
           className="h-auto w-full min-w-0 justify-start gap-3 border-transparent px-2.5 py-2 text-left shadow-none"
         >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-action-primary-bg)] text-[color:var(--color-action-primary-ink)]">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-(--color-action-primary-bg) text-(--color-action-primary-ink)">
             <Icon name="user-round" className="h-4 w-4" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm font-semibold text-[color:var(--color-ink)]">
+            <span className="block truncate text-sm font-semibold text-(--color-ink)">
               {userName}
             </span>
-            <span className="block truncate text-xs text-[color:var(--color-ink-subtle)]">
+            <span className="block truncate text-xs text-(--color-ink-subtle)">
               {resolvedRoleLabel}
             </span>
           </span>
           <Icon
             name="chevron-down"
-            className={`h-4 w-4 shrink-0 text-[color:var(--color-ink-subtle)] transition ${isOpen ? "rotate-180" : ""}`}
+            className={`h-4 w-4 shrink-0 text-(--color-ink-subtle) transition ${isOpen ? "rotate-180" : ""}`}
           />
         </Button>
       }
     >
       <DropdownMenuLabel>
-        <span className="block truncate text-sm font-semibold normal-case tracking-normal text-[color:var(--color-ink)]">
+        <span className="block truncate text-sm font-semibold normal-case tracking-normal text-(--color-ink)">
           {userName}
         </span>
-        <span className="block truncate pt-1 text-xs font-normal normal-case tracking-normal text-[color:var(--color-ink-subtle)]">
+        <span className="block truncate pt-1 text-xs font-normal normal-case tracking-normal text-(--color-ink-subtle)">
           {resolvedRoleLabel}
         </span>
       </DropdownMenuLabel>

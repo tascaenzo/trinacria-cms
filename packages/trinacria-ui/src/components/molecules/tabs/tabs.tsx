@@ -42,7 +42,7 @@ export function Tabs({
       <div
         role="tablist"
         aria-label={ariaLabel}
-        className="flex w-fit max-w-full gap-1 overflow-x-auto rounded-[var(--radius-md)] bg-[color:var(--color-panel-strong)] p-1"
+        className="flex w-fit max-w-full gap-1 overflow-x-auto rounded-(--radius-md) bg-(--color-panel-strong) p-1"
       >
         {items.map((item) => {
           const isActive = item.value === activeItem?.value;
@@ -62,10 +62,10 @@ export function Tabs({
               tabIndex={isActive ? 0 : -1}
               disabled={item.disabled}
               className={cn(
-                "inline-flex h-8 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-[var(--radius-sm)] px-3 text-sm font-medium transition-[color,background-color,box-shadow] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-focus)] focus-visible:ring-offset-1 focus-visible:ring-offset-[color:var(--color-panel-strong)] disabled:cursor-not-allowed disabled:opacity-45",
+                "inline-flex h-8 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-(--radius-sm) px-3 text-sm font-medium transition-[color,background-color,box-shadow] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--color-focus) focus-visible:ring-offset-1 focus-visible:ring-offset-(--color-panel-strong) disabled:cursor-not-allowed disabled:opacity-45",
                 isActive
-                  ? "bg-[color:var(--color-surface)] text-[color:var(--color-ink)] shadow-[var(--shadow-sm)]"
-                  : "text-[color:var(--color-ink-muted)] hover:bg-[color:var(--color-surface)]/50 hover:text-[color:var(--color-ink)]"
+                  ? "bg-(--color-surface) text-(--color-ink) shadow-(--shadow-sm)"
+                  : "text-(--color-ink-muted) hover:bg-(--color-surface)/50 hover:text-(--color-ink)"
               )}
               onClick={() => onValueChange(item.value)}
               onKeyDown={(event) => selectAdjacentTab(event, item.value)}
@@ -75,9 +75,7 @@ export function Tabs({
                 <span
                   className={cn(
                     "text-[11px] font-medium leading-none tabular-nums",
-                    isActive
-                      ? "text-[color:var(--color-ink-muted)]"
-                      : "text-[color:var(--color-ink-subtle)]"
+                    isActive ? "text-(--color-ink-muted)" : "text-(--color-ink-subtle)"
                   )}
                 >
                   {item.count}
@@ -92,7 +90,7 @@ export function Tabs({
         role="tabpanel"
         aria-labelledby={activeItem ? `${baseId}-${toSafeId(activeItem.value)}-tab` : undefined}
         tabIndex={0}
-        className={cn("outline-none", panelClassName)}
+        className={cn("outline-hidden", panelClassName)}
       >
         {children}
       </div>

@@ -13,7 +13,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   render: () => (
     <ResourceToolbar
-      leading={<p className="text-sm text-[color:var(--color-ink-muted)]">24 utenti trovati</p>}
+      leading={<p className="text-sm text-(--color-ink-muted)">24 utenti trovati</p>}
       filters={<Input placeholder="Cerca per email o nome" />}
       actions={
         <>

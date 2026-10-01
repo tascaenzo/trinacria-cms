@@ -81,7 +81,7 @@ export function ImageBlockFields({
   return (
     <div className="grid gap-3 py-2">
       {previewUrl ? (
-        <figure className="overflow-hidden rounded-md bg-[color:var(--color-surface-subtle)]">
+        <figure className="overflow-hidden rounded-md bg-(--color-surface-subtle)">
           <img
             src={previewUrl}
             alt={block.data.alt}
@@ -89,12 +89,12 @@ export function ImageBlockFields({
           />
         </figure>
       ) : (
-        <div className="flex min-h-52 flex-col items-center justify-center rounded-md border border-dashed border-[color:var(--color-border-strong)] bg-[color:var(--color-surface-subtle)] px-6 text-center">
+        <div className="flex min-h-52 flex-col items-center justify-center rounded-md border border-dashed border-(--color-border-strong) bg-(--color-surface-subtle) px-6 text-center">
           <IconTile icon="image" />
-          <p className="mt-3 text-sm font-medium text-[color:var(--color-ink)]">
+          <p className="mt-3 text-sm font-medium text-(--color-ink)">
             {previewError ?? "Scegli un’immagine dalla libreria media"}
           </p>
-          <p className="mt-1 text-xs text-[color:var(--color-ink-muted)]">
+          <p className="mt-1 text-xs text-(--color-ink-muted)">
             Il File Manager mostra soltanto file immagine.
           </p>
           {cms ? (

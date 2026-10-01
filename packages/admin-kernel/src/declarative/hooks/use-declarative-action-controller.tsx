@@ -228,7 +228,7 @@ export function useDeclarativeActionController({
               <InfoCard
                 title="No fields required"
                 description="This action does not require additional input."
-                className="bg-[color:var(--color-surface)]"
+                className="bg-(--color-surface)"
               />
             )}
             {actionState.status === "error" ? (

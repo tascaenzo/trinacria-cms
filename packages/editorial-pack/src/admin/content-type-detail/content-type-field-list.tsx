@@ -34,7 +34,7 @@ export function ContentTypeFieldList({
 }) {
   if (!fields.length) {
     return (
-      <p className="rounded-lg bg-[color:var(--color-surface-subtle)] p-3 text-sm text-[color:var(--color-ink-muted)]">
+      <p className="rounded-lg bg-(--color-surface-subtle) p-3 text-sm text-(--color-ink-muted)">
         {empty}
       </p>
     );
@@ -86,7 +86,7 @@ export function ContentTypeFieldList({
               <DataTableCell>
                 <FieldBadge>{FIELD_TYPE_LABELS[field.type]}</FieldBadge>
               </DataTableCell>
-              <DataTableCell className="text-[color:var(--color-ink-muted)]">
+              <DataTableCell className="text-(--color-ink-muted)">
                 {fieldRules(field)}
               </DataTableCell>
               <DataTableCell>
@@ -176,7 +176,7 @@ function fieldRules(field: ContentTypeField) {
 
 function FieldBadge({ children }: { children: string }) {
   return (
-    <span className="rounded bg-[color:var(--color-surface-subtle)] px-1.5 py-0.5 text-xs font-medium text-[color:var(--color-ink-muted)]">
+    <span className="rounded-sm bg-(--color-surface-subtle) px-1.5 py-0.5 text-xs font-medium text-(--color-ink-muted)">
       {children}
     </span>
   );

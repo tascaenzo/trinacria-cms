@@ -3,6 +3,13 @@
 Tutte le milestone significative sono documentate qui.
 Il formato si ispira a [Keep a Changelog](https://keepachangelog.com/).
 
+## Compatibilità Tailwind 4.3 — completata (2026-10-01)
+
+- Sintassi dei token uniformata, gradienti e wrapping aggiornati; outline accessibile.
+- Configurazioni legacy inutilizzate rimosse e guardrail automatico aggiunto.
+- 98 conversioni distinte verificate come equivalenti dal compilatore Tailwind;
+  check, build, Storybook e verifica visuale mobile light/dark verdi.
+
 ## UI condivisa del CMS — completata (2026-10-01)
 
 - Nuovi componenti pubblici Toolbar, ContextMenu, IconTile, PageCanvas e CenteredPanel,

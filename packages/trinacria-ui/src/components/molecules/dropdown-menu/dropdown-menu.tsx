@@ -256,7 +256,7 @@ export function DropdownMenu({
                   role="menu"
                   aria-label={menuLabel}
                   aria-labelledby={menuLabel ? undefined : triggerId}
-                  className="grid gap-1 outline-none"
+                  className="grid gap-1 outline-hidden"
                   onKeyDown={handleMenuKeyDown}
                 >
                   {children}
@@ -359,7 +359,7 @@ function DropdownTrigger({
           window.requestAnimationFrame(() => focusLastItem());
         }
       }}
-      className="inline-flex items-center gap-2 rounded-[var(--radius-control)] border border-[color:var(--color-action-secondary-border)] bg-[color:var(--color-action-secondary-bg)] px-3 py-2 text-sm font-medium text-[color:var(--color-action-secondary-ink)] shadow-[var(--shadow-surface)] transition hover:bg-[color:var(--color-action-secondary-hover)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-focus)] focus:ring-offset-2 focus:ring-offset-[color:var(--color-surface)]"
+      className="inline-flex items-center gap-2 rounded-(--radius-control) border border-(--color-action-secondary-border) bg-(--color-action-secondary-bg) px-3 py-2 text-sm font-medium text-(--color-action-secondary-ink) shadow-(--shadow-surface) transition hover:bg-(--color-action-secondary-hover) focus:outline-hidden focus:ring-2 focus:ring-(--color-focus) focus:ring-offset-2 focus:ring-offset-(--color-surface)"
     >
       {trigger}
       <Icon name="chevron-down" className={cn("h-4 w-4 transition", isOpen && "rotate-180")} />
@@ -371,7 +371,7 @@ export function DropdownMenuLabel({ children, className, ...props }: DropdownMen
   return (
     <div
       className={cn(
-        "px-3 pb-2 pt-1 text-xs font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]",
+        "px-3 pb-2 pt-1 text-xs font-medium uppercase tracking-[0.14em] text-(--color-ink-subtle)",
         className
       )}
       {...props}
@@ -382,9 +382,7 @@ export function DropdownMenuLabel({ children, className, ...props }: DropdownMen
 }
 
 export function DropdownMenuSeparator({ className, ...props }: DropdownMenuLabelProps) {
-  return (
-    <div className={cn("my-1 border-t border-[color:var(--color-border)]", className)} {...props} />
-  );
+  return <div className={cn("my-1 border-t border-(--color-border)", className)} {...props} />;
 }
 
 export function DropdownMenuItem({
@@ -413,11 +411,11 @@ export function DropdownMenuItem({
       type="button"
       role="menuitem"
       className={cn(
-        "flex w-full items-start gap-3 rounded-[var(--radius-control)] px-3 py-2 text-left text-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-focus)]",
+        "flex w-full items-start gap-3 rounded-(--radius-control) px-3 py-2 text-left text-sm transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--color-focus)",
         tone === "neutral" &&
-          "text-[color:var(--color-ink-muted)] hover:bg-[color:var(--color-interactive-hover)] hover:text-[color:var(--color-ink)] focus:bg-[color:var(--color-interactive-hover)] focus:text-[color:var(--color-ink)]",
+          "text-(--color-ink-muted) hover:bg-(--color-interactive-hover) hover:text-(--color-ink) focus:bg-(--color-interactive-hover) focus:text-(--color-ink)",
         tone === "danger" &&
-          "text-[color:var(--color-danger-ink)] hover:bg-[color:var(--color-danger-bg)] focus:bg-[color:var(--color-danger-bg)]",
+          "text-(--color-danger-ink) hover:bg-(--color-danger-bg) focus:bg-(--color-danger-bg)",
         props.disabled && "cursor-not-allowed opacity-55",
         className
       )}

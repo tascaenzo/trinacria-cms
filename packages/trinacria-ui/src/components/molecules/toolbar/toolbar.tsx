@@ -19,7 +19,7 @@ export function Toolbar({
       className={cn(
         hiddenUntilFocus ? "hidden" : "flex",
         wrap ? "flex-wrap" : "flex-nowrap",
-        "items-center gap-1 rounded-[var(--radius-control)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-1 shadow-[var(--shadow-surface)]",
+        "items-center gap-1 rounded-(--radius-control) border border-(--color-border) bg-(--color-surface) p-1 shadow-(--shadow-surface)",
         className
       )}
       {...props}
@@ -38,7 +38,7 @@ export const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
         aria-label={label}
         title={label}
         className={cn(
-          "h-8 shrink-0 aria-pressed:border-[color:var(--color-border-strong)] aria-pressed:bg-[color:var(--color-panel-strong)] aria-pressed:text-[color:var(--color-ink)]",
+          "h-8 shrink-0 aria-pressed:border-(--color-border-strong) aria-pressed:bg-(--color-panel-strong) aria-pressed:text-(--color-ink)",
           className
         )}
         {...props}
@@ -57,7 +57,7 @@ export const ToolbarSelect = forwardRef<HTMLSelectElement, ToolbarSelectProps>(
         ref={ref}
         aria-label={label}
         className={cn(
-          "h-8 min-w-0 rounded-[var(--radius-control)] border border-transparent bg-[color:var(--color-surface)] px-2 text-xs font-medium text-[color:var(--color-ink-muted)] hover:bg-[color:var(--color-interactive-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-focus)] disabled:cursor-not-allowed disabled:opacity-55",
+          "h-8 min-w-0 rounded-(--radius-control) border border-transparent bg-(--color-surface) px-2 text-xs font-medium text-(--color-ink-muted) hover:bg-(--color-interactive-hover) focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--color-focus) disabled:cursor-not-allowed disabled:opacity-55",
           className
         )}
         {...props}

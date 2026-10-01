@@ -99,7 +99,7 @@ export function DeclarativeResourcePage({
         <InfoCard
           title="Loading resource data"
           description="The declarative renderer is reading the endpoint declared by this resource page."
-          className="bg-[color:var(--color-surface)]"
+          className="bg-(--color-surface)"
         />
       ) : null}
       {dataState.status === "error" ? (
@@ -107,7 +107,7 @@ export function DeclarativeResourcePage({
           title="Unable to load resource data"
           description={dataState.error}
           tone="dashed"
-          className="bg-[color:var(--color-surface)]"
+          className="bg-(--color-surface)"
         />
       ) : null}
       {resource && selectedRecord && detailEnabled ? (

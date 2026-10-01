@@ -128,7 +128,7 @@ export function MfaRecoveryCodesPage({
       )}
     >
       <Panel
-        className="grid grid-cols-2 gap-2 p-4 font-mono text-sm text-[color:var(--color-ink)]"
+        className="grid grid-cols-2 gap-2 p-4 font-mono text-sm text-(--color-ink)"
         tone="soft"
       >
         {recoveryCodes.map((code) => (

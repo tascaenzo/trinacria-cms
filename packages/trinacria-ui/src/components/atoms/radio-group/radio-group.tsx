@@ -32,7 +32,7 @@ export function RadioGroup({
       aria-invalid={error ? true : undefined}
     >
       {label ? (
-        <legend id={ids.labelId} className="text-sm font-medium text-[color:var(--color-ink)]">
+        <legend id={ids.labelId} className="text-sm font-medium text-(--color-ink)">
           {label}
         </legend>
       ) : null}
@@ -41,7 +41,7 @@ export function RadioGroup({
           <label
             key={option.value}
             className={cn(
-              "flex items-start gap-3 rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-panel)] p-4",
+              "flex items-start gap-3 rounded-md border border-(--color-border) bg-(--color-panel) p-4",
               option.disabled && "cursor-not-allowed opacity-60"
             )}
           >
@@ -55,16 +55,14 @@ export function RadioGroup({
               aria-describedby={
                 option.description ? `${ids.controlId}-${option.value}-description` : undefined
               }
-              className="mt-0.5 h-4 w-4 border-[color:var(--color-border-strong)] bg-[color:var(--color-surface)] text-[color:var(--color-action-primary-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--color-focus)]"
+              className="mt-0.5 h-4 w-4 border-(--color-border-strong) bg-(--color-surface) text-(--color-action-primary-bg) focus-visible:ring-2 focus-visible:ring-(--color-focus)"
             />
             <span className="grid gap-1">
-              <span className="text-sm font-medium text-[color:var(--color-ink)]">
-                {option.label}
-              </span>
+              <span className="text-sm font-medium text-(--color-ink)">{option.label}</span>
               {option.description ? (
                 <span
                   id={`${ids.controlId}-${option.value}-description`}
-                  className="text-sm leading-6 text-[color:var(--color-ink-muted)]"
+                  className="text-sm leading-6 text-(--color-ink-muted)"
                 >
                   {option.description}
                 </span>
@@ -74,12 +72,12 @@ export function RadioGroup({
         ))}
       </div>
       {error ? (
-        <span id={ids.errorId} className="text-xs leading-5 text-[color:var(--color-danger-ink)]">
+        <span id={ids.errorId} className="text-xs leading-5 text-(--color-danger-ink)">
           {error}
         </span>
       ) : null}
       {hint ? (
-        <span id={ids.hintId} className="text-xs leading-5 text-[color:var(--color-ink-subtle)]">
+        <span id={ids.hintId} className="text-xs leading-5 text-(--color-ink-subtle)">
           {hint}
         </span>
       ) : null}

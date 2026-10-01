@@ -26,7 +26,7 @@ export const Default: Story = {
     const [value, setValue] = useState(args.value);
     return (
       <Tabs {...args} value={value} onValueChange={setValue}>
-        <div className="pt-5 text-sm text-[color:var(--color-ink-muted)]">
+        <div className="pt-5 text-sm text-(--color-ink-muted)">
           Contenuto della sezione {value}.
         </div>
       </Tabs>

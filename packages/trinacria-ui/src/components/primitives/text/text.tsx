@@ -6,9 +6,9 @@ export function BodyText({ children, className, tone = "muted", ...props }: Body
     <p
       className={cn(
         "text-sm leading-6",
-        tone === "default" && "text-[color:var(--color-ink)]",
-        tone === "muted" && "text-[color:var(--color-ink-muted)]",
-        tone === "subtle" && "text-[color:var(--color-ink-subtle)]",
+        tone === "default" && "text-(--color-ink)",
+        tone === "muted" && "text-(--color-ink-muted)",
+        tone === "subtle" && "text-(--color-ink-subtle)",
         className
       )}
       {...props}

@@ -22,13 +22,9 @@ export function InstallationDatabaseGuidePage({ envFilePath }: InstallationDatab
       heroMetrics={[]}
       heroHighlights={[]}
     >
-      <div className="grid gap-4 text-sm text-[color:var(--color-ink-muted)]">
+      <div className="grid gap-4 text-sm text-(--color-ink-muted)">
         <p>{t("auth.installation.db_guide_step_1")}</p>
-        <Panel
-          as="pre"
-          className="overflow-auto p-3 text-xs text-[color:var(--color-ink)]"
-          tone="soft"
-        >
+        <Panel as="pre" className="overflow-auto p-3 text-xs text-(--color-ink)" tone="soft">
           {`MONGO_URI=mongodb://<user>:<password>@<host>:<port>/<database>?authSource=admin
 
 # Alternative fallback when MONGO_URI is not set:
@@ -42,7 +38,7 @@ export function InstallationDatabaseGuidePage({ envFilePath }: InstallationDatab
         {envFilePath ? (
           <Panel
             as="pre"
-            className="overflow-auto px-3 py-2 font-mono text-xs text-[color:var(--color-ink)]"
+            className="overflow-auto px-3 py-2 font-mono text-xs text-(--color-ink)"
             tone="soft"
           >
             {envFilePath}

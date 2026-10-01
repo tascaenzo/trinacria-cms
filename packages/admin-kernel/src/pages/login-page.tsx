@@ -48,7 +48,7 @@ export function LoginPage({ action, isSubmitting, state }: LoginPageProps) {
             aria-invalid={hasError}
             className={
               hasError
-                ? "border-[color:var(--color-danger-border)] focus:border-[color:var(--color-danger-ink)] focus:ring-[color:var(--color-danger-border)]"
+                ? "border-(--color-danger-border) focus:border-(--color-danger-ink) focus:ring-(--color-danger-border)"
                 : undefined
             }
             required
@@ -66,7 +66,7 @@ export function LoginPage({ action, isSubmitting, state }: LoginPageProps) {
             aria-invalid={hasError}
             className={
               hasError
-                ? "border-[color:var(--color-danger-border)] focus:border-[color:var(--color-danger-ink)] focus:ring-[color:var(--color-danger-border)]"
+                ? "border-(--color-danger-border) focus:border-(--color-danger-ink) focus:ring-(--color-danger-border)"
                 : undefined
             }
             required

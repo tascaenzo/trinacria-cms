@@ -328,7 +328,7 @@ export function MediaUploadPolicySettings({
         <div className="grid gap-5 md:grid-cols-3">
           {MIME_TYPE_GROUPS.map((group) => (
             <section key={group.label} className="grid content-start gap-2">
-              <h5 className="text-xs font-semibold uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)]">
+              <h5 className="text-xs font-semibold uppercase tracking-[0.12em] text-(--color-ink-subtle)">
                 {group.label}
               </h5>
               {group.items.map(([mimeType, label]) => (
@@ -344,12 +344,10 @@ export function MediaUploadPolicySettings({
           ))}
         </div>
 
-        <div className="grid gap-3 border-t border-[color:var(--color-border)] pt-4">
+        <div className="grid gap-3 border-t border-(--color-border) pt-4">
           <div>
-            <h5 className="text-sm font-semibold text-[color:var(--color-ink)]">
-              Formato personalizzato
-            </h5>
-            <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
+            <h5 className="text-sm font-semibold text-(--color-ink)">Formato personalizzato</h5>
+            <p className="mt-1 text-sm text-(--color-ink-muted)">
               Per formati non presenti nell&apos;elenco, ad esempio application/zip.
             </p>
           </div>

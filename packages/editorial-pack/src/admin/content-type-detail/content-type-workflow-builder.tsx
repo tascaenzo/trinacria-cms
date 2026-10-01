@@ -132,10 +132,8 @@ function WorkflowCanvas({
   return (
     <section className="grid gap-6">
       <div>
-        <h3 className="text-base font-semibold text-[color:var(--color-ink)]">
-          Disegna il percorso
-        </h3>
-        <p className="mt-2 text-sm text-[color:var(--color-ink-muted)]">
+        <h3 className="text-base font-semibold text-(--color-ink)">Disegna il percorso</h3>
+        <p className="mt-2 text-sm text-(--color-ink-muted)">
           Trascina una fase nell’area di lavoro o sposta una carta per cambiarne l’ordine.
         </p>
         <div className="mt-5">
@@ -194,8 +192,8 @@ function WorkflowStateLibrary({
 }) {
   return (
     <Panel as="aside" className="p-4" tone="soft">
-      <h4 className="text-sm font-semibold text-[color:var(--color-ink)]">Fasi disponibili</h4>
-      <p className="mt-1 text-xs leading-5 text-[color:var(--color-ink-muted)]">
+      <h4 className="text-sm font-semibold text-(--color-ink)">Fasi disponibili</h4>
+      <p className="mt-1 text-xs leading-5 text-(--color-ink-muted)">
         Trascina una fase nel flusso.
       </p>
       <div className="mt-4 grid gap-2">
@@ -212,14 +210,14 @@ function WorkflowStateLibrary({
               className="flex items-center justify-between text-sm font-medium"
             >
               {state.label}
-              <Icon name="grip-vertical" className="text-[color:var(--color-ink-subtle)]" />
+              <Icon name="grip-vertical" className="text-(--color-ink-subtle)" />
             </SelectableCard>
           );
         })}
       </div>
 
-      <div className="mt-5 border-t border-[color:var(--color-border)] pt-4">
-        <p className="text-xs font-semibold text-[color:var(--color-ink)]">Fase personalizzata</p>
+      <div className="mt-5 border-t border-(--color-border) pt-4">
+        <p className="text-xs font-semibold text-(--color-ink)">Fase personalizzata</p>
         <div className="mt-3 grid gap-3">
           <Input
             aria-label="Nome della fase"
@@ -268,12 +266,12 @@ function WorkflowBoard({
     >
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h4 className="text-sm font-semibold text-[color:var(--color-ink)]">Il tuo workflow</h4>
-          <p className="mt-1 text-xs text-[color:var(--color-ink-muted)]">
+          <h4 className="text-sm font-semibold text-(--color-ink)">Il tuo workflow</h4>
+          <p className="mt-1 text-xs text-(--color-ink-muted)">
             Le frecce rappresentano i passaggi creati automaticamente.
           </p>
         </div>
-        <span className="rounded-full bg-[color:var(--color-panel)] px-3 py-1 text-xs font-medium text-[color:var(--color-ink-muted)]">
+        <span className="rounded-full bg-(--color-panel) px-3 py-1 text-xs font-medium text-(--color-ink-muted)">
           {states.length} fasi
         </span>
       </div>
@@ -298,7 +296,7 @@ function WorkflowBoard({
           ))}
         </div>
       ) : (
-        <div className="grid min-h-44 place-items-center rounded-lg bg-[color:var(--color-panel)] p-6 text-center text-sm text-[color:var(--color-ink-muted)]">
+        <div className="grid min-h-44 place-items-center rounded-lg bg-(--color-panel) p-6 text-center text-sm text-(--color-ink-muted)">
           Trascina qui la prima fase del workflow.
         </div>
       )}
@@ -343,16 +341,14 @@ function WorkflowStateCard({
         }}
         className={`w-48 ${isDragging ? "scale-[0.98] opacity-55" : ""}`}
       >
-        <span className="grid h-7 w-7 place-items-center rounded-full bg-[color:var(--color-surface)] text-xs font-semibold text-[color:var(--color-ink-subtle)]">
+        <span className="grid h-7 w-7 place-items-center rounded-full bg-(--color-surface) text-xs font-semibold text-(--color-ink-subtle)">
           {index + 1}
         </span>
-        <span className="mt-4 block text-sm font-semibold text-[color:var(--color-ink)]">
-          {state.label}
-        </span>
-        <span className="mt-2 block text-xs text-[color:var(--color-ink-muted)]">
+        <span className="mt-4 block text-sm font-semibold text-(--color-ink)">{state.label}</span>
+        <span className="mt-2 block text-xs text-(--color-ink-muted)">
           {state.initial ? "Punto di partenza" : "Fase del flusso"}
         </span>
-        <span className="mt-2 flex items-center gap-1 text-xs font-medium text-[color:var(--color-ink-subtle)]">
+        <span className="mt-2 flex items-center gap-1 text-xs font-medium text-(--color-ink-subtle)">
           <Icon name="grip-vertical" className="h-3.5 w-3.5" />
           Trascina per riordinare
         </span>
@@ -361,7 +357,7 @@ function WorkflowStateCard({
         icon="x"
         disabled={disabled || statesCount <= 1}
         onClick={() => onRemove(state.key)}
-        className="absolute right-2 top-2 bg-[color:var(--color-surface)]"
+        className="absolute right-2 top-2 bg-(--color-surface)"
         label={`Rimuovi ${state.label}`}
         size="sm"
         title="Rimuovi fase"
@@ -373,9 +369,9 @@ function WorkflowStateCard({
 export function WorkflowConnector() {
   return (
     <div className="flex w-20 shrink-0 items-center justify-center" aria-hidden="true">
-      <span className="h-px flex-1 bg-[color:var(--color-border-strong)]" />
-      <Icon name="arrow-right" className="mx-1 text-[color:var(--color-ink-subtle)]" />
-      <span className="h-px flex-1 bg-[color:var(--color-border-strong)]" />
+      <span className="h-px flex-1 bg-(--color-border-strong)" />
+      <Icon name="arrow-right" className="mx-1 text-(--color-ink-subtle)" />
+      <span className="h-px flex-1 bg-(--color-border-strong)" />
     </div>
   );
 }

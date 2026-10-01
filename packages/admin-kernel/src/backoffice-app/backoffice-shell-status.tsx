@@ -14,7 +14,7 @@ export function BackofficeShellStatus({ error, isLoading, t }: BackofficeShellSt
         eyebrow={t("auth.installation.eyebrow")}
         title={t("backoffice.shell.discovery_error_title")}
       >
-        <p className="text-sm leading-7 text-[color:var(--color-ink-muted)]">{error}</p>
+        <p className="text-sm leading-7 text-(--color-ink-muted)">{error}</p>
       </Card>
     );
   }
@@ -25,7 +25,7 @@ export function BackofficeShellStatus({ error, isLoading, t }: BackofficeShellSt
         eyebrow={t("auth.installation.eyebrow")}
         title={t("backoffice.shell.loading_discovery_title")}
       >
-        <p className="text-sm leading-7 text-[color:var(--color-ink-muted)]">
+        <p className="text-sm leading-7 text-(--color-ink-muted)">
           {t("backoffice.shell.loading_discovery_body")}
         </p>
       </Card>

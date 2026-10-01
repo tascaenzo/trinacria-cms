@@ -10,12 +10,12 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (
-    <div className="w-96 rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-panel)] p-5">
-      <p className="text-sm text-[color:var(--color-ink-muted)]">Blocco precedente</p>
+    <div className="w-96 rounded-lg border border-(--color-border) bg-(--color-panel) p-5">
+      <p className="text-sm text-(--color-ink-muted)">Blocco precedente</p>
       <div className="my-5">
         <DropIndicator />
       </div>
-      <p className="text-sm text-[color:var(--color-ink-muted)]">Blocco successivo</p>
+      <p className="text-sm text-(--color-ink-muted)">Blocco successivo</p>
     </div>
   )
 };

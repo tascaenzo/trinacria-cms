@@ -77,21 +77,19 @@ export const Registry: Story = {
       {sections.map((section) => (
         <section key={section.title} className="grid gap-3">
           <header className="flex items-center justify-between gap-3">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)]">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-(--color-ink-subtle)">
               {section.title}
             </h3>
-            <span className="text-xs text-[color:var(--color-ink-subtle)]">
-              {section.icons.length} icons
-            </span>
+            <span className="text-xs text-(--color-ink-subtle)">{section.icons.length} icons</span>
           </header>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
             {section.icons.map((name) => (
               <div
                 key={name}
-                className="flex items-center gap-3 rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4"
+                className="flex items-center gap-3 rounded-xl border border-(--color-border) bg-(--color-surface) p-4"
               >
                 <Icon name={name} className="h-5 w-5" />
-                <span className="text-sm text-[color:var(--color-ink-muted)]">{name}</span>
+                <span className="text-sm text-(--color-ink-muted)">{name}</span>
               </div>
             ))}
           </div>
@@ -107,10 +105,10 @@ export const FullIndex: Story = {
       {ICON_NAMES.map((name) => (
         <div
           key={name}
-          className="flex items-center gap-3 rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4"
+          className="flex items-center gap-3 rounded-xl border border-(--color-border) bg-(--color-surface) p-4"
         >
           <Icon name={name} className="h-5 w-5" />
-          <span className="text-sm text-[color:var(--color-ink-muted)]">{name}</span>
+          <span className="text-sm text-(--color-ink-muted)">{name}</span>
         </div>
       ))}
     </div>

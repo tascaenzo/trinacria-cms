@@ -185,10 +185,10 @@ export function TimePicker({
             aria-invalid={error ? true : ariaInvalid}
             aria-label={typeof ariaLabel === "string" ? ariaLabel : undefined}
           >
-            <span className={cn(!displayValue && "text-[color:var(--color-ink-subtle)]")}>
+            <span className={cn(!displayValue && "text-(--color-ink-subtle)")}>
               {displayValue ?? placeholder}
             </span>
-            <Icon name="clock-3" className="text-[color:var(--color-ink-subtle)]" />
+            <Icon name="clock-3" className="text-(--color-ink-subtle)" />
           </button>
 
           {isOpen ? (
@@ -200,15 +200,12 @@ export function TimePicker({
               className="absolute left-0 top-[calc(100%+0.5rem)] z-30 w-[280px] p-4"
             >
               <div className="grid gap-4">
-                <div
-                  id={popupTitleId}
-                  className="text-sm font-semibold text-[color:var(--color-ink)]"
-                >
+                <div id={popupTitleId} className="text-sm font-semibold text-(--color-ink)">
                   {popupLabel}
                 </div>
                 <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3">
                   <label className="grid gap-2">
-                    <span className="text-xs font-medium uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)]">
+                    <span className="text-xs font-medium uppercase tracking-[0.12em] text-(--color-ink-subtle)">
                       {hourLabel}
                     </span>
                     <select
@@ -224,11 +221,9 @@ export function TimePicker({
                       ))}
                     </select>
                   </label>
-                  <span className="pb-2 text-lg font-semibold text-[color:var(--color-ink-subtle)]">
-                    :
-                  </span>
+                  <span className="pb-2 text-lg font-semibold text-(--color-ink-subtle)">:</span>
                   <label className="grid gap-2">
-                    <span className="text-xs font-medium uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)]">
+                    <span className="text-xs font-medium uppercase tracking-[0.12em] text-(--color-ink-subtle)">
                       {minuteLabel}
                     </span>
                     <select
@@ -254,7 +249,7 @@ export function TimePicker({
                       onValueChange?.("");
                       closeAndRestoreFocus();
                     }}
-                    className="rounded-sm px-1 text-xs font-medium uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-focus)]"
+                    className="rounded-sm px-1 text-xs font-medium uppercase tracking-[0.12em] text-(--color-ink-subtle) focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--color-focus)"
                     aria-label={clearLabel}
                   >
                     {clearText}

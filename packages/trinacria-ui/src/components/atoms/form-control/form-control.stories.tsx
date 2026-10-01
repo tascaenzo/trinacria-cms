@@ -20,11 +20,11 @@ export const Overview: Story = {
 
       <FormControlShell label="Numeric field" error="Il valore non e valido.">
         <FormControlSurface error>
-          <span className="border-r border-[color:var(--color-border)] px-3 text-[color:var(--color-ink-subtle)]">
+          <span className="border-r border-(--color-border) px-3 text-(--color-ink-subtle)">
             EUR
           </span>
           <input
-            className="h-full w-full bg-transparent px-3 text-sm text-[color:var(--color-ink)] outline-none"
+            className="h-full w-full bg-transparent px-3 text-sm text-(--color-ink) outline-hidden"
             defaultValue="49.90"
           />
         </FormControlSurface>

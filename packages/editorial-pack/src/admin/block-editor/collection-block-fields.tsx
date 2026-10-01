@@ -46,7 +46,7 @@ export function TableBlockFields({
 
   return (
     <div className="group/table grid gap-2 py-2" data-table-block>
-      <div className="overflow-x-auto rounded-md border border-[color:var(--color-border)]">
+      <div className="overflow-x-auto rounded-md border border-(--color-border)">
         <table className="w-full min-w-[32rem] table-fixed border-collapse">
           <tbody>
             {rows.map((row, rowIndex) => (
@@ -59,7 +59,7 @@ export function TableBlockFields({
                       data-table-cell={`${rowIndex}-${columnIndex}`}
                       value={cell}
                       disabled={disabled}
-                      className={`block h-10 w-full border-0 bg-transparent px-3 text-sm text-[color:var(--color-ink)] outline-none placeholder:text-[color:var(--color-ink-subtle)] ${
+                      className={`block h-10 w-full border-0 bg-transparent px-3 text-sm text-(--color-ink) outline-hidden placeholder:text-(--color-ink-subtle) ${
                         block.data.hasHeader && rowIndex === 0 ? "font-semibold" : "font-normal"
                       }`}
                       placeholder={
@@ -80,10 +80,10 @@ export function TableBlockFields({
                       }}
                     />
                   );
-                  const cellClass = `border-b border-r border-[color:var(--color-border)] last:border-r-0 ${
+                  const cellClass = `border-b border-r border-(--color-border) last:border-r-0 ${
                     block.data.hasHeader && rowIndex === 0
-                      ? "bg-[color:var(--color-surface-subtle)]"
-                      : "bg-[color:var(--color-panel)]"
+                      ? "bg-(--color-surface-subtle)"
+                      : "bg-(--color-panel)"
                   }`;
                   return block.data.hasHeader && rowIndex === 0 ? (
                     <th scope="col" className={cellClass} key={`${rowIndex}-${columnIndex}`}>
@@ -151,7 +151,7 @@ export function ListBlockFields({
         <div className="flex min-h-7 items-start gap-2" key={`${block.id}-item-${index}`}>
           <span
             aria-hidden="true"
-            className="w-5 shrink-0 select-none pt-0.5 text-right text-base leading-7 text-[color:var(--color-ink)]"
+            className="w-5 shrink-0 select-none pt-0.5 text-right text-base leading-7 text-(--color-ink)"
           >
             {block.data.style === "numbered" ? `${index + 1}.` : "•"}
           </span>
@@ -161,7 +161,7 @@ export function ListBlockFields({
             placeholder={index === 0 ? "Voce dell’elenco" : undefined}
             value={item}
             disabled={disabled}
-            className="min-w-0 flex-1 border-0 bg-transparent px-0 py-0.5 text-base leading-7 text-[color:var(--color-ink)] outline-none placeholder:text-[color:var(--color-ink-subtle)]"
+            className="min-w-0 flex-1 border-0 bg-transparent px-0 py-0.5 text-base leading-7 text-(--color-ink) outline-hidden placeholder:text-(--color-ink-subtle)"
             onChange={(event) => {
               const nextItems = [...items];
               nextItems[index] = event.currentTarget.value;

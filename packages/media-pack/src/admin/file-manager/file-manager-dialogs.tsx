@@ -290,7 +290,7 @@ export function ConfirmationDialog({
         </>
       }
     >
-      <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
+      <p className="text-sm leading-6 text-(--color-ink-muted)">
         Questa operazione non può essere annullata.
       </p>
     </Dialog>

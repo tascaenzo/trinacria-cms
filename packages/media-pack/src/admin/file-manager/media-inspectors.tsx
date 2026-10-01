@@ -71,10 +71,8 @@ export function DirectoryInspector({
       <div className="flex items-start gap-3">
         <IconTile icon="folder" tone="warning" />
         <div className="min-w-0">
-          <h2 className="truncate text-base font-semibold text-[color:var(--color-ink)]">
-            {directory.name}
-          </h2>
-          <p className="mt-1 text-xs text-[color:var(--color-ink-muted)]">Impostazioni cartella</p>
+          <h2 className="truncate text-base font-semibold text-(--color-ink)">{directory.name}</h2>
+          <p className="mt-1 text-xs text-(--color-ink-muted)">Impostazioni cartella</p>
         </div>
       </div>
       <CompactProperties
@@ -111,7 +109,7 @@ export function DirectoryInspector({
             <Button
               type="button"
               variant="secondary"
-              className="mr-auto text-[color:var(--color-danger-ink)]"
+              className="mr-auto text-(--color-danger-ink)"
               disabled={disabled}
               onClick={onDelete}
             >
@@ -337,12 +335,10 @@ export function AssetInspector({
       <div className="flex items-start gap-3">
         <InspectorMediaGlyph mimeType={asset.mimeType} />
         <div className="min-w-0">
-          <h2 className="truncate text-base font-semibold text-[color:var(--color-ink)]">
+          <h2 className="truncate text-base font-semibold text-(--color-ink)">
             {asset.displayName}
           </h2>
-          <p className="mt-1 truncate text-xs text-[color:var(--color-ink-muted)]">
-            {asset.originalFilename}
-          </p>
+          <p className="mt-1 truncate text-xs text-(--color-ink-muted)">{asset.originalFilename}</p>
         </div>
       </div>
       <PreviewSurface
@@ -381,7 +377,7 @@ export function AssetInspector({
             <Button
               type="button"
               variant="secondary"
-              className="mr-auto text-[color:var(--color-danger-ink)]"
+              className="mr-auto text-(--color-danger-ink)"
               disabled={disabled}
               onClick={onDelete}
             >
@@ -410,8 +406,8 @@ export function AssetInspector({
         <div className="grid gap-7 lg:grid-cols-[minmax(0,0.85fr)_minmax(340px,1.15fr)]">
           <section className="grid content-start gap-4">
             <div>
-              <h3 className="text-sm font-semibold text-[color:var(--color-ink)]">Proprietà</h3>
-              <p className="mt-1 text-xs text-[color:var(--color-ink-muted)]">
+              <h3 className="text-sm font-semibold text-(--color-ink)">Proprietà</h3>
+              <p className="mt-1 text-xs text-(--color-ink-muted)">
                 Nome, posizione e accesso generale.
               </p>
             </div>
@@ -445,17 +441,15 @@ export function AssetInspector({
               <option value="public">Pubblico</option>
             </Select>
           </section>
-          <section className="grid min-w-0 content-start gap-4 border-t border-[color:var(--color-border)] pt-6 lg:border-l lg:border-t-0 lg:pl-7 lg:pt-0">
+          <section className="grid min-w-0 content-start gap-4 border-t border-(--color-border) pt-6 lg:border-l lg:border-t-0 lg:pl-7 lg:pt-0">
             <div>
-              <h3 className="text-sm font-semibold text-[color:var(--color-ink)]">Condivisioni</h3>
-              <p className="mt-1 text-xs leading-5 text-[color:var(--color-ink-muted)]">
+              <h3 className="text-sm font-semibold text-(--color-ink)">Condivisioni</h3>
+              <p className="mt-1 text-xs leading-5 text-(--color-ink-muted)">
                 Concedi accesso mirato a utenti, ruoli o servizi.
               </p>
             </div>
             {shareError ? (
-              <p className="break-words text-sm text-[color:var(--color-danger-ink)]">
-                {shareError}
-              </p>
+              <p className="wrap-break-word text-sm text-(--color-danger-ink)">{shareError}</p>
             ) : null}
             <div className="grid min-w-0 gap-4 sm:grid-cols-2">
               <Select
@@ -520,22 +514,19 @@ export function AssetInspector({
             </div>
             <div className="grid max-h-48 min-w-0 gap-2 overflow-auto">
               {isLoadingShares ? (
-                <p className="text-xs text-[color:var(--color-ink-muted)]">Caricamento regole…</p>
+                <p className="text-xs text-(--color-ink-muted)">Caricamento regole…</p>
               ) : null}
               {shares.length === 0 && !isLoadingShares ? (
                 <EmptyState className="p-3" text="Nessuna condivisione specifica." />
               ) : null}
               {shares.map((entry) => (
-                <Panel
-                  key={entry.id}
-                  className="min-w-0 p-3 text-xs text-[color:var(--color-ink-muted)]"
-                >
+                <Panel key={entry.id} className="min-w-0 p-3 text-xs text-(--color-ink-muted)">
                   <div className="flex min-w-0 items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="break-words font-semibold text-[color:var(--color-ink)]">
+                      <p className="wrap-break-word font-semibold text-(--color-ink)">
                         {entry.principalType}: {entry.principalId}
                       </p>
-                      <p className="mt-1 break-words">
+                      <p className="mt-1 wrap-break-word">
                         {entry.actions.map(shareActionLabel).join(", ")}
                         {entry.expiresAt ? ` · fino al ${formatDate(entry.expiresAt)}` : ""}
                       </p>
@@ -545,7 +536,7 @@ export function AssetInspector({
                       size="sm"
                       variant="ghost"
                       disabled={disabled || isLoadingShares}
-                      className="shrink-0 text-[color:var(--color-danger-ink)]"
+                      className="shrink-0 text-(--color-danger-ink)"
                       onClick={() => setShareToRevoke(entry)}
                     >
                       Revoca
@@ -590,7 +581,7 @@ function PreviewSurface({
   let content: React.ReactNode;
   if (isLoading) {
     content = (
-      <div className="grid h-full place-items-center text-xs text-[color:var(--color-ink-muted)]">
+      <div className="grid h-full place-items-center text-xs text-(--color-ink-muted)">
         Caricamento anteprima…
       </div>
     );
@@ -599,7 +590,7 @@ function PreviewSurface({
       <div className="grid h-full place-items-center p-5 text-center">
         <div>
           <InspectorMediaGlyph mimeType={asset.mimeType} />
-          <p className="mt-3 text-xs text-[color:var(--color-ink-muted)]">
+          <p className="mt-3 text-xs text-(--color-ink-muted)">
             {error ?? "Anteprima non disponibile"}
           </p>
         </div>
@@ -630,7 +621,7 @@ function PreviewSurface({
       <div className="grid h-full place-items-center p-5 text-center">
         <div>
           <InspectorMediaGlyph mimeType={asset.mimeType} />
-          <p className="mt-3 text-xs text-[color:var(--color-ink-muted)]">
+          <p className="mt-3 text-xs text-(--color-ink-muted)">
             Anteprima non disponibile per questo formato.
           </p>
         </div>

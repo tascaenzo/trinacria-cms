@@ -3,12 +3,12 @@ import { Icon } from "../icon/icon.js";
 import type { IconTileProps } from "./icon-tile.types.js";
 
 const tones = {
-  neutral: "bg-[color:var(--color-neutral-bg)] text-[color:var(--color-neutral-ink)]",
-  accent: "bg-[color:var(--color-accent-soft)] text-[color:var(--color-accent-ink)]",
-  info: "bg-[color:var(--color-info-bg)] text-[color:var(--color-info-ink)]",
-  success: "bg-[color:var(--color-success-bg)] text-[color:var(--color-success-ink)]",
-  warning: "bg-[color:var(--color-warning-bg)] text-[color:var(--color-warning-ink)]",
-  danger: "bg-[color:var(--color-danger-bg)] text-[color:var(--color-danger-ink)]"
+  neutral: "bg-(--color-neutral-bg) text-(--color-neutral-ink)",
+  accent: "bg-(--color-accent-soft) text-(--color-accent-ink)",
+  info: "bg-(--color-info-bg) text-(--color-info-ink)",
+  success: "bg-(--color-success-bg) text-(--color-success-ink)",
+  warning: "bg-(--color-warning-bg) text-(--color-warning-ink)",
+  danger: "bg-(--color-danger-bg) text-(--color-danger-ink)"
 };
 export function IconTile({
   icon,
@@ -19,7 +19,7 @@ export function IconTile({
   ...props
 }: IconTileProps) {
   const classes = cn(
-    "inline-flex shrink-0 items-center justify-center rounded-[var(--radius-control)]",
+    "inline-flex shrink-0 items-center justify-center rounded-(--radius-control)",
     tones[tone],
     size === "sm" ? "h-9 w-9" : size === "lg" ? "h-12 w-12" : "h-11 w-11",
     className

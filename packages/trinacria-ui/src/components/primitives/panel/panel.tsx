@@ -14,13 +14,12 @@ export function Panel({
     <Component
       className={cn(
         "border",
-        radius === "lg" && "rounded-[var(--radius-panel)]",
-        radius === "xl" && "rounded-[var(--radius-overlay)]",
-        tone === "default" && "border-[color:var(--color-border)] bg-[color:var(--color-surface)]",
-        tone === "soft" && "border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)]",
-        tone === "dashed" &&
-          "border-dashed border-[color:var(--color-border-strong)] bg-[color:var(--color-panel-soft)]",
-        elevation === "sm" && "shadow-[var(--shadow-surface)]",
+        radius === "lg" && "rounded-(--radius-panel)",
+        radius === "xl" && "rounded-(--radius-overlay)",
+        tone === "default" && "border-(--color-border) bg-(--color-surface)",
+        tone === "soft" && "border-(--color-border) bg-(--color-panel-soft)",
+        tone === "dashed" && "border-dashed border-(--color-border-strong) bg-(--color-panel-soft)",
+        elevation === "sm" && "shadow-(--shadow-surface)",
         className
       )}
       {...props}

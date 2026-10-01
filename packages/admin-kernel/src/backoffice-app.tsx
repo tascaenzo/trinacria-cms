@@ -474,13 +474,13 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
 
   if (isBootstrappingApp) {
     return renderWithI18n(
-      <div className="min-h-screen bg-[color:var(--color-canvas)] px-4 py-8">
+      <div className="min-h-screen bg-(--color-canvas) px-4 py-8">
         <div className="mx-auto max-w-3xl">
           <Card
             eyebrow={t("auth.installation.eyebrow")}
             title={t("backoffice.shell.preparing_title")}
           >
-            <p className="text-sm leading-7 text-[color:var(--color-ink-muted)]">
+            <p className="text-sm leading-7 text-(--color-ink-muted)">
               {t("backoffice.shell.preparing_body")}
             </p>
           </Card>
@@ -503,7 +503,7 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
         heroMetrics={[]}
         heroHighlights={[]}
       >
-        <div className="grid gap-4 text-sm text-[color:var(--color-ink-muted)]">
+        <div className="grid gap-4 text-sm text-(--color-ink-muted)">
           <p>{t("auth.installation.error.communication_detail")}</p>
         </div>
       </AuthScreenLayout>

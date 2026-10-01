@@ -66,10 +66,10 @@ export function CodeEditor({ ariaLabel, onChange, readOnly = false, value }: Cod
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[color:var(--color-surface)]">
-      <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-[color:var(--color-border)] bg-[color:var(--color-panel)] px-3 py-2">
-        <div className="flex min-w-48 flex-1 items-center rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-2 focus-within:ring-2 focus-within:ring-[color:var(--color-focus)]">
-          <Icon name="search" className="h-4 w-4 shrink-0 text-[color:var(--color-ink-subtle)]" />
+    <div className="flex h-full min-h-0 flex-col bg-(--color-surface)">
+      <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-(--color-border) bg-(--color-panel) px-3 py-2">
+        <div className="flex min-w-48 flex-1 items-center rounded-md border border-(--color-border) bg-(--color-surface) px-2 focus-within:ring-2 focus-within:ring-(--color-focus)">
+          <Icon name="search" className="h-4 w-4 shrink-0 text-(--color-ink-subtle)" />
           <input
             ref={searchRef}
             aria-label="Cerca nel file"
@@ -82,9 +82,9 @@ export function CodeEditor({ ariaLabel, onChange, readOnly = false, value }: Cod
                 findNext();
               }
             }}
-            className="h-8 min-w-0 flex-1 bg-transparent px-2 text-sm outline-none"
+            className="h-8 min-w-0 flex-1 bg-transparent px-2 text-sm outline-hidden"
           />
-          <span className="shrink-0 text-xs text-[color:var(--color-ink-subtle)]">
+          <span className="shrink-0 text-xs text-(--color-ink-subtle)">
             {search ? `${matchCount} risultati` : "⌘F"}
           </span>
         </div>
@@ -92,7 +92,7 @@ export function CodeEditor({ ariaLabel, onChange, readOnly = false, value }: Cod
           type="button"
           disabled={!search || matchCount === 0}
           onClick={findNext}
-          className="h-8 rounded-md border border-[color:var(--color-border)] px-3 text-sm text-[color:var(--color-ink-muted)] disabled:opacity-40"
+          className="h-8 rounded-md border border-(--color-border) px-3 text-sm text-(--color-ink-muted) disabled:opacity-40"
         >
           Successivo
         </button>
@@ -101,7 +101,7 @@ export function CodeEditor({ ariaLabel, onChange, readOnly = false, value }: Cod
         <pre
           ref={gutterRef}
           aria-hidden="true"
-          className="m-0 min-w-12 select-none overflow-hidden border-r border-[color:var(--color-border)] bg-[color:var(--color-panel)] px-3 py-4 text-right text-[color:var(--color-ink-subtle)]"
+          className="m-0 min-w-12 select-none overflow-hidden border-r border-(--color-border) bg-(--color-panel) px-3 py-4 text-right text-(--color-ink-subtle)"
         >
           {lineNumbers}
         </pre>
@@ -122,10 +122,10 @@ export function CodeEditor({ ariaLabel, onChange, readOnly = false, value }: Cod
           onScroll={(event) => {
             if (gutterRef.current) gutterRef.current.scrollTop = event.currentTarget.scrollTop;
           }}
-          className="h-full min-h-0 min-w-0 flex-1 resize-none overflow-auto whitespace-pre border-0 bg-[color:var(--color-surface)] p-4 font-mono text-[13px] leading-6 text-[color:var(--color-ink)] outline-none focus:ring-2 focus:ring-inset focus:ring-[color:var(--color-focus)]"
+          className="h-full min-h-0 min-w-0 flex-1 resize-none overflow-auto whitespace-pre border-0 bg-(--color-surface) p-4 font-mono text-[13px] leading-6 text-(--color-ink) outline-hidden focus:ring-2 focus:ring-inset focus:ring-(--color-focus)"
         />
       </div>
-      <div className="flex shrink-0 items-center justify-between border-t border-[color:var(--color-border)] bg-[color:var(--color-panel)] px-3 py-1.5 text-xs text-[color:var(--color-ink-subtle)]">
+      <div className="flex shrink-0 items-center justify-between border-t border-(--color-border) bg-(--color-panel) px-3 py-1.5 text-xs text-(--color-ink-subtle)">
         <span>
           Riga {cursor.line}, colonna {cursor.column}
         </span>

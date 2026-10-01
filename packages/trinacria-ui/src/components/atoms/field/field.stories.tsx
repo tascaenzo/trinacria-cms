@@ -12,17 +12,14 @@ export const Composition: Story = {
         <Field>
           <FieldLabel htmlFor="tenant-name">Tenant</FieldLabel>
           <FieldDescription>Identificatore principale del tenant.</FieldDescription>
-          <input
-            id="tenant-name"
-            className="h-10 rounded-lg border border-[color:var(--color-border)] px-3"
-          />
+          <input id="tenant-name" className="h-10 rounded-lg border border-(--color-border) px-3" />
           <FieldHint>Usato per DNS e provisioning.</FieldHint>
         </Field>
         <Field>
           <FieldLabel htmlFor="client-id">Client ID</FieldLabel>
           <input
             id="client-id"
-            className="h-10 rounded-[var(--radius-control)] border border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] px-3"
+            className="h-10 rounded-(--radius-control) border border-(--color-danger-border) bg-(--color-danger-bg) px-3"
           />
           <FieldError>Il campo e obbligatorio.</FieldError>
         </Field>

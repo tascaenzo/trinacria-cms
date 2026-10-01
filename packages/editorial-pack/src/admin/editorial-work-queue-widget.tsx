@@ -116,15 +116,13 @@ export function EditorialWorkQueueWidget({
           <div className="grid min-h-0 lg:grid-cols-[minmax(0,1.45fr)_minmax(17rem,0.65fr)]">
             <section className="px-5 py-4">
               <div>
-                <p className="text-sm font-medium text-[color:var(--color-ink)]">
-                  Articoli creati di recente
-                </p>
-                <p className="mt-0.5 text-xs text-[color:var(--color-ink-muted)]">
+                <p className="text-sm font-medium text-(--color-ink)">Articoli creati di recente</p>
+                <p className="mt-0.5 text-xs text-(--color-ink-muted)">
                   Apri un articolo per continuare a lavorarci.
                 </p>
               </div>
               {recentEntries.length ? (
-                <div className="mt-3 divide-y divide-[color:var(--color-border)] border-t border-[color:var(--color-border)]">
+                <div className="mt-3 divide-y divide-(--color-border) border-t border-(--color-border)">
                   {recentEntries.map((entry) => (
                     <Button
                       key={entry.id}
@@ -134,40 +132,37 @@ export function EditorialWorkQueueWidget({
                       onClick={() => openEntry(entry)}
                     >
                       <span className="min-w-0">
-                        <span className="block truncate text-sm font-medium text-[color:var(--color-ink)]">
+                        <span className="block truncate text-sm font-medium text-(--color-ink)">
                           {entry.title ?? "Senza titolo"}
                         </span>
-                        <span className="mt-0.5 block text-xs text-[color:var(--color-ink-muted)]">
+                        <span className="mt-0.5 block text-xs text-(--color-ink-muted)">
                           Creato il {formatDate(entry.createdAt)}
                         </span>
                       </span>
                       <span className="flex items-center gap-3">
                         <EntryStatus status={entry.status} />
-                        <Icon
-                          name="chevron-right"
-                          className="text-[color:var(--color-ink-subtle)]"
-                        />
+                        <Icon name="chevron-right" className="text-(--color-ink-subtle)" />
                       </span>
                     </Button>
                   ))}
                 </div>
               ) : (
-                <p className="py-8 text-sm text-[color:var(--color-ink-muted)]">
+                <p className="py-8 text-sm text-(--color-ink-muted)">
                   {loading ? "Caricamento articoli…" : "Non ci sono ancora articoli."}
                 </p>
               )}
             </section>
 
-            <aside className="border-t border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] px-5 py-4 lg:border-l lg:border-t-0">
-              <p className="text-xs font-medium text-[color:var(--color-ink-muted)]">
+            <aside className="border-t border-(--color-border) bg-(--color-panel-soft) px-5 py-4 lg:border-l lg:border-t-0">
+              <p className="text-xs font-medium text-(--color-ink-muted)">
                 Creati negli ultimi 30 giorni
               </p>
-              <p className="mt-1 text-3xl font-semibold tabular-nums text-[color:var(--color-ink)]">
+              <p className="mt-1 text-3xl font-semibold tabular-nums text-(--color-ink)">
                 {loading ? "…" : createdRecently}
               </p>
 
-              <div className="mt-5 border-t border-[color:var(--color-border)] pt-4">
-                <p className="text-sm font-medium text-[color:var(--color-ink)]">Flusso attuale</p>
+              <div className="mt-5 border-t border-(--color-border) pt-4">
+                <p className="text-sm font-medium text-(--color-ink)">Flusso attuale</p>
                 <div className="mt-4 grid gap-3">
                   <WorkflowRow
                     label="Bozze"
@@ -213,14 +208,12 @@ function WorkflowRow({
   return (
     <div>
       <div className="flex items-center justify-between gap-3 text-xs">
-        <span className="text-[color:var(--color-ink-muted)]">{label}</span>
-        <span className="font-semibold tabular-nums text-[color:var(--color-ink)]">
-          {value ?? "…"}
-        </span>
+        <span className="text-(--color-ink-muted)">{label}</span>
+        <span className="font-semibold tabular-nums text-(--color-ink)">{value ?? "…"}</span>
       </div>
-      <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-[color:var(--color-surface-subtle)]">
+      <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-(--color-surface-subtle)">
         <span
-          className="block h-full rounded-full bg-[color:var(--color-accent)]"
+          className="block h-full rounded-full bg-(--color-accent)"
           style={{ width: `${percentage}%` }}
         />
       </div>
@@ -239,9 +232,7 @@ function EntryStatus({ status }: { status: string }) {
           : status === "published"
             ? "Pubblicato"
             : status;
-  return (
-    <span className="text-[11px] font-medium text-[color:var(--color-ink-muted)]">{label}</span>
-  );
+  return <span className="text-[11px] font-medium text-(--color-ink-muted)">{label}</span>;
 }
 
 function isCreatedInLastDays(value: string, days: number) {

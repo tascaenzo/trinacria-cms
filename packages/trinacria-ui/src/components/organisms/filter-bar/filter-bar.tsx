@@ -9,9 +9,7 @@ export function FilterBar({ actions, children, className, summary, ...props }: F
         {children}
         {actions ? <div className="contents">{actions}</div> : null}
       </form>
-      {summary ? (
-        <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">{summary}</p>
-      ) : null}
+      {summary ? <p className="text-sm leading-6 text-(--color-ink-muted)">{summary}</p> : null}
     </Panel>
   );
 }

@@ -21,7 +21,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
       htmlFor={ids.controlId}
       className={cn(
         "grid gap-2 rounded-sm border border-transparent p-1",
-        Boolean(error) && "text-[color:var(--color-danger-ink)]",
+        Boolean(error) && "text-(--color-danger-ink)",
         className
       )}
     >
@@ -34,25 +34,19 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
           aria-invalid={error ? true : props["aria-invalid"]}
           aria-describedby={aria.describedBy}
           aria-errormessage={aria.errorMessage}
-          className="mt-0.5 h-4 w-4 rounded border-[color:var(--color-border-strong)] bg-[color:var(--color-surface)] text-[color:var(--color-action-primary-bg)] focus-visible:ring-2 focus-visible:ring-[color:var(--color-focus)]"
+          className="mt-0.5 h-4 w-4 rounded-sm border-(--color-border-strong) bg-(--color-surface) text-(--color-action-primary-bg) focus-visible:ring-2 focus-visible:ring-(--color-focus)"
         />
         <span className="grid gap-1">
-          <span className="text-sm font-medium text-[color:var(--color-ink)]">{label}</span>
+          <span className="text-sm font-medium text-(--color-ink)">{label}</span>
           {description ? (
-            <span
-              id={descriptionId}
-              className="text-sm leading-6 text-[color:var(--color-ink-muted)]"
-            >
+            <span id={descriptionId} className="text-sm leading-6 text-(--color-ink-muted)">
               {description}
             </span>
           ) : null}
         </span>
       </span>
       {error ? (
-        <span
-          id={ids.errorId}
-          className="pl-7 text-xs leading-5 text-[color:var(--color-danger-ink)]"
-        >
+        <span id={ids.errorId} className="pl-7 text-xs leading-5 text-(--color-danger-ink)">
           {error}
         </span>
       ) : null}

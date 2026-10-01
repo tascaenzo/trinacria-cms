@@ -161,7 +161,7 @@ export function InstallationBootstrapPage({
 
   function renderStepIndicator() {
     return (
-      <div className="mb-6 flex items-center gap-2 text-xs font-medium text-[color:var(--color-ink-muted)]">
+      <div className="mb-6 flex items-center gap-2 text-xs font-medium text-(--color-ink-muted)">
         {STEPS.slice(0, -1).map((step, i) => {
           const isActive = i === stepIndex;
           const isDone = i < stepIndex;
@@ -169,16 +169,12 @@ export function InstallationBootstrapPage({
             <span key={step} className="flex items-center gap-2">
               {i > 0 && (
                 <span
-                  className={`h-px w-4 ${isDone ? "bg-[color:var(--color-accent)]" : "bg-[color:var(--color-border)]"}`}
+                  className={`h-px w-4 ${isDone ? "bg-(--color-accent)" : "bg-(--color-border)"}`}
                 />
               )}
               <span
                 className={
-                  isActive
-                    ? "text-[color:var(--color-accent)]"
-                    : isDone
-                      ? "text-[color:var(--color-accent)]"
-                      : undefined
+                  isActive ? "text-(--color-accent)" : isDone ? "text-(--color-accent)" : undefined
                 }
               >
                 {isDone ? "✓" : i + 1}{" "}
@@ -291,25 +287,23 @@ export function InstallationBootstrapPage({
     return (
       <div className="grid gap-3 text-sm">
         <div>
-          <p className="text-xs font-semibold text-[color:var(--color-ink-muted)] uppercase tracking-wide">
+          <p className="text-xs font-semibold text-(--color-ink-muted) uppercase tracking-wide">
             {t("auth.installation.step_site")}
           </p>
           <p className="mt-1">{values.siteName}</p>
-          {values.siteTagline && (
-            <p className="text-[color:var(--color-ink-muted)]">{values.siteTagline}</p>
-          )}
-          <p className="text-[color:var(--color-ink-muted)]">
+          {values.siteTagline && <p className="text-(--color-ink-muted)">{values.siteTagline}</p>}
+          <p className="text-(--color-ink-muted)">
             {values.locale} — {values.timezone}
           </p>
         </div>
         <div>
-          <p className="text-xs font-semibold text-[color:var(--color-ink-muted)] uppercase tracking-wide">
+          <p className="text-xs font-semibold text-(--color-ink-muted) uppercase tracking-wide">
             {t("auth.installation.step_admin")}
           </p>
           <p className="mt-1">
             {values.firstName} {values.lastName}
           </p>
-          <p className="text-[color:var(--color-ink-muted)]">{values.email}</p>
+          <p className="text-(--color-ink-muted)">{values.email}</p>
         </div>
       </div>
     );

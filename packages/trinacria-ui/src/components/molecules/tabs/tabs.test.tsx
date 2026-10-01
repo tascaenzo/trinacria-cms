@@ -22,7 +22,7 @@ test("Tabs connects the selected tab to its panel", () => {
   assert.match(markup, />Contenuto eliminato</);
   assert.match(markup, /color-panel-strong/);
   assert.match(markup, /color-surface/);
-  assert.match(markup, /shadow-\[var\(--shadow-sm\)\]/);
+  assert.match(markup, /shadow-\(--shadow-sm\)/);
   assert.doesNotMatch(markup, /aria-hidden="true"/);
   assert.doesNotMatch(markup, /h-px/);
   assert.doesNotMatch(markup, /rounded-full/);

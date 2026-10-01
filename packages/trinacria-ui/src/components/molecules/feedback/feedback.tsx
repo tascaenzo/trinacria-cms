@@ -19,15 +19,15 @@ export function FeedbackBanner({
       className={cn(
         "rounded-md px-4 py-3 text-sm",
         tone === "neutral" &&
-          "border-[color:var(--color-neutral-border)] bg-[color:var(--color-panel-soft)] text-[color:var(--color-neutral-ink)]",
+          "border-(--color-neutral-border) bg-(--color-panel-soft) text-(--color-neutral-ink)",
         tone === "info" &&
-          "border-[color:var(--color-info-border)] bg-[color:var(--color-info-bg)] text-[color:var(--color-info-ink)]",
+          "border-(--color-info-border) bg-(--color-info-bg) text-(--color-info-ink)",
         tone === "success" &&
-          "border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] text-[color:var(--color-success-ink)]",
+          "border-(--color-success-border) bg-(--color-success-bg) text-(--color-success-ink)",
         tone === "warning" &&
-          "border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-bg)] text-[color:var(--color-warning-ink)]",
+          "border-(--color-warning-border) bg-(--color-warning-bg) text-(--color-warning-ink)",
         tone === "danger" &&
-          "border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] text-[color:var(--color-danger-ink)]",
+          "border-(--color-danger-border) bg-(--color-danger-bg) text-(--color-danger-ink)",
         className
       )}
       radius="lg"
@@ -58,13 +58,11 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <Panel
-      className={cn("grid gap-3 p-5 text-sm text-[color:var(--color-ink-muted)]", className)}
+      className={cn("grid gap-3 p-5 text-sm text-(--color-ink-muted)", className)}
       tone="dashed"
       {...props}
     >
-      {title ? (
-        <p className="text-base font-semibold text-[color:var(--color-ink)]">{title}</p>
-      ) : null}
+      {title ? <p className="text-base font-semibold text-(--color-ink)">{title}</p> : null}
       <BodyText className="leading-7">{text}</BodyText>
       {children}
       {action ? <div className="pt-1">{action}</div> : null}

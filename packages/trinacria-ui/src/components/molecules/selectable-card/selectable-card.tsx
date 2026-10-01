@@ -13,10 +13,10 @@ export const SelectableCard = forwardRef<HTMLButtonElement, SelectableCardProps>
         type={type}
         aria-pressed={props["aria-pressed"] ?? selected}
         className={cn(
-          "block w-full rounded-[var(--radius-panel)] border text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-focus)] disabled:cursor-not-allowed disabled:opacity-55",
+          "block w-full rounded-(--radius-panel) border text-left transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--color-focus) disabled:cursor-not-allowed disabled:opacity-55",
           selected
-            ? "border-[color:var(--color-border-strong)] bg-[color:var(--color-panel-strong)] text-[color:var(--color-ink)]"
-            : "border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-ink-muted)] hover:bg-[color:var(--color-panel-soft)] hover:text-[color:var(--color-ink)]",
+            ? "border-(--color-border-strong) bg-(--color-panel-strong) text-(--color-ink)"
+            : "border-(--color-border) bg-(--color-surface) text-(--color-ink-muted) hover:bg-(--color-panel-soft) hover:text-(--color-ink)",
           padding === "sm" ? "px-3 py-2" : "p-4",
           className
         )}

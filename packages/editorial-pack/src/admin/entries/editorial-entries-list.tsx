@@ -61,7 +61,7 @@ export function EditorialEntriesList(props: EditorialEntriesListProps) {
           <DataTableHeaderRow>
             <DataTableHeadCell
               colSpan={5}
-              className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4 shadow-[inset_0_-1px_0_var(--color-border)]"
+              className="border-b border-(--color-border) bg-(--color-surface) px-4 py-4 shadow-[inset_0_-1px_0_var(--color-border)]"
             >
               {header}
             </DataTableHeadCell>
@@ -120,13 +120,13 @@ function EntryRow({
       <DataTablePrimaryCell meta={entry.slug ?? "Senza slug"}>
         {entry.title ?? "Senza titolo"}
       </DataTablePrimaryCell>
-      <DataTableCell className="text-[color:var(--color-ink-muted)]">
+      <DataTableCell className="text-(--color-ink-muted)">
         {contentType?.name ?? "Modello rimosso"}
       </DataTableCell>
       <DataTableCell>
         <EntryStatus label={status.label} className={status.className} />
       </DataTableCell>
-      <DataTableCell className="text-[color:var(--color-ink-muted)]">
+      <DataTableCell className="text-(--color-ink-muted)">
         {formatEditorialDate(entry.updatedAt, locale)}
       </DataTableCell>
       <DataTableCell>
@@ -221,7 +221,7 @@ function EntriesSkeleton() {
   return [0, 1, 2, 3].map((item) => (
     <DataTableRow key={item}>
       <DataTableCell colSpan={5} className="p-0">
-        <div className="h-[73px] animate-pulse bg-[color:var(--color-panel)]" />
+        <div className="h-[73px] animate-pulse bg-(--color-panel)" />
       </DataTableCell>
     </DataTableRow>
   ));

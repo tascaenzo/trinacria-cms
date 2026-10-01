@@ -56,7 +56,7 @@ export function MfaEnrollmentWizard({
 
   return (
     <div className="grid gap-5">
-      <p className="text-xs font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
+      <p className="text-xs font-medium uppercase tracking-[0.14em] text-(--color-ink-subtle)">
         {t("auth.mfa.setup.progress", "Step")} {step} {t("auth.mfa.setup.progress_total", "of 3")}
       </p>
 
@@ -108,10 +108,10 @@ export function MfaEnrollmentWizard({
             </Button>
           ) : (
             <Panel className="p-3" tone="soft">
-              <p className="text-xs font-medium text-[color:var(--color-ink-muted)]">
+              <p className="text-xs font-medium text-(--color-ink-muted)">
                 {t("auth.mfa.enroll.manual_label", "Manual setup key")}
               </p>
-              <code className="mt-2 block break-all text-sm text-[color:var(--color-ink)]">
+              <code className="mt-2 block break-all text-sm text-(--color-ink)">
                 {setup.manualKey}
               </code>
             </Panel>
@@ -232,9 +232,9 @@ function EnrollmentStep({
   return (
     <section className="grid gap-4">
       <div className="space-y-1.5">
-        <h3 className="text-lg font-semibold text-[color:var(--color-ink)]">{title}</h3>
-        <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">{firstLine}</p>
-        <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">{secondLine}</p>
+        <h3 className="text-lg font-semibold text-(--color-ink)">{title}</h3>
+        <p className="text-sm leading-6 text-(--color-ink-muted)">{firstLine}</p>
+        <p className="text-sm leading-6 text-(--color-ink-muted)">{secondLine}</p>
       </div>
       {children}
     </section>

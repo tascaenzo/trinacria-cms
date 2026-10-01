@@ -39,17 +39,17 @@ export function Notification({
     <Panel
       aria-live={resolvedAriaLive}
       className={cn(
-        "rounded-md px-4 py-3 shadow-[var(--shadow-notification)]",
+        "rounded-md px-4 py-3 shadow-(--shadow-notification)",
         tone === "neutral" &&
-          "border-[color:var(--color-neutral-border)] bg-[color:var(--color-notification-neutral-bg)] text-[color:var(--color-neutral-ink)]",
+          "border-(--color-neutral-border) bg-(--color-notification-neutral-bg) text-(--color-neutral-ink)",
         tone === "info" &&
-          "border-[color:var(--color-info-border)] bg-[color:var(--color-notification-info-bg)] text-[color:var(--color-info-ink)]",
+          "border-(--color-info-border) bg-(--color-notification-info-bg) text-(--color-info-ink)",
         tone === "success" &&
-          "border-[color:var(--color-success-border)] bg-[color:var(--color-notification-success-bg)] text-[color:var(--color-success-ink)]",
+          "border-(--color-success-border) bg-(--color-notification-success-bg) text-(--color-success-ink)",
         tone === "warning" &&
-          "border-[color:var(--color-warning-border)] bg-[color:var(--color-notification-warning-bg)] text-[color:var(--color-warning-ink)]",
+          "border-(--color-warning-border) bg-(--color-notification-warning-bg) text-(--color-warning-ink)",
         tone === "danger" &&
-          "border-[color:var(--color-danger-border)] bg-[color:var(--color-notification-danger-bg)] text-[color:var(--color-danger-ink)]",
+          "border-(--color-danger-border) bg-(--color-notification-danger-bg) text-(--color-danger-ink)",
         className
       )}
       radius="lg"

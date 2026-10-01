@@ -56,7 +56,7 @@ export function DeclarativeSettingsSectionPanel({
               <InfoCard
                 title="No schema fields"
                 description="Add a JSON schema with properties to let the generic settings renderer build form controls."
-                className="bg-[color:var(--color-surface)]"
+                className="bg-(--color-surface)"
               />
             )}
           </div>
@@ -67,7 +67,7 @@ export function DeclarativeSettingsSectionPanel({
         title={section.data?.endpoint ? formatEndpoint(section.data.endpoint) : section.title}
       >
         <div className="grid gap-4">
-          <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
+          <p className="text-sm leading-6 text-(--color-ink-muted)">
             Declarative settings sections are generated from plugin metadata. A plugin can still
             expose a React renderer when the JSON contract is not expressive enough.
           </p>

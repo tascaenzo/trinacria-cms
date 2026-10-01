@@ -24,7 +24,7 @@ export function Card({
   return (
     <Panel
       className={cn(
-        "overflow-hidden bg-[color:var(--color-panel)]",
+        "overflow-hidden bg-(--color-panel)",
         padding === "md" && "p-5",
         padding === "none" && "p-0",
         className
@@ -37,9 +37,7 @@ export function Card({
         <header className="mb-4 space-y-1.5">
           {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
           {title ? (
-            <Heading className="text-lg font-semibold text-[color:var(--color-ink)]">
-              {title}
-            </Heading>
+            <Heading className="text-lg font-semibold text-(--color-ink)">{title}</Heading>
           ) : null}
         </header>
       )}
@@ -55,10 +53,7 @@ export function CardHeader({
 }: PropsWithChildren<HTMLAttributes<HTMLDivElement>>) {
   return (
     <div
-      className={cn(
-        "grid gap-1.5 border-b border-[color:var(--color-border)] px-5 py-4",
-        className
-      )}
+      className={cn("grid gap-1.5 border-b border-(--color-border) px-5 py-4", className)}
       {...props}
     >
       {children}
@@ -84,18 +79,14 @@ export function CardHeading({
     >
       <div className="flex min-w-0 items-center gap-3">
         {icon ? (
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[var(--radius-control)] bg-[color:var(--color-panel-soft)] text-[color:var(--color-accent)]">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-(--radius-control) bg-(--color-panel-soft) text-(--color-accent)">
             <Icon name={icon} />
           </span>
         ) : null}
         <div className="min-w-0">
-          <Heading className="text-base font-semibold text-[color:var(--color-ink)]">
-            {title}
-          </Heading>
+          <Heading className="text-base font-semibold text-(--color-ink)">{title}</Heading>
           {description ? (
-            <p className="mt-0.5 text-xs leading-5 text-[color:var(--color-ink-muted)]">
-              {description}
-            </p>
+            <p className="mt-0.5 text-xs leading-5 text-(--color-ink-muted)">{description}</p>
           ) : null}
         </div>
       </div>
@@ -114,10 +105,7 @@ export function CardTitle({
 }) {
   return (
     <Heading
-      className={cn(
-        "text-lg font-semibold tracking-[-0.02em] text-[color:var(--color-ink)]",
-        className
-      )}
+      className={cn("text-lg font-semibold tracking-[-0.02em] text-(--color-ink)", className)}
       {...props}
     >
       {children}
@@ -157,7 +145,7 @@ export function CardActions({
   return (
     <div
       className={cn(
-        "flex items-center justify-end gap-3 border-t border-[color:var(--color-border)] px-5 py-3",
+        "flex items-center justify-end gap-3 border-t border-(--color-border) px-5 py-3",
         className
       )}
       {...props}

@@ -7,5 +7,5 @@ import { DropIndicator } from "./drop-indicator.js";
 test("DropIndicator stays invisible to assistive technology", () => {
   const markup = renderToStaticMarkup(<DropIndicator />);
   assert.match(markup, /aria-hidden="true"/);
-  assert.match(markup, /bg-\[color:var\(--color-focus\)\]/);
+  assert.match(markup, /bg-\(--color-focus\)/);
 });

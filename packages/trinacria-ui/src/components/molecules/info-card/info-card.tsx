@@ -18,24 +18,17 @@ export function InfoCard({
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             {eyebrow ? (
-              <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
+              <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-(--color-ink-subtle)">
                 {eyebrow}
               </p>
             ) : null}
             {title ? (
-              <p
-                className={cn(
-                  "font-medium text-[color:var(--color-ink)]",
-                  eyebrow ? "mt-2" : "text-sm"
-                )}
-              >
+              <p className={cn("font-medium text-(--color-ink)", eyebrow ? "mt-2" : "text-sm")}>
                 {title}
               </p>
             ) : null}
             {description ? (
-              <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink-muted)]">
-                {description}
-              </p>
+              <p className="mt-2 text-sm leading-6 text-(--color-ink-muted)">{description}</p>
             ) : null}
           </div>
           {action ? <div className="shrink-0">{action}</div> : null}

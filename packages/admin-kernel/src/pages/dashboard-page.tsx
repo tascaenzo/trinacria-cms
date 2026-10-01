@@ -90,7 +90,7 @@ function DashboardWidgetSlot({
       </CardHeader>
       {!widget.summary ? (
         <CardContent>
-          <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
+          <p className="text-sm leading-6 text-(--color-ink-muted)">
             Il plugin non ha configurato contenuti per questo widget.
           </p>
         </CardContent>
@@ -107,7 +107,7 @@ function FallbackDashboardWidget({ widget }: { widget: RenderableAdminDashboardW
       </CardHeader>
       {!widget.summary ? (
         <CardContent>
-          <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
+          <p className="text-sm leading-6 text-(--color-ink-muted)">
             Nessun riepilogo disponibile.
           </p>
         </CardContent>

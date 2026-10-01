@@ -26,7 +26,7 @@ export function formatDeclarativeFieldValue(record: unknown, field: ResourceFiel
   }
   if (field.kind === "datetime") {
     return (
-      <span className="text-[color:var(--color-ink-muted)]">
+      <span className="text-(--color-ink-muted)">
         {typeof rawValue === "string" ? formatDateTime(rawValue) : formatCellValue(rawValue)}
       </span>
     );
@@ -83,7 +83,7 @@ function TagList({ value, limit }: { value: unknown; limit: number }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const tags = normalizeTagValues(value);
   if (tags.length === 0) {
-    return <span className="text-[color:var(--color-ink-muted)]">-</span>;
+    return <span className="text-(--color-ink-muted)">-</span>;
   }
 
   const visibleTags = isExpanded ? tags : tags.slice(0, limit);
@@ -111,8 +111,8 @@ function TagList({ value, limit }: { value: unknown; limit: number }) {
           variant="outline"
           className={
             isExpanded
-              ? "h-6 w-6 rounded-full border-[color:var(--color-accent-border)] bg-[color:var(--color-accent-soft)] p-0 text-xs text-[color:var(--color-accent-ink)]"
-              : "h-6 rounded-[var(--radius-badge)] border-[color:var(--color-neutral-border)] bg-[color:var(--color-neutral-bg)] px-2 py-0.5 text-xs text-[color:var(--color-neutral-ink)]"
+              ? "h-6 w-6 rounded-full border-(--color-accent-border) bg-(--color-accent-soft) p-0 text-xs text-(--color-accent-ink)"
+              : "h-6 rounded-(--radius-badge) border-(--color-neutral-border) bg-(--color-neutral-bg) px-2 py-0.5 text-xs text-(--color-neutral-ink)"
           }
           onClick={(event) => {
             event.stopPropagation();

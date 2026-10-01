@@ -25,8 +25,8 @@ export function PluginInventory({
 }: PluginInventoryProps) {
   return (
     <Card eyebrow={t("plugins.inventory.eyebrow")} title={t("plugins.inventory.title")}>
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-3 border-b border-[color:var(--color-border)] pb-4">
-        <p className="max-w-xl text-sm leading-6 text-[color:var(--color-ink-muted)]">
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-3 border-b border-(--color-border) pb-4">
+        <p className="max-w-xl text-sm leading-6 text-(--color-ink-muted)">
           {t("plugins.inventory.summary")}
         </p>
         <Button type="button" variant="secondary" onClick={onRefresh}>
@@ -50,16 +50,14 @@ export function PluginInventory({
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate font-semibold text-[color:var(--color-ink)]">
-                    {plugin.id}
-                  </p>
-                  <p className="mt-1 text-xs text-[color:var(--color-ink-muted)]">
+                  <p className="truncate font-semibold text-(--color-ink)">{plugin.id}</p>
+                  <p className="mt-1 text-xs text-(--color-ink-muted)">
                     v{plugin.version} · {plugin.source?.type ?? t("plugins.table.source")}
                   </p>
                 </div>
                 <Badge tone={pluginStateTone(plugin.state)}>{plugin.state}</Badge>
               </div>
-              <div className="flex flex-wrap gap-2 text-xs text-[color:var(--color-ink-muted)]">
+              <div className="flex flex-wrap gap-2 text-xs text-(--color-ink-muted)">
                 <span>
                   {plugin.capabilities.length} {t("plugins.table.capabilities").toLowerCase()}
                 </span>

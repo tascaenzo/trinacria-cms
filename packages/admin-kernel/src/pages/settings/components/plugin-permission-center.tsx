@@ -172,28 +172,26 @@ export function PluginPermissionCenter({
               >
                 <div className="grid min-w-0 gap-2">
                   <div className="flex flex-wrap items-center gap-2 text-sm">
-                    <span className="font-semibold text-[color:var(--color-ink)]">
+                    <span className="font-semibold text-(--color-ink)">
                       {grant.consumerPluginId}
                     </span>
-                    <span className="text-[color:var(--color-ink-muted)]">richiede accesso a</span>
-                    <span className="font-semibold text-[color:var(--color-ink)]">
+                    <span className="text-(--color-ink-muted)">richiede accesso a</span>
+                    <span className="font-semibold text-(--color-ink)">
                       {grant.producerPluginId}
                     </span>
                   </div>
                   <div className="grid gap-1 text-sm">
-                    <p className="break-all font-mono text-xs text-[color:var(--color-ink-muted)]">
+                    <p className="break-all font-mono text-xs text-(--color-ink-muted)">
                       {grant.eventName}
                     </p>
                     {grant.requiredPermission ? (
-                      <p className="break-all font-mono text-xs text-[color:var(--color-ink-muted)]">
+                      <p className="break-all font-mono text-xs text-(--color-ink-muted)">
                         {grant.requiredPermission}
                       </p>
                     ) : null}
                   </div>
                   {grant.reason ? (
-                    <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
-                      {grant.reason}
-                    </p>
+                    <p className="text-sm leading-6 text-(--color-ink-muted)">{grant.reason}</p>
                   ) : null}
                 </div>
                 <div className="flex items-center gap-3 justify-self-start md:justify-self-end">

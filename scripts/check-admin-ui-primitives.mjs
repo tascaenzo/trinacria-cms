@@ -61,8 +61,7 @@ for (const root of roots) {
           className.includes("rounded") &&
           !className.includes("rounded-full") &&
           className.includes("border") &&
-          (className.includes("bg-[color:var(--color-surface)") ||
-            className.includes("bg-[color:var(--color-panel)"))
+          (className.includes("bg-(--color-surface)") || className.includes("bg-(--color-panel)"))
       );
     if (customSurface) {
       violations.push(`${file}: custom ${customSurface.element} surface (use Panel or Card)`);

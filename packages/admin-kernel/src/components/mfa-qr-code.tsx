@@ -25,8 +25,8 @@ export function MfaQrCode({ otpauthUrl, alt }: { otpauthUrl: string; alt: string
 
   if (!src) {
     return (
-      <div className="h-[220px] w-[220px] animate-pulse rounded bg-[color:var(--color-surface-muted)]" />
+      <div className="h-[220px] w-[220px] animate-pulse rounded-sm bg-(--color-surface-muted)" />
     );
   }
-  return <img src={src} width={220} height={220} alt={alt} className="rounded bg-white p-2" />;
+  return <img src={src} width={220} height={220} alt={alt} className="rounded-sm bg-white p-2" />;
 }

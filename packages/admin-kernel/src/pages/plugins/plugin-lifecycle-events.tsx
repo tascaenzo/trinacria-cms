@@ -22,14 +22,14 @@ export function PluginLifecycleEvents({ error, events, isLoading, t }: PluginLif
           {events.map((event) => (
             <li
               key={`${event.sequence}-${event.timestamp}`}
-              className="flex items-start justify-between gap-4 rounded-lg border border-[color:var(--color-border)] p-3"
+              className="flex items-start justify-between gap-4 rounded-lg border border-(--color-border) p-3"
             >
               <div className="min-w-0">
-                <p className="font-medium text-[color:var(--color-ink)]">
+                <p className="font-medium text-(--color-ink)">
                   {event.action}
                   {event.phase ? ` · ${event.phase}` : ""}
                 </p>
-                <p className="mt-1 text-xs text-[color:var(--color-ink-muted)]">
+                <p className="mt-1 text-xs text-(--color-ink-muted)">
                   {formatDateTime(event.timestamp)}
                   {event.durationMs !== undefined ? ` · ${event.durationMs} ms` : ""}
                   {event.stateBefore && event.stateAfter
@@ -37,9 +37,7 @@ export function PluginLifecycleEvents({ error, events, isLoading, t }: PluginLif
                     : ""}
                 </p>
                 {event.message ? (
-                  <p className="mt-1 text-xs text-[color:var(--color-ink-muted)]">
-                    {event.message}
-                  </p>
+                  <p className="mt-1 text-xs text-(--color-ink-muted)">{event.message}</p>
                 ) : null}
               </div>
               <Badge tone={event.success ? "success" : "danger"}>

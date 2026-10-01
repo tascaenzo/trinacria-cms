@@ -15,10 +15,7 @@ export const Variants: Story = {
       <Panel tone="dashed" className="p-4">
         Dashed panel
       </Panel>
-      <Panel
-        tone="custom"
-        className="border-[color:var(--color-info-border)] bg-[color:var(--color-info-bg)] p-4"
-      >
+      <Panel tone="custom" className="border-(--color-info-border) bg-(--color-info-bg) p-4">
         Custom semantic panel
       </Panel>
     </div>

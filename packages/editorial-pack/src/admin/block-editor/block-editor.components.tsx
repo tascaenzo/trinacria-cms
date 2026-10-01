@@ -68,7 +68,7 @@ export function BlockPicker({
         }
       }}
     >
-      <div className="border-b border-[color:var(--color-border)] p-2">
+      <div className="border-b border-(--color-border) p-2">
         <SearchField
           ref={searchInputRef}
           searchLabel="Cerca un blocco"
@@ -79,7 +79,7 @@ export function BlockPicker({
         />
       </div>
       <div className="max-h-80 overflow-y-auto p-1.5">
-        <p className="px-2 pb-1 pt-1 text-[11px] font-medium text-[color:var(--color-ink-subtle)]">
+        <p className="px-2 pb-1 pt-1 text-[11px] font-medium text-(--color-ink-subtle)">
           Blocchi base
         </p>
         {filteredTypes.map((type) => (
@@ -93,17 +93,17 @@ export function BlockPicker({
           >
             <IconTile icon={BLOCK_META[type].icon} size="sm" />
             <span>
-              <span className="block text-sm font-medium text-[color:var(--color-ink)]">
+              <span className="block text-sm font-medium text-(--color-ink)">
                 {BLOCK_META[type].label}
               </span>
-              <span className="block truncate text-xs text-[color:var(--color-ink-muted)]">
+              <span className="block truncate text-xs text-(--color-ink-muted)">
                 {BLOCK_META[type].description}
               </span>
             </span>
           </SelectableCard>
         ))}
         {!filteredTypes.length ? (
-          <p className="px-3 py-6 text-center text-sm text-[color:var(--color-ink-muted)]">
+          <p className="px-3 py-6 text-center text-sm text-(--color-ink-muted)">
             Nessun blocco trovato
           </p>
         ) : null}
@@ -139,7 +139,7 @@ export function PhantomBlock({
         placeholder="Scrivi qualcosa oppure premi / per i comandi"
         value={text}
         disabled={disabled}
-        className="block min-h-10 w-full border-0 bg-transparent px-1 py-1.5 text-base leading-7 text-[color:var(--color-ink)] outline-none placeholder:text-[color:var(--color-ink-subtle)]"
+        className="block min-h-10 w-full border-0 bg-transparent px-1 py-1.5 text-base leading-7 text-(--color-ink) outline-hidden placeholder:text-(--color-ink-subtle)"
         style={{ fieldSizing: "content", resize: "none" }}
         onKeyDown={(event) => {
           if ((event.key === "/" || event.code === "Slash") && !text) {
@@ -338,7 +338,7 @@ function BlockContextSettings({
     );
   }
   return (
-    <span className="px-1.5 text-[11px] font-medium text-[color:var(--color-ink-subtle)]">
+    <span className="px-1.5 text-[11px] font-medium text-(--color-ink-subtle)">
       {BLOCK_META[block.type].label}
     </span>
   );
@@ -470,7 +470,7 @@ function BlockFields({
         rows={2}
         placeholder="Scrivi qualcosa, oppure premi / per inserire un blocco"
         disabled={disabled}
-        className="block min-h-10 w-full resize-y border-0 bg-transparent px-1 py-1.5 text-base leading-7 text-[color:var(--color-ink)] outline-none placeholder:text-[color:var(--color-ink-subtle)]"
+        className="block min-h-10 w-full resize-y border-0 bg-transparent px-1 py-1.5 text-base leading-7 text-(--color-ink) outline-hidden placeholder:text-(--color-ink-subtle)"
         style={{ fieldSizing: "content", resize: "none" }}
         onKeyDown={(event) => {
           if ((event.key === "/" || event.code === "Slash") && !block.data.text) {
@@ -499,7 +499,7 @@ function BlockFields({
         rows={1}
         placeholder="Titolo della sezione"
         disabled={disabled}
-        className={`block min-h-11 w-full resize-none border-0 bg-transparent px-1 py-1 font-semibold leading-tight text-[color:var(--color-ink)] outline-none placeholder:text-[color:var(--color-ink-subtle)] ${
+        className={`block min-h-11 w-full resize-none border-0 bg-transparent px-1 py-1 font-semibold leading-tight text-(--color-ink) outline-hidden placeholder:text-(--color-ink-subtle) ${
           block.data.level === 2 ? "text-3xl" : block.data.level === 3 ? "text-2xl" : "text-xl"
         }`}
         style={{
@@ -527,14 +527,14 @@ function BlockFields({
   }
   if (block.type === "quote") {
     return (
-      <div className="border-l-4 border-[color:var(--color-ink-subtle)] py-1 pl-4">
+      <div className="border-l-4 border-(--color-ink-subtle) py-1 pl-4">
         <RichTextEditor
           ariaLabel="Citazione"
           autoFocus={autoFocus}
           rows={2}
           placeholder="Scrivi una citazione"
           disabled={disabled}
-          className="block w-full resize-y border-0 bg-transparent px-1 py-1 text-lg italic leading-7 text-[color:var(--color-ink)] outline-none placeholder:text-[color:var(--color-ink-subtle)]"
+          className="block w-full resize-y border-0 bg-transparent px-1 py-1 text-lg italic leading-7 text-(--color-ink) outline-hidden placeholder:text-(--color-ink-subtle)"
           style={{
             fieldSizing: "content",
             fontSize: "1.125rem",
@@ -559,7 +559,7 @@ function BlockFields({
           placeholder="Fonte facoltativa"
           value={block.data.citation ?? ""}
           disabled={disabled}
-          className="block w-full border-0 bg-transparent px-1 py-1 text-sm text-[color:var(--color-ink-muted)] outline-none placeholder:text-[color:var(--color-ink-subtle)]"
+          className="block w-full border-0 bg-transparent px-1 py-1 text-sm text-(--color-ink-muted) outline-hidden placeholder:text-(--color-ink-subtle)"
           onChange={(event) =>
             onChange({
               ...block,
@@ -601,7 +601,7 @@ function BlockFields({
   if (block.type === "list") {
     return <ListBlockFields block={block} disabled={disabled} onChange={onChange} />;
   }
-  return <hr className="my-5 border-[color:var(--color-border)]" aria-label="Separatore" />;
+  return <hr className="my-5 border-(--color-border)" aria-label="Separatore" />;
 }
 
 function LayoutBlockFields({
@@ -656,7 +656,7 @@ function LayoutBlockFields({
           <section
             key={column.id}
             aria-label={`Colonna ${index + 1}`}
-            className="min-w-0 rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface-subtle)] p-1"
+            className="min-w-0 rounded-lg border border-(--color-border) bg-(--color-surface-subtle) p-1"
           >
             <EditorialBlockEditor
               apiBaseUrl={apiBaseUrl}
@@ -671,7 +671,7 @@ function LayoutBlockFields({
           </section>
         ))}
       </div>
-      <div className="flex flex-wrap items-center gap-1 px-1 text-xs text-[color:var(--color-ink-muted)]">
+      <div className="flex flex-wrap items-center gap-1 px-1 text-xs text-(--color-ink-muted)">
         <span className="mr-1">Layout · livello {nestingLevel + 1}</span>
         <Button
           type="button"

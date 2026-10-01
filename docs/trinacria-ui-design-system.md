@@ -128,3 +128,18 @@ L'inserimento di link nell'editor usa Dialog e Input con validazione inline e ri
 del focus. Le notifiche sono in basso a destra e lasciano cliccabili i contenuti sottostanti;
 i loro pulsanti rimangono interattivi. Su mobile le toolbar del testo e del blocco occupano
 righe distinte, verificate nei test browser.
+
+## Tailwind 4.3 — sintassi e compatibilità
+
+La configurazione attiva è CSS: `@import "tailwindcss" source(none)` e `@source`
+nel backoffice e in Storybook. I vecchi `tailwind.config.ts`, non caricati, sono stati rimossi.
+I token condivisi rimangono in `theme.css`; usare `bg-(--color-panel)`,
+`text-(--color-ink)` e `shadow-(--shadow-surface)` per riferirli.
+
+Usare `wrap-break-word` per le parole lunghe, `bg-linear-to-*` per i gradienti
+ed `outline-hidden` per mantenere l'outline accessibile in modalità forced colors.
+`rounded-sm` e `shadow-sm` sono nomi validi in v4 e conservano le dimensioni attuali.
+Il guardrail `check-tailwind-compatibility.mjs` impedisce la reintroduzione della
+sintassi precedente ed è incluso in `npm run ui:guardrails` e nel check completo.
+
+Riferimento: [guida ufficiale alla migrazione](https://tailwindcss.com/docs/upgrade-guide).

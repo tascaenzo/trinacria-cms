@@ -198,7 +198,7 @@ function StringArraySelectField({
         onValueChange={addValue}
       />
       {optionState?.status === "error" ? (
-        <p className="text-xs text-[color:var(--color-danger-ink)]">{optionState.error}</p>
+        <p className="text-xs text-(--color-danger-ink)">{optionState.error}</p>
       ) : null}
       {selectedOptions.length > 0 ? (
         <div className="flex flex-wrap gap-1.5">
@@ -221,7 +221,7 @@ function StringArraySelectField({
           ))}
         </div>
       ) : (
-        <p className="text-xs text-[color:var(--color-ink-subtle)]">No values selected.</p>
+        <p className="text-xs text-(--color-ink-subtle)">No values selected.</p>
       )}
     </div>
   );

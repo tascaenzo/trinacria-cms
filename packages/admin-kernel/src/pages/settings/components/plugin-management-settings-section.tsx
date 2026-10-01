@@ -117,7 +117,7 @@ export function PluginManagementSettingsSection({ section, t }: AdminSettingsSec
                     <DataTableCell>
                       <Badge tone={pluginStateTone(plugin.state)}>{plugin.state}</Badge>
                     </DataTableCell>
-                    <DataTableCell className="text-[color:var(--color-ink-muted)]">
+                    <DataTableCell className="text-(--color-ink-muted)">
                       {plugin.source ? `${plugin.source.type} · ${plugin.source.name}` : "—"}
                     </DataTableCell>
                     <DataTableCell>{plugin.capabilities.length}</DataTableCell>
@@ -179,7 +179,7 @@ export function PluginManagementSettingsSection({ section, t }: AdminSettingsSec
               onChange={(event) => setDisableReason(event.target.value)}
             />
           ) : (
-            <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
+            <p className="text-sm leading-6 text-(--color-ink-muted)">
               {t(
                 "settings.plugin_management.remove_runtime_hint",
                 "Il plugin verrà scaricato dal runtime. Il pacchetto rimane installato."

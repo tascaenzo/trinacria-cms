@@ -52,20 +52,20 @@ export function FileManagerBrowser({
   return (
     <section
       aria-label="File media"
-      className="min-w-0 overflow-auto bg-[color:var(--color-surface)]"
+      className="min-w-0 overflow-auto bg-(--color-surface)"
       onContextMenu={onBackgroundContextMenu}
       onKeyDown={(event) => {
         if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10"))
           onBackgroundContextMenu(event);
       }}
     >
-      <div className="sticky top-0 z-10 flex h-12 items-center border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4">
+      <div className="sticky top-0 z-10 flex h-12 items-center border-b border-(--color-border) bg-(--color-surface) px-4">
         <Breadcrumbs breadcrumbs={breadcrumbs} onNavigate={onNavigate} />
       </div>
       <div className="p-4 sm:p-5">
         {error ? <ErrorBanner className="mb-4" message={error} /> : null}
         {isLoading ? (
-          <p className="p-3 text-sm text-[color:var(--color-ink-muted)]">Caricamento media…</p>
+          <p className="p-3 text-sm text-(--color-ink-muted)">Caricamento media…</p>
         ) : null}
         {!isLoading && itemCount === 0 ? <EmptyFolder currentDirectory={currentDirectory} /> : null}
         {!isLoading && itemCount > 0 ? (
@@ -82,7 +82,7 @@ export function FileManagerBrowser({
           />
         ) : null}
       </div>
-      <footer className="sticky bottom-0 flex h-8 min-w-0 items-center justify-between gap-4 border-t border-[color:var(--color-border)] bg-[color:var(--color-panel)] px-4 text-xs text-[color:var(--color-ink-subtle)]">
+      <footer className="sticky bottom-0 flex h-8 min-w-0 items-center justify-between gap-4 border-t border-(--color-border) bg-(--color-panel) px-4 text-xs text-(--color-ink-subtle)">
         <span className="shrink-0">
           {itemCount} {itemCount === 1 ? "elemento" : "elementi"}
         </span>
@@ -116,16 +116,13 @@ function Breadcrumbs({
       />
       {breadcrumbs.map((directory) => (
         <span key={directory.id} className="flex min-w-0 items-center gap-1 overflow-hidden">
-          <Icon
-            name="chevron-right"
-            className="h-3.5 w-3.5 shrink-0 text-[color:var(--color-ink-subtle)]"
-          />
+          <Icon name="chevron-right" className="h-3.5 w-3.5 shrink-0 text-(--color-ink-subtle)" />
           <Button
             type="button"
             size="sm"
             variant="ghost"
             title={directory.name}
-            className="h-auto min-w-0 truncate border-transparent px-1 py-0.5 text-[color:var(--color-ink-muted)] shadow-none"
+            className="h-auto min-w-0 truncate border-transparent px-1 py-0.5 text-(--color-ink-muted) shadow-none"
             onClick={() => onNavigate(directory.id)}
           >
             {directory.name}
@@ -183,12 +180,10 @@ function FileCollection({
         >
           <FolderGlyph large={viewMode === "icons"} />
           <span className="w-full min-w-0 overflow-hidden">
-            <span className="block truncate text-sm font-medium text-[color:var(--color-ink)]">
+            <span className="block truncate text-sm font-medium text-(--color-ink)">
               {directory.name}
             </span>
-            <span className="mt-0.5 block truncate text-xs text-[color:var(--color-ink-muted)]">
-              Cartella
-            </span>
+            <span className="mt-0.5 block truncate text-xs text-(--color-ink-muted)">Cartella</span>
           </span>
           {viewMode === "list" ? (
             <span className="shrink-0">
@@ -215,8 +210,8 @@ function FileCollection({
           }}
           className={
             viewMode === "icons"
-              ? `grid h-auto min-h-28 min-w-0 content-start justify-items-center gap-2 overflow-hidden border-transparent p-3 text-center shadow-none ${selectedAssetId === asset.id ? "bg-[color:var(--color-panel-strong)]" : ""}`
-              : `grid h-auto w-full min-w-0 grid-cols-[38px_minmax(0,1fr)_auto] items-center justify-stretch gap-3 overflow-hidden border-transparent px-3 py-2 text-left shadow-none ${selectedAssetId === asset.id ? "bg-[color:var(--color-panel-strong)]" : ""}`
+              ? `grid h-auto min-h-28 min-w-0 content-start justify-items-center gap-2 overflow-hidden border-transparent p-3 text-center shadow-none ${selectedAssetId === asset.id ? "bg-(--color-panel-strong)" : ""}`
+              : `grid h-auto w-full min-w-0 grid-cols-[38px_minmax(0,1fr)_auto] items-center justify-stretch gap-3 overflow-hidden border-transparent px-3 py-2 text-left shadow-none ${selectedAssetId === asset.id ? "bg-(--color-panel-strong)" : ""}`
           }
         >
           <MediaGlyph
@@ -225,10 +220,10 @@ function FileCollection({
             resolvePreview={resolveAssetPreview}
           />
           <span className="w-full min-w-0 overflow-hidden">
-            <span className="block truncate text-sm font-medium text-[color:var(--color-ink)]">
+            <span className="block truncate text-sm font-medium text-(--color-ink)">
               {asset.displayName}
             </span>
-            <span className="mt-0.5 block truncate text-xs text-[color:var(--color-ink-muted)]">
+            <span className="mt-0.5 block truncate text-xs text-(--color-ink-muted)">
               {viewMode === "icons"
                 ? formatBytes(asset.byteSize)
                 : `${asset.mimeType} · ${formatBytes(asset.byteSize)} · ${formatDate(asset.updatedAt)}`}
@@ -250,7 +245,7 @@ function FileCollection({
 function FolderGlyph({ large }: { large: boolean }) {
   return (
     <span
-      className={`grid place-items-center text-[color:var(--color-warning-ink)] ${large ? "h-14 w-14" : "h-9 w-9"}`}
+      className={`grid place-items-center text-(--color-warning-ink) ${large ? "h-14 w-14" : "h-9 w-9"}`}
     >
       <Icon name="folder" className={large ? "h-10 w-10" : "h-6 w-6"} />
     </span>
@@ -268,7 +263,7 @@ function MediaGlyph({
   const isImage = asset.mimeType.startsWith("image/");
   return (
     <span
-      className={`grid shrink-0 place-items-center overflow-hidden rounded border border-[color:var(--color-border)] bg-[color:var(--color-panel)] text-[color:var(--color-ink-muted)] ${large ? "h-14 w-14" : "h-9 w-9"}`}
+      className={`grid shrink-0 place-items-center overflow-hidden rounded-sm border border-(--color-border) bg-(--color-panel) text-(--color-ink-muted) ${large ? "h-14 w-14" : "h-9 w-9"}`}
     >
       {isImage ? (
         <LazyImageThumbnail asset={asset} resolvePreview={resolvePreview} />

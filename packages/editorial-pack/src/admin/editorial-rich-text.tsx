@@ -19,7 +19,7 @@ export function InlineTextPreview({ value }: { value: RichTextData }) {
         let content: ReactNode = segment.text;
         if (segment.code)
           content = (
-            <code className="rounded bg-[color:var(--color-panel-soft)] px-1 py-0.5 font-mono text-[0.9em]">
+            <code className="rounded-sm bg-(--color-panel-soft) px-1 py-0.5 font-mono text-[0.9em]">
               {content}
             </code>
           );

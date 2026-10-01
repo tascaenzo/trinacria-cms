@@ -66,8 +66,8 @@ export function EditorialContentTypeDetailPage({
   return (
     <PageCanvas width="form">
       <header>
-        <h1 className="text-xl font-semibold text-[color:var(--color-ink)]">{detail.model.name}</h1>
-        <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
+        <h1 className="text-xl font-semibold text-(--color-ink)">{detail.model.name}</h1>
+        <p className="mt-1 text-sm text-(--color-ink-muted)">
           Definisci i dati che la redazione compilerà e il flusso di pubblicazione.
         </p>
       </header>
@@ -113,7 +113,7 @@ export function EditorialContentTypeDetailPage({
           description="Vedi i campi già creati e aggiungi o modifica quelli necessari alla redazione."
         >
           <div className="mb-4 flex items-center justify-between gap-3">
-            <p className="text-sm text-[color:var(--color-ink-muted)]">
+            <p className="text-sm text-(--color-ink-muted)">
               {detail.fields.length}{" "}
               {detail.fields.length === 1 ? "campo configurato" : "campi configurati"}
             </p>
@@ -186,10 +186,8 @@ function MissingDetail({ onBack }: { onBack: () => void }) {
         <Icon name="arrow-left" />
         Torna ai modelli
       </Button>
-      <h1 className="mt-6 text-2xl font-semibold text-[color:var(--color-ink)]">
-        Modello non trovato
-      </h1>
-      <p className="mt-2 text-sm text-[color:var(--color-ink-muted)]">
+      <h1 className="mt-6 text-2xl font-semibold text-(--color-ink)">Modello non trovato</h1>
+      <p className="mt-2 text-sm text-(--color-ink-muted)">
         Scegli un modello dall’elenco per configurarlo.
       </p>
     </PageCanvas>

@@ -20,10 +20,8 @@ export function EditorialEntriesHeader({
   return (
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div className="grid min-w-0 gap-1">
-        <span className="text-sm font-semibold leading-6 text-[color:var(--color-ink)]">
-          {title}
-        </span>
-        <span className="text-xs font-normal leading-5 text-[color:var(--color-ink-muted)]">
+        <span className="text-sm font-semibold leading-6 text-(--color-ink)">{title}</span>
+        <span className="text-xs font-normal leading-5 text-(--color-ink-muted)">
           {description}
         </span>
       </div>
