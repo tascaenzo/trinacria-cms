@@ -1,5 +1,10 @@
 # Editorial Pack Foundation — Technical Review
 
+> Historical review. Status updated on 2026-10-01: Turborepo, package lint, unique indexes,
+> optimistic entry locking, atomic history, model-change guards and backend/admin import
+> boundaries are implemented. The original findings below describe the reviewed branch;
+> use [current project status](../../project-quality-status.md) for the active baseline.
+>
 > Branch reviewed: `feat/editorial-pack-foundation`
 >
 > Review target: architecture, package boundaries, domain modeling, build workflow, production readiness, and technical risks.

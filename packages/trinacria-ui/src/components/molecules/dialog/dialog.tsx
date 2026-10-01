@@ -158,9 +158,7 @@ export function Dialog({
           "flex items-start justify-center px-3 py-3 sm:items-center sm:px-4 sm:py-6",
         variant === "modal" && chrome === "workspace" && "flex items-stretch justify-center p-0",
         variant === "drawer" && "flex items-stretch justify-end",
-        isActive
-          ? "bg-[color:var(--color-overlay)] backdrop-blur-[2px]"
-          : "bg-transparent backdrop-blur-none"
+        isActive ? "bg-(--color-overlay) backdrop-blur-[2px]" : "bg-transparent backdrop-blur-none"
       )}
     >
       <div className="absolute inset-0" aria-hidden="true" onClick={onClose} />
@@ -198,7 +196,7 @@ export function Dialog({
       >
         <header
           className={cn(
-            "flex shrink-0 justify-between border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)]",
+            "flex shrink-0 justify-between border-b border-(--color-border) bg-(--color-surface)",
             chrome === "standard" && "items-start gap-4 px-4 py-4 sm:px-6 sm:py-5",
             chrome === "workspace" && "h-12 items-center gap-3 px-3 sm:px-4"
           )}
@@ -210,7 +208,7 @@ export function Dialog({
             <h2
               id={titleId}
               className={cn(
-                "text-[color:var(--color-ink)]",
+                "text-(--color-ink)",
                 chrome === "standard" && "text-lg font-semibold leading-7",
                 chrome === "standard" && eyebrow ? "mt-2" : undefined,
                 chrome === "workspace" && "truncate text-sm font-medium"
@@ -218,8 +216,8 @@ export function Dialog({
             >
               {chrome === "workspace" && eyebrow ? (
                 <>
-                  <span className="text-[color:var(--color-ink-subtle)]">{eyebrow}</span>
-                  <span aria-hidden="true" className="mx-2 text-[color:var(--color-border-strong)]">
+                  <span className="text-(--color-ink-subtle)">{eyebrow}</span>
+                  <span aria-hidden="true" className="mx-2 text-(--color-border-strong)">
                     /
                   </span>
                 </>
@@ -242,7 +240,7 @@ export function Dialog({
             {closeVariant === "icon" || chrome === "workspace" ? (
               <>
                 {chrome === "standard" ? (
-                  <kbd className="hidden rounded border border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] px-1.5 py-0.5 text-[10px] font-medium leading-none text-[color:var(--color-ink-subtle)] shadow-[var(--shadow-sm)] sm:inline-flex">
+                  <kbd className="hidden rounded-sm border border-(--color-border) bg-(--color-panel-soft) px-1.5 py-0.5 text-[10px] font-medium leading-none text-(--color-ink-subtle) shadow-(--shadow-sm) sm:inline-flex">
                     {closeShortcutLabel}
                   </kbd>
                 ) : null}
@@ -250,7 +248,7 @@ export function Dialog({
                   ref={closeButtonRef}
                   type="button"
                   onClick={onClose}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[color:var(--color-ink-muted)] transition hover:bg-[color:var(--color-interactive-hover)] hover:text-[color:var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-focus)]"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md text-(--color-ink-muted) transition hover:bg-(--color-interactive-hover) hover:text-(--color-ink) focus:outline-hidden focus:ring-2 focus:ring-(--color-focus)"
                   aria-label={closeLabel}
                   title={closeLabel}
                 >
@@ -282,7 +280,7 @@ export function Dialog({
         {footer ? (
           <footer
             className={cn(
-              "flex shrink-0 flex-wrap items-center justify-end gap-3 border-t border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4 sm:px-6",
+              "flex shrink-0 flex-wrap items-center justify-end gap-3 border-t border-(--color-border) bg-(--color-surface) px-4 py-4 sm:px-6",
               variant === "drawer" && "mt-auto"
             )}
           >

@@ -14,9 +14,9 @@ export function FileManagerSidebar({
   onNavigate
 }: FileManagerSidebarProps) {
   return (
-    <aside className="min-h-0 overflow-auto border-b border-[color:var(--color-border)] bg-[color:var(--color-panel)] lg:border-b-0 lg:border-r">
-      <div className="border-b border-[color:var(--color-border)] px-4 py-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)]">
+    <aside className="min-h-0 overflow-auto border-b border-(--color-border) bg-(--color-panel) lg:border-b-0 lg:border-r">
+      <div className="border-b border-(--color-border) px-4 py-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-(--color-ink-subtle)">
           Cartelle
         </p>
       </div>
@@ -97,9 +97,9 @@ function DirectoryRow({
       variant="ghost"
       onClick={onClick}
       style={{ paddingLeft: `${10 + depth * 16}px` }}
-      className={`h-8 w-full justify-start gap-2 border-transparent pr-2 text-left text-sm shadow-none ${active ? "bg-[color:var(--color-panel-strong)] font-medium text-[color:var(--color-ink)]" : "text-[color:var(--color-ink-muted)]"}`}
+      className={`h-8 w-full justify-start gap-2 border-transparent pr-2 text-left text-sm shadow-none ${active ? "bg-(--color-panel-strong) font-medium text-(--color-ink)" : "text-(--color-ink-muted)"}`}
     >
-      <Icon name={icon} className="h-4 w-4 shrink-0 text-[color:var(--color-ink-subtle)]" />
+      <Icon name={icon} className="h-4 w-4 shrink-0 text-(--color-ink-subtle)" />
       <span className="truncate">{label}</span>
     </Button>
   );

@@ -106,7 +106,7 @@ export function ContentTypeFieldComposer({
         </div>
 
         <Panel as="section" className="p-4" tone="soft">
-          <h3 className="text-sm font-semibold text-[color:var(--color-ink)]">Formato del campo</h3>
+          <h3 className="text-sm font-semibold text-(--color-ink)">Formato del campo</h3>
           <div className="mt-4 grid gap-4">
             <Select
               label="Tipo"
@@ -139,10 +139,8 @@ export function ContentTypeFieldComposer({
           </div>
         </Panel>
 
-        <section className="rounded-lg bg-[color:var(--color-surface-subtle)] p-4">
-          <h3 className="text-sm font-semibold text-[color:var(--color-ink)]">
-            Regole di compilazione
-          </h3>
+        <section className="rounded-lg bg-(--color-surface-subtle) p-4">
+          <h3 className="text-sm font-semibold text-(--color-ink)">Regole di compilazione</h3>
           <div className="mt-4 grid gap-4">
             <Switch
               label="Obbligatorio"

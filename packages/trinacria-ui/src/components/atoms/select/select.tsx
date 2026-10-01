@@ -48,7 +48,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
         >
           {children}
         </select>
-        <span className="pointer-events-none absolute inset-y-0 right-0 flex w-10 items-center justify-center text-[color:var(--color-ink-subtle)]">
+        <span className="pointer-events-none absolute inset-y-0 right-0 flex w-10 items-center justify-center text-(--color-ink-subtle)">
           <Icon name="chevron-down" className="h-4 w-4" />
         </span>
       </div>

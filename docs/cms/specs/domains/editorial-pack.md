@@ -2,10 +2,14 @@
 
 ## Stato
 
-- Milestone: prossima milestone dominio, dopo M6
-- Stato: functional-spec-v1
+- Milestone: fondazione dominio implementata; consolidamento M7
+- Stato: functional-spec-v1 (perimetro funzionale più ampio dell’implementazione corrente)
 - Scope: motore editoriale configurabile per blog personali e redazioni
-- Ultimo aggiornamento: 2026-07-17
+- Ultimo aggiornamento: 2026-10-01
+
+Lo stato implementato e le capacità ancora future sono elencati in
+[project-quality-status.md](../../../project-quality-status.md). Questa specifica
+non equivale a una checklist di funzionalità tutte già consegnate.
 
 ## 1. Decisione
 

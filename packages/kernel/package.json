@@ -42,11 +42,11 @@
   },
   "dependencies": {
     "@trinacria/core": "0.1.1",
-    "@trinacria/events": "^0.1.1",
+    "@trinacria/events": "0.1.1",
     "@trinacria/http": "0.1.1",
     "@trinacria/schema": "0.1.1"
   },
   "peerDependencies": {
-    "mongoose": ">=9"
+    "mongoose": ">=9 <10"
   }
 }

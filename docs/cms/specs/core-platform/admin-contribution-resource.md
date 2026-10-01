@@ -493,7 +493,12 @@ Caratteristiche obbligatorie:
 - Le action declarative causano refetch dopo successo.
 - I test coprono policy, sanitizzazione, renderer e utility action.
 
-## Gap e prossimi step
+## Gap della specifica iniziale
+
+Questa lista conserva gli obiettivi della revisione del 6 giugno 2026. Non è un backlog
+aggiornato: discovery delle estensioni e contributi dei pack sono già presenti.
+Consultare [stato del progetto](../../../project-quality-status.md) e
+[guida UI](../../../trinacria-ui-design-system.md) per l’implementazione corrente.
 
 - Implementare endpoint backend `GET /admin/extensions` o equivalente.
 - Spostare le contribution ufficiali `core-pack` dal seed frontend a manifest esposti dal backend.

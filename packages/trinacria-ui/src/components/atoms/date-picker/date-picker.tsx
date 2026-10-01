@@ -107,7 +107,7 @@ export function DatePicker({
     if (selectedDate) {
       setVisibleMonth(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
     }
-  }, [selectedValue, selectedDate]);
+  }, [selectedDate]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -157,6 +157,7 @@ export function DatePicker({
     setFocusedKey(candidate);
   }, [isOpen, selectedValue]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: A changed month replaces calendar DOM nodes and requires restoring focus.
   useEffect(() => {
     if (!isOpen) {
       return;
@@ -276,10 +277,10 @@ export function DatePicker({
             aria-invalid={error ? true : ariaInvalid}
             aria-label={typeof ariaLabel === "string" ? ariaLabel : undefined}
           >
-            <span className={cn(!displayValue && "text-[color:var(--color-ink-subtle)]")}>
+            <span className={cn(!displayValue && "text-(--color-ink-subtle)")}>
               {displayValue ?? placeholder}
             </span>
-            <span className="flex items-center gap-2 text-[color:var(--color-ink-subtle)]">
+            <span className="flex items-center gap-2 text-(--color-ink-subtle)">
               <Icon name="calendar-days" />
             </span>
           </button>
@@ -287,7 +288,7 @@ export function DatePicker({
             <button
               type="button"
               onClick={() => setSelectedValue("")}
-              className="absolute right-9 top-1/2 -translate-y-1/2 rounded-sm px-1 text-xs font-medium uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-focus)]"
+              className="absolute right-9 top-1/2 -translate-y-1/2 rounded-sm px-1 text-xs font-medium uppercase tracking-[0.12em] text-(--color-ink-subtle) focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--color-focus)"
               aria-label={clearLabel}
             >
               {clearText}
@@ -306,21 +307,21 @@ export function DatePicker({
                 <button
                   type="button"
                   onClick={() => setVisibleMonth((current) => shiftMonth(current, -1))}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[color:var(--color-border)] text-[color:var(--color-ink-muted)] hover:bg-[color:var(--color-interactive-hover)] hover:text-[color:var(--color-ink)]"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-(--color-border) text-(--color-ink-muted) hover:bg-(--color-interactive-hover) hover:text-(--color-ink)"
                   aria-label={previousMonthLabel}
                 >
                   <Icon name="chevron-left" />
                 </button>
                 <div
                   id={monthLabelId}
-                  className="text-sm font-semibold capitalize text-[color:var(--color-ink)]"
+                  className="text-sm font-semibold capitalize text-(--color-ink)"
                 >
                   {monthLabel(visibleMonth, locale)}
                 </div>
                 <button
                   type="button"
                   onClick={() => setVisibleMonth((current) => shiftMonth(current, 1))}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[color:var(--color-border)] text-[color:var(--color-ink-muted)] hover:bg-[color:var(--color-interactive-hover)] hover:text-[color:var(--color-ink)]"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-(--color-border) text-(--color-ink-muted) hover:bg-(--color-interactive-hover) hover:text-(--color-ink)"
                   aria-label={nextMonthLabel}
                 >
                   <Icon name="chevron-right" />
@@ -330,7 +331,7 @@ export function DatePicker({
               <div role="grid" aria-labelledby={monthLabelId}>
                 <div
                   role="row"
-                  className="grid grid-cols-7 gap-1 text-center text-[11px] font-medium uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)]"
+                  className="grid grid-cols-7 gap-1 text-center text-[11px] font-medium uppercase tracking-[0.12em] text-(--color-ink-subtle)"
                 >
                   {resolvedWeekdayLabels.map((weekday) => (
                     <span key={weekday} role="columnheader" className="py-2">
@@ -366,18 +367,14 @@ export function DatePicker({
                             onKeyDown={(event) => handleDayKeyDown(event, cell.date)}
                             onFocus={() => setFocusedKey(key)}
                             className={cn(
-                              "inline-flex h-10 items-center justify-center rounded-sm text-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-focus)]",
+                              "inline-flex h-10 items-center justify-center rounded-sm text-sm transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--color-focus)",
                               cell.inCurrentMonth
-                                ? "text-[color:var(--color-ink)]"
-                                : "text-[color:var(--color-ink-subtle)]",
+                                ? "text-(--color-ink)"
+                                : "text-(--color-ink-subtle)",
                               isSelected &&
-                                "bg-[color:var(--color-interactive-selected)] font-semibold text-[color:var(--color-interactive-selected-ink)] hover:bg-[color:var(--color-interactive-selected)]",
-                              !isSelected &&
-                                !isDisabled &&
-                                "hover:bg-[color:var(--color-interactive-hover)]",
-                              isToday &&
-                                !isSelected &&
-                                "border border-[color:var(--color-interactive-soft)]",
+                                "bg-(--color-interactive-selected) font-semibold text-(--color-interactive-selected-ink) hover:bg-(--color-interactive-selected)",
+                              !isSelected && !isDisabled && "hover:bg-(--color-interactive-hover)",
+                              isToday && !isSelected && "border border-(--color-interactive-soft)",
                               isDisabled && "cursor-not-allowed opacity-35"
                             )}
                           >

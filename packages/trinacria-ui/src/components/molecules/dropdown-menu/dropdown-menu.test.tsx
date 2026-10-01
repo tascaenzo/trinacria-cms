@@ -164,3 +164,30 @@ test("DropdownMenu restores focus to its trigger after selection", async () => {
     restoreDom();
   }
 });
+
+for (const custom of [false, true]) {
+  test(`DropdownMenu keyboard trigger works with ${custom ? "custom" : "default"} buttons`, async () => {
+    const restore = installDom();
+    try {
+      const view = await renderClient(
+        <DropdownMenu trigger={custom ? <button type="button">Azioni</button> : "Azioni"}>
+          <DropdownMenuItem>Primo</DropdownMenuItem>
+          <DropdownMenuItem disabled>Disabilitato</DropdownMenuItem>
+          <DropdownMenuItem>Ultimo</DropdownMenuItem>
+        </DropdownMenu>
+      );
+      const trigger = view.container.querySelector<HTMLButtonElement>('button[aria-haspopup="menu"]')!;
+      await React.act(async () => {
+        trigger.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true, cancelable: true }));
+        await new Promise((resolve) => window.setTimeout(resolve, 0));
+      });
+      const items = document.querySelectorAll<HTMLButtonElement>('[role="menuitem"]');
+      assert.equal(document.activeElement, items[2]);
+      await React.act(async () => {
+        items[2].dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true }));
+      });
+      assert.equal(document.querySelector('[role="menu"]'), null);
+      await view.unmount();
+    } finally { restore(); }
+  });
+}

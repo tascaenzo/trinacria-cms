@@ -20,7 +20,8 @@ export class MemoryCacheAdapter implements CacheAdapter {
   async set<T>(namespace: string, key: string, value: T, ttlSeconds?: number): Promise<void> {
     this.store.set(buildCacheKey(namespace, key), {
       value,
-      expiresAt: ttlSeconds !== undefined ? Date.now() + ttlSeconds * 1000 : null
+      expiresAt:
+        ttlSeconds !== undefined && ttlSeconds !== 0 ? Date.now() + ttlSeconds * 1000 : null
     });
   }
 

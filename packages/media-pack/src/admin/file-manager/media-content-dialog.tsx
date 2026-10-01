@@ -86,7 +86,7 @@ export function MediaContentDialog({
     return () => {
       cancelled = true;
     };
-  }, [apiBaseUrl, asset?.id, cms]);
+  }, [apiBaseUrl, asset, cms]);
 
   function close() {
     if (isDirty) setIsDiscardOpen(true);
@@ -115,7 +115,7 @@ export function MediaContentDialog({
 
   const footer = (
     <>
-      <span className="mr-auto text-xs text-[color:var(--color-ink-subtle)]">
+      <span className="mr-auto text-xs text-(--color-ink-subtle)">
         {asset ? `${asset.mimeType} · ${formatBytes(asset.byteSize)}` : ""}
       </span>
       <Button type="button" variant="secondary" onClick={close}>
@@ -145,9 +145,9 @@ export function MediaContentDialog({
         onClose={close}
         footer={footer}
       >
-        <div className="flex h-full min-h-0 flex-col bg-[color:var(--color-panel)]">
+        <div className="flex h-full min-h-0 flex-col bg-(--color-panel)">
           {isCsv && canEdit ? (
-            <div className="flex shrink-0 items-center gap-1 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-2">
+            <div className="flex shrink-0 items-center gap-1 border-b border-(--color-border) bg-(--color-surface) px-4 py-2">
               <ViewButton
                 active={csvView === "table"}
                 label="Tabella"
@@ -284,8 +284,8 @@ function ImageViewer({
 }) {
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex shrink-0 items-center justify-between border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-2">
-        <span className="text-xs text-[color:var(--color-ink-muted)]">
+      <div className="flex shrink-0 items-center justify-between border-b border-(--color-border) bg-(--color-surface) px-4 py-2">
+        <span className="text-xs text-(--color-ink-muted)">
           {asset.width && asset.height
             ? `${asset.width} × ${asset.height} px`
             : "Anteprima originale"}
@@ -345,9 +345,7 @@ function ViewButton({
       size="sm"
       variant="ghost"
       className={
-        active
-          ? "bg-[color:var(--color-panel-strong)] text-[color:var(--color-ink)]"
-          : "text-[color:var(--color-ink-muted)]"
+        active ? "bg-(--color-panel-strong) text-(--color-ink)" : "text-(--color-ink-muted)"
       }
     >
       {label}
@@ -356,7 +354,7 @@ function ViewButton({
 }
 function LoadingState() {
   return (
-    <div className="grid h-full place-items-center text-sm text-[color:var(--color-ink-muted)]">
+    <div className="grid h-full place-items-center text-sm text-(--color-ink-muted)">
       Caricamento contenuto…
     </div>
   );
@@ -365,14 +363,14 @@ function UnsupportedState({ message, url }: { message: string; url: string | nul
   return (
     <div className="grid h-full place-items-center p-8 text-center">
       <div>
-        <Icon name="file" className="mx-auto h-10 w-10 text-[color:var(--color-ink-subtle)]" />
-        <p className="mt-3 text-sm text-[color:var(--color-ink-muted)]">{message}</p>
+        <Icon name="file" className="mx-auto h-10 w-10 text-(--color-ink-subtle)" />
+        <p className="mt-3 text-sm text-(--color-ink-muted)">{message}</p>
         {url ? (
           <a
             href={url}
             target="_blank"
             rel="noreferrer"
-            className="mt-4 inline-flex text-sm font-medium text-[color:var(--color-action-primary-ink)] hover:underline"
+            className="mt-4 inline-flex text-sm font-medium text-(--color-action-primary-ink) hover:underline"
           >
             Apri il file
           </a>

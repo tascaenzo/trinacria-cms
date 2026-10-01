@@ -74,7 +74,9 @@ export function ProfilePage() {
       const currentUser = await cms.auth.getAuthenticatedUser();
       const [userRoles, effectivePermissions, currentMfaStatus] = await Promise.all([
         cms.security.listUserRoles({ path: { id: currentUser.data.id } }),
-        cms.security.listUserEffectivePermissions({ path: { id: currentUser.data.id } }),
+        cms.security.listUserEffectivePermissions({
+          path: { id: currentUser.data.id }
+        }),
         cms.auth.getMfaStatus()
       ]);
       setUser(currentUser.data);
@@ -302,20 +304,18 @@ export function ProfilePage() {
               title={t("profile.title", "Your account")}
               className="overflow-hidden p-0"
             >
-              <div className="relative min-h-[280px] bg-[radial-gradient(circle_at_20%_10%,rgba(23,119,92,0.20),transparent_32%),linear-gradient(135deg,var(--color-surface),var(--color-canvas))] p-5">
-                <div className="absolute right-0 top-0 h-40 w-40 rounded-bl-[5rem] bg-[color:var(--color-action-primary-bg)]/10" />
+              <div className="relative min-h-70 bg-[radial-gradient(circle_at_20%_10%,color-mix(in_srgb,var(--color-accent-ink)_20%,transparent),transparent_32%),linear-gradient(135deg,var(--color-surface),var(--color-canvas))] p-5">
+                <div className="absolute right-0 top-0 h-40 w-40 rounded-bl-[5rem] bg-(--color-action-primary-bg)/10" />
                 <div className="relative flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl border border-[color:var(--color-border)] bg-[color:var(--color-action-primary-bg)] text-2xl font-semibold text-[color:var(--color-action-primary-ink)] shadow-sm">
+                    <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl border border-(--color-border) bg-(--color-action-primary-bg) text-2xl font-semibold text-(--color-action-primary-ink) shadow-sm">
                       {initials}
                     </div>
                     <div className="min-w-0">
-                      <h2 className="truncate text-2xl font-semibold tracking-[-0.04em] text-[color:var(--color-ink)]">
+                      <h2 className="truncate text-2xl font-semibold tracking-[-0.04em] text-(--color-ink)">
                         {userName}
                       </h2>
-                      <p className="mt-1 truncate text-sm text-[color:var(--color-ink-muted)]">
-                        {user.email}
-                      </p>
+                      <p className="mt-1 truncate text-sm text-(--color-ink-muted)">{user.email}</p>
                       <div className="mt-3 flex flex-wrap gap-2">
                         <Badge tone={user.status === "active" ? "success" : "warning"}>
                           {translateStatusLabel(user.status, t)}
@@ -349,10 +349,10 @@ export function ProfilePage() {
               <div className="grid gap-5">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="space-y-1.5">
-                    <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
+                    <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-(--color-ink-subtle)">
                       {t("profile.details.eyebrow", "Details")}
                     </p>
-                    <h2 className="text-lg font-semibold text-[color:var(--color-ink)]">
+                    <h2 className="text-lg font-semibold text-(--color-ink)">
                       {t("profile.readonly.title", "Profile information")}
                     </h2>
                   </div>
@@ -375,7 +375,7 @@ export function ProfilePage() {
                           {t("profile.actions.title", "Actions")}
                           <Icon
                             name="more-horizontal"
-                            className="h-4 w-4 text-[color:var(--color-ink-muted)]"
+                            className="h-4 w-4 text-(--color-ink-muted)"
                           />
                         </Button>
                       }
@@ -443,7 +443,7 @@ export function ProfilePage() {
             >
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
-                  <p className="text-sm text-[color:var(--color-ink-muted)]">
+                  <p className="text-sm text-(--color-ink-muted)">
                     {mfaStatus?.mode === "disabled"
                       ? t(
                           "profile.mfa.disabled",
@@ -465,7 +465,7 @@ export function ProfilePage() {
                             )}
                   </p>
                   {mfaStatus?.enabled && mfaStatus.mode === "required" ? (
-                    <p className="text-sm font-medium text-[color:var(--color-ink-muted)]">
+                    <p className="text-sm font-medium text-(--color-ink-muted)">
                       {t(
                         "profile.mfa.required_cannot_disable",
                         "This factor cannot be disabled while the administrator requires 2FA."
@@ -473,7 +473,7 @@ export function ProfilePage() {
                     </p>
                   ) : null}
                   {mfaStatus?.enabledAt ? (
-                    <p className="text-sm text-[color:var(--color-ink-muted)]">
+                    <p className="text-sm text-(--color-ink-muted)">
                       {t("profile.mfa.enabled_since", "Enabled on")}{" "}
                       {formatDateTime(mfaStatus.enabledAt)} · {mfaStatus.recoveryCodesRemaining}{" "}
                       {t("profile.mfa.recovery_remaining", "recovery codes remaining")}
@@ -669,7 +669,7 @@ export function ProfilePage() {
             width="md"
             variant="drawer"
           >
-            <p className="mb-4 text-xs font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
+            <p className="mb-4 text-xs font-medium uppercase tracking-[0.14em] text-(--color-ink-subtle)">
               {t("auth.mfa.recovery.progress", "Step 4 of 4")}
             </p>
             <Panel className="grid grid-cols-2 gap-2 p-4 font-mono text-sm" tone="soft">
@@ -771,15 +771,11 @@ export function ProfilePage() {
 
 function ProfileMetric({ label, value }: { label: string; value: string }) {
   return (
-    <Panel
-      className="rounded-2xl bg-[color:var(--color-surface)]/75 p-4 backdrop-blur"
-      elevation="sm"
-      tone="custom"
-    >
-      <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
+    <Panel className="p-4" elevation="sm" tone="custom">
+      <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-(--color-ink-subtle)">
         {label}
       </p>
-      <p className="mt-2 truncate text-xl font-semibold tracking-[-0.04em] text-[color:var(--color-ink)]">
+      <p className="mt-2 truncate text-xl font-semibold tracking-[-0.04em] text-(--color-ink)">
         {value}
       </p>
     </Panel>

@@ -92,10 +92,8 @@ export function EditorialCreateContentTypePage({
   return (
     <main className="w-full px-5 py-6 sm:px-8">
       <header>
-        <h1 className="text-xl font-semibold text-[color:var(--color-ink)]">
-          Nuovo modello di documento
-        </h1>
-        <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
+        <h1 className="text-xl font-semibold text-(--color-ink)">Nuovo modello di documento</h1>
+        <p className="mt-1 text-sm text-(--color-ink-muted)">
           Definisci una base pronta per la redazione, poi completa i dettagli dalla pagina del
           modello.
         </p>

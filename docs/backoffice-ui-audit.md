@@ -1,12 +1,11 @@
 # Audit UI backoffice
 
-Data: 2026-07-29
+Audit iniziale: 2026-07-29. Ultimo allineamento: 2026-10-01.
 Ambito: `admin-kernel`, `editorial-pack`, `media-pack`, `email-pack` e host `apps/backoffice`.
 
 ## Esito
 
-Il backoffice ha già una buona adozione del design system: 74 dei 87 moduli
-React analizzati importano `@trinacria-cms/trinacria-ui`. Il tema condiviso è
+La rilevazione iniziale contava 74 degli 87 moduli React analizzati che importavano `@trinacria-cms/trinacria-ui`. Il tema condiviso è
 caricato dall'host prima dello stile locale. Le liste risorsa operative usano
 gia il pattern `DataTable`/`ResourceTable`, e le pagine editoriali usano
 `ResourcePage`.
@@ -92,15 +91,16 @@ Questi componenti dovranno comunque usare token, `Button`, `Icon`, `Input` e
 migrati non mostrano più messaggi di successo locali; usano notifiche condivise
 e mantengono i banner inline solo per gli errori che richiedono correzione.
 
-Decisione proposta:
+Decisione adottata:
 
 - [x] montare un solo `ToastProvider` al confine dell'applicazione;
 - [x] usare toast per esiti transitori: successo, errore di richiesta, upload,
   operazioni su plugin e conferme non bloccanti;
 - [x] mantenere `FeedbackBanner`/`ErrorBanner` inline per errori che bloccano una
   pagina, un form o richiedono un'azione correttiva;
-- [x] standardizzare testi, tono e durata: success 4s, info 5s, warning/danger
-  persistenti finché non chiusi.
+- [x] standardizzare testi e tono: nei flussi migrati success 4s e warning/danger
+  persistenti tramite `duration: 0`. Il provider generico usa 5s di default; i toast
+  con azioni rimangono persistenti salvo durata esplicita.
 
 ### P1 — eliminare le duplicazioni di presentazione
 
@@ -137,8 +137,11 @@ Decisione proposta:
   compresa la relativa semantica accessibile.
 - [x] Aggiungere un guardrail statico che impedisca il ritorno di etichette di
   salvataggio contestuali (`Salva modello`, `Salva modifiche`, ecc.).
-- [ ] Aggiungere test end-to-end di loading, successo e fallimento per ogni
-  flusso di salvataggio migrato.
+- [x] Aggiunti E2E di loading/errore/retry per entry editoriali, upload media e creazione cartelle,
+  oltre ai flussi settings/email della baseline.
+- [ ] Estendere la matrice browser a tutti gli altri salvataggi migrati (tema, profilo,
+  modelli, settings storage/policy e azioni dichiarative); questa è copertura incrementale,
+  non un requisito già verificato per ogni schermata.
 
 ## Ordine di implementazione
 
@@ -188,3 +191,33 @@ Decisione proposta:
 - [x] tutte le liste risorsa usano `DataTable`/`ResourceTable`;
 - [x] le eccezioni custom sono documentate e limitate agli editor specializzati;
 - [x] ogni nuova UI riusabile nasce in `trinacria-ui` con documentazione e storia.
+
+## Unificazione dei componenti — 2026-10-01
+
+- Accesso, verifica MFA e recupero codici adottano CenteredPanel.
+- I dettagli di entry e modelli adottano PageCanvas con spaziatura e larghezze condivise.
+- I controlli standard degli editor adottano ToolbarButton, ToolbarSelect, IconButton,
+  SearchField, SelectableCard, OverlaySurface e IconTile; rimangono custom le aree di editing.
+- Workflow usa SelectableCard con gli stessi stati/focus delle altre selezioni.
+- File manager adotta ContextMenu accessibile e IconTile semantico; eliminati menu bianchi
+  fissi e palette locali non compatibili con il tema scuro.
+- I portal dei menu conservano il tema del contenitore, anche quando il CMS è incorporato.
+- I toast del backoffice sono in basso per lasciare libere le azioni dell'header.
+- L'host include le classi Tailwind di email-pack; profilo e frame media usano token condivisi.
+- Il guardrail vieta palette fisse nel chrome ordinario e protegge anche il builder workflow.
+
+Le anteprime di email/PDF/sito e la quiet zone QR mantengono la resa propria del documento.
+Questo intervento unifica i pattern UI; non trasforma CSV, rich text e drag-and-drop in form generici.
+
+## Compatibilità Tailwind — 2026-10-01
+
+- [x] Sintassi dei token unificata a `utility-(--token)` nei pack e nella libreria UI.
+- [x] Gradienti, wrapping e outline aggiornati alla sintassi corrente.
+- [x] Configurazioni TypeScript non caricate rimosse; sorgenti esplicite in CSS.
+- [x] Guardrail Tailwind incluso nei controlli UI e nel check completo.
+- [x] CSS dei token equivalente per tutte le 98 conversioni distinte; verifica mobile
+  di toolbar, accesso e menu nei temi light/dark senza overflow orizzontale.
+
+API e convenzioni correnti: [guida del design system](trinacria-ui-design-system.md).
+Gli esiti complessivi aggiornati sono in [stato del progetto](project-quality-status.md);
+le verifiche sopra descrivono i rispettivi interventi, non tutti i flussi del CMS.

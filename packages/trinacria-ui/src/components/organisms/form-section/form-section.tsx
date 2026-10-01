@@ -23,7 +23,7 @@ export function FormSection({
           {title ? (
             <Heading
               className={cn(
-                "font-semibold text-[color:var(--color-ink)]",
+                "font-semibold text-(--color-ink)",
                 variant === "plain" ? "text-base" : "text-lg"
               )}
             >
@@ -36,7 +36,7 @@ export function FormSection({
       {error ? <ErrorBanner message={error} /> : null}
       <div className="grid gap-4">{children}</div>
       {actions ? (
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-[color:var(--color-border)] pt-4">
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-(--color-border) pt-4">
           {actions}
         </div>
       ) : null}

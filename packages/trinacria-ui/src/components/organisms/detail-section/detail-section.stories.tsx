@@ -16,9 +16,7 @@ export const Default: Story = {
       description="Dettaglio esteso del valore risolto e della provenienza."
       actions={<Button variant="secondary">Refresh</Button>}
     >
-      <div className="text-sm text-[color:var(--color-ink-muted)]">
-        Contenuto della sezione di dettaglio.
-      </div>
+      <div className="text-sm text-(--color-ink-muted)">Contenuto della sezione di dettaglio.</div>
     </DetailSection>
   )
 };

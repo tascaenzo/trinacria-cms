@@ -141,10 +141,8 @@ function ContentTypesOverview({
   const header = (
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div className="grid min-w-0 gap-1">
-        <span className="text-sm font-semibold leading-6 text-[color:var(--color-ink)]">
-          Modelli
-        </span>
-        <span className="text-xs font-normal leading-5 text-[color:var(--color-ink-muted)]">
+        <span className="text-sm font-semibold leading-6 text-(--color-ink)">Modelli</span>
+        <span className="text-xs font-normal leading-5 text-(--color-ink-muted)">
           I modelli definiscono struttura, campi e workflow dei contenuti editoriali.
         </span>
       </div>
@@ -199,7 +197,7 @@ function ContentTypesOverview({
           <DataTableHeaderRow>
             <DataTableHeadCell
               colSpan={4}
-              className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4 shadow-[inset_0_-1px_0_var(--color-border)]"
+              className="border-b border-(--color-border) bg-(--color-surface) px-4 py-4 shadow-[inset_0_-1px_0_var(--color-border)]"
             >
               {header}
             </DataTableHeadCell>
@@ -216,7 +214,7 @@ function ContentTypesOverview({
             [0, 1, 2].map((item) => (
               <DataTableRow key={item}>
                 <DataTableCell colSpan={4} className="p-0">
-                  <div className="h-[73px] animate-pulse bg-[color:var(--color-panel)]" />
+                  <div className="h-[73px] animate-pulse bg-(--color-panel)" />
                 </DataTableCell>
               </DataTableRow>
             ))
@@ -245,7 +243,7 @@ function ContentTypesOverview({
                 <DataTableCell>
                   <ContentTypeStatus status={contentType.status} />
                 </DataTableCell>
-                <DataTableCell className="text-[color:var(--color-ink-muted)]">
+                <DataTableCell className="text-(--color-ink-muted)">
                   {formatDate(contentType.updatedAt)}
                 </DataTableCell>
                 <DataTableCell>
@@ -267,7 +265,7 @@ function ContentTypesOverview({
           ) : (
             <DataTableRow>
               <DataTableCell colSpan={4} className="p-0">
-                <p className="p-5 text-sm text-[color:var(--color-ink-muted)]">
+                <p className="p-5 text-sm text-(--color-ink-muted)">
                   Non ci sono ancora modelli configurati.
                 </p>
               </DataTableCell>
@@ -334,7 +332,7 @@ function RecentEntries({
           <DataTableHeaderRow>
             <DataTableHeadCell
               colSpan={5}
-              className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4 shadow-[inset_0_-1px_0_var(--color-border)]"
+              className="border-b border-(--color-border) bg-(--color-surface) px-4 py-4 shadow-[inset_0_-1px_0_var(--color-border)]"
             >
               <RecentEntriesHeader onShowAll={onShowAll} />
             </DataTableHeadCell>
@@ -352,7 +350,7 @@ function RecentEntries({
             [0, 1, 2].map((item) => (
               <DataTableRow key={item}>
                 <DataTableCell colSpan={5} className="p-0">
-                  <div className="h-[73px] animate-pulse bg-[color:var(--color-panel)]" />
+                  <div className="h-[73px] animate-pulse bg-(--color-panel)" />
                 </DataTableCell>
               </DataTableRow>
             ))
@@ -374,13 +372,13 @@ function RecentEntries({
                 <DataTablePrimaryCell meta={entry.slug ?? "Senza slug"}>
                   {entry.title ?? "Senza titolo"}
                 </DataTablePrimaryCell>
-                <DataTableCell className="text-[color:var(--color-ink-muted)]">
+                <DataTableCell className="text-(--color-ink-muted)">
                   {contentTypeById.get(entry.contentTypeId)?.name ?? "Modello rimosso"}
                 </DataTableCell>
                 <DataTableCell>
                   <EntryStatus status={entry.status} />
                 </DataTableCell>
-                <DataTableCell className="text-[color:var(--color-ink-muted)]">
+                <DataTableCell className="text-(--color-ink-muted)">
                   {formatDate(entry.updatedAt)}
                 </DataTableCell>
                 <DataTableCell>
@@ -395,7 +393,7 @@ function RecentEntries({
           ) : (
             <DataTableRow>
               <DataTableCell colSpan={5} className="p-0">
-                <p className="p-5 text-sm text-[color:var(--color-ink-muted)]">
+                <p className="p-5 text-sm text-(--color-ink-muted)">
                   Non ci sono ancora contenuti.
                 </p>
               </DataTableCell>
@@ -411,10 +409,8 @@ function RecentEntriesHeader({ onShowAll }: { onShowAll: () => void }) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div className="grid min-w-0 gap-1">
-        <span className="text-sm font-semibold leading-6 text-[color:var(--color-ink)]">
-          Ultimi contenuti
-        </span>
-        <span className="text-xs font-normal leading-5 text-[color:var(--color-ink-muted)]">
+        <span className="text-sm font-semibold leading-6 text-(--color-ink)">Ultimi contenuti</span>
+        <span className="text-xs font-normal leading-5 text-(--color-ink-muted)">
           Gli ultimi sei contenuti aggiornati. Apri un contenuto per continuare a lavorarci.
         </span>
       </div>
@@ -429,7 +425,7 @@ function RecentEntriesHeader({ onShowAll }: { onShowAll: () => void }) {
 
 function ContentTypeStatus({ status }: { status: EditorialContentType["status"] }) {
   return (
-    <span className="inline-flex rounded-full bg-[color:var(--color-panel-soft)] px-2 py-1 text-[11px] font-medium text-[color:var(--color-ink-muted)]">
+    <span className="inline-flex rounded-full bg-(--color-panel-soft) px-2 py-1 text-[11px] font-medium text-(--color-ink-muted)">
       {status === "active" ? "Attivo" : "Archiviato"}
     </span>
   );
@@ -437,7 +433,7 @@ function ContentTypeStatus({ status }: { status: EditorialContentType["status"] 
 
 function EntryStatus({ status }: { status: string }) {
   return (
-    <span className="inline-flex rounded-full bg-[color:var(--color-panel-soft)] px-2 py-1 text-[11px] font-medium text-[color:var(--color-ink-muted)]">
+    <span className="inline-flex rounded-full bg-(--color-panel-soft) px-2 py-1 text-[11px] font-medium text-(--color-ink-muted)">
       {STATUS_LABELS[status] ?? status}
     </span>
   );

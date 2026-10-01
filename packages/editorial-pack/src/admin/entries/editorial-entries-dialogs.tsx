@@ -107,25 +107,22 @@ export function EntryRevisionsDialog({
       onClose={onClose}
     >
       {isLoading ? (
-        <p className="text-sm text-[color:var(--color-ink-muted)]">Caricamento cronologia…</p>
+        <p className="text-sm text-(--color-ink-muted)">Caricamento cronologia…</p>
       ) : revisions.length ? (
         <ol className="grid gap-3">
           {revisions.map((revision) => (
-            <li
-              key={revision.id}
-              className="rounded-lg border border-[color:var(--color-border)] p-3"
-            >
-              <p className="text-sm font-medium text-[color:var(--color-ink)]">
+            <li key={revision.id} className="rounded-lg border border-(--color-border) p-3">
+              <p className="text-sm font-medium text-(--color-ink)">
                 Revisione {revision.revisionNumber}
               </p>
-              <p className="mt-1 text-xs text-[color:var(--color-ink-muted)]">
+              <p className="mt-1 text-xs text-(--color-ink-muted)">
                 {revision.reason} · {formatEditorialDate(revision.createdAt, locale)}
               </p>
             </li>
           ))}
         </ol>
       ) : (
-        <p className="text-sm text-[color:var(--color-ink-muted)]">
+        <p className="text-sm text-(--color-ink-muted)">
           Non esistono ancora revisioni per questo contenuto.
         </p>
       )}

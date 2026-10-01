@@ -110,7 +110,7 @@ export function AccessManagementDashboardWidget({
           <ErrorBanner message={error} />
         ) : (
           <>
-            <div className="-mx-5 -mt-5 grid divide-y divide-[color:var(--color-border)] border-b border-[color:var(--color-border)] bg-[color:var(--color-panel-soft)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+            <div className="-mx-5 -mt-5 grid divide-y divide-(--color-border) border-b border-(--color-border) bg-(--color-panel-soft) sm:grid-cols-3 sm:divide-x sm:divide-y-0">
               <AccessMetric
                 label="Utenti"
                 value={
@@ -136,36 +136,31 @@ export function AccessManagementDashboardWidget({
             <section className="grid gap-3">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-sm font-medium text-[color:var(--color-ink)]">
-                    Nuove registrazioni
-                  </p>
-                  <p className="text-xs text-[color:var(--color-ink-muted)]">Ultime 6 settimane</p>
+                  <p className="text-sm font-medium text-(--color-ink)">Nuove registrazioni</p>
+                  <p className="text-xs text-(--color-ink-muted)">Ultime 6 settimane</p>
                 </div>
                 {hasMoreUsers ? (
-                  <span className="text-xs text-[color:var(--color-ink-subtle)]">
-                    Ultimi 200 utenti
-                  </span>
+                  <span className="text-xs text-(--color-ink-subtle)">Ultimi 200 utenti</span>
                 ) : null}
               </div>
               <div
                 className="grid h-20 grid-cols-6 items-end gap-2"
-                aria-label="Andamento registrazioni utenti"
+                role="img"
+                aria-label={`Andamento registrazioni utenti: ${registrationTrend.map((bucket) => `${bucket.label}: ${bucket.count}`).join(", ")}`}
               >
                 {registrationTrend.map((bucket) => (
                   <div
                     key={bucket.label}
                     className="grid h-full grid-rows-[1fr_auto] gap-1 text-center"
                   >
-                    <div className="flex items-end rounded-sm bg-[color:var(--color-surface-subtle)]">
+                    <div className="flex items-end rounded-sm bg-(--color-surface-subtle)">
                       <span
                         title={`${bucket.label}: ${bucket.count} registrazioni`}
-                        className="w-full rounded-sm bg-[color:var(--color-accent)] transition-[height]"
+                        className="w-full rounded-sm bg-(--color-accent) transition-[height]"
                         style={{ height: `${Math.max(6, bucket.height)}%` }}
                       />
                     </div>
-                    <span className="text-[10px] text-[color:var(--color-ink-subtle)]">
-                      {bucket.label}
-                    </span>
+                    <span className="text-[10px] text-(--color-ink-subtle)">{bucket.label}</span>
                   </div>
                 ))}
               </div>
@@ -190,12 +185,10 @@ function AccessMetric({
 }) {
   const content = (
     <>
-      <span className="text-xs font-medium text-[color:var(--color-ink-muted)]">{label}</span>
+      <span className="text-xs font-medium text-(--color-ink-muted)">{label}</span>
       <span className="mt-2 flex items-baseline justify-between gap-3">
-        <span className="text-2xl font-semibold tabular-nums text-[color:var(--color-ink)]">
-          {value}
-        </span>
-        <span className="text-xs text-[color:var(--color-ink-subtle)]">{detail}</span>
+        <span className="text-2xl font-semibold tabular-nums text-(--color-ink)">{value}</span>
+        <span className="text-xs text-(--color-ink-subtle)">{detail}</span>
       </span>
     </>
   );

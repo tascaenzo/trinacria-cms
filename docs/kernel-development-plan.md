@@ -1,5 +1,8 @@
 # Piano di Sviluppo Kernel (`kernel`)
 
+> Piano storico della fondazione kernel, realizzata nelle milestone M4/M5.
+> Per lo stato corrente consultare [project-quality-status.md](project-quality-status.md).
+
 Questo documento definisce il piano step-by-step per costruire il kernel del CMS basato su Trinacria.
 
 ## Obiettivo

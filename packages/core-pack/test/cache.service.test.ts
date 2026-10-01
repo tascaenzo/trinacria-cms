@@ -79,10 +79,12 @@ test("CacheService TTL expires entries", async () => {
   assert.equal(result, undefined);
 });
 
-test("CacheService TTL=0 caches forever (no expiration)", async () => {
+test("CacheService TTL=0 caches forever (no expiration)", async (context) => {
+  context.mock.timers.enable({ apis: ["Date"], now: 1000 });
   const cache = new CacheService(new MemoryCacheAdapter());
 
   await cache.set("ttl-zero", "key", "value", 0);
+  context.mock.timers.tick(60_000);
   const result = await cache.get("ttl-zero", "key");
   assert.equal(result, "value");
 });

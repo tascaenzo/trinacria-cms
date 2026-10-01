@@ -3,6 +3,7 @@
 @source "../src";
 @source "../../../packages/admin-kernel/src";
 @source "../../../packages/media-pack/src/admin";
+@source "../../../packages/email-pack/src/admin";
 @source "../../../packages/editorial-pack/src/admin";
 @source "../../../packages/trinacria-ui/src";
 

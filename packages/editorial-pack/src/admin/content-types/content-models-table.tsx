@@ -82,7 +82,7 @@ export function ContentModelsTable({
           <DataTableHeaderRow>
             <DataTableHeadCell
               colSpan={5}
-              className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4 shadow-[inset_0_-1px_0_var(--color-border)]"
+              className="border-b border-(--color-border) bg-(--color-surface) px-4 py-4 shadow-[inset_0_-1px_0_var(--color-border)]"
             >
               {header}
             </DataTableHeadCell>
@@ -105,10 +105,10 @@ export function ContentModelsTable({
                   <ModelIcon model={model} />
                 </DataTableCell>
                 <DataTablePrimaryCell>{model.name}</DataTablePrimaryCell>
-                <DataTableCell className="font-mono text-xs text-[color:var(--color-ink-muted)]">
+                <DataTableCell className="font-mono text-xs text-(--color-ink-muted)">
                   {model.key}
                 </DataTableCell>
-                <DataTableCell className="text-[color:var(--color-ink-muted)]">
+                <DataTableCell className="text-(--color-ink-muted)">
                   {modelStatus(model, view)}
                 </DataTableCell>
                 <DataTableCell>
@@ -150,10 +150,10 @@ function ModelsTableHeader({
   return (
     <div className="flex flex-wrap items-start justify-between gap-4">
       <div className="grid gap-1">
-        <span className="text-sm font-semibold leading-6 text-[color:var(--color-ink)]">
+        <span className="text-sm font-semibold leading-6 text-(--color-ink)">
           {view === "available" ? "Modelli disponibili" : "Modelli eliminati"}
         </span>
-        <span className="text-xs font-normal leading-5 text-[color:var(--color-ink-muted)]">
+        <span className="text-xs font-normal leading-5 text-(--color-ink-muted)">
           {count} {count === 1 ? "modello" : "modelli"}{" "}
           {view === "available" ? "disponibili per la redazione" : "nel cestino"}.
         </span>
@@ -238,12 +238,12 @@ function EmptyModelsState({ view, onCreate }: { view: ModelsView; onCreate: () =
       <div>
         <Icon
           name={isAvailable ? "file-text" : "trash-2"}
-          className="mx-auto h-6 w-6 text-[color:var(--color-ink-subtle)]"
+          className="mx-auto h-6 w-6 text-(--color-ink-subtle)"
         />
-        <h2 className="mt-4 font-semibold text-[color:var(--color-ink)]">
+        <h2 className="mt-4 font-semibold text-(--color-ink)">
           {isAvailable ? "Nessun modello disponibile" : "Il cestino è vuoto"}
         </h2>
-        <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
+        <p className="mt-1 text-sm text-(--color-ink-muted)">
           {isAvailable
             ? "Crea il primo modello per definire i contenuti della redazione."
             : "I modelli eliminati compariranno qui e potranno essere ripristinati."}
@@ -261,7 +261,7 @@ function EmptyModelsState({ view, onCreate }: { view: ModelsView; onCreate: () =
 
 function ModelIcon({ model }: { model: EditorialContentType }) {
   return (
-    <span className="grid h-9 w-9 place-items-center rounded-md bg-[color:var(--color-surface-subtle)] text-[color:var(--color-ink-subtle)]">
+    <span className="grid h-9 w-9 place-items-center rounded-md bg-(--color-surface-subtle) text-(--color-ink-subtle)">
       <Icon name={model.icon ?? "file-text"} />
     </span>
   );

@@ -26,8 +26,13 @@ interface FileManagerFrameProps {
   inspector: ReactNode;
   isLoading: boolean;
   isSaving: boolean;
-  onAssetContextMenu: (asset: MediaAsset, event: React.MouseEvent<HTMLButtonElement>) => void;
-  onBackgroundContextMenu: (event: React.MouseEvent<HTMLElement>) => void;
+  onAssetContextMenu: (
+    asset: MediaAsset,
+    event: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>
+  ) => void;
+  onBackgroundContextMenu: (
+    event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>
+  ) => void;
   onCreateFolder: () => void;
   onCreateCsv: () => void;
   onDetailsVisibleChange: (visible: boolean) => void;
@@ -110,7 +115,7 @@ export function FileManagerFrame(props: FileManagerFrameProps) {
   return (
     <section
       ref={frameRef}
-      className={`flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--color-surface)] ${props.embedded ? "" : "rounded-xl border border-[color:var(--color-border)] shadow-[var(--shadow-sm)]"}`}
+      className={`flex h-full min-h-0 flex-col overflow-hidden bg-(--color-surface) ${props.embedded ? "" : "rounded-(--radius-panel) border border-(--color-border) shadow-(--shadow-surface)"}`}
     >
       <FileManagerToolbar
         detailsVisible={props.detailsVisible}
@@ -134,7 +139,7 @@ export function FileManagerFrame(props: FileManagerFrameProps) {
         onChange={(event) => props.onUpload(event.currentTarget.files)}
       />
       <div
-        className="grid min-h-0 flex-1 lg:grid-cols-[var(--fm-columns)]"
+        className="grid min-h-0 flex-1 lg:grid-cols-(--fm-columns)"
         style={{ "--fm-columns": columns } as CSSProperties}
       >
         <FileManagerSidebar
@@ -178,7 +183,7 @@ export function FileManagerFrame(props: FileManagerFrameProps) {
               onKeyDown={(event) => resizeWithKeyboard("right", event)}
               onPointerDown={(event) => startResize("right", event)}
             />
-            <aside className="min-h-0 border-t border-[color:var(--color-border)] bg-[color:var(--color-panel)] lg:border-t-0">
+            <aside className="min-h-0 border-t border-(--color-border) bg-(--color-panel) lg:border-t-0">
               {props.inspector}
             </aside>
           </>
@@ -217,9 +222,9 @@ function PanelResizeHandle({
       onDoubleClick={onDoubleClick}
       onKeyDown={onKeyDown}
       onPointerDown={onPointerDown}
-      className="group relative z-10 hidden cursor-col-resize touch-none bg-[color:var(--color-border)] outline-none transition-colors hover:bg-[color:var(--color-focus)] focus:bg-[color:var(--color-focus)] lg:block"
+      className="group relative z-10 hidden cursor-col-resize touch-none bg-(--color-border) outline-hidden transition-colors hover:bg-(--color-focus) focus:bg-(--color-focus) lg:block"
     >
-      <span className="absolute left-1/2 top-1/2 h-12 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[color:var(--color-border-strong)] group-hover:bg-[color:var(--color-surface)]" />
+      <span className="absolute left-1/2 top-1/2 h-12 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-(--color-border-strong) group-hover:bg-(--color-surface)" />
     </div>
   );
 }

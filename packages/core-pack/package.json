@@ -29,18 +29,18 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --import tsx --test test/**/*.test.ts",
+    "test:integration": "node --import tsx --test test/**/*.integration.test.ts",
     "lint": "biome check ."
   },
   "dependencies": {
     "@trinacria-cms/kernel": "0.1.0",
-    "@trinacria/events": "^0.1.1",
+    "@trinacria/events": "0.1.1",
     "@trinacria/schema": "0.1.1",
-    "ioredis": "^5.10.1",
-    "jose": "^6.2.0",
-    "mongoose": ">=9"
+    "ioredis": "^6.0.0",
+    "jose": "^6.2.12",
+    "mongoose": "^9.10.3"
   },
   "devDependencies": {
-    "@types/ioredis": "^4.28.10",
-    "@types/node": "^25.9.1"
+    "@types/node": "^24.19.0"
   }
 }

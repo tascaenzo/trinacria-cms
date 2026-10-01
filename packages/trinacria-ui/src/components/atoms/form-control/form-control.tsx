@@ -55,19 +55,18 @@ export function formControlClassName(options?: {
 
   return cn(
     multiline
-      ? "min-h-28 w-full rounded-[var(--radius-control)] border bg-[color:var(--color-surface)] px-3 py-2.5 text-sm"
-      : "h-10 w-full rounded-[var(--radius-control)] border bg-[color:var(--color-surface)] px-3 text-sm",
-    "border-[color:var(--color-border)] text-[color:var(--color-ink)] outline-none transition placeholder:text-[color:var(--color-ink-subtle)]",
-    !disabled && !error && "hover:border-[color:var(--color-accent-border)]",
+      ? "min-h-28 w-full rounded-(--radius-control) border bg-(--color-surface) px-3 py-2.5 text-sm"
+      : "h-10 w-full rounded-(--radius-control) border bg-(--color-surface) px-3 text-sm",
+    "border-(--color-border) text-(--color-ink) outline-hidden transition placeholder:text-(--color-ink-subtle)",
+    !disabled && !error && "hover:border-(--color-accent-border)",
     withFocusWithin
-      ? "focus-within:border-[color:var(--color-border-strong)] focus-within:ring-1 focus-within:ring-[color:var(--color-accent-border)]"
-      : "focus:border-[color:var(--color-border-strong)] focus:ring-1 focus:ring-[color:var(--color-accent-border)]",
-    disabled &&
-      "cursor-not-allowed bg-[color:var(--color-panel-soft)] text-[color:var(--color-ink-subtle)]",
+      ? "focus-within:border-(--color-border-strong) focus-within:ring-1 focus-within:ring-(--color-accent-border)"
+      : "focus:border-(--color-border-strong) focus:ring-1 focus:ring-(--color-accent-border)",
+    disabled && "cursor-not-allowed bg-(--color-panel-soft) text-(--color-ink-subtle)",
     Boolean(error) &&
       (withFocusWithin
-        ? "border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] focus-within:border-[color:var(--color-danger-ink)] focus-within:ring-1 focus-within:ring-[color:var(--color-danger-border)]"
-        : "border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] focus:border-[color:var(--color-danger-ink)] focus:ring-1 focus:ring-[color:var(--color-danger-border)]"),
+        ? "border-(--color-danger-border) bg-(--color-danger-bg) focus-within:border-(--color-danger-ink) focus-within:ring-1 focus-within:ring-(--color-danger-border)"
+        : "border-(--color-danger-border) bg-(--color-danger-bg) focus:border-(--color-danger-ink) focus:ring-1 focus:ring-(--color-danger-border)"),
     className
   );
 }
@@ -91,19 +90,19 @@ export function FormControlShell({
         <label
           htmlFor={labelFor ?? controlId}
           id={labelId}
-          className="text-sm font-medium text-[color:var(--color-ink)]"
+          className="text-sm font-medium text-(--color-ink)"
         >
           {label}
         </label>
       ) : null}
       {children}
       {error ? (
-        <span id={errorId} className="text-xs leading-5 text-[color:var(--color-danger-ink)]">
+        <span id={errorId} className="text-xs leading-5 text-(--color-danger-ink)">
           {error}
         </span>
       ) : null}
       {hint ? (
-        <span id={hintId} className="text-xs leading-5 text-[color:var(--color-ink-subtle)]">
+        <span id={hintId} className="text-xs leading-5 text-(--color-ink-subtle)">
           {hint}
         </span>
       ) : null}

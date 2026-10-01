@@ -11,6 +11,7 @@ import type { EntityIndexDefinition, EntityRegistry } from "./entity-registry.js
 
 interface MongoSessionLike {
   startTransaction?(): void;
+  withTransaction?<T>(work: () => Promise<T>): Promise<T | undefined>;
   commitTransaction(): Promise<void>;
   abortTransaction(): Promise<void>;
   endSession?(): Promise<void>;
@@ -44,11 +45,16 @@ interface MongoCollectionLike<TData> {
     filter: Record<string, unknown>,
     options?: Record<string, unknown>
   ): Promise<{ deletedCount?: number }>;
+  indexes?(): Promise<
+    Array<{ name: string; key: Record<string, 1 | -1>; unique?: boolean; sparse?: boolean }>
+  >;
+  dropIndex?(name: string): Promise<unknown>;
   createIndexes?(
     indexes: Array<{
       key: Record<string, 1 | -1>;
       unique?: boolean;
       sparse?: boolean;
+      partialFilterExpression?: Record<string, unknown>;
       name?: string;
     }>
   ): Promise<unknown>;
@@ -99,6 +105,45 @@ export class MongoDbAdapter implements DbAdapter {
     return new MongoDbTransaction(session);
   }
 
+  async withTransaction<T>(
+    context: NamespaceContext,
+    work: (adapter: DbAdapter) => Promise<T>
+  ): Promise<T> {
+    const session = await this.options.connection.startSession();
+    try {
+      if (!session.withTransaction)
+        throw new DbAdapterError(
+          "Mongo transactions require a replica set and session.withTransaction"
+        );
+      let result: T;
+      await session.withTransaction(async () => {
+        const scoped: DbAdapter = {
+          repository: <TData>(entityName: string, namespace: NamespaceContext) => {
+            if (buildNamespaceKey(namespace) !== buildNamespaceKey(context)) {
+              throw new DbAdapterError(
+                "Transaction repositories must use the transaction namespace"
+              );
+            }
+            return this.createRepository(
+              this.resolveCollection<TData>(entityName, namespace),
+              namespace,
+              entityName,
+              { session }
+            );
+          },
+          beginTransaction: async () => {
+            throw new DbAdapterError("Nested transactions are not supported");
+          },
+          healthCheck: () => this.healthCheck()
+        };
+        result = await work(scoped);
+      });
+      return result!;
+    } finally {
+      await session.endSession?.();
+    }
+  }
+
   async healthCheck(): Promise<{ ok: true } | { ok: false; reason: string }> {
     try {
       if (this.options.connection.db) {
@@ -122,7 +167,25 @@ export class MongoDbAdapter implements DbAdapter {
       const collection = this.resolveCollection(entityName, { pluginId });
       const indexes = definition.indexes ?? [];
       if (!collection.createIndexes || indexes.length === 0) continue;
+      // Create the replacement first: existing data remains protected throughout migration.
       await collection.createIndexes(indexes.map((index) => toMongoIndex(index)));
+      if (collection.indexes && collection.dropIndex) {
+        const existing = await collection.indexes();
+        for (const index of indexes.filter(
+          (candidate) => candidate.unique && candidate.partialFilter
+        )) {
+          for (const legacy of existing) {
+            if (
+              legacy.sparse &&
+              legacy.unique &&
+              legacy.name !== index.name &&
+              JSON.stringify(legacy.key) === JSON.stringify(index.fields)
+            ) {
+              await collection.dropIndex(legacy.name);
+            }
+          }
+        }
+      }
     }
   }
 
@@ -309,12 +372,14 @@ function toMongoIndex(index: EntityIndexDefinition): {
   key: Record<string, 1 | -1>;
   unique?: boolean;
   sparse?: boolean;
+  partialFilterExpression?: Record<string, unknown>;
   name?: string;
 } {
   const mapped: {
     key: Record<string, 1 | -1>;
     unique?: boolean;
     sparse?: boolean;
+    partialFilterExpression?: Record<string, unknown>;
     name?: string;
   } = {
     key: index.fields
@@ -324,6 +389,9 @@ function toMongoIndex(index: EntityIndexDefinition): {
   }
   if (index.sparse !== undefined) {
     mapped.sparse = index.sparse;
+  }
+  if (index.partialFilter !== undefined) {
+    mapped.partialFilterExpression = index.partialFilter;
   }
   if (index.name !== undefined) {
     mapped.name = index.name;

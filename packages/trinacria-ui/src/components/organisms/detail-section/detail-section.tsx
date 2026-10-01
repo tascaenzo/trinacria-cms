@@ -20,7 +20,7 @@ export function DetailSection({
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div className="space-y-1.5">
           {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-          <Heading className="text-lg font-semibold text-[color:var(--color-ink)]">{title}</Heading>
+          <Heading className="text-lg font-semibold text-(--color-ink)">{title}</Heading>
           {description ? <BodyText>{description}</BodyText> : null}
         </div>
         {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}

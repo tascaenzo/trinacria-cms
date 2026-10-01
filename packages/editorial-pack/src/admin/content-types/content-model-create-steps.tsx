@@ -104,7 +104,7 @@ export function FieldsStep({
       {fields.length ? (
         <>
           <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
-            <span className="rounded-full bg-[color:var(--color-surface-subtle)] px-3 py-1.5 text-xs font-medium text-[color:var(--color-ink-muted)]">
+            <span className="rounded-full bg-(--color-surface-subtle) px-3 py-1.5 text-xs font-medium text-(--color-ink-muted)">
               {fields.length} {fields.length === 1 ? "campo configurato" : "campi configurati"}
             </span>
             <Button type="button" size="sm" disabled={disabled} onClick={onNew}>
@@ -223,9 +223,9 @@ const ACCESS_LABELS: Record<CreateContentTypeDraft["ownershipScope"], string> = 
 
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid gap-1 rounded-lg bg-[color:var(--color-surface-subtle)] px-4 py-3">
-      <dt className="text-xs font-medium text-[color:var(--color-ink-muted)]">{label}</dt>
-      <dd className="text-sm font-medium text-[color:var(--color-ink)]">{value}</dd>
+    <div className="grid gap-1 rounded-lg bg-(--color-surface-subtle) px-4 py-3">
+      <dt className="text-xs font-medium text-(--color-ink-muted)">{label}</dt>
+      <dd className="text-sm font-medium text-(--color-ink)">{value}</dd>
     </div>
   );
 }

@@ -171,7 +171,7 @@ export class EntriesController extends HttpController {
   private listRevisions = async (ctx: HttpContext) => {
     if (!ctx.params.id) return responder.invalidRequest("Missing entry id");
     try {
-      await this.require(ctx, "read");
+      await this.require(ctx, "read", "revisions");
       const revisions = await this.entries.listRevisions(ctx.params.id, await this.scope(ctx));
       return revisions
         ? responder.list(revisions)
@@ -234,9 +234,16 @@ export class EntriesController extends HttpController {
   private async scope(ctx: HttpContext): Promise<EntryAccessScope> {
     const user = getAuthenticatedUser(ctx);
     const elevated = await Promise.all(
-      ["delete", "review", "approve", "publish"].map((action) => this.can(user.id, action))
+      ["delete", "approve", "publish"].map((action) => this.can(user.id, action))
     );
-    return { actorUserId: user.id, canAccessAll: elevated.some(Boolean) };
+    return {
+      actorUserId: user.id,
+      canAccessAll: elevated.some(Boolean),
+      canReviewAssigned: await this.can(user.id, "review"),
+      canUseAuthorScope: (
+        await Promise.all(["create", "update", "submit"].map((action) => this.can(user.id, action)))
+      ).some(Boolean)
+    };
   }
 
   private async require(ctx: HttpContext, action: string, resource = "entries") {

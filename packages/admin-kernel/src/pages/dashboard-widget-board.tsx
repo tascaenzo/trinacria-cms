@@ -70,10 +70,12 @@ export function DashboardWidgetBoard({
   const [isDirty, setIsDirty] = useState(false);
   const [draggedKey, setDraggedKey] = useState<string | null>(null);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: The signature refreshes the layout when widget metadata changes.
   useEffect(() => {
     setLayout((previous) => normalizeDashboardWidgetLayout(previous, items));
   }, [items, widgetSignature]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Persisted layout versions deliberately reset customization state.
   useEffect(() => {
     setLayout(normalizeDashboardWidgetLayout(layoutValue, items));
     setIsDirty(false);
@@ -226,16 +228,16 @@ export function DashboardWidgetBoard({
       ) : null}
 
       {isEditing ? (
-        <div className="flex items-start gap-3 border-y border-[color:var(--color-border)] py-3 text-sm leading-6 text-[color:var(--color-ink-muted)]">
-          <Icon name="grip-vertical" className="mt-1 text-[color:var(--color-accent)]" />
+        <div className="flex items-start gap-3 border-y border-(--color-border) py-3 text-sm leading-6 text-(--color-ink-muted)">
+          <Icon name="grip-vertical" className="mt-1 text-(--color-accent)" />
           <p>Trascina i widget, modifica larghezza e altezza, quindi salva il layout condiviso.</p>
         </div>
       ) : null}
       {isEditing && hiddenItems.length ? (
-        <div className="flex flex-col gap-3 border-b border-[color:var(--color-border)] pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 border-b border-(--color-border) pb-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-medium text-[color:var(--color-ink)]">Widget nascosti</p>
-            <p className="text-xs text-[color:var(--color-ink-muted)]">
+            <p className="text-sm font-medium text-(--color-ink)">Widget nascosti</p>
+            <p className="text-xs text-(--color-ink-muted)">
               Riattiva solo gli elementi che vuoi mostrare.
             </p>
           </div>
@@ -255,7 +257,7 @@ export function DashboardWidgetBoard({
         </div>
       ) : null}
       {isLayoutLoading ? (
-        <p className="flex items-center gap-2 text-sm text-[color:var(--color-ink-muted)]">
+        <p className="flex items-center gap-2 text-sm text-(--color-ink-muted)">
           <Icon name="loader-circle" className="animate-spin" />
           Caricamento layout condiviso…
         </p>
@@ -276,7 +278,7 @@ export function DashboardWidgetBoard({
                   COLUMN_SPAN_CLASSES[dimension.columnSpan],
                   ROW_SPAN_CLASSES[dimension.rowSpan],
                   isEditing
-                    ? "cursor-move overflow-hidden rounded-[var(--radius-surface)] border border-dashed border-[color:var(--color-border-strong)] bg-[color:var(--color-surface-subtle)] p-2"
+                    ? "cursor-move overflow-hidden rounded-(--radius-surface) border border-dashed border-(--color-border-strong) bg-(--color-surface-subtle) p-2"
                     : "",
                   draggedKey === item.key ? "opacity-45" : ""
                 ].join(" ")}
@@ -289,8 +291,8 @@ export function DashboardWidgetBoard({
               >
                 {isEditing ? (
                   <div className="mb-2 flex flex-col justify-between gap-2 px-1 pb-2 sm:flex-row sm:items-center">
-                    <div className="flex min-w-0 items-center gap-2 text-xs font-medium text-[color:var(--color-ink-muted)]">
-                      <Icon name="grip-vertical" className="text-[color:var(--color-accent)]" />
+                    <div className="flex min-w-0 items-center gap-2 text-xs font-medium text-(--color-ink-muted)">
+                      <Icon name="grip-vertical" className="text-(--color-accent)" />
                       <span className="truncate">{item.title}</span>
                     </div>
                     <WidgetControls
@@ -361,12 +363,12 @@ function WidgetControls({
   return (
     <div className="flex flex-wrap items-center gap-1 sm:justify-end">
       <span
-        className="mr-1 text-[10px] font-medium tabular-nums text-[color:var(--color-ink-subtle)]"
+        className="mr-1 text-[10px] font-medium tabular-nums text-(--color-ink-subtle)"
         title="Dimensione attuale"
       >
         {dimension.columnSpan} × {dimension.rowSpan}
       </span>
-      <div className="flex items-center border-l border-[color:var(--color-border)] pl-1 md:hidden">
+      <div className="flex items-center border-l border-(--color-border) pl-1 md:hidden">
         <IconButton
           variant="ghost"
           size="sm"
@@ -423,10 +425,8 @@ function ControlPair({
   onIncrease: () => void;
 }) {
   return (
-    <div className="flex items-center border-l border-[color:var(--color-border)] pl-2">
-      <span className="mr-1 text-[10px] font-semibold text-[color:var(--color-ink-subtle)]">
-        {label}
-      </span>
+    <div className="flex items-center border-l border-(--color-border) pl-2">
+      <span className="mr-1 text-[10px] font-semibold text-(--color-ink-subtle)">{label}</span>
       <IconButton
         variant="ghost"
         size="sm"

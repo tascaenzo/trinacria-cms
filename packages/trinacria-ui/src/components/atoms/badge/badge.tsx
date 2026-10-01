@@ -5,19 +5,19 @@ export function Badge({ children, className, tone = "neutral", ...props }: Badge
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-[var(--radius-badge)] border px-2 py-0.5 text-xs font-medium",
+        "inline-flex items-center rounded-(--radius-badge) border px-2 py-0.5 text-xs font-medium",
         tone === "neutral" &&
-          "border-[color:var(--color-neutral-border)] bg-[color:var(--color-neutral-bg)] text-[color:var(--color-neutral-ink)]",
+          "border-(--color-neutral-border) bg-(--color-neutral-bg) text-(--color-neutral-ink)",
         tone === "accent" &&
-          "border-[color:var(--color-accent-border)] bg-[color:var(--color-accent-soft)] text-[color:var(--color-accent-ink)]",
+          "border-(--color-accent-border) bg-(--color-accent-soft) text-(--color-accent-ink)",
         tone === "info" &&
-          "border-[color:var(--color-info-border)] bg-[color:var(--color-info-bg)] text-[color:var(--color-info-ink)]",
+          "border-(--color-info-border) bg-(--color-info-bg) text-(--color-info-ink)",
         tone === "success" &&
-          "border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] text-[color:var(--color-success-ink)]",
+          "border-(--color-success-border) bg-(--color-success-bg) text-(--color-success-ink)",
         tone === "warning" &&
-          "border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-bg)] text-[color:var(--color-warning-ink)]",
+          "border-(--color-warning-border) bg-(--color-warning-bg) text-(--color-warning-ink)",
         tone === "danger" &&
-          "border-[color:var(--color-danger-border)] bg-[color:var(--color-danger-bg)] text-[color:var(--color-danger-ink)]",
+          "border-(--color-danger-border) bg-(--color-danger-bg) text-(--color-danger-ink)",
         className
       )}
       {...props}

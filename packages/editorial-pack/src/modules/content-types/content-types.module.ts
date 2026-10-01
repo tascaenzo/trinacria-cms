@@ -37,7 +37,8 @@ export const EditorialContentTypesModule: ModuleDefinition = defineModule({
     ),
     classProvider(CONTENT_TYPES_REPOSITORY_TOKEN, ContentTypesRepository, [CORE_TOKENS.DB_ADAPTER]),
     classProvider(CONTENT_TYPES_SERVICE_TOKEN, ContentTypesService, [
-      CONTENT_TYPES_REPOSITORY_TOKEN
+      CONTENT_TYPES_REPOSITORY_TOKEN,
+      CORE_TOKENS.DB_ADAPTER
     ]),
     httpProvider(CONTENT_TYPES_CONTROLLER_TOKEN, ContentTypesController, [
       CONTENT_TYPES_SERVICE_TOKEN,

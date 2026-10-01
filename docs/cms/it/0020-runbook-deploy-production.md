@@ -6,6 +6,9 @@ essere vero per l'applicazione.
 
 ## Stato attuale
 
+Usare Node.js 24.21.0 LTS (versione fissata in `.nvmrc`) e npm 11.16.0 anche in staging e
+produzione. I pacchetti Trinacria stabili supportano Node 24; altre major non sono abilitate.
+
 Il progetto e pronto per staging controllato, non ancora per produzione pubblica senza E2E e runbook
 operativo verificato. Prima di pubblicare:
 
@@ -14,6 +17,18 @@ operativo verificato. Prima di pubblicare:
 - `/ready` deve restituire stato pronto.
 - `/ops/checklist` deve essere accessibile solo con token osservabilita.
 - Mongo deve avere backup e restore testati.
+
+## MongoDB e transazioni editoriali
+
+Editorial Pack richiede un replica set o un cluster sharded con transazioni; un server standalone
+non è sufficiente. Verificare primary, sessioni e scritture transazionali prima dell'avvio.
+Il compose locale include un replica set autenticato a nodo singolo per sviluppo e test.
+In produzione configurare un replica set gestito e backup/restore; il nodo singolo locale non
+costituisce una configurazione di alta disponibilità.
+
+L'indice degli slug viene migrato verso un indice unico parziale senza eliminazione di dati.
+Le modifiche distruttive a modelli con entry sono rifiutate: richiedono una migrazione esplicita
+con backup, verifica su staging e controllo degli stati editoriali.
 
 ## Variabili `.env` richieste
 

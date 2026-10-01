@@ -16,16 +16,14 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        "flex flex-col gap-4 border-b border-[color:var(--color-border)] pb-4 md:flex-row md:items-center md:justify-between",
+        "flex flex-col gap-4 border-b border-(--color-border) pb-4 md:flex-row md:items-center md:justify-between",
         className
       )}
       {...props}
     >
       <div className="min-w-0 space-y-1.5">
         {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-        <h1 className="text-2xl font-semibold tracking-[-0.03em] text-[color:var(--color-ink)]">
-          {title}
-        </h1>
+        <h1 className="text-2xl font-semibold tracking-[-0.03em] text-(--color-ink)">{title}</h1>
         {description ? <BodyText>{description}</BodyText> : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-3">{actions}</div> : null}
@@ -66,13 +64,13 @@ export function ContentSection({
   const Heading = `h${headingLevel}` as "h2" | "h3" | "h4";
   return (
     <section
-      className={cn("grid gap-5 border-t border-[color:var(--color-border)] pt-6", className)}
+      className={cn("grid gap-5 border-t border-(--color-border) pt-6", className)}
       {...props}
     >
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0 space-y-1.5">
           {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-          <Heading className="text-lg font-semibold tracking-[-0.02em] text-[color:var(--color-ink)]">
+          <Heading className="text-lg font-semibold tracking-[-0.02em] text-(--color-ink)">
             {title}
           </Heading>
           {description ? <BodyText>{description}</BodyText> : null}

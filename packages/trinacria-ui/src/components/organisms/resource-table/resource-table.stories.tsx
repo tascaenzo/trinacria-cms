@@ -59,7 +59,7 @@ export const UsersLikeLayout: Story = {
             <ResourceTableCell>
               <Badge tone="success">Active</Badge>
             </ResourceTableCell>
-            <ResourceTableCell className="text-[color:var(--color-ink-muted)]">
+            <ResourceTableCell className="text-(--color-ink-muted)">
               2026-04-10 10:45
             </ResourceTableCell>
             <ResourceTableCell>

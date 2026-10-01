@@ -7,4 +7,9 @@ import * as Stories from "./dropdown-menu.stories";
 
 Menu contestuale leggero per azioni account, overflow e piccoli pannelli operativi.
 
+La navigazione con frecce, Home/End salta le voci disabilitate e segue le stesse regole
+di ContextMenu. Una selezione chiude il menu e riporta il focus al trigger, salvo
+`closeOnSelect={false}` o `event.preventDefault()` nel proprio `onClick`.
+I trigger custom mantengono ref e handler; la loro gestione di `preventDefault()` viene rispettata.
+
 <Canvas of={Stories.Default} />

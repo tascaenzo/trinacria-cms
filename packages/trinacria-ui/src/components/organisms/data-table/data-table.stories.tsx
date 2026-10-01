@@ -61,7 +61,7 @@ export const Default: Story = {
         <DataTableBody>
           <DataTableRow>
             <DataTablePrimaryCell meta="Produzione">API key: server-sync</DataTablePrimaryCell>
-            <DataTableCell className="text-[color:var(--color-ink-muted)]">core-pack</DataTableCell>
+            <DataTableCell className="text-(--color-ink-muted)">core-pack</DataTableCell>
             <DataTableCell>
               <Badge tone="success">Active</Badge>
             </DataTableCell>
@@ -99,9 +99,7 @@ export const WithPagination: Story = {
           <DataTableBody>
             <DataTableRow>
               <DataTablePrimaryCell meta="Produzione">API key: server-sync</DataTablePrimaryCell>
-              <DataTableCell className="text-[color:var(--color-ink-muted)]">
-                core-pack
-              </DataTableCell>
+              <DataTableCell className="text-(--color-ink-muted)">core-pack</DataTableCell>
               <DataTableCell>
                 <Badge tone="success">Active</Badge>
               </DataTableCell>
@@ -111,9 +109,7 @@ export const WithPagination: Story = {
             </DataTableRow>
             <DataTableRow>
               <DataTablePrimaryCell meta="Staging">API key: media-cache</DataTablePrimaryCell>
-              <DataTableCell className="text-[color:var(--color-ink-muted)]">
-                content-suite
-              </DataTableCell>
+              <DataTableCell className="text-(--color-ink-muted)">content-suite</DataTableCell>
               <DataTableCell>
                 <Badge tone="warning">Review</Badge>
               </DataTableCell>

@@ -136,7 +136,7 @@ export function DeclarativeResourceTable({
         <InfoCard
           title="No table fields"
           description="Declare fields with table: true to let the generic renderer build this resource table."
-          className="m-5 bg-[color:var(--color-surface)]"
+          className="m-5 bg-(--color-surface)"
         />
       }
     >
@@ -146,7 +146,7 @@ export function DeclarativeResourceTable({
             <DataTableHeaderRow>
               <DataTableHeadCell
                 colSpan={tableFields.length + (hasRecordMenu ? 1 : 0)}
-                className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-4 shadow-[inset_0_-1px_0_var(--color-border)]"
+                className="border-b border-(--color-border) bg-(--color-surface) px-4 py-4 shadow-[inset_0_-1px_0_var(--color-border)]"
               >
                 <TableHeaderContent
                   globalActions={globalActions}
@@ -226,7 +226,7 @@ export function DeclarativeResourceTable({
               <DataTableRow>
                 <DataTableCell
                   colSpan={tableFields.length + (hasRecordMenu ? 1 : 0)}
-                  className="text-[color:var(--color-ink-muted)]"
+                  className="text-(--color-ink-muted)"
                 >
                   No records found.
                 </DataTableCell>
@@ -255,11 +255,9 @@ function TableHeaderContent({
   return (
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div className="grid min-w-0 gap-1">
-        <span className="text-sm font-semibold leading-6 text-[color:var(--color-ink)]">
-          {resource.title}
-        </span>
+        <span className="text-sm font-semibold leading-6 text-(--color-ink)">{resource.title}</span>
         {resource.summary ? (
-          <span className="text-xs font-normal leading-5 text-[color:var(--color-ink-muted)]">
+          <span className="text-xs font-normal leading-5 text-(--color-ink-muted)">
             {resource.summary}
           </span>
         ) : null}

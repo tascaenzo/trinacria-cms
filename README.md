@@ -4,6 +4,10 @@ Modular headless CMS built on top of Trinacria, the underlying framework/library
 that provides the DI runtime, module lifecycle, HTTP integration and schema
 tooling used by this repository.
 
+Stato aggiornato: [qualità e funzionalità presenti](docs/project-quality-status.md).
+UI e Tailwind: [guida del design system](docs/trinacria-ui-design-system.md) e
+[audit del backoffice](docs/backoffice-ui-audit.md).
+
 ## Vision
 
 Trinacria CMS targets two usage modes:
@@ -24,6 +28,9 @@ The project keeps a strict separation between:
 - `apps/backoffice`: thin Vite host for the shared admin runtime
 - `packages/kernel`: CMS runtime contracts, plugin orchestration, namespace governance, Mongo-first storage core
 - `packages/core-pack`: official baseline plugin pack: auth, users, roles, permissions, settings, installation
+- `packages/editorial-pack`: modelli, contenuti, workflow, revisioni ed editor a blocchi
+- `packages/media-pack`: upload, file manager, ACL e storage locale/S3
+- `packages/email-pack`: delivery, template e flussi email
 - `packages/sdk`: zero-dependency HTTP client generated from the OpenAPI snapshot
 - `packages/admin-kernel`: shared backoffice application runtime, pages, route registry, SDK wiring
 - `packages/trinacria-ui`: reusable React design system and backoffice presentation components
@@ -78,19 +85,29 @@ Branch strategy:
 
 Requirements:
 
-- Node.js 20+
-- npm 11+
+- Node.js 24.21.0 LTS (see `.nvmrc`)
+- npm 11.16.0
 - Docker (for Mongo local runtime)
 
 Install and run playground:
 
+If you use nvm, run `nvm install` and `nvm use` from the repository root first. Keep npm
+aligned with `packageManager` (`npm install --global npm@11.16.0` if needed).
+
 ```bash
 npm install
-docker compose up -d mongo
+docker compose up -d --wait mongo
 npm run dev:playground
 ```
 
 MongoDB configuration:
+
+- Editorial requires replica-set transactions. The bundled Mongo service starts an authenticated
+  single-node replica set and its healthcheck waits for a writable primary.
+- Existing database volumes are retained. With custom root credentials, keep Compose variables
+  aligned with those used to initialize the existing volume.
+- Use `directConnection=true` when reaching the single-node development replica set through a
+  forwarded port or a container hostname different from its advertised address.
 
 - `MONGO_URI` is the canonical CMS application connection string.
 - When `MONGO_URI` is set, the app ignores the split Mongo fallback values for
@@ -131,6 +148,8 @@ Operational endpoints:
 ## Quality checks
 
 ```bash
+npm run check
+npm run ui:guardrails
 npm run lint
 npm run format
 npm run build
@@ -139,6 +158,22 @@ npm run test
 npm run test:integration
 npm run storybook:build
 ```
+
+Run check, application build and Storybook build sequentially: SDK generation writes shared
+sources. `ui:guardrails` checks shared primitives, save labels, stories and Tailwind syntax.
+`npm run e2e:typecheck` first builds the playground and its workspace dependencies, so it
+also works on a clean checkout without pre-existing `dist` files.
+
+Integration tests require running Mongo, S3-compatible storage and Redis services. Enable
+`TRINACRIA_RUN_MONGO_INTEGRATION=1`, `TRINACRIA_RUN_S3_INTEGRATION=1` and
+`TRINACRIA_RUN_REDIS_INTEGRATION=1`; configure `TRINACRIA_MONGO_URI` (or `MONGO_URI`),
+`TRINACRIA_S3_ENDPOINT`, S3 credentials/bucket and `TRINACRIA_REDIS_URI` for dedicated test
+services. See [.github/workflows/ci.yml](.github/workflows/ci.yml) for the reproducible setup.
+The CI S3 test server builds the official MinIO release from the pinned source commit
+`07c3a429bfed433e49018cb0f78a52145d4bedeb`, then runs it against temporary storage. This
+avoids relying on the removed prebuilt container/binary downloads. Source reference:
+[MinIO release](https://github.com/minio/minio/tree/07c3a429bfed433e49018cb0f78a52145d4bedeb). Recorded results are in
+[project quality status](docs/project-quality-status.md).
 
 Install Chromium once and run the production-readiness browser/API suite:
 
@@ -149,7 +184,9 @@ npm run e2e
 
 The E2E harness uses and resets only the dedicated `trinacria_cms_e2e` Mongo database. Override
 `E2E_MONGO_URI` only with a database name ending in `_e2e`; the reset guard rejects every other
-database name.
+database name. The `E2E_APP_URL`, `E2E_API_URL`, `E2E_DEGRADED_API_URL` and
+`E2E_DOWN_API_URL` overrides also determine the fixture ports; use distinct addresses
+when running the suite alongside a development instance.
 
 ## Production Hardening
 

@@ -63,10 +63,10 @@ export function DeclarativeResourceDetail({
   return (
     <>
       <Panel
-        className="overflow-hidden border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-0"
+        className="overflow-hidden border-(--color-border) bg-(--color-surface) p-0"
         radius="lg"
       >
-        <header className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] shadow-[inset_0_-1px_0_var(--color-border)]">
+        <header className="border-b border-(--color-border) bg-(--color-surface) shadow-[inset_0_-1px_0_var(--color-border)]">
           <div className="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between md:py-4">
             <div className="flex min-w-0 items-start gap-3">
               <IconButton
@@ -77,16 +77,16 @@ export function DeclarativeResourceDetail({
                 onClick={onBack}
               />
               <div className="grid min-w-0 gap-1">
-                <h2 className="break-words text-sm font-semibold leading-6 text-[color:var(--color-ink)]">
+                <h2 className="wrap-break-word text-sm font-semibold leading-6 text-(--color-ink)">
                   {title}
                 </h2>
-                <span className="text-xs font-medium leading-5 text-[color:var(--color-ink-muted)]">
+                <span className="text-xs font-medium leading-5 text-(--color-ink-muted)">
                   {detail.title ?? resource.title}
                 </span>
               </div>
             </div>
             {showJson || recordActions.length ? (
-              <div className="flex w-full justify-end border-t border-[color:var(--color-border)] pt-3 md:ml-auto md:w-auto md:border-t-0 md:pt-0">
+              <div className="flex w-full justify-end border-t border-(--color-border) pt-3 md:ml-auto md:w-auto md:border-t-0 md:pt-0">
                 <DropdownMenu
                   trigger={
                     <Button type="button" variant="secondary" size="sm">
@@ -227,7 +227,7 @@ function TagList({ value, limit }: { value: unknown; limit: number }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const tags = normalizeTagValues(value);
   if (tags.length === 0) {
-    return <span className="text-[color:var(--color-ink-muted)]">-</span>;
+    return <span className="text-(--color-ink-muted)">-</span>;
   }
 
   const visibleTags = isExpanded ? tags : tags.slice(0, limit);
@@ -255,8 +255,8 @@ function TagList({ value, limit }: { value: unknown; limit: number }) {
           variant="outline"
           className={
             isExpanded
-              ? "h-6 w-6 rounded-full border-[color:var(--color-accent-border)] bg-[color:var(--color-accent-soft)] p-0 text-xs text-[color:var(--color-accent-ink)]"
-              : "h-6 rounded-[var(--radius-badge)] border-[color:var(--color-neutral-border)] bg-[color:var(--color-neutral-bg)] px-2 py-0.5 text-xs text-[color:var(--color-neutral-ink)]"
+              ? "h-6 w-6 rounded-full border-(--color-accent-border) bg-(--color-accent-soft) p-0 text-xs text-(--color-accent-ink)"
+              : "h-6 rounded-(--radius-badge) border-(--color-neutral-border) bg-(--color-neutral-bg) px-2 py-0.5 text-xs text-(--color-neutral-ink)"
           }
           onClick={() => setIsExpanded((current) => !current)}
         >

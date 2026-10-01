@@ -63,6 +63,11 @@ export interface DbAdapter {
    * Implementations that do not support it can omit this method.
    */
   ensureIndexes?(pluginId: string, entityNames: readonly string[]): Promise<void>;
+  /** Runs repositories on one session; commits atomically and retries transient conflicts. */
+  withTransaction?<T>(
+    context: NamespaceContext,
+    work: (adapter: DbAdapter) => Promise<T>
+  ): Promise<T>;
   /** Starts a namespaced transaction. */
   beginTransaction(context: NamespaceContext): Promise<DbTransaction>;
   /** Exposes adapter health for health endpoints and readiness checks. */

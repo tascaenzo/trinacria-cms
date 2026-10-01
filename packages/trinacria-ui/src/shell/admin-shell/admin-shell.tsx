@@ -34,12 +34,12 @@ function getFocusableElements(container: HTMLElement | null) {
  */
 function badgeToneClass(tone: AdminShellStatusBadge["tone"]): string {
   if (tone === "success") {
-    return "border-[color:var(--color-success-border)] bg-[color:var(--color-success-bg)] text-[color:var(--color-success-ink)]";
+    return "border-(--color-success-border) bg-(--color-success-bg) text-(--color-success-ink)";
   }
   if (tone === "warning") {
-    return "border-[color:var(--color-warning-border)] bg-[color:var(--color-warning-bg)] text-[color:var(--color-warning-ink)]";
+    return "border-(--color-warning-border) bg-(--color-warning-bg) text-(--color-warning-ink)";
   }
-  return "border-[color:var(--color-border)] bg-[color:var(--color-panel)] text-[color:var(--color-ink-muted)]";
+  return "border-(--color-border) bg-(--color-panel) text-(--color-ink-muted)";
 }
 
 function toNavigationGroupId(group: string): string {
@@ -236,7 +236,7 @@ export function AdminShell({
               ref={mobileCloseButtonRef}
               type="button"
               onClick={() => setIsMobileSidebarOpen(false)}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-(--color-ink-muted) transition hover:bg-(--color-interactive-hover) hover:text-(--color-ink) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--color-focus) lg:hidden"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-(--color-ink-muted) transition hover:bg-(--color-interactive-hover) hover:text-(--color-ink) focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--color-focus) lg:hidden"
               aria-label={closeSidebarLabel}
             >
               <Icon name="x" />
@@ -261,7 +261,7 @@ export function AdminShell({
                         aria-controls={groupId}
                         onClick={() => toggleGroup(group)}
                         className={cn(
-                          "flex w-full items-center justify-between gap-2 rounded-md px-2 pb-1 pt-1 text-left text-[11px] font-medium uppercase tracking-[0.14em] text-(--color-ink-subtle) transition hover:bg-(--color-interactive-hover) hover:text-(--color-ink-muted) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--color-focus)",
+                          "flex w-full items-center justify-between gap-2 rounded-md px-2 pb-1 pt-1 text-left text-[11px] font-medium uppercase tracking-[0.14em] text-(--color-ink-subtle) transition hover:bg-(--color-interactive-hover) hover:text-(--color-ink-muted) focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--color-focus)",
                           isSidebarCollapsed && "lg:hidden"
                         )}
                       >
@@ -284,7 +284,7 @@ export function AdminShell({
                             aria-current={isActive ? "page" : undefined}
                             onClick={() => handleNavigate(item)}
                             className={cn(
-                              "group flex h-9 w-full items-center gap-2 rounded-md px-2 text-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-(--color-focus)",
+                              "group flex h-9 w-full items-center gap-2 rounded-md px-2 text-sm transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--color-focus)",
                               isSidebarCollapsed ? "lg:justify-center lg:px-0" : "justify-between",
                               isActive
                                 ? "bg-(--color-interactive-selected) text-(--color-interactive-selected-ink)"
@@ -353,7 +353,7 @@ export function AdminShell({
               <button
                 type="button"
                 onClick={() => setIsMobileSidebarOpen(true)}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-(--color-ink-muted) transition hover:bg-(--color-interactive-hover) hover:text-(--color-ink) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--color-focus) lg:hidden"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-(--color-ink-muted) transition hover:bg-(--color-interactive-hover) hover:text-(--color-ink) focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--color-focus) lg:hidden"
                 aria-label={openSidebarLabel}
               >
                 <Icon name="panel-left" />
@@ -361,7 +361,7 @@ export function AdminShell({
               <button
                 type="button"
                 onClick={() => setIsSidebarCollapsed((current) => !current)}
-                className="hidden h-8 w-8 items-center justify-center rounded-md text-(--color-ink-muted) transition hover:bg-(--color-interactive-hover) hover:text-(--color-ink) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--color-focus) lg:inline-flex"
+                className="hidden h-8 w-8 items-center justify-center rounded-md text-(--color-ink-muted) transition hover:bg-(--color-interactive-hover) hover:text-(--color-ink) focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--color-focus) lg:inline-flex"
                 aria-label={isSidebarCollapsed ? expandSidebarLabel : collapseSidebarLabel}
               >
                 <Icon name="panel-left" />

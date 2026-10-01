@@ -28,20 +28,36 @@
     "lint": "biome check ."
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1089.0",
-    "@aws-sdk/s3-request-presigner": "^3.1089.0",
+    "@aws-sdk/client-s3": "^3.1144.0",
+    "@aws-sdk/s3-request-presigner": "^3.1144.0",
     "@trinacria-cms/core-pack": "0.1.0",
-    "@trinacria-cms/kernel": "0.1.0",
+    "@trinacria-cms/kernel": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.0",
+    "@types/react": "^19.3.0",
+    "mongoose": "^9.10.3",
     "@trinacria-cms/sdk": "0.1.0",
     "@trinacria-cms/trinacria-ui": "0.1.0"
   },
-  "devDependencies": {
-    "@types/node": "^25.9.1",
-    "@types/react": "^19.2.2",
-    "mongoose": ">=9"
-  },
   "peerDependencies": {
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "@trinacria-cms/sdk": "0.1.0",
+    "@trinacria-cms/trinacria-ui": "0.1.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "@trinacria-cms/sdk": {
+      "optional": true
+    },
+    "@trinacria-cms/trinacria-ui": {
+      "optional": true
+    }
   }
 }

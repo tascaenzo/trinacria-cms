@@ -57,7 +57,7 @@ export function CsvEditor({ document, onChange }: CsvEditorProps) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex flex-wrap items-center gap-2 border-b border-[color:var(--color-border)] bg-[color:var(--color-panel)] px-3 py-2">
+      <div className="flex flex-wrap items-center gap-2 border-b border-(--color-border) bg-(--color-panel) px-3 py-2">
         <Button type="button" variant="secondary" onClick={addRow}>
           <Icon name="plus" className="h-4 w-4" /> Riga
         </Button>
@@ -91,21 +91,21 @@ export function CsvEditor({ document, onChange }: CsvEditorProps) {
           <option value={"\t"}>Tabulazione</option>
         </Select>
       </div>
-      <div className="min-h-0 flex-1 overflow-auto bg-[color:var(--color-surface)]">
+      <div className="min-h-0 flex-1 overflow-auto bg-(--color-surface)">
         <table className="min-w-full border-separate border-spacing-0 text-sm">
           <tbody>
             {rows.map((row, rowIndex) => (
               <tr key={rowIndex}>
                 <th
                   scope="row"
-                  className="sticky left-0 z-10 w-12 border-b border-r border-[color:var(--color-border)] bg-[color:var(--color-panel)] px-2 text-right text-xs font-normal text-[color:var(--color-ink-subtle)]"
+                  className="sticky left-0 z-10 w-12 border-b border-r border-(--color-border) bg-(--color-panel) px-2 text-right text-xs font-normal text-(--color-ink-subtle)"
                 >
                   {rowIndex + 1}
                 </th>
                 {Array.from({ length: columnCount }, (_, columnIndex) => (
                   <td
                     key={columnIndex}
-                    className={`min-w-40 border-b border-r border-[color:var(--color-border)] p-0 ${selection.row === rowIndex && selection.column === columnIndex ? "outline outline-2 -outline-offset-2 outline-[color:var(--color-focus)]" : ""}`}
+                    className={`min-w-40 border-b border-r border-(--color-border) p-0 ${selection.row === rowIndex && selection.column === columnIndex ? "outline outline-2 -outline-offset-2 outline-(--color-focus)" : ""}`}
                   >
                     <input
                       aria-label={`Riga ${rowIndex + 1}, colonna ${columnIndex + 1}`}
@@ -114,7 +114,7 @@ export function CsvEditor({ document, onChange }: CsvEditorProps) {
                       onChange={(event) =>
                         updateCell(rowIndex, columnIndex, event.currentTarget.value)
                       }
-                      className={`h-10 w-full min-w-0 bg-transparent px-3 outline-none ${rowIndex === 0 ? "font-semibold text-[color:var(--color-ink)]" : "text-[color:var(--color-ink-muted)]"}`}
+                      className={`h-10 w-full min-w-0 bg-transparent px-3 outline-hidden ${rowIndex === 0 ? "font-semibold text-(--color-ink)" : "text-(--color-ink-muted)"}`}
                     />
                   </td>
                 ))}
@@ -123,7 +123,7 @@ export function CsvEditor({ document, onChange }: CsvEditorProps) {
           </tbody>
         </table>
       </div>
-      <div className="flex items-center justify-between border-t border-[color:var(--color-border)] bg-[color:var(--color-panel)] px-3 py-2 text-xs text-[color:var(--color-ink-subtle)]">
+      <div className="flex items-center justify-between border-t border-(--color-border) bg-(--color-panel) px-3 py-2 text-xs text-(--color-ink-subtle)">
         <span>{rows.length} righe</span>
         <span>{columnCount} colonne</span>
       </div>

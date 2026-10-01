@@ -55,9 +55,7 @@ export const Default: Story = {
                   <DataTablePrimaryCell meta={`Runtime node ${record.id}`}>
                     {record.key}
                   </DataTablePrimaryCell>
-                  <DataTableCell className="text-[color:var(--color-ink-muted)]">
-                    {record.owner}
-                  </DataTableCell>
+                  <DataTableCell className="text-(--color-ink-muted)">{record.owner}</DataTableCell>
                   <DataTableCell>
                     <Badge tone={record.status === "success" ? "success" : "warning"}>
                       {record.status === "success" ? "Healthy" : "Review"}

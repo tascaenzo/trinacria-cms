@@ -8,6 +8,7 @@ import {
   Icon,
   IconButton,
   Input,
+  PageCanvas,
   Panel,
   Select,
   Switch,
@@ -184,7 +185,7 @@ export function EditorialEntryDetailPage({
         setIsAutosaving(false);
       }
     },
-    [cms, contentType, entry, pushToast, resetDraft]
+    [cms, contentType, draftRef, entry, markSaved, pushToast]
   );
 
   const autosave = useCallback(() => void save("auto"), [save]);
@@ -242,7 +243,7 @@ export function EditorialEntryDetailPage({
 
   return (
     <>
-      <main className="mx-auto w-full max-w-5xl px-5 py-6 sm:px-8">
+      <PageCanvas width="form">
         <header className="flex items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-2">
             <Button
@@ -256,8 +257,8 @@ export function EditorialEntryDetailPage({
               <Icon name="arrow-left" />
             </Button>
             <div className="min-w-0">
-              <p className="text-xs text-[color:var(--color-ink-subtle)]">{contentType.name}</p>
-              <h1 className="truncate text-lg font-semibold text-[color:var(--color-ink)]">
+              <p className="text-xs text-(--color-ink-subtle)">{contentType.name}</p>
+              <h1 className="truncate text-lg font-semibold text-(--color-ink)">
                 {draft.title || "Senza titolo"}
               </h1>
             </div>
@@ -290,24 +291,24 @@ export function EditorialEntryDetailPage({
                 className="group block w-full text-left"
                 onClick={openContentEditor}
               >
-                <span className="block text-xl font-semibold text-[color:var(--color-ink)]">
+                <span className="block text-xl font-semibold text-(--color-ink)">
                   {draft.title || "Senza titolo"}
                 </span>
                 <span className="relative mt-3 block max-h-24 overflow-hidden">
-                  <span className="block text-sm leading-6 text-[color:var(--color-ink-muted)]">
+                  <span className="block text-sm leading-6 text-(--color-ink-muted)">
                     {documentPlainText(draft.body) || "Il documento non contiene ancora testo."}
                   </span>
                   <span
                     aria-hidden="true"
-                    className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[color:var(--color-panel)] to-transparent"
+                    className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-linear-to-t from-(--color-panel) to-transparent"
                   />
                 </span>
-                <span className="mt-3 flex items-center justify-between gap-3 text-xs text-[color:var(--color-ink-subtle)]">
+                <span className="mt-3 flex items-center justify-between gap-3 text-xs text-(--color-ink-subtle)">
                   <span>
                     {draft.body.blocks.length}{" "}
                     {draft.body.blocks.length === 1 ? "blocco" : "blocchi"}
                   </span>
-                  <span className="font-medium text-[color:var(--color-ink-muted)] group-hover:text-[color:var(--color-ink)]">
+                  <span className="font-medium text-(--color-ink-muted) group-hover:text-(--color-ink)">
                     Continua nell’editor →
                   </span>
                 </span>
@@ -329,7 +330,7 @@ export function EditorialEntryDetailPage({
                     />
                   ))
                 ) : (
-                  <p className="text-sm text-[color:var(--color-ink-muted)]">
+                  <p className="text-sm text-(--color-ink-muted)">
                     Questo modello usa soltanto i campi editoriali principali.
                   </p>
                 )}
@@ -345,12 +346,10 @@ export function EditorialEntryDetailPage({
                 readOnly={isSaving}
                 onChange={(event) => updateDraft({ slug: event.currentTarget.value })}
               />
-              <div className="grid gap-4 border-t border-[color:var(--color-border)] pt-4">
+              <div className="grid gap-4 border-t border-(--color-border) pt-4">
                 <div>
-                  <h3 className="text-sm font-semibold text-[color:var(--color-ink)]">
-                    Pubblicazione
-                  </h3>
-                  <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
+                  <h3 className="text-sm font-semibold text-(--color-ink)">Pubblicazione</h3>
+                  <p className="mt-1 text-sm text-(--color-ink-muted)">
                     Stato corrente: <strong>{entry.status}</strong>. Salva prima di eseguire una
                     transizione dal desk.
                   </p>
@@ -378,7 +377,7 @@ export function EditorialEntryDetailPage({
             </FormSection>
           </aside>
         </div>
-      </main>
+      </PageCanvas>
 
       <Dialog
         open={isContentEditorOpen}
@@ -407,11 +406,11 @@ export function EditorialEntryDetailPage({
           />
         }
       >
-        <div className="min-h-full bg-[color:var(--color-panel)]">
+        <div className="min-h-full bg-(--color-panel)">
           {isPreviewMode ? (
-            <div className="min-h-full bg-[color:var(--color-surface)]">
+            <div className="min-h-full bg-(--color-surface)">
               <div
-                className={`mx-auto min-h-[calc(100vh-8rem)] w-full bg-[color:var(--color-surface)] transition-[width] ${previewDeviceClass(previewDevice)}`}
+                className={`mx-auto min-h-[calc(100vh-8rem)] w-full bg-(--color-surface) transition-[width] ${previewDeviceClass(previewDevice)}`}
               >
                 {resolvePublicPreviewUrl(previewUrl, entry, draft) ? (
                   <iframe
@@ -439,7 +438,7 @@ export function EditorialEntryDetailPage({
                     placeholder="Senza titolo"
                     value={draft.title}
                     disabled={isSaving}
-                    className="block w-full overflow-hidden border-0 bg-transparent px-1 text-4xl font-bold leading-tight tracking-tight text-[color:var(--color-ink)] outline-none placeholder:text-[color:var(--color-ink-subtle)] sm:text-5xl"
+                    className="block w-full overflow-hidden border-0 bg-transparent px-1 text-4xl font-bold leading-tight tracking-tight text-(--color-ink) outline-hidden placeholder:text-(--color-ink-subtle) sm:text-5xl"
                     style={{
                       fieldSizing: "content",
                       fontSize: "3rem",
@@ -507,7 +506,7 @@ export function EditorialEntryDetailPage({
           </>
         }
       >
-        <p className="text-sm text-[color:var(--color-ink-muted)]">
+        <p className="text-sm text-(--color-ink-muted)">
           Puoi continuare a scrivere da questa bozza oppure tenerne la versione salvata.
         </p>
       </Dialog>
@@ -537,7 +536,7 @@ export function EditorialEntryDetailPage({
           </>
         }
       >
-        <p className="text-sm text-[color:var(--color-ink-muted)]">
+        <p className="text-sm text-(--color-ink-muted)">
           La bozza resta disponibile per il recupero automatico quando riapri il contenuto.
         </p>
       </Dialog>
@@ -601,7 +600,7 @@ function EditorialEditorToolbar({
 
   return (
     <div className="flex items-center gap-1.5">
-      <div className="hidden items-center gap-0.5 border-r border-[color:var(--color-border)] pr-1.5 sm:flex">
+      <div className="hidden items-center gap-0.5 border-r border-(--color-border) pr-1.5 sm:flex">
         <IconButton
           type="button"
           size="sm"
@@ -660,7 +659,7 @@ function EditorialEditorToolbar({
         </DropdownMenu>
       ) : null}
 
-      <div className="flex items-center border-l border-[color:var(--color-border)] pl-1.5">
+      <div className="flex items-center border-l border-(--color-border) pl-1.5">
         <span aria-live="polite" className="sr-only">
           {status.label}
         </span>
@@ -772,10 +771,8 @@ function parseJsonOrText(value: string): unknown {
 }
 
 function previewDeviceClass(device: PreviewDevice) {
-  if (device === "mobile")
-    return "max-w-[26rem] border-x border-[color:var(--color-border)] px-3 py-4";
-  if (device === "tablet")
-    return "max-w-[56rem] border-x border-[color:var(--color-border)] px-5 py-5";
+  if (device === "mobile") return "max-w-[26rem] border-x border-(--color-border) px-3 py-4";
+  if (device === "tablet") return "max-w-[56rem] border-x border-(--color-border) px-5 py-5";
   return "max-w-none";
 }
 
@@ -792,24 +789,24 @@ function resolvePublicPreviewUrl(
 
 function LoadingEditor() {
   return (
-    <main className="mx-auto w-full max-w-5xl px-5 py-6 sm:px-8">
+    <PageCanvas width="form">
       <Panel aria-hidden="true" className="h-96 animate-pulse" />
-    </main>
+    </PageCanvas>
   );
 }
 
 function MissingEditor({ error, onBack }: { error: string | null; onBack: () => void }) {
   return (
-    <main className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-8">
+    <PageCanvas width="document">
       <Button type="button" variant="ghost" onClick={onBack}>
         <Icon name="arrow-left" />
         Torna ai contenuti
       </Button>
       <h1 className="mt-6 text-2xl font-semibold">Contenuto non trovato</h1>
-      <p className="mt-2 text-sm text-[color:var(--color-ink-muted)]">
+      <p className="mt-2 text-sm text-(--color-ink-muted)">
         {error ?? "Scegli un contenuto dal desk editoriale."}
       </p>
-    </main>
+    </PageCanvas>
   );
 }
 

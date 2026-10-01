@@ -1,6 +1,6 @@
 # Proposta: modernizzazione della toolchain con Biome e Turborepo
 
-> Stato: proposta tecnica da valutare. Il documento non rappresenta una decisione definitiva.
+> Stato: implementata (Biome e Turborepo sono attivi). Il testo seguente conserva il contesto della proposta iniziale.
 
 ## Contesto
 

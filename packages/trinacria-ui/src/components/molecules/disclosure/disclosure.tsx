@@ -13,14 +13,14 @@ export function Disclosure({
   return (
     <details
       className={cn(
-        "group overflow-hidden rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)]",
+        "group overflow-hidden rounded-(--radius-panel) border border-(--color-border) bg-(--color-surface)",
         className
       )}
       {...props}
     >
       <summary
         className={cn(
-          "flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-[color:var(--color-ink)] transition hover:bg-[color:var(--color-panel-soft)] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--color-focus)] [&::-webkit-details-marker]:hidden",
+          "flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-(--color-ink) transition hover:bg-(--color-panel-soft) focus:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-(--color-focus) [&::-webkit-details-marker]:hidden",
           summaryClassName
         )}
       >
@@ -28,12 +28,12 @@ export function Disclosure({
         <Icon
           name="chevron-down"
           aria-hidden="true"
-          className="h-4 w-4 shrink-0 text-[color:var(--color-ink-subtle)] transition group-open:rotate-180"
+          className="h-4 w-4 shrink-0 text-(--color-ink-subtle) transition group-open:rotate-180"
         />
       </summary>
       <div
         className={cn(
-          "border-t border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4",
+          "border-t border-(--color-border) bg-(--color-surface) p-4",
           contentClassName
         )}
       >

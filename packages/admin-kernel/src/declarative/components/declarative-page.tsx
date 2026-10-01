@@ -21,7 +21,7 @@ export function DeclarativeAdminPage({ context }: { context: AdminPageRenderCont
   return (
     <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
       <Card eyebrow={context.route.pluginId} title={context.route.title}>
-        <p className="max-w-3xl text-sm leading-7 text-[color:var(--color-ink-muted)]">
+        <p className="max-w-3xl text-sm leading-7 text-(--color-ink-muted)">
           {context.route.summary ??
             "Declarative admin page rendered from plugin manifest metadata."}
         </p>

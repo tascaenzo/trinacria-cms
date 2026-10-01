@@ -202,8 +202,8 @@ export function BackofficeThemeSettingsSection({
           data-accent={accent}
           className="p-4"
         >
-          <p className="text-sm font-semibold text-[color:var(--color-ink)]">Trinacria CMS</p>
-          <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
+          <p className="text-sm font-semibold text-(--color-ink)">Trinacria CMS</p>
+          <p className="mt-1 text-sm text-(--color-ink-muted)">
             {t("settings.backoffice_theme.preview_copy", "Esempio di contenuto del backoffice.")}
           </p>
           <Button className="mt-4" disabled>

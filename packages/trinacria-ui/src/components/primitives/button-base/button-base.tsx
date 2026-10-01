@@ -9,7 +9,7 @@ export function getButtonBaseClassName({
   variant = "primary"
 }: Pick<ButtonBaseProps, "className" | "iconOnly" | "size" | "variant">) {
   return cn(
-    "inline-flex cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-control)] border font-medium shadow-[var(--shadow-surface)] transition focus:outline-none focus:ring-2 focus:ring-[color:var(--color-focus)] focus:ring-offset-2 focus:ring-offset-[color:var(--color-surface)] disabled:cursor-not-allowed disabled:opacity-55",
+    "inline-flex cursor-pointer items-center justify-center gap-2 rounded-(--radius-control) border font-medium shadow-(--shadow-surface) transition focus:outline-hidden focus:ring-2 focus:ring-(--color-focus) focus:ring-offset-2 focus:ring-offset-(--color-surface) disabled:cursor-not-allowed disabled:opacity-55",
     getButtonSizeClassName(size, iconOnly),
     getButtonVariantClassName(variant),
     className
@@ -29,19 +29,22 @@ function getButtonSizeClassName(size: ButtonSize, iconOnly: boolean) {
 }
 
 function getButtonVariantClassName(variant: ButtonVariant) {
+  if (variant === "danger") {
+    return "border-(--color-danger-border) bg-(--color-danger-bg) text-(--color-danger-ink) shadow-none hover:brightness-95";
+  }
   if (variant === "secondary") {
-    return "border-[color:var(--color-action-secondary-border)] bg-[color:var(--color-action-secondary-bg)] text-[color:var(--color-action-secondary-ink)] hover:bg-[color:var(--color-action-secondary-hover)]";
+    return "border-(--color-action-secondary-border) bg-(--color-action-secondary-bg) text-(--color-action-secondary-ink) hover:bg-(--color-action-secondary-hover)";
   }
 
   if (variant === "outline") {
-    return "border-[color:var(--color-border-strong)] bg-transparent text-[color:var(--color-action-secondary-ink)] shadow-none hover:bg-[color:var(--color-action-secondary-hover)]";
+    return "border-(--color-border-strong) bg-transparent text-(--color-action-secondary-ink) shadow-none hover:bg-(--color-action-secondary-hover)";
   }
 
   if (variant === "ghost") {
-    return "border-[color:var(--color-action-ghost-border)] bg-[color:var(--color-action-ghost-bg)] text-[color:var(--color-action-ghost-ink)] shadow-none hover:border-[color:var(--color-border)] hover:bg-[color:var(--color-action-ghost-hover)] hover:text-[color:var(--color-ink)]";
+    return "border-(--color-action-ghost-border) bg-(--color-action-ghost-bg) text-(--color-action-ghost-ink) shadow-none hover:border-(--color-border) hover:bg-(--color-action-ghost-hover) hover:text-(--color-ink)";
   }
 
-  return "border-[color:var(--color-action-primary-border)] bg-[color:var(--color-action-primary-bg)] text-[color:var(--color-action-primary-ink)] hover:bg-[color:var(--color-action-primary-hover)]";
+  return "border-(--color-action-primary-border) bg-(--color-action-primary-bg) text-(--color-action-primary-ink) hover:bg-(--color-action-primary-hover)";
 }
 
 /**

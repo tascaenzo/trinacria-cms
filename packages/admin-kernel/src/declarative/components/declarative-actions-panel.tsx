@@ -27,9 +27,7 @@ export function DeclarativeActionsPanel({
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-sm font-semibold text-[color:var(--color-ink)]">
-                    {action.title}
-                  </p>
+                  <p className="text-sm font-semibold text-(--color-ink)">{action.title}</p>
                   <Badge tone={action.intent === "delete" ? "danger" : "neutral"}>
                     {action.intent}
                   </Badge>

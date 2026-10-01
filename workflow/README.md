@@ -1,5 +1,15 @@
 # Workflow Operativo
 
+## Stato corrente
+
+- [Stato e qualità del progetto](../docs/project-quality-status.md)
+- [Changelog](changelog/CHANGELOG.md)
+- [Consolidamento M7](milestones/M7-editorial-media-quality-hardening.md)
+- [Guida UI e Tailwind](../docs/trinacria-ui-design-system.md)
+
+I risultati nei task completati descrivono la verifica della relativa fase; non sostituiscono
+il riepilogo corrente né implicano che tutte le funzionalità previste dalle specifiche siano disponibili.
+
 ## Struttura
 
 ```

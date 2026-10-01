@@ -85,10 +85,10 @@ export function MediaFileManagerWidget({
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)]">
+            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-(--color-ink-subtle)">
               Libreria
             </p>
-            <h3 className="mt-1 truncate text-base font-semibold text-[color:var(--color-ink)]">
+            <h3 className="mt-1 truncate text-base font-semibold text-(--color-ink)">
               File manager
             </h3>
           </div>
@@ -119,7 +119,7 @@ export function MediaFileManagerWidget({
         </div>
       </CardHeader>
 
-      <div className="grid grid-cols-3 divide-x divide-[color:var(--color-border)] border-b border-[color:var(--color-border)] bg-[color:var(--color-surface-subtle)]">
+      <div className="grid grid-cols-3 divide-x divide-(--color-border) border-b border-(--color-border) bg-(--color-surface-subtle)">
         <MediaMetric label="Media" value={isLoading ? "…" : totalLabel} />
         <MediaMetric label="Spazio" value={isLoading ? "…" : formatBytes(usedBytes)} />
         <MediaMetric label="Condivisi" value={isLoading ? "…" : String(sharedAssets)} />
@@ -127,11 +127,11 @@ export function MediaFileManagerWidget({
 
       <div className="min-h-0 flex-1 px-5 py-4">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[color:var(--color-ink-subtle)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-(--color-ink-subtle)">
             Modificati di recente
           </p>
           {assets.length === PAGE_LIMIT ? (
-            <span className="text-[11px] text-[color:var(--color-ink-subtle)]">Primi 100</span>
+            <span className="text-[11px] text-(--color-ink-subtle)">Primi 100</span>
           ) : null}
         </div>
 
@@ -164,14 +164,14 @@ export function MediaFileManagerWidget({
                   className="grid h-auto w-full min-w-0 grid-cols-[36px_minmax(0,1fr)_auto] items-center justify-stretch gap-3 border-transparent px-2 py-1.5 text-left shadow-none disabled:cursor-default"
                   onClick={() => navigateToRoute?.("media-assets")}
                 >
-                  <span className="grid h-9 w-9 place-items-center rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-ink-muted)]">
+                  <span className="grid h-9 w-9 place-items-center rounded-md border border-(--color-border) bg-(--color-surface) text-(--color-ink-muted)">
                     <Icon name={getAssetIcon(asset.mimeType)} />
                   </span>
                   <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium text-[color:var(--color-ink)]">
+                    <span className="block truncate text-sm font-medium text-(--color-ink)">
                       {asset.displayName}
                     </span>
-                    <span className="block truncate text-xs text-[color:var(--color-ink-subtle)]">
+                    <span className="block truncate text-xs text-(--color-ink-subtle)">
                       {formatBytes(asset.byteSize)} · {formatUpdatedAt(asset.updatedAt, locale)}
                     </span>
                   </span>
@@ -206,8 +206,8 @@ export function MediaFileManagerWidget({
 function MediaMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0 px-4 py-3">
-      <p className="truncate text-[11px] text-[color:var(--color-ink-subtle)]">{label}</p>
-      <p className="mt-0.5 truncate text-lg font-semibold tabular-nums text-[color:var(--color-ink)]">
+      <p className="truncate text-[11px] text-(--color-ink-subtle)">{label}</p>
+      <p className="mt-0.5 truncate text-lg font-semibold tabular-nums text-(--color-ink)">
         {value}
       </p>
     </div>
@@ -219,11 +219,13 @@ function VisibilityDot({ visibility }: { visibility: MediaWidgetAsset["visibilit
     visibility === "public" ? "Pubblico" : visibility === "restricted" ? "Limitato" : "Privato";
   const tone =
     visibility === "public"
-      ? "bg-emerald-500"
+      ? "bg-(--color-success-ink)"
       : visibility === "restricted"
-        ? "bg-amber-500"
-        : "bg-slate-400";
-  return <span className={`h-2 w-2 rounded-full ${tone}`} title={label} aria-label={label} />;
+        ? "bg-(--color-warning-ink)"
+        : "bg-(--color-ink-subtle)";
+  return (
+    <span className={`h-2 w-2 rounded-full ${tone}`} title={label} role="img" aria-label={label} />
+  );
 }
 
 function getAssetIcon(mimeType: string) {

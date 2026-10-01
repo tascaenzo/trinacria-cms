@@ -32,10 +32,8 @@ export function ContentTypeWorkflowEditor({
     <div className="grid gap-5">
       <section className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h3 className="text-sm font-semibold text-[color:var(--color-ink)]">
-            Workflow operativo
-          </h3>
-          <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
+          <h3 className="text-sm font-semibold text-(--color-ink)">Workflow operativo</h3>
+          <p className="mt-1 text-sm text-(--color-ink-muted)">
             Scegli un modello predefinito o disegna un percorso su misura per la redazione.
           </p>
         </div>
@@ -59,9 +57,9 @@ export function ContentTypeWorkflowEditor({
       </section>
 
       {workflow.preset === "custom" ? (
-        <p className="-mt-2 text-sm text-[color:var(--color-ink-muted)]">
+        <p className="-mt-2 text-sm text-(--color-ink-muted)">
           Workflow personalizzato:{" "}
-          <span className="font-medium text-[color:var(--color-ink)]">{workflow.name}</span>
+          <span className="font-medium text-(--color-ink)">{workflow.name}</span>
         </p>
       ) : null}
 
@@ -92,16 +90,14 @@ function WorkflowPreview({ workflow }: { workflow: ContentWorkflow }) {
               <Panel
                 className={`w-40 p-4 ${
                   state.initial
-                    ? "border-[color:var(--color-accent-border)] bg-[color:var(--color-accent-soft)]"
-                    : "border-[color:var(--color-border)] bg-[color:var(--color-panel)]"
+                    ? "border-(--color-accent-border) bg-(--color-accent-soft)"
+                    : "border-(--color-border) bg-(--color-panel)"
                 }`}
                 elevation="sm"
                 tone="custom"
               >
-                <span className="text-sm font-semibold text-[color:var(--color-ink)]">
-                  {state.label}
-                </span>
-                <span className="mt-2 block text-xs text-[color:var(--color-ink-muted)]">
+                <span className="text-sm font-semibold text-(--color-ink)">{state.label}</span>
+                <span className="mt-2 block text-xs text-(--color-ink-muted)">
                   {state.initial ? "Punto di partenza" : "Fase del flusso"}
                 </span>
               </Panel>

@@ -59,7 +59,7 @@ export function EditorialReviewBoard(props: EditorialReviewBoardProps) {
 
   return (
     <Panel as="section" className="overflow-hidden p-0" elevation="sm">
-      <header className="border-b border-[color:var(--color-border)] px-4 py-4">
+      <header className="border-b border-(--color-border) px-4 py-4">
         <EditorialEntriesHeader
           title={props.title}
           description={props.description}
@@ -70,7 +70,7 @@ export function EditorialReviewBoard(props: EditorialReviewBoardProps) {
         />
       </header>
 
-      <div className="overflow-x-auto bg-[color:var(--color-surface-subtle)] p-4">
+      <div className="overflow-x-auto bg-(--color-surface-subtle) p-4">
         <div className="flex min-w-max items-start gap-4">
           {states.map((state) => {
             const entries = props.entries.filter((entry) => entry.status === state.key);
@@ -82,10 +82,10 @@ export function EditorialReviewBoard(props: EditorialReviewBoardProps) {
                 as="section"
                 key={state.key}
                 tone="custom"
-                className={`w-80 shrink-0 bg-[color:var(--color-panel)] transition ${
+                className={`w-80 shrink-0 bg-(--color-panel) transition ${
                   isDropTarget
-                    ? "border-[color:var(--color-accent)] ring-2 ring-[color:var(--color-accent-soft)]"
-                    : "border-[color:var(--color-border)]"
+                    ? "border-(--color-accent) ring-2 ring-(--color-accent-soft)"
+                    : "border-(--color-border)"
                 }`}
                 onDragOver={(event) => {
                   if (!canDrop) return;
@@ -101,14 +101,12 @@ export function EditorialReviewBoard(props: EditorialReviewBoardProps) {
                 }}
                 onDrop={(event) => dropEntry(event, state.key)}
               >
-                <header className="flex items-center justify-between border-b border-[color:var(--color-border)] px-3 py-3">
+                <header className="flex items-center justify-between border-b border-(--color-border) px-3 py-3">
                   <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-[color:var(--color-accent)]" />
-                    <h2 className="text-sm font-semibold text-[color:var(--color-ink)]">
-                      {state.label}
-                    </h2>
+                    <span className="h-2 w-2 rounded-full bg-(--color-accent)" />
+                    <h2 className="text-sm font-semibold text-(--color-ink)">{state.label}</h2>
                   </div>
-                  <span className="rounded-full bg-[color:var(--color-surface-subtle)] px-2 py-0.5 text-xs font-semibold text-[color:var(--color-ink-muted)]">
+                  <span className="rounded-full bg-(--color-surface-subtle) px-2 py-0.5 text-xs font-semibold text-(--color-ink-muted)">
                     {entries.length}
                   </span>
                 </header>
@@ -175,7 +173,7 @@ function ReviewCard({
     <Panel
       as="article"
       draggable={canMove}
-      className={`p-3 transition hover:border-[color:var(--color-border-strong)] ${
+      className={`p-3 transition hover:border-(--color-border-strong) ${
         canMove ? "cursor-grab active:cursor-grabbing" : ""
       }`}
       elevation="sm"
@@ -193,10 +191,10 @@ function ReviewCard({
           className="h-auto min-w-0 flex-1 justify-start border-0 bg-transparent p-0 text-left shadow-none hover:bg-transparent"
           onClick={onEdit}
         >
-          <span className="block truncate text-sm font-semibold text-[color:var(--color-ink)]">
+          <span className="block truncate text-sm font-semibold text-(--color-ink)">
             {entry.title ?? "Senza titolo"}
           </span>
-          <span className="mt-1 block truncate text-xs text-[color:var(--color-ink-subtle)]">
+          <span className="mt-1 block truncate text-xs text-(--color-ink-subtle)">
             {contentType?.name ?? "Modello rimosso"}
           </span>
         </Button>
@@ -209,11 +207,11 @@ function ReviewCard({
           onTransition={onTransition}
         />
       </div>
-      <div className="mt-3 flex items-center justify-between gap-3 border-t border-[color:var(--color-border)] pt-3">
+      <div className="mt-3 flex items-center justify-between gap-3 border-t border-(--color-border) pt-3">
         <span className={`rounded-full px-2 py-1 text-[11px] font-medium ${status.className}`}>
           {status.label}
         </span>
-        <span className="flex items-center gap-1 text-xs text-[color:var(--color-ink-subtle)]">
+        <span className="flex items-center gap-1 text-xs text-(--color-ink-subtle)">
           {formatEditorialDate(entry.updatedAt, locale)}
           {canMove ? <Icon name="grip-vertical" className="h-3.5 w-3.5" /> : null}
         </span>
@@ -229,7 +227,7 @@ function BoardSkeleton() {
         <Panel
           aria-hidden="true"
           key={item}
-          className="h-28 animate-pulse bg-[color:var(--color-surface-subtle)]"
+          className="h-28 animate-pulse bg-(--color-surface-subtle)"
           tone="soft"
         />
       ))}

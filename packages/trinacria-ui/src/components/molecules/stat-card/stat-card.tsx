@@ -17,10 +17,10 @@ export function StatCard({
     <Card
       className={cn(
         "h-full",
-        tone === "info" && "border-[color:var(--color-info-border)]",
-        tone === "success" && "border-[color:var(--color-success-border)]",
-        tone === "warning" && "border-[color:var(--color-warning-border)]",
-        tone === "danger" && "border-[color:var(--color-danger-border)]",
+        tone === "info" && "border-(--color-info-border)",
+        tone === "success" && "border-(--color-success-border)",
+        tone === "warning" && "border-(--color-warning-border)",
+        tone === "danger" && "border-(--color-danger-border)",
         className
       )}
       padding="none"
@@ -35,15 +35,13 @@ export function StatCard({
           actions={
             badge ??
             (meta ? (
-              <span className="text-xs font-medium text-[color:var(--color-ink-subtle)]">
-                {meta}
-              </span>
+              <span className="text-xs font-medium text-(--color-ink-subtle)">{meta}</span>
             ) : undefined)
           }
         />
       </CardHeader>
       <CardContent className="py-4">
-        <p className="text-3xl font-semibold tracking-[-0.03em] tabular-nums text-[color:var(--color-ink)]">
+        <p className="text-3xl font-semibold tracking-[-0.03em] tabular-nums text-(--color-ink)">
           {value}
         </p>
       </CardContent>

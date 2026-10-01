@@ -31,10 +31,7 @@ export function FieldLabel({
   ...props
 }: PropsWithChildren<LabelHTMLAttributes<HTMLLabelElement>>) {
   return (
-    <label
-      className={cn("text-sm font-medium text-[color:var(--color-ink)]", className)}
-      {...props}
-    >
+    <label className={cn("text-sm font-medium text-(--color-ink)", className)} {...props}>
       {children}
     </label>
   );
@@ -46,10 +43,7 @@ export function FieldDescription({
   ...props
 }: PropsWithChildren<HTMLAttributes<HTMLParagraphElement>>) {
   return (
-    <p
-      className={cn("text-sm leading-6 text-[color:var(--color-ink-muted)]", className)}
-      {...props}
-    >
+    <p className={cn("text-sm leading-6 text-(--color-ink-muted)", className)} {...props}>
       {children}
     </p>
   );
@@ -61,10 +55,7 @@ export function FieldHint({
   ...props
 }: PropsWithChildren<HTMLAttributes<HTMLParagraphElement>>) {
   return (
-    <p
-      className={cn("text-xs leading-5 text-[color:var(--color-ink-subtle)]", className)}
-      {...props}
-    >
+    <p className={cn("text-xs leading-5 text-(--color-ink-subtle)", className)} {...props}>
       {children}
     </p>
   );
@@ -76,10 +67,7 @@ export function FieldError({
   ...props
 }: PropsWithChildren<HTMLAttributes<HTMLParagraphElement>>) {
   return (
-    <p
-      className={cn("text-xs leading-5 text-[color:var(--color-danger-ink)]", className)}
-      {...props}
-    >
+    <p className={cn("text-xs leading-5 text-(--color-danger-ink)", className)} {...props}>
       {children}
     </p>
   );

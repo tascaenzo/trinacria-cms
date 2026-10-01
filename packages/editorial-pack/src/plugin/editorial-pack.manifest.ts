@@ -67,10 +67,10 @@ export const EDITORIAL_PACK_MANIFEST: PluginManifest = definePluginManifest({
           fields: { ownerUserId: 1, status: 1, updatedAt: -1 }
         },
         {
-          name: "entries_content_type_slug_unique",
+          name: "entries_content_type_slug_present_unique",
           fields: { contentTypeId: 1, slug: 1 },
           unique: true,
-          sparse: true
+          partialFilter: { slug: { $type: "string" } }
         },
         {
           name: "entries_reviewer_queue_idx",

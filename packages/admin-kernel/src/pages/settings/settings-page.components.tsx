@@ -50,7 +50,7 @@ export function SettingsWorkspaceSidebar({
   }, [selectedGroupId]);
 
   return (
-    <aside className="min-h-0 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] lg:overflow-auto lg:border-b-0 lg:border-r">
+    <aside className="min-h-0 border-b border-(--color-border) bg-(--color-surface) lg:overflow-auto lg:border-b-0 lg:border-r">
       <div className="p-4 lg:hidden">
         <Select
           label={t("settings.navigation.section", "Sezione")}
@@ -71,10 +71,10 @@ export function SettingsWorkspaceSidebar({
       </div>
 
       <div className="hidden px-6 py-4 lg:block">
-        <p className="text-xs font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
+        <p className="text-xs font-medium uppercase tracking-[0.14em] text-(--color-ink-subtle)">
           {t("official.route.settings.title", "Impostazioni")}
         </p>
-        <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink-muted)]">
+        <p className="mt-2 text-sm leading-6 text-(--color-ink-muted)">
           {sections.length} {t("settings.navigation.sections", "sezioni")}
         </p>
       </div>
@@ -100,7 +100,7 @@ export function SettingsWorkspaceSidebar({
                         [group.id]: !isCollapsed
                       }))
                     }
-                    className="min-h-10 w-full justify-start gap-2 border-transparent px-2 text-left text-xs font-semibold uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)] shadow-none"
+                    className="min-h-10 w-full justify-start gap-2 border-transparent px-2 text-left text-xs font-semibold uppercase tracking-[0.12em] text-(--color-ink-subtle) shadow-none"
                   >
                     <Icon name={group.icon} className="h-4 w-4" />
                     <span className="min-w-0 flex-1 truncate">{group.label}</span>
@@ -151,8 +151,8 @@ function SettingsSectionNavigationItem({
       aria-label={section.title}
       className={`h-10 w-full justify-start gap-3 border-transparent px-3 text-left shadow-none ${
         isSelected
-          ? "bg-[color:var(--color-panel-strong)] text-[color:var(--color-ink)]"
-          : "text-[color:var(--color-ink-muted)] hover:bg-[color:var(--color-interactive-hover)] hover:text-[color:var(--color-ink)]"
+          ? "bg-(--color-panel-strong) text-(--color-ink)"
+          : "text-(--color-ink-muted) hover:bg-(--color-interactive-hover) hover:text-(--color-ink)"
       }`}
     >
       <Icon name={getSectionIcon(section.id)} className="h-4 w-4 shrink-0 opacity-75" />

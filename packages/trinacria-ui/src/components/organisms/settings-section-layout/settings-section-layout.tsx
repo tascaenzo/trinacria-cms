@@ -22,14 +22,14 @@ export function SettingsSectionLayout({
 
   return (
     <section
-      className={cn("flex h-full min-h-0 flex-col bg-[color:var(--color-surface)]", className)}
+      className={cn("flex h-full min-h-0 flex-col bg-(--color-surface)", className)}
       {...props}
     >
       <div className="min-h-0 flex-1 overflow-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
         <div className={cn("mx-auto grid gap-6", widthClassName)}>
-          <header className="flex flex-col gap-4 border-b border-[color:var(--color-border)] pb-5 sm:flex-row sm:items-start sm:justify-between">
+          <header className="flex flex-col gap-4 border-b border-(--color-border) pb-5 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 space-y-1.5">
-              <Heading className="text-xl font-semibold tracking-[-0.02em] text-[color:var(--color-ink)]">
+              <Heading className="text-xl font-semibold tracking-[-0.02em] text-(--color-ink)">
                 {title}
               </Heading>
               {description ? <BodyText>{description}</BodyText> : null}
@@ -44,7 +44,7 @@ export function SettingsSectionLayout({
       </div>
 
       {actions ? (
-        <footer className="shrink-0 border-t border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3 sm:px-6 lg:px-8">
+        <footer className="shrink-0 border-t border-(--color-border) bg-(--color-surface) px-4 py-3 sm:px-6 lg:px-8">
           <div
             className={cn(
               "mx-auto flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end",

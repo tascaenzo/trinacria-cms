@@ -3,6 +3,83 @@
 Tutte le milestone significative sono documentate qui.
 Il formato si ispira a [Keep a Changelog](https://keepachangelog.com/).
 
+## Cache senza scadenza — completata (2026-10-01)
+
+- L’adapter in memoria conserva i valori con TTL zero senza scadenza, come Redis.
+- Il test avanza un orologio simulato per verificare il comportamento senza dipendere
+  dalla velocità del runner; corretto il difetto emerso nella CI sul push.
+
+## Installazione E2E sincronizzata — completata (2026-10-01)
+
+- Il test attende la risposta POST del bootstrap e ne verifica il successo prima
+  di cercare la dashboard; rimosso il click sintetico che non attendeva il flusso.
+- Le porte dei fixture seguono gli URL E2E configurati, permettendo la verifica
+  senza fermare il CMS di sviluppo. Suite locale su porte separate: 17/17 passati.
+
+## Servizio S3 della CI — completato (2026-10-01)
+
+- MinIO costruito dal commit ufficiale della release fissata, dopo il ritiro delle
+  immagini/binari precompilati usati dalla CI; dati e log restano temporanei nel runner.
+- Verificata la build sorgente e l’integrazione upload/lettura/cancellazione S3 locale.
+
+## Typecheck E2E su checkout pulito — completato (2026-10-01)
+
+- `e2e:typecheck` compila prima il playground e le dipendenze workspace richieste
+  dagli entrypoint browser/API, senza dipendere da artifact locali precedenti.
+- Riprodotto il problema in CI; verificato il comando senza `apps/playground/dist`.
+
+## Semplificazione menu UI — completata (2026-10-01)
+
+- Navigazione e contratto di selezione condivisi tra dropdown e menu contestuale.
+- Handler del trigger unificato, rimosso il cast ref `as never`.
+- ContextMenu rispetta selezioni persistenti e annullate; ArrowUp senza voce attiva
+  raggiunge l’ultima azione abilitata.
+- Check completo: 470 test ordinari, inclusi 96 UI; build e Storybook verdi.
+
+## Allineamento documentazione — completato (2026-10-01)
+
+- README e indici collegano stato corrente, UI/Tailwind e operazioni editoriali.
+- Guide aggiornate alle API pubbliche, configurazione CSS e guardrail effettivi.
+- Risultati storici distinti dal riepilogo corrente: 464 test e 11 integrazioni registrati
+  nell’aggiornamento delle dipendenze; le singole fasi conservano i propri conteggi.
+- Audit, specifiche e milestone collegati allo stato implementato senza dichiarare
+  concluse le capacità prodotto ancora previste.
+
+## Compatibilità Tailwind 4.3 — completata (2026-10-01)
+
+- Sintassi dei token uniformata, gradienti e wrapping aggiornati; outline accessibile.
+- Configurazioni legacy inutilizzate rimosse e guardrail automatico aggiunto.
+- 98 conversioni distinte verificate come equivalenti dal compilatore Tailwind;
+  check, build, Storybook e verifica visuale mobile light/dark verdi.
+
+## UI condivisa del CMS — completata (2026-10-01)
+
+- Nuovi componenti pubblici Toolbar, ContextMenu, IconTile, PageCanvas e CenteredPanel,
+  con varianti, tipi, stories e documentazione.
+- Accesso/MFA, editor, workflow e media adottano token e componenti comuni;
+  variante danger condivisa e dialog accessibile per inserire link.
+- Menu con tema e navigazione da tastiera, toolbar responsive e notifiche senza
+  interferenze con i clic; guardrail contro palette locali nel chrome amministrativo.
+- Verifica: 463 test ordinari e 17 scenari Chromium passati; check, build e Storybook verdi.
+
+## [M7] Consolidamento Editorial, Media e qualità — completata (2026-10-01)
+
+- Ownership applicata, restore validato senza cambiare pubblicazione e permesso publish
+  obbligatorio anche nei workflow personalizzati.
+- Indice slug parziale migrato senza rimuovere dati; storico e entry atomici in transazioni Mongo;
+  snapshot concorrenti serializzati; modelli popolati protetti da modifiche distruttive.
+- Editor e file manager modularizzati, renderer lazy e bundle principale ridotto da circa 794 a 397 kB.
+- Frontend dei pack come peer opzionali e confini server/admin verificati in CI.
+- Lint hook/ARIA attivi; file temporaneo Storybook rimosso dal repository; dipendenze ripristinate
+  e aggiornate. Resta la sola segnalazione low esbuild Windows nel tooling transitivo.
+- Corretti bootstrap eventi, apertura diretta delle pagine, messaggi errore media e retry cartelle.
+- Stato progetto, task storici e procedure operative editoriali riallineati al codice.
+- Verifica: 460 test ordinari, 10 integrazioni Mongo/S3 senza skip e 17 scenari Chromium passati;
+  build, Storybook, lint, format, typecheck, SDK e controlli dipendenze/confini verdi.
+- Mongo di sviluppo/CI ora replica set autenticato: requisito delle transazioni editoriali.
+
+---
+
 ## [M6] Production Readiness — completata
 
 ### Avvio

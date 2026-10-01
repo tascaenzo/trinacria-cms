@@ -34,7 +34,7 @@ export function FileManagerToolbar({
   viewMode
 }: FileManagerToolbarProps) {
   return (
-    <header className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3">
+    <header className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-(--color-border) bg-(--color-surface) px-4 py-3">
       <div className="flex flex-wrap items-center gap-2">
         <Button type="button" variant="secondary" disabled={isSaving} onClick={onCreateFolder}>
           <Icon name="folder-plus" className="h-4 w-4" /> Nuova cartella
@@ -45,7 +45,7 @@ export function FileManagerToolbar({
         <Button type="button" variant="secondary" disabled={isSaving} onClick={onUpload}>
           <Icon name="upload" className="h-4 w-4" /> Carica
         </Button>
-        <div className="h-7 border-l border-[color:var(--color-border)]" />
+        <div className="h-7 border-l border-(--color-border)" />
         <Select
           aria-label="Ordina elementi"
           value={sort}
@@ -56,7 +56,7 @@ export function FileManagerToolbar({
           <option value="updated">Ordina: modifica</option>
           <option value="size">Ordina: dimensione</option>
         </Select>
-        <div className="flex overflow-hidden rounded-md border border-[color:var(--color-border)]">
+        <div className="flex overflow-hidden rounded-md border border-(--color-border)">
           <ToolButton
             active={viewMode === "icons"}
             label="Vista a icone"
@@ -79,8 +79,8 @@ export function FileManagerToolbar({
           onClick={() => onDetailsVisibleChange(!detailsVisible)}
           className={
             detailsVisible
-              ? "bg-[color:var(--color-panel-strong)] text-[color:var(--color-ink)]"
-              : "text-[color:var(--color-ink-muted)]"
+              ? "bg-(--color-panel-strong) text-(--color-ink)"
+              : "text-(--color-ink-muted)"
           }
         >
           <Icon name="panel-right" className="h-4 w-4" /> Dettagli
@@ -117,9 +117,7 @@ function ToolButton({
       onClick={onClick}
       size="sm"
       variant="ghost"
-      className={
-        active ? "bg-[color:var(--color-panel-strong)] text-[color:var(--color-ink)]" : undefined
-      }
+      className={active ? "bg-(--color-panel-strong) text-(--color-ink)" : undefined}
     />
   );
 }

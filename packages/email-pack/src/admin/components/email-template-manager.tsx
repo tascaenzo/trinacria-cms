@@ -17,7 +17,7 @@ import {
   Textarea,
   useToast
 } from "@trinacria-cms/trinacria-ui";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 
 type CmsClient = ReturnType<typeof createCmsSdkClient>;
 type EmailTemplateRecord = Awaited<ReturnType<EmailApi["listEmailTemplates"]>>["data"][number];
@@ -64,8 +64,9 @@ export function EmailTemplateManager({ cms, onDirtyChange, t }: EmailTemplateMan
   const [previewMode, setPreviewMode] = useState<EmailPreviewMode>("html");
   const { pushToast } = useToast();
 
+  const loadTemplatesEffect = useEffectEvent(() => loadTemplates());
   useEffect(() => {
-    void loadTemplates();
+    void loadTemplatesEffect();
   }, []);
 
   const selectedTemplate = useMemo(
@@ -234,7 +235,7 @@ export function EmailTemplateManager({ cms, onDirtyChange, t }: EmailTemplateMan
 
   return (
     <section className="grid h-full min-h-0 gap-0 lg:grid-cols-[280px_minmax(0,1fr)]">
-      <aside className="min-h-0 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] lg:overflow-auto lg:border-b-0 lg:border-r">
+      <aside className="min-h-0 border-b border-(--color-border) bg-(--color-surface) lg:overflow-auto lg:border-b-0 lg:border-r">
         <div className="p-4 lg:hidden">
           <Select
             label={t("settings.email_templates.template", "Template")}
@@ -249,10 +250,10 @@ export function EmailTemplateManager({ cms, onDirtyChange, t }: EmailTemplateMan
           </Select>
         </div>
         <div className="hidden px-6 py-4 lg:block">
-          <p className="text-xs font-medium uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-(--color-ink-subtle)">
             {t("settings.email_templates.title", "Template email")}
           </p>
-          <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink-muted)]">
+          <p className="mt-2 text-sm leading-6 text-(--color-ink-muted)">
             {templates.length} {t("settings.email_templates.count_label", "template")}
           </p>
         </div>
@@ -271,9 +272,7 @@ export function EmailTemplateManager({ cms, onDirtyChange, t }: EmailTemplateMan
                 <Badge tone={template.status === "active" ? "success" : "warning"}>
                   {template.status}
                 </Badge>
-                <span className="text-xs text-[color:var(--color-ink-muted)]">
-                  {template.locale}
-                </span>
+                <span className="text-xs text-(--color-ink-muted)">{template.locale}</span>
               </span>
             </SelectableCard>
           ))}
@@ -403,15 +402,15 @@ export function EmailTemplateManager({ cms, onDirtyChange, t }: EmailTemplateMan
               />
 
               {variableNames.length ? (
-                <div className="grid gap-2 border-t border-[color:var(--color-border)] pt-3">
-                  <span className="text-xs font-medium uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)]">
+                <div className="grid gap-2 border-t border-(--color-border) pt-3">
+                  <span className="text-xs font-medium uppercase tracking-[0.12em] text-(--color-ink-subtle)">
                     {t("settings.email_templates.available_variables", "Variabili disponibili")}
                   </span>
                   <div className="flex flex-wrap gap-2">
                     {variableNames.map((variable) => (
                       <code
                         key={variable}
-                        className="rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-2 py-1 text-xs text-[color:var(--color-ink-muted)]"
+                        className="rounded-md border border-(--color-border) bg-(--color-surface) px-2 py-1 text-xs text-(--color-ink-muted)"
                       >
                         {`{{${variable}}}`}
                       </code>
@@ -480,11 +479,11 @@ export function EmailTemplateManager({ cms, onDirtyChange, t }: EmailTemplateMan
 
           <aside className="min-h-0 xl:sticky xl:top-5 xl:self-start">
             <Panel as="section" className="overflow-hidden p-0">
-              <div className="border-b border-[color:var(--color-border)] px-4 py-3">
-                <p className="text-xs font-medium uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)]">
+              <div className="border-b border-(--color-border) px-4 py-3">
+                <p className="text-xs font-medium uppercase tracking-[0.12em] text-(--color-ink-subtle)">
                   {t("settings.email_templates.preview_title", "Anteprima mail")}
                 </p>
-                <p className="mt-1 break-words text-sm font-semibold text-[color:var(--color-ink)]">
+                <p className="mt-1 wrap-break-word text-sm font-semibold text-(--color-ink)">
                   {localPreview?.subject}
                 </p>
               </div>
@@ -507,10 +506,10 @@ export function EmailTemplateManager({ cms, onDirtyChange, t }: EmailTemplateMan
                       title={t("settings.email_templates.preview_title", "Anteprima mail")}
                       sandbox=""
                       srcDoc={previewDocument}
-                      className="h-[600px] w-full rounded-[var(--radius-sm)] bg-white"
+                      className="h-[600px] w-full rounded-(--radius-sm) bg-white"
                     />
                   ) : (
-                    <pre className="min-h-[480px] whitespace-pre-wrap break-words rounded-[var(--radius-sm)] bg-[color:var(--color-panel-soft)] p-5 text-sm leading-6 text-[color:var(--color-ink)]">
+                    <pre className="min-h-[480px] whitespace-pre-wrap wrap-break-word rounded-(--radius-sm) bg-(--color-panel-soft) p-5 text-sm leading-6 text-(--color-ink)">
                       {localPreview?.text}
                     </pre>
                   )}

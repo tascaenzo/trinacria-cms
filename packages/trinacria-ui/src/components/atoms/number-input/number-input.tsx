@@ -48,7 +48,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(functi
         className="flex items-center overflow-hidden"
       >
         {prefix ? (
-          <span className="border-r border-[color:var(--color-border)] px-3 text-[color:var(--color-ink-subtle)]">
+          <span className="border-r border-(--color-border) px-3 text-(--color-ink-subtle)">
             {prefix}
           </span>
         ) : null}
@@ -61,13 +61,13 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(functi
           aria-describedby={aria.describedBy}
           aria-errormessage={aria.errorMessage}
           className={cn(
-            "h-full w-full bg-transparent px-3 text-[color:var(--color-ink)] outline-none placeholder:text-[color:var(--color-ink-subtle)] disabled:cursor-not-allowed disabled:bg-[color:var(--color-panel-soft)] disabled:text-[color:var(--color-ink-subtle)]",
+            "h-full w-full bg-transparent px-3 text-(--color-ink) outline-hidden placeholder:text-(--color-ink-subtle) disabled:cursor-not-allowed disabled:bg-(--color-panel-soft) disabled:text-(--color-ink-subtle)",
             "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
             className
           )}
         />
         {suffix ? (
-          <span className="border-l border-[color:var(--color-border)] px-3 text-[color:var(--color-ink-subtle)]">
+          <span className="border-l border-(--color-border) px-3 text-(--color-ink-subtle)">
             {suffix}
           </span>
         ) : null}

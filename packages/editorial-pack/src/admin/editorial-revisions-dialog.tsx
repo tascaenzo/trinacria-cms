@@ -47,31 +47,29 @@ export function EditorialRevisionsDialog({
       onClose={onClose}
     >
       {isLoading ? (
-        <p className="py-6 text-center text-sm text-[color:var(--color-ink-muted)]">
-          Caricamento cronologia…
-        </p>
+        <p className="py-6 text-center text-sm text-(--color-ink-muted)">Caricamento cronologia…</p>
       ) : null}
       {!isLoading && !revisions.length ? (
         <div className="py-10 text-center">
-          <p className="text-sm font-medium text-[color:var(--color-ink)]">Nessuna versione</p>
-          <p className="mt-1 text-xs text-[color:var(--color-ink-muted)]">
+          <p className="text-sm font-medium text-(--color-ink)">Nessuna versione</p>
+          <p className="mt-1 text-xs text-(--color-ink-muted)">
             Gli autosave non vengono inclusi nella cronologia.
           </p>
         </div>
       ) : null}
       {!isLoading && revisions.length ? (
-        <ol className="divide-y divide-[color:var(--color-border)]">
+        <ol className="divide-y divide-(--color-border)">
           {revisions.map((revision) => (
             <li key={revision.id} className="py-4 first:pt-0 last:pb-0">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-[color:var(--color-ink)]">
+                  <p className="text-sm font-medium text-(--color-ink)">
                     Revisione {revision.revisionNumber}
                   </p>
-                  <p className="mt-1 text-xs text-[color:var(--color-ink-muted)]">
+                  <p className="mt-1 text-xs text-(--color-ink-muted)">
                     {revision.reason} · {formatRevisionDate(revision.createdAt)}
                   </p>
-                  <p className="mt-2 text-xs leading-5 text-[color:var(--color-ink-muted)]">
+                  <p className="mt-2 text-xs leading-5 text-(--color-ink-muted)">
                     {revisionDifference(revision, current)}
                   </p>
                 </div>

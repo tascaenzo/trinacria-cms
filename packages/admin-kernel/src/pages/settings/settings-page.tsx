@@ -197,6 +197,7 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
   } = useSettingsSectionDrafts(selectedSectionRecords, t);
   const hasUnsavedChanges = isSectionDirty || isCustomSectionDirty;
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Switching sections resets the dirty marker without capturing the previous section.
   useEffect(() => {
     setIsCustomSectionDirty(false);
   }, [selectedSection?.id]);
@@ -267,7 +268,7 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
         ) : null}
         {isLoading ? <EmptyState text={t("settings.empty.loading_definitions")} /> : null}
         {!isLoading ? (
-          <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] bg-[color:var(--color-panel-soft)] lg:grid-cols-[288px_minmax(0,1fr)] lg:grid-rows-1">
+          <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] bg-(--color-panel-soft) lg:grid-cols-[288px_minmax(0,1fr)] lg:grid-rows-1">
             <SettingsWorkspaceSidebar
               onSelectSection={handleSelectSection}
               sections={operationalSettings}
@@ -333,13 +334,13 @@ export function SettingsPage({ sectionContext, settings = [] }: SettingsPageProp
         variant="modal"
       >
         <div className="grid gap-4">
-          <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
+          <p className="text-sm leading-6 text-(--color-ink-muted)">
             {t(
               "settings.mfa_required.line1",
               "At the next password login, every user without 2FA will be guided through setup before receiving a session."
             )}
           </p>
-          <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
+          <p className="text-sm leading-6 text-(--color-ink-muted)">
             {t(
               "settings.mfa_required.line2",
               "Users who already configured 2FA will need their authenticator or a recovery code to sign in."

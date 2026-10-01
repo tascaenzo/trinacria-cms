@@ -43,7 +43,7 @@ export function DeclarativeDashboardWidgetPanel({
           {widget.data ? (
             <DeclarativeDataBinding binding={widget.data} dataState={dataState} />
           ) : (
-            <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
+            <p className="text-sm leading-6 text-(--color-ink-muted)">
               Nessuna sorgente dati configurata.
             </p>
           )}
@@ -58,7 +58,7 @@ export function DeclarativeDashboardWidgetPanel({
         <CardHeading icon="puzzle" title={widget.title} description={widget.summary} />
       </CardHeader>
       <CardContent>
-        <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
+        <p className="text-sm leading-6 text-(--color-ink-muted)">
           {endpoint ?? "Nessun dettaglio aggiuntivo disponibile."}
         </p>
       </CardContent>

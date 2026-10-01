@@ -24,7 +24,7 @@ export function DataTable({
       {mobile}
       <div
         className={cn(
-          "overflow-x-auto rounded-[var(--radius-panel)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] shadow-[var(--shadow-surface)]",
+          "overflow-x-auto rounded-(--radius-panel) border border-(--color-border) bg-(--color-surface) shadow-(--shadow-surface)",
           Boolean(mobile) && "hidden md:block",
           className
         )}
@@ -51,7 +51,7 @@ export function DataTableHead({ children, className, ...props }: DataTableHeadPr
   return (
     <thead
       className={cn(
-        "sticky top-0 z-[1] bg-[color:var(--color-surface)] shadow-[inset_0_-1px_0_var(--color-border)]",
+        "sticky top-0 z-[1] bg-(--color-surface) shadow-[inset_0_-1px_0_var(--color-border)]",
         className
       )}
       {...props}
@@ -75,7 +75,7 @@ export function DataTableHeaderRow({
   ...props
 }: PropsWithChildren<HTMLAttributes<HTMLTableRowElement>>) {
   return (
-    <tr className={cn("text-left text-[color:var(--color-ink-subtle)]", className)} {...props}>
+    <tr className={cn("text-left text-(--color-ink-subtle)", className)} {...props}>
       {children}
     </tr>
   );
@@ -84,10 +84,7 @@ export function DataTableHeaderRow({
 export function DataTableHeadCell({ children, className, ...props }: DataTableHeadCellProps) {
   return (
     <th
-      className={cn(
-        "px-4 py-3 text-xs font-medium leading-5 text-[color:var(--color-ink-subtle)]",
-        className
-      )}
+      className={cn("px-4 py-3 text-xs font-medium leading-5 text-(--color-ink-subtle)", className)}
       scope={props.scope ?? "col"}
       {...props}
     >
@@ -104,7 +101,7 @@ export function DataTableRow({
   return (
     <tr
       className={cn(
-        "group transition-colors [&>td]:border-b [&>td]:border-[color:var(--color-border)] last:[&>td]:border-b-0 hover:bg-[color:var(--color-panel-soft)]/70 focus-within:bg-[color:var(--color-panel-soft)]",
+        "group transition-colors [&>td]:border-b [&>td]:border-(--color-border) last:[&>td]:border-b-0 hover:bg-(--color-panel-soft)/70 focus-within:bg-(--color-panel-soft)",
         className
       )}
       {...props}
@@ -116,10 +113,7 @@ export function DataTableRow({
 
 export function DataTableCell({ children, className, ...props }: DataTableCellProps) {
   return (
-    <td
-      className={cn("px-4 py-4 align-top leading-6 text-[color:var(--color-ink)]", className)}
-      {...props}
-    >
+    <td className={cn("px-4 py-4 align-top leading-6 text-(--color-ink)", className)} {...props}>
       {children}
     </td>
   );
@@ -134,7 +128,7 @@ export function DataTablePrimaryCell({
   return (
     <DataTableCell className={className} {...props}>
       <div className="min-w-0">
-        <p className="break-words font-medium text-[color:var(--color-ink)]">{children}</p>
+        <p className="wrap-break-word font-medium text-(--color-ink)">{children}</p>
         {meta ? <BodyText className="mt-1">{meta}</BodyText> : null}
       </div>
     </DataTableCell>

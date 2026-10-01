@@ -20,7 +20,7 @@ export const Modal: Story = {
         </>
       }
     >
-      <p className="text-sm leading-6 text-[color:var(--color-ink-muted)]">
+      <p className="text-sm leading-6 text-(--color-ink-muted)">
         Preview del dialog operativo del backoffice.
       </p>
     </Dialog>

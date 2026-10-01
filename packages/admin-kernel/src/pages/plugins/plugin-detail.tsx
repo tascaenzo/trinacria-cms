@@ -72,9 +72,7 @@ export function PluginDetail({
 
         <DetailSection title={t("plugins.detail.capabilities")}>
           {plugin.capabilities.length === 0 ? (
-            <p className="text-[color:var(--color-ink-muted)]">
-              {t("plugins.detail.no_capabilities")}
-            </p>
+            <p className="text-(--color-ink-muted)">{t("plugins.detail.no_capabilities")}</p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {plugin.capabilities.map((capability) => (
@@ -86,21 +84,17 @@ export function PluginDetail({
 
         <DetailSection title={t("plugins.detail.dependencies")}>
           {plugin.dependencies.length === 0 ? (
-            <p className="text-[color:var(--color-ink-muted)]">
-              {t("plugins.detail.no_dependencies")}
-            </p>
+            <p className="text-(--color-ink-muted)">{t("plugins.detail.no_dependencies")}</p>
           ) : (
             <ul className="grid gap-2">
               {plugin.dependencies.map((dependency) => (
                 <li
                   key={dependency.pluginId}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[color:var(--color-border)] p-3"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-(--color-border) p-3"
                 >
                   <div>
-                    <p className="font-medium text-[color:var(--color-ink)]">
-                      {dependency.pluginId}
-                    </p>
-                    <p className="mt-1 text-xs text-[color:var(--color-ink-muted)]">
+                    <p className="font-medium text-(--color-ink)">{dependency.pluginId}</p>
+                    <p className="mt-1 text-xs text-(--color-ink-muted)">
                       {dependency.versionRange}
                       {dependency.currentVersion
                         ? ` · ${t("plugins.dependencies.current_version")}: ${dependency.currentVersion}`
@@ -108,9 +102,7 @@ export function PluginDetail({
                       {dependency.optional ? ` · ${t("plugins.dependencies.optional")}` : ""}
                     </p>
                     {dependency.reason ? (
-                      <p className="mt-1 text-xs text-[color:var(--color-ink-muted)]">
-                        {dependency.reason}
-                      </p>
+                      <p className="mt-1 text-xs text-(--color-ink-muted)">{dependency.reason}</p>
                     ) : null}
                   </div>
                   <Badge tone={dependencyTone(dependency.status)}>{dependency.status}</Badge>
@@ -120,8 +112,8 @@ export function PluginDetail({
           )}
         </DetailSection>
 
-        <div className="grid gap-2 border-t border-[color:var(--color-border)] pt-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-[color:var(--color-ink-muted)]">
+        <div className="grid gap-2 border-t border-(--color-border) pt-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-(--color-ink-muted)">
             {t("common.actions.menu")}
           </p>
           <div className="flex flex-wrap gap-2">

@@ -24,7 +24,7 @@ export const ResourceHeader: Story = {
         }
       />
       <ActionBar>
-        <p className="text-sm text-[color:var(--color-ink-muted)]">
+        <p className="text-sm text-(--color-ink-muted)">
           12 plugin registrati, 1 richiede attenzione.
         </p>
         <Badge tone="warning">Degraded</Badge>
@@ -41,12 +41,12 @@ export const LinearDocumentSections: Story = {
         description="Il contenuto viene modificato nell'editor dedicato."
         actions={<Button variant="secondary">Apri editor</Button>}
       >
-        <p className="border-y border-[color:var(--color-border)] py-4 text-sm text-[color:var(--color-ink-muted)]">
+        <p className="border-y border-(--color-border) py-4 text-sm text-(--color-ink-muted)">
           Anteprima sintetica del documento, senza contenitori visivi ridondanti.
         </p>
       </ContentSection>
       <ContentSection title="Dati base" description="Metadati usati dal CMS.">
-        <p className="text-sm text-[color:var(--color-ink-muted)]">Slug e proprietà editoriali.</p>
+        <p className="text-sm text-(--color-ink-muted)">Slug e proprietà editoriali.</p>
       </ContentSection>
     </div>
   )

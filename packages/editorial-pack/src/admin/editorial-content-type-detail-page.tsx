@@ -3,6 +3,7 @@ import {
   ErrorBanner,
   Icon,
   Input,
+  PageCanvas,
   Panel,
   Select,
   Textarea
@@ -63,10 +64,10 @@ export function EditorialContentTypeDetailPage({
       : detail.addField(field);
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-5 py-6 sm:px-8">
+    <PageCanvas width="form">
       <header>
-        <h1 className="text-xl font-semibold text-[color:var(--color-ink)]">{detail.model.name}</h1>
-        <p className="mt-1 text-sm text-[color:var(--color-ink-muted)]">
+        <h1 className="text-xl font-semibold text-(--color-ink)">{detail.model.name}</h1>
+        <p className="mt-1 text-sm text-(--color-ink-muted)">
           Definisci i dati che la redazione compilerà e il flusso di pubblicazione.
         </p>
       </header>
@@ -112,7 +113,7 @@ export function EditorialContentTypeDetailPage({
           description="Vedi i campi già creati e aggiungi o modifica quelli necessari alla redazione."
         >
           <div className="mb-4 flex items-center justify-between gap-3">
-            <p className="text-sm text-[color:var(--color-ink-muted)]">
+            <p className="text-sm text-(--color-ink-muted)">
               {detail.fields.length}{" "}
               {detail.fields.length === 1 ? "campo configurato" : "campi configurati"}
             </p>
@@ -166,32 +167,30 @@ export function EditorialContentTypeDetailPage({
         onClose={() => setFieldEditor(null)}
         onSubmit={saveField}
       />
-    </main>
+    </PageCanvas>
   );
 }
 
 function LoadingDetail() {
   return (
-    <main className="mx-auto w-full max-w-6xl px-5 py-6 sm:px-8">
+    <PageCanvas width="form">
       <Panel aria-hidden="true" className="h-72 animate-pulse" />
-    </main>
+    </PageCanvas>
   );
 }
 
 function MissingDetail({ onBack }: { onBack: () => void }) {
   return (
-    <main className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-8">
+    <PageCanvas width="document">
       <Button type="button" variant="ghost" onClick={onBack}>
         <Icon name="arrow-left" />
         Torna ai modelli
       </Button>
-      <h1 className="mt-6 text-2xl font-semibold text-[color:var(--color-ink)]">
-        Modello non trovato
-      </h1>
-      <p className="mt-2 text-sm text-[color:var(--color-ink-muted)]">
+      <h1 className="mt-6 text-2xl font-semibold text-(--color-ink)">Modello non trovato</h1>
+      <p className="mt-2 text-sm text-(--color-ink-muted)">
         Scegli un modello dall’elenco per configurarlo.
       </p>
-    </main>
+    </PageCanvas>
   );
 }
 

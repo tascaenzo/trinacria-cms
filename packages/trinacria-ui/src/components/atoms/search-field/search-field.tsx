@@ -25,7 +25,7 @@ export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(functi
       className={cn("flex h-10 items-center gap-2 px-3 shadow-sm", className)}
       disabled={disabled}
     >
-      <Icon name="search" className="h-4 w-4 text-[color:var(--color-ink-subtle)]" />
+      <Icon name="search" className="h-4 w-4 text-(--color-ink-subtle)" />
       <input
         ref={ref}
         aria-label={ariaLabel ?? searchLabel}
@@ -34,7 +34,7 @@ export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(functi
         disabled={disabled}
         onChange={onChange}
         onKeyDown={onKeyDown}
-        className="w-full border-0 bg-transparent text-sm text-[color:var(--color-ink)] outline-none placeholder:text-[color:var(--color-ink-subtle)]"
+        className="w-full border-0 bg-transparent text-sm text-(--color-ink) outline-hidden placeholder:text-(--color-ink-subtle)"
         {...props}
       />
       {hasValue ? (
@@ -42,7 +42,7 @@ export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(functi
           type="button"
           aria-label={clearLabel}
           disabled={disabled}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-sm text-[color:var(--color-ink-subtle)] transition hover:bg-[color:var(--color-panel-soft)] hover:text-[color:var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-focus)] disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex h-7 w-7 items-center justify-center rounded-sm text-(--color-ink-subtle) transition hover:bg-(--color-panel-soft) hover:text-(--color-ink) focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--color-focus) disabled:cursor-not-allowed disabled:opacity-50"
           onClick={() => {
             onChange?.({
               target: { value: "" },

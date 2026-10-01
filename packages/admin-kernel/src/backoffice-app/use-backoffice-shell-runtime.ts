@@ -37,11 +37,13 @@ export function useBackofficeShellRuntime({
   const [health, setHealth] = useState<HealthSnapshot | null>(null);
   const [shellError, setShellError] = useState<string | null>(null);
   const [isShellLoading, setIsShellLoading] = useState(false);
+  const [loadedShellUserId, setLoadedShellUserId] = useState<string | null>(null);
   const [dynamicNavigation, setDynamicNavigation] = useState<readonly AdminNavigationItem[]>([]);
   const [navigationRevision, setNavigationRevision] = useState(0);
 
   useEffect(() => {
     if (!installationInstalled || !authUser) {
+      setLoadedShellUserId(null);
       setRuntimePlugins([]);
       setRuntimeManifests([]);
       setUserPermissionKeys([]);
@@ -55,6 +57,7 @@ export function useBackofficeShellRuntime({
 
     async function loadShellData() {
       setIsShellLoading(true);
+      setLoadedShellUserId(null);
       setShellError(null);
       const [discoveryResult, healthResult, permissionsResult] = await Promise.allSettled([
         loadRuntimeDiscovery(),
@@ -94,6 +97,7 @@ export function useBackofficeShellRuntime({
         setShellError(blockingErrors.join(" "));
       }
 
+      setLoadedShellUserId(authenticatedUser.id);
       setIsShellLoading(false);
     }
 
@@ -104,6 +108,7 @@ export function useBackofficeShellRuntime({
     };
   }, [authUser, installationInstalled]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Navigation events deliberately refresh data even when the user and modules are unchanged.
   useEffect(() => {
     const loaders = modules
       .map((module) => module.dynamicNavigation)
@@ -215,6 +220,7 @@ export function useBackofficeShellRuntime({
     capabilityIndex,
     canCustomizeDashboard,
     isShellLoading,
+    isShellReady: !!authUser && loadedShellUserId === authUser.id,
     registry,
     runtimePlugins,
     shellError

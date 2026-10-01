@@ -113,11 +113,11 @@ async function copyToClipboard(value: string) {
 
 function JsonPrimitive({ value }: { value: unknown }) {
   if (typeof value === "string") {
-    return <span className="text-[color:var(--color-success-ink)]">{JSON.stringify(value)}</span>;
+    return <span className="text-(--color-success-ink)">{JSON.stringify(value)}</span>;
   }
 
   if (typeof value === "number" || typeof value === "bigint") {
-    return <span className="text-[color:var(--color-warning-ink)]">{String(value)}</span>;
+    return <span className="text-(--color-warning-ink)">{String(value)}</span>;
   }
 
   if (typeof value === "boolean") {
@@ -125,14 +125,14 @@ function JsonPrimitive({ value }: { value: unknown }) {
   }
 
   if (value === null) {
-    return <span className="text-[color:var(--color-code-subtle)]">null</span>;
+    return <span className="text-(--color-code-subtle)">null</span>;
   }
 
   if (typeof value === "undefined") {
-    return <span className="text-[color:var(--color-code-subtle)]">undefined</span>;
+    return <span className="text-(--color-code-subtle)">undefined</span>;
   }
 
-  return <span className="text-[color:var(--color-code-muted)]">{String(value)}</span>;
+  return <span className="text-(--color-code-muted)">{String(value)}</span>;
 }
 
 function JsonNode({
@@ -179,7 +179,7 @@ function JsonNode({
           onClick={() => onToggle(path)}
           aria-label={isExpanded ? "Collapse JSON node" : "Expand JSON node"}
           className={cn(
-            "mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded text-[color:var(--color-code-subtle)] transition hover:bg-white/10 hover:text-[color:var(--color-code-ink)] focus:outline-none focus:ring-1 focus:ring-[color:var(--color-focus)]",
+            "mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-sm text-(--color-code-subtle) transition hover:bg-white/10 hover:text-(--color-code-ink) focus:outline-hidden focus:ring-1 focus:ring-(--color-focus)",
             !hasEntries && "opacity-40"
           )}
         >
@@ -188,11 +188,11 @@ function JsonNode({
           ) : null}
         </button>
         {label ? <JsonKey label={label} isArrayIndex={parentIsArray} /> : null}
-        <span className="text-[color:var(--color-code-muted)]">{isArray ? "[" : "{"}</span>
+        <span className="text-(--color-code-muted)">{isArray ? "[" : "{"}</span>
         {!isExpanded || !hasEntries ? (
           <>
-            <span className="text-[color:var(--color-code-subtle)]">{getValueLabel(value)}</span>
-            <span className="text-[color:var(--color-code-muted)]">{isArray ? "]" : "}"}</span>
+            <span className="text-(--color-code-subtle)">{getValueLabel(value)}</span>
+            <span className="text-(--color-code-muted)">{isArray ? "]" : "}"}</span>
           </>
         ) : null}
       </div>
@@ -202,7 +202,7 @@ function JsonNode({
           <div
             className={cn(
               childIndentClass,
-              "border-l border-white/10 pl-3 text-[color:var(--color-code-ink)]"
+              "border-l border-white/10 pl-3 text-(--color-code-ink)"
             )}
           >
             {entries.map(([key, entryValue]) => {
@@ -224,7 +224,7 @@ function JsonNode({
           </div>
           <div className="flex items-start gap-2 py-0.5">
             <span className="h-4 w-4 shrink-0" />
-            <span className="text-[color:var(--color-code-muted)]">{isArray ? "]" : "}"}</span>
+            <span className="text-(--color-code-muted)">{isArray ? "]" : "}"}</span>
           </div>
         </>
       ) : null}
@@ -234,13 +234,13 @@ function JsonNode({
 
 function JsonKey({ isArrayIndex, label }: { isArrayIndex: boolean; label: string }) {
   if (isArrayIndex) {
-    return <span className="text-[color:var(--color-code-subtle)]">[{label}]</span>;
+    return <span className="text-(--color-code-subtle)">[{label}]</span>;
   }
 
   return (
-    <span className="whitespace-nowrap text-[color:var(--color-code-muted)]">
+    <span className="whitespace-nowrap text-(--color-code-muted)">
       {JSON.stringify(label)}
-      <span className="text-[color:var(--color-code-subtle)]">:</span>
+      <span className="text-(--color-code-subtle)">:</span>
     </span>
   );
 }
@@ -324,7 +324,7 @@ export function JsonView({
           ) : null}
         </div>
       ) : null}
-      <div className="overflow-auto rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-code-surface)] px-4 py-4 font-mono text-xs leading-6 shadow-[var(--shadow-sm)]">
+      <div className="overflow-auto rounded-md border border-(--color-border) bg-(--color-code-surface) px-4 py-4 font-mono text-xs leading-6 shadow-(--shadow-sm)">
         <JsonNode
           depth={0}
           defaultExpandedDepth={defaultExpandedDepth}

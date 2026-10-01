@@ -256,7 +256,7 @@ export function Combobox({
           onKeyDown={handleKeyDown}
         />
 
-        <div className="pointer-events-none absolute inset-y-0 right-11 flex items-center text-[color:var(--color-ink-subtle)]">
+        <div className="pointer-events-none absolute inset-y-0 right-11 flex items-center text-(--color-ink-subtle)">
           <Icon name="search" className="h-4 w-4" />
         </div>
 
@@ -273,7 +273,7 @@ export function Combobox({
                 setIsOpen(false);
                 inputRef.current?.focus();
               }}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] text-[color:var(--color-ink-subtle)] transition hover:bg-[color:var(--color-action-ghost-hover)] hover:text-[color:var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-focus)]"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-(--radius-control) text-(--color-ink-subtle) transition hover:bg-(--color-action-ghost-hover) hover:text-(--color-ink) focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--color-focus)"
             >
               <Icon name="x" className="h-4 w-4" />
             </button>
@@ -295,7 +295,7 @@ export function Combobox({
                 inputRef.current?.focus();
               }
             }}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] text-[color:var(--color-ink-subtle)] transition hover:bg-[color:var(--color-action-ghost-hover)] hover:text-[color:var(--color-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-focus)]"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-(--radius-control) text-(--color-ink-subtle) transition hover:bg-(--color-action-ghost-hover) hover:text-(--color-ink) focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--color-focus)"
           >
             <Icon
               name="chevron-down"
@@ -338,18 +338,18 @@ export function Combobox({
                       }}
                       onClick={() => commitSelection(option)}
                       className={cn(
-                        "flex w-full items-start gap-3 rounded-[var(--radius-control)] px-3 py-2 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-focus)]",
+                        "flex w-full items-start gap-3 rounded-(--radius-control) px-3 py-2 text-left transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-(--color-focus)",
                         option.disabled && "cursor-not-allowed opacity-50",
                         !option.disabled &&
                           !isSelected &&
                           !isActive &&
-                          "text-[color:var(--color-ink-muted)] hover:bg-[color:var(--color-interactive-hover)] hover:text-[color:var(--color-ink)]",
+                          "text-(--color-ink-muted) hover:bg-(--color-interactive-hover) hover:text-(--color-ink)",
                         !option.disabled &&
                           isActive &&
                           !isSelected &&
-                          "bg-[color:var(--color-interactive-hover)] text-[color:var(--color-ink)]",
+                          "bg-(--color-interactive-hover) text-(--color-ink)",
                         isSelected &&
-                          "bg-[color:var(--color-accent-soft)] text-[color:var(--color-accent-ink)] ring-1 ring-[color:var(--color-accent-border)]"
+                          "bg-(--color-accent-soft) text-(--color-accent-ink) ring-1 ring-(--color-accent-border)"
                       )}
                     >
                       {option.icon ? <Icon name={option.icon} className="mt-0.5 h-4 w-4" /> : null}
@@ -357,13 +357,13 @@ export function Combobox({
                         <span className="flex items-center justify-between gap-3">
                           <span className="block font-medium">{option.label}</span>
                           {option.meta ? (
-                            <span className="text-xs font-medium text-[color:var(--color-ink-subtle)]">
+                            <span className="text-xs font-medium text-(--color-ink-subtle)">
                               {option.meta}
                             </span>
                           ) : null}
                         </span>
                         {option.description ? (
-                          <span className="mt-0.5 block text-xs leading-5 text-[color:var(--color-ink-subtle)]">
+                          <span className="mt-0.5 block text-xs leading-5 text-(--color-ink-subtle)">
                             {option.description}
                           </span>
                         ) : null}
@@ -374,9 +374,7 @@ export function Combobox({
                 })}
               </div>
             ) : (
-              <div className="px-3 py-2 text-sm text-[color:var(--color-ink-subtle)]">
-                {emptyText}
-              </div>
+              <div className="px-3 py-2 text-sm text-(--color-ink-subtle)">{emptyText}</div>
             )}
           </OverlaySurface>
         ) : null}
