@@ -74,7 +74,9 @@ export function ProfilePage() {
       const currentUser = await cms.auth.getAuthenticatedUser();
       const [userRoles, effectivePermissions, currentMfaStatus] = await Promise.all([
         cms.security.listUserRoles({ path: { id: currentUser.data.id } }),
-        cms.security.listUserEffectivePermissions({ path: { id: currentUser.data.id } }),
+        cms.security.listUserEffectivePermissions({
+          path: { id: currentUser.data.id }
+        }),
         cms.auth.getMfaStatus()
       ]);
       setUser(currentUser.data);
@@ -302,7 +304,7 @@ export function ProfilePage() {
               title={t("profile.title", "Your account")}
               className="overflow-hidden p-0"
             >
-              <div className="relative min-h-[280px] bg-[radial-gradient(circle_at_20%_10%,color-mix(in_srgb,var(--color-accent-ink)_20%,transparent),transparent_32%),linear-gradient(135deg,var(--color-surface),var(--color-canvas))] p-5">
+              <div className="relative min-h-70 bg-[radial-gradient(circle_at_20%_10%,color-mix(in_srgb,var(--color-accent-ink)_20%,transparent),transparent_32%),linear-gradient(135deg,var(--color-surface),var(--color-canvas))] p-5">
                 <div className="absolute right-0 top-0 h-40 w-40 rounded-bl-[5rem] bg-(--color-action-primary-bg)/10" />
                 <div className="relative flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
                   <div className="flex items-center gap-4">
