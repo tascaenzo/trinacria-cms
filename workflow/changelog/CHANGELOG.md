@@ -3,6 +3,34 @@
 Tutte le milestone significative sono documentate qui.
 Il formato si ispira a [Keep a Changelog](https://keepachangelog.com/).
 
+## UI condivisa del CMS — completata (2026-10-01)
+
+- Nuovi componenti pubblici Toolbar, ContextMenu, IconTile, PageCanvas e CenteredPanel,
+  con varianti, tipi, stories e documentazione.
+- Accesso/MFA, editor, workflow e media adottano token e componenti comuni;
+  variante danger condivisa e dialog accessibile per inserire link.
+- Menu con tema e navigazione da tastiera, toolbar responsive e notifiche senza
+  interferenze con i clic; guardrail contro palette locali nel chrome amministrativo.
+- Verifica: 463 test ordinari e 17 scenari Chromium passati; check, build e Storybook verdi.
+
+## [M7] Consolidamento Editorial, Media e qualità — completata (2026-10-01)
+
+- Ownership applicata, restore validato senza cambiare pubblicazione e permesso publish
+  obbligatorio anche nei workflow personalizzati.
+- Indice slug parziale migrato senza rimuovere dati; storico e entry atomici in transazioni Mongo;
+  snapshot concorrenti serializzati; modelli popolati protetti da modifiche distruttive.
+- Editor e file manager modularizzati, renderer lazy e bundle principale ridotto da circa 794 a 397 kB.
+- Frontend dei pack come peer opzionali e confini server/admin verificati in CI.
+- Lint hook/ARIA attivi; file temporaneo Storybook rimosso dal repository; dipendenze ripristinate
+  e aggiornate. Resta la sola segnalazione low esbuild Windows nel tooling transitivo.
+- Corretti bootstrap eventi, apertura diretta delle pagine, messaggi errore media e retry cartelle.
+- Stato progetto, task storici e procedure operative editoriali riallineati al codice.
+- Verifica: 460 test ordinari, 10 integrazioni Mongo/S3 senza skip e 17 scenari Chromium passati;
+  build, Storybook, lint, format, typecheck, SDK e controlli dipendenze/confini verdi.
+- Mongo di sviluppo/CI ora replica set autenticato: requisito delle transazioni editoriali.
+
+---
+
 ## [M6] Production Readiness — completata
 
 ### Avvio

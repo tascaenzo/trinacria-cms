@@ -1,11 +1,14 @@
 # M4 - Editorial Pack Foundation V1
 
-Stato: `deferred / da rinumerare`
+Stato: `superseded`
+
+La fondazione editoriale è implementata. Questo piano storico è sostituito dallo
+stato effettivo in `docs/project-quality-status.md` e dal consolidamento M7.
+La numerazione M4 continua a identificare la fondazione core.
 
 Questa milestone non e attiva e il nome storico e fuorviante: il numero `M4`
-ora identifica la fondazione core della piattaforma plugin-first. Questo blocco
-editoriale resta in backlog dominio e andra rinumerato quando il core sara
-pronto.
+ora identifica la fondazione core della piattaforma plugin-first. La fondazione editoriale è ora implementata nel pack dedicato; M7 ne documenta
+il consolidamento. L’estensione OpenAPI/SDK generata resta nel backlog.
 
 ## Obiettivo
 
@@ -25,10 +28,10 @@ con plugin funzionali sopra `kernel`, `core-pack` e Mongo.
 
 ## Task inclusi
 
-- [ ] `workflow/tasks/backlog/2026-04-06-content-domain-adr-and-bounded-context.md`
-- [ ] `workflow/tasks/backlog/2026-04-06-content-types-foundation.md`
-- [ ] `workflow/tasks/backlog/2026-04-06-content-entries-persistence-and-api.md`
-- [ ] `workflow/tasks/backlog/2026-04-06-content-admin-ui-v1.md`
+- [x] `workflow/tasks/done/2026-04-06-content-domain-adr-and-bounded-context.md`
+- [x] `workflow/tasks/done/2026-04-06-content-types-foundation.md`
+- [x] `workflow/tasks/done/2026-04-06-content-entries-persistence-and-api.md`
+- [x] `workflow/tasks/done/2026-04-06-content-admin-ui-v1.md`
 - [ ] `workflow/tasks/backlog/2026-04-06-content-openapi-sdk-and-docs.md`
 
 ## Dipendenze

@@ -3,8 +3,8 @@
 ## Stato
 
 - Area: architettura repository
-- Stato: `draft`
-- Ultimo aggiornamento: `2026-05-21`
+- Stato: `implemented`
+- Ultimo aggiornamento: `2026-10-01`
 
 ## Scopo
 
@@ -34,6 +34,14 @@ trinacria-ui  -> componenti visuali riusabili del backoffice
 Conclusione: i package attuali servono tutti. La confusione non nasce dal
 numero, ma dal fatto che `admin-kernel` e `trinacria-ui` sono vicini come area
 funzionale e devono avere confini espliciti.
+
+## Domain packs
+
+`editorial-pack` possiede modelli, entry, workflow e revisioni; `media-pack` possiede asset,
+ACL e storage; `email-pack` possiede template e delivery. I loro backend restano headless.
+I renderer React sono esposti da `/admin` e i manifest dichiarativi da `/admin-manifest`.
+SDK/UI/React sono peer opzionali con dipendenze di sviluppo locali. Il comando
+`npm run boundaries:check` protegge il grafo runtime server dagli import frontend.
 
 ## Dependency direction
 

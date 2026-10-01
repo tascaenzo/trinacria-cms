@@ -1,5 +1,9 @@
 # OpenAPI, SDK e docs del dominio contenuti
 
+Stato: `backlog` — le API admin usano `cms.request`; i metodi editoriali generati
+non sono ancora inclusi nello snapshot SDK. Le procedure operative sono già
+disponibili in `docs/cms/it/0023-editorial-operazioni.md`.
+
 ## Obiettivo
 
 Rendere il dominio contenuti disponibile in modo typed via OpenAPI/SDK e documentato come parte ufficiale del CMS.

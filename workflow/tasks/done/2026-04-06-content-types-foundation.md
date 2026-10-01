@@ -1,5 +1,11 @@
 # Fondazioni content types
 
+Stato: `completed` — riallineato al codice il 1 ottobre 2026.
+
+Esito: fondazione implementata in `packages/editorial-pack`; specifica in
+`docs/cms/specs/domains/editorial-pack.md`, procedure in
+`docs/cms/it/0023-editorial-operazioni.md` e verifiche nel consolidamento M7.
+
 ## Obiettivo
 
 Implementare il modello iniziale dei content type, con schema persistito, validazione e API amministrative minime.

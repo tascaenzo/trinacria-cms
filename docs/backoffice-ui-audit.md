@@ -137,8 +137,11 @@ Decisione proposta:
   compresa la relativa semantica accessibile.
 - [x] Aggiungere un guardrail statico che impedisca il ritorno di etichette di
   salvataggio contestuali (`Salva modello`, `Salva modifiche`, ecc.).
-- [ ] Aggiungere test end-to-end di loading, successo e fallimento per ogni
-  flusso di salvataggio migrato.
+- [x] Aggiunti E2E di loading/errore/retry per entry editoriali, upload media e creazione cartelle,
+  oltre ai flussi settings/email della baseline.
+- [ ] Estendere la matrice browser a tutti gli altri salvataggi migrati (tema, profilo,
+  modelli, settings storage/policy e azioni dichiarative); questa è copertura incrementale,
+  non un requisito già verificato per ogni schermata.
 
 ## Ordine di implementazione
 
@@ -188,3 +191,20 @@ Decisione proposta:
 - [x] tutte le liste risorsa usano `DataTable`/`ResourceTable`;
 - [x] le eccezioni custom sono documentate e limitate agli editor specializzati;
 - [x] ogni nuova UI riusabile nasce in `trinacria-ui` con documentazione e storia.
+
+## Unificazione dei componenti — 2026-10-01
+
+- Accesso, verifica MFA e recupero codici adottano CenteredPanel.
+- I dettagli di entry e modelli adottano PageCanvas con spaziatura e larghezze condivise.
+- I controlli standard degli editor adottano ToolbarButton, ToolbarSelect, IconButton,
+  SearchField, SelectableCard, OverlaySurface e IconTile; rimangono custom le aree di editing.
+- Workflow usa SelectableCard con gli stessi stati/focus delle altre selezioni.
+- File manager adotta ContextMenu accessibile e IconTile semantico; eliminati menu bianchi
+  fissi e palette locali non compatibili con il tema scuro.
+- I portal dei menu conservano il tema del contenitore, anche quando il CMS è incorporato.
+- I toast del backoffice sono in basso per lasciare libere le azioni dell'header.
+- L'host include le classi Tailwind di email-pack; profilo e frame media usano token condivisi.
+- Il guardrail vieta palette fisse nel chrome ordinario e protegge anche il builder workflow.
+
+Le anteprime di email/PDF/sito e la quiet zone QR mantengono la resa propria del documento.
+Questo intervento unifica i pattern UI; non trasforma CSV, rich text e drag-and-drop in form generici.

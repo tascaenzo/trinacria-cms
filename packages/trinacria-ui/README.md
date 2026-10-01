@@ -33,3 +33,13 @@ Component convention:
   - `component.mdx`
   - `index.ts`
 - foundations live under `src/foundations/**`
+
+Shared CMS patterns:
+
+- `PageCanvas`: consistent page width and spacing (`full`, `form`, `document`).
+- `CenteredPanel`: authentication and MFA presentation, with plain title/description/children.
+- `Toolbar`, `ToolbarButton`, `ToolbarSelect`: compact editor actions with accessible labels.
+- `ContextMenu`, `ContextMenuItem`, `ContextMenuSeparator`: themed contextual actions and keyboard navigation.
+- `IconTile`: semantic icon surfaces that follow light/dark/accent tokens.
+
+Usage and adoption rules: [design system guide](../../docs/trinacria-ui-design-system.md).

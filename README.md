@@ -4,6 +4,8 @@ Modular headless CMS built on top of Trinacria, the underlying framework/library
 that provides the DI runtime, module lifecycle, HTTP integration and schema
 tooling used by this repository.
 
+Stato aggiornato: [analisi e consolidamento qualità](docs/project-quality-status.md).
+
 ## Vision
 
 Trinacria CMS targets two usage modes:
@@ -24,6 +26,9 @@ The project keeps a strict separation between:
 - `apps/backoffice`: thin Vite host for the shared admin runtime
 - `packages/kernel`: CMS runtime contracts, plugin orchestration, namespace governance, Mongo-first storage core
 - `packages/core-pack`: official baseline plugin pack: auth, users, roles, permissions, settings, installation
+- `packages/editorial-pack`: modelli, contenuti, workflow, revisioni ed editor a blocchi
+- `packages/media-pack`: upload, file manager, ACL e storage locale/S3
+- `packages/email-pack`: delivery, template e flussi email
 - `packages/sdk`: zero-dependency HTTP client generated from the OpenAPI snapshot
 - `packages/admin-kernel`: shared backoffice application runtime, pages, route registry, SDK wiring
 - `packages/trinacria-ui`: reusable React design system and backoffice presentation components
@@ -78,19 +83,29 @@ Branch strategy:
 
 Requirements:
 
-- Node.js 20+
-- npm 11+
+- Node.js 24.21.0 LTS (see `.nvmrc`)
+- npm 11.16.0
 - Docker (for Mongo local runtime)
 
 Install and run playground:
 
+If you use nvm, run `nvm install` and `nvm use` from the repository root first. Keep npm
+aligned with `packageManager` (`npm install --global npm@11.16.0` if needed).
+
 ```bash
 npm install
-docker compose up -d mongo
+docker compose up -d --wait mongo
 npm run dev:playground
 ```
 
 MongoDB configuration:
+
+- Editorial requires replica-set transactions. The bundled Mongo service starts an authenticated
+  single-node replica set and its healthcheck waits for a writable primary.
+- Existing database volumes are retained. With custom root credentials, keep Compose variables
+  aligned with those used to initialize the existing volume.
+- Use `directConnection=true` when reaching the single-node development replica set through a
+  forwarded port or a container hostname different from its advertised address.
 
 - `MONGO_URI` is the canonical CMS application connection string.
 - When `MONGO_URI` is set, the app ignores the split Mongo fallback values for

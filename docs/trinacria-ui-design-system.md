@@ -91,3 +91,40 @@ Promoted into `trinacria-ui` during M3.5:
 - page header and action bar primitives
 
 The next extraction target should be table wrappers and filter/action layouts reused by `users`, `roles`, `permissions`, `settings` and `plugins`.
+
+## Componenti unificati — 1 ottobre 2026
+
+La logica di dominio rimane nei pack; i pattern visuali ricorrenti sono API pubbliche di
+`@trinacria-cms/trinacria-ui`.
+
+| Esigenza | Componente | Scelta essenziale |
+| --- | --- | --- |
+| Liste e panoramiche | ResourcePage, PageHeader, DataTable | Layout a larghezza piena |
+| Pagine di dettaglio | PageCanvas, FormSection, DetailSection | width form oppure document |
+| Accesso e MFA | CenteredPanel | title, description e children |
+| Azioni compatte | Toolbar, ToolbarButton, ToolbarSelect | label obbligatoria; normali eventi React |
+| Menu a tasto destro | ContextMenu, ContextMenuItem, ContextMenuSeparator | x/y, label e onClose |
+| Icona su superficie | IconTile | icon, tone, size; label solo se informativa |
+| Feedback | ErrorBanner, FeedbackBanner, ToastProvider | Errori persistenti inline; toast in basso |
+
+Toolbar e menu condividono dimensioni, focus, disabled, selezione e colori dei token.
+Le toolbar supportano `wrap` per i layout più densi. I form continuano a usare Input/Select/Textarea;
+ToolbarSelect è riservato alle opzioni compatte degli editor.
+
+ContextMenu conserva il tema del contenitore, limita le coordinate alla viewport e gestisce
+focus, frecce, Home/End, Escape e clic esterno. Nel file manager si apre anche con Shift+F10.
+DropdownMenu conserva anch'esso i token delle UI incorporate.
+
+L'host include nel build Tailwind tutti i domini, incluso email-pack. I colori fissi sono ammessi
+per contenuti esterni e preview di documenti, non per il chrome del CMS. Il guardrail verifica
+questa distinzione; il builder workflow usa ora SelectableCard ed è fuori dalle eccezioni.
+
+I nuovi componenti sono documentati nel rispettivo MDX e nelle stories, con tipi dedicati.
+I test coprono semantica axe, selezione del testo nell'editor, focus e menu da tastiera.
+La compatibilità dei flussi è verificata con la suite browser esistente e le sue estensioni.
+
+Le azioni distruttive usano Button con `variant="danger"`, evitando ricette locali.
+L'inserimento di link nell'editor usa Dialog e Input con validazione inline e ripristino
+del focus. Le notifiche sono in basso a destra e lasciano cliccabili i contenuti sottostanti;
+i loro pulsanti rimangono interattivi. Su mobile le toolbar del testo e del blocco occupano
+righe distinte, verificate nei test browser.
