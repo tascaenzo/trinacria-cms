@@ -3,6 +3,12 @@
 Tutte le milestone significative sono documentate qui.
 Il formato si ispira a [Keep a Changelog](https://keepachangelog.com/).
 
+## Cache senza scadenza — completata (2026-10-01)
+
+- L’adapter in memoria conserva i valori con TTL zero senza scadenza, come Redis.
+- Il test avanza un orologio simulato per verificare il comportamento senza dipendere
+  dalla velocità del runner; corretto il difetto emerso nella CI sul push.
+
 ## Installazione E2E sincronizzata — completata (2026-10-01)
 
 - Il test attende la risposta POST del bootstrap e ne verifica il successo prima
