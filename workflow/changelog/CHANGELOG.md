@@ -3,6 +3,13 @@
 Tutte le milestone significative sono documentate qui.
 Il formato si ispira a [Keep a Changelog](https://keepachangelog.com/).
 
+## Installazione E2E sincronizzata — completata (2026-10-01)
+
+- Il test attende la risposta POST del bootstrap e ne verifica il successo prima
+  di cercare la dashboard; rimosso il click sintetico che non attendeva il flusso.
+- Le porte dei fixture seguono gli URL E2E configurati, permettendo la verifica
+  senza fermare il CMS di sviluppo. Suite locale su porte separate: 17/17 passati.
+
 ## Servizio S3 della CI — completato (2026-10-01)
 
 - MinIO costruito dal commit ufficiale della release fissata, dopo il ritiro delle

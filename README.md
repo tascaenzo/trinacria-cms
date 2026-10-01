@@ -184,7 +184,9 @@ npm run e2e
 
 The E2E harness uses and resets only the dedicated `trinacria_cms_e2e` Mongo database. Override
 `E2E_MONGO_URI` only with a database name ending in `_e2e`; the reset guard rejects every other
-database name.
+database name. The `E2E_APP_URL`, `E2E_API_URL`, `E2E_DEGRADED_API_URL` and
+`E2E_DOWN_API_URL` overrides also determine the fixture ports; use distinct addresses
+when running the suite alongside a development instance.
 
 ## Production Hardening
 

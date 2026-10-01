@@ -53,7 +53,7 @@ export default defineConfig({
         CMS_INSTALLED: "false",
         MONGO_URI: E2E_MONGO_URI,
         HTTP_HOST: "127.0.0.1",
-        HTTP_PORT: "3000",
+        HTTP_PORT: new URL(E2E_API_URL).port || "3000",
         HTTP_CORS_ORIGINS: E2E_APP_URL,
         CMS_CSRF_PROTECTION: "true",
         CMS_CSRF_TRUSTED_ORIGINS: E2E_APP_URL,
@@ -76,7 +76,7 @@ export default defineConfig({
       }
     },
     {
-      command: "npm run preview -w @trinacria-cms/backoffice -- --host 127.0.0.1 --port 4174",
+      command: `npm run preview -w @trinacria-cms/backoffice -- --host 127.0.0.1 --port ${new URL(E2E_APP_URL).port || "4174"}`,
       url: E2E_APP_URL,
       cwd: workspaceRoot,
       reuseExistingServer: false,

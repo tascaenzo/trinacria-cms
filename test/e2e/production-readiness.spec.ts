@@ -60,7 +60,16 @@ test.describe.serial("production readiness baseline", () => {
     await page.getByRole("button", { name: "Continue" }).click();
 
     await expect(page.getByText(E2E_ADMIN.email)).toBeVisible();
-    await page.getByRole("button", { name: "Initialise CMS" }).dispatchEvent("click");
+    const [bootstrapResponse] = await Promise.all([
+      page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname.endsWith("/v1/install/bootstrap") &&
+          response.request().method() === "POST",
+        { timeout: 60_000 }
+      ),
+      page.getByRole("button", { name: "Initialise CMS" }).click()
+    ]);
+    expect(bootstrapResponse.ok()).toBe(true);
 
     await expect(page.getByText(`${E2E_ADMIN.firstName} ${E2E_ADMIN.lastName}`)).toBeVisible();
     await expect(page.getByRole("heading", { name: "Panoramica", exact: true })).toBeVisible();
