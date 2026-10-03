@@ -30,7 +30,7 @@ Mongo reale, security gate e procedure operative riproducibili.
 ## Criterio di chiusura
 
 - installazione, login e sessione sono coperti da browser E2E
-- settings, permission center ed email template editor sono coperti da E2E
+- settings, controlli accesso ed email template editor sono coperti da E2E
 - CSRF, replay, privilege escalation e secret leakage hanno release gate automatici
 - il test Mongo reale non puo essere saltato silenziosamente in CI
 - backup/restore e superfici observability hanno smoke riproducibili

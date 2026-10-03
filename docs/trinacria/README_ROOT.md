@@ -292,4 +292,4 @@ Release automation is not configured in this CMS root. Follow the versioning pol
 ## License
 
 This project is licensed under the MIT License.
-See the [LICENSE](./LICENSE) file for details.
+See the [LICENSE](../../LICENSE) file for details.

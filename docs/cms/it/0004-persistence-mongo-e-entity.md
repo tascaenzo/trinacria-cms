@@ -1,5 +1,15 @@
 # 0004 - Persistence: EntityRegistry, DbAdapter, Mongo adapter
 
+Storage A0 attuale: `defineEntity` richiede `ownerPluginId`, il registry usa
+`get(entityName, ownerPluginId)`. I plugin pubblici usano `context.services.storage`
+senza namespace selezionabile. Nomi Mongo: `v2_` più SHA-256 della tuple JSON
+`[pluginId, workspaceId ?? null, entityName]`; registro ownership kernel con indici unici
+su tuple/nome fisico verificato prima di CRUD e inizializzazione transazioni. I prefissi
+precedenti nei diagrammi/snapshot sotto sono etichette storiche leggibili, non i nomi
+fisici attuali; le query shell richiedono lookup esplicito con `buildPhysicalCollectionName`.
+Collezioni del vecchio layout bloccano lo storage senza modificare dati.
+Vedi [servizi A0](./0007-creare-un-plugin.md#servizi-host-del-plugin-a0-implementato).
+
 Questo capitolo descrive il layer persistence e le nuove implicazioni del modello security plugin-contributed.
 
 ## 1. Entita canoniche
@@ -445,8 +455,9 @@ Nota attuale:
 | `plugin_core_pack__role_policy_rules` | `core-pack`     | `id`, `roleCode`, `effect`, `permissionPattern`, `conditions[]`, `sourcePluginId`                                               | `id` unique, `roleCode`, `sourcePluginId`                     | Regole policy avanzate (`allow/deny`, wildcard, condizioni).                               |
 | `plugin_core_pack__settings`          | `core-pack`     | `id`, `key`, `kind`, `ownerPluginId`, `status`, `schema/defaultValue/value`, `cipherText`, `algorithm`, `keyVersion`, `version` | `id` unique, `(kind,key)` unique, `ownerPluginId+kind`, `key` | Store settings unificato con proiezioni logiche per definizioni, valori e segreti cifrati. |
 
-Nota sul naming fisico:
+Nota sul naming fisico attuale (A0):
 
-- per i plugin normali, il Mongo adapter continua a usare il prefisso fisico `plugin_<pluginId_normalized>__<entity>`;
-- per il namespace riservato `kernel`, il naming e stato semplificato in `kernel__<entity>`;
-- il namespace logico non cambia: il runtime continua a ragionare con `pluginId = "kernel"`.
+- kernel e plugin usano `v2_` più SHA-256 della tuple JSON canonica;
+- il registro ownership conserva owner/workspace/entityName leggibili e verifica due indici unici;
+- il namespace logico resta `pluginId = "kernel"` per l'infrastruttura riservata all'host;
+- i nomi precedenti nelle tabelle sono riferimenti storici; non esiste fallback automatico.

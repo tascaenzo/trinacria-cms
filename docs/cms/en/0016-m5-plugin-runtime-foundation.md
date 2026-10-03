@@ -115,3 +115,22 @@ Mongo integration:
 ```bash
 TRINACRIA_RUN_MONGO_INTEGRATION=1 npm run test:integration -w @trinacria-cms/kernel
 ```
+
+## Event authorization
+
+Protected/audit subscriptions need a producer-owned declared permission and a positive
+policy decision. Missing authorizer fails load; Core supplies the DI policy. Minimal
+hosts must supply an explicit restricted authorizer. Every delivery rechecks policy;
+revoked consumers are skipped. Approval after failed load requires a new load, and
+already-running handlers may finish. Unload/reload rejects stale binding generations;
+partial load rolls back subscriptions and modules, including recursive dependencies.
+Use runtime `onDeliveryDiagnostic` or starter `onPluginEventDeliveryDiagnostic` for
+redacted diagnostics. In-process plugins remain trusted; A1 is not a sandbox.
+
+## Current plugin context
+
+A0 replaces the container with generation-scoped `context.services` for storage, settings,
+events, logger and named operations. Entity ownership and hashed Mongo collection names
+are enforced; host-only transactions can cover domain and kernel data atomically. See
+[the plugin services guide](./0007-build-a-plugin.md#plugin-host-services-a0-implemented)
+for the available contract, discovery roots and development database requirements.

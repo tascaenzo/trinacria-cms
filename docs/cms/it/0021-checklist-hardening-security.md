@@ -45,7 +45,7 @@ Superfici:
 Checklist:
 
 - `core-pack:plugin_auth:max_skew_seconds` resta basso e coerente con clock dei server;
-- `core-pack:plugin_auth:nonce_cache_max_entries` dimensionato per il traffico;
+- store nonce Mongo condiviso con unique atomico e TTL BSON Date; errori dello store negano accesso con 503;
 - nonce gia visti vengono rifiutati;
 - token reset/verifica/invito sono hashati a riposo;
 - token consumati non possono essere riusati;
@@ -63,16 +63,16 @@ npm run test -w @trinacria-cms/kernel
 Regole:
 
 - un plugin puo referenziare permessi propri nel manifest admin;
-- accessi cross-plugin sensibili passano da grant esplicito;
-- un grant deve essere granulare: producer, consumer, event, payload type, permission, access type;
+- integrazioni installate dichiarano dipendenza, evento/operazione e permesso;
+- accessi HTTP firmati usano decisioni esplicite su consumer, owner, azione e permesso;
 - il backoffice deve mostrare solo operazioni consentite dal backend.
 
 Checklist:
 
-- `core-pack:security:plugin_access_grants` contiene solo grant necessari;
+- i grant HTTP persistiti contengono solo accessi remoti necessari;
 - grant non usati sono `denied` o rimossi;
 - `email-pack` puo claimare solo `email-pack:send-email-request` con `email-pack:email:send`;
-- plugin terzi non ricevono payload sensibili senza approvazione admin;
+- i payload sensibili specificano i consumer autorizzati;
 - route admin hanno `requiredPermission` o guard equivalente;
 - ruoli baseline non includono wildcard non necessari.
 
@@ -125,7 +125,7 @@ Checklist log:
 | Eventi sensibili      | Reset password emette solo secure payload metadata | nessun token raw       |
 | Replay                | nonce signed plugin auth riusato                   | rifiutato              |
 | Secure payload        | claim non autorizzato                              | rifiutato              |
-| Permission escalation | plugin senza grant sensitive                       | denied/pending         |
+| Permission escalation | delega utente senza permesso                       | rifiutato         |
 | CSRF                  | mutazione cookie da origine non trusted            | `csrf_origin_rejected` |
 | Settings secret       | lettura SMTP password via API admin normale        | mascherata             |
 | Log                   | errore flusso reset password                       | niente token raw       |
@@ -138,6 +138,6 @@ Non promuovere a production se uno di questi punti e falso:
 - checklist CORS/CSRF completa;
 - secret runtime configurati fuori repository;
 - backup/restore Mongo verificato;
-- permission center revisionato;
+- gestione plugin e autorizzazioni HTTP verificate;
 - nessun token sensibile in eventi normali o log;
 - osservabilita protetta da token.

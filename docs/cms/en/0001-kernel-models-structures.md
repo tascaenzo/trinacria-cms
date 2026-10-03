@@ -166,7 +166,7 @@ Benefit:
 
 `runtime/entity-registry.ts` provides:
 
-- `defineEntity({ entityName, schema, indexes })`
+- `defineEntity({ ownerPluginId, entityName, schema, indexes })`
 - `EntityRegistry.register/get`
 
 Benefit:

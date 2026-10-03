@@ -18,7 +18,7 @@ Disaccoppiare le UI custom di backoffice dalle pagine generiche usando renderer 
 - In scope:
   - registry renderer per settings section e dashboard widget
   - sezione custom email templates dichiarata dal manifest `email-pack`
-  - permission center dichiarato dal manifest `core-pack`
+  - controlli accesso dichiarato dal manifest `core-pack`
   - widget dashboard email dichiarato dal manifest `email-pack`
   - discovery/adapters allineati per preservare `componentRef`
 - Out of scope:

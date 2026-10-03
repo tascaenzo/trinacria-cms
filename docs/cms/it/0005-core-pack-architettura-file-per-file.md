@@ -76,7 +76,7 @@ Firma (concetto):
 
 Configurazione runtime:
 
-- `CMS_PLUGIN_AUTH_KEYS_JSON`: mappa `{ pluginId: secret }`
+- `CMS_PLUGIN_AUTH_KEYS_JSON`: mappa `{ pluginId: { current: { id, secret }, previous?: { id, secret, acceptUntil } } }`
 - `CMS_PLUGIN_AUTH_MAX_SKEW_SECONDS`: tolleranza clock (default 300s)
 - `PluginAuthKeyProvider`: punto di estensione DI per leggere secret da Vault/KMS invece che da env.
 

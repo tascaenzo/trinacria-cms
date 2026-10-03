@@ -1,5 +1,10 @@
 # Specifiche core platform
 
+> Per l'evoluzione corrente della piattaforma plugin pubblica usare il
+> [piano tecnico M8](../../architecture/plugin-platform-implementation-plan.md).
+> Le sezioni M4/M5 seguenti conservano il contesto della fondazione, non lo stato
+> dei lavori pianificati in M8.
+
 Questa directory raccoglie le specifiche documentali da chiudere prima di
 procedere con l'implementazione della piattaforma core plugin-first.
 

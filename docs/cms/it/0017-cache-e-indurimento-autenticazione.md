@@ -102,7 +102,7 @@ silenziosamente su Memory.
 
 ```ts
 import { CORE_TOKENS, type CacheAdapter } from "@trinacria-cms/kernel";
-import { CORE_PACK_CACHE_SERVICE_TOKEN } from "@trinacria-cms/core-pack";
+import { CORE_PACK_CACHE_SERVICE_TOKEN } from "@trinacria-cms/core-pack/runtime";
 
 // Token adapter (livello kernel)
 CORE_TOKENS.CACHE_ADAPTER;
@@ -176,7 +176,7 @@ funziona lo stesso.
 
 ```ts
 import { classProvider } from "@trinacria-cms/kernel";
-import { CORE_PACK_CACHE_SERVICE_TOKEN } from "@trinacria-cms/core-pack";
+import { CORE_PACK_CACHE_SERVICE_TOKEN } from "@trinacria-cms/core-pack/runtime";
 
 classProvider(MY_REPOSITORY_TOKEN, MyRepository, [
   CORE_TOKENS.DB_ADAPTER,
@@ -229,14 +229,14 @@ async update(id: string, data: Partial<Widget>): Promise<Widget> {
 import type { CacheAdapter, CacheEntry } from "@trinacria-cms/kernel";
 
 // Servizio (da core-pack)
-import { CacheService, CORE_PACK_CACHE_SERVICE_TOKEN } from "@trinacria-cms/core-pack";
-import type { CacheService } from "@trinacria-cms/core-pack";
+import { CacheService, CORE_PACK_CACHE_SERVICE_TOKEN } from "@trinacria-cms/core-pack/runtime";
+import type { CacheService } from "@trinacria-cms/core-pack/runtime";
 
 // Classi adapter (per test)
-import { MemoryCacheAdapter, RedisCacheAdapter } from "@trinacria-cms/core-pack";
+import { MemoryCacheAdapter, RedisCacheAdapter } from "@trinacria-cms/core-pack/runtime";
 
 // Registrazione custom adapter
-import { setCustomCacheAdapter } from "@trinacria-cms/core-pack";
+import { setCustomCacheAdapter } from "@trinacria-cms/core-pack/runtime";
 ```
 
 ## 4. Custom cache adapter
@@ -245,7 +245,7 @@ Per fornire un backend cache personalizzato (es. Redis Cluster, Memcached,
 SQL-based):
 
 ```ts
-import { setCustomCacheAdapter } from "@trinacria-cms/core-pack";
+import { setCustomCacheAdapter } from "@trinacria-cms/core-pack/runtime";
 import type { CacheAdapter } from "@trinacria-cms/kernel";
 
 class MyClusterAdapter implements CacheAdapter {
@@ -373,8 +373,8 @@ Esempio URL Redis: `redis://:password@host:6379`
 Per i test unitari, istanzia direttamente `MemoryCacheAdapter`:
 
 ```ts
-import { MemoryCacheAdapter } from "@trinacria-cms/core-pack";
-import { CacheService } from "@trinacria-cms/core-pack";
+import { MemoryCacheAdapter } from "@trinacria-cms/core-pack/runtime";
+import { CacheService } from "@trinacria-cms/core-pack/runtime";
 
 const adapter = new MemoryCacheAdapter();
 const cache = new CacheService(adapter);

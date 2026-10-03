@@ -20,7 +20,7 @@ E2E, checklist operativa e hardening finale.
 - In scope:
   - infrastruttura E2E browser/API riproducibile e isolata
   - installazione, login, sessione e logout
-  - settings, permission center, email template editor e admin extensions
+  - settings, controlli accesso, email template editor e admin extensions
   - flussi auth/email e controlli CSRF, replay, escalation e leakage
   - backup/restore Mongo, readiness, disaster recovery e observability
 - Out of scope:

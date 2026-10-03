@@ -3,6 +3,150 @@
 Tutte le milestone significative sono documentate qui.
 Il formato si ispira a [Keep a Changelog](https://keepachangelog.com/).
 
+## Pulizia del codice plugin e dei documenti (2026-10-03)
+
+- Eliminati runtime sperimentali inutilizzati, profili nei manifest, export, test e
+  documenti associati; tolti wrapper/fence dei grant locali e seed delle approvazioni.
+- Policy HTTP esplicita e separata; grant remoti limitati agli scope API.
+  Permessi utente, vault, ownership, transazioni, manutenzione e cluster opzionale mantenuti.
+- Checklist e guide eventi/email/settings aggiornate; rimosse istruzioni verso UI,
+  classi e file eliminati. Link relativi verificati. SDK/OpenAPI e contratti rigenerati.
+- Build pulita, check, 51 test mirati, 42 integrazioni Mongo, 21 Chromium e fixture
+  esterna passati; Redis/S3 non attivati. Otto tarball senza artefatti rimossi,
+  con guardrail nel packaging contro file compilati orfani. Nessun reset o pubblicazione.
+- [Registro della pulizia](../tasks/done/2026-10-03-plugin-code-and-docs-cleanup.md).
+
+## Plugin fidati — runtime standard semplificato (2026-10-03)
+
+- Plugin installati nello stesso processo Node.js e chiamate dirette. Policy basata
+  su manifest/dipendenze/contratti, senza grant DB o fence transazionali per le
+  integrazioni locali. Autorizzazione utente, deleghe, schema e ownership mantenuti.
+- Singola istanza per default, cluster opt-in. Lifecycle locale con CAS, idempotenza,
+  drain e revisioni conservate oltre il buffer diagnostico. Gestione plugin visibile
+  in Settings; centro approvazioni rimosso. Controlli dei client HTTP firmati conservati.
+- Vault cifrato/atomico mantenuto e verificato con i permessi consumer di Email;
+  eventi protected, destinatari e monouso ancora controllati.
+- SDK/OpenAPI, contratti, template/starter, esempi e documenti allineati. Build/check,
+  prove Mongo sui componenti attivi, 21 Chromium e fixture tarball esterna passati,
+  incluso upgrade distribuito con dati conservati. Prova locale: dieci letture e
+  evento protected, zero query ai grant e zero approvazioni. Nessun reset/rilascio.
+- [Decisione vigente](../../docs/cms/architecture/plugin-platform/trusted-plugin-model.md)
+  e [task](../tasks/done/2026-10-03-trusted-plugin-runtime-simplification.md).
+
+## E0 — sito pubblico (2026-10-02)
+
+- Snapshot pubblicati immutabili, pointer/ripubblicazione CAS e intent atomici; copia
+  di lavoro e restore non cambiano la pubblicazione. Delivery allowlist, relazioni
+  bounded, Media public controllati e limiter Mongo condiviso.
+- Anteprima monouso/sessioni hash-only con chiavi separate; backoffice, SDK delivery/
+  preview e sito React SSR/Vite con CSP/SEO, cache condivisa30s e invalidazioni C1.
+- Check/build/SDK/Storybook, 41 test integrazione / 2 skip Redis-S3, 20 Chromium;
+  restore snapshot/pointer su database separato verificato. Deployment team aperto.
+- D0: fixture esterna con tarball, overlay/browser e upgrade conservativo0.1→0.2
+  passata anche dopo il fence workload/storage; fixture aggiornata a25 route Editorial
+  e gruppi SDK editorial/preview, report precedente eliminato prima della prova.
+  Prova umana e suite di riferimento completa aperte. Nessun rilascio npm.
+- [Runbook sito pubblico](../../docs/cms/architecture/plugin-platform/public-site-runbook.md).
+
+## B0 — export pubblici e semver (2026-10-02)
+
+- Semver npm diretto, caret 0.x corretto e prerelease esplicite; runtime rifiuta combinazioni incompatibili.
+- Servizi/repository e factory host spostati al subpath `/runtime`, consumer aggiornati senza alias legacy.
+- Inventario e snapshot `.d.ts` degli otto package, fixture TypeScript positiva/negativa,
+  range Core/plugin/admin e check CI; guide e riferimento API aggiornati.
+- Check: 563 test passati, 13 skip opt-in, build 12/12 e public-api:check passati.
+- [Baseline](../../docs/cms/specs/core-platform/public-api/README.md) e
+  [task](../tasks/done/2026-10-02-public-exports-semver-and-compatibility.md). Continua B1.
+
+## A3 — autorizzazione applicativa (2026-10-02)
+
+- Contesti host certificati, principal autenticato e doppio controllo delle deleghe;
+  authorizer Core per utenti/grant API e diniego redatto 403, policy risolta a ogni uso.
+- Facade applicative nei sei domini; controller e operazioni nominate condividono i
+  controlli, owner/approver/updatedBy derivati dall'host, nessun bypass dai payload.
+- Editorial ricrea modello/entry/revisioni nella sessione, fence CAS e retry autorizzati;
+  publish obbligatorio sulle scritture live, restore preserva lo stato pubblico.
+- Media ACL prima della paginazione, replacement controllato a ogni fase, cleanup system
+  con scope esplicito; secrets e runtime manage separati, nuovi permessi solo ad admin.
+- Check senza cache: 561 passati/13 skip opt-in; 20 integrazioni Mongo/2 skip Redis-S3;
+  17/17 Chromium, build 12/12, SDK e backend senza React passati. Nessun reset sviluppo.
+- [Inventario](../../docs/cms/architecture/plugin-platform/application-operation-inventory.md)
+  e [task completato](../tasks/done/2026-10-02-application-operation-authorization.md).
+  Prossimo B0/B1; store grant condiviso/outbox/migrazioni restano C2/C1/C0.
+
+## A2 — vault atomico e keyring (2026-10-01)
+
+- Claim Mongo con CAS, massimo tre tentativi e policy rivalutata; nessun plaintext su
+  CAS perso, record corrotto, stato/scadenza/destinatario negato o policy assente.
+- Client `services.securePayloads` con identità host, DTO sanitizzati e Core/Email migrati;
+  starter risolve la policy al claim anche se Core viene caricato dopo il singleton.
+- Keyring obbligatorio in ogni ambiente, write active/read keyVersion; retention TTL
+  24h configurabile. Rotazione CAS con inventario readonly, batch e ripresa idempotente.
+- [Runbook](../../docs/cms/architecture/plugin-platform/secure-payload-keyring-runbook.md),
+  `.env.example`, guide EN/IT e checklist aggiornati; nessun alias o reset sviluppo.
+- Riproduzione prima: 50 successi errati per max1/max3; dopo: esattamente 1/3.
+  Check senza cache: 541 passati, 13 opt-in skip; build, SDK e backend senza React passati;
+  17 integrazioni Mongo (2 skip Redis/S3) e 17/17 Chromium.
+- [Task completato](../tasks/done/2026-10-01-secure-payload-atomic-claim-and-keyring.md).
+  Prossimo: A3, autorizzazione applicativa; grant condivisi/outbox restano C2/C1.
+
+## A0 — contesto plugin e ownership storage (2026-10-01)
+
+- Rimossi app/bus dai contesti: storage/settings/events/logger/operazioni nominate scoped,
+  identità host e generazioni invalidate su unload/reload; pack e playground aggiornati.
+- Entità con owner obbligatorio, nomi Mongo SHA-256 e registro ownership con due indici
+  unici; vecchio layout rilevato senza modificarlo. Transazioni host cross-namespace con
+  allowlist e sessione unica; nesting/repository fuori tentativo negati anche nei retry.
+- Discovery locale con root realpath e controlli URL/symlink prima dell'import.
+- Helper server nel subpath runtime e guardrail plugin-api condiviso; typecheck SDK attende
+  generate per evitare una gara nel grafo Turbo. Guide EN/IT e piano M8 allineati.
+- Check senza cache: 512 test passati, 7 opt-in skip; build completa, SDK e import backend
+  senza React passati; 11 integrazioni Mongo e 17/17 Chromium. Redis/S3 non ripetuti.
+- [Task completato](../tasks/done/2026-10-01-plugin-host-context-and-storage-boundaries.md).
+  Prossimo: A2 (claim atomico e keyring); policy applicativa completa resta A3/C2.
+
+## A1 — autorizzazione e consegna eventi plugin (2026-10-01)
+
+- Protected/audit negati senza authorizer, con permesso dichiarato dall'owner e decisione
+  rigorosamente positiva; policy rivalutata a ogni consegna, senza cache.
+- Unload/reload invalida handler già in snapshot o in attesa della policy; binding parziale
+  ripulito con rollback di moduli/contributi anche nelle dipendenze ricorsive.
+- Diagnostica tipizzata redatta disponibile nel runtime e nello starter; errori policy
+  contenuti senza interrompere altri consumer, errori applicativi conservati.
+- Verifiche senza cache: 500 test passati, 5 opt-in skip, build completa, SDK,
+  9 integrazioni Mongo e 17/17 Chromium. Nessuna modifica al vault o sandbox.
+- [Task completato](../tasks/done/2026-10-01-plugin-event-authorization-hardening.md).
+
+## M8 — riprogettazione prima del primo rilascio (2026-10-01)
+
+- Confermato dal maintainer che il progetto non è mai stato rilasciato: nessun vincolo
+  di retrocompatibilità con il codice attuale, alias legacy o finestra di deprecazione.
+- Aggiornati piano, specifiche e task: contesto plugin senza app, firma solo v2,
+  API cluster e SDK aggiornati direttamente, delivery obbligatoria nei manifest.
+- Naming/schema target per nuove installazioni; recupero dati di sviluppo opzionale,
+  senza reset automatici. Restano semver, rotazione chiavi e migrazioni future.
+- Versione della prima release da scegliere al gate G2; nessuna modifica al runtime.
+
+## Specifiche piattaforma plugin M8 — completate (2026-10-01)
+
+- Completati gli approfondimenti dei 12 punti: piano tecnico, 20 decisioni,
+  sei specifiche esecutive e 13 task implementativi collegati alla milestone M8.
+- Definiti contratti, ownership/unit of work host, sicurezza, API/SDK/release,
+  migrazioni, eventi durevoli, repliche, audit, sito pubblico e plugin isolati.
+- A1 aggiornato con diagnostica e semantica del bus effettivamente installato;
+  nessuna modifica al runtime o dichiarazione di completamento dei task implementativi.
+- Riferimento: [piano tecnico](../../docs/cms/architecture/plugin-platform-implementation-plan.md).
+
+## Revisione piattaforma plugin — completata (2026-10-01)
+
+- Checklist operativa con 12 punti: evidenze nel codice, priorità, dipendenze,
+  criteri di completamento e sequenza delle prime PR; nessuna modifica al runtime.
+- Baseline PR #16 verificata su Node 24.21.0: check senza cache con 470 test passati,
+  build/Storybook senza cache, SDK, 11 integrazioni Mongo/S3/Redis e 17/17 Chromium.
+- Confermati i gap dei contratti pubblici e della sicurezza plugin; distinta dai lavori
+  futuri la separazione server/admin già protetta dai guardrail.
+- Riferimento: [checklist](../../docs/cms/architecture/plugin-platform-operational-checklist.md).
+
 ## Cache senza scadenza — completata (2026-10-01)
 
 - L’adapter in memoria conserva i valori con TTL zero senza scadenza, come Redis.
@@ -268,3 +412,20 @@ CRUD settings, bootstrap core-pack, sicurezza, ownership.
 ## [M1] Riallineamento Base Operativa — completata
 
 Baseline README, struttura repo, smoke test, contratti utenti admin.
+
+### M8 B1 — Editorial OpenAPI e SDK (2 ottobre 2026)
+
+Documentate e tipizzate le 22 route Editorial, con errori 409 e JSON annidato.
+Inventario del router confrontato con OpenAPI al bootstrap; cookie effettivo e firma
+plugin documentati separatamente. CLI overlay esterna, pulizia con ownership e schemi
+non supportati rifiutati. Trasporto binario Media preserva i byte. Admin Editorial migrato
+ai metodi SDK. Verifica: 569 test pass, 13 skip opt-in; 20 integrazioni Mongo pass,
+2 skip S3; 19 Chromium pass; SDK check, build e Storybook pass.
+
+### M8 B2 e sviluppo C0 — 2 ottobre 2026
+
+Packaging degli otto pacchetti MIT, registry locale e fixture tarball backend/admin
+verificati fuori dal monorepo, con una copia React. Nessuna pubblicazione; versione
+iniziale da fissare a G2. C0 in sviluppo: migrazioni con checkpoint, lock fencing e
+maintenance transazionale; lifecycle attende il drain degli handler già iniziati.
+Le superfici migration restano experimental e il gate di cluster/recovery è aperto.

@@ -6,6 +6,10 @@
 - [Changelog](changelog/CHANGELOG.md)
 - [Consolidamento M7](milestones/M7-editorial-media-quality-hardening.md)
 - [Guida UI e Tailwind](../docs/trinacria-ui-design-system.md)
+- [Checklist piattaforma plugin](../docs/cms/architecture/plugin-platform-operational-checklist.md)
+- [Piano tecnico piattaforma plugin](../docs/cms/architecture/plugin-platform-implementation-plan.md)
+- [Inventario operazioni A3](../docs/cms/architecture/plugin-platform/application-operation-inventory.md)
+- [M8 — Piattaforma plugin pubblica](milestones/M8-public-plugin-platform.md)
 
 I risultati nei task completati descrivono la verifica della relativa fase; non sostituiscono
 il riepilogo corrente né implicano che tutte le funzionalità previste dalle specifiche siano disponibili.

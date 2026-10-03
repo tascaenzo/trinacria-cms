@@ -1,5 +1,15 @@
 # 0004 - Persistence: EntityRegistry, DbAdapter, Mongo adapter
 
+Current A0 storage: `defineEntity` requires `ownerPluginId`; registry lookups require
+`get(entityName, ownerPluginId)`. Public plugins use `context.services.storage`, without
+a selectable namespace. Mongo names are `v2_` plus SHA-256 of the JSON tuple
+`[pluginId, workspaceId ?? null, entityName]`; a persistent kernel ownership registry
+checks unique tuple/physical-name mappings before CRUD and transaction initialization.
+The old collection prefixes used in the diagrams and document snapshots below are
+historical readable labels, not current physical names; the raw shell queries need
+explicit collection lookup with `buildPhysicalCollectionName`. Existing old-layout
+collections block storage without changing data. See [A0 services](./0007-build-a-plugin.md#plugin-host-services-a0-implemented).
+
 This chapter explains the persistence layer and the new implications of plugin-contributed security data.
 
 ## 1. Canonical entities
@@ -109,9 +119,10 @@ Goal:
 
 ## 12. Current Mongo DB diagram (kernel + core-pack)
 
-Reserved namespace `kernel` creates collections with prefix `kernel__`.
+The readable historical label `kernel__` represents the reserved logical owner `kernel`.
 
-Plugin namespace `core-pack` creates collections with prefix `plugin_core_pack__`.
+The readable historical label `plugin_core_pack__` represents the logical owner `core-pack`;
+current physical names use the A0 hash described above.
 
 ```mermaid
 erDiagram
