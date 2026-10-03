@@ -1,89 +1,66 @@
+export interface PluginAuthKey {
+  id: string;
+  secret: string;
+}
+export interface PluginAuthKeyring {
+  current: PluginAuthKey;
+  previous?: PluginAuthKey & { acceptUntil: string };
+}
 export interface PluginAuthKeyProvider {
-  /**
-   * Returns the shared auth secret for a plugin caller, or null when unknown.
-   */
-  getSecret(pluginId: string): Promise<string | null>;
-  getSecrets?(pluginId: string): Promise<readonly string[]>;
+  getKey(pluginId: string, keyId: string, now: number): Promise<PluginAuthKey | null>;
 }
-
 export interface EnvPluginAuthKeyProviderOptions {
-  keys?: Record<string, string | readonly string[]>;
+  keys?: Record<string, PluginAuthKeyring>;
 }
-
-/**
- * Default key provider based on environment configuration.
- * The expected format is CMS_PLUGIN_AUTH_KEYS_JSON='{\"plugin-id\":\"secret\"}'.
- */
+/** Explicit key IDs; previous keys are accepted only before their configured expiry. */
 export class EnvPluginAuthKeyProvider implements PluginAuthKeyProvider {
-  private readonly keys: Map<string, readonly string[]>;
-
+  private readonly keys = new Map<string, PluginAuthKeyring>();
   constructor(options?: EnvPluginAuthKeyProviderOptions) {
-    this.keys = new Map(
-      Object.entries(options?.keys ?? readKeysFromEnv()).map(([pluginId, secrets]) => [
-        pluginId.trim().toLowerCase(),
-        Array.isArray(secrets) ? secrets : [secrets]
-      ])
-    );
+    const keys = options?.keys ?? readKeysFromEnv();
+    for (const [pluginId, ring] of Object.entries(keys)) {
+      if (!/^[a-z0-9][a-z0-9._/-]*$/.test(pluginId) || !ring || typeof ring !== "object")
+        throw new Error("Invalid plugin auth keyring owner");
+      validateKey(ring.current);
+      if (ring.previous) {
+        validateKey(ring.previous);
+        if (
+          ring.previous.id === ring.current.id ||
+          !Number.isFinite(Date.parse(ring.previous.acceptUntil))
+        )
+          throw new Error("Previous plugin key requires a distinct ID and finite expiry");
+      }
+      this.keys.set(pluginId, structuredClone(ring));
+    }
   }
-
-  async getSecret(pluginId: string): Promise<string | null> {
-    const normalized = pluginId.trim().toLowerCase();
-    return this.keys.get(normalized)?.[0] ?? null;
-  }
-
-  async getSecrets(pluginId: string): Promise<readonly string[]> {
-    const normalized = pluginId.trim().toLowerCase();
-    return this.keys.get(normalized) ?? [];
+  async getKey(pluginId: string, keyId: string, now: number): Promise<PluginAuthKey | null> {
+    const ring = this.keys.get(pluginId);
+    if (ring?.current.id === keyId) return { ...ring.current };
+    if (ring?.previous?.id === keyId && Date.parse(ring.previous.acceptUntil) > now)
+      return { id: ring.previous.id, secret: ring.previous.secret };
+    return null;
   }
 }
-
-function readKeysFromEnv(): Record<string, readonly string[]> {
+function validateKey(key: PluginAuthKey) {
+  if (
+    !key ||
+    !/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/.test(key.id) ||
+    typeof key.secret !== "string" ||
+    Buffer.byteLength(key.secret, "utf8") < 32
+  )
+    throw new Error(
+      "Plugin auth keys require an explicit key ID and at least 32 bytes of secret material"
+    );
+}
+function readKeysFromEnv(): Record<string, PluginAuthKeyring> {
   const raw = process.env.CMS_PLUGIN_AUTH_KEYS_JSON?.trim();
-  if (!raw) {
-    return {};
-  }
-
+  if (!raw) return {};
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
-  } catch (error) {
-    throw new Error(
-      `Invalid CMS_PLUGIN_AUTH_KEYS_JSON. Expected JSON object. Cause: ${error instanceof Error ? error.message : String(error)}`
-    );
+  } catch {
+    throw new Error("Invalid CMS_PLUGIN_AUTH_KEYS_JSON keyring JSON");
   }
-
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new Error("Invalid CMS_PLUGIN_AUTH_KEYS_JSON. Expected object map pluginId -> secret");
-  }
-
-  const entries = Object.entries(parsed as Record<string, unknown>);
-  const result: Record<string, readonly string[]> = {};
-  for (const [pluginId, secret] of entries) {
-    const normalizedPluginId = pluginId.trim().toLowerCase();
-    if (typeof secret === "string") {
-      if (secret.trim().length < 8) {
-        throw new Error(
-          `Invalid secret for plugin "${pluginId}" in CMS_PLUGIN_AUTH_KEYS_JSON (min length 8)`
-        );
-      }
-      result[normalizedPluginId] = [secret];
-      continue;
-    }
-    if (Array.isArray(secret) && secret.length > 0) {
-      const normalized = secret.map((item) => {
-        if (typeof item !== "string" || item.trim().length < 8) {
-          throw new Error(
-            `Invalid secret for plugin "${pluginId}" in CMS_PLUGIN_AUTH_KEYS_JSON (min length 8)`
-          );
-        }
-        return item;
-      });
-      result[normalizedPluginId] = normalized;
-      continue;
-    }
-    throw new Error(
-      `Invalid secret for plugin "${pluginId}" in CMS_PLUGIN_AUTH_KEYS_JSON (expected string or non-empty string array)`
-    );
-  }
-  return result;
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
+    throw new Error("Plugin keyrings must be an object keyed by canonical plugin ID");
+  return parsed as Record<string, PluginAuthKeyring>;
 }

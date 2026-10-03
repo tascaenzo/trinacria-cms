@@ -4,10 +4,14 @@ import {
   classProvider,
   createToken,
   defineModule,
-  type EntityRegistry,
   factoryProvider,
   httpProvider
 } from "@trinacria-cms/kernel";
+import { type EntityRegistry, SecureEventPayloadsService } from "@trinacria-cms/kernel/runtime";
+import {
+  AUTH_FLOW_OPERATIONS,
+  createAuthFlowOperations
+} from "../../operations/auth-flow-operations.js";
 import { CorePackCacheModule } from "../cache/cache.module.js";
 import { CORE_PACK_CACHE_SERVICE_TOKEN } from "../cache/cache.tokens.js";
 import { LOCAL_CREDENTIALS_ENTITY } from "../installation/installation.schemas.js";
@@ -55,10 +59,23 @@ const CORE_PACK_AUTH_PASSWORD_HASHING_SERVICE_TOKEN = createToken<PasswordHashin
  * - wires password-based login against local credentials
  * - exposes JWT auth service and HTTP API
  */
+const AUTH_SECURE_PAYLOAD_CLIENT = createToken<
+  import("@trinacria-cms/kernel/contracts").SecureEventPayloadClient
+>("AUTH_SECURE_PAYLOAD_CLIENT");
+
 export const CorePackAuthModule = defineModule({
   name: "CorePackAuthModule",
   imports: [CorePackRuntimeConfigModule, CorePackCacheModule],
   providers: [
+    factoryProvider(
+      CORE_TOKENS.HTTP_ACCESS_COOKIE_NAME,
+      (auth) => async () => (await auth.getJwtCookieConfig()).accessCookieName,
+      [CORE_PACK_JWT_AUTH_SERVICE_TOKEN]
+    ),
+    factoryProvider(AUTH_FLOW_OPERATIONS, createAuthFlowOperations, [
+      CORE_PACK_AUTH_USER_FLOWS_SERVICE_TOKEN,
+      CORE_TOKENS.OPERATION_AUTHORIZER
+    ]),
     factoryProvider(
       CORE_PACK_AUTH_ENTITY_REGISTRATION_TOKEN,
       (registry) => {
@@ -106,21 +123,80 @@ export const CorePackAuthModule = defineModule({
       CORE_TOKENS.DB_ADAPTER,
       CORE_PACK_AUTH_MFA_SERVICE_TOKEN
     ]),
-    classProvider(CORE_PACK_AUTH_USER_FLOWS_SERVICE_TOKEN, AuthUserFlowsService, [
-      CORE_PACK_AUTH_USERS_REPOSITORY_TOKEN,
-      CORE_PACK_AUTH_LOCAL_CREDENTIALS_REPOSITORY_TOKEN,
-      CORE_PACK_AUTH_PASSWORD_HASHING_SERVICE_TOKEN,
-      CORE_PACK_AUTH_FLOW_TOKENS_REPOSITORY_TOKEN,
-      RUNTIME_CONFIG_SERVICE_TOKEN,
-      CORE_TOKENS.SECURE_EVENT_PAYLOAD_STORE,
-      EVENT_BUS_TOKEN
+    factoryProvider(AUTH_SECURE_PAYLOAD_CLIENT, (host) => host.forPlugin("core-pack"), [
+      CORE_TOKENS.SECURE_EVENT_PAYLOAD_HOST
     ]),
+    factoryProvider(
+      CORE_PACK_AUTH_USER_FLOWS_SERVICE_TOKEN,
+      (
+        users,
+        credentials,
+        hashing,
+        tokens,
+        config,
+        client,
+        events,
+        durable: import("@trinacria-cms/kernel/runtime").MongoDurableEventStore,
+        vault
+      ) => {
+        const service = new AuthUserFlowsService(
+          users,
+          credentials,
+          hashing,
+          tokens,
+          config,
+          client,
+          events,
+          (work) =>
+            durable.transactionWithKernel("core-pack", (db, publisher, repositories) => {
+              if (!(vault instanceof SecureEventPayloadsService))
+                throw new Error("User flows require a transactional vault host");
+              const kernel: import("@trinacria-cms/kernel").DbAdapter = {
+                repository: (name, namespace) => {
+                  if (namespace.pluginId !== "kernel") throw new Error("Vault owner mismatch");
+                  return repositories.repository(name, namespace);
+                },
+                async beginTransaction() {
+                  throw new Error("Nested vault transaction");
+                },
+                healthCheck: () => db.healthCheck()
+              };
+              return work(
+                new AuthUserFlowsService(
+                  new AuthUsersRepository(db),
+                  new LocalCredentialsRepository(db),
+                  hashing,
+                  new AuthFlowTokensRepository(db),
+                  config,
+                  vault.forTransaction(kernel).forPlugin("core-pack"),
+                  publisher
+                )
+              );
+            })
+        );
+        return service;
+      },
+      [
+        CORE_PACK_AUTH_USERS_REPOSITORY_TOKEN,
+        CORE_PACK_AUTH_LOCAL_CREDENTIALS_REPOSITORY_TOKEN,
+        CORE_PACK_AUTH_PASSWORD_HASHING_SERVICE_TOKEN,
+        CORE_PACK_AUTH_FLOW_TOKENS_REPOSITORY_TOKEN,
+        RUNTIME_CONFIG_SERVICE_TOKEN,
+        AUTH_SECURE_PAYLOAD_CLIENT,
+        EVENT_BUS_TOKEN,
+        CORE_TOKENS.DURABLE_EVENTS,
+        CORE_TOKENS.SECURE_EVENT_PAYLOAD_HOST
+      ]
+    ),
+
     httpProvider(CORE_PACK_AUTH_CONTROLLER_TOKEN, AuthController, [
       CORE_PACK_JWT_AUTH_SERVICE_TOKEN,
       CORE_PACK_AUTH_USER_FLOWS_SERVICE_TOKEN
     ])
   ],
   exports: [
+    CORE_TOKENS.HTTP_ACCESS_COOKIE_NAME,
+    AUTH_FLOW_OPERATIONS,
     CORE_PACK_AUTH_ENTITY_REGISTRATION_TOKEN,
     CORE_PACK_AUTH_USERS_REPOSITORY_TOKEN,
     CORE_PACK_AUTH_FLOW_TOKENS_REPOSITORY_TOKEN,

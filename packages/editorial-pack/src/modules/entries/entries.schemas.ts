@@ -1,4 +1,6 @@
-import { defineEntity, type Infer, s } from "@trinacria-cms/kernel";
+import { type Infer, s } from "@trinacria-cms/kernel";
+import { defineEntity } from "@trinacria-cms/kernel/runtime";
+import { EditorialJsonObjectSchema } from "./editorial-json.js";
 import { EntryBodySchema } from "./structured-document.js";
 
 export const EntryStatusSchema = s.string({
@@ -8,15 +10,6 @@ export const EntryStatusSchema = s.string({
   maxLength: 80,
   pattern: /^[a-z][a-z0-9_]*$/
 });
-const JsonScalarSchema = s.union([s.string(), s.number(), s.boolean()]);
-const JsonObjectSchema = s.record(s.string({ trim: true, minLength: 1 }), JsonScalarSchema);
-const JsonValueSchema = s.union([
-  JsonScalarSchema,
-  JsonObjectSchema,
-  s.array(JsonScalarSchema),
-  s.array(JsonObjectSchema)
-]);
-const FreeformObjectSchema = s.record(s.string({ trim: true, minLength: 1 }), JsonValueSchema);
 
 export const EntryRecordSchema = s.object(
   {
@@ -35,7 +28,7 @@ export const EntryRecordSchema = s.object(
       })
       .optional(),
     body: EntryBodySchema.optional(),
-    data: FreeformObjectSchema,
+    data: EditorialJsonObjectSchema,
     status: EntryStatusSchema,
     scheduledAt: s.dateTimeString().optional(),
     publishedAt: s.dateTimeString().optional(),
@@ -49,6 +42,7 @@ export const EntryRecordSchema = s.object(
 export type EntryRecord = Infer<typeof EntryRecordSchema>;
 
 export const ENTRIES_ENTITY = defineEntity({
+  ownerPluginId: "editorial-pack",
   entityName: "entries",
   schema: EntryRecordSchema,
   indexes: [

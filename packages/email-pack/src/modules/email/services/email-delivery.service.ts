@@ -55,12 +55,8 @@ class ConsoleMailSender implements MailSender {
         service: "email-pack",
         event: "outbound_email",
         provider: "console",
-        from: formatFrom(this.config),
-        to: normalizeRecipients(input.to),
-        replyTo: input.replyTo ?? this.config.replyTo,
-        subject: input.subject,
-        text: redactSensitiveEmailContent(input.text),
-        ...(input.html ? { html: redactSensitiveEmailContent(input.html) } : {})
+        recipientCount: typeof input.to === "string" ? 1 : input.to.length,
+        ...(input.messageId ? { messageId: input.messageId } : {})
       })
     );
   }
@@ -91,6 +87,7 @@ class SmtpMailSender implements MailSender {
 
     await transporter.sendMail({
       from: formatFrom(this.config),
+      ...(input.messageId ? { messageId: input.messageId } : {}),
       to: normalizeRecipients(input.to),
       replyTo: input.replyTo ?? this.config.replyTo,
       subject: input.subject,
@@ -106,10 +103,6 @@ function formatFrom(config: EmailDeliveryConfig): string {
     return config.fromAddress;
   }
   return `"${escapeMailHeaderValue(name)}" <${config.fromAddress}>`;
-}
-
-function redactSensitiveEmailContent(value: string): string {
-  return value.replace(/([?&](?:token|code)=)[^\s&<"']+/giu, "$1[REDACTED]");
 }
 
 function escapeMailHeaderValue(value: string): string {

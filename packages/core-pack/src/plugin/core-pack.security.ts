@@ -27,6 +27,28 @@ export const CORE_PACK_CAPABILITY_LIST: readonly CorePackCapability[] = Object.f
 );
 
 const CORE_PACK_PERMISSIONS = definePermissionSet(CORE_PACK_PLUGIN_ID, {
+  PLUGINS_MANAGE: { resource: "plugins", action: "manage", displayName: "Manage plugins" },
+  PLUGIN_GRANTS_READ: {
+    resource: "plugin-grants",
+    action: "read",
+    displayName: "Read plugin-grants"
+  },
+  PLUGIN_GRANTS_MANAGE: {
+    resource: "plugin-grants",
+    action: "manage",
+    displayName: "Manage plugin-grants"
+  },
+  MIGRATIONS_READ: { resource: "migrations", action: "read", displayName: "Read migrations" },
+  MIGRATIONS_APPLY: { resource: "migrations", action: "apply", displayName: "Apply migrations" },
+  DELIVERIES_READ: { resource: "deliveries", action: "read", displayName: "Read deliveries" },
+  DELIVERIES_MANAGE: { resource: "deliveries", action: "manage", displayName: "Manage deliveries" },
+  EMAIL_JOBS_READ: { resource: "email-jobs", action: "read", displayName: "Read email jobs" },
+  EMAIL_JOBS_MANAGE: {
+    resource: "email-jobs",
+    action: "manage",
+    displayName: "Reconcile email jobs"
+  },
+  AUDIT_READ: { resource: "audit", action: "read", displayName: "Read audit" },
   PLUGINS_READ: {
     resource: "plugins",
     action: "read",

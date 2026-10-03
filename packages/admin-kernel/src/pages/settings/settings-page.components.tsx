@@ -173,9 +173,6 @@ function getCompactSectionLabel(section: RenderableAdminSettingsSection, t: Tran
   if (sectionId.includes("user-flow")) return t("settings.navigation.user_access", "Utenti");
   if (sectionId.includes("authentication"))
     return t("settings.navigation.authentication", "Autenticazione");
-  if (sectionId.includes("plugin-permissions")) {
-    return t("settings.navigation.plugin_permissions", "Permessi");
-  }
   if (sectionId.includes("plugin-management")) return t("settings.navigation.plugins", "Plugin");
   if (sectionId.includes("email-template")) return t("settings.navigation.templates", "Template");
   if (sectionId.includes("email")) return t("settings.navigation.email_delivery", "Email");
@@ -245,8 +242,7 @@ function getSettingsSectionGroup(
     category === "user_flows" ||
     category === "auth" ||
     sectionId.includes("user-flow") ||
-    sectionId.includes("authentication") ||
-    sectionId.includes("plugin-permissions")
+    sectionId.includes("authentication")
   ) {
     return {
       id: "access",

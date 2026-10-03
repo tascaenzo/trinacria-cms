@@ -1,16 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { DbAdapter, DbQuery, DbRepository, NamespaceContext } from "@trinacria-cms/kernel";
+import { TrinacriaApp, valueProvider } from "@trinacria/core";
+import { createEventsPlugin } from "@trinacria/events";
+import { InMemoryPluginRuntime } from "@trinacria-cms/kernel/runtime";
+import { CORE_TOKENS } from "@trinacria-cms/kernel/tokens";
 import { SettingsDefinitionsRepository } from "../src/modules/settings/definitions/settings-definitions.repository.js";
 import { SettingsSecretsCryptoService } from "../src/modules/settings/secrets/settings-secrets-crypto.service.js";
 import {
   CORE_PACK_SETTING_DEFINITION_SEEDS,
   provisionCorePackSettingDefinitions
 } from "../src/modules/settings/settings.bootstrap.js";
-import {
-  PLUGIN_ACCESS_GRANTS_SETTING_KEY,
-  SettingsPluginAccessPolicyService
-} from "../src/modules/settings/plugin-access/plugin-access-policy.service.js";
 import { SettingsSecretsRepository } from "../src/modules/settings/secrets/settings-secrets.repository.js";
 import { SettingsService } from "../src/modules/settings/services/settings.service.js";
 import { SettingsValuesRepository } from "../src/modules/settings/values/settings-values.repository.js";
@@ -31,7 +31,6 @@ test("core-pack settings bootstrap provisions the canonical seed catalog", async
 
   const siteName = await service.getResolvedValueByKey("core-pack:site:name");
   const timezone = await service.getResolvedValueByKey("core-pack:cms:timezone");
-  const pluginAccessGrants = await service.getResolvedValueByKey(PLUGIN_ACCESS_GRANTS_SETTING_KEY);
   const dashboardLayout = await service.getResolvedValueByKey("core-pack:dashboard:widget_layout");
   const backofficeTheme = await service.getResolvedValueByKey(
     "core-pack:branding:backoffice_theme"
@@ -42,7 +41,7 @@ test("core-pack settings bootstrap provisions the canonical seed catalog", async
 
   assert.equal(siteName?.value, "Trinacria CMS");
   assert.equal(timezone?.value, "Europe/Rome");
-  assert.ok(Array.isArray(pluginAccessGrants?.value));
+  assert.equal(await service.getResolvedValueByKey("core-pack:security:plugin_access_grants"), null);
   assert.deepEqual(dashboardLayout?.value, {
     version: 2,
     order: [],
@@ -77,158 +76,31 @@ test("core-pack manifest declares public user lifecycle events", () => {
   ]);
 });
 
-test("settings-backed plugin access policy authorizes official email grant and denies missing grants", async () => {
-  const service = createSettingsService();
-  await provisionCorePackSettingDefinitions(service);
-  const policy = new SettingsPluginAccessPolicyService(service);
 
-  const allowedSubscription = await policy.canSubscribe({
-    subscriberPluginId: "email-pack",
-    eventName: "core-pack:secure-event-payload-ready",
-    eventOwnerPluginId: "core-pack",
-    eventVisibility: "protected",
-    requiredPermission: "email-pack:email:send"
-  });
-  assert.equal(allowedSubscription.allowed, true);
-
-  const allowedClaim = await policy.canClaim({
-    payload: {
-      id: "payload-1",
-      producerPluginId: "core-pack",
-      eventName: "core-pack:secure-event-payload-ready",
-      payloadType: "email-pack:send-email-request",
-      schemaVersion: 1,
-      requiredPermission: "email-pack:email:send",
-      encryptedPayload: {
-        cipherText: "cipher",
-        iv: "iv",
-        authTag: "tag",
-        algorithm: "aes-256-gcm",
-        keyVersion: "v1"
-      },
-      status: "available",
-      maxClaims: 1,
-      claimCount: 0,
-      createdAt: new Date(0).toISOString(),
-      updatedAt: new Date(0).toISOString()
-    },
-    consumerPluginId: "email-pack",
-    eventName: "core-pack:secure-event-payload-ready",
-    requiredPermission: "email-pack:email:send",
-    decision: "allow"
-  });
-  assert.equal(allowedClaim.allowed, true);
-
-  const deniedSubscription = await policy.canSubscribe({
-    subscriberPluginId: "third-party-pack",
-    eventName: "core-pack:secure-event-payload-ready",
-    eventOwnerPluginId: "core-pack",
-    eventVisibility: "protected",
-    requiredPermission: "email-pack:email:send"
-  });
-  assert.deepEqual(deniedSubscription, {
-    allowed: false,
-    reason: "plugin_access_grant_missing"
-  });
+test("scoped runtime settings never reveal secrets or accept another owner", async (t) => {
+  const settings = createSettingsService();
+  await provisionCorePackSettingDefinitions(settings);
+  const app = new TrinacriaApp();
+  app.registerGlobalProvider(valueProvider(CORE_TOKENS.PLUGIN_SETTINGS_HOST, {
+    async get(pluginId: string, key: string) { return (await settings.getResolvedValueForPlugin(pluginId, key))?.value ?? null; },
+    async set(pluginId: string, key: string, value: any) { await settings.upsertValue({ requesterPluginId: pluginId, key, value }); }
+  }));
+  await app.start(); t.after(() => app.shutdown());
+  let services!: import("@trinacria-cms/kernel/contracts").PluginHostServices;
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0", app });
+  await runtime.register({ manifest: { id: "core-pack", version: "0.1.0", requiresCore: "^0.1.0", settings: [...(CORE_PACK_MANIFEST.settings ?? []), { key: "core-pack:test:secret", category: "test", visibility: "internal", secret: true }] },
+    onLoad(context) { services = context.services; } });
+  await runtime.load("core-pack");
+  assert.equal(await services.settings.get("core-pack:site:name"), "Trinacria CMS");
+  const secret = { key: "core-pack:test:secret" };
+  await settings.upsertDefinition({ requesterPluginId: "core-pack", key: secret.key, secret: true, visibility: "internal", mutable: true });
+  await settings.upsertSecret({ requesterPluginId: "core-pack", key: secret.key, plaintext: "never-return-this" });
+  await assert.rejects(services.settings.get(secret.key), /secret/);
+  await assert.rejects(services.settings.set(secret.key, "cannot-replace-secret"), /secret/);
+  await assert.rejects(services.settings.get("email-pack:email:password"), /not owned/);
 });
 
-test("settings-backed plugin access policy supports explicit third-party workflow grants", async () => {
-  const service = createSettingsService();
-  await provisionCorePackSettingDefinitions(service);
-  await service.upsertValue({
-    requesterPluginId: "core-pack",
-    key: PLUGIN_ACCESS_GRANTS_SETTING_KEY,
-    value: [
-      {
-        accessType: "event-subscription",
-        producerPluginId: "core-pack",
-        consumerPluginId: "workflow-pack",
-        eventName: "core-pack:user-created",
-        requiredPermission: "workflow-pack:workflow:execute",
-        status: "approved"
-      },
-      {
-        accessType: "secure-payload-claim",
-        producerPluginId: "core-pack",
-        consumerPluginId: "workflow-pack",
-        eventName: "core-pack:secure-event-payload-ready",
-        payloadType: "email-pack:send-email-request",
-        requiredPermission: "workflow-pack:workflow:execute",
-        status: "approved"
-      }
-    ],
-    updatedBy: "test"
-  });
 
-  const policy = new SettingsPluginAccessPolicyService(service);
-  const publicWorkflowSubscription = await policy.canSubscribe({
-    subscriberPluginId: "workflow-pack",
-    eventName: "core-pack:user-created",
-    eventOwnerPluginId: "core-pack",
-    eventVisibility: "protected",
-    requiredPermission: "workflow-pack:workflow:execute"
-  });
-  assert.equal(publicWorkflowSubscription.allowed, true);
-
-  const secureWorkflowClaim = await policy.canClaim({
-    payload: {
-      id: "payload-workflow-1",
-      producerPluginId: "core-pack",
-      eventName: "core-pack:secure-event-payload-ready",
-      payloadType: "email-pack:send-email-request",
-      schemaVersion: 1,
-      requiredPermission: "workflow-pack:workflow:execute",
-      encryptedPayload: {
-        cipherText: "cipher",
-        iv: "iv",
-        authTag: "tag",
-        algorithm: "aes-256-gcm",
-        keyVersion: "v1"
-      },
-      status: "available",
-      maxClaims: 1,
-      claimCount: 0,
-      createdAt: new Date(0).toISOString(),
-      updatedAt: new Date(0).toISOString()
-    },
-    consumerPluginId: "workflow-pack",
-    eventName: "core-pack:secure-event-payload-ready",
-    requiredPermission: "workflow-pack:workflow:execute",
-    decision: "allow"
-  });
-  assert.equal(secureWorkflowClaim.allowed, true);
-
-  const missingPayloadGrant = await policy.canClaim({
-    payload: {
-      id: "payload-workflow-2",
-      producerPluginId: "core-pack",
-      eventName: "core-pack:secure-event-payload-ready",
-      payloadType: "core-pack:password-reset-secret",
-      schemaVersion: 1,
-      requiredPermission: "workflow-pack:workflow:execute",
-      encryptedPayload: {
-        cipherText: "cipher",
-        iv: "iv",
-        authTag: "tag",
-        algorithm: "aes-256-gcm",
-        keyVersion: "v1"
-      },
-      status: "available",
-      maxClaims: 1,
-      claimCount: 0,
-      createdAt: new Date(0).toISOString(),
-      updatedAt: new Date(0).toISOString()
-    },
-    consumerPluginId: "workflow-pack",
-    eventName: "core-pack:secure-event-payload-ready",
-    requiredPermission: "workflow-pack:workflow:execute",
-    decision: "allow"
-  });
-  assert.deepEqual(missingPayloadGrant, {
-    allowed: false,
-    reason: "plugin_access_grant_missing"
-  });
-});
 
 function createSettingsService(): SettingsService {
   const db = createFakeDbAdapter();

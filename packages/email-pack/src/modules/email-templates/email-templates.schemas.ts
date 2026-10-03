@@ -1,4 +1,5 @@
-import { defineEntity, type Infer, s } from "@trinacria-cms/kernel";
+import { type Infer, s } from "@trinacria-cms/kernel";
+import { defineEntity } from "@trinacria-cms/kernel/runtime";
 
 export const EmailTemplateStatusSchema = s.enum(["active", "draft", "disabled"] as const);
 export type EmailTemplateStatus = Infer<typeof EmailTemplateStatusSchema>;
@@ -25,6 +26,7 @@ export const EmailTemplateRecordSchema = s.object(
 export type EmailTemplateRecord = Infer<typeof EmailTemplateRecordSchema>;
 
 export const EMAIL_TEMPLATES_ENTITY = defineEntity({
+  ownerPluginId: "email-pack",
   entityName: "email_templates",
   schema: EmailTemplateRecordSchema,
   indexes: [

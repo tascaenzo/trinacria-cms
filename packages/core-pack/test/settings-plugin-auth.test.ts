@@ -1,3 +1,4 @@
+import { MemoryPluginNonceStore } from "@trinacria-cms/kernel/runtime";
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { HttpContext } from "@trinacria-cms/kernel";
@@ -10,7 +11,7 @@ import {
 } from "../src/modules/settings/index.js";
 
 const PLUGIN_ID = "core-pack";
-const PLUGIN_SECRET = "super-secret-key-for-tests";
+const PLUGIN_SECRET = "super-secret-key-for-tests-with-at-least-32-bytes";
 
 test("SettingsPluginAuthService authenticates a valid signed request", async () => {
   const service = createAuthService();
@@ -21,6 +22,7 @@ test("SettingsPluginAuthService authenticates a valid signed request", async () 
   const path = "/v1/settings/secrets/core-pack:integrations:stripe_api_key";
   const headers = buildPluginAuthHeaders({
     pluginId: PLUGIN_ID,
+    keyId: "current",
     secret: PLUGIN_SECRET,
     method: "PUT",
     path,
@@ -56,11 +58,12 @@ test("SettingsPluginAuthService rejects replayed nonce", async () => {
   const path = "/v1/settings/secrets/core-pack:integrations:stripe_api_key";
   const headers = buildPluginAuthHeaders({
     pluginId: PLUGIN_ID,
+    keyId: "current",
     secret: PLUGIN_SECRET,
     method: "PUT",
     path,
     body,
-    nonce: "fixed-replay-nonce",
+    nonce: "fixed-replay-nonce-0000000000",
     timestamp: Math.floor(Date.now() / 1000)
   });
 
@@ -77,12 +80,13 @@ test("SettingsPluginAuthService rejects expired timestamp", async () => {
   const path = "/v1/settings/values/core-pack:features:beta";
   const headers = buildPluginAuthHeaders({
     pluginId: PLUGIN_ID,
+    keyId: "current",
     secret: PLUGIN_SECRET,
     method: "PUT",
     path,
     body,
     timestamp: Math.floor(Date.now() / 1000) - 60,
-    nonce: "expired-nonce"
+    nonce: "expired-nonce-00000000000000"
   });
 
   const ctx = createContext({ method: "PUT", url: path, headers, body });
@@ -92,15 +96,12 @@ test("SettingsPluginAuthService rejects expired timestamp", async () => {
 test("SettingsPluginAuthService accepts rotated key ring secrets", async () => {
   const service = new SettingsPluginAuthService(
     {
-      async getSecret() {
-        return null;
-      },
-      async getSecrets(pluginId: string) {
-        if (pluginId !== PLUGIN_ID) return [];
-        return ["old-secret-not-used", PLUGIN_SECRET];
+      async getKey(pluginId: string, keyId: string) {
+        return pluginId === PLUGIN_ID && keyId === "current" ? { id: keyId, secret: PLUGIN_SECRET } : null;
       }
     },
     null,
+    new MemoryPluginNonceStore(),
     { maxSkewSeconds: 300 }
   );
 
@@ -108,6 +109,7 @@ test("SettingsPluginAuthService accepts rotated key ring secrets", async () => {
   const path = "/v1/settings/values/core-pack:features:new_home";
   const headers = buildPluginAuthHeaders({
     pluginId: PLUGIN_ID,
+    keyId: "current",
     secret: PLUGIN_SECRET,
     method: "PUT",
     path,
@@ -124,6 +126,7 @@ test("SettingsPluginAuth middleware stores authenticated plugin id in context st
   const path = "/v1/settings/values/core-pack:features:new_home";
   const headers = buildPluginAuthHeaders({
     pluginId: PLUGIN_ID,
+    keyId: "current",
     secret: PLUGIN_SECRET,
     method: "PUT",
     path,
@@ -145,11 +148,12 @@ test("SettingsPluginAuth middleware stores authenticated plugin id in context st
 function createAuthService(options?: { maxSkewSeconds?: number }) {
   return new SettingsPluginAuthService(
     {
-      async getSecret(pluginId: string) {
-        return pluginId === PLUGIN_ID ? PLUGIN_SECRET : null;
+      async getKey(pluginId: string, keyId: string) {
+        return pluginId === PLUGIN_ID ? { id: keyId, secret: PLUGIN_SECRET } : null;
       }
     },
     null,
+    new MemoryPluginNonceStore(),
     { maxSkewSeconds: options?.maxSkewSeconds ?? 300 }
   );
 }

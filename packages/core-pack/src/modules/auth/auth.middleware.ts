@@ -5,6 +5,10 @@ import {
   type HttpMiddleware,
   response
 } from "@trinacria-cms/kernel";
+import {
+  bindHttpOperationContext,
+  createUserOperationContext
+} from "@trinacria-cms/kernel/runtime";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import { type UserRecord, UserRecordSchema } from "../users/users.schemas.js";
 import { extractAccessTokenFromCookie, readJwtCookieConfigFromEnv } from "./auth-session.js";
@@ -30,6 +34,7 @@ export function createJwtAuthMiddleware(
     try {
       const user = await auth.authenticateBearerToken(token, options);
       ctx.state[AUTHENTICATED_USER_STATE_KEY] = user;
+      bindHttpOperationContext(ctx, createUserOperationContext(user.id));
       return next();
     } catch (error) {
       if (error instanceof JwtAuthError) {

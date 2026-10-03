@@ -7,7 +7,7 @@ import type { CreateRoleRequest, CreateRoleResponse, GetRoleByIdRequest, GetRole
 export interface RolesApi {
   createRole(input: CreateRoleRequest, options?: SdkRequestOverrides): Promise<CreateRoleResponse>;
   getRoleById(input: GetRoleByIdRequest, options?: SdkRequestOverrides): Promise<GetRoleByIdResponse>;
-  listRoles(input: ListRolesRequest, options?: SdkRequestOverrides): Promise<ListRolesResponse>;
+  listRoles(input?: ListRolesRequest, options?: SdkRequestOverrides): Promise<ListRolesResponse>;
   updateRole(input: UpdateRoleRequest, options?: SdkRequestOverrides): Promise<UpdateRoleResponse>;
   updateRoleStatus(input: UpdateRoleStatusRequest, options?: SdkRequestOverrides): Promise<UpdateRoleStatusResponse>;
 }
@@ -21,6 +21,8 @@ export function createRolesApi(client: CmsSdkClientCore): RolesApi {
         pathParams: undefined,
         query: undefined,
         body: input.body,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,
@@ -32,17 +34,21 @@ export function createRolesApi(client: CmsSdkClientCore): RolesApi {
         pathParams: input.path,
         query: undefined,
         body: undefined,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,
       }),
-    listRoles: async (input, options) =>
+    listRoles: async (input = {}, options) =>
       client.request({
         method: "GET",
         path: "/v1/roles",
         pathParams: undefined,
         query: input.query,
         body: undefined,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,
@@ -54,6 +60,8 @@ export function createRolesApi(client: CmsSdkClientCore): RolesApi {
         pathParams: input.path,
         query: undefined,
         body: input.body,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,
@@ -65,6 +73,8 @@ export function createRolesApi(client: CmsSdkClientCore): RolesApi {
         pathParams: input.path,
         query: undefined,
         body: input.body,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,

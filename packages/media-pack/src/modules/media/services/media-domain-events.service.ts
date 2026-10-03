@@ -6,7 +6,7 @@ export interface MediaEventPublisher {
 export class MediaDomainEventsService {
   private publisher?: MediaEventPublisher;
 
-  setPublisher(publisher: MediaEventPublisher): void {
+  setPublisher(publisher: MediaEventPublisher | undefined): void {
     this.publisher = publisher;
   }
 

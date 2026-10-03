@@ -1,7 +1,7 @@
 {
   "name": "@trinacria-cms/core-pack",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -21,6 +21,10 @@
     "./i18n": {
       "types": "./dist/admin-i18n/index.d.ts",
       "import": "./dist/admin-i18n/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime.d.ts",
+      "import": "./dist/runtime.js"
     }
   },
   "scripts": {
@@ -42,5 +46,18 @@
   },
   "devDependencies": {
     "@types/node": "^24.19.0"
+  },
+  "license": "MIT",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "engines": {
+    "node": ">=24.21.0 <25"
   }
 }

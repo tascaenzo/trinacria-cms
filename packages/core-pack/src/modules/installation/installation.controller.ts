@@ -28,6 +28,7 @@ export class InstallationController extends HttpController {
     return this.router()
       .get("/v1/install/status", this.getStatus, {
         docs: {
+          pluginId: "core-pack",
           summary: "Read CMS installation status",
           tags: [CORE_PACK_OPENAPI_TAGS.INSTALLATION],
           operationId: "getInstallationStatus",
@@ -41,6 +42,7 @@ export class InstallationController extends HttpController {
       })
       .post("/v1/install/bootstrap", this.bootstrap, {
         docs: {
+          pluginId: "core-pack",
           summary: "Bootstrap CMS installation with site and admin account",
           tags: [CORE_PACK_OPENAPI_TAGS.INSTALLATION],
           operationId: "bootstrapInstallation",

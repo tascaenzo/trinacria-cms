@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import type { EventBus } from "@trinacria/events";
-import type { SecureEventPayloadStore } from "@trinacria-cms/kernel/contracts";
+import type { SecureEventPayloadClient } from "@trinacria-cms/kernel/contracts";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import type { LocalCredentialsRepository } from "../../installation/repositories/local-credentials.repository.js";
 import type { PasswordHashingService } from "../../installation/services/password-hashing.service.js";
@@ -24,13 +24,15 @@ export class AuthUserFlowsService {
     private readonly passwordHashing: PasswordHashingService,
     private readonly tokens: AuthFlowTokensRepository,
     private readonly config: RuntimeConfigService,
-    private readonly securePayloads: SecureEventPayloadStore,
-    private readonly events: EventBus
+    private readonly securePayloads: SecureEventPayloadClient,
+    private readonly events: Pick<EventBus, "emit">,
+    private readonly atomic?: <T>(work: (service: AuthUserFlowsService) => Promise<T>) => Promise<T>
   ) {
     this.userEvents = new UserLifecycleEventPublisher(events);
   }
 
   async requestPasswordReset(email: string): Promise<{ accepted: true }> {
+    if (this.atomic) return this.atomic((service) => service.requestPasswordReset(email));
     if (!(await this.getBoolean("core-pack:user_flows:password_reset_enabled", true))) {
       return { accepted: true };
     }
@@ -59,6 +61,7 @@ export class AuthUserFlowsService {
     token: string;
     newPassword: string;
   }): Promise<{ completed: true }> {
+    if (this.atomic) return this.atomic((service) => service.completePasswordReset(input));
     const record = await this.consumeFlowToken(input.token, "password_reset");
     if (!record.userId) {
       throw new Error("Invalid password reset token");
@@ -74,6 +77,7 @@ export class AuthUserFlowsService {
   }
 
   async requestEmailVerification(email: string): Promise<{ accepted: true }> {
+    if (this.atomic) return this.atomic((service) => service.requestEmailVerification(email));
     if (!(await this.getBoolean("core-pack:user_flows:email_verification_required", false))) {
       return { accepted: true };
     }
@@ -100,6 +104,7 @@ export class AuthUserFlowsService {
   }
 
   async confirmEmailVerification(token: string): Promise<{ completed: true }> {
+    if (this.atomic) return this.atomic((service) => service.confirmEmailVerification(token));
     const record = await this.consumeFlowToken(token, "email_verification");
     if (record.userId) {
       const existing = await this.users.findById(record.userId);
@@ -122,6 +127,7 @@ export class AuthUserFlowsService {
     lastName: string;
     password: string;
   }): Promise<{ accepted: true }> {
+    if (this.atomic) return this.atomic((service) => service.registerPublic(input));
     if (!(await this.getBoolean("core-pack:user_flows:public_registration_enabled", false))) {
       throw new Error("Public registration is disabled");
     }
@@ -166,6 +172,7 @@ export class AuthUserFlowsService {
     inviterName?: string;
     actorUserId?: string;
   }): Promise<{ accepted: true }> {
+    if (this.atomic) return this.atomic((service) => service.sendUserInvite(input));
     if (!(await this.getBoolean("core-pack:user_flows:user_invites_enabled", true))) {
       throw new Error("User invites are disabled");
     }
@@ -199,6 +206,7 @@ export class AuthUserFlowsService {
   }
 
   async acceptUserInvite(input: { token: string; password: string }): Promise<{ completed: true }> {
+    if (this.atomic) return this.atomic((service) => service.acceptUserInvite(input));
     const record = await this.consumeFlowToken(input.token, "user_invite");
     if (!record.userId) {
       throw new Error("Invalid invite token");
@@ -269,7 +277,6 @@ export class AuthUserFlowsService {
     expiresAt: string;
   }): Promise<void> {
     const record = await this.securePayloads.create({
-      producerPluginId: CORE_PACK_PLUGIN_ID,
       eventName: EMAIL_READY_EVENT,
       payloadType: EMAIL_REQUEST_PAYLOAD_TYPE,
       schemaVersion: EMAIL_REQUEST_SCHEMA_VERSION,

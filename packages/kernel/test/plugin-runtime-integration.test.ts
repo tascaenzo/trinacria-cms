@@ -18,7 +18,7 @@ test("register then load exposes contributions in describeContributions", async 
     requiresCore: "^0.1.0",
     entities: [{ name: "posts", schemaVersion: 1 }],
     settings: [{ key: "blog-pack:blog:title", category: "blog", visibility: "admin" }],
-    events: { emits: [{ name: "post-created", visibility: "public", version: 1 }] },
+    events: { emits: [{ name: "post-created", visibility: "public", version: 1 , delivery: "sync" }] },
     admin: { routes: [{ id: "list", path: "/blog/posts", label: "Posts" }] }
   });
 

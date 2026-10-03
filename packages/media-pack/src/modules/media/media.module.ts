@@ -6,16 +6,25 @@ import {
   CorePackSettingsModule,
   RUNTIME_CONFIG_SERVICE_TOKEN,
   SETTINGS_SERVICE_TOKEN
-} from "@trinacria-cms/core-pack";
+} from "@trinacria-cms/core-pack/runtime";
 import {
   CORE_TOKENS,
   classProvider,
+  createToken,
   defineModule,
-  type EntityRegistry,
   factoryProvider,
   httpProvider,
   type ModuleDefinition
 } from "@trinacria-cms/kernel";
+import type { EntityRegistry } from "@trinacria-cms/kernel/runtime";
+import {
+  MEDIA_ASSET_OPERATIONS,
+  MEDIA_DIRECTORY_OPERATIONS,
+  MEDIA_UPLOAD_OPERATIONS,
+  MediaAssetOperations,
+  MediaDirectoryOperations,
+  MediaUploadOperations
+} from "../../operations/media-operations.js";
 import {
   MEDIA_ACL_ENTRIES_ENTITY,
   MEDIA_ASSETS_ENTITY,
@@ -39,6 +48,7 @@ import {
   MEDIA_UPLOADS_SERVICE_TOKEN
 } from "./media.tokens.js";
 import { MediaAssetsController } from "./media-assets.controller.js";
+import { MediaPublicDeliveryController } from "./media-delivery.controller.js";
 import { MediaProviderRegistry } from "./media-provider-registry.service.js";
 import { MediaUploadController } from "./media-upload.controller.js";
 import { LocalDiskMediaStorageProvider } from "./providers/local-disk-media-storage.provider.js";
@@ -49,6 +59,9 @@ import { MediaAssetsService } from "./services/media-assets.service.js";
 import { MediaDirectoriesService } from "./services/media-directories.service.js";
 import { MediaDomainEventsService } from "./services/media-domain-events.service.js";
 import { MediaStorageConfigService } from "./services/media-storage-config.service.js";
+
+const MEDIA_PUBLIC_DELIVERY = createToken<MediaPublicDeliveryController>("MEDIA_PUBLIC_DELIVERY");
+
 import { MediaUploadsService } from "./services/media-uploads.service.js";
 
 export const MediaPackMediaModule: ModuleDefinition = defineModule({
@@ -60,6 +73,12 @@ export const MediaPackMediaModule: ModuleDefinition = defineModule({
     CorePackSettingsModule
   ],
   providers: [
+    httpProvider(MEDIA_PUBLIC_DELIVERY, MediaPublicDeliveryController, [
+      MEDIA_ASSETS_SERVICE_TOKEN,
+      MEDIA_PROVIDER_REGISTRY_TOKEN,
+      CORE_TOKENS.OPERATION_AUTHORIZER,
+      CORE_TOKENS.PUBLIC_REQUEST_LIMITER
+    ]),
     factoryProvider(
       MEDIA_ENTITY_REGISTRATION_TOKEN,
       (registry) => {
@@ -114,21 +133,41 @@ export const MediaPackMediaModule: ModuleDefinition = defineModule({
       MEDIA_STORAGE_CONFIG_SERVICE_TOKEN,
       MEDIA_DOMAIN_EVENTS_SERVICE_TOKEN
     ]),
-    httpProvider(MEDIA_UPLOAD_CONTROLLER_TOKEN, MediaUploadController, [
+    classProvider(MEDIA_ASSET_OPERATIONS, MediaAssetOperations, [
+      MEDIA_ASSETS_SERVICE_TOKEN,
+      CORE_TOKENS.OPERATION_AUTHORIZER,
+      MEDIA_PROVIDER_REGISTRY_TOKEN
+    ]),
+    classProvider(MEDIA_DIRECTORY_OPERATIONS, MediaDirectoryOperations, [
+      MEDIA_DIRECTORIES_SERVICE_TOKEN,
+      MEDIA_ASSETS_SERVICE_TOKEN,
+      CORE_TOKENS.OPERATION_AUTHORIZER
+    ]),
+    classProvider(MEDIA_UPLOAD_OPERATIONS, MediaUploadOperations, [
       MEDIA_UPLOADS_SERVICE_TOKEN,
+      MEDIA_ASSETS_SERVICE_TOKEN,
+      CORE_TOKENS.OPERATION_AUTHORIZER
+    ]),
+    httpProvider(MEDIA_UPLOAD_CONTROLLER_TOKEN, MediaUploadController, [
+      MEDIA_UPLOAD_OPERATIONS,
       CORE_PACK_JWT_AUTH_SERVICE_TOKEN,
       CORE_TOKENS.AUTHZ_SERVICE
     ]),
     httpProvider(MEDIA_ASSETS_CONTROLLER_TOKEN, MediaAssetsController, [
-      MEDIA_ASSETS_SERVICE_TOKEN,
-      MEDIA_DIRECTORIES_SERVICE_TOKEN,
+      MEDIA_ASSET_OPERATIONS,
+      MEDIA_DIRECTORY_OPERATIONS,
       MEDIA_PROVIDER_REGISTRY_TOKEN,
       MEDIA_STORAGE_CONFIG_SERVICE_TOKEN,
       CORE_PACK_JWT_AUTH_SERVICE_TOKEN,
-      CORE_TOKENS.AUTHZ_SERVICE
+      CORE_TOKENS.AUTHZ_SERVICE,
+      MEDIA_ASSETS_SERVICE_TOKEN
     ])
   ],
   exports: [
+    MEDIA_PUBLIC_DELIVERY,
+    MEDIA_ASSET_OPERATIONS,
+    MEDIA_DIRECTORY_OPERATIONS,
+    MEDIA_UPLOAD_OPERATIONS,
     MEDIA_ENTITY_REGISTRATION_TOKEN,
     MEDIA_PROVIDER_REGISTRY_TOKEN,
     MEDIA_LOCAL_DISK_PROVIDER_TOKEN,

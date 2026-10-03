@@ -75,6 +75,7 @@ const PersistedPluginRuntimeRecordSchema = s.object(
 );
 
 export const INSTALLED_PLUGINS_ENTITY = defineEntity({
+  ownerPluginId: "kernel",
   entityName: "installed_plugins",
   schema: PersistedPluginRuntimeRecordSchema,
   indexes: [

@@ -2,9 +2,7 @@ import type { CmsClient, EditorialContentType } from "./editorial-admin.types.js
 
 /** Every active content model is an editorial destination; hiding it would strand its entries. */
 export async function loadEditorialContentNavigation(cms: CmsClient) {
-  const response = await cms.request<{ data: readonly EditorialContentType[] }>({
-    method: "GET",
-    path: "/v1/editorial/content-types",
+  const response = await cms.editorial.listEditorialContentTypes({
     query: { status: "active", limit: 100, offset: 0 }
   });
   return [...response.data]

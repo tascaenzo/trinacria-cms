@@ -6,6 +6,20 @@ import {
   validatePluginManifest
 } from "../src/runtime/plugin-manifest/plugin-manifest-validation.js";
 
+test("manifest rejects unsupported execution configuration", () => {
+  const base = { id: "sample", version: "0.1.0", requiresCore: "^0.1.0" };
+  for (const extra of [{ executionProfile: "isolated" }, { isolation: {} }])
+    assert.throws(() => validatePluginManifest({ ...base, ...extra }), PluginManifestError);
+});
+
+test("manifest retains valid TTL indexes and rejects unsupported compound/unique TTL", () => {
+  const base = { id: "ttl-plugin", version: "0.1.0", requiresCore: "^0.1.0" };
+  const manifest = validatePluginManifest({ ...base, entities: [{ name: "sessions", schemaVersion: 1, indexes: [{ name: "expires_ttl", fields: { expiresAt: 1 }, expireAfterSeconds: 0 }] }] });
+  assert.equal(manifest.entities[0]!.indexes![0]!.expireAfterSeconds, 0);
+  for (const index of [{ fields: { expiresAt: 1, id: 1 } }, { fields: { expiresAt: "text" } }, { fields: { expiresAt: 1 }, unique: true }, { fields: { expiresAt: 1 }, expireAfterSeconds: -1 }])
+    assert.throws(() => validatePluginManifest({ ...base, entities: [{ name: "sessions", indexes: [{ name: "invalid_ttl", expireAfterSeconds: 0, ...index }] }] }), PluginManifestError);
+});
+
 test("validatePluginManifest returns normalized manifest", () => {
   const manifest = validatePluginManifest({
     id: "cms/plugin-content",
@@ -313,7 +327,7 @@ test("validatePluginManifest accepts M4 declarative contribution blocks", () => 
           payloadSchema: {
             type: "object"
           }
-        }
+        , delivery: "sync" }
       ],
       subscribes: [
         {
@@ -378,7 +392,7 @@ test("validatePluginManifest accepts M4 declarative contribution blocks", () => 
   assert.equal(manifest.displayName, "Blog Pack");
   assert.equal(manifest.entities?.[0]?.name, "posts");
   assert.equal(manifest.settings?.[0]?.key, "blog-pack:editorial:default-status");
-  assert.equal(manifest.events?.emits?.[0]?.delivery, "async");
+  assert.equal(manifest.events?.emits?.[0]?.delivery, "sync");
   assert.equal(manifest.admin?.routes?.[0]?.path, "/blog/posts");
   assert.deepEqual({ ...manifest.admin?.widgets?.[0]?.layout }, {
     columnSpan: 2,
@@ -606,3 +620,14 @@ test("validatePluginManifest rejects setting keys owned by another plugin", () =
     PluginManifestError
   );
 });
+
+test("migration metadata rejects foreign entities, unsafe files, gaps and non-idempotent batches", () => {
+  const migration = { id: "0001-status", checksum: "a".repeat(64), sourceFiles: ["dist/migrations/status.js"], entities: ["items"], fromSchemaVersion: 1, toSchemaVersion: 2, kind: "batched", destructive: false, idempotent: true };
+  const manifest = { id: "catalog-plugin", version: "1.0.0", requiresCore: "*", entities: [{ name: "items", schemaVersion: 2 }], migrations: [migration] };
+  assert.equal(validatePluginManifest(manifest).migrations?.length, 1);
+  for (const patch of [{ entities: ["foreign"] }, { sourceFiles: ["../secret"] }, { sourceFiles: [] }, { toSchemaVersion: 3 }, { idempotent: false }, { prerequisites: ["0000-missing"] }]) {
+    assert.throws(() => validatePluginManifest({ ...manifest, migrations: [{ ...migration, ...patch }] }), PluginManifestError);
+  }
+});
+
+test("emitted events require explicit delivery", () => { assert.throws(() => validatePluginManifest({ id: "producer", version: "1.0.0", requiresCore: "*", events: { emits: [{ name: "ready", version: 1, visibility: "public" }] } } as any)); });

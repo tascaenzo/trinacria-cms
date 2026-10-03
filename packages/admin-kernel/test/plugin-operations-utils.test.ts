@@ -10,6 +10,8 @@ import {
 function plugin(id: string): PluginSnapshot {
   return {
     id,
+    executionMode: "local",
+    operationRevision: 1,
     version: "0.1.0",
     requiresCore: "^0.1.0",
     state: "loaded",

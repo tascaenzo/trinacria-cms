@@ -135,6 +135,15 @@ export class SettingsService {
     private readonly crypto: SettingsSecretsCryptoService
   ) {}
 
+  /** Host-only session rebinding; callers still use the owner-bound host capability. */
+  forRepositories(
+    definitions: SettingsDefinitionsRepository,
+    values: SettingsValuesRepository,
+    secrets: SettingsSecretsRepository
+  ) {
+    return new SettingsService(definitions, values, secrets, this.crypto);
+  }
+
   async upsertDefinition(input: {
     requesterPluginId: string;
     key: string;

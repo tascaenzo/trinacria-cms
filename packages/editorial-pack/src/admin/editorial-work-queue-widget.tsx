@@ -38,11 +38,7 @@ export function EditorialWorkQueueWidget({
     try {
       setLoading(true);
       setError(null);
-      const result = await cms.request<Envelope<readonly Entry[]>>({
-        method: "GET",
-        path: "/v1/editorial/entries",
-        query: { limit: 100, offset: 0 }
-      });
+      const result = await cms.editorial.listEditorialEntries({ query: { limit: 100, offset: 0 } });
       setEntries(result.data);
     } catch {
       setEntries([]);

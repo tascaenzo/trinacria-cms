@@ -6,6 +6,7 @@ export interface SendEmailInput {
   text: string;
   html?: string;
   replyTo?: string;
+  messageId?: string;
 }
 
 export interface MailSender {

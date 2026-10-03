@@ -1,245 +1,188 @@
-import type { HttpContext } from "@trinacria-cms/kernel";
+import { createHash } from "node:crypto";
+import type { HttpContext, PluginNonceStore } from "@trinacria-cms/kernel";
 import type { RuntimeConfigService } from "../config/runtime-config.service.js";
 import {
   buildPluginRequestSignature,
-  normalizePath,
   PLUGIN_AUTH_HEADERS,
   signaturesEqual
 } from "./plugin-auth.js";
-import type { PluginAuthKeyProvider } from "./plugin-auth-key-provider.js";
-
+import type { PluginAuthKey, PluginAuthKeyProvider } from "./plugin-auth-key-provider.js";
 export interface SettingsPluginAuthServiceOptions {
   maxSkewSeconds?: number;
+  now?: () => number;
 }
-
 export interface SettingsPluginAuthObservabilitySnapshot {
   successes: number;
   failures: number;
   replays: number;
+  storeFailures: number;
 }
-
-/**
- * Typed authentication error used by settings endpoints.
- */
 export class SettingsPluginAuthError extends Error {
-  readonly code: string;
-  readonly details?: Record<string, unknown>;
-
-  constructor(code: string, message: string, details?: Record<string, unknown>) {
+  constructor(
+    readonly code: string,
+    message: string,
+    readonly details?: Record<string, unknown>
+  ) {
     super(message);
     this.name = "SettingsPluginAuthError";
-    this.code = code;
-    this.details = details;
   }
 }
-
-/**
- * Validates signed plugin caller headers and prevents short-window replays.
- */
+/** Signature first, then one atomic shared consume. Only protocol v2 is accepted. */
 export class SettingsPluginAuthService {
-  private readonly usedNonces = new Map<string, number>();
   private readonly metrics: SettingsPluginAuthObservabilitySnapshot = {
     successes: 0,
     failures: 0,
-    replays: 0
+    replays: 0,
+    storeFailures: 0
   };
-
   constructor(
     private readonly keyProvider: PluginAuthKeyProvider,
     private readonly config: RuntimeConfigService | null,
-    options?: SettingsPluginAuthServiceOptions
+    private readonly nonceStore: PluginNonceStore,
+    private readonly options: SettingsPluginAuthServiceOptions = {}
   ) {
-    if (!config && options?.maxSkewSeconds !== undefined) {
-      this.envMaxSkewSeconds = options.maxSkewSeconds;
-    }
+    if (["production", "staging"].includes(process.env.NODE_ENV ?? "") && !nonceStore.shared)
+      throw new SettingsPluginAuthError(
+        "plugin_auth_configuration_invalid",
+        "Production/staging requires a shared nonce store"
+      );
+    if (
+      options.maxSkewSeconds !== undefined &&
+      (!Number.isSafeInteger(options.maxSkewSeconds) ||
+        options.maxSkewSeconds < 1 ||
+        options.maxSkewSeconds > 3600)
+    )
+      throw new Error("Invalid plugin authentication skew");
   }
-  private readonly envMaxSkewSeconds: number = 300;
-
   async authenticateRequest(ctx: HttpContext): Promise<string> {
     try {
-      const config = await this.getConfig();
-      const pluginId = this.getHeader(ctx, PLUGIN_AUTH_HEADERS.pluginId)?.trim().toLowerCase();
-      const timestampRaw = this.getHeader(ctx, PLUGIN_AUTH_HEADERS.timestamp)?.trim();
-      const nonce = this.getHeader(ctx, PLUGIN_AUTH_HEADERS.nonce)?.trim();
-      const signature = this.getHeader(ctx, PLUGIN_AUTH_HEADERS.signature)?.trim().toLowerCase();
-
-      if (!pluginId || !timestampRaw || !nonce || !signature) {
+      const request = ctx.req as unknown as {
+        headers?: Record<string, string | string[] | undefined>;
+        url?: string;
+        method?: string;
+      };
+      const header = (name: string) => {
+        const value = request.headers?.[name];
+        return typeof value === "string" ? value : undefined;
+      };
+      const pluginId = header(PLUGIN_AUTH_HEADERS.pluginId),
+        rawTimestamp = header(PLUGIN_AUTH_HEADERS.timestamp),
+        nonce = header(PLUGIN_AUTH_HEADERS.nonce),
+        signature = header(PLUGIN_AUTH_HEADERS.signature),
+        keyId = header(PLUGIN_AUTH_HEADERS.keyId),
+        version = header(PLUGIN_AUTH_HEADERS.version);
+      if (!pluginId || !rawTimestamp || !nonce || !signature || !keyId || !version)
         throw new SettingsPluginAuthError(
           "plugin_auth_missing_headers",
-          "Missing plugin authentication headers"
+          "Missing v2 plugin authentication headers"
         );
-      }
-
-      const timestamp = Number.parseInt(timestampRaw, 10);
-      if (!Number.isFinite(timestamp)) {
+      if (version !== "2")
+        throw new SettingsPluginAuthError(
+          "plugin_auth_version_unsupported",
+          "Only plugin authentication protocol v2 is accepted"
+        );
+      if (
+        !/^[a-z0-9][a-z0-9._/-]{0,119}$/.test(pluginId) ||
+        !/^[a-zA-Z0-9_-]{24,128}$/.test(nonce) ||
+        !/^[a-fA-F0-9]{64}$/.test(signature) ||
+        !/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/.test(keyId)
+      )
+        throw new SettingsPluginAuthError(
+          "plugin_auth_invalid_headers",
+          "Invalid plugin authentication headers"
+        );
+      if (!/^\d{1,13}$/.test(rawTimestamp) || !Number.isSafeInteger(Number(rawTimestamp)))
         throw new SettingsPluginAuthError(
           "plugin_auth_invalid_timestamp",
-          "Invalid plugin auth timestamp"
+          "Timestamp must be a strict integer"
         );
-      }
-
-      const now = Math.floor(Date.now() / 1000);
-      if (Math.abs(now - timestamp) > config.maxSkewSeconds) {
+      const timestamp = Number(rawTimestamp),
+        nowMs = (this.options.now ?? Date.now)(),
+        now = Math.floor(nowMs / 1000);
+      const maxSkew = this.config
+        ? await this.config.getNumber("core-pack:plugin_auth:max_skew_seconds", {
+            envVar: "CMS_PLUGIN_AUTH_MAX_SKEW_SECONDS",
+            fallback: this.options.maxSkewSeconds ?? 300,
+            min: 30,
+            max: 3600
+          })
+        : (this.options.maxSkewSeconds ?? 300);
+      if (maxSkew === undefined || !Number.isSafeInteger(maxSkew))
+        throw new SettingsPluginAuthError(
+          "plugin_auth_configuration_invalid",
+          "Invalid configured plugin authentication skew"
+        );
+      if (Math.abs(now - timestamp) > maxSkew)
         throw new SettingsPluginAuthError(
           "plugin_auth_timestamp_expired",
-          "Plugin auth timestamp expired"
+          "Plugin authentication timestamp expired"
+        );
+      let key: PluginAuthKey | null;
+      try {
+        key = await this.keyProvider.getKey(pluginId, keyId, nowMs);
+      } catch {
+        throw new SettingsPluginAuthError(
+          "plugin_auth_key_store_unavailable",
+          "Plugin authentication key store unavailable"
         );
       }
-
-      const secrets = await this.getSecrets(pluginId);
-      if (secrets.length === 0) {
+      if (!key || key.id !== keyId)
         throw new SettingsPluginAuthError(
           "plugin_auth_plugin_not_configured",
-          `Plugin caller "${pluginId}" is not configured`
+          "Plugin authentication key is not configured"
         );
-      }
-
-      this.assertNonceNotReplayed(
-        pluginId,
-        nonce,
-        now + config.maxSkewSeconds,
-        config.nonceCacheMaxEntries
-      );
-
-      const request = toNodeRequest(ctx.req);
-      const isValid = secrets.some((secret) => {
-        const expected = buildPluginRequestSignature({
+      let expected: string;
+      try {
+        expected = buildPluginRequestSignature({
           pluginId,
-          secret,
+          keyId,
+          secret: key.secret,
           method: request.method ?? "GET",
-          path: normalizePath(request.url ?? "/"),
+          path: request.url ?? "/",
           timestamp,
           nonce,
           body: ctx.body
         });
-        return signaturesEqual(signature, expected);
-      });
-
-      if (!isValid) {
+      } catch {
+        throw new SettingsPluginAuthError(
+          "plugin_auth_invalid_request",
+          "Request target/body cannot be signed canonically"
+        );
+      }
+      if (!signaturesEqual(signature, expected))
         throw new SettingsPluginAuthError(
           "plugin_auth_invalid_signature",
           "Invalid plugin request signature"
         );
+      let consumed: boolean;
+      try {
+        consumed = await this.nonceStore.consume(
+          pluginId,
+          createHash("sha256").update(nonce).digest("hex"),
+          new Date((timestamp + maxSkew + 1) * 1000)
+        );
+      } catch {
+        this.metrics.storeFailures++;
+        throw new SettingsPluginAuthError(
+          "plugin_auth_nonce_store_unavailable",
+          "Plugin authentication nonce store unavailable"
+        );
       }
-      this.metrics.successes += 1;
+      if (!consumed) {
+        this.metrics.replays++;
+        throw new SettingsPluginAuthError(
+          "plugin_auth_nonce_replay",
+          "Plugin auth nonce replay detected"
+        );
+      }
+      this.metrics.successes++;
       return pluginId;
     } catch (error) {
-      if (error instanceof SettingsPluginAuthError) {
-        this.metrics.failures += 1;
-      }
+      this.metrics.failures++;
       throw error;
     }
   }
-
-  private getHeader(ctx: HttpContext, name: string): string | undefined {
-    const request = toNodeRequest(ctx.req);
-    const value = request.headers?.[name.toLowerCase()];
-    if (!value) return undefined;
-    return Array.isArray(value) ? value[0] : value;
-  }
-
-  private assertNonceNotReplayed(
-    pluginId: string,
-    nonce: string,
-    expiresAt: number,
-    nonceCacheMaxEntries: number
-  ): void {
-    const key = `${pluginId}:${nonce}`;
-    const now = Math.floor(Date.now() / 1000);
-
-    for (const [existingKey, expiration] of this.usedNonces) {
-      if (expiration < now) {
-        this.usedNonces.delete(existingKey);
-      }
-    }
-
-    if (this.usedNonces.has(key)) {
-      this.metrics.replays += 1;
-      throw new SettingsPluginAuthError(
-        "plugin_auth_nonce_replay",
-        "Plugin auth nonce replay detected"
-      );
-    }
-
-    if (this.usedNonces.size >= nonceCacheMaxEntries) {
-      const first = this.usedNonces.keys().next();
-      if (!first.done) {
-        this.usedNonces.delete(first.value);
-      }
-    }
-    this.usedNonces.set(key, expiresAt);
-  }
-
-  private async getConfig(): Promise<{ maxSkewSeconds: number; nonceCacheMaxEntries: number }> {
-    if (!this.config) {
-      return {
-        maxSkewSeconds: this.envMaxSkewSeconds,
-        nonceCacheMaxEntries: 10_000
-      };
-    }
-    const maxSkewSeconds =
-      (await this.config.getNumber("core-pack:plugin_auth:max_skew_seconds", {
-        envVar: "CMS_PLUGIN_AUTH_MAX_SKEW_SECONDS",
-        fallback: this.envMaxSkewSeconds,
-        min: 30,
-        max: 3600
-      })) ?? this.envMaxSkewSeconds;
-    const nonceCacheMaxEntries =
-      (await this.config.getNumber("core-pack:plugin_auth:nonce_cache_max_entries", {
-        fallback: 10_000,
-        min: 100,
-        max: 200_000
-      })) ?? 10_000;
-    return { maxSkewSeconds, nonceCacheMaxEntries };
-  }
-
   getObservabilitySnapshot(): SettingsPluginAuthObservabilitySnapshot {
     return { ...this.metrics };
   }
-
-  private async getSecrets(pluginId: string): Promise<readonly string[]> {
-    if (typeof this.keyProvider.getSecrets === "function") {
-      const secrets = await this.keyProvider.getSecrets(pluginId);
-      return secrets.filter((secret) => secret.trim().length >= 8);
-    }
-    const secret = await this.keyProvider.getSecret(pluginId);
-    return secret ? [secret] : [];
-  }
-}
-
-function toNodeRequest(value: unknown): {
-  method?: string;
-  url?: string;
-  headers?: Record<string, string | string[] | undefined>;
-} {
-  if (!value || typeof value !== "object") {
-    return {};
-  }
-
-  const maybeRequest = value as {
-    method?: unknown;
-    url?: unknown;
-    headers?: unknown;
-  };
-
-  const method = typeof maybeRequest.method === "string" ? maybeRequest.method : undefined;
-  const url = typeof maybeRequest.url === "string" ? maybeRequest.url : undefined;
-  const headersRaw =
-    maybeRequest.headers && typeof maybeRequest.headers === "object"
-      ? (maybeRequest.headers as Record<string, unknown>)
-      : undefined;
-  const headers: Record<string, string | string[] | undefined> = {};
-
-  if (headersRaw) {
-    for (const [key, headerValue] of Object.entries(headersRaw)) {
-      if (typeof headerValue === "string") {
-        headers[key.toLowerCase()] = headerValue;
-      } else if (Array.isArray(headerValue)) {
-        const normalized = headerValue.filter((item): item is string => typeof item === "string");
-        headers[key.toLowerCase()] = normalized.length > 0 ? normalized : undefined;
-      }
-    }
-  }
-
-  return { method, url, headers };
 }

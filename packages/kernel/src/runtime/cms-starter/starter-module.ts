@@ -19,19 +19,36 @@ import { KERNEL_CORS_PREFLIGHT_CONTROLLER } from "../../http/cors-preflight.toke
 import { KernelHealthHttpController } from "../../http/health/kernel-health.controller.js";
 import { KERNEL_HEALTH_HTTP_CONTROLLER } from "../../http/health/kernel-health.tokens.js";
 import { CmsSwaggerController } from "../../http/swagger/cms-swagger.controller.js";
+import { KernelDeliveriesController } from "../../http/system/deliveries.controller.js";
+import { KernelEmailJobsController } from "../../http/system/email-jobs.controller.js";
 import { KernelSystemHttpController } from "../../http/system/kernel-system.controller.js";
 import { KERNEL_SYSTEM_HTTP_CONTROLLER } from "../../http/system/kernel-system.tokens.js";
 import { CORE_TOKENS } from "../../tokens/core-tokens.js";
+import {
+  createKernelSystemOperations,
+  KERNEL_SYSTEM_OPERATIONS
+} from "../operations/kernel-system-operations.js";
+import { assertOperationContext, operationForbidden } from "../operations/operation-context.js";
 import {
   createDbPluginRuntimeStore,
   createDeferredPluginRuntimeStore,
   createInMemoryPluginRuntimeStore
 } from "../persistence/plugin-runtime-store.js";
+import { PublicRequestLimiter } from "../persistence/public-request-limiter.js";
 import { ConfiguredPluginDiscoveryService } from "../plugin-discovery/plugin-discovery-service.js";
 import { InMemoryPluginRuntime } from "../plugin-runtime/in-memory-plugin-runtime.js";
+import { PluginActivityRegistry } from "../plugin-runtime/plugin-activity.js";
 import { KernelHealthService } from "../system/kernel-health-service.js";
 import { KernelSystemService } from "../system/kernel-system-service.js";
+import { registerDurableEventHost } from "./durable-event-host.js";
+import { createPlatformPreflight } from "./platform-preflight.js";
 
+const KERNEL_EMAIL_JOBS_CONTROLLER = createToken<KernelEmailJobsController>(
+  "KERNEL_EMAIL_JOBS_CONTROLLER"
+);
+const KERNEL_DELIVERIES_CONTROLLER = createToken<KernelDeliveriesController>(
+  "KERNEL_DELIVERIES_CONTROLLER"
+);
 const CMS_STARTER_SWAGGER_CONFIG_TOKEN = createToken<CmsSwaggerUiConfig>(
   "CMS_STARTER_SWAGGER_CONFIG"
 );
@@ -55,6 +72,67 @@ export function createCmsStarterKernelModule({
   swaggerUi,
   pluginSourceSnapshots
 }: CreateCmsStarterKernelModuleOptions) {
+  if (!app.hasToken(CORE_TOKENS.DURABLE_EVENTS)) registerDurableEventHost(app, options);
+  const activity = new PluginActivityRegistry();
+  app.registerGlobalProvider(
+    factoryProvider(
+      CORE_TOKENS.PUBLIC_REQUEST_LIMITER,
+      () => ({
+        async consume(clientId: string) {
+          const adapter = await app.resolve(CORE_TOKENS.DB_ADAPTER);
+          await new PublicRequestLimiter(adapter).consume(clientId);
+        }
+      }),
+      []
+    )
+  );
+  const platformPreflight = createPlatformPreflight(app, options);
+  app.registerGlobalProvider(
+    factoryProvider(
+      CORE_TOKENS.PLUGIN_RUNTIME_VIEW,
+      () => ({
+        list: async () => (await app.resolve(CORE_TOKENS.PLUGIN_RUNTIME)).list()
+      }),
+      []
+    )
+  );
+  if (!app.hasToken(CORE_TOKENS.OPERATION_AUTHORIZER)) {
+    app.registerGlobalProvider(
+      factoryProvider(
+        CORE_TOKENS.OPERATION_AUTHORIZER,
+        () => ({
+          async assert(context, target) {
+            assertOperationContext(context);
+            if (!app.hasToken(CORE_TOKENS.OPERATION_POLICY))
+              throw operationForbidden("policy_required");
+            const policy = await app.resolve(CORE_TOKENS.OPERATION_POLICY);
+            if (app.hasToken(CORE_TOKENS.PLUGIN_CLUSTER_COORDINATOR)) {
+              const cluster = await app.resolve(CORE_TOKENS.PLUGIN_CLUSTER_COORDINATOR);
+              await cluster.assertActive(target.ownerPluginId);
+              if (context.actor.kind === "plugin")
+                await cluster.assertActive(context.actor.pluginId);
+            }
+            await policy.assert(context, target);
+          },
+          run: async (context, targets, work) =>
+            activity.run(
+              [
+                ...targets.map((target) => target.ownerPluginId),
+                ...(context.actor.kind === "plugin" ? [context.actor.pluginId] : [])
+              ],
+              async () => {
+                const policy = await app.resolve(CORE_TOKENS.OPERATION_POLICY);
+                if (policy.run) return policy.run(context, targets, work);
+                for (const target of targets) await policy.assert(context, target);
+                return work();
+              }
+            )
+        }),
+        []
+      )
+    );
+  }
+
   const manifestProvisioningEnabled = options.enablePluginManifestProvisioning !== false;
 
   return defineModule({
@@ -73,9 +151,27 @@ export function createCmsStarterKernelModule({
         (runtimeStore) =>
           new InMemoryPluginRuntime({
             coreVersion: options.coreVersion,
+            activity,
+            assertPluginActive: async (pluginId) => {
+              if (app.hasToken(CORE_TOKENS.PLUGIN_CLUSTER_COORDINATOR))
+                await (await app.resolve(CORE_TOKENS.PLUGIN_CLUSTER_COORDINATOR)).assertActive(
+                  pluginId
+                );
+            },
             app,
             runtimeStore: runtimeStore as PluginRuntimeStore,
+            onDeliveryDiagnostic:
+              options.onPluginEventDeliveryDiagnostic ??
+              ((diagnostic) => console.warn("[kernel:plugin-events] Delivery skipped", diagnostic)),
             lifecycleHooks: {
+              onBeforeLoad: async (definition) => {
+                if (app.hasToken(CORE_TOKENS.PLUGIN_CLUSTER_COORDINATOR)) {
+                  const cluster = await app.resolve(CORE_TOKENS.PLUGIN_CLUSTER_COORDINATOR);
+                  if (cluster.isInitialized() || !options.migrations?.allowStartupWithoutDb)
+                    await cluster.assertActive(definition.manifest.id);
+                }
+                await platformPreflight(definition);
+              },
               onAfterLoad: async (context) => {
                 const provisioner = await resolvePluginManifestProvisioner(app);
                 if (!manifestProvisioningEnabled) {
@@ -108,6 +204,7 @@ export function createCmsStarterKernelModule({
         () =>
           options.pluginDiscoveryService ??
           new ConfiguredPluginDiscoveryService({
+            allowedRoots: options.pluginAllowedRoots,
             continueOnError: options.continueOnPluginDiscoveryError ?? false
           }),
         []
@@ -141,6 +238,31 @@ function createHealthProviders(
       (runtime) =>
         new KernelHealthService({
           runtime: runtime as PluginRuntime,
+          durableReadiness: async () =>
+            (runtime as PluginRuntime)
+              .list()
+              .some((record) =>
+                record.manifest.events?.emits?.some((event) => event.delivery !== "sync")
+              )
+              ? await (async () => {
+                  const store = await app.resolve(CORE_TOKENS.DURABLE_EVENTS);
+                  return store.isInitialized()
+                    ? store.readiness()
+                    : { ok: false, reason: "durable-store-not-initialized" };
+                })()
+              : { ok: true },
+          clusterReadiness: async () =>
+            app.hasToken(CORE_TOKENS.PLUGIN_CLUSTER_COORDINATOR)
+              ? await (async () => {
+                  const coordinator = await app.resolve(CORE_TOKENS.PLUGIN_CLUSTER_COORDINATOR);
+                  return coordinator.isInitialized()
+                    ? coordinator.readiness()
+                    : { ok: false, reason: "cluster-not-started" };
+                })()
+              : {
+                  ok: !options.cluster,
+                  ...(options.cluster ? { reason: "cluster-not-started" } : {})
+                },
           dbHealthCheck: async () => {
             if (!app.hasToken(CORE_TOKENS.DB_ADAPTER)) {
               return { ok: false, reason: "not_configured" } as const;
@@ -158,7 +280,11 @@ function createHealthProviders(
       CORE_TOKENS.KERNEL_SYSTEM_SERVICE,
       (runtime) =>
         new KernelSystemService(runtime as PluginRuntime, {
-          pluginSources: pluginSourceSnapshots
+          pluginSources: pluginSourceSnapshots,
+          coordinator: async () =>
+            app.hasToken(CORE_TOKENS.PLUGIN_CLUSTER_COORDINATOR)
+              ? app.resolve(CORE_TOKENS.PLUGIN_CLUSTER_COORDINATOR)
+              : null
         }),
       [CORE_TOKENS.PLUGIN_RUNTIME]
     ),
@@ -167,8 +293,22 @@ function createHealthProviders(
       () => createLazyKernelAdminRouteGuard(app),
       []
     ),
-    httpProvider(KERNEL_SYSTEM_HTTP_CONTROLLER, KernelSystemHttpController, [
+    factoryProvider(KERNEL_SYSTEM_OPERATIONS, createKernelSystemOperations, [
       CORE_TOKENS.KERNEL_SYSTEM_SERVICE,
+      CORE_TOKENS.OPERATION_AUTHORIZER
+    ]),
+    httpProvider(KERNEL_EMAIL_JOBS_CONTROLLER, KernelEmailJobsController, [
+      CORE_TOKENS.SECURE_EMAIL_JOBS,
+      CORE_TOKENS.OPERATION_AUTHORIZER,
+      CMS_STARTER_KERNEL_ADMIN_ROUTE_GUARD
+    ]),
+    httpProvider(KERNEL_DELIVERIES_CONTROLLER, KernelDeliveriesController, [
+      CORE_TOKENS.DURABLE_EVENTS,
+      CORE_TOKENS.OPERATION_AUTHORIZER,
+      CMS_STARTER_KERNEL_ADMIN_ROUTE_GUARD
+    ]),
+    httpProvider(KERNEL_SYSTEM_HTTP_CONTROLLER, KernelSystemHttpController, [
+      KERNEL_SYSTEM_OPERATIONS,
       CMS_STARTER_KERNEL_ADMIN_ROUTE_GUARD
     ])
   ];
@@ -181,6 +321,8 @@ function createHealthExports(options: CmsStarterOptions) {
 
   return [
     CORE_TOKENS.KERNEL_HEALTH_SERVICE,
+    KERNEL_EMAIL_JOBS_CONTROLLER,
+    KERNEL_DELIVERIES_CONTROLLER,
     KERNEL_CORS_PREFLIGHT_CONTROLLER,
     KERNEL_HEALTH_HTTP_CONTROLLER,
     CORE_TOKENS.KERNEL_SYSTEM_SERVICE,

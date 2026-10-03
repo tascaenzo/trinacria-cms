@@ -2,19 +2,16 @@ import type { PluginManifestEmittedEvent } from "./plugin-manifest.js";
 import type { SecureEventPayloadRecord } from "./secure-event-payloads.js";
 
 export type PluginAccessGrantStatus = "pending" | "approved" | "denied" | "revoked";
-export type PluginAccessGrantType =
-  | "event-subscription"
-  | "secure-payload-claim"
-  | "setting"
-  | "api";
+export type PluginAccessGrantType = "api";
 
 export interface PluginAccessGrant {
   id?: string;
   accessType?: PluginAccessGrantType;
   producerPluginId: string;
   consumerPluginId: string;
-  eventName: string;
-  payloadType?: string;
+  resource?: string;
+  action?: string;
+  operation?: string;
   requiredPermission: string;
   status: PluginAccessGrantStatus;
   reason?: string;
@@ -47,8 +44,6 @@ export interface SecureEventPayloadAuthorizationRequest {
   consumerPluginId: string;
   eventName: string;
   requiredPermission: string;
-  decision: "allow" | "deny";
-  reason?: string;
 }
 
 export interface SecureEventPayloadAuthorizer {

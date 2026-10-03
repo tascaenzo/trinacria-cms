@@ -3,7 +3,7 @@ import test from "node:test";
 import { EmailDeliveryService } from "../src/modules/email/services/email-delivery.service.js";
 import type { EmailConfigService } from "../src/modules/email/services/email-config.service.js";
 
-test("console email delivery emits JSON logs with flow tokens redacted", async () => {
+test("console email delivery emits JSON logs without recipient, body or flow tokens", async () => {
   const token = "sensitive-flow-token-that-must-never-reach-logs";
   const lines: string[] = [];
   const originalInfo = console.info;
@@ -33,7 +33,8 @@ test("console email delivery emits JSON logs with flow tokens redacted", async (
   assert.equal(lines.length, 1);
   const entry = JSON.parse(lines[0] ?? "") as Record<string, unknown>;
   assert.equal(entry.event, "outbound_email");
-  assert.match(String(entry.text), /token=\[REDACTED\]/);
-  assert.match(String(entry.html), /token=\[REDACTED\]/);
+  assert.equal(entry.recipientCount, 1);
+  for (const key of ["to", "from", "replyTo", "subject", "text", "html"]) assert.equal(key in entry, false);
+  assert.doesNotMatch(lines[0] ?? "", /operator@example|Reset password|cms.example/);
   assert.doesNotMatch(lines[0] ?? "", new RegExp(token));
 });

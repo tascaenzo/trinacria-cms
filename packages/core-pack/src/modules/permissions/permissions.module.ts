@@ -2,10 +2,14 @@ import {
   CORE_TOKENS,
   classProvider,
   defineModule,
-  type EntityRegistry,
   factoryProvider,
   httpProvider
 } from "@trinacria-cms/kernel";
+import type { EntityRegistry } from "@trinacria-cms/kernel/runtime";
+import {
+  createPermissionsOperations,
+  PERMISSIONS_OPERATIONS
+} from "../../operations/access-operations.js";
 import { CorePackAuthModule } from "../auth/auth.module.js";
 import { CORE_PACK_JWT_AUTH_SERVICE_TOKEN } from "../auth/auth.tokens.js";
 import { CorePackCacheModule } from "../cache/cache.module.js";
@@ -41,12 +45,17 @@ export const CorePackPermissionsModule = defineModule({
       CORE_PACK_CACHE_SERVICE_TOKEN
     ]),
     classProvider(PERMISSIONS_SERVICE_TOKEN, PermissionsService, [PERMISSIONS_REPOSITORY_TOKEN]),
-    httpProvider(PERMISSIONS_CONTROLLER_TOKEN, PermissionsController, [
+    factoryProvider(PERMISSIONS_OPERATIONS, createPermissionsOperations, [
       PERMISSIONS_SERVICE_TOKEN,
+      CORE_TOKENS.OPERATION_AUTHORIZER
+    ]),
+    httpProvider(PERMISSIONS_CONTROLLER_TOKEN, PermissionsController, [
+      PERMISSIONS_OPERATIONS,
       CORE_PACK_JWT_AUTH_SERVICE_TOKEN
     ])
   ],
   exports: [
+    PERMISSIONS_OPERATIONS,
     PERMISSIONS_CONTROLLER_TOKEN,
     PERMISSIONS_ENTITY_REGISTRATION_TOKEN,
     PERMISSIONS_REPOSITORY_TOKEN,

@@ -1,8 +1,14 @@
 import { randomUUID } from "node:crypto";
-import type { SettingsService } from "@trinacria-cms/core-pack";
+import type { SettingsService } from "@trinacria-cms/core-pack/runtime";
 import type { DbAdapter } from "@trinacria-cms/kernel";
+import type { OperationAuthorizer, OperationContext } from "@trinacria-cms/kernel/contracts";
+import type { MongoDurableEventStore } from "@trinacria-cms/kernel/runtime";
+import type { MediaAssetsService } from "@trinacria-cms/media-pack/runtime";
 import type { ContentTypeRecord } from "../../content-types/content-types.schemas.js";
-import type { ContentTypesService } from "../../content-types/services/content-types.service.js";
+import { ContentTypesRepository } from "../../content-types/repositories/content-types.repository.js";
+import { ContentTypesService } from "../../content-types/services/content-types.service.js";
+import { validatePublicationContent } from "../../publications/publication-validation.js";
+import { PublicationsRepository } from "../../publications/publications.repository.js";
 import { RevisionsRepository } from "../../revisions/revisions.repository.js";
 import {
   type CreateEntryInput,
@@ -16,11 +22,15 @@ import { EntriesRepository } from "../repositories/entries.repository.js";
 import { resolveEntryWorkflow } from "./entry-workflows.js";
 
 export class EntryValidationError extends Error {
-  readonly code = "validation_error";
+  readonly code: string = "validation_error";
   constructor(message: string) {
     super(message);
     this.name = "EntryValidationError";
   }
+}
+
+export class EntryConflictError extends EntryValidationError {
+  readonly code = "conflict";
 }
 
 export class EntryAccessError extends Error {
@@ -53,8 +63,50 @@ export class EntriesService {
     private readonly contentTypes: ContentTypesService,
     private readonly revisions: RevisionsRepository,
     private readonly settings?: SettingsService,
-    private readonly db?: DbAdapter
+    private readonly db?: DbAdapter,
+    private readonly authorization?: {
+      context: OperationContext;
+      authorizer: OperationAuthorizer;
+      scope?: () => Promise<EntryAccessScope>;
+    },
+    private readonly fenceModel = false,
+    private readonly durable?: MongoDurableEventStore,
+    private readonly publications: PublicationsRepository | undefined = db
+      ? new PublicationsRepository(db)
+      : undefined,
+    private readonly media?: Pick<MediaAssetsService, "validateUse">
   ) {}
+
+  withAuthorization(
+    context: OperationContext,
+    authorizer: OperationAuthorizer,
+    scope?: () => Promise<EntryAccessScope>
+  ): EntriesService {
+    const service = new EntriesService(
+      this.repository,
+      this.contentTypes,
+      this.revisions,
+      this.settings,
+      this.db,
+      { context, authorizer, scope },
+      this.fenceModel,
+      this.durable,
+      this.publications,
+      this.media
+    );
+    service.setPublisher(this.publisher);
+    return service;
+  }
+
+  private async assertAction(action: string, id?: string, resource = "entries") {
+    if (this.authorization)
+      await this.authorization.authorizer.assert(this.authorization.context, {
+        ownerPluginId: "editorial-pack",
+        resource,
+        action,
+        resourceId: id
+      });
+  }
 
   setPublisher(publisher: EditorialDomainEventPublisher | undefined): void {
     this.publisher = publisher;
@@ -62,8 +114,12 @@ export class EntriesService {
 
   async createEntry(input: CreateEntryInput, ownerUserId: string): Promise<EntryRecord> {
     if (this.db) return this.atomic((service) => service.createEntry(input, ownerUserId));
+    await this.assertAction("create");
     const parsed = CreateEntryInputSchema.parse(input);
     const contentType = await this.requireActiveContentType(parsed.contentTypeId);
+    const initialStatus =
+      resolveEntryWorkflow(contentType).states.find((state) => state.initial)?.key ?? "draft";
+    if (initialStatus === "published") await this.assertAction("publish");
     this.validateData(contentType, parsed.data as Record<string, unknown>);
     const created = await this.repository.create({
       ...parsed,
@@ -71,12 +127,19 @@ export class EntriesService {
       initialStatus:
         resolveEntryWorkflow(contentType).states.find((state) => state.initial)?.key ?? "draft"
     });
-    await this.createRevision(created, "created", ownerUserId);
+    const revision = await this.createRevision(created, "created", ownerUserId);
+    if (created.status === "published") {
+      await validatePublicationContent(contentType, created, this.media);
+      await this.requirePublications().publish(created, revision.id);
+      await this.publisher?.emit("entry-published", toEventPayload(created, ownerUserId));
+      await this.publisher?.emit("delivery-invalidated", { scope: "entry", id: created.id });
+    }
     await this.publisher?.emit("entry-created", toEventPayload(created, ownerUserId));
     return created;
   }
 
   async getEntry(id: string, scope?: EntryAccessScope) {
+    await this.assertAction("read", id);
     const entry = await this.repository.findById(id);
     if (entry && scope) await this.assertEntryAccess(entry, scope);
     return entry;
@@ -86,6 +149,8 @@ export class EntriesService {
     options: Parameters<EntriesRepository["list"]>[0] = {},
     scope?: EntryAccessScope
   ) {
+    await this.assertAction("read");
+    if (this.authorization?.scope) scope = await this.authorization.scope();
     if (!scope || scope.canAccessAll) return this.repository.list(options);
     const types = await this.contentTypes.listContentTypes();
     const unrestricted: string[] = [];
@@ -134,11 +199,19 @@ export class EntriesService {
     }
   }
 
-  async updateEntry(id: string, input: UpdateEntryInput, scope: EntryAccessScope) {
+  async updateEntry(
+    id: string,
+    input: UpdateEntryInput,
+    scope: EntryAccessScope
+  ): Promise<EntryRecord | null> {
+    if (this.db) return this.atomic((service) => service.updateEntry(id, input, scope));
+    await this.assertAction("update", id);
     const parsed = UpdateEntryInputSchema.parse(input);
     const entry = await this.repository.findById(id);
     if (!entry) return null;
     await this.assertEntryAccess(entry, scope);
+    if (entry.status === "published") await this.assertAction("publish", id);
+    await this.requireContentTypeForExistingEntry(entry.contentTypeId);
     if (parsed.data !== undefined) {
       const contentType = await this.requireActiveContentType(entry.contentTypeId);
       this.validateData(contentType, parsed.data as Record<string, unknown>);
@@ -149,7 +222,7 @@ export class EntriesService {
       parsed.expectedVersion ?? entry.version ?? 1
     );
     if (!updated) {
-      throw new EntryValidationError(
+      throw new EntryConflictError(
         "Il contenuto è stato modificato da un altro utente. Aggiorna e riprova."
       );
     }
@@ -175,6 +248,18 @@ export class EntriesService {
         `Transition "${transition}" is not available from status "${entry.status}"`
       );
     }
+    const action =
+      configuredTransition.requiredPermission ??
+      (configuredTransition.to === "published" || entry.status === "published"
+        ? "publish"
+        : transition === "request_changes"
+          ? "review"
+          : transition === "approve"
+            ? "approve"
+            : "submit");
+    await this.assertAction(action, id);
+    if (configuredTransition.to === "published" || entry.status === "published")
+      await this.assertAction("publish", id);
     if (
       configuredTransition.to === "in_review" &&
       (await this.requiresReviewerAssignment()) &&
@@ -200,19 +285,62 @@ export class EntriesService {
       entry.version ?? 1
     );
     if (!updated) {
-      throw new EntryValidationError(
+      throw new EntryConflictError(
         "Il contenuto è stato modificato da un altro utente. Aggiorna e riprova."
       );
     }
-    await this.createRevision(updated, `transition:${transition}`, scope.actorUserId);
+    const revision = await this.createRevision(
+      updated,
+      `transition:${transition}`,
+      scope.actorUserId
+    );
     await this.publisher?.emit("entry-transitioned", toEventPayload(updated, scope.actorUserId));
     if (updated.status === "published") {
+      await validatePublicationContent(contentType, updated, this.media);
+      await this.requirePublications().publish(updated, revision.id);
       await this.publisher?.emit("entry-published", toEventPayload(updated, scope.actorUserId));
+    } else if (entry.status === "published") {
+      await this.requirePublications().unpublish(entry.id);
     }
+    if (updated.status === "published" || entry.status === "published")
+      await this.publisher?.emit("delivery-invalidated", { scope: "entry", id: entry.id });
     return updated;
   }
 
+  async publishSnapshot(
+    id: string,
+    expectedVersion: number,
+    scope: EntryAccessScope
+  ): Promise<EntryRecord | null> {
+    if (this.db)
+      return this.atomic((service) => service.publishSnapshot(id, expectedVersion, scope));
+    await this.assertAction("publish", id);
+    if (!Number.isSafeInteger(expectedVersion) || expectedVersion < 1)
+      throw new EntryValidationError("expectedVersion required");
+    const entry = await this.repository.findById(id);
+    if (!entry) return null;
+    await this.assertEntryAccess(entry, scope);
+    if (entry.status !== "published")
+      throw new EntryValidationError("Publish through the workflow before republishing");
+    const type = await this.requireActiveContentType(entry.contentTypeId);
+    await validatePublicationContent(type, entry, this.media);
+    const updated = await this.repository.update(id, {}, expectedVersion);
+    if (!updated) throw new EntryConflictError("Working copy changed before publication");
+    const revision = await this.createRevision(updated, "publication", scope.actorUserId);
+    await this.requirePublications().publish(updated, revision.id);
+    await this.publisher?.emit("entry-published", toEventPayload(updated, scope.actorUserId));
+    await this.publisher?.emit("delivery-invalidated", { scope: "entry", id: entry.id });
+    return updated;
+  }
+
+  private requirePublications() {
+    if (!this.publications)
+      throw new EntryValidationError("Transactional publication repository required");
+    return this.publications;
+  }
+
   async listRevisions(entryId: string, scope?: EntryAccessScope) {
+    await this.assertAction("read", entryId, "revisions");
     const entry = await this.repository.findById(entryId);
     if (!entry) return null;
     if (scope) await this.assertEntryAccess(entry, scope);
@@ -222,12 +350,14 @@ export class EntriesService {
   /** Saves an intentional restore point; ordinary and automatic saves do not create revisions. */
   async createRevisionSnapshot(id: string, scope: EntryAccessScope): Promise<EntryRecord | null> {
     if (this.db) return this.atomic((service) => service.createRevisionSnapshot(id, scope));
+    await this.assertAction("update", id);
     const entry = await this.repository.findById(id);
     if (!entry) return null;
     await this.assertEntryAccess(entry, scope);
+    await this.requireContentTypeForExistingEntry(entry.contentTypeId);
     const locked = await this.repository.update(id, {}, entry.version ?? 1);
     if (!locked)
-      throw new EntryValidationError("Il contenuto è stato modificato da un altro utente.");
+      throw new EntryConflictError("Il contenuto è stato modificato da un altro utente.");
     await this.createRevision(locked, "snapshot", scope.actorUserId);
     return locked;
   }
@@ -256,9 +386,11 @@ export class EntriesService {
     scope: EntryAccessScope
   ): Promise<EntryRecord | null> {
     if (this.db) return this.atomic((service) => service.restoreRevision(id, revisionId, scope));
+    await this.assertAction("restore", id, "revisions");
     const entry = await this.repository.findById(id);
     if (!entry) return null;
     await this.assertEntryAccess(entry, scope);
+    if (entry.status === "published") await this.assertAction("publish", id);
     const revision = await this.revisions.findById(id, revisionId);
     if (!revision) throw new EntryValidationError(`Revision "${revisionId}" does not exist`);
     let snapshot: EntryRecord;
@@ -275,21 +407,31 @@ export class EntriesService {
     // Restore content only: lifecycle, assignment and publication remain governed by transitions.
     const restored = await this.repository.restore(entry.id, snapshot, entry.version ?? 1);
     if (!restored) {
-      throw new EntryValidationError("Il contenuto è stato modificato da un altro utente.");
+      throw new EntryConflictError("Il contenuto è stato modificato da un altro utente.");
     }
     await this.createRevision(restored, `restore:${revision.revisionNumber}`, scope.actorUserId);
     return restored;
   }
 
   async deleteEntry(id: string, scope: EntryAccessScope): Promise<boolean> {
+    if (this.db) return this.atomic((service) => service.deleteEntry(id, scope));
+    await this.assertAction("delete", id);
     const entry = await this.repository.findById(id);
     if (!entry) return false;
     await this.assertEntryAccess(entry, scope);
+    await this.requireContentTypeForExistingEntry(entry.contentTypeId);
+    if (entry.status === "published") {
+      await this.requirePublications().unpublish(id);
+      await this.publisher?.emit("delivery-invalidated", { scope: "entry", id });
+    }
     return this.repository.delete(id);
   }
 
   private async requireActiveContentType(contentTypeId: string): Promise<ContentTypeRecord> {
-    const contentType = await this.contentTypes.getContentType(contentTypeId);
+    const contentType = await this.contentTypes.getContentTypeForEntry(
+      contentTypeId,
+      this.fenceModel
+    );
     if (!contentType) {
       throw new EntryValidationError(`Content type "${contentTypeId}" does not exist`);
     }
@@ -302,7 +444,10 @@ export class EntriesService {
   private async requireContentTypeForExistingEntry(
     contentTypeId: string
   ): Promise<ContentTypeRecord> {
-    const contentType = await this.contentTypes.getContentType(contentTypeId);
+    const contentType = await this.contentTypes.getContentTypeForEntry(
+      contentTypeId,
+      this.fenceModel
+    );
     if (!contentType) {
       throw new EntryValidationError(`Content type "${contentTypeId}" does not exist`);
     }
@@ -321,6 +466,7 @@ export class EntriesService {
   }
 
   private async assertEntryAccess(entry: EntryRecord, scope: EntryAccessScope) {
+    if (this.authorization?.scope) scope = await this.authorization.scope();
     if (
       scope.canAccessAll ||
       entry.ownerUserId === scope.actorUserId ||
@@ -334,6 +480,23 @@ export class EntriesService {
   }
 
   private async atomic<T>(work: (service: EntriesService) => Promise<T>): Promise<T> {
+    if (this.durable && this.publisher)
+      return this.durable.transaction("editorial-pack", async (db, publisher) => {
+        const service = new EntriesService(
+          new EntriesRepository(db),
+          new ContentTypesService(new ContentTypesRepository(db), db),
+          new RevisionsRepository(db),
+          this.settings,
+          undefined,
+          this.authorization,
+          true,
+          undefined,
+          new PublicationsRepository(db),
+          this.media
+        );
+        service.setPublisher(publisher);
+        return work(service);
+      });
     if (!this.db?.withTransaction)
       throw new EntryValidationError("Editorial writes require MongoDB replica-set transactions");
     const events: Array<{ name: string; payload: unknown }> = [];
@@ -341,9 +504,15 @@ export class EntriesService {
       events.length = 0;
       const service = new EntriesService(
         new EntriesRepository(db),
-        this.contentTypes,
+        new ContentTypesService(new ContentTypesRepository(db), db),
         new RevisionsRepository(db),
-        this.settings
+        this.settings,
+        undefined,
+        this.authorization,
+        true,
+        undefined,
+        new PublicationsRepository(db),
+        this.media
       );
       service.setPublisher({
         emit: async (name, payload) => {
@@ -358,7 +527,7 @@ export class EntriesService {
 
   private async createRevision(entry: EntryRecord, reason: string, actorUserId: string) {
     const revisions = await this.revisions.listByEntryId(entry.id, { limit: 1 });
-    await this.revisions.create({
+    return this.revisions.create({
       id: randomUUID(),
       entryId: entry.id,
       revisionNumber: (revisions[0]?.revisionNumber ?? 0) + 1,

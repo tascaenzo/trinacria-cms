@@ -2,10 +2,10 @@ import {
   CORE_TOKENS,
   classProvider,
   defineModule,
-  type EntityRegistry,
   factoryProvider,
   httpProvider
 } from "@trinacria-cms/kernel";
+import type { EntityRegistry } from "@trinacria-cms/kernel/runtime";
 import { CorePackCacheModule } from "../cache/cache.module.js";
 import { CORE_PACK_CACHE_SERVICE_TOKEN } from "../cache/cache.tokens.js";
 import { I18nController } from "./i18n.controller.js";

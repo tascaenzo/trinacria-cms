@@ -33,22 +33,33 @@ const looseObjectSchema: Schema<Record<string, unknown>> = jsonValueSchema<
 
 const entityIndexDirectionSchema = s.union([s.literal(1), s.literal(-1), s.literal("text")]);
 
-const entityIndexSchema = s.object(
-  {
-    name: namespaceSegmentSchema,
-    fields: s
-      .record(s.string({ trim: true, minLength: 1, maxLength: 120 }), entityIndexDirectionSchema)
-      .refine(
-        (value) => Object.keys(value).length > 0,
-        "Index fields cannot be empty",
-        "empty_index"
-      ),
-    unique: s.boolean().optional().default(false),
-    sparse: s.boolean().optional().default(false),
-    partialFilter: looseObjectSchema.optional()
-  },
-  { strict: true }
-);
+const entityIndexSchema = s
+  .object(
+    {
+      name: namespaceSegmentSchema,
+      fields: s
+        .record(s.string({ trim: true, minLength: 1, maxLength: 120 }), entityIndexDirectionSchema)
+        .refine(
+          (value) => Object.keys(value).length > 0,
+          "Index fields cannot be empty",
+          "empty_index"
+        ),
+      unique: s.boolean().optional().default(false),
+      sparse: s.boolean().optional().default(false),
+      expireAfterSeconds: s.number({ int: true, min: 0, max: 2147483647 }).optional(),
+      partialFilter: looseObjectSchema.optional()
+    },
+    { strict: true }
+  )
+  .refine(
+    (index) =>
+      index.expireAfterSeconds === undefined ||
+      (Object.keys(index.fields).length === 1 &&
+        Object.values(index.fields)[0] === 1 &&
+        !index.unique),
+    "TTL indexes require one ascending field and cannot be unique",
+    "invalid_ttl_index"
+  );
 
 const entityRepositorySchema = s.object(
   {
@@ -152,10 +163,7 @@ const emittedEventSchema = s.object(
     name: namespaceSegmentSchema,
     visibility: s.enum(["public", "protected", "private", "audit"] as const),
     version: s.number({ int: true, min: 1 }),
-    delivery: s
-      .enum(["sync", "async", "deferred"] as const)
-      .optional()
-      .default("async"),
+    delivery: s.enum(["sync", "async", "deferred"] as const),
     payloadSchema: looseObjectSchema.optional()
   },
   { strict: true }

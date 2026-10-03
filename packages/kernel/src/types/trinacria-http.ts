@@ -14,6 +14,10 @@ declare module "@trinacria/http" {
 
   export interface RouteOpenApiDocs {
     parameters?: RouteOpenApiParameter[];
+    /** Canonical owner for SDK overlays. */
+    pluginId?: string;
+    /** Mandatory explanation for a CMS route excluded from OpenAPI. */
+    exclusionReason?: string;
   }
 }
 

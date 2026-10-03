@@ -1,13 +1,13 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import type { EventBus } from "@trinacria/events";
 import type { PluginManifestProvisioner } from "@trinacria-cms/kernel";
+import type { MongoDurableEventStore } from "@trinacria-cms/kernel/runtime";
 import { CORE_PACK_ADMIN_I18N_SOURCES } from "../../../admin-i18n/index.js";
 import { CORE_PACK_MANIFEST } from "../../../plugin/core-pack.manifest.js";
 import { CORE_PACK_ADMIN_ROLE } from "../../../plugin/core-pack.security.js";
 import type { UserAccessService } from "../../security/user-access/user-access.service.js";
 import type { SettingsService } from "../../settings/services/settings.service.js";
-import type { UsersRepository } from "../../users/repositories/users.repository.js";
+import { UsersRepository } from "../../users/repositories/users.repository.js";
 import { UserLifecycleEventPublisher } from "../../users/services/user-lifecycle-event-publisher.js";
 import type { UserRecord } from "../../users/users.schemas.js";
 import type { InstallBootstrapInput } from "../dto/installation.input.dto.js";
@@ -60,8 +60,6 @@ export class PasswordMismatchError extends Error {
  * MongoDB is expected to be pre-configured via .env at application startup.
  */
 export class InstallationService {
-  private readonly userEvents: UserLifecycleEventPublisher;
-
   constructor(
     private readonly installationState: InstallationStateRepository,
     private readonly localCredentials: LocalCredentialsRepository,
@@ -70,10 +68,8 @@ export class InstallationService {
     private readonly manifestProvisioning: PluginManifestProvisioner,
     private readonly passwordHashing: PasswordHashingService,
     private readonly settings: SettingsService,
-    events?: EventBus
-  ) {
-    this.userEvents = new UserLifecycleEventPublisher(events);
-  }
+    private readonly durable?: MongoDurableEventStore
+  ) {}
 
   async getStatus(): Promise<InstallationStatus> {
     const envStatus = readInstallationEnvironmentStatus();
@@ -183,14 +179,30 @@ export class InstallationService {
   }
 
   private async upsertAdminUser(input: InstallBootstrapInput): Promise<UserRecord> {
-    const existing = await this.users.findByEmail(input.email);
+    if (this.durable)
+      return this.durable.transaction("core-pack", (db, publisher) =>
+        this.writeAdminUser(
+          input,
+          new UsersRepository(db),
+          new UserLifecycleEventPublisher(publisher)
+        )
+      );
+    return this.writeAdminUser(input, this.users, new UserLifecycleEventPublisher());
+  }
+
+  private async writeAdminUser(
+    input: InstallBootstrapInput,
+    users: UsersRepository,
+    events: UserLifecycleEventPublisher
+  ): Promise<UserRecord> {
+    const existing = await users.findByEmail(input.email);
     if (!existing) {
-      const created = await this.users.create({
+      const created = await users.create({
         email: input.email,
         firstName: input.firstName,
         lastName: input.lastName
       });
-      await this.userEvents.userCreated({
+      await events.userCreated({
         userId: created.id,
         status: created.status,
         source: "system"
@@ -202,13 +214,13 @@ export class InstallationService {
       return existing;
     }
 
-    const reactivated = await this.users.updateStatus(existing.id, {
+    const reactivated = await users.updateStatus(existing.id, {
       status: "active"
     });
     if (!reactivated) {
       throw new Error(`User "${existing.id}" disappeared during activation`);
     }
-    await this.userEvents.userStatusChanged({
+    await events.userStatusChanged({
       userId: reactivated.id,
       previousStatus: existing.status,
       status: reactivated.status,

@@ -46,6 +46,11 @@ export interface MediaStorageProvider {
   discardUpload(uploadId: string): Promise<void>;
   completeUpload(input: CompleteMediaStorageUploadInput): Promise<MediaStoredObject>;
   createReadUrl(input: CreateMediaStorageReadUrlInput): Promise<{ url: string; expiresAt: string }>;
+  /** Optional host streaming capability for revocable public delivery; never exposes a signed URL. */
+  readObject?(input: {
+    storageKey: string;
+    signal?: AbortSignal;
+  }): Promise<AsyncIterable<Uint8Array>>;
   deleteObject(input: { storageKey: string }): Promise<void>;
 }
 

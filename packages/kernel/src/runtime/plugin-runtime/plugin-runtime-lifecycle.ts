@@ -1,4 +1,5 @@
 import type { ApplicationContext, ModuleDefinition } from "@trinacria/core";
+import type { PluginHostServices } from "../../contracts/plugin-host-services.js";
 import type {
   KernelPluginDefinition,
   KernelPluginRuntimeContext,
@@ -35,8 +36,12 @@ export interface PluginRuntimeLifecycleContext {
   lifecycleHooks?: PluginRuntimeLifecycleHooks;
   loadedContributions: PluginContributionRegistry;
   app?: ApplicationContext;
+  services: (pluginId: string) => PluginHostServices;
   runtimeStore: PluginRuntimeStore;
   emitPluginEvent?: (pluginId: string, eventName: string, payload: unknown) => Promise<void>;
+  prepareEventSubscriptions?: (pluginId: string) => Promise<void>;
+  bindEventSubscriptions?: (pluginId: string) => Promise<void>;
+  unbindEventSubscriptions?: (pluginId: string) => void;
 }
 
 export interface LifecycleContextOptions {
@@ -48,7 +53,11 @@ export interface LifecycleContextOptions {
   moduleBridge?: TrinacriaModuleBridge;
   lifecycleHooks?: PluginRuntimeLifecycleHooks;
   app?: ApplicationContext;
+  services: (pluginId: string) => PluginHostServices;
   emitPluginEvent?: (pluginId: string, eventName: string, payload: unknown) => Promise<void>;
+  prepareEventSubscriptions?: (pluginId: string) => Promise<void>;
+  bindEventSubscriptions?: (pluginId: string) => Promise<void>;
+  unbindEventSubscriptions?: (pluginId: string) => void;
 }
 
 export function createLifecycleContext(
@@ -63,7 +72,11 @@ export function createLifecycleContext(
     moduleBridge: options.moduleBridge,
     lifecycleHooks: options.lifecycleHooks,
     app: options.app,
-    emitPluginEvent: options.emitPluginEvent
+    services: options.services,
+    emitPluginEvent: options.emitPluginEvent,
+    prepareEventSubscriptions: options.prepareEventSubscriptions,
+    bindEventSubscriptions: options.bindEventSubscriptions,
+    unbindEventSubscriptions: options.unbindEventSubscriptions
   };
 }
 
@@ -91,23 +104,13 @@ function getDefinition(
 
 function createContext(
   definition: KernelPluginDefinition,
-  app: ApplicationContext | undefined,
-  emitPluginEvent: (eventName: string, payload: unknown) => Promise<void>
+  services: PluginHostServices
 ): KernelPluginRuntimeContext {
-  if (!app) {
-    throw new PluginRuntimeError(
-      `Plugin "${definition.manifest.id}" requires an ApplicationContext to run lifecycle hooks`,
-      { pluginId: definition.manifest.id }
-    );
-  }
   return {
-    app,
+    services,
     pluginId: definition.manifest.id,
     manifest: definition.manifest,
-    i18nSources: definition.i18nSources ?? [],
-    events: {
-      emit: emitPluginEvent
-    }
+    i18nSources: definition.i18nSources ?? []
   };
 }
 
@@ -213,17 +216,26 @@ export async function loadPluginInternal(
   } catch (error) {
     markFailedState(ctx.records, ctx.loadedContributions, pluginId, "dependency-check", error);
     stack.delete(pluginId);
+    await persistRecord(ctx.records, ctx.runtimeStore, pluginId);
     throw error;
   }
 
-  for (const dependency of requiredDependencies) {
-    const dependencyRecord = getRecord(ctx.records, dependency.pluginId);
-    if (dependencyRecord.state !== "loaded") {
-      await loadPluginInternal(ctx, dependency.pluginId, stack);
+  try {
+    for (const dependency of requiredDependencies) {
+      const dependencyRecord = getRecord(ctx.records, dependency.pluginId);
+      if (dependencyRecord.state !== "loaded") {
+        await loadPluginInternal(ctx, dependency.pluginId, stack);
+      }
     }
+    await ctx.lifecycleHooks?.onBeforeLoad?.(definition);
+    await ctx.prepareEventSubscriptions?.(pluginId);
+  } catch (error) {
+    markFailedState(ctx.records, ctx.loadedContributions, pluginId, "load", error);
+    await persistRecord(ctx.records, ctx.runtimeStore, pluginId);
+    throw error;
+  } finally {
+    stack.delete(pluginId);
   }
-
-  stack.delete(pluginId);
 
   if ((definition.modules?.length ?? 0) > 0 && !ctx.moduleBridge) {
     const error = new PluginRuntimeError(
@@ -231,6 +243,7 @@ export async function loadPluginInternal(
       { pluginId }
     );
     markFailedState(ctx.records, ctx.loadedContributions, pluginId, "load", error);
+    await persistRecord(ctx.records, ctx.runtimeStore, pluginId);
     throw error;
   }
 
@@ -241,15 +254,7 @@ export async function loadPluginInternal(
     Boolean(definition.onUnload) ||
     Boolean(ctx.lifecycleHooks?.onAfterLoad);
   const context = needsRuntimeContext
-    ? createContext(definition, ctx.app, async (eventName, payload) => {
-        if (!ctx.emitPluginEvent) {
-          throw new PluginRuntimeError(
-            `Plugin "${definition.manifest.id}" cannot emit "${eventName}" because the runtime publisher is not available`,
-            { pluginId: definition.manifest.id }
-          );
-        }
-        await ctx.emitPluginEvent(definition.manifest.id, eventName, payload);
-      })
+    ? createContext(definition, ctx.services(pluginId))
     : undefined;
   let phase: PluginLifecyclePhase = "load";
   let onLoadCompleted = false;
@@ -278,6 +283,8 @@ export async function loadPluginInternal(
       await ctx.lifecycleHooks.onAfterLoad(context);
     }
 
+    await ctx.bindEventSubscriptions?.(pluginId);
+
     ctx.records.set(pluginId, {
       ...getRecord(ctx.records, pluginId),
       state: "loaded",
@@ -289,7 +296,9 @@ export async function loadPluginInternal(
     });
     ctx.pluginModules.set(pluginId, registeredModules);
     ctx.loadedContributions.upsert(definition.manifest);
+    await persistRecord(ctx.records, ctx.runtimeStore, pluginId);
   } catch (error) {
+    ctx.unbindEventSubscriptions?.(pluginId);
     const rollbackErrors = await rollbackFailedLoad(
       ctx,
       pluginId,
@@ -299,6 +308,8 @@ export async function loadPluginInternal(
       onLoadCompleted
     );
     markFailedState(ctx.records, ctx.loadedContributions, pluginId, phase, error);
+    ctx.pluginModules.delete(pluginId);
+    await persistRecord(ctx.records, ctx.runtimeStore, pluginId);
     throw buildLifecycleError(pluginId, phase, error, "load", rollbackErrors);
   }
 }
@@ -351,15 +362,7 @@ export async function unloadPlugin(
   const definition = getDefinition(ctx.definitions, pluginId);
   const needsRuntimeContext = Boolean(definition.onUnload);
   const context = needsRuntimeContext
-    ? createContext(definition, ctx.app, async (eventName, payload) => {
-        if (!ctx.emitPluginEvent) {
-          throw new PluginRuntimeError(
-            `Plugin "${pluginId}" cannot emit "${eventName}" because the runtime publisher is not available`,
-            { pluginId }
-          );
-        }
-        await ctx.emitPluginEvent(pluginId, eventName, payload);
-      })
+    ? createContext(definition, ctx.services(pluginId))
     : undefined;
   const loadedModules = ctx.pluginModules.get(pluginId) ?? [];
 

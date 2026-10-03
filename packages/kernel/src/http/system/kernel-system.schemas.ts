@@ -12,11 +12,47 @@ export const PluginSourceSchema = s.object(
   { strict: true }
 );
 
+export const PluginInstanceObservationSchema = s.object(
+  {
+    instanceId: s.string(),
+    observedRevision: s.number({ int: true, min: 0 }),
+    state: s.enum(["loaded", "disabled", "failed"] as const),
+    reason: s.string().optional(),
+    healthy: s.boolean(),
+    artifactVersion: s.string(),
+    artifactChecksum: s.string()
+  },
+  { strict: true }
+);
+
 export const KernelInstalledPluginSchema = s.object(
   {
     id: s.string({ trim: true, minLength: 1 }),
+    executionMode: s.enum(["local", "cluster"] as const),
+    operationRevision: s.number({ int: true, min: 1 }),
     version: s.string({ trim: true, minLength: 1 }),
     requiresCore: s.string({ trim: true, minLength: 1 }),
+    cluster: s
+      .object(
+        {
+          desired: s.object(
+            {
+              pluginId: s.string(),
+              artifactVersion: s.string(),
+              artifactChecksum: s.string(),
+              enabled: s.boolean(),
+              revision: s.number({ int: true, min: 1 }),
+              updatedBy: s.string(),
+              reason: s.string(),
+              updatedAt: s.string()
+            },
+            { strict: true }
+          ),
+          instances: s.array(PluginInstanceObservationSchema)
+        },
+        { strict: true }
+      )
+      .optional(),
     state: s.enum([
       "registered",
       "loading",
@@ -234,6 +270,8 @@ export const ListAdminExtensionsResponseSchema = s.object(
 export const PluginOperationRequestSchema = s.object(
   {
     operation: s.enum(["load", "unload", "reload", "disable", "enable"] as const),
+    expectedRevision: s.number({ int: true, min: 1 }),
+    idempotencyKey: s.string({ minLength: 8, maxLength: 120 }),
     reason: s.string({ trim: true, minLength: 1, maxLength: 1000 }).optional()
   },
   { strict: true }
@@ -241,9 +279,15 @@ export const PluginOperationRequestSchema = s.object(
 
 export const PluginOperationResultSchema = s.object(
   {
-    plugin: KernelInstalledPluginSchema,
+    operationId: s.string(),
+    pluginId: s.string(),
     operation: s.enum(["load", "unload", "reload", "disable", "enable"] as const),
-    executedAt: s.dateTimeString()
+    desiredRevision: s.number({ int: true, min: 1 }),
+    status: s.enum(["pending", "succeeded", "failed", "partial"] as const),
+    submittedAt: s.string(),
+    expiresAt: s.string(),
+    participants: s.array(s.string()),
+    instances: s.array(PluginInstanceObservationSchema)
   },
   { strict: true }
 );

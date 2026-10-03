@@ -85,6 +85,26 @@ const pluginManifestSchema = s
         })
         .optional()
         .default([]),
+      migrations: s
+        .array(
+          s.object(
+            {
+              id: s.string({ pattern: /^\d{4}-[a-z0-9][a-z0-9-]*$/ }),
+              checksum: s.string({ pattern: /^[a-f0-9]{64}$/ }),
+              sourceFiles: s.array(s.string({ minLength: 1 }), { unique: true }),
+              entities: s.array(s.string({ minLength: 1 }), { unique: true }),
+              fromSchemaVersion: s.number({ int: true, min: 1 }),
+              toSchemaVersion: s.number({ int: true, min: 2 }),
+              kind: s.enum(["transactional", "batched", "index"] as const),
+              destructive: s.boolean(),
+              idempotent: s.boolean(),
+              prerequisites: s.array(s.string({ minLength: 1 }), { unique: true }).optional()
+            },
+            { strict: true }
+          ),
+          { unique: (item) => item.id }
+        )
+        .optional(),
       settings: s
         .array(settingSchema, { unique: (setting) => setting.key })
         .optional()
@@ -95,6 +115,30 @@ const pluginManifestSchema = s
       security: securitySectionSchema.optional()
     },
     { strict: true }
+  )
+  .refine(
+    (manifest) =>
+      (manifest.migrations ?? []).every(
+        (migration) =>
+          migration.toSchemaVersion === migration.fromSchemaVersion + 1 &&
+          migration.entities.length > 0 &&
+          migration.sourceFiles.length > 0 &&
+          migration.entities.every((entity) =>
+            manifest.entities?.some((declared) => declared.name === entity)
+          ) &&
+          migration.sourceFiles.every(
+            (file) =>
+              !file.startsWith("/") &&
+              !file.includes("\\") &&
+              file.split("/").every((part) => part && part !== "." && part !== "..")
+          ) &&
+          (migration.kind !== "batched" || migration.idempotent) &&
+          (migration.prerequisites ?? []).every(
+            (id) => id < migration.id && manifest.migrations?.some((declared) => declared.id === id)
+          )
+      ),
+    "Migration metadata must name owned entities, immutable local files and a complete ordered step",
+    "invalid_plugin_migration"
   )
   .refine(
     (manifest) =>
@@ -200,6 +244,7 @@ export function validatePluginManifest(input: unknown): PluginManifest {
       capabilities: [...(parsed.capabilities ?? [])],
       dependencies,
       entities: [...(parsed.entities ?? [])],
+      ...(parsed.migrations ? { migrations: parsed.migrations } : {}),
       settings: [...(parsed.settings ?? [])],
       ...(parsed.events
         ? {

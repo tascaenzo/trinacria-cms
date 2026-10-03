@@ -1,4 +1,9 @@
 import { apiError, type HttpContext, type HttpMiddleware, response } from "@trinacria-cms/kernel";
+import {
+  bindHttpOperationContext,
+  createPluginOperationContext,
+  createUserOperationContext
+} from "@trinacria-cms/kernel/runtime";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import { AUTHENTICATED_USER_STATE_KEY, extractAuthToken } from "../../auth/auth.middleware.js";
 import { JwtAuthError, type JwtAuthService } from "../../auth/services/auth.service.js";
@@ -28,6 +33,7 @@ export function createSettingsAccessMiddleware(
           requireAdmin: true
         });
         ctx.state[AUTHENTICATED_USER_STATE_KEY] = user;
+        bindHttpOperationContext(ctx, createUserOperationContext(user.id));
         ctx.state[SETTINGS_ACCESS_MODE_STATE_KEY] = "admin" satisfies SettingsAccessMode;
         return next();
       } catch (error) {
@@ -45,10 +51,13 @@ export function createSettingsAccessMiddleware(
       try {
         const pluginId = await pluginAuth.authenticateRequest(ctx);
         ctx.state[SETTINGS_AUTH_PLUGIN_ID_STATE_KEY] = pluginId;
+        bindHttpOperationContext(ctx, createPluginOperationContext(pluginId, "http"));
         ctx.state[SETTINGS_ACCESS_MODE_STATE_KEY] = "plugin" satisfies SettingsAccessMode;
         return next();
       } catch (error) {
         if (error instanceof SettingsPluginAuthError) {
+          if (error.code.endsWith("_store_unavailable"))
+            return response(apiError(error.code, error.message), { status: 503 });
           return unauthorized(error.code, error.message, error.details);
         }
         return unauthorized("auth_unauthorized", "Unauthorized request");

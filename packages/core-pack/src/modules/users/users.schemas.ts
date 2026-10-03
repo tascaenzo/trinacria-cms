@@ -1,4 +1,5 @@
-import { defineEntity, type Infer, s } from "@trinacria-cms/kernel";
+import { type Infer, s } from "@trinacria-cms/kernel";
+import { defineEntity } from "@trinacria-cms/kernel/runtime";
 
 export const UserStatusSchema = s.enum(["active", "suspended"] as const);
 
@@ -24,6 +25,7 @@ export type UserRecord = Infer<typeof UserRecordSchema>;
  * It co-locates schema + logical indexes to keep plugin authoring simple.
  */
 export const USERS_ENTITY = defineEntity({
+  ownerPluginId: "core-pack",
   entityName: "users",
   schema: UserRecordSchema,
   indexes: [

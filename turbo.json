@@ -44,6 +44,8 @@
         "NODE_ENV",
         "MONGO_URI",
         "TRINACRIA_RUN_MONGO_INTEGRATION",
+        "TRINACRIA_RUN_ISOLATION_INTEGRATION",
+        "TRINACRIA_ISOLATION_TEST_IMAGE",
         "TRINACRIA_RUN_S3_INTEGRATION",
         "TRINACRIA_RUN_REDIS_INTEGRATION",
         "TRINACRIA_REDIS_URI",
@@ -74,6 +76,18 @@
         "TRINACRIA_S3_SECRET_KEY",
         "TRINACRIA_S3_BUCKET"
       ]
+    },
+    "@trinacria-cms/sdk#typecheck": {
+      "dependsOn": ["^build", "generate"],
+      "outputs": []
     }
-  }
+  },
+  "globalPassThroughEnv": [
+    "TRINACRIA_EXTERNAL_MONGO_URI",
+    "FIXTURE_PORT",
+    "CMS_OPERATOR_TOKEN",
+    "FIXTURE_OPERATOR_TOKEN",
+    "CATALOG_PORT",
+    "CATALOG_ADMIN_PASSWORD"
+  ]
 }

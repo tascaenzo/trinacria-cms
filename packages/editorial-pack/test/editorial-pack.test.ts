@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { validatePluginManifest } from "@trinacria-cms/kernel";
+import { validatePluginManifest } from "@trinacria-cms/kernel/runtime";
 import { CmsSdkHttpError } from "@trinacria-cms/sdk";
 import {
   EDITORIAL_PACK_MANIFEST,
@@ -17,7 +17,7 @@ import {
   toStructuredDocument,
   type EntryRecord,
   type ContentTypeRecord
-} from "../src/index.js";
+} from "../src/runtime.js";
 import {
   getTransitionToStatus,
   supportsEditorialReview,
@@ -35,7 +35,7 @@ test("editorial-pack declares the plugin foundation", () => {
   ]);
   assert.deepEqual(
     manifest.entities.map((entity) => entity.name),
-    ["content_types", "entries", "entry_revisions"]
+    ["publication_pointers", "publication_snapshots", "preview_credentials", "delivery_cache", "delivery_cache_epochs", "content_types", "entries", "entry_revisions"]
   );
   assert.deepEqual(
     manifest.settings.map((setting) => setting.key).sort(),
@@ -343,6 +343,7 @@ test("entries are validated against the active content type before persistence",
     ],
     taxonomyIds: [],
     ownershipScope: "inherit",
+    version: 1,
     createdByUserId: "manager-1",
     createdAt: "2026-07-17T00:00:00.000Z",
     updatedAt: "2026-07-17T00:00:00.000Z"
@@ -376,7 +377,7 @@ test("entries are validated against the active content type before persistence",
       }
     } as never,
     {
-      async getContentType(id: string) {
+      async getContentTypeForEntry(id: string) {
         return id === contentType.id ? contentType : null;
       }
     } as never,
@@ -462,7 +463,7 @@ test("editorial transitions create immutable revision snapshots", async () => {
       }
     } as never,
     {
-      async getContentType() {
+      async getContentTypeForEntry() {
         return {
           id: "content-type-event",
           key: "event",
@@ -471,7 +472,8 @@ test("editorial transitions create immutable revision snapshots", async () => {
           fields: [],
           taxonomyIds: [],
           ownershipScope: "inherit",
-          createdByUserId: "manager-1",
+          version: 1,
+    createdByUserId: "manager-1",
           createdAt: "2026-07-17T00:00:00.000Z",
           updatedAt: "2026-07-17T00:00:00.000Z"
         } satisfies ContentTypeRecord;
@@ -534,7 +536,7 @@ test("ordinary saves do not create revisions while explicit snapshots do", async
         return entry;
       }
     } as never,
-    {} as never,
+    { async getContentTypeForEntry() { return { id: entry.contentTypeId, status: "active", fields: [], ownershipScope: "inherit" }; } } as never,
     revisions as never
   );
   const scope = { actorUserId: "author-1", canAccessAll: false };
@@ -568,7 +570,7 @@ test("direct workflows allow a draft to be published without review", async () =
       }
     } as never,
     {
-      async getContentType() {
+      async getContentTypeForEntry() {
         return {
           id: "content-type-page",
           key: "page",
@@ -578,7 +580,8 @@ test("direct workflows allow a draft to be published without review", async () =
           fields: [],
           taxonomyIds: [],
           ownershipScope: "inherit",
-          createdByUserId: "manager-1",
+          version: 1,
+    createdByUserId: "manager-1",
           createdAt: "2026-07-17T00:00:00.000Z",
           updatedAt: "2026-07-17T00:00:00.000Z"
         } satisfies ContentTypeRecord;
@@ -591,7 +594,9 @@ test("direct workflows allow a draft to be published without review", async () =
       async create() {
         return {};
       }
-    } as never
+    } as never,
+    undefined, undefined, undefined, false, undefined,
+    { async publish() {} } as never
   );
 
   const published = await service.transitionEntry(entry.id, "publish", {
@@ -627,6 +632,7 @@ test("content types keep stable keys and reject unsafe field definitions", async
         fields: input.fields,
         taxonomyIds: [...(input.taxonomyIds ?? [])],
         ownershipScope: input.ownershipScope ?? "inherit",
+        version: 1,
         createdByUserId: input.createdByUserId,
         createdAt: now,
         updatedAt: now
@@ -715,6 +721,7 @@ test("content types support soft delete, restore and guarded permanent deletion"
     fields: [],
     taxonomyIds: [],
     ownershipScope: "inherit",
+    version: 1,
     createdByUserId: "manager-1",
     createdAt: now,
     updatedAt: now

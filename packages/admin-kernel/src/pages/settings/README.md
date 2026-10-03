@@ -9,7 +9,7 @@ renderer registry supplied by registered backoffice modules.
 - `settings-page.tsx` owns page layout, route state, and selected section handling.
 - `settings-page.hooks.ts` owns data loading and save orchestration.
 - `settings-page.components.tsx` contains generic settings form and sidebar components.
-- `components/` contains focused settings UI components such as the plugin permission center.
+- `components/` contains focused settings UI components such as plugin management and authentication settings.
 - `utils/` contains parsing and transformation helpers used by focused components.
 - `settings-page.utils.ts` contains generic settings form helpers.
 
@@ -19,9 +19,8 @@ Custom settings UI is selected by `componentRef`, not by hardcoded checks inside
 Renderer lookup flows through `runtime/admin-renderers.tsx`, but plugin-owned renderers should be
 exported by the plugin package and passed through its `BackofficeModule.renderers` entry.
 
-The permission center edits the `core-pack:security:plugin_access_grants` setting through the
-kernel-owned `core-pack:plugin-permission-center` renderer. Plugin management is rendered in the
-same workspace through `core-pack:plugin-management`; it intentionally exposes runtime operations,
+Plugin management is rendered through `core-pack:plugin-management`, supports local and
+explicit cluster deployments, and exposes runtime operations,
 not package uninstallation. The email template editor is owned by `email-pack` and is registered by
 the email backoffice module through `email-pack:email-template-manager`.
 

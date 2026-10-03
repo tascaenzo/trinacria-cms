@@ -2,17 +2,17 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { s } from "@trinacria/schema";
 import { DbAdapterError } from "../src/errors/index.js";
-import { createMongoDbAdapter, EntityRegistry } from "../src/runtime/index.js";
+import { createMongoDbAdapter, EntityRegistry, InMemoryStorageOwnershipStore, buildPhysicalCollectionName } from "../src/runtime/index.js";
 
 test("MongoDbAdapter maps namespace to collection and resolves query options", async () => {
   const connection = createFakeConnection();
   const registry = new EntityRegistry();
-  registry.register({
+  registry.register({ ownerPluginId: "cms/content",
     entityName: "content_entries",
     schema: s.object({ title: s.string() })
   });
 
-  const adapter = createMongoDbAdapter({
+  const adapter = createMongoDbAdapter({ ownershipStore: new InMemoryStorageOwnershipStore(),
     connection,
     entityRegistry: registry
   });
@@ -31,11 +31,11 @@ test("MongoDbAdapter maps namespace to collection and resolves query options", a
 
   assert.equal(items.length, 1);
   assert.equal(items[0]?.title, "hello");
-  assert.equal(connection.lastCollectionName, "plugin_cms_content__content_entries");
+  assert.equal(connection.lastCollectionName, buildPhysicalCollectionName({ pluginId: "cms/content" }, "content_entries"));
   assert.deepEqual(connection.queryLog.at(-1), {
     kind: "find",
     filter: { status: "published" },
-    options: {},
+    options: { readPreference: "primary" },
     sort: { createdAt: -1 },
     skip: 5,
     limit: 10
@@ -45,12 +45,12 @@ test("MongoDbAdapter maps namespace to collection and resolves query options", a
 test("MongoDbAdapter supports insert/update/delete", async () => {
   const connection = createFakeConnection();
   const registry = new EntityRegistry();
-  registry.register({
+  registry.register({ ownerPluginId: "cms/settings",
     entityName: "settings",
     schema: s.object({ key: s.string(), value: s.string() })
   });
 
-  const adapter = createMongoDbAdapter({
+  const adapter = createMongoDbAdapter({ ownershipStore: new InMemoryStorageOwnershipStore(),
     connection,
     entityRegistry: registry
   });
@@ -73,11 +73,11 @@ test("MongoDbAdapter supports insert/update/delete", async () => {
 test("MongoDbAdapter preserves a domain value field in direct findOneAndUpdate results", async () => {
   const connection = createFakeConnection({ directFindOneAndUpdateResult: true });
   const registry = new EntityRegistry();
-  registry.register({
+  registry.register({ ownerPluginId: "core-pack",
     entityName: "settings",
     schema: s.object({ key: s.string(), value: s.string() })
   });
-  const adapter = createMongoDbAdapter({ connection, entityRegistry: registry });
+  const adapter = createMongoDbAdapter({ ownershipStore: new InMemoryStorageOwnershipStore(), connection, entityRegistry: registry });
   const repository = adapter.repository<{ key: string; value: string }>("settings", {
     pluginId: "core-pack"
   });
@@ -89,7 +89,7 @@ test("MongoDbAdapter preserves a domain value field in direct findOneAndUpdate r
 });
 
 test("EntityRegistry throws when entity is missing", () => {
-  const adapter = createMongoDbAdapter({
+  const adapter = createMongoDbAdapter({ ownershipStore: new InMemoryStorageOwnershipStore(),
     connection: createFakeConnection(),
     entityRegistry: new EntityRegistry()
   });
@@ -106,12 +106,12 @@ test("EntityRegistry throws when entity is missing", () => {
 test("MongoDbAdapter healthCheck and transactions are available", async () => {
   const connection = createFakeConnection();
   const registry = new EntityRegistry();
-  registry.register({
+  registry.register({ ownerPluginId: "cms/jobs",
     entityName: "jobs",
     schema: s.object({ id: s.string() })
   });
 
-  const adapter = createMongoDbAdapter({
+  const adapter = createMongoDbAdapter({ ownershipStore: new InMemoryStorageOwnershipStore(),
     connection,
     entityRegistry: registry
   });
@@ -127,7 +127,7 @@ test("MongoDbAdapter healthCheck and transactions are available", async () => {
 });
 
 test("MongoDbAdapter healthCheck reports a failed Mongo ping", async () => {
-  const adapter = createMongoDbAdapter({
+  const adapter = createMongoDbAdapter({ ownershipStore: new InMemoryStorageOwnershipStore(),
     connection: createFakeConnection({ pingError: new Error("mongo unavailable") }),
     entityRegistry: new EntityRegistry()
   });
@@ -141,7 +141,7 @@ test("MongoDbAdapter healthCheck reports a failed Mongo ping", async () => {
 test("MongoDbAdapter ensureIndexes uses canonical index declarations", async () => {
   const connection = createFakeConnection();
   const registry = new EntityRegistry();
-  registry.register({
+  registry.register({ ownerPluginId: "core-pack",
     entityName: "users",
     schema: s.object({ email: s.string({ email: true }) }),
     indexes: [
@@ -153,7 +153,7 @@ test("MongoDbAdapter ensureIndexes uses canonical index declarations", async () 
     ]
   });
 
-  const adapter = createMongoDbAdapter({
+  const adapter = createMongoDbAdapter({ ownershipStore: new InMemoryStorageOwnershipStore(),
     connection,
     entityRegistry: registry
   });
@@ -161,7 +161,7 @@ test("MongoDbAdapter ensureIndexes uses canonical index declarations", async () 
   await adapter.ensureIndexes("core-pack", ["users"]);
   assert.deepEqual(connection.indexCalls, [
     {
-      collection: "plugin_core_pack__users",
+      collection: buildPhysicalCollectionName({ pluginId: "core-pack" }, "users"),
       indexes: [
         {
           key: { pluginId: 1, email: 1 },
@@ -176,12 +176,12 @@ test("MongoDbAdapter ensureIndexes uses canonical index declarations", async () 
 test("MongoDbAdapter maps reserved kernel namespace without plugin prefix", async () => {
   const connection = createFakeConnection();
   const registry = new EntityRegistry();
-  registry.register({
+  registry.register({ ownerPluginId: "kernel",
     entityName: "installed_plugins",
     schema: s.object({ pluginId: s.string() })
   });
 
-  const adapter = createMongoDbAdapter({
+  const adapter = createMongoDbAdapter({ ownershipStore: new InMemoryStorageOwnershipStore(),
     connection,
     entityRegistry: registry
   });
@@ -195,7 +195,7 @@ test("MongoDbAdapter maps reserved kernel namespace without plugin prefix", asyn
     parse: (value) => value as { pluginId: string }
   });
 
-  assert.equal(connection.lastCollectionName, "kernel__installed_plugins");
+  assert.equal(connection.lastCollectionName, buildPhysicalCollectionName({ pluginId: "kernel" }, "installed_plugins"));
 });
 
 function createFakeConnection(options?: {
@@ -347,10 +347,10 @@ test("MongoDbAdapter carries partial filters and safely replaces legacy sparse i
   const original = connection.collection.bind(connection);
   const lifecycle: string[] = [];
   const registry = new EntityRegistry();
-  registry.register({ entityName: "entries", schema: s.object({ id: s.string() }), indexes: [{
+  registry.register({ ownerPluginId: "editorial-pack", entityName: "entries", schema: s.object({ id: s.string() }), indexes: [{
     fields: { contentTypeId: 1, slug: 1 }, unique: true, partialFilter: { slug: { $type: "string" } }, name: "partial_slug"
   }] });
-  const adapter = createMongoDbAdapter({ connection: {
+  const adapter = createMongoDbAdapter({ ownershipStore: new InMemoryStorageOwnershipStore(), connection: {
     ...connection,
     collection(name: string) {
       const records = original(name);
@@ -369,8 +369,8 @@ test("MongoDbAdapter carries partial filters and safely replaces legacy sparse i
 test("MongoDbAdapter scopes all transaction queries to one session and cleans up", async () => {
   const connection = createFakeConnection();
   const registry = new EntityRegistry();
-  registry.register({ entityName: "entries", schema: s.object({ id: s.string() }) });
-  const db = createMongoDbAdapter({ connection, entityRegistry: registry });
+  registry.register({ ownerPluginId: "editorial-pack", entityName: "entries", schema: s.object({ id: s.string() }) });
+  const db = createMongoDbAdapter({ ownershipStore: new InMemoryStorageOwnershipStore(), connection, entityRegistry: registry });
   const value = await db.withTransaction({ pluginId: "editorial-pack" }, async (scoped) => {
     await scoped.repository("entries", { pluginId: "editorial-pack" }).findMany({});
     await scoped.repository("entries", { pluginId: "editorial-pack" }).findMany({});
@@ -385,4 +385,39 @@ test("MongoDbAdapter scopes all transaction queries to one session and cleans up
   assert.deepEqual(connection.sessionLog, ["start", "begin", "commit", "end"]);
   await assert.rejects(db.withTransaction({ pluginId: "editorial-pack" }, async () => { throw new Error("injected"); }), /injected/);
   assert.deepEqual(connection.sessionLog.slice(-4), ["start", "begin", "abort", "end"]);
+});
+
+test("host transaction retries invalidate repositories from earlier attempts", async () => {
+  const connection = createFakeConnection();
+  const originalSession = await connection.startSession();
+  connection.startSession = async () => ({ ...originalSession, async withTransaction(work) {
+    await work(); await work(); return undefined;
+  } });
+  const registry = new EntityRegistry();
+  registry.register({ ownerPluginId: "host-test", entityName: "items", schema: s.object({ id: s.string() }) });
+  const db = createMongoDbAdapter({ ownershipStore: new InMemoryStorageOwnershipStore(), connection, entityRegistry: registry });
+  let previous: ReturnType<typeof db.repository> | undefined;
+  let attempts = 0;
+  const result = await db.runHostTransaction([{ pluginId: "host-test" }], async (repositories) => {
+    attempts++;
+    if (previous) await assert.rejects(previous.findMany({}), /scope has ended/);
+    previous = repositories.repository("items", { pluginId: "host-test" });
+    await previous.findMany({});
+    return attempts;
+  });
+  assert.equal(result, 2);
+  await assert.rejects(previous!.findMany({}), /scope has ended/);
+});
+
+test("storage rechecks legacy collections after reconnect and before indexes", async () => {
+  const connection = createFakeConnection();
+  let initialized = 0;
+  const store = new InMemoryStorageOwnershipStore();
+  store.initialize = async () => { initialized++; };
+  const db = createMongoDbAdapter({ ownershipStore: store, connection, entityRegistry: new EntityRegistry() });
+  await db.initializeStorageOwnership();
+  assert.equal(initialized, 1);
+  connection.db = { async command() { return { cursor: { firstBatch: [{ name: "plugin_old__items" }] } }; } } as typeof connection.db;
+  await assert.rejects(db.initializeStorageOwnership(), /No data was changed/);
+  assert.equal(initialized, 1);
 });

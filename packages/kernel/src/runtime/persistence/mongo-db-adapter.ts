@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import type {
   DbAdapter,
   DbQuery,
@@ -5,9 +6,16 @@ import type {
   DbTransaction
 } from "../../contracts/db-adapter.js";
 import type { NamespaceContext } from "../../contracts/namespace-context.js";
-import { buildNamespaceKey } from "../../contracts/namespace-context.js";
 import { DbAdapterError } from "../../errors/db-errors.js";
 import type { EntityIndexDefinition, EntityRegistry } from "./entity-registry.js";
+import type { HostTransactionRepositories } from "./host-unit-of-work.js";
+import {
+  buildPhysicalCollectionName,
+  canonicalStorageTuple,
+  MongoStorageOwnershipStore,
+  STORAGE_OWNERSHIP_COLLECTION,
+  type StorageOwnershipStore
+} from "./storage-ownership.js";
 
 interface MongoSessionLike {
   startTransaction?(): void;
@@ -54,6 +62,7 @@ interface MongoCollectionLike<TData> {
       key: Record<string, 1 | -1>;
       unique?: boolean;
       sparse?: boolean;
+      expireAfterSeconds?: number;
       partialFilterExpression?: Record<string, unknown>;
       name?: string;
     }>
@@ -71,10 +80,12 @@ interface MongoConnectionLike {
 export interface MongoDbAdapterOptions {
   connection: MongoConnectionLike;
   entityRegistry: EntityRegistry;
+  ownershipStore?: StorageOwnershipStore;
 }
 
 interface InternalRepositoryOptions {
   session?: MongoSessionLike;
+  assertActive?: () => void;
 }
 
 class MongoDbTransaction implements DbTransaction {
@@ -92,14 +103,76 @@ class MongoDbTransaction implements DbTransaction {
 }
 
 export class MongoDbAdapter implements DbAdapter {
-  constructor(private readonly options: MongoDbAdapterOptions) {}
+  private readonly transactionScope = new AsyncLocalStorage<boolean>();
+  private needsWriteTransaction(context: NamespaceContext): boolean {
+    return Boolean(this.writeGuard && context.pluginId !== "kernel");
+  }
+  private readonly ownership: StorageOwnershipStore;
+  private writeGuard?: (
+    repositories: HostTransactionRepositories,
+    namespaces: readonly NamespaceContext[]
+  ) => Promise<void>;
+  /** Host-only maintenance guard; plugins cannot replace or bypass it. */
+  setWriteGuard(guard: NonNullable<MongoDbAdapter["writeGuard"]>): void {
+    if (this.writeGuard) throw new DbAdapterError("Write guard is already configured");
+    this.writeGuard = guard;
+  }
+  async hasStoredRecords(namespace: NamespaceContext, entityName: string): Promise<boolean> {
+    await this.initializeStorageOwnership();
+    return Boolean(
+      await this.options.connection
+        .collection(buildPhysicalCollectionName(namespace, entityName))
+        .findOne({})
+    );
+  }
+  private legacyCheck?: Promise<void>;
+  private legacyCheckDatabase?: MongoConnectionLike["db"];
+  constructor(private readonly options: MongoDbAdapterOptions) {
+    this.ownership =
+      options.ownershipStore ??
+      new MongoStorageOwnershipStore(
+        () => options.connection.collection(STORAGE_OWNERSHIP_COLLECTION),
+        () => options.connection.db
+      );
+  }
+  async initializeStorageOwnership(): Promise<void> {
+    const database = this.options.connection.db;
+    if (!database && !this.options.ownershipStore)
+      throw new DbAdapterError("Mongo database must be connected before storage initialization");
+    if (database !== this.legacyCheckDatabase) {
+      this.legacyCheck = undefined;
+      this.legacyCheckDatabase = database;
+    }
+    if (!this.legacyCheck)
+      this.legacyCheck = this.assertNoLegacyStorage().catch((error) => {
+        this.legacyCheck = undefined;
+        throw error;
+      });
+    await this.legacyCheck;
+    await this.ownership.initialize();
+  }
+  private async assertNoLegacyStorage(): Promise<void> {
+    if (!this.options.connection.db) return;
+    const result = (await this.options.connection.db.command({
+      listCollections: 1,
+      filter: { name: { $regex: "^(plugin_|kernel__)" } },
+      nameOnly: true
+    })) as { cursor?: { firstBatch?: unknown[] } };
+    if (result.cursor?.firstBatch?.length)
+      throw new DbAdapterError(
+        "Previous storage layout detected; use an empty database or an explicit reviewed data migration. No data was changed."
+      );
+  }
 
   repository<TData = unknown>(entityName: string, context: NamespaceContext): DbRepository<TData> {
+    context = Object.freeze({ ...context });
     const collection = this.resolveCollection<TData>(entityName, context);
     return this.createRepository(collection, context, entityName);
   }
 
   async beginTransaction(_context: NamespaceContext): Promise<DbTransaction> {
+    if (this.transactionScope.getStore())
+      throw new DbAdapterError("Nested transactions are not supported");
     const session = await this.options.connection.startSession();
     session.startTransaction?.();
     return new MongoDbTransaction(session);
@@ -109,6 +182,31 @@ export class MongoDbAdapter implements DbAdapter {
     context: NamespaceContext,
     work: (adapter: DbAdapter) => Promise<T>
   ): Promise<T> {
+    return this.runHostTransaction([context], async (repositories) => {
+      const scoped: DbAdapter = {
+        repository: <TData>(entityName: string, namespace: NamespaceContext) =>
+          repositories.repository<TData>(entityName, namespace),
+        beginTransaction: async () => {
+          throw new DbAdapterError("Nested transactions are not supported");
+        },
+        healthCheck: () => this.healthCheck()
+      };
+      return work(scoped);
+    });
+  }
+
+  async runHostTransaction<T>(
+    allowedNamespaces: readonly NamespaceContext[],
+    work: (repositories: HostTransactionRepositories) => Promise<T>,
+    transactionOptions: { bypassMaintenance?: boolean } = {}
+  ): Promise<T> {
+    if (this.transactionScope.getStore())
+      throw new DbAdapterError("Nested transactions are not supported");
+    const allowed = new Set(
+      allowedNamespaces.map((namespace) => canonicalStorageTuple(namespace, "__scope"))
+    );
+    if (!allowed.size) throw new DbAdapterError("Host transaction namespace allowlist is required");
+    await this.initializeStorageOwnership();
     const session = await this.options.connection.startSession();
     try {
       if (!session.withTransaction)
@@ -116,28 +214,48 @@ export class MongoDbAdapter implements DbAdapter {
           "Mongo transactions require a replica set and session.withTransaction"
         );
       let result: T;
-      await session.withTransaction(async () => {
-        const scoped: DbAdapter = {
-          repository: <TData>(entityName: string, namespace: NamespaceContext) => {
-            if (buildNamespaceKey(namespace) !== buildNamespaceKey(context)) {
-              throw new DbAdapterError(
-                "Transaction repositories must use the transaction namespace"
-              );
-            }
-            return this.createRepository(
-              this.resolveCollection<TData>(entityName, namespace),
-              namespace,
-              entityName,
-              { session }
-            );
-          },
-          beginTransaction: async () => {
-            throw new DbAdapterError("Nested transactions are not supported");
-          },
-          healthCheck: () => this.healthCheck()
-        };
-        result = await work(scoped);
-      });
+      await session.withTransaction(() =>
+        this.transactionScope.run(true, async () => {
+          let active = true;
+          const assertActive = () => {
+            if (!active) throw new DbAdapterError("Transaction repository scope has ended");
+          };
+          try {
+            const repositories = Object.freeze({
+              repository: <TData>(entityName: string, namespace: NamespaceContext) => {
+                assertActive();
+                if (!allowed.has(canonicalStorageTuple(namespace, "__scope")))
+                  throw new DbAdapterError("Transaction namespace is outside the host allowlist");
+                const context = Object.freeze({ ...namespace });
+                return this.createRepository(
+                  this.resolveCollection<TData>(entityName, context),
+                  context,
+                  entityName,
+                  { session, assertActive }
+                );
+              }
+            });
+            const guardedRepositories = Object.freeze({
+              repository: <TData>(entityName: string, namespace: NamespaceContext) =>
+                namespace.pluginId === "kernel" && !namespace.workspaceId
+                  ? this.createRepository(
+                      this.resolveCollection<TData>(entityName, namespace),
+                      namespace,
+                      entityName,
+                      { session, assertActive }
+                    )
+                  : repositories.repository<TData>(entityName, namespace)
+            });
+            if (this.writeGuard && !transactionOptions.bypassMaintenance)
+              await this.writeGuard(guardedRepositories, allowedNamespaces);
+            result = await work(repositories);
+            if (this.writeGuard && !transactionOptions.bypassMaintenance)
+              await this.writeGuard(guardedRepositories, allowedNamespaces);
+          } finally {
+            active = false;
+          }
+        })
+      );
       return result!;
     } finally {
       await session.endSession?.();
@@ -163,7 +281,9 @@ export class MongoDbAdapter implements DbAdapter {
 
   async ensureIndexes(pluginId: string, entityNames: readonly string[]): Promise<void> {
     for (const entityName of entityNames) {
-      const definition = this.options.entityRegistry.get(entityName);
+      const definition = this.options.entityRegistry.get(entityName, pluginId);
+      await this.initializeStorageOwnership();
+      await this.ownership.ensure({ pluginId }, entityName);
       const collection = this.resolveCollection(entityName, { pluginId });
       const indexes = definition.indexes ?? [];
       if (!collection.createIndexes || indexes.length === 0) continue;
@@ -193,8 +313,8 @@ export class MongoDbAdapter implements DbAdapter {
     entityName: string,
     context: NamespaceContext
   ): MongoCollectionLike<TData> {
-    this.options.entityRegistry.get(entityName);
-    const collectionName = this.buildCollectionName(context, entityName);
+    this.options.entityRegistry.get(entityName, context.pluginId);
+    const collectionName = buildPhysicalCollectionName(context, entityName);
     return this.options.connection.collection<TData>(collectionName);
   }
 
@@ -206,12 +326,20 @@ export class MongoDbAdapter implements DbAdapter {
   ): DbRepository<TData> {
     return {
       findOne: async (query) => {
+        options.assertActive?.();
+        await this.initializeStorageOwnership();
+        await this.ownership.ensure(context, entityName, options.session);
+        options.assertActive?.();
         const found = await collection.findOne(query.filter ?? {}, toReadOptions(query, options));
         if (!found) return null;
         return this.applyParser(query, this.normalizeReadRecord(found, context, entityName));
       },
 
       findMany: async (query) => {
+        options.assertActive?.();
+        await this.initializeStorageOwnership();
+        await this.ownership.ensure(context, entityName, options.session);
+        options.assertActive?.();
         let cursor = collection.find(query.filter ?? {}, toReadOptions(query, options));
         if (query.sort) {
           cursor = cursor.sort(toMongoSort(query.sort));
@@ -229,6 +357,14 @@ export class MongoDbAdapter implements DbAdapter {
       },
 
       insertOne: async (data) => {
+        if (!options.session && this.needsWriteTransaction(context))
+          return this.runHostTransaction([context, { pluginId: "kernel" }], async (repositories) =>
+            repositories.repository<TData>(entityName, context).insertOne(data)
+          );
+        options.assertActive?.();
+        await this.initializeStorageOwnership();
+        await this.ownership.ensure(context, entityName, options.session);
+        options.assertActive?.();
         const document = this.normalizeInsertPayload(data, context);
         const result = await collection.insertOne(document as TData, toWriteOptions(options));
         const insertedId = result.insertedId;
@@ -247,6 +383,14 @@ export class MongoDbAdapter implements DbAdapter {
       },
 
       updateOne: async (query, patch) => {
+        if (!options.session && this.needsWriteTransaction(context))
+          return this.runHostTransaction([context, { pluginId: "kernel" }], async (repositories) =>
+            repositories.repository<TData>(entityName, context).updateOne(query, patch)
+          );
+        options.assertActive?.();
+        await this.initializeStorageOwnership();
+        await this.ownership.ensure(context, entityName, options.session);
+        options.assertActive?.();
         const result = await collection.findOneAndUpdate(
           query.filter ?? {},
           toMongoUpdateDocument(patch),
@@ -261,28 +405,18 @@ export class MongoDbAdapter implements DbAdapter {
       },
 
       deleteOne: async (query) => {
+        if (!options.session && this.needsWriteTransaction(context))
+          return this.runHostTransaction([context, { pluginId: "kernel" }], async (repositories) =>
+            repositories.repository<TData>(entityName, context).deleteOne(query)
+          );
+        options.assertActive?.();
+        await this.initializeStorageOwnership();
+        await this.ownership.ensure(context, entityName, options.session);
+        options.assertActive?.();
         const outcome = await collection.deleteOne(query.filter ?? {}, toWriteOptions(options));
         return (outcome.deletedCount ?? 0) > 0;
       }
     };
-  }
-
-  private buildCollectionName(context: NamespaceContext, entityName: string): string {
-    const namespace = this.buildStorageNamespace(context);
-    const entity = sanitizeIdentifier(entityName);
-    return `${namespace}__${entity}`;
-  }
-
-  private buildStorageNamespace(context: NamespaceContext): string {
-    const pluginId = context.pluginId.trim().toLowerCase();
-    if (pluginId === "kernel") {
-      if (context.workspaceId) {
-        return `kernel_workspace_${sanitizeIdentifier(context.workspaceId)}`;
-      }
-      return "kernel";
-    }
-
-    return sanitizeIdentifier(buildNamespaceKey(context));
   }
 
   private applyParser<TData>(query: DbQuery<TData>, value: unknown): TData {
@@ -341,14 +475,6 @@ function toMongoSort(sort: Record<string, "asc" | "desc">): Record<string, 1 | -
   );
 }
 
-function sanitizeIdentifier(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "");
-}
-
 function toWriteOptions(options: InternalRepositoryOptions): Record<string, unknown> | undefined {
   if (!options.session) return undefined;
   return { session: options.session };
@@ -358,7 +484,7 @@ function toReadOptions(
   query: DbQuery<unknown>,
   options: InternalRepositoryOptions
 ): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
+  const result: Record<string, unknown> = { readPreference: "primary" };
   if (query.projection) {
     result.projection = query.projection;
   }
@@ -372,6 +498,7 @@ function toMongoIndex(index: EntityIndexDefinition): {
   key: Record<string, 1 | -1>;
   unique?: boolean;
   sparse?: boolean;
+  expireAfterSeconds?: number;
   partialFilterExpression?: Record<string, unknown>;
   name?: string;
 } {
@@ -379,6 +506,7 @@ function toMongoIndex(index: EntityIndexDefinition): {
     key: Record<string, 1 | -1>;
     unique?: boolean;
     sparse?: boolean;
+    expireAfterSeconds?: number;
     partialFilterExpression?: Record<string, unknown>;
     name?: string;
   } = {
@@ -389,6 +517,9 @@ function toMongoIndex(index: EntityIndexDefinition): {
   }
   if (index.sparse !== undefined) {
     mapped.sparse = index.sparse;
+  }
+  if (index.expireAfterSeconds !== undefined) {
+    mapped.expireAfterSeconds = index.expireAfterSeconds;
   }
   if (index.partialFilter !== undefined) {
     mapped.partialFilterExpression = index.partialFilter;

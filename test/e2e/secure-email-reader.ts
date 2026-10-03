@@ -1,4 +1,3 @@
-import { createDecipheriv, createHash } from "node:crypto";
 import mongoose from "mongoose";
 import { E2E_MONGO_URI, E2E_SECURE_PAYLOAD_KEY } from "./e2e-env.js";
 
@@ -10,44 +9,45 @@ interface SecureEmailPayload {
 }
 
 interface StoredSecurePayload {
-  encryptedPayload: {
-    cipherText: string;
-    iv: string;
-    authTag: string;
-  };
+  id: string;
+  encryptedPayload: import("@trinacria-cms/kernel/contracts").EncryptedSecurePayload;
 }
 
 export async function readLatestSecureEmail(
   email: string,
   templateKey: string
 ): Promise<SecureEmailPayload> {
+  const { buildPhysicalCollectionName, SecureEventPayloadCrypto } = await import("@trinacria-cms/kernel/runtime");
+  const crypto = new SecureEventPayloadCrypto({ activeKeyId: "e2e-v1", keys: { "e2e-v1": E2E_SECURE_PAYLOAD_KEY } });
   const connection = await mongoose.createConnection(E2E_MONGO_URI).asPromise();
   try {
     const records = await connection
-      .collection<StoredSecurePayload>("kernel__secure_event_payloads")
+      .collection<StoredSecurePayload>(
+        buildPhysicalCollectionName({ pluginId: "kernel" }, "secure_event_payloads")
+      )
       .find({ payloadType: "email-pack:send-email-request" })
       .sort({ createdAt: -1 })
       .limit(20)
       .toArray();
     for (const record of records) {
-      const payload = JSON.parse(decryptPayload(record.encryptedPayload)) as SecureEmailPayload;
-      if (payload.to === email && payload.templateKey === templateKey) return payload;
+      const payload = JSON.parse(crypto.decrypt(record.encryptedPayload)) as SecureEmailPayload;
+      if (payload.to === email && payload.templateKey === templateKey) {
+        const jobs = connection.collection(buildPhysicalCollectionName({ pluginId: "kernel" }, "secure_email_jobs"));
+        const deadline = Date.now() + 15000;
+        while (Date.now() < deadline) {
+          const job = await jobs.findOne({ "claim.payloadId": record.id }, { projection: { _id: 0, status: 1, reason: 1 } });
+          if (job?.status === "succeeded") return payload;
+          if (job && ["ambiguous", "blocked", "cancelled"].includes(job.status)) throw new Error(`Email job ${job.status}: ${job.reason}`);
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        throw new Error(`Email job was not confirmed for template ${templateKey}`);
+      }
     }
 
     throw new Error(`Secure email payload not found for ${email} and template ${templateKey}`);
   } finally {
     await connection.close();
   }
-}
-
-function decryptPayload(payload: StoredSecurePayload["encryptedPayload"]): string {
-  const key = createHash("sha256").update(E2E_SECURE_PAYLOAD_KEY, "utf8").digest();
-  const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(payload.iv, "base64"));
-  decipher.setAuthTag(Buffer.from(payload.authTag, "base64"));
-  return Buffer.concat([
-    decipher.update(Buffer.from(payload.cipherText, "base64")),
-    decipher.final()
-  ]).toString("utf8");
 }
 
 export function extractFlowToken(url: string): string {

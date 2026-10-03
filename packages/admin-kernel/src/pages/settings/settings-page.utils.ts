@@ -21,18 +21,13 @@ const CORE_PACK_VISIBLE_SETTING_CATEGORIES = new Set([
   "email"
 ]);
 
-const CORE_PACK_VISIBLE_SETTING_KEYS = new Set([
-  "core-pack:security:plugin_access_grants",
-  "core-pack:auth:mfa_mode"
-]);
+const CORE_PACK_VISIBLE_SETTING_KEYS = new Set(["core-pack:auth:mfa_mode"]);
 
 const CORE_PACK_HIDDEN_SETTINGS_SECTION_IDS = new Set([
   "core-pack-auth-settings",
   "core-pack-security-settings",
   "core-pack-cache-settings",
-  "core-pack-settings-catalog",
-  "core-pack-plugin-permissions-settings",
-  "core-pack-plugin-management-settings"
+  "core-pack-settings-catalog"
 ]);
 
 export function isVisibleSettingsSection(section: RenderableAdminSettingsSection): boolean {

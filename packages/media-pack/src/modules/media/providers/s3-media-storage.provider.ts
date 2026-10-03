@@ -155,6 +155,19 @@ export class S3MediaStorageProvider implements MediaStorageProvider {
     return { url, expiresAt: new Date(Date.now() + expiresInSeconds * 1_000).toISOString() };
   }
 
+  async readObject(input: {
+    storageKey: string;
+    signal?: AbortSignal;
+  }): Promise<AsyncIterable<Uint8Array>> {
+    const result = await this.client.send(
+      new GetObjectCommand({ Bucket: this.options.bucket, Key: input.storageKey }),
+      { abortSignal: input.signal }
+    );
+    if (!result.Body || !(Symbol.asyncIterator in result.Body))
+      throw new Error("Media storage stream unavailable");
+    return result.Body as AsyncIterable<Uint8Array>;
+  }
+
   async deleteObject(input: { storageKey: string }): Promise<void> {
     await this.client.send(
       new DeleteObjectCommand({ Bucket: this.options.bucket, Key: input.storageKey })

@@ -3,7 +3,8 @@ import type {
   AuthorizationResult,
   AuthzService
 } from "@trinacria-cms/kernel";
-import { CoreError, matchesPermissionPattern } from "@trinacria-cms/kernel";
+import { CoreError } from "@trinacria-cms/kernel";
+import { matchesPermissionPattern } from "@trinacria-cms/kernel/runtime";
 import type { AuthorizationRule } from "../policies/authz-rules.js";
 import type { UserAccessService } from "../user-access/user-access.service.js";
 

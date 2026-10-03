@@ -1,0 +1,52 @@
+{
+  "name": "@trinacria-cms/example-catalog-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./admin": {
+      "types": "./dist/admin/index.d.ts",
+      "import": "./dist/admin/index.js"
+    },
+    "./admin-manifest": {
+      "types": "./dist/admin-manifest.d.ts",
+      "import": "./dist/admin-manifest.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "biome check .",
+    "test": "node --import tsx --test test/**/*.test.ts"
+  },
+  "dependencies": {
+    "@trinacria-cms/kernel": "0.1.0",
+    "@trinacria-cms/core-pack": "0.1.0"
+  },
+  "peerDependencies": {
+    "react": ">=19 <20",
+    "@trinacria-cms/sdk": "0.1.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "@trinacria-cms/sdk": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@trinacria-cms/sdk": "0.1.0"
+  },
+  "license": "MIT"
+}

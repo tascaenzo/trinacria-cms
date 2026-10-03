@@ -1,4 +1,5 @@
-import { defineEntity, type Infer, isValidPermissionKey, s } from "@trinacria-cms/kernel";
+import { type Infer, s } from "@trinacria-cms/kernel";
+import { defineEntity, isValidPermissionKey } from "@trinacria-cms/kernel/runtime";
 
 export const PermissionStatusSchema = s.enum(["active", "disabled"] as const);
 
@@ -34,6 +35,7 @@ export type PermissionRecord = Infer<typeof PermissionRecordSchema>;
  * It defines schema and logical indexes in one place.
  */
 export const PERMISSIONS_ENTITY = defineEntity({
+  ownerPluginId: "core-pack",
   entityName: "permissions",
   schema: PermissionRecordSchema,
   indexes: [

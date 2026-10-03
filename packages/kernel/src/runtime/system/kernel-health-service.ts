@@ -8,6 +8,8 @@ import type {
 
 export interface KernelHealthServiceOptions {
   runtime: Pick<PluginRuntime, "list" | "describeDependencies">;
+  durableReadiness?: () => Promise<{ ok: boolean; reason?: string }>;
+  clusterReadiness?: () => Promise<{ ok: boolean; reason?: string }>;
   dbAdapter?: Pick<DbAdapter, "healthCheck">;
   dbHealthCheck?: () => Promise<{ ok: true } | { ok: false; reason: string }>;
 }
@@ -41,8 +43,18 @@ export class KernelHealthService {
         : ({ ok: false, reason: "not_configured" } as const);
 
     const issues = this.collectIssues(records, dependencies, db);
-    const status = this.deriveStatus(records, dependencies, db);
+    let status = this.deriveStatus(records, dependencies, db);
+    const cluster = await this.options.clusterReadiness?.();
+    if (cluster && !cluster.ok) {
+      issues.push(`cluster:${cluster.reason ?? "not-ready"}`);
+      if (status === "ok") status = "degraded";
+    }
 
+    const durable = await this.options.durableReadiness?.();
+    if (durable && !durable.ok) {
+      issues.push(`durable:${durable.reason ?? "not-ready"}`);
+      if (status === "ok") status = "degraded";
+    }
     return {
       timestamp: new Date(),
       status,

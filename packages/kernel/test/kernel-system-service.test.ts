@@ -4,7 +4,7 @@ import type { PluginRuntimeRecord, PluginState } from "../src/contracts/plugin-r
 import { InMemoryPluginRuntime, KernelSystemService } from "../src/runtime/index.js";
 import { describeAvailableOperations } from "../src/runtime/plugin-runtime/plugin-runtime-operations.js";
 
-test("KernelSystemService exposes operational plugin snapshots", () => {
+test("KernelSystemService exposes operational plugin snapshots", async () => {
   const service = new KernelSystemService(
     {
       list: () =>
@@ -109,7 +109,7 @@ test("KernelSystemService exposes operational plugin snapshots", () => {
     }
   );
 
-  const [content, users] = service.listInstalledPlugins();
+  const [content, users] = await service.listInstalledPlugins();
 
   assert.equal(content?.dependencies[0]?.status, "disabled");
   assert.equal(content?.dependencies[0]?.state, "disabled");
@@ -211,32 +211,65 @@ test("KernelSystemService exposes configured plugin discovery sources", () => {
   assert.equal(sources[1]?.error, "module not found");
 });
 
-test("KernelSystemService executes supported plugin operations", async () => {
+test("KernelSystemService uses shared coordination when explicitly configured", async () => {
   const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0" });
-  await runtime.register({
-    id: "cms/plugin-content",
-    version: "1.0.0",
-    requiresCore: "^0.1.0"
-  });
+  const input = { operation: "enable" as const, expectedRevision: 1, idempotencyKey: "operator-command" };
+  const result = { operationId: "operation", pluginId: "example", status: "pending" };
+  const service = new KernelSystemService(runtime, { coordinator: async () => ({ submit: async (id: string, actual: unknown, actor: string) => { assert.equal(id, "example"); assert.deepEqual(actual, input); assert.equal(actor, "operator"); return result; }, status: async () => result }) as never });
+  assert.deepEqual(await service.executeOperation("example", input, "operator"), result);
+  assert.deepEqual(await service.getPluginOperation("operation"), result);
+});
 
+test("local lifecycle operations work without cluster, reject stale state and deduplicate retries", async () => {
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0" });
+  let loads = 0;
+  await runtime.register({ manifest: { id: "example", version: "0.1.0", requiresCore: "^0.1.0" }, onLoad() { loads++; } });
   const service = new KernelSystemService(runtime);
+  const before = (await service.getInstalledPlugin("example"))!;
+  assert.equal(before.executionMode, "local"); assert.equal(before.cluster, undefined);
+  const input = { operation: "load" as const, expectedRevision: before.operationRevision, idempotencyKey: "first-command" };
+  const [first, retry] = await Promise.all([service.executeOperation("example", input, "operator"), service.executeOperation("example", input, "operator")]);
+  assert.deepEqual(first, retry); assert.equal(first.status, "succeeded"); assert.equal(loads, 1);
+  assert.deepEqual(await service.getPluginOperation(first.operationId), first);
+  await assert.rejects(service.executeOperation("example", { ...input, operation: "reload" }, "operator"), /Idempotency/);
+  await assert.rejects(service.executeOperation("example", { ...input, operation: "reload", idempotencyKey: "stale-command" }, "operator"), /state changed/);
+  const loaded = (await service.getInstalledPlugin("example"))!;
+  const disabled = await service.executeOperation("example", { operation: "disable", expectedRevision: loaded.operationRevision, idempotencyKey: "disable-command", reason: "operator request" }, "operator");
+  assert.equal(disabled.status, "succeeded"); assert.equal(runtime.list()[0].state, "disabled");
+  const snapshot = (await service.getInstalledPlugin("example"))!;
+  await service.executeOperation("example", { operation: "enable", expectedRevision: snapshot.operationRevision, idempotencyKey: "enable-command" }, "operator");
+  assert.equal(runtime.list()[0].state, "registered");
+  await assert.rejects(service.getPluginOperation("unknown"), { code: "not_found" });
+});
 
-  const loaded = await service.executeOperation("cms/plugin-content", {
-    operation: "load"
-  });
-  assert.equal(loaded.plugin.state, "loaded");
+test("local revisions survive eviction of lifecycle diagnostics", async () => {
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0", eventBufferSize: 1 });
+  for (const id of ["example", "other"])
+    await runtime.register({ id, version: "0.1.0", requiresCore: "^0.1.0" });
+  const service = new KernelSystemService(runtime);
+  const before = (await service.getInstalledPlugin("example"))!;
+  await runtime.load("example");
+  await runtime.load("other");
+  assert.equal(runtime.events({ pluginId: "example" }).length, 0);
+  const loaded = (await service.getInstalledPlugin("example"))!;
+  assert.ok(loaded.operationRevision > before.operationRevision);
+  await assert.rejects(service.executeOperation("example", { operation: "unload", expectedRevision: before.operationRevision, idempotencyKey: "stale" }, "operator"), /state changed/);
+  assert.equal((await service.executeOperation("example", { operation: "unload", expectedRevision: loaded.operationRevision, idempotencyKey: "current" }, "operator")).status, "succeeded");
+});
 
-  const disabled = await service.executeOperation("cms/plugin-content", {
-    operation: "disable",
-    reason: "operator stop"
-  });
-  assert.equal(disabled.plugin.state, "disabled");
-  assert.equal(disabled.plugin.disabledReason, "operator stop");
-
-  const enabled = await service.executeOperation("cms/plugin-content", {
-    operation: "enable"
-  });
-  assert.equal(enabled.plugin.state, "registered");
+test("local disable waits for real activity and rejects concurrent lifecycle commands", async () => {
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0" });
+  await runtime.register({ id: "example", version: "0.1.0", requiresCore: "^0.1.0" }); await runtime.load("example");
+  let release!: () => void;
+  const barrier = new Promise<void>(resolve => { release = resolve; });
+  const activity = runtime.activity.run(["example"], () => barrier);
+  const service = new KernelSystemService(runtime);
+  const snapshot = (await service.getInstalledPlugin("example"))!;
+  const disable = service.executeOperation("example", { operation: "disable", expectedRevision: snapshot.operationRevision, idempotencyKey: "disable-command" }, "operator");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(runtime.activity.snapshot("example").blocked, true); assert.equal(runtime.list()[0].state, "loaded");
+  await assert.rejects(service.executeOperation("example", { operation: "reload", expectedRevision: snapshot.operationRevision, idempotencyKey: "reload-command" }, "operator"), /already running/);
+  release(); await activity; assert.equal((await disable).status, "succeeded"); assert.equal(runtime.list()[0].state, "disabled");
 });
 
 test("KernelSystemService blocks unload and disable when loaded dependents exist", async () => {
@@ -255,7 +288,7 @@ test("KernelSystemService blocks unload and disable when loaded dependents exist
   await runtime.loadMany(["cms/plugin-content"]);
 
   const service = new KernelSystemService(runtime);
-  const users = service.getInstalledPlugin("cms/plugin-users");
+  const users = await service.getInstalledPlugin("cms/plugin-users");
 
   assert.equal(users?.operations.find((item) => item.operation === "unload")?.available, false);
   assert.equal(users?.operations.find((item) => item.operation === "disable")?.available, false);

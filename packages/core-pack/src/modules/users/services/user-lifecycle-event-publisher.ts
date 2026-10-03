@@ -13,7 +13,7 @@ import {
 } from "../events/user-events.catalog.js";
 
 export class UserLifecycleEventPublisher {
-  constructor(private readonly events?: EventBus) {}
+  constructor(private readonly events?: Pick<EventBus, "emit">) {}
 
   userCreated(payload: CorePackUserCreatedPayload): Promise<void> {
     return this.emit(CORE_PACK_USER_CREATED_EVENT, payload);

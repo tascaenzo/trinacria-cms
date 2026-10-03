@@ -24,7 +24,7 @@ test("DbPluginRuntimeStore initializes entity registration and indexes", async (
 
   await store.initialize();
 
-  const entity = entityRegistry.get(INSTALLED_PLUGINS_ENTITY.entityName);
+  const entity = entityRegistry.get(INSTALLED_PLUGINS_ENTITY.entityName, "kernel");
   assert.equal(entity.entityName, "installed_plugins");
   assert.deepEqual(db.ensureIndexesCalls, [
     {

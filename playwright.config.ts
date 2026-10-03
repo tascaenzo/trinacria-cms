@@ -11,6 +11,8 @@ import {
   E2E_MONGO_URI,
   E2E_OBSERVABILITY_TOKEN,
   E2E_PLUGIN_AUTH_SECRET,
+  E2E_PREVIEW_KEY,
+  E2E_PUBLIC_SITE_URL,
   E2E_SECURE_PAYLOAD_KEY
 } from "./test/e2e/e2e-env.js";
 
@@ -28,6 +30,7 @@ export default defineConfig({
     : [["list"], ["html", { outputFolder: "playwright-report", open: "never" }]],
   globalTeardown: "./test/e2e/global-teardown.ts",
   use: {
+    ignoreHTTPSErrors: true,
     baseURL: E2E_APP_URL,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
@@ -49,23 +52,32 @@ export default defineConfig({
       env: {
         ...process.env,
         NODE_ENV: "production",
+        PLAYGROUND_CLUSTER_ENABLED: "false",
         CMS_ENV_FILE: fixtureEnvPath,
         CMS_INSTALLED: "false",
         MONGO_URI: E2E_MONGO_URI,
         HTTP_HOST: "127.0.0.1",
         HTTP_PORT: new URL(E2E_API_URL).port || "3000",
         HTTP_CORS_ORIGINS: E2E_APP_URL,
+        // The serial suite exercises hundreds of requests within one rate-limit window.
+        HTTP_RATE_LIMIT_MAX: "1000",
         CMS_CSRF_PROTECTION: "true",
         CMS_CSRF_TRUSTED_ORIGINS: E2E_APP_URL,
         CMS_JWT_SECRET: "trinacria-e2e-only-jwt-secret-with-more-than-thirty-two-characters",
         CMS_STRICT_JWT_SECRET_REQUIRED: "true",
         CMS_JWT_COOKIE_SECURE: "false",
         CMS_JWT_COOKIE_SAME_SITE: "lax",
-        CMS_SECURE_PAYLOAD_MASTER_KEY: E2E_SECURE_PAYLOAD_KEY,
+        CMS_PREVIEW_ACTIVE_KEY_ID: "preview-e2e",
+        CMS_PREVIEW_KEYS_JSON: JSON.stringify({ "preview-e2e": E2E_PREVIEW_KEY }),
+        CMS_PREVIEW_SITES_JSON: JSON.stringify([
+          { id: "public-site", origin: E2E_PUBLIC_SITE_URL }
+        ]),
+        CMS_SECURE_PAYLOAD_ACTIVE_KEY_ID: "e2e-v1",
+        CMS_SECURE_PAYLOAD_KEYS_JSON: JSON.stringify({ "e2e-v1": E2E_SECURE_PAYLOAD_KEY }),
         CMS_PLUGIN_AUTH_KEYS_JSON: JSON.stringify({
-          "email-pack": E2E_PLUGIN_AUTH_SECRET
+          "email-pack": { current: { id: "e2e-current", secret: E2E_PLUGIN_AUTH_SECRET } }
         }),
-        CMS_OPENAPI_ENABLED: "false",
+        CMS_OPENAPI_ENABLED: "true",
         CMS_SWAGGER_ENABLED: "false",
         OBSERVABILITY_ENABLED: "true",
         METRICS_ENABLED: "true",
@@ -84,6 +96,20 @@ export default defineConfig({
       env: {
         ...process.env,
         VITE_CMS_PROXY_TARGET: E2E_API_URL
+      }
+    },
+    {
+      command: "node --import tsx test/e2e/start-public-site.ts",
+      url: `${E2E_PUBLIC_SITE_URL}/health`,
+      ignoreHTTPSErrors: true,
+      cwd: workspaceRoot,
+      reuseExistingServer: false,
+      timeout: 120_000,
+      env: {
+        ...process.env,
+        PUBLIC_SITE_ORIGIN: E2E_PUBLIC_SITE_URL,
+        PUBLIC_SITE_API_BASE_URL: E2E_API_URL,
+        PUBLIC_SITE_BACKOFFICE_ORIGINS_JSON: JSON.stringify([E2E_APP_URL])
       }
     },
     {
@@ -131,7 +157,8 @@ function readinessFixtureEnv(input: {
     CMS_CSRF_TRUSTED_ORIGINS: E2E_APP_URL,
     CMS_JWT_SECRET: "trinacria-e2e-only-jwt-secret-with-more-than-thirty-two-characters",
     CMS_STRICT_JWT_SECRET_REQUIRED: "true",
-    CMS_SECURE_PAYLOAD_MASTER_KEY: E2E_SECURE_PAYLOAD_KEY,
+    CMS_SECURE_PAYLOAD_ACTIVE_KEY_ID: "e2e-v1",
+    CMS_SECURE_PAYLOAD_KEYS_JSON: JSON.stringify({ "e2e-v1": E2E_SECURE_PAYLOAD_KEY }),
     CMS_OPENAPI_ENABLED: "false",
     CMS_SWAGGER_ENABLED: "false",
     OBSERVABILITY_ENABLED: "true",

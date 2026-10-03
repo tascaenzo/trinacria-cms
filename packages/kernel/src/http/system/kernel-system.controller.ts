@@ -7,7 +7,8 @@ import {
   PluginRuntimeError,
   PluginStateTransitionError
 } from "../../errors/plugin-errors.js";
-import type { KernelSystemService } from "../../runtime/system/kernel-system-service.js";
+import type { KernelSystemOperations } from "../../runtime/operations/kernel-system-operations.js";
+import { getHttpOperationContext } from "../../runtime/operations/operation-context.js";
 import {
   createPluginApiResponder,
   parsePathParam,
@@ -31,7 +32,7 @@ const responder = createPluginApiResponder("kernel");
 
 export class KernelSystemHttpController extends HttpController {
   constructor(
-    private readonly system: KernelSystemService,
+    private readonly system: KernelSystemOperations,
     private readonly adminRouteGuard: KernelAdminRouteGuard | null = null
   ) {
     super();
@@ -45,6 +46,7 @@ export class KernelSystemHttpController extends HttpController {
       .get("/v1/system/plugins", this.listInstalledPlugins, {
         middlewares: guardedMiddlewares,
         docs: {
+          pluginId: "kernel",
           summary: "List installed plugins and their runtime state",
           tags: ["System"],
           operationId: "listInstalledPlugins",
@@ -60,6 +62,7 @@ export class KernelSystemHttpController extends HttpController {
       .get("/v1/system/capabilities", this.listCapabilities, {
         middlewares: guardedMiddlewares,
         docs: {
+          pluginId: "kernel",
           summary: "List published capabilities across installed plugins",
           tags: ["System"],
           operationId: "listInstalledCapabilities",
@@ -75,6 +78,7 @@ export class KernelSystemHttpController extends HttpController {
       .get("/v1/system/plugin-contributions", this.listPluginContributions, {
         middlewares: guardedMiddlewares,
         docs: {
+          pluginId: "kernel",
           summary: "List manifest-derived plugin contributions",
           tags: ["System"],
           operationId: "listPluginContributions",
@@ -90,6 +94,7 @@ export class KernelSystemHttpController extends HttpController {
       .get("/v1/admin/extensions", this.listAdminExtensions, {
         middlewares: guardedMiddlewares,
         docs: {
+          pluginId: "kernel",
           summary: "List runtime admin extension manifests for loaded plugins",
           tags: ["System"],
           operationId: "listAdminExtensions",
@@ -105,6 +110,7 @@ export class KernelSystemHttpController extends HttpController {
       .get("/v1/system/plugins/sources", this.listPluginSources, {
         middlewares: guardedMiddlewares,
         docs: {
+          pluginId: "kernel",
           summary: "List configured plugin discovery sources",
           tags: ["System"],
           operationId: "listPluginSources",
@@ -120,6 +126,7 @@ export class KernelSystemHttpController extends HttpController {
       .get("/v1/system/plugins/:pluginId", this.getInstalledPlugin, {
         middlewares: guardedMiddlewares,
         docs: {
+          pluginId: "kernel",
           summary: "Read one installed plugin snapshot",
           tags: ["System"],
           operationId: "getInstalledPlugin",
@@ -135,7 +142,8 @@ export class KernelSystemHttpController extends HttpController {
       .post("/v1/system/plugins/:pluginId/operations", this.executePluginOperation, {
         middlewares: guardedMiddlewares,
         docs: {
-          summary: "Execute a supported runtime operation on one installed plugin",
+          pluginId: "kernel",
+          summary: "Execute a plugin lifecycle operation locally or through the configured cluster",
           tags: ["System"],
           operationId: "executePluginOperation",
           ...(guardedSecurity ? { security: guardedSecurity } : {}),
@@ -144,8 +152,24 @@ export class KernelSystemHttpController extends HttpController {
             schema: toOpenApiSchema(PluginOperationRequestSchema)
           },
           responses: {
+            202: {
+              description: "Plugin lifecycle operation accepted",
+              schema: toOpenApiSchema(PluginOperationResponseSchema)
+            }
+          }
+        }
+      })
+      .get("/v1/system/plugin-operations/:operationId", this.getPluginOperation, {
+        middlewares: guardedMiddlewares,
+        docs: {
+          pluginId: "kernel",
+          operationId: "getPluginOperation",
+          summary: "Read local or cluster plugin operation status",
+          tags: ["System"],
+          ...(guardedSecurity ? { security: guardedSecurity } : {}),
+          responses: {
             200: {
-              description: "Plugin operation result",
+              description: "Plugin lifecycle operation status",
               schema: toOpenApiSchema(PluginOperationResponseSchema)
             }
           }
@@ -154,6 +178,7 @@ export class KernelSystemHttpController extends HttpController {
       .get("/v1/system/plugins/:pluginId/events", this.listPluginEvents, {
         middlewares: guardedMiddlewares,
         docs: {
+          pluginId: "kernel",
           summary: "Read recent lifecycle events for one installed plugin",
           tags: ["System"],
           operationId: "listPluginEvents",
@@ -170,24 +195,46 @@ export class KernelSystemHttpController extends HttpController {
       .build();
   }
 
-  private listInstalledPlugins = async () => {
-    return responder.list(this.system.listInstalledPlugins());
+  private listInstalledPlugins = async (ctx: HttpContext) => {
+    try {
+      return responder.list(await this.system.listInstalledPlugins(getHttpOperationContext(ctx)));
+    } catch (error) {
+      return responder.fromError(error);
+    }
   };
 
-  private listCapabilities = async () => {
-    return responder.list(this.system.listCapabilities());
+  private listCapabilities = async (ctx: HttpContext) => {
+    try {
+      return responder.list(await this.system.listCapabilities(getHttpOperationContext(ctx)));
+    } catch (error) {
+      return responder.fromError(error);
+    }
   };
 
-  private listPluginContributions = async () => {
-    return responder.success(this.system.listPluginContributions());
+  private listPluginContributions = async (ctx: HttpContext) => {
+    try {
+      return responder.success(
+        await this.system.listPluginContributions(getHttpOperationContext(ctx))
+      );
+    } catch (error) {
+      return responder.fromError(error);
+    }
   };
 
-  private listAdminExtensions = async () => {
-    return responder.list(this.system.listAdminExtensions());
+  private listAdminExtensions = async (ctx: HttpContext) => {
+    try {
+      return responder.list(await this.system.listAdminExtensions(getHttpOperationContext(ctx)));
+    } catch (error) {
+      return responder.fromError(error);
+    }
   };
 
-  private listPluginSources = async () => {
-    return responder.list(this.system.listPluginSources());
+  private listPluginSources = async (ctx: HttpContext) => {
+    try {
+      return responder.list(await this.system.listPluginSources(getHttpOperationContext(ctx)));
+    } catch (error) {
+      return responder.fromError(error);
+    }
   };
 
   private getInstalledPlugin = async (ctx: HttpContext) => {
@@ -196,12 +243,25 @@ export class KernelSystemHttpController extends HttpController {
       return responder.invalidRequest("Missing plugin id");
     }
 
-    const snapshot = this.system.getInstalledPlugin(pluginId);
+    const snapshot = await this.system.getInstalledPlugin(getHttpOperationContext(ctx), pluginId);
     if (!snapshot) {
       return responder.notFound(`Plugin "${pluginId}" not found`);
     }
 
     return responder.success(snapshot);
+  };
+
+  private getPluginOperation = async (ctx: HttpContext) => {
+    try {
+      return responder.success(
+        await this.system.getPluginOperation(
+          getHttpOperationContext(ctx),
+          parsePathParam(ctx.params, "operationId") ?? ""
+        )
+      );
+    } catch (error) {
+      return responder.fromError(error);
+    }
   };
 
   private executePluginOperation = async (ctx: HttpContext) => {
@@ -212,10 +272,15 @@ export class KernelSystemHttpController extends HttpController {
 
     try {
       const payload = PluginOperationRequestSchema.parse(ctx.body);
-      const result = await this.system.executeOperation(pluginId, payload);
-      return responder.success(result);
+      const result = await this.system.executeOperation(
+        getHttpOperationContext(ctx),
+        pluginId,
+        payload,
+        ""
+      );
+      return response(responder.success(result), { status: 202 });
     } catch (error) {
-      return this.fromPluginOperationError(pluginId, error);
+      return this.fromPluginOperationError(ctx, pluginId, error);
     }
   };
 
@@ -225,7 +290,7 @@ export class KernelSystemHttpController extends HttpController {
       return responder.invalidRequest("Missing plugin id");
     }
 
-    const snapshot = this.system.getInstalledPlugin(pluginId);
+    const snapshot = await this.system.getInstalledPlugin(getHttpOperationContext(ctx), pluginId);
     if (!snapshot) {
       return responder.notFound(`Plugin "${pluginId}" not found`);
     }
@@ -236,12 +301,25 @@ export class KernelSystemHttpController extends HttpController {
         ? undefined
         : Math.min(200, Math.max(1, Math.floor(requestedLimit)));
 
-    return responder.list(this.system.listPluginEvents(pluginId, limit));
+    return responder.list(
+      await this.system.listPluginEvents(getHttpOperationContext(ctx), pluginId, limit)
+    );
   };
 
-  private fromPluginOperationError(pluginId: string, error: unknown) {
-    const snapshot = this.system.getInstalledPlugin(pluginId);
-    const recentEvents = this.system.listPluginEvents(pluginId, 5);
+  private async fromPluginOperationError(ctx: HttpContext, pluginId: string, error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "operation_forbidden"
+    )
+      return responder.fromError(error);
+    const snapshot = await this.system.getInstalledPlugin(getHttpOperationContext(ctx), pluginId);
+    const recentEvents = await this.system.listPluginEvents(
+      getHttpOperationContext(ctx),
+      pluginId,
+      5
+    );
     const details = {
       ...(hasErrorDetails(error) ? error.details : {}),
       ...(snapshot ? { plugin: snapshot } : {}),

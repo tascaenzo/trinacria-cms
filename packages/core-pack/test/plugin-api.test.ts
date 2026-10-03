@@ -18,12 +18,13 @@ test("core-pack plugin API keeps kernel helper re-exports available for compatib
 test("core-pack plugin API creates signed plugin requests", () => {
   const request = createSignedPluginRequest({
     pluginId: "Blog-Pack",
-    secret: "test-secret",
+    keyId: "current",
+    secret: "test-secret-with-at-least-32-bytes-of-material",
     method: "post",
     path: "/v1/settings/",
     body: { value: true },
     timestamp: 1234,
-    nonce: "nonce-1",
+    nonce: "nonce-1-000000000000000000",
     headers: { "content-type": "application/json" }
   });
 
@@ -35,11 +36,12 @@ test("core-pack plugin API creates signed plugin requests", () => {
     request.headers[PLUGIN_AUTH_HEADERS.signature],
     buildPluginRequestSignature({
       pluginId: "blog-pack",
-      secret: "test-secret",
+      keyId: "current",
+    secret: "test-secret-with-at-least-32-bytes-of-material",
       method: "POST",
       path: "/v1/settings",
       timestamp: 1234,
-      nonce: "nonce-1",
+      nonce: "nonce-1-000000000000000000",
       body: { value: true }
     })
   );

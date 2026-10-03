@@ -1,4 +1,5 @@
-import { type Infer, isValidPermissionKey, s } from "@trinacria-cms/kernel";
+import { type Infer, s } from "@trinacria-cms/kernel";
+import { isValidPermissionKey } from "@trinacria-cms/kernel/runtime";
 
 /**
  * Embedded grant payload stored inside a role document.

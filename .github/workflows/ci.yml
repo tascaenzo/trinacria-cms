@@ -55,6 +55,12 @@ jobs:
       - name: Storybook build
         run: npm run storybook:build
 
+      - name: Public API contracts
+        run: npm run build && npm run public-api:check
+
+      - name: External tarball backend and admin
+        run: npm run release:test
+
       - name: SDK generated check
         run: npm run sdk:check
 

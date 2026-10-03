@@ -3,15 +3,14 @@ import {
   CORE_TOKENS,
   classProvider,
   defineModule,
-  type EntityRegistry,
   factoryProvider,
   httpProvider
 } from "@trinacria-cms/kernel";
+import type { EntityRegistry } from "@trinacria-cms/kernel/runtime";
+import { createUsersOperations, USERS_OPERATIONS } from "../../operations/access-operations.js";
+import { AUTH_FLOW_OPERATIONS } from "../../operations/auth-flow-operations.js";
 import { CorePackAuthModule } from "../auth/auth.module.js";
-import {
-  CORE_PACK_AUTH_USER_FLOWS_SERVICE_TOKEN,
-  CORE_PACK_JWT_AUTH_SERVICE_TOKEN
-} from "../auth/auth.tokens.js";
+import { CORE_PACK_JWT_AUTH_SERVICE_TOKEN } from "../auth/auth.tokens.js";
 import { UsersRepository } from "./repositories/users.repository.js";
 import { UsersService } from "./services/users.service.js";
 import { UsersController } from "./users.controller.js";
@@ -39,14 +38,32 @@ export const CorePackUsersModule = defineModule({
       [CORE_TOKENS.ENTITY_REGISTRY]
     ),
     classProvider(USERS_REPOSITORY_TOKEN, UsersRepository, [CORE_TOKENS.DB_ADAPTER]),
-    classProvider(USERS_SERVICE_TOKEN, UsersService, [USERS_REPOSITORY_TOKEN, EVENT_BUS_TOKEN]),
-    httpProvider(USERS_CONTROLLER_TOKEN, UsersController, [
+    factoryProvider(
       USERS_SERVICE_TOKEN,
+      (
+        repository,
+        events,
+        durable: import("@trinacria-cms/kernel/runtime").MongoDurableEventStore
+      ) =>
+        new UsersService(repository, events, (work) =>
+          durable.transaction("core-pack", (db, publisher) =>
+            work(new UsersService(new UsersRepository(db), publisher))
+          )
+        ),
+      [USERS_REPOSITORY_TOKEN, EVENT_BUS_TOKEN, CORE_TOKENS.DURABLE_EVENTS]
+    ),
+    factoryProvider(USERS_OPERATIONS, createUsersOperations, [
+      USERS_SERVICE_TOKEN,
+      CORE_TOKENS.OPERATION_AUTHORIZER
+    ]),
+    httpProvider(USERS_CONTROLLER_TOKEN, UsersController, [
+      USERS_OPERATIONS,
       CORE_PACK_JWT_AUTH_SERVICE_TOKEN,
-      CORE_PACK_AUTH_USER_FLOWS_SERVICE_TOKEN
+      AUTH_FLOW_OPERATIONS
     ])
   ],
   exports: [
+    USERS_OPERATIONS,
     USERS_CONTROLLER_TOKEN,
     USERS_ENTITY_REGISTRATION_TOKEN,
     USERS_REPOSITORY_TOKEN,

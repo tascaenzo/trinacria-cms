@@ -6,6 +6,8 @@ import {
   parseQueryNumber,
   toOpenApiSchema
 } from "@trinacria-cms/kernel";
+import { getHttpOperationContext } from "@trinacria-cms/kernel/runtime";
+import type { RolesOperations } from "../../operations/access-operations.js";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import { createJwtAuthMiddleware } from "../auth/auth.middleware.js";
 import type { JwtAuthService } from "../auth/services/auth.service.js";
@@ -19,7 +21,6 @@ import {
   UpdateRoleInputSchema,
   UpdateRoleStatusInputSchema
 } from "./dto/index.js";
-import type { RolesService } from "./services/roles.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
 
@@ -45,7 +46,7 @@ export class RolesController extends HttpController {
   private readonly adminAuthMiddleware: HttpMiddleware;
 
   constructor(
-    private readonly roles: RolesService,
+    private readonly roles: RolesOperations,
     auth: JwtAuthService
   ) {
     super();
@@ -59,6 +60,7 @@ export class RolesController extends HttpController {
       .get("/v1/roles", this.listRoles, {
         middlewares: [this.adminAuthMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "List roles",
           tags: [CORE_PACK_OPENAPI_TAGS.ROLES],
           operationId: "listRoles",
@@ -75,6 +77,7 @@ export class RolesController extends HttpController {
       .get("/v1/roles/:id", this.getRoleById, {
         middlewares: [this.adminAuthMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Get role by id",
           tags: [CORE_PACK_OPENAPI_TAGS.ROLES],
           operationId: "getRoleById",
@@ -94,6 +97,7 @@ export class RolesController extends HttpController {
       .post("/v1/roles", this.createRole, {
         middlewares: [this.adminAuthMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Create role",
           tags: [CORE_PACK_OPENAPI_TAGS.ROLES],
           operationId: "createRole",
@@ -117,6 +121,7 @@ export class RolesController extends HttpController {
       .patch("/v1/roles/:id", this.updateRole, {
         middlewares: [this.adminAuthMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Update role",
           tags: [CORE_PACK_OPENAPI_TAGS.ROLES],
           operationId: "updateRole",
@@ -140,6 +145,7 @@ export class RolesController extends HttpController {
       .patch("/v1/roles/:id/status", this.updateRoleStatus, {
         middlewares: [this.adminAuthMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Update role status",
           tags: [CORE_PACK_OPENAPI_TAGS.ROLES],
           operationId: "updateRoleStatus",
@@ -169,7 +175,7 @@ export class RolesController extends HttpController {
         limit: parseQueryNumber(ctx.query.limit),
         offset: parseQueryNumber(ctx.query.offset)
       });
-      const roles = await this.roles.listRoles(query);
+      const roles = await this.roles.listRoles(getHttpOperationContext(ctx), query);
       return responder.list(roles, {
         limit: query.limit,
         offset: query.offset
@@ -186,7 +192,7 @@ export class RolesController extends HttpController {
     }
 
     try {
-      const role = await this.roles.getRoleById(id);
+      const role = await this.roles.getRoleById(getHttpOperationContext(ctx), id);
       if (!role) {
         return responder.notFound(`Role "${id}" not found`);
       }
@@ -199,7 +205,7 @@ export class RolesController extends HttpController {
   private createRole = async (ctx: HttpContext) => {
     try {
       const payload = CreateRoleInputSchema.parse(ctx.body);
-      const created = await this.roles.createRole(payload);
+      const created = await this.roles.createRole(getHttpOperationContext(ctx), payload);
       return responder.success(created);
     } catch (error) {
       return responder.fromError(error);
@@ -214,7 +220,7 @@ export class RolesController extends HttpController {
 
     try {
       const payload = UpdateRoleInputSchema.parse(ctx.body);
-      const updated = await this.roles.updateRole(id, payload);
+      const updated = await this.roles.updateRole(getHttpOperationContext(ctx), id, payload);
       if (!updated) {
         return responder.notFound(`Role "${id}" not found`);
       }
@@ -234,8 +240,8 @@ export class RolesController extends HttpController {
       const payload = UpdateRoleStatusInputSchema.parse(ctx.body);
       const updated =
         payload.status === "active"
-          ? await this.roles.activateRole(id)
-          : await this.roles.disableRole(id);
+          ? await this.roles.activateRole(getHttpOperationContext(ctx), id)
+          : await this.roles.disableRole(getHttpOperationContext(ctx), id);
       if (!updated) {
         return responder.notFound(`Role "${id}" not found`);
       }

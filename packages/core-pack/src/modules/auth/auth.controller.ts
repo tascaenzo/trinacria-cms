@@ -20,6 +20,11 @@ import {
   extractRefreshTokenFromCookie
 } from "./auth-session.js";
 import {
+  AuthAcceptedResponseSchema,
+  AuthCompletedResponseSchema,
+  AuthDisabledResponseSchema
+} from "./dto/auth.response.dto.js";
+import {
   AcceptUserInviteInputSchema,
   AuthErrorResponseSchema,
   AuthLogoutResponseSchema,
@@ -68,6 +73,7 @@ export class AuthController extends HttpController {
     return this.router()
       .post("/v1/auth/login", this.login, {
         docs: {
+          pluginId: "core-pack",
           summary: "Login with email and password",
           tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
           operationId: "loginWithPassword",
@@ -89,6 +95,7 @@ export class AuthController extends HttpController {
       })
       .post("/v1/auth/login/mfa", this.completeMfaLogin, {
         docs: {
+          pluginId: "core-pack",
           summary: "Complete login with an authenticator or recovery code",
           tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
           operationId: "completeMfaLogin",
@@ -107,6 +114,7 @@ export class AuthController extends HttpController {
       })
       .post("/v1/auth/login/mfa/enrollment", this.beginLoginMfaEnrollment, {
         docs: {
+          pluginId: "core-pack",
           summary: "Begin required MFA enrollment during login",
           tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
           operationId: "beginLoginMfaEnrollment",
@@ -125,6 +133,7 @@ export class AuthController extends HttpController {
       })
       .post("/v1/auth/login/mfa/enrollment/confirm", this.completeLoginMfaEnrollment, {
         docs: {
+          pluginId: "core-pack",
           summary: "Confirm required MFA enrollment and complete login",
           tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
           operationId: "completeLoginMfaEnrollment",
@@ -143,6 +152,7 @@ export class AuthController extends HttpController {
       })
       .post("/v1/auth/password-reset/request", this.requestPasswordReset, {
         docs: {
+          pluginId: "core-pack",
           summary: "Request password reset email",
           tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
           operationId: "requestPasswordReset",
@@ -151,12 +161,16 @@ export class AuthController extends HttpController {
             schema: toOpenApiSchema(RequestPasswordResetInputSchema)
           },
           responses: {
-            200: { description: "Password reset request accepted" }
+            200: {
+              description: "Password reset request accepted",
+              schema: toOpenApiSchema(AuthAcceptedResponseSchema)
+            }
           }
         }
       })
       .post("/v1/auth/register", this.registerPublic, {
         docs: {
+          pluginId: "core-pack",
           summary: "Register public user",
           tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
           operationId: "registerPublicUser",
@@ -165,12 +179,16 @@ export class AuthController extends HttpController {
             schema: toOpenApiSchema(PublicRegistrationInputSchema)
           },
           responses: {
-            200: { description: "Registration accepted" }
+            200: {
+              description: "Registration accepted",
+              schema: toOpenApiSchema(AuthAcceptedResponseSchema)
+            }
           }
         }
       })
       .post("/v1/auth/invite/accept", this.acceptUserInvite, {
         docs: {
+          pluginId: "core-pack",
           summary: "Accept user invite",
           tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
           operationId: "acceptUserInvite",
@@ -179,12 +197,16 @@ export class AuthController extends HttpController {
             schema: toOpenApiSchema(AcceptUserInviteInputSchema)
           },
           responses: {
-            200: { description: "Invite accepted" }
+            200: {
+              description: "Invite accepted",
+              schema: toOpenApiSchema(AuthCompletedResponseSchema)
+            }
           }
         }
       })
       .post("/v1/auth/password-reset/complete", this.completePasswordReset, {
         docs: {
+          pluginId: "core-pack",
           summary: "Complete password reset",
           tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
           operationId: "completePasswordReset",
@@ -193,12 +215,16 @@ export class AuthController extends HttpController {
             schema: toOpenApiSchema(CompletePasswordResetInputSchema)
           },
           responses: {
-            200: { description: "Password reset completed" }
+            200: {
+              description: "Password reset completed",
+              schema: toOpenApiSchema(AuthCompletedResponseSchema)
+            }
           }
         }
       })
       .post("/v1/auth/email-verification/request", this.requestEmailVerification, {
         docs: {
+          pluginId: "core-pack",
           summary: "Request email verification email",
           tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
           operationId: "requestEmailVerification",
@@ -207,12 +233,16 @@ export class AuthController extends HttpController {
             schema: toOpenApiSchema(RequestEmailVerificationInputSchema)
           },
           responses: {
-            200: { description: "Email verification request accepted" }
+            200: {
+              description: "Email verification request accepted",
+              schema: toOpenApiSchema(AuthAcceptedResponseSchema)
+            }
           }
         }
       })
       .post("/v1/auth/email-verification/confirm", this.confirmEmailVerification, {
         docs: {
+          pluginId: "core-pack",
           summary: "Confirm email verification token",
           tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
           operationId: "confirmEmailVerification",
@@ -221,13 +251,17 @@ export class AuthController extends HttpController {
             schema: toOpenApiSchema(ConfirmEmailVerificationInputSchema)
           },
           responses: {
-            200: { description: "Email verification completed" }
+            200: {
+              description: "Email verification completed",
+              schema: toOpenApiSchema(AuthCompletedResponseSchema)
+            }
           }
         }
       })
       .get("/v1/auth/me", this.me, {
         middlewares: [this.authMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Resolve current authenticated user",
           tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
           operationId: "getAuthenticatedUser",
@@ -247,6 +281,7 @@ export class AuthController extends HttpController {
       .patch("/v1/auth/me", this.updateMe, {
         middlewares: [this.authMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Update current authenticated user profile",
           tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
           operationId: "updateAuthenticatedUserProfile",
@@ -270,6 +305,7 @@ export class AuthController extends HttpController {
       .patch("/v1/auth/me/password", this.changePassword, {
         middlewares: [this.authMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Change current authenticated user password",
           tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
           operationId: "changeAuthenticatedUserPassword",
@@ -293,6 +329,7 @@ export class AuthController extends HttpController {
       .get("/v1/auth/mfa", this.mfaStatus, {
         middlewares: [this.authMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Get MFA enrollment status for the current user",
           tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
           operationId: "getMfaStatus",
@@ -305,6 +342,7 @@ export class AuthController extends HttpController {
       .post("/v1/auth/mfa/enrollment", this.beginMfaEnrollment, {
         middlewares: [this.authMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Begin MFA enrollment for the current user",
           tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
           operationId: "beginMfaEnrollment",
@@ -320,6 +358,7 @@ export class AuthController extends HttpController {
       .post("/v1/auth/mfa/enrollment/confirm", this.confirmMfaEnrollment, {
         middlewares: [this.authMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Confirm MFA enrollment for the current user",
           tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
           operationId: "confirmMfaEnrollment",
@@ -336,13 +375,17 @@ export class AuthController extends HttpController {
       .delete("/v1/auth/mfa", this.disableMfa, {
         middlewares: [this.authMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Disable MFA for the current user",
           tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
           operationId: "disableMfa",
           security: [{ bearerAuth: [] }],
           requestBody: { required: true, schema: toOpenApiSchema(DisableMfaInputSchema) },
           responses: {
-            200: { description: "MFA disabled" },
+            200: {
+              description: "MFA disabled",
+              schema: toOpenApiSchema(AuthDisabledResponseSchema)
+            },
             401: {
               description: "Authentication failed",
               schema: toOpenApiSchema(AuthErrorResponseSchema)
@@ -352,6 +395,7 @@ export class AuthController extends HttpController {
       })
       .post("/v1/auth/logout", this.logout, {
         docs: {
+          pluginId: "core-pack",
           summary: "Logout current JWT session and clear auth cookies",
           tags: [CORE_PACK_OPENAPI_TAGS.AUTH],
           operationId: "logoutSession",

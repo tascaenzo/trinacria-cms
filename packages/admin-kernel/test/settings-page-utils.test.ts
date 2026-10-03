@@ -77,7 +77,7 @@ test("core technical settings stay hidden from the main settings workspace", () 
   assert.equal(isVisibleSettingDefinition(records[1]), true);
   assert.equal(isVisibleSettingDefinition(records[2]), false);
   assert.equal(isVisibleSettingDefinition(records[3]), false);
-  assert.equal(isVisibleSettingDefinition(records[4]), true);
+  assert.equal(isVisibleSettingDefinition(records[4]), false);
   assert.equal(isVisibleSettingDefinition(records[5]), true);
   assert.equal(
     isVisibleSettingsSection({
@@ -89,20 +89,24 @@ test("core technical settings stay hidden from the main settings workspace", () 
 
   assert.deepEqual(
     groupSettingRecordsForForm(records).flatMap((group) => group.records),
-    [records[0], records[1], records[4], records[5]]
+    [records[0], records[1], records[5]]
   );
 });
 
-test("plugin permission center setting is visible through its explicit settings section", () => {
+test("custom settings remain visible through their explicit settings section", () => {
+  assert.equal(isVisibleSettingsSection({
+    id: "core-pack-plugin-management-settings",
+    pluginId: "core-pack"
+  } as RenderableAdminSettingsSection), true);
   const record = setting({
-    key: "core-pack:security:plugin_access_grants",
-    category: "security",
-    schema: { type: "array" }
+    key: "core-pack:branding:tagline",
+    category: "branding",
+    schema: { type: "string" }
   });
   const section = {
-    id: "core-pack-plugin-permissions-settings",
+    id: "core-pack-branding-settings",
     pluginId: "core-pack",
-    settingKeys: ["core-pack:security:plugin_access_grants"]
+    settingKeys: ["core-pack:branding:tagline"]
   } as RenderableAdminSettingsSection;
 
   assert.equal(isVisibleSettingDefinition(record), true);

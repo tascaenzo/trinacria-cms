@@ -6,10 +6,13 @@ import {
   parseQueryNumber,
   toOpenApiSchema
 } from "@trinacria-cms/kernel";
+import { getHttpOperationContext } from "@trinacria-cms/kernel/runtime";
+import type { UsersOperations } from "../../operations/access-operations.js";
+import type { AuthFlowOperations } from "../../operations/auth-flow-operations.js";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import { createJwtAuthMiddleware, getAuthenticatedUser } from "../auth/auth.middleware.js";
+import { AuthAcceptedResponseSchema } from "../auth/dto/auth.response.dto.js";
 import type { JwtAuthService } from "../auth/services/auth.service.js";
-import type { AuthUserFlowsService } from "../auth/services/auth-user-flows.service.js";
 import { CORE_PACK_OPENAPI_TAGS } from "../openapi-tags.js";
 import {
   CreateUserInputSchema,
@@ -20,7 +23,6 @@ import {
   UserResponseSchema,
   UsersErrorResponseSchema
 } from "./dto/index.js";
-import type { UsersService } from "./services/users.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
 
@@ -46,9 +48,9 @@ export class UsersController extends HttpController {
   private readonly adminAuthMiddleware: HttpMiddleware;
 
   constructor(
-    private readonly users: UsersService,
+    private readonly users: UsersOperations,
     auth: JwtAuthService,
-    private readonly flows: AuthUserFlowsService
+    private readonly flows: AuthFlowOperations
   ) {
     super();
     this.adminAuthMiddleware = createJwtAuthMiddleware(auth, {
@@ -61,6 +63,7 @@ export class UsersController extends HttpController {
       .get("/v1/users", this.listUsers, {
         middlewares: [this.adminAuthMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "List users",
           tags: [CORE_PACK_OPENAPI_TAGS.USERS],
           operationId: "listUsers",
@@ -77,6 +80,7 @@ export class UsersController extends HttpController {
       .get("/v1/users/:id", this.getUserById, {
         middlewares: [this.adminAuthMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Get user by id",
           tags: [CORE_PACK_OPENAPI_TAGS.USERS],
           operationId: "getUserById",
@@ -96,6 +100,7 @@ export class UsersController extends HttpController {
       .post("/v1/users", this.createUser, {
         middlewares: [this.adminAuthMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Create user",
           tags: [CORE_PACK_OPENAPI_TAGS.USERS],
           operationId: "createUser",
@@ -119,6 +124,7 @@ export class UsersController extends HttpController {
       .patch("/v1/users/:id", this.updateUserProfile, {
         middlewares: [this.adminAuthMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Update user profile",
           tags: [CORE_PACK_OPENAPI_TAGS.USERS],
           operationId: "updateUserProfile",
@@ -142,6 +148,7 @@ export class UsersController extends HttpController {
       .patch("/v1/users/:id/status", this.updateUserStatus, {
         middlewares: [this.adminAuthMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Update user status",
           tags: [CORE_PACK_OPENAPI_TAGS.USERS],
           operationId: "updateUserStatus",
@@ -165,12 +172,16 @@ export class UsersController extends HttpController {
       .post("/v1/users/:id/invite", this.inviteUser, {
         middlewares: [this.adminAuthMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Invite user by email",
           tags: [CORE_PACK_OPENAPI_TAGS.USERS],
           operationId: "inviteUser",
           security: [{ bearerAuth: [] }],
           responses: {
-            200: { description: "Invite accepted" }
+            200: {
+              description: "Invite accepted",
+              schema: toOpenApiSchema(AuthAcceptedResponseSchema)
+            }
           }
         }
       })
@@ -183,7 +194,7 @@ export class UsersController extends HttpController {
         limit: parseQueryNumber(ctx.query.limit),
         offset: parseQueryNumber(ctx.query.offset)
       });
-      const users = await this.users.listUsers(query);
+      const users = await this.users.listUsers(getHttpOperationContext(ctx), query);
       return responder.list(users, {
         limit: query.limit,
         offset: query.offset
@@ -200,7 +211,7 @@ export class UsersController extends HttpController {
     }
 
     try {
-      const user = await this.users.getUserById(id);
+      const user = await this.users.getUserById(getHttpOperationContext(ctx), id);
       if (!user) {
         return responder.notFound(`User "${id}" not found`);
       }
@@ -213,7 +224,7 @@ export class UsersController extends HttpController {
   private createUser = async (ctx: HttpContext) => {
     try {
       const payload = CreateUserInputSchema.parse(ctx.body);
-      const created = await this.users.createUser(payload);
+      const created = await this.users.createUser(getHttpOperationContext(ctx), payload);
       return responder.success(created);
     } catch (error) {
       return responder.fromError(error);
@@ -228,7 +239,7 @@ export class UsersController extends HttpController {
 
     try {
       const payload = UpdateUserProfileInputSchema.parse(ctx.body);
-      const updated = await this.users.updateUserProfile(id, payload);
+      const updated = await this.users.updateUserProfile(getHttpOperationContext(ctx), id, payload);
       if (!updated) {
         return responder.notFound(`User "${id}" not found`);
       }
@@ -248,8 +259,8 @@ export class UsersController extends HttpController {
       const payload = UpdateUserStatusInputSchema.parse(ctx.body);
       const updated =
         payload.status === "active"
-          ? await this.users.activateUser(id)
-          : await this.users.suspendUser(id);
+          ? await this.users.activateUser(getHttpOperationContext(ctx), id)
+          : await this.users.suspendUser(getHttpOperationContext(ctx), id);
       if (!updated) {
         return responder.notFound(`User "${id}" not found`);
       }
@@ -267,7 +278,7 @@ export class UsersController extends HttpController {
 
     try {
       const admin = getAuthenticatedUser(ctx);
-      const result = await this.flows.sendUserInvite({
+      const result = await this.flows.sendUserInvite(getHttpOperationContext(ctx), {
         userId: id,
         inviterName: `${admin.firstName} ${admin.lastName}`.trim(),
         actorUserId: admin.id

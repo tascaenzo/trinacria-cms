@@ -1,4 +1,5 @@
-import { defineEntity, type Infer, s } from "@trinacria-cms/kernel";
+import { type Infer, s } from "@trinacria-cms/kernel";
+import { defineEntity } from "@trinacria-cms/kernel/runtime";
 
 export const EntryRevisionRecordSchema = s.object(
   {
@@ -17,6 +18,7 @@ export type EntryRevisionRecord = Infer<typeof EntryRevisionRecordSchema>;
 
 /** Revisions are append-only records, kept outside the working entry document. */
 export const ENTRY_REVISIONS_ENTITY = defineEntity({
+  ownerPluginId: "editorial-pack",
   entityName: "entry_revisions",
   schema: EntryRevisionRecordSchema,
   indexes: [

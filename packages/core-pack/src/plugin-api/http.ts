@@ -12,6 +12,8 @@ import {
   buildBodyHash,
   buildPluginAuthHeaders,
   buildPluginRequestSignature,
+  canonicalPluginSignatureMaterial,
+  canonicalRequestTarget,
   normalizePath,
   PLUGIN_AUTH_HEADERS
 } from "../modules/settings/auth/plugin-auth.js";
@@ -22,6 +24,8 @@ export {
   buildBodyHash,
   buildPluginAuthHeaders,
   buildPluginRequestSignature,
+  canonicalPluginSignatureMaterial,
+  canonicalRequestTarget,
   type ErrorEnvelope,
   errorEnvelope,
   normalizePath,

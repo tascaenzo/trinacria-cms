@@ -49,6 +49,9 @@ export default defineConfig(({ mode }) => {
         "@trinacria-cms/media-pack/admin": fileURLToPath(
           new URL("../../packages/media-pack/src/admin/index.tsx", import.meta.url)
         ),
+        "@trinacria-cms/trinacria-ui/theme.css": fileURLToPath(
+          new URL("../../packages/trinacria-ui/theme.css", import.meta.url)
+        ),
         "@trinacria-cms/trinacria-ui": fileURLToPath(
           new URL("../../packages/trinacria-ui/src/index.ts", import.meta.url)
         ),

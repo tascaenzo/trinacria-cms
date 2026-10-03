@@ -1,5 +1,11 @@
+import { randomBytes } from "node:crypto";
+import { matchesMongoFilter } from "../../../test/helpers/mongo-like-filter.js";
 import assert from "node:assert/strict";
 import test from "node:test";
+import { TrinacriaApp, defineModule, valueProvider } from "@trinacria/core";
+import { type PluginHostServices } from "@trinacria-cms/kernel";
+import { InMemoryPluginRuntime } from "@trinacria-cms/kernel/runtime";
+import { EMAIL_OPERATIONS } from "../src/plugin/email-pack.operations.js";
 import {
   CORE_TOKENS,
   type DbAdapter,
@@ -7,25 +13,15 @@ import {
   type DbRepository,
   type NamespaceContext
 } from "@trinacria-cms/kernel";
-import {
-  SecureEventPayloadCrypto,
-  SecureEventPayloadsRepository,
-  SecureEventPayloadsService
-} from "@trinacria-cms/kernel";
-import {
-  RuntimeConfigService,
-  SettingsDefinitionsRepository,
-  SettingsSecretsCryptoService,
-  SettingsSecretsRepository,
-  SettingsService,
-  SettingsValuesRepository
-} from "@trinacria-cms/core-pack";
+import { SecureEventPayloadCrypto, SecureEventPayloadsRepository, SecureEventPayloadsService } from "@trinacria-cms/kernel/runtime";
+import { RuntimeConfigService, SettingsDefinitionsRepository, SettingsSecretsCryptoService, SettingsSecretsRepository, SettingsService, SettingsValuesRepository } from "@trinacria-cms/core-pack/runtime";
 import { EmailConfigService } from "../src/modules/email/services/email-config.service.js";
 import {
   EMAIL_SEND_REQUEST_PAYLOAD_TYPE,
   EMAIL_SEND_REQUEST_SCHEMA_VERSION
 } from "../src/modules/email/email-request.types.js";
-import { EMAIL_PACK_EMAIL_DELIVERY_SERVICE_TOKEN } from "../src/modules/email/email.tokens.js";
+import { EMAIL_DELIVERY_OPERATIONS, createEmailDeliveryOperations } from "../src/operations/email-operations.js";
+import { CoreOperationAuthorizer } from "@trinacria-cms/core-pack/runtime";
 import { EMAIL_PACK_SETTING_DEFINITIONS } from "../src/modules/email/email-settings.js";
 import { EmailTemplatesRepository } from "../src/modules/email-templates/repositories/email-templates.repository.js";
 import { EmailTemplatesService } from "../src/modules/email-templates/services/email-templates.service.js";
@@ -115,7 +111,7 @@ test("EmailConfigService reads SMTP delivery config from email-pack settings", a
   });
 });
 
-test("email-pack handler claims official secure email request and delivers it", async () => {
+test("email-pack handler delegates the claim to the durable host and the private job operation preserves the message", async (t) => {
   const db = createFakeDbAdapter();
   const settingsRuntime = createSettingsRuntime(db);
   await provisionEmailPackSettings(settingsRuntime.service);
@@ -123,10 +119,10 @@ test("email-pack handler claims official secure email request and delivers it", 
   await templates.seedDefaults();
   const payloads = new SecureEventPayloadsService(
     new SecureEventPayloadsRepository(db),
-    new SecureEventPayloadCrypto({ masterKey: "email-notification-test-key" })
+    new SecureEventPayloadCrypto({ activeKeyId: "test-v1", keys: { "test-v1": randomBytes(32) } }),
+    { canClaim: () => ({ allowed: true }) }
   );
-  const securePayload = await payloads.create({
-    producerPluginId: "core-pack",
+  const securePayload = await payloads.forPlugin("core-pack").create({
     eventName: "core-pack:secure-event-payload-ready",
     payloadType: EMAIL_SEND_REQUEST_PAYLOAD_TYPE,
     schemaVersion: EMAIL_SEND_REQUEST_SCHEMA_VERSION,
@@ -145,24 +141,23 @@ test("email-pack handler claims official secure email request and delivers it", 
     expiresAt: new Date(Date.now() + 60_000)
   });
   const sent: unknown[] = [];
-  const app = {
-    async resolve(token: unknown) {
-      if (token === CORE_TOKENS.SECURE_EVENT_PAYLOAD_STORE) return payloads;
-      if (token === EMAIL_TEMPLATES_SERVICE_TOKEN) return templates;
-      if (token === EMAIL_PACK_EMAIL_DELIVERY_SERVICE_TOKEN) {
-        return {
-          async send(input: unknown) {
-            sent.push(input);
-          }
-        };
-      }
-      throw new Error(`Unexpected token ${String(token)}`);
-    }
-  };
+  const app = new TrinacriaApp();
+  app.registerGlobalProvider(valueProvider(CORE_TOKENS.SECURE_EVENT_PAYLOAD_HOST, payloads));
+  app.registerGlobalProvider(valueProvider(EMAIL_TEMPLATES_SERVICE_TOKEN, templates));
+  app.registerGlobalProvider(valueProvider(EMAIL_DELIVERY_OPERATIONS, createEmailDeliveryOperations({
+    async send(input: unknown) { sent.push(input); }
+  } as never, new CoreOperationAuthorizer({ can: async () => ({ allowed: false }) } as never))));
+  app.registerModule(defineModule({ name: "EmailOperationFixture", providers: [EMAIL_OPERATIONS], exports: [EMAIL_OPERATIONS.token] }));
+  await app.start(); t.after(() => app.shutdown());
+  let services!: PluginHostServices;
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.1.0", app });
+  await runtime.register({ manifest: { id: "email-pack", version: "1.0.0", requiresCore: "^0.1.0" }, onLoad(context) { services = context.services; } });
+  await runtime.load("email-pack");
   const plugin = createEmailPackPlugin();
   const handler = plugin.eventHandlers?.deliverEmailRequest;
   assert.ok(handler);
 
+  const claims: unknown[] = [];
   await handler(
     {
       securePayloadId: securePayload.id,
@@ -171,14 +166,22 @@ test("email-pack handler claims official secure email request and delivers it", 
     },
     {} as never,
     {
-      app: app as never,
+      secureJobs: { async enqueueFromPayload(input) { claims.push(input); return "job-id"; } },
+      services,
       pluginId: "email-pack",
       eventName: "core-pack:secure-event-payload-ready",
       handlerName: "deliverEmailRequest"
     }
   );
 
+  assert.deepEqual(claims, [{ payloadId: securePayload.id, eventName: "core-pack:secure-event-payload-ready", payloadType: EMAIL_SEND_REQUEST_PAYLOAD_TYPE, schemaVersion: EMAIL_SEND_REQUEST_SCHEMA_VERSION, requiredPermission: "email-pack:email:send" }]);
+  assert.equal(sent.length, 0);
+  assert.equal((await payloads.forPlugin("email-pack").claim({ payloadId: securePayload.id, eventName: "core-pack:secure-event-payload-ready", payloadType: EMAIL_SEND_REQUEST_PAYLOAD_TYPE, schemaVersion: EMAIL_SEND_REQUEST_SCHEMA_VERSION, requiredPermission: "email-pack:email:send" })).record.claimCount, 1);
+  await services.operations.call("email-pack", "send-job", { payload: { to: "recipient@example.test", subject: "Test subject", text: "Actual message", variables: { nullable: null } }, messageId: `<${"a".repeat(64)}@trinacria.invalid>` });
   assert.equal(sent.length, 1);
+  assert.deepEqual((sent[0] as any).to, ["recipient@example.test"]);
+  assert.equal((sent[0] as any).text, "Actual message");
+  assert.equal((sent[0] as any).messageId, `<${"a".repeat(64)}@trinacria.invalid>`);
 });
 
 async function provisionEmailPackSettings(service: SettingsService): Promise<void> {
@@ -295,7 +298,7 @@ function matchesFilter(
   filter: Record<string, unknown> | undefined
 ): boolean {
   if (!filter) return true;
-  return Object.entries(filter).every(([key, value]) => item[key] === value);
+  return matchesMongoFilter(item, filter);
 }
 
 function applySort<TData extends Record<string, unknown>>(

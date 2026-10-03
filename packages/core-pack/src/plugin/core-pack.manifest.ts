@@ -32,6 +32,19 @@ export const CORE_PACK_MANIFEST: PluginManifest = definePluginManifest({
   version: "0.1.0",
   requiresCore: "^0.1.0",
   capabilities: [...CORE_PACK_CAPABILITY_LIST],
+  entities: [
+    "users",
+    "permissions",
+    "roles",
+    "settings",
+    "i18n_messages",
+    "auth_flow_tokens",
+    "auth_mfa_credentials",
+    "auth_mfa_challenges",
+    "local_credentials",
+    "plugin_access_grants",
+    "security_audit"
+  ].map((name) => ({ name, schemaVersion: 1 })),
   // Complete Core Pack Backoffice catalog, synchronized into the persistent registry.
   i18n: defineI18n({
     fallbackLocale: "en",

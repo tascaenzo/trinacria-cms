@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { validatePluginManifest } from "@trinacria-cms/kernel";
+import { validatePluginManifest } from "@trinacria-cms/kernel/runtime";
 import {
   TEAM_ONBOARDING_MANIFEST,
   TEAM_ONBOARDING_PLUGIN,

@@ -1,27 +1,21 @@
 # Settings Module
 
-The settings module owns plugin settings, encrypted secrets, runtime configuration, plugin auth,
-and the plugin permission center policy.
+The module owns namespaced settings, encrypted secrets, runtime configuration and
+signed HTTP caller authentication. Installed in-process plugins use
+`TrustedPluginAccessPolicyService`: runtime manifests, declared dependencies and active
+owners authorize integrations without database grant approvals or transaction fences.
+User contexts and delegations retain user permissions in the application facade.
 
-## Structure
+`PluginSettingsHost` exposes only the owner's declared nonsecret settings. Secret reads
+remain separate application operations. The vault retains encryption, expiry, explicit
+producer-authorized consumers and atomic single-use claims.
 
-- `services/` contains the main settings application service.
-- `plugin-access/` contains policy logic for event subscription grants and secure payload claims.
-- `definitions/`, `values/`, and `secrets/` contain persistence repositories.
-- `auth/` contains signed plugin caller authentication.
-- `config/` contains runtime setting readers.
-- `_shared/` contains reusable parsing, JSON, key, and error helpers.
+`ExternalPluginHttpAccessPolicyService` checks persisted access decisions for signed
+external HTTP settings clients only.
+Grants live in the dedicated `plugin_access_grants` collection, never a settings array.
+Its management APIs retain administrator permissions, CAS revisions and audit. It is
+not the policy used for local event subscriptions, payload claims or service calls;
+the standard admin no longer presents a plugin approval center. No official local
+integration grants are provisioned during startup.
 
-## Plugin Access Grants
-
-Plugin access grants are stored as settings so administrators can manage them from the backoffice.
-The policy is wired into kernel tokens:
-
-- `PLUGIN_EVENT_SUBSCRIPTION_AUTHORIZER`
-- `SECURE_EVENT_PAYLOAD_AUTHORIZER`
-
-This keeps authorization centralized while leaving each plugin responsible for declaring its own
-events, required permissions, and secure payload types.
-
-New imports should use `services/` and `plugin-access/`. The module barrel in `index.ts` re-exports
-the public surface from those directories.
+See the [current trust decision](../../../../../docs/cms/architecture/plugin-platform/trusted-plugin-model.md).

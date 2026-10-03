@@ -1,4 +1,4 @@
-import type { RuntimeConfigService, SettingsService } from "@trinacria-cms/core-pack";
+import type { RuntimeConfigService, SettingsService } from "@trinacria-cms/core-pack/runtime";
 import { MEDIA_PACK_PLUGIN_ID } from "../../../plugin/media-pack.constants.js";
 import type { MediaProviderRegistry } from "../media-provider-registry.service.js";
 import { MEDIA_PACK_DEFAULT_UPLOAD_POLICY } from "../media-settings.js";

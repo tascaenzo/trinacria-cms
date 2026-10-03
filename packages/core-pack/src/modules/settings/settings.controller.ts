@@ -7,6 +7,8 @@ import {
   parseQueryNumber,
   toOpenApiSchema
 } from "@trinacria-cms/kernel";
+import { getHttpOperationContext } from "@trinacria-cms/kernel/runtime";
+import type { SettingsOperations } from "../../operations/settings-operations.js";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import type { JwtAuthService } from "../auth/services/auth.service.js";
 import { CORE_PACK_OPENAPI_TAGS } from "../openapi-tags.js";
@@ -44,7 +46,6 @@ import {
   UpsertSettingValueBodyOpenApiSchema,
   UpsertSettingValueInputSchema
 } from "./dto/index.js";
-import type { SettingsService } from "./services/settings.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
 
@@ -104,7 +105,7 @@ export class SettingsController extends HttpController {
   private readonly adminOnlyMiddleware: HttpMiddleware;
 
   constructor(
-    private readonly settings: SettingsService,
+    private readonly settings: SettingsOperations,
     auth: JwtAuthService,
     private readonly pluginAuth: SettingsPluginAuthService
   ) {
@@ -132,6 +133,7 @@ export class SettingsController extends HttpController {
       .get("/v1/settings/groups", this.listGroups, {
         middlewares: [this.readAccessMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "List grouped settings forms",
           description: AdminOrSignedPluginReadDescription,
           tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
@@ -153,6 +155,7 @@ export class SettingsController extends HttpController {
       .get("/v1/settings/groups/:groupId", this.getGroupById, {
         middlewares: [this.readAccessMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Read a grouped settings form",
           description: AdminOrSignedPluginReadDescription,
           tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
@@ -178,6 +181,7 @@ export class SettingsController extends HttpController {
       .patch("/v1/settings/groups/:groupId", this.upsertGroupValues, {
         middlewares: [this.readAccessMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Patch grouped non-secret settings values",
           description: AdminOrSignedPluginWriteDescription,
           tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
@@ -211,6 +215,7 @@ export class SettingsController extends HttpController {
       .get("/v1/settings/definitions", this.listDefinitions, {
         middlewares: [this.readAccessMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "List setting definitions",
           description: AdminOrSignedPluginReadDescription,
           tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
@@ -232,6 +237,7 @@ export class SettingsController extends HttpController {
       .get("/v1/settings/definitions/:key", this.getDefinitionByKey, {
         middlewares: [this.readAccessMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Get setting definition by key",
           description: AdminOrSignedPluginReadDescription,
           tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
@@ -256,6 +262,7 @@ export class SettingsController extends HttpController {
       .post("/v1/settings/definitions", this.upsertDefinition, {
         middlewares: [this.pluginAuthMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Create or update setting definition",
           description: SignedPluginAuthDescription,
           tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
@@ -284,6 +291,7 @@ export class SettingsController extends HttpController {
       .get("/v1/settings/values/:key", this.getValueByKey, {
         middlewares: [this.readAccessMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Resolve setting value by key (explicit or default)",
           description: AdminOrSignedPluginReadDescription,
           tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
@@ -308,6 +316,7 @@ export class SettingsController extends HttpController {
       .put("/v1/settings/values/:key", this.upsertValue, {
         middlewares: [this.readAccessMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Create or update setting value",
           description: AdminOrSignedPluginWriteDescription,
           tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
@@ -336,6 +345,7 @@ export class SettingsController extends HttpController {
       .get("/v1/settings/secrets/:key", this.getSecretMetadata, {
         middlewares: [this.readAccessMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Read secret metadata (masked)",
           description: AdminOrSignedPluginReadDescription,
           tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
@@ -364,6 +374,7 @@ export class SettingsController extends HttpController {
       .put("/v1/settings/secrets/:key", this.upsertSecret, {
         middlewares: [this.writeAccessMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Create or update encrypted secret",
           description: AdminOrSignedPluginWriteDescription,
           tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
@@ -392,6 +403,7 @@ export class SettingsController extends HttpController {
       .post("/v1/settings/secrets/:key/reveal", this.revealSecret, {
         middlewares: [this.pluginAuthMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Reveal secret value (owner only)",
           description: SignedPluginAuthDescription,
           tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
@@ -420,6 +432,7 @@ export class SettingsController extends HttpController {
       .get("/v1/settings/export/:pluginId", this.exportPluginSettings, {
         middlewares: [this.pluginAuthMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Export plugin settings snapshot with masked secrets",
           description: SignedPluginAuthDescription,
           tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
@@ -445,6 +458,7 @@ export class SettingsController extends HttpController {
       .get("/v1/settings/observability", this.getObservability, {
         middlewares: [this.adminOnlyMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Read settings observability snapshot",
           description: "Admin-only operational counters for settings read/write/deny/error flows.",
           tags: [CORE_PACK_OPENAPI_TAGS.SETTINGS],
@@ -504,8 +518,13 @@ export class SettingsController extends HttpController {
       });
       const groups =
         getSettingsAccessMode(ctx) === "admin"
-          ? await this.settings.listGroups({ ownerPluginId: query.ownerPluginId })
-          : await this.settings.listGroupsForPlugin(getAuthenticatedPluginId(ctx));
+          ? await this.settings.listGroups(getHttpOperationContext(ctx), {
+              ownerPluginId: query.ownerPluginId
+            })
+          : await this.settings.listGroupsForPlugin(
+              getHttpOperationContext(ctx),
+              getAuthenticatedPluginId(ctx)
+            );
       return responder.list(groups);
     } catch (error) {
       return responder.fromError(error);
@@ -522,8 +541,12 @@ export class SettingsController extends HttpController {
       const params = SettingsGroupParamSchema.parse({ groupId });
       const group =
         getSettingsAccessMode(ctx) === "admin"
-          ? await this.settings.getGroupById(params.groupId)
-          : await this.settings.getGroupForPlugin(getAuthenticatedPluginId(ctx), params.groupId);
+          ? await this.settings.getGroupById(getHttpOperationContext(ctx), params.groupId)
+          : await this.settings.getGroupForPlugin(
+              getHttpOperationContext(ctx),
+              getAuthenticatedPluginId(ctx),
+              params.groupId
+            );
       if (!group) {
         return responder.notFound(`Settings group "${params.groupId}" not found`);
       }
@@ -550,7 +573,7 @@ export class SettingsController extends HttpController {
         return responder.invalidRequest("Missing values object");
       }
 
-      const result = await this.settings.upsertGroupValues({
+      const result = await this.settings.upsertGroupValues(getHttpOperationContext(ctx), {
         requesterPluginId:
           getSettingsAccessMode(ctx) === "admin"
             ? CORE_PACK_PLUGIN_ID
@@ -578,8 +601,12 @@ export class SettingsController extends HttpController {
       });
       const definitions =
         getSettingsAccessMode(ctx) === "admin"
-          ? await this.settings.listDefinitions(query)
-          : await this.settings.listDefinitionsForPlugin(getAuthenticatedPluginId(ctx), query);
+          ? await this.settings.listDefinitions(getHttpOperationContext(ctx), query)
+          : await this.settings.listDefinitionsForPlugin(
+              getHttpOperationContext(ctx),
+              getAuthenticatedPluginId(ctx),
+              query
+            );
       return responder.list(definitions, {
         limit: query.limit,
         offset: query.offset
@@ -599,8 +626,9 @@ export class SettingsController extends HttpController {
       const params = SettingKeyParamSchema.parse({ key });
       const definition =
         getSettingsAccessMode(ctx) === "admin"
-          ? await this.settings.getDefinitionByKey(params.key)
+          ? await this.settings.getDefinitionByKey(getHttpOperationContext(ctx), params.key)
           : await this.settings.getDefinitionByKeyForPlugin(
+              getHttpOperationContext(ctx),
               getAuthenticatedPluginId(ctx),
               params.key
             );
@@ -617,7 +645,7 @@ export class SettingsController extends HttpController {
     try {
       const requesterPluginId = getAuthenticatedPluginId(ctx);
       const payload = UpsertSettingDefinitionInputSchema.parse(ctx.body);
-      const definition = await this.settings.upsertDefinition({
+      const definition = await this.settings.upsertDefinition(getHttpOperationContext(ctx), {
         requesterPluginId,
         key: payload.key,
         category: payload.category,
@@ -645,8 +673,9 @@ export class SettingsController extends HttpController {
       const params = SettingKeyParamSchema.parse({ key });
       const value =
         getSettingsAccessMode(ctx) === "admin"
-          ? await this.settings.getResolvedValueByKey(params.key)
+          ? await this.settings.getResolvedValueByKey(getHttpOperationContext(ctx), params.key)
           : await this.settings.getResolvedValueForPlugin(
+              getHttpOperationContext(ctx),
               getAuthenticatedPluginId(ctx),
               params.key
             );
@@ -680,7 +709,7 @@ export class SettingsController extends HttpController {
         return responder.invalidRequest("Missing value field");
       }
 
-      const value = await this.settings.upsertValue({
+      const value = await this.settings.upsertValue(getHttpOperationContext(ctx), {
         requesterPluginId,
         key: params.key,
         value: parseJsonValue(rawValue),
@@ -702,8 +731,12 @@ export class SettingsController extends HttpController {
       const params = SettingKeyParamSchema.parse({ key });
       const metadata =
         getSettingsAccessMode(ctx) === "admin"
-          ? await this.settings.getSecretMetadataByKey(params.key)
-          : await this.settings.getSecretMetadata(getAuthenticatedPluginId(ctx), params.key);
+          ? await this.settings.getSecretMetadataByKey(getHttpOperationContext(ctx), params.key)
+          : await this.settings.getSecretMetadata(
+              getHttpOperationContext(ctx),
+              getAuthenticatedPluginId(ctx),
+              params.key
+            );
       if (!metadata) {
         return responder.notFound(`Setting secret "${params.key}" not found`);
       }
@@ -726,7 +759,7 @@ export class SettingsController extends HttpController {
         getSettingsAccessMode(ctx) === "admin"
           ? getOwnerPluginIdFromSettingKey(params.key)
           : getAuthenticatedPluginId(ctx);
-      const secret = await this.settings.upsertSecret({
+      const secret = await this.settings.upsertSecret(getHttpOperationContext(ctx), {
         requesterPluginId,
         key: params.key,
         plaintext: payload.plaintext,
@@ -747,7 +780,11 @@ export class SettingsController extends HttpController {
     try {
       const requesterPluginId = getAuthenticatedPluginId(ctx);
       const params = SettingKeyParamSchema.parse({ key });
-      const secret = await this.settings.revealSecret(requesterPluginId, params.key);
+      const secret = await this.settings.revealSecret(
+        getHttpOperationContext(ctx),
+        requesterPluginId,
+        params.key
+      );
       if (!secret) {
         return responder.notFound(`Setting secret "${params.key}" not found`);
       }
@@ -766,16 +803,20 @@ export class SettingsController extends HttpController {
     try {
       const requesterPluginId = getAuthenticatedPluginId(ctx);
       const params = ExportPluginSettingsParamSchema.parse({ pluginId });
-      const exported = await this.settings.exportPluginSettings(requesterPluginId, params.pluginId);
+      const exported = await this.settings.exportPluginSettings(
+        getHttpOperationContext(ctx),
+        requesterPluginId,
+        params.pluginId
+      );
       return responder.success(exported);
     } catch (error) {
       return responder.fromError(error);
     }
   };
 
-  private getObservability = async () => {
+  private getObservability = async (ctx: HttpContext) => {
     return responder.success({
-      ...this.settings.getObservabilitySnapshot(),
+      ...(await this.settings.getObservabilitySnapshot(getHttpOperationContext(ctx))),
       pluginAuth: this.pluginAuth.getObservabilitySnapshot()
     });
   };

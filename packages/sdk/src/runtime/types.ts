@@ -15,15 +15,18 @@ export interface SdkOperationRequest {
   query?: Record<string, SdkQueryValue>;
   headers?: Record<string, string>;
   body?: unknown;
+  bodyType?: "json" | "binary";
+  responseType?: "json" | "binary";
   credentials?: "include" | "omit" | "same-origin";
   signal?: unknown;
 }
 
 export interface SdkTransportRequest {
+  responseType?: "json" | "binary";
   url: string;
   method: string;
   headers: Record<string, string>;
-  body?: string;
+  body?: string | Uint8Array;
   credentials?: "include" | "omit" | "same-origin";
   signal?: unknown;
 }
@@ -62,6 +65,7 @@ export interface FetchResponseLike {
   status: number;
   headers: FetchHeadersLike;
   text(): Promise<string>;
+  arrayBuffer?(): Promise<ArrayBuffer>;
 }
 
 export type FetchLike = (
@@ -69,7 +73,7 @@ export type FetchLike = (
   init?: {
     method?: string;
     headers?: Record<string, string>;
-    body?: string;
+    body?: string | Uint8Array;
     credentials?: "include" | "omit" | "same-origin";
     signal?: unknown;
   }

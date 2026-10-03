@@ -5,6 +5,13 @@ import {
   factoryProvider,
   httpProvider
 } from "@trinacria-cms/kernel";
+import {
+  createRoleRulesOperations,
+  createUserAccessOperations,
+  ROLE_RULES_OPERATIONS,
+  USER_ACCESS_OPERATIONS
+} from "../../operations/access-operations.js";
+import { CoreOperationAuthorizer } from "../../operations/core-operation-authorizer.js";
 import { CorePackAuthModule } from "../auth/auth.module.js";
 import { CORE_PACK_JWT_AUTH_SERVICE_TOKEN } from "../auth/auth.tokens.js";
 import { CorePackI18nModule } from "../i18n/i18n.module.js";
@@ -14,7 +21,10 @@ import { PERMISSIONS_REPOSITORY_TOKEN } from "../permissions/permissions.tokens.
 import { CorePackRolesModule } from "../roles/roles.module.js";
 import { ROLE_GRANTS_REPOSITORY_TOKEN, ROLES_REPOSITORY_TOKEN } from "../roles/roles.tokens.js";
 import { CorePackSettingsModule } from "../settings/settings.module.js";
-import { SETTINGS_SERVICE_TOKEN } from "../settings/settings.tokens.js";
+import {
+  SETTINGS_PLUGIN_ACCESS_POLICY_SERVICE_TOKEN,
+  SETTINGS_SERVICE_TOKEN
+} from "../settings/settings.tokens.js";
 import { CorePackUsersModule } from "../users/users.module.js";
 import { USERS_REPOSITORY_TOKEN } from "../users/users.tokens.js";
 import { RolePolicyRulesController } from "./role-policy-rules/role-policy-rules.controller.js";
@@ -56,6 +66,15 @@ export const CorePackSecurityModule = defineModule({
     CorePackI18nModule
   ],
   providers: [
+    factoryProvider(
+      CORE_TOKENS.OPERATION_POLICY,
+      (authz, policy, audit) => new CoreOperationAuthorizer(authz, policy, audit),
+      [
+        CORE_PACK_AUTHZ_SERVICE_TOKEN,
+        SETTINGS_PLUGIN_ACCESS_POLICY_SERVICE_TOKEN,
+        CORE_TOKENS.AUDIT_SINK
+      ]
+    ),
     classProvider(CORE_PACK_USER_ROLES_REPOSITORY_TOKEN, UserRolesRepository, [
       CORE_TOKENS.DB_ADAPTER
     ]),
@@ -89,12 +108,20 @@ export const CorePackSecurityModule = defineModule({
     classProvider(CORE_PACK_AUTHZ_SERVICE_TOKEN, CorePackAuthzService, [
       CORE_PACK_USER_ACCESS_SERVICE_TOKEN
     ]),
-    httpProvider(CORE_PACK_USER_ACCESS_CONTROLLER_TOKEN, UserAccessController, [
+    factoryProvider(USER_ACCESS_OPERATIONS, createUserAccessOperations, [
       CORE_PACK_USER_ACCESS_SERVICE_TOKEN,
+      CORE_TOKENS.OPERATION_AUTHORIZER
+    ]),
+    httpProvider(CORE_PACK_USER_ACCESS_CONTROLLER_TOKEN, UserAccessController, [
+      USER_ACCESS_OPERATIONS,
       CORE_PACK_JWT_AUTH_SERVICE_TOKEN
     ]),
-    httpProvider(CORE_PACK_ROLE_POLICY_RULES_CONTROLLER_TOKEN, RolePolicyRulesController, [
+    factoryProvider(ROLE_RULES_OPERATIONS, createRoleRulesOperations, [
       CORE_PACK_ROLE_POLICY_RULES_SERVICE_TOKEN,
+      CORE_TOKENS.OPERATION_AUTHORIZER
+    ]),
+    httpProvider(CORE_PACK_ROLE_POLICY_RULES_CONTROLLER_TOKEN, RolePolicyRulesController, [
+      ROLE_RULES_OPERATIONS,
       CORE_PACK_JWT_AUTH_SERVICE_TOKEN
     ]),
     factoryProvider(CORE_TOKENS.PLUGIN_MANIFEST_PROVISIONER, (service) => service, [
@@ -105,6 +132,9 @@ export const CorePackSecurityModule = defineModule({
     ])
   ],
   exports: [
+    ROLE_RULES_OPERATIONS,
+    USER_ACCESS_OPERATIONS,
+    CORE_TOKENS.OPERATION_POLICY,
     CORE_PACK_USER_ROLES_REPOSITORY_TOKEN,
     CORE_PACK_ROLE_POLICY_RULES_SERVICE_TOKEN,
     CORE_PACK_ROLE_POLICY_RULES_CONTROLLER_TOKEN,

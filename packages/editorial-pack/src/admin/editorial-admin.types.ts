@@ -74,6 +74,13 @@ export interface EditorialContentType {
   workflow?: ContentWorkflow;
   updatedAt: string;
   deletedAt?: string;
+  delivery?: {
+    enabled: boolean;
+    publicFields: readonly string[];
+    exposeTitle: boolean;
+    exposeBody: boolean;
+    exposeSlug: boolean;
+  };
 }
 
 export interface EditorialEntryRecord {

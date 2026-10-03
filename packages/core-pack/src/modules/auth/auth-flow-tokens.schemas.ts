@@ -1,4 +1,5 @@
-import { defineEntity, type Infer, s } from "@trinacria-cms/kernel";
+import { type Infer, s } from "@trinacria-cms/kernel";
+import { defineEntity } from "@trinacria-cms/kernel/runtime";
 
 export const AuthFlowTokenTypeSchema = s.enum([
   "password_reset",
@@ -33,6 +34,7 @@ export type AuthFlowTokenType = Infer<typeof AuthFlowTokenTypeSchema>;
 export type AuthFlowTokenRecord = Infer<typeof AuthFlowTokenRecordSchema>;
 
 export const AUTH_FLOW_TOKENS_ENTITY = defineEntity({
+  ownerPluginId: "core-pack",
   entityName: "auth_flow_tokens",
   schema: AuthFlowTokenRecordSchema,
   indexes: [

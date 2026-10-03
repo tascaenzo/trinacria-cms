@@ -3,7 +3,7 @@ import type { SettingsPluginAuthService } from "./auth/plugin-auth.service.js";
 import type { PluginAuthKeyProvider } from "./auth/plugin-auth-key-provider.js";
 import type { RuntimeConfigService } from "./config/runtime-config.service.js";
 import type { SettingsDefinitionsRepository } from "./definitions/settings-definitions.repository.js";
-import type { SettingsPluginAccessPolicyService } from "./plugin-access/plugin-access-policy.service.js";
+import type { TrustedPluginAccessPolicyService } from "./plugin-access/trusted-plugin-access-policy.service.js";
 import type { SettingsSecretsRepository } from "./secrets/settings-secrets.repository.js";
 import type { SettingsSecretsCryptoService } from "./secrets/settings-secrets-crypto.service.js";
 import type { SettingsService } from "./services/settings.service.js";
@@ -36,8 +36,19 @@ export const SETTINGS_CONTROLLER_TOKEN = createToken<SettingsController>(
   "CORE_PACK_SETTINGS_CONTROLLER"
 );
 export const SETTINGS_PLUGIN_ACCESS_POLICY_SERVICE_TOKEN =
-  createCapabilityToken<SettingsPluginAccessPolicyService>("settings.plugin-access-policy");
+  createCapabilityToken<TrustedPluginAccessPolicyService>("settings.plugin-access-policy");
 
 export const RUNTIME_CONFIG_SERVICE_TOKEN = createToken<RuntimeConfigService>(
   "CORE_PACK_RUNTIME_CONFIG_SERVICE"
 );
+
+export const PLUGIN_GRANTS_REPOSITORY = createToken<
+  import("./plugin-access/plugin-grants.repository.js").PluginGrantsRepository
+>("PLUGIN_GRANTS_REPOSITORY");
+export const PLUGIN_GRANTS_CONTROLLER = createToken<
+  import("./plugin-access/plugin-grants.controller.js").PluginGrantsController
+>("PLUGIN_GRANTS_CONTROLLER");
+export const SECURITY_AUDIT_STORE =
+  createToken<import("../security/audit/security-audit.js").SecurityAuditStore>(
+    "SECURITY_AUDIT_STORE"
+  );

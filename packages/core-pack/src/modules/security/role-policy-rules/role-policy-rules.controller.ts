@@ -6,6 +6,8 @@ import {
   parsePathParam,
   toOpenApiSchema
 } from "@trinacria-cms/kernel";
+import { getHttpOperationContext } from "@trinacria-cms/kernel/runtime";
+import type { RoleRulesOperations } from "../../../operations/access-operations.js";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import { createJwtAuthMiddleware } from "../../auth/auth.middleware.js";
 import type { JwtAuthService } from "../../auth/services/auth.service.js";
@@ -17,7 +19,6 @@ import {
   RolePolicyRulesErrorResponseSchema,
   UpdateRolePolicyRuleInputSchema
 } from "../dto/index.js";
-import type { RolePolicyRulesService } from "./role-policy-rules.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
 
@@ -28,7 +29,7 @@ export class RolePolicyRulesController extends HttpController {
   private readonly adminAuthMiddleware: HttpMiddleware;
 
   constructor(
-    private readonly rules: RolePolicyRulesService,
+    private readonly rules: RoleRulesOperations,
     auth: JwtAuthService
   ) {
     super();
@@ -42,6 +43,7 @@ export class RolePolicyRulesController extends HttpController {
       .get("/v1/roles/:roleCode/policy-rules", this.listRolePolicyRules, {
         middlewares: [this.adminAuthMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "List policy rules for a role",
           tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
           operationId: "listRolePolicyRules",
@@ -61,6 +63,7 @@ export class RolePolicyRulesController extends HttpController {
       .post("/v1/roles/:roleCode/policy-rules", this.createRolePolicyRule, {
         middlewares: [this.adminAuthMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Create policy rule for a role",
           tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
           operationId: "createRolePolicyRule",
@@ -88,6 +91,7 @@ export class RolePolicyRulesController extends HttpController {
       .patch("/v1/roles/:roleCode/policy-rules/:ruleId", this.updateRolePolicyRule, {
         middlewares: [this.adminAuthMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Update a role policy rule",
           tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
           operationId: "updateRolePolicyRule",
@@ -111,6 +115,7 @@ export class RolePolicyRulesController extends HttpController {
       .delete("/v1/roles/:roleCode/policy-rules/:ruleId", this.deleteRolePolicyRule, {
         middlewares: [this.adminAuthMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Delete a role policy rule",
           tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
           operationId: "deleteRolePolicyRule",
@@ -137,7 +142,7 @@ export class RolePolicyRulesController extends HttpController {
     }
 
     try {
-      const rules = await this.rules.listByRoleCode(roleCode);
+      const rules = await this.rules.listByRoleCode(getHttpOperationContext(ctx), roleCode);
       if (!rules) {
         return responder.notFound(`Role "${roleCode}" not found`);
       }
@@ -155,7 +160,7 @@ export class RolePolicyRulesController extends HttpController {
 
     try {
       const payload = CreateRolePolicyRuleInputSchema.parse(ctx.body);
-      const created = await this.rules.create(roleCode, payload);
+      const created = await this.rules.create(getHttpOperationContext(ctx), roleCode, payload);
       if (!created) {
         return responder.notFound(`Role "${roleCode}" not found`);
       }
@@ -177,7 +182,7 @@ export class RolePolicyRulesController extends HttpController {
 
     try {
       const payload = UpdateRolePolicyRuleInputSchema.parse(ctx.body);
-      const updated = await this.rules.update(roleCode, id, payload);
+      const updated = await this.rules.update(getHttpOperationContext(ctx), roleCode, id, payload);
       if (!updated) {
         return responder.notFound(`Role policy rule "${id}" for role "${roleCode}" not found`);
       }
@@ -198,14 +203,14 @@ export class RolePolicyRulesController extends HttpController {
     }
 
     try {
-      const deleted = await this.rules.delete(roleCode, id);
+      const deleted = await this.rules.delete(getHttpOperationContext(ctx), roleCode, id);
       if (deleted === null) {
         return responder.notFound(`Role "${roleCode}" not found`);
       }
       if (!deleted) {
         return responder.notFound(`Role policy rule "${id}" for role "${roleCode}" not found`);
       }
-      const rules = await this.rules.listByRoleCode(roleCode);
+      const rules = await this.rules.listByRoleCode(getHttpOperationContext(ctx), roleCode);
       return responder.list(rules ?? []);
     } catch (error) {
       return responder.fromError(error);

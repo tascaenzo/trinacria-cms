@@ -6,6 +6,8 @@ import {
   parsePathParam,
   toOpenApiSchema
 } from "@trinacria-cms/kernel";
+import { getHttpOperationContext } from "@trinacria-cms/kernel/runtime";
+import type { UserAccessOperations } from "../../../operations/access-operations.js";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import { createJwtAuthMiddleware } from "../../auth/auth.middleware.js";
 import type { JwtAuthService } from "../../auth/services/auth.service.js";
@@ -17,7 +19,6 @@ import {
   UserRoleAssignmentResponseSchema,
   UserRoleAssignmentsResponseSchema
 } from "../dto/index.js";
-import type { UserAccessService } from "./user-access.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
 
@@ -28,7 +29,7 @@ export class UserAccessController extends HttpController {
   private readonly adminAuthMiddleware: HttpMiddleware;
 
   constructor(
-    private readonly access: UserAccessService,
+    private readonly access: UserAccessOperations,
     auth: JwtAuthService
   ) {
     super();
@@ -42,6 +43,7 @@ export class UserAccessController extends HttpController {
       .get("/v1/users/:id/roles", this.listUserRoles, {
         middlewares: [this.adminAuthMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "List role assignments for a user",
           tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
           operationId: "listUserRoles",
@@ -61,6 +63,7 @@ export class UserAccessController extends HttpController {
       .post("/v1/users/:id/roles", this.assignUserRole, {
         middlewares: [this.adminAuthMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Assign a role to a user",
           tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
           operationId: "assignUserRole",
@@ -84,6 +87,7 @@ export class UserAccessController extends HttpController {
       .delete("/v1/users/:id/roles/:roleCode", this.removeUserRole, {
         middlewares: [this.adminAuthMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Remove a role from a user",
           tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
           operationId: "removeUserRole",
@@ -103,6 +107,7 @@ export class UserAccessController extends HttpController {
       .get("/v1/users/:id/permissions", this.listUserEffectivePermissions, {
         middlewares: [this.adminAuthMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "List effective permissions for a user",
           tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
           operationId: "listUserEffectivePermissions",
@@ -129,7 +134,7 @@ export class UserAccessController extends HttpController {
     }
 
     try {
-      const assignments = await this.access.listUserRoles(userId);
+      const assignments = await this.access.listUserRoles(getHttpOperationContext(ctx), userId);
       return responder.list(assignments);
     } catch (error) {
       return responder.fromError(error);
@@ -144,7 +149,11 @@ export class UserAccessController extends HttpController {
 
     try {
       const payload = AssignUserRoleInputSchema.parse(ctx.body);
-      const assignment = await this.access.assignRoleToUser(userId, payload.roleCode);
+      const assignment = await this.access.assignRoleToUser(
+        getHttpOperationContext(ctx),
+        userId,
+        payload.roleCode
+      );
       return responder.success(assignment);
     } catch (error) {
       return responder.fromError(error);
@@ -163,11 +172,15 @@ export class UserAccessController extends HttpController {
     }
 
     try {
-      const removed = await this.access.removeRoleFromUser(userId, roleCode);
+      const removed = await this.access.removeRoleFromUser(
+        getHttpOperationContext(ctx),
+        userId,
+        roleCode
+      );
       if (!removed) {
         return responder.notFound(`Role assignment "${roleCode}" for user "${userId}" not found`);
       }
-      const assignments = await this.access.listUserRoles(userId);
+      const assignments = await this.access.listUserRoles(getHttpOperationContext(ctx), userId);
       return responder.list(assignments);
     } catch (error) {
       return responder.fromError(error);
@@ -181,7 +194,10 @@ export class UserAccessController extends HttpController {
     }
 
     try {
-      const permissions = await this.access.resolveUserPermissions(userId);
+      const permissions = await this.access.resolveUserPermissions(
+        getHttpOperationContext(ctx),
+        userId
+      );
       return responder.list(permissions);
     } catch (error) {
       return responder.fromError(error);

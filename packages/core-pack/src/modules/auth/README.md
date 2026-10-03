@@ -14,7 +14,7 @@ requests produced by those flows.
 
 Auth does not send email directly. It creates secure email payloads through the kernel secure
 payload store and emits `secure-event-payload-ready`. The email plugin can claim those payloads only
-when the permission center grants the required access.
+when the local manifest policy and producer-authorized recipient list allow access.
 
 Auth also emits user lifecycle events through `UserLifecycleEventPublisher` instead of publishing
 raw events inline. This keeps the event contract in the users module and the auth flow focused on

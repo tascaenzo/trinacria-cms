@@ -37,6 +37,7 @@ export class MediaUploadError extends Error {
 
 export interface StartMediaUploadInput {
   ownerUserId: string;
+  accessActor?: { userId?: string; pluginId?: string };
   filename: string;
   mimeType: string;
   byteSize: number;
@@ -59,6 +60,14 @@ export class MediaUploadsService {
     private readonly config?: MediaStorageConfigService,
     private readonly events?: MediaDomainEventsService
   ) {}
+
+  /** Host operations inspect only a session belonging to the authenticated actor. */
+  async getOwnedSession(uploadId: string, ownerUserId: string) {
+    const session = await this.uploads.findById(uploadId);
+    if (!session || session.ownerUserId !== ownerUserId.trim())
+      throw new MediaUploadError("media_upload_not_found", "Media upload not found");
+    return session;
+  }
 
   async startUpload(input: StartMediaUploadInput): Promise<StartedMediaUpload> {
     const mimeType = input.mimeType.trim().toLowerCase();
@@ -87,7 +96,7 @@ export class MediaUploadsService {
       input.directoryId &&
       !(await this.assets.canAccessDirectory(
         input.directoryId,
-        { userId: input.ownerUserId },
+        input.accessActor ?? { userId: input.ownerUserId },
         "write"
       ))
     ) {
@@ -101,7 +110,11 @@ export class MediaUploadsService {
       if (
         !replacement ||
         replacement.status === "deleted" ||
-        !(await this.assets.canAccessAsset(replacement.id, { userId: input.ownerUserId }, "write"))
+        !(await this.assets.canAccessAsset(
+          replacement.id,
+          input.accessActor ?? { userId: input.ownerUserId },
+          "write"
+        ))
       ) {
         throw new MediaUploadError(
           "media_asset_not_editable",
@@ -227,6 +240,7 @@ export class MediaUploadsService {
   async completeUpload(input: {
     uploadId: string;
     ownerUserId: string;
+    accessActor?: { userId?: string; pluginId?: string };
   }): Promise<MediaAssetRecord> {
     const session = await this.assertCompletableSession(input.uploadId, input.ownerUserId);
     const provider = this.providers.get(session.providerId);
@@ -234,7 +248,7 @@ export class MediaUploadsService {
       session.directoryId &&
       !(await this.assets.canAccessDirectory(
         session.directoryId,
-        { userId: session.ownerUserId },
+        input.accessActor ?? { userId: session.ownerUserId },
         "write"
       ))
     ) {
@@ -319,7 +333,7 @@ export class MediaUploadsService {
         (!previous ||
           !(await this.assets.canAccessAsset(
             previous.id,
-            { userId: session.ownerUserId },
+            input.accessActor ?? { userId: session.ownerUserId },
             "write"
           )))
       ) {

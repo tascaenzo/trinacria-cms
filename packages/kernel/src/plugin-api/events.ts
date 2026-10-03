@@ -10,7 +10,7 @@ export function defineEmittedEvent(input: PluginManifestEmittedEvent): PluginMan
     name: input.name.trim(),
     visibility: input.visibility,
     version: input.version,
-    ...(input.delivery !== undefined ? { delivery: input.delivery } : {}),
+    delivery: input.delivery,
     ...(input.payloadSchema !== undefined ? { payloadSchema: input.payloadSchema } : {})
   };
 }

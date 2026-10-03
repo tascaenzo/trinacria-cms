@@ -21,10 +21,7 @@ export function useEditorRevisions({
     if (!entryId) return;
     try {
       setIsLoading(true);
-      const response = await cms.request<{ data: readonly EditorRevision[] }>({
-        method: "GET",
-        path: `/v1/editorial/entries/${entryId}/revisions`
-      });
+      const response = await cms.editorial.listEditorialEntryRevisions({ path: { id: entryId } });
       setRevisions(response.data);
       setIsOpen(true);
     } catch (error) {
@@ -39,9 +36,8 @@ export function useEditorRevisions({
       if (!entryId) return null;
       try {
         setIsRestoring(true);
-        const response = await cms.request<{ data: EditorialEntryRecord }>({
-          method: "POST",
-          path: `/v1/editorial/entries/${entryId}/revisions/${revision.id}/restore`
+        const response = await cms.editorial.restoreEditorialEntryRevision({
+          path: { id: entryId, revisionId: revision.id }
         });
         return response.data;
       } catch (error) {
@@ -58,7 +54,7 @@ export function useEditorRevisions({
     if (!entryId) return false;
     try {
       setIsCreating(true);
-      await cms.request({ method: "POST", path: `/v1/editorial/entries/${entryId}/revisions` });
+      await cms.editorial.createEditorialEntryRevision({ path: { id: entryId } });
       await load();
       return true;
     } catch (error) {
