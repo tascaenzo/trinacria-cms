@@ -39,13 +39,12 @@
       "outputs": []
     },
     "test:integration": {
+      "cache": false,
       "dependsOn": ["^build"],
       "env": [
         "NODE_ENV",
         "MONGO_URI",
         "TRINACRIA_RUN_MONGO_INTEGRATION",
-        "TRINACRIA_RUN_ISOLATION_INTEGRATION",
-        "TRINACRIA_ISOLATION_TEST_IMAGE",
         "TRINACRIA_RUN_S3_INTEGRATION",
         "TRINACRIA_RUN_REDIS_INTEGRATION",
         "TRINACRIA_REDIS_URI",
@@ -88,6 +87,7 @@
     "CMS_OPERATOR_TOKEN",
     "FIXTURE_OPERATOR_TOKEN",
     "CATALOG_PORT",
-    "CATALOG_ADMIN_PASSWORD"
+    "CATALOG_ADMIN_PASSWORD",
+    "CONFORMANCE_FRONTEND_URL"
   ]
 }

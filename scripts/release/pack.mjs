@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdir, readFile, realpath, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, realpath, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 export const packageOrder = [
@@ -48,6 +48,16 @@ export async function packRelease(output) {
     );
     const files = result.files.map((file) => file.path);
     for (const file of files) {
+      if (/^dist\/.*(?:\.js|\.d\.ts)(?:\.map)?$/.test(file)) {
+        const source = file.replace(/^dist\//, "src/").replace(/(?:\.js|\.d\.ts)(?:\.map)?$/, "");
+        const candidates = await Promise.allSettled(
+          [".ts", ".tsx"].map((extension) => access(join(directory, source + extension)))
+        );
+        assert.ok(
+          candidates.some((candidate) => candidate.status === "fulfilled"),
+          `Orphan compiled artifact: ${manifest.name}:${file}; remove stale dist files and rebuild`
+        );
+      }
       assert.ok(
         /^(dist\/|README\.md$|LICENSE$|package\.json$|theme\.css$|scripts\/(?:generate-sdk|cms|create-trinacria-plugin|plugin-conformance)\.mjs$|templates\/catalog-v1\.json$)/.test(
           file

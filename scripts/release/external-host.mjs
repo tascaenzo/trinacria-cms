@@ -29,19 +29,26 @@ function command(program, args, cwd, env = {}) {
       stdio: ["ignore", "pipe", "pipe"]
     });
     children.add(child);
-    let output = "";
+    const deadline = setTimeout(() => child.kill("SIGKILL"), 300000);
+    let output = "",
+      errors = "";
     child.stdout.on("data", (data) => {
       output += data;
     });
     child.stderr.on("data", (data) => {
-      output += data;
+      errors += data;
     });
-    child.on("error", reject);
+    child.on("error", (error) => {
+      clearTimeout(deadline);
+      children.delete(child);
+      reject(error);
+    });
     child.on("exit", (code) => {
+      clearTimeout(deadline);
       children.delete(child);
       code === 0
         ? resolve(output)
-        : reject(new Error(`${program} ${args.join(" ")} exited ${code}\n${output}`));
+        : reject(new Error(`${program} ${args.join(" ")} exited ${code}\n${output}${errors}`));
     });
   });
 }
@@ -90,6 +97,7 @@ async function waitReady(child, marker) {
 try {
   // A failed attempt must not leave a previous success report as current evidence.
   await rm(join(repository, ".tmp/release/external-host-result.json"), { force: true });
+  await rm(join(repository, ".tmp/release/catalog-conformance-result.json"), { force: true });
   const artifactsDir = join(fixtureRoot, "artifacts");
   const inventory = await packRelease(artifactsDir);
   const artifacts = new Map(inventory.artifacts.map((artifact) => [artifact.name, artifact]));
@@ -151,7 +159,12 @@ try {
   dependencies.mongoose = await installedVersion("mongoose");
   await writeFile(
     join(backendDir, "package.json"),
-    JSON.stringify({ private: true, type: "module", dependencies })
+    JSON.stringify({
+      private: true,
+      type: "module",
+      dependencies,
+      devDependencies: { "@playwright/test": await installedVersion("@playwright/test") }
+    })
   );
   await command("npm", ["install", "--ignore-scripts"], backendDir);
   await assertNoSymlinks(join(backendDir, "node_modules/@trinacria-cms"));
@@ -332,7 +345,8 @@ try {
     )
   );
   assert.ok(conformance.checks.includes("http-security"));
-  assert.equal(conformance.complete, false); // Full conformance also requires runtime scenarios and a separate human trial.
+  assert.equal(conformance.complete, false); // Static checks do not execute the nine runtime scenarios.
+  assert.equal(conformance.status, "incomplete");
   await command(
     join(backendDir, "node_modules/.bin/trinacria-sdk"),
     ["catalog-openapi.json", "catalog-sdk", "--mode", "overlay", "--owner", "catalog-plugin"],
@@ -562,6 +576,75 @@ try {
   console.log(
     "Generated catalog 0.1→0.2 passed distributed CLI migration and cold-start HTTP with preserved data and new currency"
   );
+  // The reference module runs inside the physical external host and uses only public exports.
+  for (const file of ["catalog-conformance.mjs", "catalog-recovery.mjs"])
+    await cp(join(fixtureFiles, file), join(backendDir, file));
+  await command(
+    join(backendDir, "node_modules/.bin/trinacria-sdk"),
+    ["catalog-openapi.json", "catalog-sdk", "--mode", "overlay", "--owner", "catalog-plugin"],
+    backendDir
+  );
+  await command(
+    process.execPath,
+    [
+      join(repository, "node_modules/typescript/bin/tsc"),
+      "--strict",
+      "--skipLibCheck",
+      "--module",
+      "NodeNext",
+      "--moduleResolution",
+      "NodeNext",
+      "--target",
+      "ES2022",
+      "--outDir",
+      "catalog-overlay-dist",
+      "catalog-overlay.ts"
+    ],
+    backendDir
+  );
+  const completeConformance = JSON.parse(
+    await command(
+      join(backendDir, "node_modules/.bin/cms-plugin-conformance"),
+      [
+        "--manifest",
+        "catalog-manifest.json",
+        "--core-version",
+        inventory.version,
+        "--openapi",
+        "catalog-openapi.json",
+        "--scenario",
+        "catalog-conformance.mjs"
+      ],
+      backendDir,
+      { ...upgradeEnv, CONFORMANCE_FRONTEND_URL: `http://127.0.0.1:${browserPort}/catalog.html` }
+    )
+  );
+  assert.equal(completeConformance.complete, true);
+  assert.equal(completeConformance.status, "passed");
+  assert.equal(completeConformance.scenarios.length, 9);
+  assert.ok(completeConformance.scenarios.every((scenario) => scenario.status === "passed"));
+  const measurements = JSON.parse(
+    await readFile(join(backendDir, "catalog-measurements.json"), "utf8")
+  );
+  await mkdir(join(repository, ".tmp/release"), { recursive: true });
+  await writeFile(
+    join(repository, ".tmp/release/catalog-conformance-result.json"),
+    JSON.stringify(
+      {
+        testedAt: new Date().toISOString(),
+        artifactVersion: "0.2.0",
+        ...completeConformance,
+        measurements,
+        humanAcceptance: "pending",
+        stagingAcceptance: "pending"
+      },
+      null,
+      2
+    )
+  );
+  console.log(
+    "Nine external conformance scenarios passed, including BSON/index/media/config restore and measured six-plugin cold start"
+  );
   await mkdir(join(repository, ".tmp/release"), { recursive: true });
   await writeFile(
     join(repository, ".tmp/release/external-host-result.json"),
@@ -578,6 +661,10 @@ try {
         catalogSdkOverlay: "passed",
         catalogUpgrade: "passed",
         catalogConformanceContract: "passed",
+        catalogConformanceScenarios: "passed",
+        recovery: "passed-local-fixture",
+        humanAcceptance: "pending",
+        stagingAcceptance: "pending",
         artifacts: inventory.artifacts.map(({ manifest, files, ...rest }) => rest)
       },
       null,

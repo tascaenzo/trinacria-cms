@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash, randomBytes } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { createCorePackPlugin } from "@trinacria-cms/core-pack";
 import { CORE_TOKENS, valueProvider } from "@trinacria-cms/kernel";
 import {
@@ -86,7 +86,11 @@ export async function createMigrationDeployHost() {
           valueProvider(CORE_TOKENS.DB_ADAPTER, adapter),
           valueProvider(CORE_TOKENS.ENTITY_REGISTRY, registry)
         ],
-        http: { host: "127.0.0.1", port: Number(process.env.CATALOG_PORT) }
+        http: {
+          host: "127.0.0.1",
+          port: Number(process.env.CATALOG_PORT),
+          openApi: { enabled: true, title: "Upgraded catalog", version: "2" }
+        }
       });
       const base = `http://127.0.0.1:${process.env.CATALOG_PORT}`;
       const login = await fetch(base + "/v1/auth/login", {
@@ -106,6 +110,11 @@ export async function createMigrationDeployHost() {
       const item = (await response.json()).data;
       assert.equal(item.currency, "EUR");
       assert.equal(item.name, "Concurrent update");
+      await writeFile("catalog-manifest.json", JSON.stringify(CATALOG_MANIFEST));
+      await writeFile(
+        "catalog-openapi.json",
+        JSON.stringify(await (await fetch(base + "/openapi.json")).json())
+      );
       console.log("CATALOG_UPGRADE_PASSED");
     },
     async close() {
