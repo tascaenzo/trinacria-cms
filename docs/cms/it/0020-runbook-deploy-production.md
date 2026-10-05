@@ -47,7 +47,6 @@ con backup, verifica su staging e controllo degli stati editoriali.
 | `CMS_PUBLIC_ORIGIN`     | consigliata  | Origine pubblica API/CMS usata anche per link e CSRF trusted origins. |
 | `VITE_CMS_API_BASE_URL` | consigliata  | Base URL usata dal backoffice quando servito separatamente.           |
 | `LOG_FORMAT=json`       | si           | Log strutturati per collector esterno.                                |
-| `CMS_INSTALLED=true`    | post-install | Segnale operativo per checklist; non sostituisce lo stato DB.         |
 
 ### HTTP, reverse proxy, CORS e CSRF
 
@@ -114,7 +113,6 @@ CMS_SECURE_PAYLOAD_KEYS_JSON='{"v1":"<base64-of-32-random-bytes-from-secret-mana
 
 LOG_FORMAT=json
 OBSERVABILITY_TOKEN=replace-with-runtime-secret
-CMS_INSTALLED=true
 ```
 
 Nota: `CMS_JWT_SECRET_FILE` e supportato dal playground. Per `CMS_SETTINGS_MASTER_KEY` e
@@ -247,3 +245,6 @@ Per generazione/configurazione valida, CAS, TTL e rotazione completa v1→v2 ved
 il [runbook vault A2](../architecture/plugin-platform/secure-payload-keyring-runbook.md).
 Il placeholder nell'esempio non è una chiave valida. Non avviare writer senza materiale
 casuale di 32 byte iniettato dal secret manager.
+
+Lo stato di installazione viene letto da Mongo. Per il primo avvio, i controlli e
+la ripresa consultare [Installazione e bootstrap](../specs/core-platform/installation-bootstrap.md).

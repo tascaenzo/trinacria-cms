@@ -3,6 +3,55 @@
 Tutte le milestone significative sono documentate qui.
 Il formato si ispira a [Keep a Changelog](https://keepachangelog.com/).
 
+## Consolidamento automatico delle basi CMS e plugin (2026-10-05)
+
+- Nove scenari D0 reali nello stesso comando di conformità da tarball; report distingue
+  controlli statici incompleti, successo e fallimento. Teardown e exit status verificati.
+- Backup/restore della fixture con tipi BSON, indici, media e configurazione, cold start,
+  login e salute del kernel; misure locali di avvio, memoria e latenza HTTP.
+- CI completa, Chromium prima del packaging/browser, integrazioni senza cache e prova
+  primo avvio Mongo esplicita; report redatti conservati come artefatti.
+- Guardrail dei tarball contro output compilati orfani; ricompilati gli otto pacchetti
+  da sorgenti, archiviando gli output precedenti in una directory locale ignorata.
+- Verificati 605 test ordinari, 45 della suite Mongo/Redis/S3 senza skip, 12 playground
+  incluso primo avvio reale, 28 Chromium, build/Storybook/SDK/API/signing/template.
+- Task C0/C1/D0 e guide allineati alle evidenze; procedure del team pronte. Prova umana,
+  CI remota e staging restano aperti, con nessuna pubblicazione o reset del DB mock.
+- [Consegna](../tasks/done/2026-10-05-cms-foundation-consolidation.md) e
+  [acceptance del team](../../docs/cms/architecture/plugin-platform/single-instance-acceptance.md).
+
+## Setup: prerequisiti separati e step centrati (2026-10-05)
+
+- Pagina dedicata ai requisiti mancanti, checklist compatta e correzioni senza duplicati.
+  Esempi di configurazione espandibili, limitati alle variabili da correggere.
+- Setup automatico quando i controlli passano e il runtime è pronto; rimane necessario
+  riavviare il CMS dopo modifiche ambientali in modalità `installerOnly`.
+- Stepper del design system con tutti e tre i passi centrati, navigazione anche con
+  Invio e form adattati al mobile. Tolti i banner dei prerequisiti dal wizard;
+  verifiche finali raccolte in un dettaglio espandibile.
+- Build e tipi verificati, 102 test admin e sette test Chromium dell'interfaccia;
+  risposte API simulate e nessuna modifica al database mock.
+- [Specifica operativa](../../docs/cms/specs/core-platform/installation-bootstrap.md).
+
+## Primo avvio verificato e riprendibile (2026-10-04)
+
+- Stato automatico da Mongo, requisiti reali e guida con controlli ripetibili.
+- Configurazione core atomica, lease condiviso e ripresa con le credenziali originali.
+- Scelta CMS vuoto/demo, hook `onInstall` idempotente e nessun seed durante `onLoad`.
+- Controlli finali prima del completamento e schermata di ingresso al backoffice.
+- SDK/OpenAPI, traduzioni, API pubbliche e runbook aggiornati; mock corrente conservato.
+- [Specifica operativa](../../docs/cms/specs/core-platform/installation-bootstrap.md)
+  e [verifiche](../tasks/done/2026-10-04-first-run-installation.md).
+
+## Collection Mongo leggibili (2026-10-04)
+
+- Naming `<entity>__plugin_<pluginId>`, con workspace opzionale ed escaping reversibile.
+  Registro ownership e controlli tra plugin invariati.
+- Rinominate le 31 collection del database mock, conservando documenti, indici e account.
+  Login, pubblicazioni e media verificati dopo riavvio.
+- [Regole di naming](../../docs/cms/architecture/plugin-platform/collection-naming.md)
+  e [registro del lavoro](../tasks/done/2026-10-04-readable-mongo-collection-names.md).
+
 ## Pulizia del codice plugin e dei documenti (2026-10-03)
 
 - Eliminati runtime sperimentali inutilizzati, profili nei manifest, export, test e
@@ -94,7 +143,7 @@ Il formato si ispira a [Keep a Changelog](https://keepachangelog.com/).
 
 - Rimossi app/bus dai contesti: storage/settings/events/logger/operazioni nominate scoped,
   identità host e generazioni invalidate su unload/reload; pack e playground aggiornati.
-- Entità con owner obbligatorio, nomi Mongo SHA-256 e registro ownership con due indici
+- Entità con owner obbligatorio, nomi Mongo leggibili (aggiornati il 2026-10-04) e registro ownership con due indici
   unici; vecchio layout rilevato senza modificarlo. Transazioni host cross-namespace con
   allowlist e sessione unica; nesting/repository fuori tentativo negati anche nei retry.
 - Discovery locale con root realpath e controlli URL/symlink prima dell'import.

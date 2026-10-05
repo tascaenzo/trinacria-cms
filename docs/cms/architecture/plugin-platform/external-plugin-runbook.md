@@ -53,6 +53,10 @@ scelto. Il modulo deve esportare tests per negative-authz, lifecycle, reload-cle
 missing-provider, headless, browser, migration, disable-remove-preserve e sdk-overlay.
 Ogni funzione esegue assertion reali; l'assenza di uno scenario o un errore fa fallire
 il comando. Non è una certificazione di sicurezza e non autorizza codice non fidato.
+Il controllo statico riporta `status: incomplete`; una suite completa riuscita riporta
+`status: passed, complete: true`, con durata/esito dei nove scenari. Errori, funzioni
+mancanti o teardown fallito danno `status: failed` ed exit 1. I log dei moduli vanno
+a stderr; stdout contiene il report JSON.
 
 La fixture `npm run release:test` genera il progetto, compila e installa tarball veri,
 usando solo export pubblici. Verifica Mongo, permessi, evento protetto atomico,
@@ -65,3 +69,15 @@ su HTTP dopo un nuovo cold start. Il report locale è `.tmp/release/external-hos
 La prova umana richiede un membro del team che non abbia scritto lo starter: compilare
 il [registro di acceptance](external-plugin-human-acceptance.md), annotando tempi,
 errori, passaggi ambigui e rebuild necessari. Le prove automatiche non la completano.
+
+Il modulo di riferimento è `scripts/release/fixtures/catalog-conformance.mjs`, copiato
+dalla fixture nel progetto backend fisico e avviato con la CLI distribuita. Aggiunge
+missing-provider e tutti gli altri otto scenari nello stesso report. Il percorso
+migrazione include snapshot BSON/indici, media reali e configurazione, restore su DB
+vuoto e cold start; il report è `.tmp/release/catalog-conformance-result.json`.
+L'helper di recovery è dedicato ai dati della fixture; per lo staging usare la
+[procedura operativa del team](single-instance-acceptance.md).
+
+Dopo uninstall il writer fence resta in maintenance. Una reinstallazione autorizzata
+deve verificare artefatto/schema, riaprire il fence tramite `runner.maintenance.set`
+per gli owner interessati e caricare i plugin. Il normale avvio non azzera maintenance.

@@ -287,10 +287,13 @@ root package/workspace aggiuntive. URL HTTP/data/node, query/fragment e symlink 
 sono rifiutati prima dell'import. Package fidati fissati nel lockfile e revisionati:
 questo confine API non isola il codice in-process.
 
-Mongo usa `v2_` più SHA-256 di `[pluginId, workspaceId ?? null, entityName]`, con registro
-ownership persistente e indici unique tuple/nome fisico. Collezioni `plugin_`/`kernel__`
-precedenti bloccano l'inizializzazione: scegliere un DB di sviluppo vuoto oppure pianificare
-una migrazione esplicita. Nessun reset automatico o fallback legacy. `HostUnitOfWork` è
+Mongo usa nomi leggibili: `<entity>__plugin_<pluginId>`, con suffisso opzionale
+`__workspace_<workspaceId>`. Esempi: `users__plugin_core-pack` ed
+`entries__plugin_editorial-pack`. Trattini e underscore singoli sono conservati;
+caratteri riservati e underscore doppi hanno un escaping reversibile.
+Il registro ownership mantiene gli indici unici tuple/nome fisico. I layout precedenti
+richiedono migrazione esplicita o database di sviluppo vuoto, senza reset automatico.
+Vedi [naming delle collection](../architecture/plugin-platform/collection-naming.md). `HostUnitOfWork` è
 infrastruttura avanzata dell'host e non è esposto da servizi/plugin-api.
 
 ## Payload sensibili (A2 implementato)
@@ -366,3 +369,23 @@ supporta CRUD, paginazione limitata, conflitti di versione e recupero da errore 
 Il backend non richiede React. Il README generato e il
 [runbook sviluppatore esterno](../architecture/plugin-platform/external-plugin-runbook.md)
 spiegano contratti di integrazione, eventi durevoli, lifecycle e prova umana indipendente.
+
+## Contenuti del primo avvio
+
+L'hook opzionale `onInstall(context, { dataMode, adminUserId })` prepara i dati
+iniziali tramite i servizi del plugin e propaga gli errori all'installer. Ogni seed
+deve essere idempotente: dopo un'interruzione l'hook viene richiamato. `onLoad`
+inizializza il runtime ordinario e non deve inserire dati demo.
+Vedi il [contratto di installazione](../specs/core-platform/installation-bootstrap.md).
+
+## Conformità completa
+
+`cms-plugin-conformance` restituisce `status: incomplete` per i soli controlli statici.
+Con `--scenario ./conformance.mjs` devono passare le nove funzioni obbligatorie e il
+teardown: `status: passed, complete: true`. Un errore produce exit 1 e identifica
+lo scenario fallito. I log console vanno a stderr; stdout contiene il report JSON.
+`npm run release:test` esegue il modulo di riferimento con pacchetti fisici esterni,
+Mongo/browser/SDK reali e recovery di documenti, indici, media e configurazione.
+L'acceptance umana indipendente resta separata. Usare il
+[runbook autore](../architecture/plugin-platform/external-plugin-runbook.md) e la
+[procedura del team](../architecture/plugin-platform/single-instance-acceptance.md).

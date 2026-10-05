@@ -75,27 +75,23 @@ non isola il codice fidato in-process dalle risorse Node.js.
 
 ### Ownership fisica dello storage
 
-Ulteriore evidenza: il Mongo adapter usa `sanitizeIdentifier`, che trasforma caratteri
-distinti in underscore, mentre plugin ID ammette trattino, punto, underscore e slash.
-Per esempio `a-b` e `a_b` possono produrre lo stesso namespace fisico. Le collisioni
-dei nomi canonici nel manifest non sono sufficienti a provarne l'assenza nel DB.
+Il nome fisico deve restare leggibile senza normalizzare identificatori diversi nello
+stesso nome: `a-b` e `a_b` sono plugin distinti.
 
-Decisione: aggiungere registro `storage_ownership` kernel con mapping unique tra tuple
-canoniche `(pluginId, workspaceId, entityName)` e nome collezione fisico, vincolato anche
-per physicalName. Nuove collezioni usano `v2_` più SHA-256 completo della tuple JSON
-canonica, senza sanitizzazione lossy; registry conserva il nome leggibile e controlla
-anche eventuali collisioni del digest. `EntityRegistry` registra owner della definizione:
-il client pubblico non può usare una definizione appartenente a un altro owner.
+Decisione attuale: `<entity>__plugin_<pluginId>`, con suffisso opzionale
+`__workspace_<workspaceId>`. Lettere, cifre, trattini e underscore singoli restano
+leggibili; caratteri riservati e underscore doppi hanno un escaping reversibile.
+Il registro `storage_ownership__plugin_kernel` mantiene il mapping univoco tra tuple
+canoniche `(pluginId, workspaceId, entityName)` e nome fisico, con due indici unique.
+`EntityRegistry` verifica il proprietario della definizione: il client pubblico non
+può scegliere un altro owner o usare una sua entità.
 
-A0 adotta direttamente ownership e naming target per le nuove installazioni e inizializza
-registry e indici unici prima di CRUD/transazioni/indici di dominio, anche dopo riconnessione
-a un altro DB. C0 integrerà questa stessa primitiva nel runner di migrazioni future.
-Collezioni del layout precedente (`plugin_`/`kernel__`) bloccano il bootstrap storage con
-un errore esplicito: nessun fallback verso un database apparentemente vuoto o reset. Non serve una fase di transizione
-con nomi legacy. Se si decide di recuperare dati di sviluppo, eseguire inventario e
-assegnazione verificata al singolo owner con mapping esplicito, senza rename o copia
-automatica. Owner ambiguo blocca il recupero con report: nessun merge o assegnazione
-arbitraria. Il kernel namespace resta riservato all'host.
+Registry e indici vengono inizializzati prima di CRUD, transazioni e indici di dominio,
+anche dopo una riconnessione. Il namespace kernel resta riservato all'host. I vecchi
+layout bloccano il bootstrap senza modificare dati: nessun fallback verso un database
+apparentemente vuoto o reset automatico. Il database locale mock è stato rinominato
+esplicitamente dal registro ownership, con backup e verifica di documenti e indici.
+Vedi [naming delle collection](./collection-naming.md).
 
 Acceptance storage: owner diversi, entityName collidenti e workspace collidenti non
 condividono collezioni; tentativo di repository con entity non posseduta viene rifiutato;

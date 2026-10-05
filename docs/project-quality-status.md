@@ -1,8 +1,34 @@
-# Stato e qualità del progetto — 3 ottobre 2026
+# Stato e qualità del progetto — 5 ottobre 2026
 
 Questa è la fonte aggiornata per lo stato del checkout dopo il consolidamento di qualità,
 l’aggiornamento delle dipendenze, l’unificazione UI e la revisione Tailwind 4.3.
 Le milestone M1–M6 documentano risultati storici; non descrivono da sole Editorial e Media.
+
+## Consolidamento corrente — 5 ottobre 2026
+
+Completati primo avvio riprendibile, prerequisiti separati dal wizard e collection
+leggibili. La suite di riferimento D0 esegue tutti i nove scenari nel backend esterno
+fisico tramite CLI distribuita: `status:passed, complete:true`. Include upgrade 0.1→0.2,
+reinstallazione esplicita, CRUD/browser/overlay e restore completo su DB separato.
+
+Verifica locale con Node 24.21.0/npm 11.16.0: **605 test ordinari passati**, 34 integrazioni
+opt-in saltate nel comando ordinario; suite **45 test d'integrazione passati senza skip**
+con Mongo/Redis/S3 attivi, **12 test playground senza skip** incluso primo avvio Mongo,
+**28/28 Chromium**, build **15/15**, Storybook **11/11**, SDK, API, signing e template verdi.
+I conteggi delle sezioni precedenti sono risultati storici delle rispettive consegne.
+
+Il report locale con sei plugin misura 8.13 s per avvio e primo login, RSS circa 327 MiB,
+50 letture HTTP seriali dopo cinque warmup: mediana 9.14 ms, p95 10.06 ms. Restore e
+verifica locale richiedono 10.76 s su 27 collection/69 indici e un media reale. Queste
+misure descrivono la fixture, non la capacità o il recovery time del vostro deployment.
+
+CI aggiornata per installare Chromium prima della prova di distribuzione, eseguire
+le suite complete e conservare le evidenze. Nessun file compilato senza sorgente viene
+ammesso nei tarball. DB mock conservato: 31 collection, 4 utenti, 13 entry e 3 media.
+La CI remota, lo staging e il partecipante indipendente restano da registrare;
+G2/G3/G4 rimangono aperti per le rispettive acceptance.
+[Procedura del team](cms/architecture/plugin-platform/single-instance-acceptance.md) ·
+[Consegna e verifiche](../workflow/tasks/done/2026-10-05-cms-foundation-consolidation.md).
 
 ## Modello standard dei plugin
 

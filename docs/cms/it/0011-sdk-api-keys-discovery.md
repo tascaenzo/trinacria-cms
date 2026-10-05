@@ -202,7 +202,7 @@ Per questi casi il sistema espone API key amministrabili dal `core-pack`.
 
 Collection:
 
-- `plugin_core_pack__api_keys`
+- `api_keys__plugin_core-pack`
 
 Campi concettuali:
 

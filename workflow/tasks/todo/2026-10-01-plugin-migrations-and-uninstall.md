@@ -11,7 +11,7 @@ Consegnare il blocco C0 del piano tecnico, applicando decisioni e criteri della 
 ## Milestone
 
 [M8 — Piattaforma plugin pubblica](../../milestones/M8-public-plugin-platform.md).
-Stato: in sviluppo il 2 ottobre 2026.
+Stato: implementazione e prove automatiche integrate; acceptance del deployment aperta.
 Responsabile: owner dei package indicati nell'area; reviewer dei contratti kernel/Core.
 
 ## Specifica esecutiva
@@ -27,11 +27,11 @@ A0 HostUnitOfWork/ownership e A3 autorizzazione; coordinamento istanze completat
 
 ## Scope e incrementi
 
-- [ ] Aggiungere migrations plan/apply/status, registro versioni/checksum e definizioni distribuite nel plugin.
-- [ ] Implementare locks con epoch, transazioni/batch/checkpoint e fencing nella stessa sessione.
-- [ ] Inizializzare storage ownership target; recupero dati precedenti opzionale con report, senza cancellazioni automatiche.
-- [ ] Introdurre maintenance/drain e runbook backup/restore/downgrade.
-- [ ] Separare uninstall e purge da unregister/disable; proteggere dipendenti, dati e referenze.
+- [x] Aggiungere migrations plan/apply/status, registro versioni/checksum e definizioni distribuite nel plugin.
+- [x] Implementare locks con epoch, transazioni/batch/checkpoint e fencing nella stessa sessione.
+- [x] Inizializzare storage ownership target; recupero dati precedenti opzionale con report, senza cancellazioni automatiche.
+- [x] Introdurre maintenance/drain e runbook backup/restore/downgrade.
+- [x] Separare uninstall e purge da unregister/disable; proteggere dipendenti, dati e referenze.
 
 Fuori scope: gli altri blocchi M8, salvo integrazioni necessarie dichiarate nella specifica.
 Ogni incremento deve avere test e consumer aggiornati; recupero dati di sviluppo solo se richiesto, senza reset automatici; non segnare il task done dopo il solo scaffolding.
@@ -52,7 +52,7 @@ Due runner, stale epoch, crash batch, checksum, indice e restore; downgrade/name
 - Documentazione, checklist e changelog aggiornati; risultati e skip registrati.
 - Chiudere solo dopo gli acceptance della specifica e le dipendenze richieste dal relativo gate.
 
-## Incrementi implementati e ancora da validare
+## Implementazione e acceptance
 
 Runner/CLI locale plan/apply/status, checksum file distribuiti, registro per entità,
 lease epoch/heartbeat, transazioni e batch/checkpoint/audit; guard writer nella sessione
@@ -68,3 +68,9 @@ sono passati nelle fixture dedicate. C2 aggiunge ack/drain distribuito e deploy 
 sotto maintenance; il runbook descrive i callback di competenza dell host.
 Restano la verifica finale integrata e la procedura G3 nell ambiente di deploy del team.
 Il task resta aperto; lo sviluppo non dichiara G3 soddisfatto dalla sola lease locale.
+
+
+Per chiusura operativa e risultati aggiornati usare il
+[registro singola istanza](../../../docs/cms/architecture/plugin-platform/single-instance-acceptance.md).
+Gli incrementi di codice sono completati; le checkbox della milestone restano aperte
+fino alle acceptance richieste dal rispettivo gate.

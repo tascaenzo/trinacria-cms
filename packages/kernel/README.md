@@ -149,10 +149,13 @@ workspace/package roots. HTTP/data/node entrypoints, query/fragment URLs and sym
 escapes are rejected before import. Pin trusted packages in the host lockfile and review
 them: these API boundaries do not isolate in-process code.
 
-Mongo storage uses `v2_` plus SHA-256 of `[pluginId, workspaceId ?? null, entityName]`,
-with a persistent ownership registry and unique tuple/physical-name indexes. Existing
-`plugin_`/`kernel__` collections block initialization; choose an empty development DB
-or plan an explicit migration. No automatic data reset or legacy fallback is performed.
+Mongo collection names are readable: `<entity>__plugin_<pluginId>`, optionally followed
+by `__workspace_<workspaceId>`. For example: `users__plugin_core-pack` and
+`entries__plugin_editorial-pack`. Normal letters, digits, hyphens and single underscores
+are preserved; reserved characters and double underscores are escaped reversibly.
+A persistent ownership registry checks unique tuple/physical-name mappings. Previous
+hashed or prefix-based layouts require an explicit migration or an empty development DB;
+there is no automatic reset or fallback. See the [collection naming guide](../../docs/cms/architecture/plugin-platform/collection-naming.md).
 `HostUnitOfWork` is advanced host infrastructure and is absent from plugin services/API.
 
 ## Secure payloads (A2 implemented)
@@ -198,3 +201,13 @@ supports local lifecycle operations; multiple CMS instances explicitly configure
 coordination. The playground defaults to local mode (`PLAYGROUND_CLUSTER_ENABLED=true`
 opts into cluster). A Mongo replica set is still required for domain transactions.
 See the [current trust model](../../docs/cms/architecture/plugin-platform/trusted-plugin-model.md).
+
+## External plugin verification
+
+The distributed `cms-plugin-conformance` CLI reports static checks as incomplete.
+Pass an explicit local scenario module to execute all nine required runtime scenarios.
+Missing functions, failed assertions and cleanup failures produce `status: failed` and
+exit 1; successful completion produces `status: passed, complete: true`. Scenario logs
+go to stderr and stdout contains JSON. The reference catalog suite runs against real
+packages, Mongo, Chromium and the SDK overlay; it also verifies a fixture backup/restore.
+See the [external author runbook](../../docs/cms/architecture/plugin-platform/external-plugin-runbook.md).

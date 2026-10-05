@@ -256,10 +256,13 @@ workspace/package roots. HTTP/data/node entrypoints, query/fragment URLs and sym
 escapes are rejected before import. Pin trusted packages in the host lockfile and review
 them: these API boundaries do not isolate in-process code.
 
-Mongo storage uses `v2_` plus SHA-256 of `[pluginId, workspaceId ?? null, entityName]`,
-with a persistent ownership registry and unique tuple/physical-name indexes. Existing
-`plugin_`/`kernel__` collections block initialization; choose an empty development DB
-or plan an explicit migration. No automatic data reset or legacy fallback is performed.
+Mongo collection names are readable: `<entity>__plugin_<pluginId>`, optionally followed
+by `__workspace_<workspaceId>`. For example: `users__plugin_core-pack` and
+`entries__plugin_editorial-pack`. Normal letters, digits, hyphens and single underscores
+are preserved; reserved characters and double underscores are escaped reversibly.
+A persistent ownership registry checks unique tuple/physical-name mappings. Previous
+hashed or prefix-based layouts require an explicit migration or an empty development DB;
+there is no automatic reset or fallback. See the [collection naming guide](../architecture/plugin-platform/collection-naming.md).
 `HostUnitOfWork` is advanced host infrastructure and is absent from plugin services/API.
 
 ## Secure payloads (A2 implemented)
@@ -337,3 +340,23 @@ CRUD, bounded pagination, stale-version conflicts and API failure recovery. Back
 installation does not require React. Review the generated README and the
 [external developer runbook](../architecture/plugin-platform/external-plugin-runbook.md)
 for installed integration contracts, durable events, lifecycle and the independent human acceptance trial.
+
+## First-run content
+
+Use the optional `onInstall(context, { dataMode, adminUserId })` hook for first-run
+content. It runs with the plugin's owner-bound services and propagates failures to
+the installer. Make each seed idempotent: an interrupted install calls the hook
+again. `onLoad` initializes the ordinary runtime and must not insert demo content.
+See the [installation contract](../specs/core-platform/installation-bootstrap.md).
+
+## Complete conformance
+
+`cms-plugin-conformance` emits `status: incomplete` for static checks alone. With
+`--scenario ./conformance.mjs`, all nine required functions must pass, followed by
+successful teardown: `status: passed, complete: true`. Failures exit 1 and identify
+which scenario failed. Console logs go to stderr; stdout is the JSON result.
+`npm run release:test` executes the reference module from physical external packages,
+including live Mongo/browser/SDK requests and fixture recovery of documents, indexes,
+media and configuration. Independent human acceptance remains a separate gate.
+See the [author runbook](../architecture/plugin-platform/external-plugin-runbook.md)
+and [team acceptance procedure](../architecture/plugin-platform/single-instance-acceptance.md).

@@ -10,7 +10,9 @@ npm run release:test
 `release:pack` builds then creates eight MIT tarballs in topological order. It checks
 coordinated versions, exact internal dependencies, exported files, binaries and package
 contents. `.tmp/release/release.json` records SHA-256, npm integrity and the complete
-file inventory. It never publishes packages. Version 0.1.0 is currently an internal
+file inventory. Compiled files without a matching TypeScript source fail packaging;
+archive/remove stale package `dist` outputs and rebuild before retrying.
+It never publishes packages. Version 0.1.0 is currently an internal
 fixture version; choose/fix the coordinated first beta version at G2 before publication.
 
 `release:test` starts an isolated localhost registry for only `@trinacria-cms` artifacts.
@@ -36,3 +38,23 @@ The catalog fixture verifies trusted declared integrations without approval reco
 protected durable events, public service calls, user authorization and preserved data.
 Its normal backend uses one CMS instance. The separate upgrade fixture explicitly opts
 into cluster coordination to keep testing the advanced deployment profile.
+
+The physical external backend then runs `fixtures/catalog-conformance.mjs` through
+the distributed conformance CLI. All nine required scenarios must pass, including
+missing-provider, headless imports, live Chromium requests, the applied migration,
+reload cleanup, data-preserving removal and the generated TypeScript SDK overlay.
+The CLI reports `status: incomplete` for static checks alone, `failed` (exit 1) for
+an assertion/missing scenario/teardown failure, and `passed, complete: true` only
+after all nine scenarios and cleanup. Scenario logs go to stderr; stdout is JSON.
+
+The migration scenario also stops the CMS and restores a fixture snapshot into an
+empty dedicated DB: BSON documents, indexes, local media bytes and configuration.
+It cold-starts the restored host and verifies login, installed state, catalog, media
+SHA-256 and readiness. `catalog-recovery.mjs` is a fixture helper, not a production
+backup tool. Temporary secret files stay private and are removed with the fixture.
+
+`.tmp/release/catalog-conformance-result.json` records each scenario and local
+six-plugin startup/RSS plus 50 serial HTTP read latencies after five warmups. These
+measurements are a local baseline, not deployment capacity. Human and staging
+acceptance explicitly remain pending. Use the
+[team acceptance procedure](../../docs/cms/architecture/plugin-platform/single-instance-acceptance.md).

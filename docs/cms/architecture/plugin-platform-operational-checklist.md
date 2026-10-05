@@ -109,7 +109,7 @@ Per più istanze verificare convergenza, restart e rifiuto delle scritture da le
 
 - [x] Generatore e conformità distribuiti; catalogo/consumer, overlay e upgrade automatici verificati.
 - [ ] Prova indipendente dello starter da parte di una persona che non lo ha scritto.
-- [ ] Registro completo dei nove scenari di conformità dello starter.
+- [x] Registro completo dei nove scenari reali di conformità, eseguiti dalla CLI da tarball.
 
 Acceptance: installare solo tarball, senza workspace link; annotare passaggi ambigui,
 rebuild e errori reali. La prova automatica non completa la prova umana.
@@ -135,3 +135,7 @@ Redis/S3 sono prove opt-in; registrarne l'attivazione o l'esclusione.
 Il [piano tecnico](plugin-platform-implementation-plan.md) e la
 [milestone M8](../../../workflow/milestones/M8-public-plugin-platform.md) collegano i task.
 Non dedurre il superamento di gate umani o di deployment dal solo codice o dai test automatici.
+
+Consolidamento del 5 ottobre: nove scenari D0 passati, upgrade e restore completo
+su Mongo locale verificati; prova umana e staging restano aperti nel
+[registro operativo del team](plugin-platform/single-instance-acceptance.md).

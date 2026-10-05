@@ -145,6 +145,12 @@ Operational endpoints:
 - Swagger UI: `http://127.0.0.1:3000/docs`
 - backoffice host: `http://127.0.0.1:4174`
 
+The first-run wizard reads installation state from Mongo and checks connectivity,
+transactions, write access and the secure payload keyring. Choose an empty CMS or
+optional demo drafts. Interrupted installation can be resumed with the original
+administrator credentials; a normal restart preserves the installation. See the
+[installation runbook](docs/cms/specs/core-platform/installation-bootstrap.md).
+
 ## Quality checks
 
 ```bash
@@ -272,3 +278,7 @@ Start here:
 Trinacria framework reference:
 
 - `docs/trinacria/README.md`
+
+Per completare il consolidamento della beta: [procedura di acceptance su singola istanza](docs/cms/architecture/plugin-platform/single-instance-acceptance.md),
+[prova indipendente dello starter](docs/cms/architecture/plugin-platform/external-plugin-human-acceptance.md)
+e [verifiche dei pacchetti](scripts/release/README.md).

@@ -130,7 +130,7 @@ redacted diagnostics. In-process plugins remain trusted; A1 is not a sandbox.
 ## Current plugin context
 
 A0 replaces the container with generation-scoped `context.services` for storage, settings,
-events, logger and named operations. Entity ownership and hashed Mongo collection names
+events, logger and named operations. Entity ownership and readable Mongo collection names
 are enforced; host-only transactions can cover domain and kernel data atomically. See
 [the plugin services guide](./0007-build-a-plugin.md#plugin-host-services-a0-implemented)
 for the available contract, discovery roots and development database requirements.

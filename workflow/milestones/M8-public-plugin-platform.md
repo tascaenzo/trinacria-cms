@@ -3,7 +3,7 @@
 ## Obiettivo
 
 Rendere il CMS utilizzabile da autori esterni con contratti stabili, sicurezza esplicita,
-upgrade recuperabili e packaging autonomo; separare i gate sito pubblico e plugin isolati.
+upgrade recuperabili e packaging autonomo; separare i gate sito pubblico e multi-replica.
 
 Nessun rilascio precedente: modifiche incompatibili consentite con tutti i consumer
 aggiornati; nessuna finestra di deprecazione. Recupero dati di sviluppo opzionale.
@@ -17,8 +17,8 @@ policy sui contratti senza grant DB, lifecycle locale e cluster esplicito.
 
 In corso. Approfondimenti e decisioni tecniche completati il 1 ottobre 2026;
 A0/A1/A2/A3/B0/B1/B2 implementati e verificati (A3 il 2 ottobre 2026); C0/C2 hanno codice e prove Mongo/CLI, C1 è collegato e verificato localmente;
-D0 ha superato fixture tarball, overlay/browser e upgrade 0.1→0.2; prova umana e suite
-di riferimento dei nove scenari aperte. E0 ha snapshot/delivery/preview, SDK, backoffice
+D0 ha superato fixture tarball, overlay/browser, upgrade 0.1→0.2 e suite
+di riferimento completa dei nove scenari con restore; prova umana aperta. E0 ha snapshot/delivery/preview, SDK, backoffice
 e app SSR verificati, inclusi browser, cache C1, Storybook e ripristino snapshot; deployment
 del team aperto. Le acceptance sono elencate nei task; nessun task è dichiarato
 completato dalla sola documentazione.
@@ -61,3 +61,9 @@ nel runner di upgrade futuri. Recupero di dati di sviluppo separato e opzionale.
 
 M8 include tutte le evoluzioni richieste: il primo rilascio beta G2 può avvenire prima
 che E0 sia completato, ma la milestone complessiva non viene chiusa anticipatamente.
+
+
+Il [registro operativo singola istanza](../../docs/cms/architecture/plugin-platform/single-instance-acceptance.md)
+assegna procedure ed evidenze per chiudere primo avvio, lifecycle, recovery e G2.
+Lo staging non è ancora assegnato; CI remota, partecipante indipendente e reviewer
+rimangono da registrare. Non richiedere G3 per il normale host a singola istanza.

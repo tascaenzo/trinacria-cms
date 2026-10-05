@@ -32,7 +32,7 @@ C0 riusa la primitiva nel runner di migrazioni future.
 - [x] Vincolare storage/settings/events al plugin autenticato; controllare root realpath della discovery.
 - [x] Aggiungere ownership entità e naming target senza collisioni; recupero storage precedente opzionale.
 - [x] Implementare HostUnitOfWork interno con allowlist host e sessione condivisa; conservare DbAdapter pubblico scoped.
-- [x] Attivare mapping storage_ownership e naming v2 direttamente, con bootstrap indici nell'adapter.
+- [x] Attivare mapping storage_ownership e naming leggibile (aggiornato il 2026-10-04), con bootstrap indici nell'adapter.
 
 Fuori scope: gli altri blocchi M8, salvo integrazioni necessarie dichiarate nella specifica.
 Ogni incremento deve avere test e consumer aggiornati; recupero dati di sviluppo solo se richiesto, senza reset automatici; non segnare il task done dopo il solo scaffolding.

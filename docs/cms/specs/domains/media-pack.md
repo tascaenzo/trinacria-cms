@@ -295,10 +295,10 @@ Tutte le collection usano il namespace fisico del plugin:
 
 | Collection                       | Indici principali                                                                                                                             | Note                                                |
 | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| `plugin_media_pack__assets`      | `id` unique; `{ directoryId, status, updatedAt }`; `{ status, deletedAt }`; `{ ownerUserId, createdAt }`; `{ providerId, storageKey }` unique | Nessun byte binario                                 |
-| `plugin_media_pack__directories` | `id` unique; `{ parentId, name }` unique; il tombstone riceve un nome tecnico                                                                 | Directory virtuali                                  |
-| `plugin_media_pack__acl_entries` | `{ targetType, targetId, principal.type, principal.id }` unique                                                                               | Grant e scadenze                                    |
-| `plugin_media_pack__uploads`     | `id` unique; `{ expiresAt }`; `{ status, updatedAt }`; `{ ownerUserId, status, createdAt }`                                                   | Sessioni effimere eliminate dal cleanup pianificato |
+| `assets__plugin_media-pack`      | `id` unique; `{ directoryId, status, updatedAt }`; `{ status, deletedAt }`; `{ ownerUserId, createdAt }`; `{ providerId, storageKey }` unique | Nessun byte binario                                 |
+| `directories__plugin_media-pack` | `id` unique; `{ parentId, name }` unique; il tombstone riceve un nome tecnico                                                                 | Directory virtuali                                  |
+| `acl_entries__plugin_media-pack` | `{ targetType, targetId, principal.type, principal.id }` unique                                                                               | Grant e scadenze                                    |
+| `uploads__plugin_media-pack`     | `id` unique; `{ expiresAt }`; `{ status, updatedAt }`; `{ ownerUserId, status, createdAt }`                                                   | Sessioni effimere eliminate dal cleanup pianificato |
 
 I record conservano `createdAt` e `updatedAt`; ownership e attore sono espressi
 con `ownerUserId`, `uploadedByUserId` e `createdByUserId` per gli ACL. L'upload

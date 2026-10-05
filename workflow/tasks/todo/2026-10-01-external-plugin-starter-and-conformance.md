@@ -11,7 +11,7 @@ Consegnare il blocco D0 del piano tecnico, applicando decisioni e criteri della 
 ## Milestone
 
 [M8 — Piattaforma plugin pubblica](../../milestones/M8-public-plugin-platform.md).
-Stato: implementazione e acceptance automatica esterna verificate il 2 ottobre 2026; prova umana e modulo di riferimento dei nove scenari ancora aperti.
+Stato: nove scenari automatici esterni e recovery completi il 5 ottobre 2026; prova umana indipendente aperta.
 Responsabile: owner dei package indicati nell'area; reviewer dei contratti kernel/Core.
 
 ## Specifica esecutiva
@@ -30,7 +30,8 @@ B2 e contratti A0/A3; gate finale G2 dopo C0/C1/C2.
 - [x] Creare catalog-plugin e consumer separato, CRUD/settings/eventi/widget e upgrade dati.
 - [x] CLI create-trinacria-plugin safe su directory nuova, template versionato e configurazione backend/admin.
 - [x] Tool conformità statico e runner di scenari espliciti; output incomplete finché i nove scenari non sono eseguiti.
-- [ ] CI fixture senza import interni e prova umana di un autore che non ha scritto lo starter.
+- [x] Fixture da pacchetti fisici, senza import interni, con tutti i nove scenari obbligatori.
+- [ ] Esecuzione CI remota sul candidato e prova umana di un autore che non ha scritto lo starter.
 - [ ] Registrare ostacoli e correggere guide EN/IT; nessuna modifica kernel durante prova.
 
 Fuori scope: gli altri blocchi M8, salvo integrazioni necessarie dichiarate nella specifica.
@@ -67,6 +68,9 @@ overlay TypeScript eseguito contro HTTP, CRUD Chromium/conflitto/API down, reloa
 uninstall con dati conservati e upgrade catalogo 0.1→0.2 via migrations CLI, con nuovo
 host avviato sui dati conservati e campo currency verificato via HTTP. Verificati anche
 permessi operativi deliveries/email-jobs e revoca dei settings alla generation precedente.
-La prova umana non è eseguita; il tool statico conserva `complete:false`. Manca un
-modulo di riferimento che esegua insieme tutti i nove scenari, incluso missing-provider.
-Il task resta aperto e G2 non viene dichiarato soddisfatto.
+Il modulo `catalog-conformance.mjs` esegue tutti i nove scenari nella CLI distribuita:
+`status:passed, complete:true`, teardown riuscito e report con durate. Include il restore
+reale di 27 collection, 69 indici, media e configurazione su DB dedicato, seguito da
+login, verifica dei dati e salute del kernel. Il controllo statico da solo resta incompleto.
+La prova umana e la CI remota restano aperte: G2 non è dichiarato soddisfatto.
+Usare il [registro singola istanza](../../../docs/cms/architecture/plugin-platform/single-instance-acceptance.md).

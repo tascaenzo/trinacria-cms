@@ -11,7 +11,7 @@ Consegnare il blocco C1 del piano tecnico, applicando decisioni e criteri della 
 ## Milestone
 
 [M8 — Piattaforma plugin pubblica](../../milestones/M8-public-plugin-platform.md).
-Stato: in sviluppo il 2 ottobre 2026; runtime e consumer collegati, verifiche complete in corso.
+Stato: implementazione e prove automatiche integrate; acceptance del deployment aperta.
 Responsabile: owner dei package indicati nell'area; reviewer dei contratti kernel/Core.
 
 ## Specifica esecutiva
@@ -27,11 +27,11 @@ A0/A1/A2/A3, C0 e C2; non attivare async durevole senza questi prerequisiti.
 
 ## Scope e incrementi
 
-- [ ] Outbox e intent di routing nella transazione dominio/kernel; materializer idempotente.
-- [ ] Worker lease/epoch, wrapper A1, inbox per consumer, retry/dead-letter e partition ordering.
-- [ ] Derivare envelope ID/versione da outbox e non usare bus dedup come prova di successo.
-- [ ] Trasferimento atomico vault→job email cifrato, expiry e gestione degli invii esterni ambigui.
-- [ ] API amministrative delivery/replay/cancel, retention coordinata e metriche/readiness.
+- [x] Outbox e intent di routing nella transazione dominio/kernel; materializer idempotente.
+- [x] Worker lease/epoch, wrapper A1, inbox per consumer, retry/dead-letter e partition ordering.
+- [x] Derivare envelope ID/versione da outbox e non usare bus dedup come prova di successo.
+- [x] Trasferimento atomico vault→job email cifrato, expiry e gestione degli invii esterni ambigui.
+- [x] API amministrative delivery/replay/cancel, retention coordinata e metriche/readiness.
 
 Fuori scope: gli altri blocchi M8, salvo integrazioni necessarie dichiarate nella specifica.
 Ogni incremento deve avere test e consumer aggiornati; recupero dati di sviluppo solo se richiesto, senza reset automatici; non segnare il task done dopo il solo scaffolding.
@@ -61,5 +61,12 @@ API delivery/email-jobs e readiness presenti. Quattro test Mongo C1 passati,
 comprendenti recovery CAS/audit, retention coordinata, deadline cooperativa e rotazione
 job senza alterare claim/stato. Diciannove flussi Chromium passati con consegna dei
 job realmente completata; il profilo installer offline è passato su HTTP reale.
-Gli ultimi incrementi devono ancora superare la suite generale aggiornata. Il task
-non è done e non dichiara G2/G3 soddisfatti.
+Il consolidamento del 5 ottobre ripete la suite generale e le integrazioni reali.
+Il task resta aperto per la prova operativa del deployment; G2/G3 non sono chiusi
+dalla sola suite automatica.
+
+
+Per chiusura operativa e risultati aggiornati usare il
+[registro singola istanza](../../../docs/cms/architecture/plugin-platform/single-instance-acceptance.md).
+Gli incrementi di codice sono completati; le checkbox della milestone restano aperte
+fino alle acceptance richieste dal rispettivo gate.

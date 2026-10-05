@@ -158,3 +158,9 @@ La gestione locale funziona senza cluster, con revisione stabile e drain.
 [Modello operativo corrente](plugin-platform/trusted-plugin-model.md) ·
 [Milestone e task](../../../workflow/milestones/M8-public-plugin-platform.md).
 Nessun gate umano o di deployment viene chiuso per deduzione dalle prove automatiche.
+
+
+Consolidamento del 5 ottobre: D0 ha un modulo di riferimento completo dei nove scenari,
+con upgrade/restore reale e report CLI passato. C0/C1 hanno superato la suite integrata
+locale. CI remota, prova umana e staging restano acceptance esplicite nel
+[registro del team](plugin-platform/single-instance-acceptance.md).

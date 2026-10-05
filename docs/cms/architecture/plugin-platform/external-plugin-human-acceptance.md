@@ -15,7 +15,7 @@ Ambiente Node/Mongo/browser: da compilare. Inizio/fine/tempo totale: da compilar
 | Integrazione metadata/renderer, una copia React | Da compilare | Da compilare |
 | Permessi: 401/403 e CRUD autorizzato | Da compilare | Da compilare |
 | Setting proprio e protezione foreign/secret | Da compilare | Da compilare |
-| Consumer separato: evento protetto, grant e revoca | Da compilare | Da compilare |
+| Consumer separato: evento protetto, dipendenza/permesso e cleanup dopo unload | Da compilare | Da compilare |
 | SDK overlay TypeScript e richieste reali | Da compilare | Da compilare |
 | Reload dipendenze e pulizia route/provider | Da compilare | Da compilare |
 | Upgrade N→N+1 con dati esistenti e recovery | Da compilare | Da compilare |
@@ -25,3 +25,7 @@ Ambiente Node/Mongo/browser: da compilare. Inizio/fine/tempo totale: da compilar
 Correzioni richieste e owner: da compilare. Ripetizione degli step falliti: da compilare.
 Decisione del reviewer sul gate D0/G2: da compilare dopo tutte le evidenze.
 Non includere token, credenziali, indirizzi personali o payload sensibili nel registro.
+
+Per setup, staging, backup e misure usare anche il
+[registro singola istanza](single-instance-acceptance.md). Le integrazioni locali
+fidate non richiedono grant DB; gli accessi HTTP firmati hanno controlli distinti.
