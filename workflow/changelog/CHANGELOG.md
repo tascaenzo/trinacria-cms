@@ -11,6 +11,8 @@ Il formato si ispira a [Keep a Changelog](https://keepachangelog.com/).
   login e salute del kernel; misure locali di avvio, memoria e latenza HTTP.
 - CI completa, Chromium prima del packaging/browser, integrazioni senza cache e prova
   primo avvio Mongo esplicita; report redatti conservati come artefatti.
+- Cleanup del database esterno assicurato dal runner dopo l uscita dei figli,
+  con nome UUID controllato e verifica delle collection residue.
 - Guardrail dei tarball contro output compilati orfani; ricompilati gli otto pacchetti
   da sorgenti, archiviando gli output precedenti in una directory locale ignorata.
 - Verificati 605 test ordinari, 45 della suite Mongo/Redis/S3 senza skip, 12 playground

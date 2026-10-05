@@ -17,7 +17,7 @@ con Mongo/Redis/S3 attivi, **12 test playground senza skip** incluso primo avvio
 **28/28 Chromium**, build **15/15**, Storybook **11/11**, SDK, API, signing e template verdi.
 I conteggi delle sezioni precedenti sono risultati storici delle rispettive consegne.
 
-Il report locale con sei plugin misura 8.13 s per avvio e primo login, RSS circa 327 MiB,
+La prima prova positiva registrata con sei plugin misura 8.13 s per avvio e primo login, RSS circa 327 MiB,
 50 letture HTTP seriali dopo cinque warmup: mediana 9.14 ms, p95 10.06 ms. Restore e
 verifica locale richiedono 10.76 s su 27 collection/69 indici e un media reale. Queste
 misure descrivono la fixture, non la capacità o il recovery time del vostro deployment.

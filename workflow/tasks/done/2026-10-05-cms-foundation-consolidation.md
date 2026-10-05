@@ -41,7 +41,7 @@ I report riproducibili sono `.tmp/release/external-host-result.json` e
 sono nel report esterno/inventario release. La CI li conserva come artefatti, senza
 backup, credenziali o keyring. Il controllo statico da solo conserva `complete:false`.
 
-Baseline locale con sei plugin: avvio più primo login 8133 ms, RSS 342900736 byte;
+Baseline del primo esito positivo (2026-10-05 12:57:29 UTC) con sei plugin: avvio più primo login 8133 ms, RSS 342900736 byte;
 50 GET seriali, cinque warmup, mediana 9.14 ms, p95 10.06 ms. Backup fixture 36 ms;
 restore e verifica 10757 ms, 27 collection, 1621 documenti, 69 indici, un media.
 Sono misure della fixture, senza una soglia di capacità o RTO del deployment.
@@ -67,11 +67,23 @@ Il contenuto del commit `1add372` è stato esportato con `git archive` in una di
 nuova senza `node_modules`, `dist` o cache Turbo. In quella copia sono passati `npm ci`
 (0 vulnerabilità segnalate), build forzata 15/15, `npm run check` (605 passati, 34 opt-in
 skip previsti), SDK generato (138 operazioni), otto tarball e tutti i nove scenari
-esterni con upgrade/restore. La successiva modifica del checkpoint aggiorna solo
-questo registro e la formulazione dell'acceptance C0; nessun codice eseguibile cambia.
+esterni con upgrade/restore. Il codice dei domini è invariato dopo questa verifica. Gli incrementi successivi
+aggiornano i registri e il cleanup della sola fixture esterna, verificato nuovamente
+con la suite completa e controllo dell assenza del database temporaneo.
 
 Report della ripetizione: `.tmp/release/clean-checkout-conformance-result.json` e
 `.tmp/release/clean-checkout-external-host-result.json`. Il report del checkpoint
 `.tmp/release/foundation-checkpoint.json` registra commit, verifiche e gate pendenti.
 Gli artefatti restano locali e redatti, mentre le procedure/evidenze aggregate sono
 versionate. Non sono stati eseguiti push, pubblicazioni o prove sullo staging del team.
+
+
+## Cleanup dei database delle fixture
+
+Il controllo finale ha identificato database sintetici residui: il figlio backend
+poteva terminare prima di completare la propria pulizia. Il runner ora attende l'uscita
+dei figli ed elimina esplicitamente il solo DB casuale di sua proprietà, anche dopo
+errori del figlio. L'helper valida il prefisso/UUID, verifica il nome della connessione
+ed esige zero collection residue; non richiede di elencare tutti i database del cluster.
+Sono stati rimossi gli undici residui identificati, privi di utenti/contenuti/media.
+Il database CMS e database non appartenenti alla fixture sono esclusi.

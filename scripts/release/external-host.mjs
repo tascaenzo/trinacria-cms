@@ -11,7 +11,7 @@ import { prepareCatalogV2 } from "./prepare-catalog-v2.mjs";
 
 const fixtureRoot = await mkdtemp(join(tmpdir(), "trinacria-external-host-"));
 const children = new Set();
-let registry, browser, catalogCleanupDirectory;
+let registry, browser, catalogCleanupDirectory, backendCleanupDirectory;
 const fixtureFiles = join(import.meta.dirname, "fixtures");
 const installedVersion = async (name) =>
   JSON.parse(await readFile(join(repository, "node_modules", name, "package.json"), "utf8"))
@@ -174,6 +174,8 @@ try {
     "# Isolated test host; configuration is supplied via process environment.\n"
   );
   await cp(join(fixtureFiles, "backend.mjs"), join(backendDir, "backend.mjs"));
+  await cp(join(fixtureFiles, "external-cleanup.mjs"), join(backendDir, "external-cleanup.mjs"));
+  backendCleanupDirectory = backendDir;
   await cp(join(fixtureFiles, "consumer.ts"), join(backendDir, "consumer.ts"));
   await command(
     process.execPath,
@@ -680,13 +682,12 @@ try {
     [...children].map(
       (child) =>
         new Promise((resolve) => {
-          if (child.exitCode !== null) {
+          if (child.exitCode !== null || child.signalCode !== null) {
             resolve();
             return;
           }
           const timer = setTimeout(() => {
             child.kill("SIGKILL");
-            resolve();
           }, 5000);
           child.once("exit", () => {
             clearTimeout(timer);
@@ -697,6 +698,10 @@ try {
   );
   if (catalogCleanupDirectory)
     await command(process.execPath, ["catalog-cleanup.mjs"], catalogCleanupDirectory, {
+      MONGO_URI: mongoTarget.toString()
+    });
+  if (backendCleanupDirectory)
+    await command(process.execPath, ["external-cleanup.mjs"], backendCleanupDirectory, {
       MONGO_URI: mongoTarget.toString()
     });
   if (registry) await new Promise((resolve) => registry.close(resolve));

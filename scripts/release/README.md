@@ -25,7 +25,9 @@ are explicit host imports; upgrading renderer code requires rebuilding the admin
 
 Mongo must be a replica set. `TRINACRIA_EXTERNAL_MONGO_URI` selects the test cluster;
 the script always substitutes a fresh `trinacria_external_host_<random>_e2e` database
-and removes only that database when the fixture exits. It never resets a development
+and removes only that database when the fixture exits. The parent waits for child
+process exit, repeats cleanup explicitly and asserts no collection remains, including
+when a child fails to complete its own shutdown cleanup. It never resets a development
 or production database. Temporary registry/projects/tarballs are removed in `finally`;
 the redacted checksum/result report stays in `.tmp/release/external-host-result.json`.
 
