@@ -7,7 +7,7 @@ const LOCALE_PATTERN = /^[a-z]{2}(-[A-Z]{2})?$/;
 
 /**
  * DTO schema for first-install bootstrap payload.
- * MongoDB is expected to be pre-configured via .env at startup.
+ * Database and runtime prerequisites must pass before bootstrap.
  */
 export const InstallBootstrapInputSchema = s.object(
   {
@@ -19,6 +19,7 @@ export const InstallBootstrapInputSchema = s.object(
     confirmPassword: s.string({ minLength: 10, maxLength: 200 }),
 
     // Site settings
+    dataMode: s.enum(["empty", "demo"] as const).optional(),
     siteName: s.string({ trim: true, minLength: 1, maxLength: 120 }),
     siteTagline: s.string({ trim: true, maxLength: 160 }).optional(),
     locale: s.string({ trim: true, pattern: LOCALE_PATTERN }).optional(),

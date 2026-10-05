@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import type { NamespaceContext } from "../../contracts/namespace-context.js";
 import { DbAdapterError } from "../../errors/db-errors.js";
 
@@ -15,7 +14,18 @@ export function canonicalStorageTuple(context: NamespaceContext, entityName: str
   return JSON.stringify([context.pluginId, context.workspaceId ?? null, entityName]);
 }
 export function buildPhysicalCollectionName(context: NamespaceContext, entityName: string): string {
-  return `v2_${createHash("sha256").update(canonicalStorageTuple(context, entityName)).digest("hex")}`;
+  canonicalStorageTuple(context, entityName);
+  const workspace =
+    context.workspaceId === undefined
+      ? ""
+      : `__workspace_${collectionComponent(context.workspaceId)}`;
+  return `${collectionComponent(entityName)}__plugin_${collectionComponent(context.pluginId)}${workspace}`;
+}
+/** Reversible escaping keeps normal identifiers readable without collapsing distinct owners. */
+function collectionComponent(value: string): string {
+  return encodeURIComponent(value)
+    .replace(/[.!'()*]/g, (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`)
+    .replace(/__/g, "%5F%5F");
 }
 export const STORAGE_OWNERSHIP_COLLECTION = buildPhysicalCollectionName(
   { pluginId: "kernel" },

@@ -89,13 +89,20 @@ export const EDITORIAL_OPERATIONS = pluginOperationsProvider(
       }
     },
     {
+      name: "initializeDemo",
+      private: true,
+      input: s.object({ adminUserId: s.string({ minLength: 1 }) }, { strict: true }),
+      async invoke(input) {
+        await entries.ensureDemoContent((input as { adminUserId: string }).adminUserId);
+        return null;
+      }
+    },
+    {
       name: "initialize",
       private: true,
       input: s.object({}),
       async invoke(_input, context) {
         await contentTypes.ensureDefaultContentTypes();
-        entries.setPublisher(undefined);
-        await entries.ensureDefaultBlogContent();
         entries.setPublisher(context.events);
         return null;
       }

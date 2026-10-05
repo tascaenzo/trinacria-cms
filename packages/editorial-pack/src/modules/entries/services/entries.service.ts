@@ -170,31 +170,29 @@ export class EntriesService {
   }
 
   /** Seeds a small, immediately understandable blog only when the workspace is empty. */
-  async ensureDefaultBlogContent(): Promise<void> {
-    if ((await this.repository.list({ limit: 1 })).length > 0) return;
+  /** Individually idempotent seeds let an interrupted install finish the missing item. */
+  async ensureDemoContent(adminUserId: string): Promise<void> {
     const contentTypes = await this.contentTypes.listContentTypes({ status: "active", limit: 20 });
-    const article = contentTypes.find((contentType) => contentType.key === "article");
-    const page = contentTypes.find((contentType) => contentType.key === "page");
-    if (article) {
+    for (const sample of [
+      {
+        key: "article",
+        title: "Benvenuto nel tuo nuovo blog",
+        slug: "benvenuto-nel-tuo-nuovo-blog",
+        data: { category: "Tecnologia", tags: ["CMS", "Editoriale"] }
+      },
+      { key: "page", title: "Chi siamo", slug: "chi-siamo", data: {} }
+    ]) {
+      const type = contentTypes.find((type) => type.key === sample.key);
+      if (!type) throw new Error(`Demo requires content type "${sample.key}"`);
+      const existing = await this.repository.list({
+        contentTypeId: type.id,
+        accessFilter: { slug: sample.slug },
+        limit: 1
+      });
+      if (existing.length) continue;
       await this.createEntry(
-        {
-          contentTypeId: article.id,
-          title: "Benvenuto nel tuo nuovo blog",
-          slug: "benvenuto-nel-tuo-nuovo-blog",
-          data: { category: "Tecnologia", tags: ["CMS", "Editoriale"] }
-        },
-        "system:editorial-pack"
-      );
-    }
-    if (page) {
-      await this.createEntry(
-        {
-          contentTypeId: page.id,
-          title: "Chi siamo",
-          slug: "chi-siamo",
-          data: {}
-        },
-        "system:editorial-pack"
+        { contentTypeId: type.id, title: sample.title, slug: sample.slug, data: sample.data },
+        adminUserId
       );
     }
   }

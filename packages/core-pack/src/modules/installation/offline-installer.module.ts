@@ -1,34 +1,38 @@
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
 import {
   apiError,
   CORE_TOKENS,
   createToken,
-  type DbAdapter,
   defineModule,
   HttpController,
   httpProvider,
+  type InstallationHost,
   response
 } from "@trinacria-cms/kernel";
 import { InstallationStatusResponseSchema } from "./dto/index.js";
-/** Only environmental status is mounted while Mongo is unavailable. No business plugin is executed. */
+import { readInstallationEnvironmentStatus } from "./services/installation.service.js";
+/** Environment-only status when host prerequisites fail. No business plugin is executed. */
 export class OfflineInstallerController extends HttpController {
-  constructor(private readonly db: DbAdapter) {
+  constructor(private readonly host: InstallationHost) {
     super();
   }
   routes() {
     return this.router()
       .get(
         "/v1/install/status",
-        async () => ({
-          data: {
-            installed: false,
-            envFilePresent: existsSync(resolve(process.cwd(), ".env")),
-            dbConfigured: Boolean(process.env.MONGO_URI),
-            envFilePath: resolve(process.cwd(), ".env")
-          },
-          meta: { pluginId: "core-pack" }
-        }),
+        async () => {
+          const prerequisites = await this.host.inspect();
+          return {
+            data: {
+              installed: prerequisites.installed ?? false,
+              ...readInstallationEnvironmentStatus(),
+              phase: "prerequisites",
+              canInstall: false,
+              restartRequired: true,
+              checks: prerequisites.checks
+            },
+            meta: { pluginId: "core-pack" }
+          };
+        },
         {
           docs: {
             pluginId: "core-pack",
@@ -47,7 +51,9 @@ export class OfflineInstallerController extends HttpController {
       .post(
         "/v1/install/bootstrap",
         async () => {
-          const healthy = (await this.db.healthCheck()).ok;
+          const healthy = (await this.host.inspect()).checks.every(
+            (check) => check.status === "pass"
+          );
           return response(
             apiError(
               "platform_maintenance",
@@ -74,6 +80,8 @@ export class OfflineInstallerController extends HttpController {
 const controller = createToken<OfflineInstallerController>("CORE_OFFLINE_INSTALLER_CONTROLLER");
 export const CorePackOfflineInstallerModule = defineModule({
   name: "CorePackOfflineInstallerModule",
-  providers: [httpProvider(controller, OfflineInstallerController, [CORE_TOKENS.DB_ADAPTER])],
+  providers: [
+    httpProvider(controller, OfflineInstallerController, [CORE_TOKENS.INSTALLATION_HOST])
+  ],
   exports: [controller]
 });

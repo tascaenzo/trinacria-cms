@@ -642,6 +642,7 @@ export type BootstrapInstallationRequest = {
   "email": string;
   "password": string;
   "confirmPassword": string;
+  "dataMode"?: "empty" | "demo";
   "siteName": string;
   "siteTagline"?: string;
   "locale"?: string;
@@ -653,6 +654,15 @@ export type BootstrapInstallationResponse = {
   "data": {
   "status": {
   "installed": boolean;
+  "phase": "prerequisites" | "ready" | "configuration" | "content" | "verification" | "complete";
+  "canInstall": boolean;
+  "restartRequired": boolean;
+  "dataMode"?: "empty" | "demo";
+  "checks": Array<{
+  "id": "database" | "transactions" | "write-access" | "runtime-keys" | "plugins" | "services" | "administrator" | "settings";
+  "status": "pass" | "fail" | "blocked";
+  "message": string;
+}>;
   "installedAt"?: string;
   "adminUserId"?: string;
   "envFilePresent": boolean;
@@ -3829,6 +3839,15 @@ export type GetInstallationStatusRequest = void;
 export type GetInstallationStatusResponse = {
   "data": {
   "installed": boolean;
+  "phase": "prerequisites" | "ready" | "configuration" | "content" | "verification" | "complete";
+  "canInstall": boolean;
+  "restartRequired": boolean;
+  "dataMode"?: "empty" | "demo";
+  "checks": Array<{
+  "id": "database" | "transactions" | "write-access" | "runtime-keys" | "plugins" | "services" | "administrator" | "settings";
+  "status": "pass" | "fail" | "blocked";
+  "message": string;
+}>;
   "installedAt"?: string;
   "adminUserId"?: string;
   "envFilePresent": boolean;

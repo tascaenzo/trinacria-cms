@@ -5,6 +5,7 @@ import {
   CorePackSecurityModule,
   CorePackSettingsModule,
   RUNTIME_CONFIG_SERVICE_TOKEN,
+  type RuntimeConfigService,
   SETTINGS_SERVICE_TOKEN
 } from "@trinacria-cms/core-pack/runtime";
 import {
@@ -94,8 +95,14 @@ export const MediaPackMediaModule: ModuleDefinition = defineModule({
     classProvider(MEDIA_PROVIDER_REGISTRY_TOKEN, MediaProviderRegistry),
     factoryProvider(
       MEDIA_LOCAL_DISK_PROVIDER_TOKEN,
-      () => new LocalDiskMediaStorageProvider({ rootDirectory: ".trinacria/media" }),
-      []
+      async (config) =>
+        new LocalDiskMediaStorageProvider({
+          rootDirectory:
+            (await (config as RuntimeConfigService).getString("media-pack:storage:local_root", {
+              fallback: ".trinacria/media"
+            })) ?? ".trinacria/media"
+        }),
+      [RUNTIME_CONFIG_SERVICE_TOKEN]
     ),
     factoryProvider(
       MEDIA_PROVIDER_REGISTRY_INITIALIZATION_TOKEN,

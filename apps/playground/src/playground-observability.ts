@@ -469,9 +469,8 @@ export function createOpsChecklistItems(
     {
       id: "login",
       label: "Login flow",
-      status: process.env.CMS_INSTALLED?.trim().toLowerCase() === "true" ? "manual" : "warn",
+      status: corePackLoaded ? "manual" : "warn",
       details: {
-        installedFlag: process.env.CMS_INSTALLED === "true",
         manualCheck: "Submit admin credentials through the backoffice login screen"
       }
     },

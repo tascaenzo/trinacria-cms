@@ -22,6 +22,8 @@
     "dev:backoffice": "npm run build && turbo run dev --ui=tui --filter=@trinacria-cms/backoffice...",
     "dev:playground:watch": "npm run dev -w @trinacria-cms/playground",
     "dev:backoffice:watch": "npm run dev -w @trinacria-cms/backoffice",
+    "db:mock:plan": "npm run build && node scripts/dev/reset-mock-db.mjs",
+    "db:mock:reset": "npm run build && node scripts/dev/reset-mock-db.mjs --reset",
     "storybook": "npm run storybook -w @trinacria-cms/trinacria-ui",
     "storybook:build": "turbo run storybook:build",
     "pree2e": "npm run build",

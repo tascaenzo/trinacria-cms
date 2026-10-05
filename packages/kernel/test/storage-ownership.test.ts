@@ -8,12 +8,24 @@ test("physical names preserve distinctions between owner, workspace and entity t
     [{ pluginId: "a-b" }, "items"], [{ pluginId: "a_b" }, "items"],
     [{ pluginId: "a-b", workspaceId: "a-b" }, "items"], [{ pluginId: "a-b", workspaceId: "a_b" }, "items"],
     [{ pluginId: "a-b" }, "item-s"], [{ pluginId: "a-b" }, "item_s"],
-    [{ pluginId: "a-b", workspaceId: "x:workspace:y" }, "items"], [{ pluginId: "a-b", workspaceId: "x" }, "workspace:y:items"]
+    [{ pluginId: "a-b", workspaceId: "x:workspace:y" }, "items"], [{ pluginId: "a-b", workspaceId: "x" }, "workspace:y:items"],
+    [{ pluginId: "a-b" }, "items__plugin_a-b"], [{ pluginId: "a-b" }, "items%5F%5Fplugin_a-b"],
+    [{ pluginId: "a-b__workspace_x" }, "items"], [{ pluginId: "a-b", workspaceId: "x" }, "items"],
+    [{ pluginId: "a-b", workspaceId: "x__workspace_y" }, "items"],
+    [{ pluginId: "a-b" }, "system.users"], [{ pluginId: "a-b" }, "system%2Eusers"]
   ] as const;
   const names = tuples.map(([namespace, entity]) => buildPhysicalCollectionName(namespace, entity));
   assert.equal(new Set(names).size, names.length);
-  assert.ok(names.every((name) => /^v2_[a-f0-9]{64}$/.test(name)));
+  assert.ok(names.every((name) => name.includes("__plugin_") && !name.startsWith("v2_")));
   assert.throws(() => buildPhysicalCollectionName({ pluginId: "Upper" }, "items"), /canonical/);
+});
+test("collection names expose entity, plugin and optional workspace", () => {
+  assert.equal(buildPhysicalCollectionName({ pluginId: "core-pack" }, "users"), "users__plugin_core-pack");
+  assert.equal(buildPhysicalCollectionName({ pluginId: "core-pack" }, "local_credentials"), "local_credentials__plugin_core-pack");
+  assert.equal(buildPhysicalCollectionName({ pluginId: "editorial-pack" }, "entries"), "entries__plugin_editorial-pack");
+  assert.equal(buildPhysicalCollectionName({ pluginId: "kernel" }, "storage_ownership"), "storage_ownership__plugin_kernel");
+  assert.equal(buildPhysicalCollectionName({ pluginId: "media-pack", workspaceId: "team-1" }, "assets"), "assets__plugin_media-pack__workspace_team-1");
+  assert.equal(buildPhysicalCollectionName({ pluginId: "vendor/plugin", workspaceId: "team:a" }, "items"), "items__plugin_vendor%2Fplugin__workspace_team%3Aa");
 });
 test("entity registration requires a canonical owner and prevents schema overwrite", () => {
   const registry = new EntityRegistry();

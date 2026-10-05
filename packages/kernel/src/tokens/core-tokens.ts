@@ -3,6 +3,7 @@ import type { AuditSink } from "../contracts/audit.js";
 import type { AuthzService } from "../contracts/authz-service.js";
 import type { CacheAdapter } from "../contracts/cache-adapter.js";
 import type { DbAdapter } from "../contracts/db-adapter.js";
+import type { InstallationHost } from "../contracts/installation.js";
 import type { KernelAdminRouteGuard } from "../contracts/kernel-admin-route-guard.js";
 import type { OperationAuthorizer } from "../contracts/operations.js";
 import type { PluginEventSubscriptionAuthorizer } from "../contracts/plugin-access-policy.js";
@@ -28,6 +29,7 @@ import type { KernelSystemService } from "../runtime/system/kernel-system-servic
  * Core DI tokens exposed as stable integration points for platform services.
  */
 export const CORE_TOKENS = {
+  INSTALLATION_HOST: createToken<InstallationHost>("CMS_INSTALLATION_HOST"),
   PUBLIC_REQUEST_LIMITER: createToken<{ consume(clientId: string): Promise<void> }>(
     "CMS_PUBLIC_REQUEST_LIMITER"
   ),

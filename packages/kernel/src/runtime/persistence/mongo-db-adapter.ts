@@ -155,7 +155,7 @@ export class MongoDbAdapter implements DbAdapter {
     if (!this.options.connection.db) return;
     const result = (await this.options.connection.db.command({
       listCollections: 1,
-      filter: { name: { $regex: "^(plugin_|kernel__)" } },
+      filter: { name: { $regex: "^(?!.*__plugin_)(plugin_|kernel__|v2_[a-f0-9]{64}$)" } },
       nameOnly: true
     })) as { cursor?: { firstBatch?: unknown[] } };
     if (result.cursor?.firstBatch?.length)

@@ -4,6 +4,7 @@ export * from "./authz-service.js";
 export * from "./cache-adapter.js";
 export * from "./cms-starter.js";
 export * from "./db-adapter.js";
+export * from "./installation.js";
 export * from "./kernel-admin-route-guard.js";
 export * from "./namespace-context.js";
 export type * from "./operations.js";

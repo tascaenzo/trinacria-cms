@@ -1,10 +1,11 @@
-import { Button, ErrorBanner, Input, Select } from "@trinacria-cms/trinacria-ui";
-import { type FormEvent, type MouseEvent, startTransition, useRef, useState } from "react";
+import { Button, ErrorBanner, Input, Select, Stepper } from "@trinacria-cms/trinacria-ui";
+import { type FormEvent, startTransition, useRef, useState } from "react";
 import { AuthScreenLayout } from "../components/auth-screen-layout.js";
 import { useI18n } from "../lib/i18n.js";
 
 export interface InstallationBootstrapPageProps {
   isSubmitting: boolean;
+  dataMode?: "empty" | "demo";
   state: {
     error: string | null;
   };
@@ -13,6 +14,7 @@ export interface InstallationBootstrapPageProps {
 
 type Step = "site" | "admin" | "review";
 type FormValues = {
+  dataMode: string;
   siteName: string;
   siteTagline: string;
   locale: string;
@@ -56,6 +58,7 @@ function getStepIndex(step: Step): number {
 
 export function InstallationBootstrapPage({
   action,
+  dataMode,
   isSubmitting,
   state
 }: InstallationBootstrapPageProps) {
@@ -64,6 +67,7 @@ export function InstallationBootstrapPage({
   const [currentStep, setCurrentStep] = useState<Step>("site");
   const [localError, setLocalError] = useState<string | null>(null);
   const [values, setValues] = useState<FormValues>({
+    dataMode: dataMode ?? "empty",
     siteName: "",
     siteTagline: "",
     locale: "en-US",
@@ -75,7 +79,6 @@ export function InstallationBootstrapPage({
     confirmPassword: ""
   });
 
-  const stepIndex = getStepIndex(currentStep);
   const isFirstStep = currentStep === "site";
   const isReviewStep = currentStep === "review";
 
@@ -111,8 +114,7 @@ export function InstallationBootstrapPage({
     return true;
   }
 
-  function handleContinue(event: MouseEvent<HTMLButtonElement>) {
-    event.preventDefault();
+  function handleContinue() {
     if (!validateCurrentStep()) {
       return;
     }
@@ -126,11 +128,16 @@ export function InstallationBootstrapPage({
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!isReviewStep) {
+      handleContinue();
+      return;
+    }
     if (!validateAllSteps()) {
       return;
     }
 
     const formData = new FormData();
+    formData.set("dataMode", values.dataMode);
     formData.set("siteName", values.siteName.trim());
     formData.set("siteTagline", values.siteTagline.trim());
     formData.set("locale", values.locale);
@@ -161,35 +168,33 @@ export function InstallationBootstrapPage({
 
   function renderStepIndicator() {
     return (
-      <div className="mb-6 flex items-center gap-2 text-xs font-medium text-(--color-ink-muted)">
-        {STEPS.slice(0, -1).map((step, i) => {
-          const isActive = i === stepIndex;
-          const isDone = i < stepIndex;
-          return (
-            <span key={step} className="flex items-center gap-2">
-              {i > 0 && (
-                <span
-                  className={`h-px w-4 ${isDone ? "bg-(--color-accent)" : "bg-(--color-border)"}`}
-                />
-              )}
-              <span
-                className={
-                  isActive ? "text-(--color-accent)" : isDone ? "text-(--color-accent)" : undefined
-                }
-              >
-                {isDone ? "✓" : i + 1}{" "}
-                <span className="hidden sm:inline">{t(`auth.installation.step_${step}`)}</span>
-              </span>
-            </span>
-          );
-        })}
-      </div>
+      <nav
+        className="border-b border-(--color-border) pb-6"
+        aria-label={t("auth.installation.progress_title")}
+      >
+        <Stepper
+          items={STEPS.map((step) => ({ id: step, label: t(`auth.installation.step_${step}`) }))}
+          currentStep={currentStep}
+          ariaLabel={t("auth.installation.progress_title")}
+        />
+      </nav>
     );
   }
 
   function renderSiteStep() {
     return (
       <div className="grid gap-4">
+        <Select
+          label={t("auth.installation.data_mode_label")}
+          name="dataMode"
+          value={values.dataMode}
+          onChange={(event) => setValue("dataMode", event.currentTarget.value)}
+          disabled={Boolean(dataMode)}
+        >
+          <option value="empty">{t("auth.installation.data_mode_empty")}</option>
+          <option value="demo">{t("auth.installation.data_mode_demo")}</option>
+        </Select>
+        <p className="text-sm text-(--color-ink-muted)">{t("auth.installation.data_mode_hint")}</p>
         <Input
           label={t("auth.installation.site_name_label")}
           name="siteName"
@@ -236,7 +241,7 @@ export function InstallationBootstrapPage({
   function renderAdminStep() {
     return (
       <div className="grid gap-4">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <Input
             label={t("auth.installation.first_name_label")}
             name="firstName"
@@ -268,6 +273,7 @@ export function InstallationBootstrapPage({
           value={values.password}
           onChange={(event) => setValue("password", event.currentTarget.value)}
           autoComplete="new-password"
+          minLength={10}
           required
         />
         <Input
@@ -277,6 +283,7 @@ export function InstallationBootstrapPage({
           value={values.confirmPassword}
           onChange={(event) => setValue("confirmPassword", event.currentTarget.value)}
           autoComplete="new-password"
+          minLength={10}
           required
         />
       </div>
@@ -291,6 +298,7 @@ export function InstallationBootstrapPage({
             {t("auth.installation.step_site")}
           </p>
           <p className="mt-1">{values.siteName}</p>
+          <p>{t(`auth.installation.data_mode_${values.dataMode}`)}</p>
           {values.siteTagline && <p className="text-(--color-ink-muted)">{values.siteTagline}</p>}
           <p className="text-(--color-ink-muted)">
             {values.locale} — {values.timezone}
@@ -324,6 +332,9 @@ export function InstallationBootstrapPage({
     >
       <form ref={formRef} className="grid gap-5" onSubmit={handleSubmit}>
         {renderStepIndicator()}
+        {dataMode ? (
+          <p className="text-sm text-(--color-ink-muted)">{t("auth.installation.resume_hint")}</p>
+        ) : null}
 
         {currentStep === "site" && renderSiteStep()}
         {currentStep === "admin" && renderAdminStep()}
@@ -331,7 +342,7 @@ export function InstallationBootstrapPage({
 
         {localError || state.error ? <ErrorBanner message={localError ?? state.error} /> : null}
 
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-3 border-t border-(--color-border) pt-5">
           {!isFirstStep ? (
             <Button
               type="button"
@@ -342,15 +353,12 @@ export function InstallationBootstrapPage({
             >
               {t("auth.installation.back")}
             </Button>
-          ) : (
-            <div />
-          )}
+          ) : null}
 
           {!isReviewStep ? (
             <Button
-              type="button"
+              type="submit"
               disabled={isSubmitting}
-              onClick={handleContinue}
               className="h-11 flex-1 rounded-sm text-sm font-semibold"
             >
               {t("auth.installation.continue")}

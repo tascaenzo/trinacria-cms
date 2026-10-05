@@ -11,6 +11,12 @@ export function createEditorialPackPlugin(): KernelPluginDefinition {
         await invalidateDeliveryCache(context.services.storage, payload, envelope.id);
       }
     },
+    async onInstall(context, input) {
+      if (input.dataMode === "demo")
+        await context.services.operations.call("editorial-pack", "initializeDemo", {
+          adminUserId: input.adminUserId
+        });
+    },
     async onLoad(context) {
       await context.services.operations.call("editorial-pack", "initialize", {});
     }

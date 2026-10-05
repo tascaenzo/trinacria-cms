@@ -104,11 +104,13 @@ export async function startCmsApp(options: CmsStarterOptions): Promise<CmsStarte
       autoLoadPlugins: false
     });
     pluginSourceSnapshots = pluginBootstrap.pluginSources;
-    if (runtime instanceof InMemoryPluginRuntime) await durable.initialize(runtime);
     const installerOnly =
-      options.migrations?.allowStartupWithoutDb &&
-      app.hasToken(CORE_TOKENS.DB_ADAPTER) &&
-      !(await (await app.resolve(CORE_TOKENS.DB_ADAPTER)).healthCheck()).ok;
+      options.installerOnly ||
+      (options.migrations?.allowStartupWithoutDb &&
+        app.hasToken(CORE_TOKENS.DB_ADAPTER) &&
+        !(await (await app.resolve(CORE_TOKENS.DB_ADAPTER)).healthCheck()).ok);
+    if (!installerOnly && runtime instanceof InMemoryPluginRuntime)
+      await durable.initialize(runtime);
     if (installerOnly) {
       if (!options.offlineInstallerModules?.length)
         throw new Error(

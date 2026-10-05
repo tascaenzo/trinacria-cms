@@ -35,7 +35,10 @@ export function registerSecurePayloadHostProvider(
   app.registerGlobalProvider(
     factoryProvider(CORE_TOKENS.SECURE_EVENT_PAYLOAD_HOST, async () => {
       const dbAdapter = await app.resolve(CORE_TOKENS.DB_ADAPTER);
-      if (options.migrations?.allowStartupWithoutDb && !(await dbAdapter.healthCheck()).ok) {
+      if (
+        options.installerOnly ||
+        (options.migrations?.allowStartupWithoutDb && !(await dbAdapter.healthCheck()).ok)
+      ) {
         const unavailable = async () => {
           throw new SecureEventPayloadError(
             "platform_maintenance",

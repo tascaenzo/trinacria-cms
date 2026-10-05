@@ -59,8 +59,13 @@ export class InstallationController extends HttpController {
               description: "Invalid input or password mismatch",
               schema: toOpenApiSchema(InstallationErrorResponseSchema)
             },
+            503: {
+              description: "Prerequisites or final verification failed",
+              schema: toOpenApiSchema(InstallationErrorResponseSchema)
+            },
             409: {
-              description: "Installation already completed",
+              description:
+                "Installation completed, concurrent attempt, or resume credentials mismatch",
               schema: toOpenApiSchema(InstallationErrorResponseSchema)
             }
           }

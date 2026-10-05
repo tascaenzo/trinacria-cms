@@ -3,7 +3,8 @@ import { fileURLToPath } from "node:url";
 import { createCorePackPlugin } from "@trinacria-cms/core-pack";
 import {
   CorePackOfflineInstallerModule,
-  createCorePackMongoGlobalProviders
+  createCorePackMongoGlobalProviders,
+  inspectInstallationPrerequisites
 } from "@trinacria-cms/core-pack/runtime";
 import { createEditorialPackPlugin } from "@trinacria-cms/editorial-pack";
 import { createEmailPackPlugin } from "@trinacria-cms/email-pack";
@@ -63,7 +64,11 @@ export async function createPlaygroundCmsApp(): Promise<PlaygroundCmsApp> {
   const port = Number(process.env.HTTP_PORT ?? process.env.PORT ?? "3000");
   const smokeMode = process.env.PLAYGROUND_EVENT_SMOKE === "1";
   const smokeStandalone = process.env.PLAYGROUND_EVENT_SMOKE_STANDALONE === "1";
-  const installationMode = !isCmsInstalled();
+  const prerequisites = smokeStandalone
+    ? undefined
+    : await inspectInstallationPrerequisites(mongoUri);
+  const installationMode = !prerequisites?.installed;
+  const installerOnly = prerequisites?.checks.some((check) => check.status !== "pass") ?? false;
   const clusterEnabled = readPlaygroundClusterEnabled(process.env.PLAYGROUND_CLUSTER_ENABLED);
 
   const plugins = createPlaygroundPlugins(smokeStandalone);
@@ -96,8 +101,12 @@ export async function createPlaygroundCmsApp(): Promise<PlaygroundCmsApp> {
     ...(clusterEnabled && !smokeStandalone && process.env.E2E_READINESS_FIXTURE !== "degraded"
       ? { cluster: { artifacts } }
       : {}),
+    installerOnly,
+    installation: smokeStandalone
+      ? undefined
+      : { inspect: async () => inspectInstallationPrerequisites(mongoUri) },
     offlineInstallerModules: [CorePackOfflineInstallerModule],
-    migrations: { allowStartupWithoutDb: installationMode },
+    migrations: { allowStartupWithoutDb: installerOnly },
     http: {
       host,
       port,
@@ -117,11 +126,15 @@ export async function createPlaygroundCmsApp(): Promise<PlaygroundCmsApp> {
       enabled: security.docsEnabled
     },
     modules: [createPlaygroundObservabilityModule({ config: observability, logger, metrics })],
-    globalProviders: createGlobalProviders({ mongoUri, installationMode, smokeStandalone }),
+    globalProviders: createGlobalProviders({
+      mongoUri,
+      installationMode: installerOnly,
+      smokeStandalone
+    }),
     plugins,
     pluginSources: createPlaygroundPluginSources(smokeStandalone),
-    pluginRuntimeStore: installationMode ? createInMemoryPluginRuntimeStore() : undefined,
-    enablePluginManifestProvisioning: smokeStandalone ? false : !installationMode,
+    pluginRuntimeStore: installerOnly ? createInMemoryPluginRuntimeStore() : undefined,
+    enablePluginManifestProvisioning: !smokeStandalone && !installerOnly,
     autoLoadPlugins: true
   });
 
@@ -205,10 +218,6 @@ function createPlaygroundPluginSources(smokeStandalone: boolean): readonly Plugi
       entrypoint: "@trinacria-cms/example-team-onboarding-plugin"
     }
   ];
-}
-
-function isCmsInstalled(): boolean {
-  return process.env.CMS_INSTALLED?.trim().toLowerCase() === "true";
 }
 
 function createPlaygroundEventSmokePlugins(): readonly KernelPluginDefinition[] {

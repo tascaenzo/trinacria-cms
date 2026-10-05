@@ -819,6 +819,20 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     return this.loadedContributions.snapshot();
   }
 
+  /** Host-only: run owner-bound hooks, propagating failures to the installer. */
+  async initializeInstallation(
+    input: import("../../contracts/installation.js").PluginInstallationInput
+  ): Promise<void> {
+    for (const record of this.list()) {
+      if (record.state !== "loaded")
+        throw new Error("Installation requires all configured plugins to be loaded");
+      const definition = this.registry.getDefinition(record.manifest.id);
+      await this.activity.run([record.manifest.id], async () => {
+        await definition.onInstall?.(this.createContext(definition), input);
+      });
+    }
+  }
+
   private createContext(definition: KernelPluginDefinition): KernelPluginRuntimeContext {
     return {
       services: this.servicesForPlugin(definition.manifest.id),

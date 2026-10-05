@@ -4896,7 +4896,8 @@ export declare class EntriesService {
         publishedAt?: string | undefined;
     })[]>;
     /** Seeds a small, immediately understandable blog only when the workspace is empty. */
-    ensureDefaultBlogContent(): Promise<void>;
+    /** Individually idempotent seeds let an interrupted install finish the missing item. */
+    ensureDemoContent(adminUserId: string): Promise<void>;
     updateEntry(id: string, input: UpdateEntryInput, scope: EntryAccessScope): Promise<EntryRecord | null>;
     transitionEntry(id: string, transition: EditorialTransition, scope: EntryAccessScope): Promise<EntryRecord | null>;
     publishSnapshot(id: string, expectedVersion: number, scope: EntryAccessScope): Promise<EntryRecord | null>;

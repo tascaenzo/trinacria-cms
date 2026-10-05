@@ -93,6 +93,9 @@ export const SettingRecordSchema = s.object(
 
     // Installation-state fields.
     installed: s.boolean().optional(),
+    phase: s.enum(["configuration", "content", "verification", "complete"] as const).optional(),
+    dataMode: s.enum(["empty", "demo"] as const).optional(),
+    adminEmail: s.string({ email: true }).optional(),
     installedAt: s.dateTimeString().optional(),
     adminUserId: s.string({ trim: true, minLength: 1 }).optional(),
 

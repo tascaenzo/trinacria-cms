@@ -1069,6 +1069,20 @@
             ]
           },
           {
+            "symbol": "InstallationCheck",
+            "status": "public",
+            "origins": [
+              "packages/kernel/dist/contracts/installation.d.ts"
+            ]
+          },
+          {
+            "symbol": "InstallationHost",
+            "status": "public",
+            "origins": [
+              "packages/kernel/dist/contracts/installation.d.ts"
+            ]
+          },
+          {
             "symbol": "InternalServerErrorException",
             "status": "public",
             "origins": [
@@ -1752,6 +1766,13 @@
             "status": "public",
             "origins": [
               "packages/kernel/dist/contracts/plugin-host-services.d.ts"
+            ]
+          },
+          {
+            "symbol": "PluginInstallationInput",
+            "status": "public",
+            "origins": [
+              "packages/kernel/dist/contracts/installation.d.ts"
             ]
           },
           {
@@ -3053,6 +3074,20 @@
             ]
           },
           {
+            "symbol": "InstallationCheck",
+            "status": "public",
+            "origins": [
+              "packages/kernel/dist/contracts/installation.d.ts"
+            ]
+          },
+          {
+            "symbol": "InstallationHost",
+            "status": "public",
+            "origins": [
+              "packages/kernel/dist/contracts/installation.d.ts"
+            ]
+          },
+          {
             "symbol": "JsonValue",
             "status": "public",
             "origins": [
@@ -3337,6 +3372,13 @@
             "status": "public",
             "origins": [
               "packages/kernel/dist/contracts/plugin-host-services.d.ts"
+            ]
+          },
+          {
+            "symbol": "PluginInstallationInput",
+            "status": "public",
+            "origins": [
+              "packages/kernel/dist/contracts/installation.d.ts"
             ]
           },
           {
@@ -5619,6 +5661,16 @@
           "origin": "packages/kernel/dist/contracts/index.d.ts"
         },
         {
+          "symbol": "InstallationCheck",
+          "status": "internal",
+          "origin": "packages/kernel/dist/contracts/index.d.ts"
+        },
+        {
+          "symbol": "InstallationHost",
+          "status": "internal",
+          "origin": "packages/kernel/dist/contracts/index.d.ts"
+        },
+        {
           "symbol": "JsonValue",
           "status": "internal",
           "origin": "packages/kernel/dist/contracts/index.d.ts"
@@ -5820,6 +5872,11 @@
         },
         {
           "symbol": "PluginHostServices",
+          "status": "internal",
+          "origin": "packages/kernel/dist/contracts/index.d.ts"
+        },
+        {
+          "symbol": "PluginInstallationInput",
           "status": "internal",
           "origin": "packages/kernel/dist/contracts/index.d.ts"
         },
@@ -7179,6 +7236,16 @@
           "origin": "packages/kernel/dist/index.d.ts"
         },
         {
+          "symbol": "InstallationCheck",
+          "status": "internal",
+          "origin": "packages/kernel/dist/index.d.ts"
+        },
+        {
+          "symbol": "InstallationHost",
+          "status": "internal",
+          "origin": "packages/kernel/dist/index.d.ts"
+        },
+        {
           "symbol": "InternalServerErrorException",
           "status": "internal",
           "origin": "packages/kernel/dist/index.d.ts"
@@ -7665,6 +7732,11 @@
         },
         {
           "symbol": "PluginHostServices",
+          "status": "internal",
+          "origin": "packages/kernel/dist/index.d.ts"
+        },
+        {
+          "symbol": "PluginInstallationInput",
           "status": "internal",
           "origin": "packages/kernel/dist/index.d.ts"
         },
@@ -12673,6 +12745,13 @@
             ]
           },
           {
+            "symbol": "inspectInstallationPrerequisites",
+            "status": "experimental",
+            "origins": [
+              "packages/core-pack/dist/modules/installation/services/installation-prerequisites.d.ts"
+            ]
+          },
+          {
             "symbol": "INSTALLATION_STATE_KEY",
             "status": "experimental",
             "origins": [
@@ -12712,6 +12791,13 @@
             "status": "experimental",
             "origins": [
               "packages/core-pack/dist/modules/installation/services/installation.service.d.ts"
+            ]
+          },
+          {
+            "symbol": "InstallationCheckSchema",
+            "status": "experimental",
+            "origins": [
+              "packages/core-pack/dist/modules/installation/dto/installation.response.dto.d.ts"
             ]
           },
           {
@@ -13510,6 +13596,13 @@
             "status": "experimental",
             "origins": [
               "packages/core-pack/dist/modules/settings/config/runtime-settings.d.ts"
+            ]
+          },
+          {
+            "symbol": "readInstallationEnvironmentStatus",
+            "status": "experimental",
+            "origins": [
+              "packages/core-pack/dist/modules/installation/services/installation.service.d.ts"
             ]
           },
           {
@@ -17125,6 +17218,11 @@
           "origin": "packages/core-pack/dist/modules/index.d.ts"
         },
         {
+          "symbol": "inspectInstallationPrerequisites",
+          "status": "internal",
+          "origin": "packages/core-pack/dist/modules/index.d.ts"
+        },
+        {
           "symbol": "INSTALLATION_STATE_KEY",
           "status": "internal",
           "origin": "packages/core-pack/dist/modules/index.d.ts"
@@ -17151,6 +17249,11 @@
         },
         {
           "symbol": "InstallationBootstrapResult",
+          "status": "internal",
+          "origin": "packages/core-pack/dist/modules/index.d.ts"
+        },
+        {
+          "symbol": "InstallationCheckSchema",
           "status": "internal",
           "origin": "packages/core-pack/dist/modules/index.d.ts"
         },
@@ -17601,6 +17704,11 @@
         },
         {
           "symbol": "readCorePackSettingValue",
+          "status": "internal",
+          "origin": "packages/core-pack/dist/modules/index.d.ts"
+        },
+        {
+          "symbol": "readInstallationEnvironmentStatus",
           "status": "internal",
           "origin": "packages/core-pack/dist/modules/index.d.ts"
         },
@@ -18505,6 +18613,11 @@
           "origin": "packages/core-pack/dist/modules/installation/dto/index.d.ts"
         },
         {
+          "symbol": "InstallationCheckSchema",
+          "status": "internal",
+          "origin": "packages/core-pack/dist/modules/installation/dto/index.d.ts"
+        },
+        {
           "symbol": "InstallationErrorResponseSchema",
           "status": "internal",
           "origin": "packages/core-pack/dist/modules/installation/dto/index.d.ts"
@@ -18555,6 +18668,11 @@
           "origin": "packages/core-pack/dist/modules/installation/index.d.ts"
         },
         {
+          "symbol": "inspectInstallationPrerequisites",
+          "status": "internal",
+          "origin": "packages/core-pack/dist/modules/installation/index.d.ts"
+        },
+        {
           "symbol": "INSTALLATION_STATE_KEY",
           "status": "internal",
           "origin": "packages/core-pack/dist/modules/installation/index.d.ts"
@@ -18581,6 +18699,11 @@
         },
         {
           "symbol": "InstallationBootstrapResult",
+          "status": "internal",
+          "origin": "packages/core-pack/dist/modules/installation/index.d.ts"
+        },
+        {
+          "symbol": "InstallationCheckSchema",
           "status": "internal",
           "origin": "packages/core-pack/dist/modules/installation/index.d.ts"
         },
@@ -18691,6 +18814,11 @@
         },
         {
           "symbol": "PasswordMismatchError",
+          "status": "internal",
+          "origin": "packages/core-pack/dist/modules/installation/index.d.ts"
+        },
+        {
+          "symbol": "readInstallationEnvironmentStatus",
           "status": "internal",
           "origin": "packages/core-pack/dist/modules/installation/index.d.ts"
         },
@@ -22440,6 +22568,11 @@
           "origin": "packages/core-pack/dist/runtime.d.ts"
         },
         {
+          "symbol": "inspectInstallationPrerequisites",
+          "status": "internal",
+          "origin": "packages/core-pack/dist/runtime.d.ts"
+        },
+        {
           "symbol": "INSTALLATION_STATE_KEY",
           "status": "internal",
           "origin": "packages/core-pack/dist/runtime.d.ts"
@@ -22466,6 +22599,11 @@
         },
         {
           "symbol": "InstallationBootstrapResult",
+          "status": "internal",
+          "origin": "packages/core-pack/dist/runtime.d.ts"
+        },
+        {
+          "symbol": "InstallationCheckSchema",
           "status": "internal",
           "origin": "packages/core-pack/dist/runtime.d.ts"
         },
@@ -23036,6 +23174,11 @@
         },
         {
           "symbol": "readCorePackSettingValue",
+          "status": "internal",
+          "origin": "packages/core-pack/dist/runtime.d.ts"
+        },
+        {
+          "symbol": "readInstallationEnvironmentStatus",
           "status": "internal",
           "origin": "packages/core-pack/dist/runtime.d.ts"
         },

@@ -73,6 +73,8 @@ test.describe.serial("production readiness baseline", () => {
       page.getByRole("button", { name: "Initialise CMS" }).click()
     ]);
     expect(bootstrapResponse.ok()).toBe(true);
+    await expect(page.getByRole("button", { name: "Enter backoffice" })).toBeVisible();
+    await page.getByRole("button", { name: "Enter backoffice" }).click();
 
     await expect(page.getByText(`${E2E_ADMIN.firstName} ${E2E_ADMIN.lastName}`)).toBeVisible();
     await expect(page.getByRole("heading", { name: "Panoramica", exact: true })).toBeVisible();

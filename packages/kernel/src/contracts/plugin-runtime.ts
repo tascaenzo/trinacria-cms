@@ -109,6 +109,11 @@ export interface PluginRuntimeLifecycleHooks {
  * They are distinct from Trinacria plugin hooks and scoped to CMS plugins.
  */
 export interface KernelPluginHooks {
+  /** First-run content provisioning; called again after interrupted attempts. */
+  onInstall?(
+    context: KernelPluginRuntimeContext,
+    input: import("./installation.js").PluginInstallationInput
+  ): Promise<void> | void;
   onLoad?(context: KernelPluginRuntimeContext): Promise<void> | void;
   onInit?(context: KernelPluginRuntimeContext): Promise<void> | void;
   onUnload?(context: KernelPluginRuntimeContext): Promise<void> | void;

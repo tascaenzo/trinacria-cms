@@ -1683,7 +1683,7 @@ export * from "./installation.response.dto.js";
 import { type Infer } from "@trinacria-cms/kernel";
 /**
  * DTO schema for first-install bootstrap payload.
- * MongoDB is expected to be pre-configured via .env at startup.
+ * Database and runtime prerequisites must pass before bootstrap.
  */
 export declare const InstallBootstrapInputSchema: import("@trinacria/schema/dist/core").InternalSchema<{
     email: string;
@@ -1694,6 +1694,7 @@ export declare const InstallBootstrapInputSchema: import("@trinacria/schema/dist
     confirmPassword: string;
 } & {
     locale?: string | undefined;
+    dataMode?: "empty" | "demo" | undefined;
     siteTagline?: string | undefined;
     timezone?: string | undefined;
 }>;
@@ -1716,12 +1717,26 @@ export declare const InstallationApiErrorSchema: import("@trinacria/schema/dist/
 /**
  * Public installation status model returned by `GET /v1/install/status`.
  */
+export declare const InstallationCheckSchema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{
+    id: "settings" | "plugins" | "database" | "transactions" | "write-access" | "runtime-keys" | "services" | "administrator";
+    status: "pass" | "fail" | "blocked";
+    message: string;
+} & {}>;
 export declare const InstallationStatusSchema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{
     installed: boolean;
+    phase: "configuration" | "content" | "verification" | "complete" | "prerequisites" | "ready";
+    canInstall: boolean;
+    restartRequired: boolean;
+    checks: ({
+        id: "settings" | "plugins" | "database" | "transactions" | "write-access" | "runtime-keys" | "services" | "administrator";
+        status: "pass" | "fail" | "blocked";
+        message: string;
+    } & {})[];
     envFilePresent: boolean;
     dbConfigured: boolean;
     envFilePath: string;
 } & {
+    dataMode?: "empty" | "demo" | undefined;
     installedAt?: string | undefined;
     adminUserId?: string | undefined;
 }>;
@@ -1731,10 +1746,19 @@ export declare const InstallationStatusSchema: import("@trinacria/schema/dist/co
 export declare const InstallationStatusResponseSchema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{
     data: {
         installed: boolean;
+        phase: "configuration" | "content" | "verification" | "complete" | "prerequisites" | "ready";
+        canInstall: boolean;
+        restartRequired: boolean;
+        checks: ({
+            id: "settings" | "plugins" | "database" | "transactions" | "write-access" | "runtime-keys" | "services" | "administrator";
+            status: "pass" | "fail" | "blocked";
+            message: string;
+        } & {})[];
         envFilePresent: boolean;
         dbConfigured: boolean;
         envFilePath: string;
     } & {
+        dataMode?: "empty" | "demo" | undefined;
         installedAt?: string | undefined;
         adminUserId?: string | undefined;
     };
@@ -1750,10 +1774,19 @@ export declare const InstallationBootstrapResponseSchema: import("@trinacria/sch
     data: {
         status: {
             installed: boolean;
+            phase: "configuration" | "content" | "verification" | "complete" | "prerequisites" | "ready";
+            canInstall: boolean;
+            restartRequired: boolean;
+            checks: ({
+                id: "settings" | "plugins" | "database" | "transactions" | "write-access" | "runtime-keys" | "services" | "administrator";
+                status: "pass" | "fail" | "blocked";
+                message: string;
+            } & {})[];
             envFilePresent: boolean;
             dbConfigured: boolean;
             envFilePath: string;
         } & {
+            dataMode?: "empty" | "demo" | undefined;
             installedAt?: string | undefined;
             adminUserId?: string | undefined;
         };
@@ -1794,6 +1827,7 @@ export * from "./installation.tokens.js";
 export * from "./repositories/installation-state.repository.js";
 export * from "./repositories/local-credentials.repository.js";
 export * from "./services/installation.service.js";
+export * from "./services/installation-prerequisites.js";
 export * from "./services/password-hashing.service.js";
 
 // dist/modules/installation/installation.controller.d.ts
@@ -2054,6 +2088,9 @@ export declare const InstallationStateRecordSchema: import("@trinacria/schema/di
     key: "core-pack";
     installed: boolean;
 } & {
+    phase?: "configuration" | "content" | "verification" | "complete" | undefined;
+    dataMode?: "empty" | "demo" | undefined;
+    adminEmail?: string | undefined;
     installedAt?: string | undefined;
     adminUserId?: string | undefined;
 }>;
@@ -2102,11 +2139,11 @@ export declare const CORE_PACK_INSTALLATION_CONTROLLER_TOKEN: import("@trinacria
 export declare const CORE_PACK_INSTALLATION_ENTITY_REGISTRATION_TOKEN: import("@trinacria/core").Token<boolean>;
 
 // dist/modules/installation/offline-installer.module.d.ts
-import { type DbAdapter, HttpController } from "@trinacria-cms/kernel";
-/** Only environmental status is mounted while Mongo is unavailable. No business plugin is executed. */
+import { HttpController, type InstallationHost } from "@trinacria-cms/kernel";
+/** Environment-only status when host prerequisites fail. No business plugin is executed. */
 export declare class OfflineInstallerController extends HttpController {
-    private readonly db;
-    constructor(db: DbAdapter);
+    private readonly host;
+    constructor(host: InstallationHost);
     routes(): import("@trinacria/http").RouteDefinition[];
 }
 export declare const CorePackOfflineInstallerModule: Readonly<{
@@ -2125,6 +2162,13 @@ export declare class InstallationStateRepository {
     private scope?;
     constructor(db: DbAdapter, cache?: CacheService | undefined);
     get(): Promise<InstallationStateRecord | null>;
+    getAdapter(): DbAdapter;
+    checkpoint(input: {
+        phase: "configuration" | "content" | "verification" | "complete";
+        dataMode?: "empty" | "demo";
+        adminEmail?: string;
+        adminUserId?: string;
+    }): Promise<InstallationStateRecord>;
     private getFromDb;
     ensureCreated(): Promise<InstallationStateRecord>;
     markInstalled(adminUserId: string): Promise<InstallationStateRecord>;
@@ -2152,19 +2196,31 @@ export declare class LocalCredentialsRepository {
     private repository;
 }
 
+// dist/modules/installation/services/installation-prerequisites.d.ts
+import type { InstallationCheck } from "@trinacria-cms/kernel";
+export declare function inspectInstallationPrerequisites(uri: string): Promise<{
+    installed: boolean;
+    checks: InstallationCheck[];
+}>;
+
 // dist/modules/installation/services/installation.service.d.ts
-import type { PluginManifestProvisioner } from "@trinacria-cms/kernel";
-import type { MongoDurableEventStore } from "@trinacria-cms/kernel/runtime";
+import type { InstallationCheck, InstallationHost, PluginManifestProvisioner } from "@trinacria-cms/kernel";
+import { type MongoDurableEventStore } from "@trinacria-cms/kernel/runtime";
 import type { UserAccessService } from "../../security/user-access/user-access.service.js";
 import type { SettingsService } from "../../settings/services/settings.service.js";
 import { UsersRepository } from "../../users/repositories/users.repository.js";
 import type { UserRecord } from "../../users/users.schemas.js";
 import type { InstallBootstrapInput } from "../dto/installation.input.dto.js";
-import type { InstallationStateRepository } from "../repositories/installation-state.repository.js";
-import type { LocalCredentialsRepository } from "../repositories/local-credentials.repository.js";
+import { InstallationStateRepository } from "../repositories/installation-state.repository.js";
+import { LocalCredentialsRepository } from "../repositories/local-credentials.repository.js";
 import type { PasswordHashingService } from "./password-hashing.service.js";
 export interface InstallationStatus {
     installed: boolean;
+    phase: "prerequisites" | "ready" | "configuration" | "content" | "verification" | "complete";
+    canInstall: boolean;
+    restartRequired: boolean;
+    dataMode?: "empty" | "demo";
+    checks: readonly InstallationCheck[];
     installedAt?: string;
     adminUserId?: string;
     envFilePresent: boolean;
@@ -2195,7 +2251,7 @@ export declare class PasswordMismatchError extends Error {
  * - save site settings
  * - persist installation state
  *
- * MongoDB is expected to be pre-configured via .env at application startup.
+ * Host prerequisites determine readiness; interrupted attempts remain retryable.
  */
 export declare class InstallationService {
     private readonly installationState;
@@ -2206,14 +2262,22 @@ export declare class InstallationService {
     private readonly passwordHashing;
     private readonly settings;
     private readonly durable?;
-    constructor(installationState: InstallationStateRepository, localCredentials: LocalCredentialsRepository, users: UsersRepository, userAccess: UserAccessService, manifestProvisioning: PluginManifestProvisioner, passwordHashing: PasswordHashingService, settings: SettingsService, durable?: MongoDurableEventStore | undefined);
+    private readonly host?;
+    constructor(installationState: InstallationStateRepository, localCredentials: LocalCredentialsRepository, users: UsersRepository, userAccess: UserAccessService, manifestProvisioning: PluginManifestProvisioner, passwordHashing: PasswordHashingService, settings: SettingsService, durable?: MongoDurableEventStore | undefined, host?: InstallationHost | undefined);
     getStatus(): Promise<InstallationStatus>;
     bootstrap(input: InstallBootstrapInput): Promise<InstallationBootstrapResult>;
+    private transaction;
+    private siteValues;
     private provisionSiteSettings;
-    private upsertAdminUser;
+    private verify;
     private writeAdminUser;
     private toStatus;
 }
+export declare function readInstallationEnvironmentStatus(): {
+    envFilePresent: boolean;
+    dbConfigured: boolean;
+    envFilePath: string;
+};
 
 // dist/modules/installation/services/password-hashing.service.d.ts
 export interface PasswordHashResult {
@@ -3619,13 +3683,14 @@ export declare class UserAccessController extends HttpController {
 }
 
 // dist/modules/security/user-access/user-access.service.d.ts
-import type { PermissionsRepository } from "../../permissions/repositories/permissions.repository.js";
-import type { RoleGrantsRepository } from "../../roles/grants/role-grants.repository.js";
-import type { RolesRepository } from "../../roles/repositories/roles.repository.js";
-import type { UsersRepository } from "../../users/repositories/users.repository.js";
+import type { DbAdapter } from "@trinacria-cms/kernel";
+import { PermissionsRepository } from "../../permissions/repositories/permissions.repository.js";
+import { RoleGrantsRepository } from "../../roles/grants/role-grants.repository.js";
+import { RolesRepository } from "../../roles/repositories/roles.repository.js";
+import { UsersRepository } from "../../users/repositories/users.repository.js";
 import { type AuthorizationRule } from "../policies/authz-rules.js";
-import type { RolePolicyRulesRepository } from "../role-policy-rules/role-policy-rules.repository.js";
-import type { UserRolesRepository } from "./user-roles.repository.js";
+import { RolePolicyRulesRepository } from "../role-policy-rules/role-policy-rules.repository.js";
+import { UserRolesRepository } from "./user-roles.repository.js";
 /**
  * Coordinates user-role assignments and effective permission resolution.
  */
@@ -3637,6 +3702,8 @@ export declare class UserAccessService {
     private readonly permissions;
     private readonly userRoles;
     constructor(users: UsersRepository, roles: RolesRepository, roleGrants: RoleGrantsRepository, rolePolicyRules: RolePolicyRulesRepository, permissions: PermissionsRepository, userRoles: UserRolesRepository);
+    /** Host-only transaction rebinding. */
+    forDb(db: DbAdapter): UserAccessService;
     assignRoleToUser(userId: string, roleCode: string): Promise<{
         id: string;
         createdAt: string;
@@ -4316,6 +4383,9 @@ export declare const SettingRecordSchema: import("@trinacria/schema/dist/core/sc
     value?: JsonValue | undefined;
     defaultValue?: JsonValue | undefined;
     installed?: boolean | undefined;
+    phase?: "configuration" | "content" | "verification" | "complete" | undefined;
+    dataMode?: "empty" | "demo" | undefined;
+    adminEmail?: string | undefined;
     installedAt?: string | undefined;
     adminUserId?: string | undefined;
     algorithm?: "aes-256-gcm" | undefined;
@@ -4415,6 +4485,9 @@ export declare const SETTINGS_ENTITY: {
         value?: JsonValue | undefined;
         defaultValue?: JsonValue | undefined;
         installed?: boolean | undefined;
+        phase?: "configuration" | "content" | "verification" | "complete" | undefined;
+        dataMode?: "empty" | "demo" | undefined;
+        adminEmail?: string | undefined;
         installedAt?: string | undefined;
         adminUserId?: string | undefined;
         algorithm?: "aes-256-gcm" | undefined;

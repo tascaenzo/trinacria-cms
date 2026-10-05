@@ -148,6 +148,11 @@ export interface CmsSwaggerUiConfig {
  */
 export interface CmsStarterOptions {
     coreVersion: string;
+    /** Environment-only startup selected by real host prerequisite checks. */
+    installerOnly?: boolean;
+    installation?: {
+        inspect: import("./installation.js").InstallationHost["inspect"];
+    };
     durableEvents?: {
         enabled?: boolean;
         concurrency?: number;
@@ -162,7 +167,7 @@ export interface CmsStarterOptions {
         leaseMs?: number;
         operationTimeoutMs?: number;
     };
-    /** Explicit environment-only modules mounted when installation allows an unavailable database. */
+    /** Explicit environment-only modules mounted when installerOnly or database setup requires them. */
     offlineInstallerModules?: readonly ModuleDefinition[];
     migrations?: {
         instanceId?: string;
@@ -308,6 +313,7 @@ export * from "./authz-service.js";
 export * from "./cache-adapter.js";
 export * from "./cms-starter.js";
 export * from "./db-adapter.js";
+export * from "./installation.js";
 export * from "./kernel-admin-route-guard.js";
 export * from "./namespace-context.js";
 export type * from "./operations.js";
@@ -322,6 +328,26 @@ export * from "./plugin-nonce-store.js";
 export * from "./plugin-runtime.js";
 export * from "./plugin-runtime-store.js";
 export * from "./secure-event-payloads.js";
+
+// dist/contracts/installation.d.ts
+/** Host-only installation coordination. Plugin hooks must be idempotent. */
+export interface InstallationCheck {
+    id: "database" | "transactions" | "write-access" | "runtime-keys" | "plugins" | "services" | "administrator" | "settings";
+    status: "pass" | "fail" | "blocked";
+    message: string;
+}
+export interface PluginInstallationInput {
+    dataMode: "empty" | "demo";
+    adminUserId: string;
+}
+export interface InstallationHost {
+    inspect(): Promise<{
+        installed?: boolean;
+        checks: readonly InstallationCheck[];
+    }>;
+    initialize(input: PluginInstallationInput): Promise<void>;
+    verify(): Promise<readonly InstallationCheck[]>;
+}
 
 // dist/contracts/kernel-admin-route-guard.d.ts
 import type { HttpMiddleware } from "@trinacria/http";
@@ -1024,6 +1050,8 @@ export interface PluginRuntimeLifecycleHooks {
  * They are distinct from Trinacria plugin hooks and scoped to CMS plugins.
  */
 export interface KernelPluginHooks {
+    /** First-run content provisioning; called again after interrupted attempts. */
+    onInstall?(context: KernelPluginRuntimeContext, input: import("./installation.js").PluginInstallationInput): Promise<void> | void;
     onLoad?(context: KernelPluginRuntimeContext): Promise<void> | void;
     onInit?(context: KernelPluginRuntimeContext): Promise<void> | void;
     onUnload?(context: KernelPluginRuntimeContext): Promise<void> | void;
@@ -1861,6 +1889,11 @@ export declare const PluginContributionCatalogSchema: import("@trinacria/schema/
             declaration: {} & {};
         } & {})[];
     } & {};
+    settings: ({
+        pluginId: string;
+        key: string;
+        declaration: {} & {};
+    } & {})[];
     events: {
         emits: ({
             pluginId: string;
@@ -1873,11 +1906,6 @@ export declare const PluginContributionCatalogSchema: import("@trinacria/schema/
             declaration: {} & {};
         } & {})[];
     } & {};
-    settings: ({
-        pluginId: string;
-        key: string;
-        declaration: {} & {};
-    } & {})[];
     entities: ({
         pluginId: string;
         key: string;
@@ -1913,6 +1941,11 @@ export declare const ListPluginContributionsResponseSchema: import("@trinacria/s
                 declaration: {} & {};
             } & {})[];
         } & {};
+        settings: ({
+            pluginId: string;
+            key: string;
+            declaration: {} & {};
+        } & {})[];
         events: {
             emits: ({
                 pluginId: string;
@@ -1925,11 +1958,6 @@ export declare const ListPluginContributionsResponseSchema: import("@trinacria/s
                 declaration: {} & {};
             } & {})[];
         } & {};
-        settings: ({
-            pluginId: string;
-            key: string;
-            declaration: {} & {};
-        } & {})[];
         entities: ({
             pluginId: string;
             key: string;
@@ -3407,6 +3435,8 @@ export declare class InMemoryPluginRuntime implements PluginRuntime {
     sendSecureEmailJob(payload: unknown, messageId: string): Promise<void>;
     describeDependencies(): PluginDependencyGraphSnapshot;
     describeContributions(): PluginContributionCatalogSnapshot;
+    /** Host-only: run owner-bound hooks, propagating failures to the installer. */
+    initializeInstallation(input: import("../../contracts/installation.js").PluginInstallationInput): Promise<void>;
     private createContext;
     private servicesForPlugin;
     private markDisabled;
@@ -3854,6 +3884,7 @@ import type { AuditSink } from "../contracts/audit.js";
 import type { AuthzService } from "../contracts/authz-service.js";
 import type { CacheAdapter } from "../contracts/cache-adapter.js";
 import type { DbAdapter } from "../contracts/db-adapter.js";
+import type { InstallationHost } from "../contracts/installation.js";
 import type { KernelAdminRouteGuard } from "../contracts/kernel-admin-route-guard.js";
 import type { OperationAuthorizer } from "../contracts/operations.js";
 import type { PluginEventSubscriptionAuthorizer } from "../contracts/plugin-access-policy.js";
@@ -3875,6 +3906,7 @@ import type { KernelSystemService } from "../runtime/system/kernel-system-servic
  * Core DI tokens exposed as stable integration points for platform services.
  */
 export declare const CORE_TOKENS: {
+    readonly INSTALLATION_HOST: import("@trinacria/core").Token<InstallationHost>;
     readonly PUBLIC_REQUEST_LIMITER: import("@trinacria/core").Token<{
         consume(clientId: string): Promise<void>;
     }>;

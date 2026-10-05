@@ -76,6 +76,57 @@ export function createCmsStarterKernelModule({
   const activity = new PluginActivityRegistry();
   app.registerGlobalProvider(
     factoryProvider(
+      CORE_TOKENS.INSTALLATION_HOST,
+      () => ({
+        async inspect() {
+          if (options.installation) return options.installation.inspect();
+          const healthy =
+            app.hasToken(CORE_TOKENS.DB_ADAPTER) &&
+            (await (await app.resolve(CORE_TOKENS.DB_ADAPTER)).healthCheck()).ok;
+          return {
+            checks: [
+              {
+                id: "database" as const,
+                status: healthy ? ("pass" as const) : ("fail" as const),
+                message: healthy ? "database-ready" : "configure-mongo"
+              }
+            ]
+          };
+        },
+        async initialize(input) {
+          const runtime = await app.resolve(CORE_TOKENS.PLUGIN_RUNTIME);
+          if (!(runtime instanceof InMemoryPluginRuntime))
+            throw new Error("Installation hooks require the host runtime");
+          await runtime.initializeInstallation(input);
+        },
+        async verify() {
+          const runtime = await app.resolve(CORE_TOKENS.PLUGIN_RUNTIME);
+          const loaded =
+            runtime.list().length > 0 &&
+            runtime.list().every((record) => record.state === "loaded");
+          const healthy =
+            options.enableHealthModule !== false &&
+            (await (await app.resolve(CORE_TOKENS.KERNEL_HEALTH_SERVICE)).snapshot()).status ===
+              "ok";
+          return [
+            {
+              id: "plugins" as const,
+              status: loaded ? ("pass" as const) : ("fail" as const),
+              message: loaded ? "plugins-ready" : "plugins-not-ready"
+            },
+            {
+              id: "services" as const,
+              status: healthy ? ("pass" as const) : ("fail" as const),
+              message: healthy ? "services-ready" : "services-not-ready"
+            }
+          ];
+        }
+      }),
+      []
+    )
+  );
+  app.registerGlobalProvider(
+    factoryProvider(
       CORE_TOKENS.PUBLIC_REQUEST_LIMITER,
       () => ({
         async consume(clientId: string) {
@@ -264,6 +315,8 @@ function createHealthProviders(
                   ...(options.cluster ? { reason: "cluster-not-started" } : {})
                 },
           dbHealthCheck: async () => {
+            if (options.installerOnly)
+              return { ok: false, reason: "installation-prerequisites" } as const;
             if (!app.hasToken(CORE_TOKENS.DB_ADAPTER)) {
               return { ok: false, reason: "not_configured" } as const;
             }

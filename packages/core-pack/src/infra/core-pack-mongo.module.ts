@@ -35,10 +35,7 @@ class CorePackMongoConnection {
       if (!this.config.allowStartupWithoutDb) {
         throw error;
       }
-      console.warn(
-        "[core-pack] MongoDB unavailable at startup; continuing in installation mode:",
-        error instanceof Error ? error.message : error
-      );
+      console.warn("[core-pack] MongoDB unavailable at startup; continuing in installation mode");
     }
   }
 

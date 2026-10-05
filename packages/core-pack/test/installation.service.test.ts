@@ -5,29 +5,11 @@ import type {
   DbQuery,
   DbRepository,
   NamespaceContext,
-  PluginManifest
+  PluginManifest,
+  InstallationHost,
 } from "@trinacria-cms/kernel";
-import { LocalCredentialsRepository } from "../src/modules/installation/repositories/local-credentials.repository.js";
-import {
-  InstallationAlreadyCompletedError,
-  InstallationService
-} from "../src/modules/installation/services/installation.service.js";
-import { InstallationStateRepository } from "../src/modules/installation/repositories/installation-state.repository.js";
-import { PasswordHashingService } from "../src/modules/installation/services/password-hashing.service.js";
-import { PermissionsRepository } from "../src/modules/permissions/repositories/permissions.repository.js";
-import { RoleGrantsRepository } from "../src/modules/roles/grants/role-grants.repository.js";
-import { RolesRepository } from "../src/modules/roles/repositories/roles.repository.js";
-import { CorePackManifestProvisioningService } from "../src/modules/security/services/security-provisioning.service.js";
-import { RolePolicyRulesRepository } from "../src/modules/security/role-policy-rules/role-policy-rules.repository.js";
-import { UserAccessService } from "../src/modules/security/user-access/user-access.service.js";
-import { UserRolesRepository } from "../src/modules/security/user-access/user-roles.repository.js";
-import { SettingsDefinitionsRepository } from "../src/modules/settings/definitions/settings-definitions.repository.js";
-import { SettingsValuesRepository } from "../src/modules/settings/values/settings-values.repository.js";
-import { SettingsSecretsRepository } from "../src/modules/settings/secrets/settings-secrets.repository.js";
-import { SettingsSecretsCryptoService } from "../src/modules/settings/secrets/settings-secrets-crypto.service.js";
-import { SettingsService } from "../src/modules/settings/services/settings.service.js";
-import { UsersRepository } from "../src/modules/users/repositories/users.repository.js";
-
+import { InstallationAlreadyCompletedError } from "../src/modules/installation/services/installation.service.js";
+import { createInstallationRuntime as createDomainRuntime } from "./_shared/installation-runtime.js";
 test("InstallationService reports not-installed status by default", async () => {
   const runtime = createInstallationRuntime();
   const status = await runtime.service.getStatus();
@@ -49,7 +31,7 @@ test("InstallationService bootstraps admin user and local credentials", async ()
     siteName: "My Site",
     siteTagline: "Editorial operations",
     locale: "it-IT",
-    timezone: "Europe/Rome"
+    timezone: "Europe/Rome",
   });
 
   assert.equal(result.status.installed, true);
@@ -71,7 +53,7 @@ test("InstallationService bootstraps admin user and local credentials", async ()
   const validPassword = await runtime.passwordHashing.verifyPassword("StrongerPass123!", {
     algorithm: credentials?.algorithm ?? "scrypt-v1",
     passwordHash: credentials?.passwordHash ?? "",
-    passwordSalt: credentials?.passwordSalt ?? ""
+    passwordSalt: credentials?.passwordSalt ?? "",
   });
   assert.equal(validPassword, true);
 
@@ -83,19 +65,19 @@ test("InstallationService bootstraps admin user and local credentials", async ()
 
   assert.equal(
     (await runtime.settings.getResolvedValueByKey("core-pack:site:name"))?.value,
-    "My Site"
+    "My Site",
   );
   assert.equal(
     (await runtime.settings.getResolvedValueByKey("core-pack:branding:tagline"))?.value,
-    "Editorial operations"
+    "Editorial operations",
   );
   assert.equal(
     (await runtime.settings.getResolvedValueByKey("core-pack:cms:locale"))?.value,
-    "it-IT"
+    "it-IT",
   );
   assert.equal(
     (await runtime.settings.getResolvedValueByKey("core-pack:cms:timezone"))?.value,
-    "Europe/Rome"
+    "Europe/Rome",
   );
 });
 
@@ -110,16 +92,16 @@ test("InstallationService provisions security for plugins already loaded in setu
           key: "extension-pack:settings:read",
           resource: "settings",
           action: "read",
-          displayName: "Read extension settings"
-        }
+          displayName: "Read extension settings",
+        },
       ],
       grants: [
         {
           roleCode: "admin",
-          permissionKeys: ["extension-pack:settings:read"]
-        }
-      ]
-    }
+          permissionKeys: ["extension-pack:settings:read"],
+        },
+      ],
+    },
   };
   const runtime = createInstallationRuntime(extensionManifest);
 
@@ -129,7 +111,7 @@ test("InstallationService provisions security for plugins already loaded in setu
     lastName: "Admin",
     confirmPassword: "StrongerPass123!",
     password: "StrongerPass123!",
-    siteName: "My Site"
+    siteName: "My Site",
   });
 
   const permissions = await runtime.userAccess.resolveUserPermissions(result.adminUser.id);
@@ -145,7 +127,7 @@ test("InstallationService blocks bootstrap when installation is already complete
     lastName: "Admin",
     confirmPassword: "StrongerPass123!",
     password: "StrongerPass123!",
-    siteName: "My Site"
+    siteName: "My Site",
   });
 
   await assert.rejects(
@@ -156,11 +138,11 @@ test("InstallationService blocks bootstrap when installation is already complete
         lastName: "Admin",
         confirmPassword: "AnotherStrongPass123!",
         password: "AnotherStrongPass123!",
-        siteName: "My Site"
+        siteName: "My Site",
       }),
     (error) =>
       error instanceof InstallationAlreadyCompletedError &&
-      error.code === "installation_already_completed"
+      error.code === "installation_already_completed",
   );
 });
 
@@ -175,73 +157,83 @@ test("InstallationService rejects password mismatch", async () => {
         lastName: "Admin",
         password: "StrongerPass123!",
         confirmPassword: "DifferentPass123!",
-        siteName: "My Site"
+        siteName: "My Site",
       }),
-    { code: "password_mismatch" }
+    { code: "password_mismatch" },
   );
 });
 
-interface InstallationRuntime {
-  service: InstallationService;
-  installationState: InstallationStateRepository;
-  localCredentials: LocalCredentialsRepository;
-  settings: SettingsService;
-  roles: RolesRepository;
-  userAccess: UserAccessService;
-  passwordHashing: PasswordHashingService;
-}
-
-function createInstallationRuntime(loadedManifest?: PluginManifest): InstallationRuntime {
-  const db = createFakeDbAdapter();
-  const users = new UsersRepository(db);
-  const roles = new RolesRepository(db);
-  const roleGrants = new RoleGrantsRepository(db);
-  const rolePolicyRules = new RolePolicyRulesRepository(db);
-  const permissions = new PermissionsRepository(db);
-  const userRoles = new UserRolesRepository(db);
-  const settings = new SettingsService(
-    new SettingsDefinitionsRepository(db),
-    new SettingsValuesRepository(db),
-    new SettingsSecretsRepository(db),
-    new SettingsSecretsCryptoService()
+const retryInput = {
+  email: "retry@example.test",
+  firstName: "Admin",
+  lastName: "Retry",
+  password: "RetryPassword123!",
+  confirmPassword: "RetryPassword123!",
+  siteName: "Retry site",
+  dataMode: "demo" as const,
+};
+test("installation preserves the checkpoint, rejects takeover and resumes with one admin", async () => {
+  let fail = true,
+    initialized = 0;
+  const runtime = createInstallationRuntime(undefined, {
+    inspect: async () => ({ checks: [] }),
+    verify: async () => [],
+    async initialize() {
+      initialized++;
+      if (fail) throw new Error("Demo interrupted");
+    },
+  });
+  await assert.rejects(runtime.service.bootstrap(retryInput), /Demo interrupted/);
+  const interrupted = await runtime.installationState.get();
+  assert.equal(interrupted?.phase, "content");
+  assert.equal(interrupted?.installed, false);
+  await assert.rejects(runtime.service.bootstrap({ ...retryInput, email: "other@example.test" }), {
+    code: "installation_resume_mismatch",
+  });
+  await assert.rejects(
+    runtime.service.bootstrap({
+      ...retryInput,
+      password: "DifferentPassword123!",
+      confirmPassword: "DifferentPassword123!",
+    }),
+    { code: "installation_resume_mismatch" },
   );
-  const userAccess = new UserAccessService(
-    users,
-    roles,
-    roleGrants,
-    rolePolicyRules,
-    permissions,
-    userRoles
-  );
-  const manifestProvisioning = new CorePackManifestProvisioningService(
-    roles,
-    roleGrants,
-    permissions,
-    userRoles,
-    settings
-  );
-  const installationState = new InstallationStateRepository(db);
-  const localCredentials = new LocalCredentialsRepository(db);
-  const passwordHashing = new PasswordHashingService();
-  if (loadedManifest) manifestProvisioning.defer(loadedManifest);
-
-  return {
-    service: new InstallationService(
-      installationState,
-      localCredentials,
-      users,
-      userAccess,
-      manifestProvisioning,
-      passwordHashing,
-      settings
-    ),
-    installationState,
-    localCredentials,
-    settings,
-    roles,
-    userAccess,
-    passwordHashing
+  fail = false;
+  const completed = await runtime.service.bootstrap(retryInput);
+  assert.equal(completed.adminUser.id, interrupted?.adminUserId);
+  assert.equal(completed.status.phase, "complete");
+  assert.equal(initialized, 2);
+});
+test("required settings failures never produce a completed installation", async () => {
+  const runtime = createInstallationRuntime();
+  runtime.settings.upsertValue = async () => {
+    throw new Error("Settings unavailable");
   };
+  await assert.rejects(runtime.service.bootstrap(retryInput), /Settings unavailable/);
+  assert.equal((await runtime.installationState.get())?.installed, false);
+});
+test("failed prerequisites block bootstrap and failed final checks preserve retry state", async () => {
+  let blocked = true;
+  const runtime = createInstallationRuntime(undefined, {
+    inspect: async () => ({
+      checks: [
+        { id: "transactions", status: blocked ? "fail" : "pass", message: "transactions-ready" },
+      ],
+    }),
+    initialize: async () => {},
+    verify: async () => [{ id: "services", status: "fail", message: "services-not-ready" }],
+  });
+  assert.equal((await runtime.service.getStatus()).canInstall, false);
+  await assert.rejects(runtime.service.bootstrap(retryInput), { code: "platform_maintenance" });
+  assert.equal(await runtime.installationState.get(), null);
+  blocked = false;
+  await assert.rejects(runtime.service.bootstrap(retryInput), { code: "platform_maintenance" });
+  assert.equal((await runtime.installationState.get())?.phase, "verification");
+  assert.equal((await runtime.installationState.get())?.installed, false);
+});
+
+function createInstallationRuntime(manifest?: PluginManifest, host?: InstallationHost) {
+  return createDomainRuntime(createFakeDbAdapter(), manifest, host);
 }
 
 function createFakeDbAdapter(): DbAdapter {
@@ -296,7 +288,7 @@ function createFakeDbAdapter(): DbAdapter {
       if (index < 0) return false;
       bucket.splice(index, 1);
       return true;
-    }
+    },
   });
 
   return {
@@ -306,26 +298,32 @@ function createFakeDbAdapter(): DbAdapter {
     async beginTransaction() {
       return {
         async commit() {},
-        async rollback() {}
+        async rollback() {},
       };
     },
     async healthCheck() {
       return { ok: true };
-    }
+    },
   };
 }
 
 function matchesFilter(
   item: Record<string, unknown>,
-  filter: Record<string, unknown> | undefined
+  filter: Record<string, unknown> | undefined,
 ): boolean {
   if (!filter) return true;
-  return Object.entries(filter).every(([key, value]) => item[key] === value);
+  return Object.entries(filter).every(([key, value]) => {
+    if (value && typeof value === "object" && "$lte" in value)
+      return (item[key] as Date) <= (value as { $lte: Date }).$lte;
+    if (value && typeof value === "object" && "$gt" in value)
+      return (item[key] as Date) > (value as { $gt: Date }).$gt;
+    return item[key] === value;
+  });
 }
 
 function applySort<TData extends Record<string, unknown>>(
   values: readonly TData[],
-  sort: Record<string, "asc" | "desc"> | undefined
+  sort: Record<string, "asc" | "desc"> | undefined,
 ): TData[] {
   if (!sort || Object.keys(sort).length === 0) return [...values];
   const [field, direction] = Object.entries(sort)[0];

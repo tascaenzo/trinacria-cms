@@ -63,3 +63,15 @@ test("previous storage layout fails explicitly without deleting development data
     assert.equal(await connection.collection("kernel__installed_plugins").countDocuments({ marker: "keep" }), 1);
   } finally { await connection.dropDatabase(); await connection.close(); }
 });
+
+test("hashed storage cannot silently become an empty readable database", { skip: !enabled }, async () => {
+  const connection = await mongoose.createConnection(uri, { dbName: `trinacria_old_hash_test_${Date.now()}` }).asPromise();
+  try {
+    const previous = `v2_${"a".repeat(64)}`;
+    await connection.collection(previous).insertOne({ marker: "keep" });
+    const adapter = createMongoDbAdapter({ connection, entityRegistry: new EntityRegistry() });
+    await assert.rejects(adapter.initializeStorageOwnership(), /Previous storage layout detected/);
+    assert.equal(await connection.collection(previous).countDocuments({ marker: "keep" }), 1);
+    assert.equal((await connection.db!.listCollections({ name: STORAGE_OWNERSHIP_COLLECTION }).toArray()).length, 0);
+  } finally { await connection.dropDatabase(); await connection.close(); }
+});

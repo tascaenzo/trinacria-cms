@@ -6,4 +6,5 @@ export * from "./installation.tokens.js";
 export * from "./repositories/installation-state.repository.js";
 export * from "./repositories/local-credentials.repository.js";
 export * from "./services/installation.service.js";
+export * from "./services/installation-prerequisites.js";
 export * from "./services/password-hashing.service.js";

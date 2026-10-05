@@ -44,6 +44,9 @@ export interface CmsSwaggerUiConfig {
  */
 export interface CmsStarterOptions {
   coreVersion: string;
+  /** Environment-only startup selected by real host prerequisite checks. */
+  installerOnly?: boolean;
+  installation?: { inspect: import("./installation.js").InstallationHost["inspect"] };
   durableEvents?: { enabled?: boolean; concurrency?: number; pollMs?: number };
   /** Host-verified deployed artifact fingerprints; enables the shared control plane. */
   cluster?: {
@@ -54,7 +57,7 @@ export interface CmsStarterOptions {
     leaseMs?: number;
     operationTimeoutMs?: number;
   };
-  /** Explicit environment-only modules mounted when installation allows an unavailable database. */
+  /** Explicit environment-only modules mounted when installerOnly or database setup requires them. */
   offlineInstallerModules?: readonly ModuleDefinition[];
   migrations?: {
     instanceId?: string;
