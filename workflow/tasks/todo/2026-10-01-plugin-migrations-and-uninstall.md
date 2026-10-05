@@ -66,7 +66,8 @@ reconciliato) e 64 test runtime mirati; check completo, 19 Chromium e tarball es
 Prova CLI da tarball, removal con dati conservati/purge controllato e backup/restore
 sono passati nelle fixture dedicate. C2 aggiunge ack/drain distribuito e deploy artefatti
 sotto maintenance; il runbook descrive i callback di competenza dell host.
-Restano la verifica finale integrata e la procedura G3 nell ambiente di deploy del team.
+La verifica finale integrata locale è passata il 5 ottobre. Resta la procedura
+operativa nell ambiente di deploy del team; G3 richiede prove multi-replica distinte.
 Il task resta aperto; lo sviluppo non dichiara G3 soddisfatto dalla sola lease locale.
 
 

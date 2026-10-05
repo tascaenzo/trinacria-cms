@@ -59,3 +59,19 @@ I processi browser del test usano porte alternative perché il CMS di sviluppo �
 Restano da assegnare staging, partecipante indipendente e reviewer G2. La CI remota
 va eseguita sul candidato dopo push; G3/G4 restano gate autonomi.
 [Registro operativo del team](../../../docs/cms/architecture/plugin-platform/single-instance-acceptance.md).
+
+
+## Riproducibilità del checkpoint
+
+Il contenuto del commit `1add372` è stato esportato con `git archive` in una directory
+nuova senza `node_modules`, `dist` o cache Turbo. In quella copia sono passati `npm ci`
+(0 vulnerabilità segnalate), build forzata 15/15, `npm run check` (605 passati, 34 opt-in
+skip previsti), SDK generato (138 operazioni), otto tarball e tutti i nove scenari
+esterni con upgrade/restore. La successiva modifica del checkpoint aggiorna solo
+questo registro e la formulazione dell'acceptance C0; nessun codice eseguibile cambia.
+
+Report della ripetizione: `.tmp/release/clean-checkout-conformance-result.json` e
+`.tmp/release/clean-checkout-external-host-result.json`. Il report del checkpoint
+`.tmp/release/foundation-checkpoint.json` registra commit, verifiche e gate pendenti.
+Gli artefatti restano locali e redatti, mentre le procedure/evidenze aggregate sono
+versionate. Non sono stati eseguiti push, pubblicazioni o prove sullo staging del team.
