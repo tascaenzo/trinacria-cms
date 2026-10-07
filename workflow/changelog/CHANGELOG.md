@@ -10,6 +10,9 @@ Il formato si ispira a [Keep a Changelog](https://keepachangelog.com/).
   ANSI del runner interrompevano il marker testuale pur con server già avviato.
 - Deadline IPC del catalogo portata a 120 secondi: comprende installazione, login e
   assertion prima del segnale, mantenendo timeout e controlli reali.
+- Prima CI completa verde sul commit `d97ff83`: PR/push, nove scenari esterni,
+  integrazioni 45/45, playground 12/12 e Chromium 28/28. Individuata e corretta
+  l'esclusione dei report `.tmp` nell'upload; verifica download da completare sul nuovo run.
 - [Verifica e risultati](../tasks/todo/2026-10-07-pr-ci-first-verification.md).
 
 ## Consolidamento automatico delle basi CMS e plugin (2026-10-05)

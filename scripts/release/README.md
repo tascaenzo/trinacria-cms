@@ -64,3 +64,7 @@ six-plugin startup/RSS plus 50 serial HTTP read latencies after five warmups. Th
 measurements are a local baseline, not deployment capacity. Human and staging
 acceptance explicitly remain pending. Use the
 [team acceptance procedure](../../docs/cms/architecture/plugin-platform/single-instance-acceptance.md).
+
+The `cms-foundation-evidence` CI artifact includes the two explicitly listed redacted
+reports under `.tmp/release` and durable queue diagnostics. Hidden files are enabled
+for this exact allowlist; temporary projects, backups and secrets are not uploaded.

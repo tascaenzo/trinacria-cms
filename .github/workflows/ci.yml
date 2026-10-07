@@ -138,6 +138,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: cms-foundation-evidence
+          # Only the explicitly listed redacted reports are uploaded from .tmp.
+          include-hidden-files: true
           path: |
             .tmp/release/external-host-result.json
             .tmp/release/catalog-conformance-result.json

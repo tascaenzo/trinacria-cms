@@ -29,8 +29,19 @@ verificare la CI completa sul commit candidato, conservando i report degli scena
 
 ## Check
 
-- [x] Marker Vite con colori ANSI riconosciuto; Biome e diff senza errori.
-- [ ] CI remota completa sul candidato aggiornato.
+- [x] Vero Vite con `FORCE_COLOR=1`, senza `NO_COLOR`: marker ANSI riconosciuto e
+  pagina HTTP verificata; processo/directory di prova rimossi. Biome/diff passati.
+- [x] CI remota completa sul candidato `d97ff83`, PR e push: tutti i controlli verdi.
 - [ ] Report nove scenari, upgrade/restore e digest dei tarball scaricati e verificati.
+
+Prima CI verde: [run PR 37582912912](https://github.com/tascaenzo/trinacria-cms/actions/runs/37582912912),
+commit `d97ff83f5553d870934ad7b383dfb14ce468c8fd`; anche il run push `37582908865`
+passa. Le integrazioni sono 45/45 senza skip, playground 12/12 e Chromium 28/28.
+I log attestano nove scenari esterni, upgrade e restore completati.
+
+Il download dell'artefatto iniziale contiene solo la diagnostica durevole: il default
+`include-hidden-files:false` esclude i due report sotto `.tmp`. L'upload ora abilita
+le cartelle nascoste solo per i tre percorsi redatti già elencati; il prossimo run
+deve confermare i report realmente scaricabili, senza caricare backup o credenziali.
 
 Acceptance indipendente e staging restano aperte; questa verifica non le sostituisce.
