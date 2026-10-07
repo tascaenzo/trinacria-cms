@@ -1,0 +1,139 @@
+:root {
+  font-family: Georgia, serif;
+  color: #16332d;
+  background: #f7f7f2;
+  line-height: 1.65;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+a {
+  color: #155b48;
+  text-underline-offset: 0.2em;
+}
+a:focus-visible,
+button:focus-visible {
+  outline: 3px solid #c18325;
+  outline-offset: 4px;
+}
+.skip {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  background: white;
+  padding: 0.5rem;
+}
+.skip:focus {
+  top: 1rem;
+}
+.site-header,
+footer {
+  padding: 1.5rem max(1.25rem, calc((100vw - 68rem) / 2));
+  border-bottom: 1px solid #ccd5ce;
+}
+.site-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.brand {
+  font-size: 1.4rem;
+  font-weight: bold;
+  text-decoration: none;
+}
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+main {
+  max-width: 54rem;
+  margin: 3rem auto;
+  padding: 0 1.25rem;
+  min-height: 55vh;
+}
+h1 {
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  line-height: 1.15;
+}
+h2,
+h3,
+h4 {
+  line-height: 1.25;
+}
+article {
+  font-size: 1.15rem;
+}
+.entry-list article {
+  padding: 1.5rem 0;
+  border-bottom: 1px solid #ccd5ce;
+}
+time,
+figcaption,
+footer {
+  font-size: 0.9rem;
+  color: #536b60;
+}
+img {
+  max-width: 100%;
+  height: auto;
+}
+figure {
+  margin: 2rem 0;
+}
+blockquote {
+  border-left: 3px solid #155b48;
+  margin: 2rem 0;
+  padding-left: 1.5rem;
+}
+cite {
+  display: block;
+  font-size: 0.9rem;
+}
+.columns {
+  display: flex;
+  gap: 2rem;
+}
+.columns > div {
+  flex: 1;
+  min-width: 0;
+}
+.table-wrap {
+  overflow-x: auto;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+td,
+th {
+  padding: 0.6rem;
+  border: 1px solid #ccd5ce;
+  text-align: left;
+}
+.preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  background: #fff0c0;
+  font-family: system-ui, sans-serif;
+}
+button {
+  cursor: pointer;
+  padding: 0.3rem 0.75rem;
+}
+@media (max-width: 640px) {
+  .columns {
+    flex-direction: column;
+    gap: 0;
+  }
+  main {
+    margin-top: 2rem;
+  }
+}

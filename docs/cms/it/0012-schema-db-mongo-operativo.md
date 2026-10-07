@@ -6,49 +6,53 @@ Questo documento e un riferimento rapido, pensato piu come schema operativo che 
 
 ### Namespace kernel
 
-- pattern: `kernel__<entity>`
+- pattern: `<entity>__plugin_kernel`
 
 Esempio:
 
-- `kernel__installed_plugins`
+- `installed_plugins__plugin_kernel`
 
 ### Namespace plugin normale
 
-- pattern: `plugin_<pluginId_normalized>__<entity>`
+- pattern: `<entity>__plugin_<pluginId>`
+- workspace opzionale: `__workspace_<workspaceId>`
+- identificatori distinti restano distinti, senza normalizzazione lossy.
+
+Vedi [regole di escaping e esempi](../architecture/plugin-platform/collection-naming.md).
 
 Esempio:
 
-- `plugin_core_pack__users`
-- `plugin_core_pack__roles`
+- `users__plugin_core-pack`
+- `roles__plugin_core-pack`
 
 ## 2. Mappa collection attuale
 
 | Collection                            | Namespace logico | Entita logica       | Scopo                                            |
 | ------------------------------------- | ---------------- | ------------------- | ------------------------------------------------ |
-| `kernel__installed_plugins`           | `kernel`         | `installed_plugins` | stato runtime persistente dei plugin installati  |
-| `plugin_core_pack__users`             | `core-pack`      | `users`             | utenti e assegnazioni ruolo embedded             |
-| `plugin_core_pack__roles`             | `core-pack`      | `roles`             | ruoli e grant embedded                           |
-| `plugin_core_pack__permissions`       | `core-pack`      | `permissions`       | catalogo permessi canonici                       |
-| `plugin_core_pack__role_policy_rules` | `core-pack`      | `role_policy_rules` | policy rules avanzate                            |
-| `plugin_core_pack__api_keys`          | `core-pack`      | `api_keys`          | credenziali macchina e materiale authz associato |
-| `plugin_core_pack__settings`          | `core-pack`      | `settings`          | definizioni, valori e segreti cifrati            |
+| `installed_plugins__plugin_kernel`           | `kernel`         | `installed_plugins` | stato runtime persistente dei plugin installati  |
+| `users__plugin_core-pack`             | `core-pack`      | `users`             | utenti e assegnazioni ruolo embedded             |
+| `roles__plugin_core-pack`             | `core-pack`      | `roles`             | ruoli e grant embedded                           |
+| `permissions__plugin_core-pack`       | `core-pack`      | `permissions`       | catalogo permessi canonici                       |
+| `role_policy_rules__plugin_core-pack` | `core-pack`      | `role_policy_rules` | policy rules avanzate                            |
+| `api_keys__plugin_core-pack`          | `core-pack`      | `api_keys`          | credenziali macchina e materiale authz associato |
+| `settings__plugin_core-pack`          | `core-pack`      | `settings`          | definizioni, valori e segreti cifrati            |
 
 ## 3. Diagramma compatto
 
 ```mermaid
 erDiagram
-  "kernel__installed_plugins" ||--o{ "plugin_core_pack__permissions" : "sourcePluginId"
-  "kernel__installed_plugins" ||--o{ "plugin_core_pack__roles" : "ownerPluginId"
-  "plugin_core_pack__users" ||--o{ "users.roleAssignments[]" : "embedded"
-  "plugin_core_pack__roles" ||--o{ "roles.permissionGrants[]" : "embedded"
-  "plugin_core_pack__roles" ||--o{ "plugin_core_pack__role_policy_rules" : "roleCode"
-  "plugin_core_pack__api_keys" ||--o{ "plugin_core_pack__roles" : "roleCodes[]"
-  "plugin_core_pack__api_keys" ||--o{ "plugin_core_pack__permissions" : "permissionKeys[]"
+  "installed_plugins__plugin_kernel" ||--o{ "permissions__plugin_core-pack" : "sourcePluginId"
+  "installed_plugins__plugin_kernel" ||--o{ "roles__plugin_core-pack" : "ownerPluginId"
+  "users__plugin_core-pack" ||--o{ "users.roleAssignments[]" : "embedded"
+  "roles__plugin_core-pack" ||--o{ "roles.permissionGrants[]" : "embedded"
+  "roles__plugin_core-pack" ||--o{ "role_policy_rules__plugin_core-pack" : "roleCode"
+  "api_keys__plugin_core-pack" ||--o{ "roles__plugin_core-pack" : "roleCodes[]"
+  "api_keys__plugin_core-pack" ||--o{ "permissions__plugin_core-pack" : "permissionKeys[]"
 ```
 
 ## 4. Campi guida per collection
 
-### `kernel__installed_plugins`
+### `installed_plugins__plugin_kernel`
 
 Campi chiave:
 
@@ -69,7 +73,7 @@ Indici principali:
 - `enabled`
 - `updatedAt desc`
 
-### `plugin_core_pack__users`
+### `users__plugin_core-pack`
 
 Campi chiave:
 
@@ -85,7 +89,7 @@ Indici principali:
 - unique `email`
 - unique `username`
 
-### `plugin_core_pack__roles`
+### `roles__plugin_core-pack`
 
 Campi chiave:
 
@@ -103,7 +107,7 @@ Indici principali:
 - `ownerPluginId`
 - `status`
 
-### `plugin_core_pack__permissions`
+### `permissions__plugin_core-pack`
 
 Campi chiave:
 
@@ -119,7 +123,7 @@ Indici principali:
 - `sourcePluginId`
 - `status`
 
-### `plugin_core_pack__role_policy_rules`
+### `role_policy_rules__plugin_core-pack`
 
 Campi chiave:
 
@@ -136,7 +140,7 @@ Indici principali:
 - `roleCode`
 - `sourcePluginId`
 
-### `plugin_core_pack__api_keys`
+### `api_keys__plugin_core-pack`
 
 Campi chiave:
 
@@ -160,7 +164,7 @@ Indici principali:
 - `kind`
 - `expiresAt`
 
-### `plugin_core_pack__settings`
+### `settings__plugin_core-pack`
 
 Campi chiave:
 
@@ -196,9 +200,9 @@ Indici principali:
 
 Se un problema riguarda:
 
-- runtime plugin: controlla `kernel__installed_plugins`
-- assegnazioni ruolo utente: controlla `plugin_core_pack__users.roleAssignments[]`
-- grant ruolo: controlla `plugin_core_pack__roles.permissionGrants[]`
-- policy avanzate: controlla `plugin_core_pack__role_policy_rules`
-- integrazioni macchina: controlla `plugin_core_pack__api_keys`
-- configurazione plugin: controlla `plugin_core_pack__settings`
+- runtime plugin: controlla `installed_plugins__plugin_kernel`
+- assegnazioni ruolo utente: controlla `users__plugin_core-pack.roleAssignments[]`
+- grant ruolo: controlla `roles__plugin_core-pack.permissionGrants[]`
+- policy avanzate: controlla `role_policy_rules__plugin_core-pack`
+- integrazioni macchina: controlla `api_keys__plugin_core-pack`
+- configurazione plugin: controlla `settings__plugin_core-pack`

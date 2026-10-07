@@ -1,5 +1,10 @@
 # Specifiche core platform
 
+> Per l'evoluzione corrente della piattaforma plugin pubblica usare il
+> [piano tecnico M8](../../architecture/plugin-platform-implementation-plan.md).
+> Le sezioni M4/M5 seguenti conservano il contesto della fondazione, non lo stato
+> dei lavori pianificati in M8.
+
 Questa directory raccoglie le specifiche documentali da chiudere prima di
 procedere con l'implementazione della piattaforma core plugin-first.
 
@@ -13,9 +18,9 @@ completato (NamespaceValidator, CollisionPolicy, ContributionIndex e discovery
 configurata con 96 test kernel, 178 test totali monorepo; 1 integration Mongo
 gated).
 
-Prossima milestone implementativa: **M5 — Plugin Runtime Foundation**,
-corrispondente allo **Step 2 — Runtime plugin** (stati, transizioni, dependency
-ordering, rollback, enable/disable, discovery).
+La sequenza storica proseguiva con **M5 — Plugin Runtime Foundation**.
+Il runtime è ora implementato; per stato corrente e acceptance aperte usare
+il [piano M8](../../architecture/plugin-platform-implementation-plan.md).
 
 Guida sviluppatore M5:
 [`m5-plugin-runtime-implementation.md`](./m5-plugin-runtime-implementation.md).

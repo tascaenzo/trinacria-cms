@@ -15,7 +15,6 @@ export interface SecureEventPayloadRecord {
   payloadType: string;
   schemaVersion: number;
   requiredPermission: string;
-  encryptedPayload: EncryptedSecurePayload;
   status: SecureEventPayloadStatus;
   maxClaims: number;
   claimCount: number;
@@ -28,7 +27,6 @@ export interface SecureEventPayloadRecord {
 }
 
 export interface CreateSecureEventPayloadInput<TPayload = unknown> {
-  producerPluginId: string;
   eventName: string;
   payloadType: string;
   schemaVersion: number;
@@ -41,10 +39,9 @@ export interface CreateSecureEventPayloadInput<TPayload = unknown> {
 
 export interface ClaimSecureEventPayloadInput {
   payloadId: string;
-  consumerPluginId: string;
   eventName: string;
   payloadType: string;
-  schemaVersion?: number;
+  schemaVersion: number;
   requiredPermission: string;
 }
 
@@ -64,7 +61,7 @@ export type {
   SecureEventPayloadAuthorizer
 } from "./plugin-access-policy.js";
 
-export interface SecureEventPayloadStore {
+export interface SecureEventPayloadClient {
   create<TPayload = unknown>(
     input: CreateSecureEventPayloadInput<TPayload>
   ): Promise<SecureEventPayloadRecord>;
@@ -72,4 +69,10 @@ export interface SecureEventPayloadStore {
     input: ClaimSecureEventPayloadInput
   ): Promise<ClaimSecureEventPayloadResult<TPayload>>;
   revoke(payloadId: string): Promise<SecureEventPayloadRecord>;
+}
+
+/** Key material is host configuration, not a plugin input. Strings are canonical base64. */
+export interface SecurePayloadKeyring {
+  activeKeyId: string;
+  keys: Readonly<Record<string, string | Uint8Array>>;
 }

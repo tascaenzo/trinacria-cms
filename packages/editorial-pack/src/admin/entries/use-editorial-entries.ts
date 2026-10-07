@@ -23,16 +23,8 @@ export function useEditorialEntries(cms: CmsClient) {
       setIsLoading(true);
       setError(null);
       const [entriesResponse, contentTypesResponse] = await Promise.all([
-        cms.request<{ data: readonly EditorialEntry[] }>({
-          method: "GET",
-          path: "/v1/editorial/entries",
-          query: { limit: 100, offset: 0 }
-        }),
-        cms.request<{ data: readonly EditorialEntryContentType[] }>({
-          method: "GET",
-          path: "/v1/editorial/content-types",
-          query: { limit: 100, offset: 0 }
-        })
+        cms.editorial.listEditorialEntries({ query: { limit: 100, offset: 0 } }),
+        cms.editorial.listEditorialContentTypes({ query: { limit: 100, offset: 0 } })
       ]);
       setEntries(entriesResponse.data);
       setContentTypes(contentTypesResponse.data);
@@ -60,9 +52,7 @@ export function useEditorialEntries(cms: CmsClient) {
     try {
       setIsCreating(true);
       setError(null);
-      const response = await cms.request<{ data: EditorialEntry }>({
-        method: "POST",
-        path: "/v1/editorial/entries",
+      const response = await cms.editorial.createEditorialEntry({
         body: { contentTypeId, ...(title.trim() ? { title: title.trim() } : {}), data: {} }
       });
       await refresh();
@@ -94,9 +84,8 @@ export function useEditorialEntries(cms: CmsClient) {
     try {
       setActionEntryId(entry.id);
       setError(null);
-      await cms.request({
-        method: "POST",
-        path: `/v1/editorial/entries/${entry.id}/transition`,
+      await cms.editorial.transitionEditorialEntry({
+        path: { id: entry.id },
         body: { transitionId: action.id }
       });
       await refresh();
@@ -125,10 +114,7 @@ export function useEditorialEntries(cms: CmsClient) {
   const loadRevisions = async (entry: EditorialEntry): Promise<readonly EntryRevision[]> => {
     try {
       setError(null);
-      const response = await cms.request<{ data: readonly EntryRevision[] }>({
-        method: "GET",
-        path: `/v1/editorial/entries/${entry.id}/revisions`
-      });
+      const response = await cms.editorial.listEditorialEntryRevisions({ path: { id: entry.id } });
       return response.data;
     } catch (currentError) {
       setError(

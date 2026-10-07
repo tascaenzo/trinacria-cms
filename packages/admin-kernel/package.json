@@ -1,7 +1,7 @@
 {
   "name": "@trinacria-cms/admin-kernel",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -32,5 +32,18 @@
   "peerDependencies": {
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
+  },
+  "license": "MIT",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "engines": {
+    "node": ">=24.21.0 <25"
   }
 }

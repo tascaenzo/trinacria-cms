@@ -6,6 +6,8 @@ import {
   parseQueryNumber,
   toOpenApiSchema
 } from "@trinacria-cms/kernel";
+import { getHttpOperationContext } from "@trinacria-cms/kernel/runtime";
+import type { EmailTemplateOperations } from "../../operations/email-operations.js";
 import { EMAIL_PACK_PLUGIN_ID } from "../../plugin/email-pack.constants.js";
 import {
   PreviewEmailTemplateInputSchema,
@@ -16,13 +18,12 @@ import {
   ListEmailTemplatesResponseOpenApiSchema,
   PreviewEmailTemplateResponseOpenApiSchema
 } from "./dto/email-templates.response.dto.js";
-import type { EmailTemplatesService } from "./services/email-templates.service.js";
 
 const responder = createPluginApiResponder(EMAIL_PACK_PLUGIN_ID);
 
 export class EmailTemplatesController extends HttpController {
   constructor(
-    private readonly templates: EmailTemplatesService,
+    private readonly templates: EmailTemplateOperations,
     private readonly adminRouteGuard: KernelAdminRouteGuard
   ) {
     super();
@@ -33,6 +34,7 @@ export class EmailTemplatesController extends HttpController {
       .get("/v1/email/templates", this.listTemplates, {
         middlewares: [this.adminRouteGuard.middleware],
         docs: {
+          pluginId: "email-pack",
           summary: "List email templates",
           tags: ["Email"],
           operationId: "listEmailTemplates",
@@ -62,6 +64,7 @@ export class EmailTemplatesController extends HttpController {
       .put("/v1/email/templates", this.upsertTemplate, {
         middlewares: [this.adminRouteGuard.middleware],
         docs: {
+          pluginId: "email-pack",
           summary: "Upsert email template",
           tags: ["Email"],
           operationId: "upsertEmailTemplate",
@@ -78,6 +81,7 @@ export class EmailTemplatesController extends HttpController {
       .post("/v1/email/templates/preview", this.previewTemplate, {
         middlewares: [this.adminRouteGuard.middleware],
         docs: {
+          pluginId: "email-pack",
           summary: "Preview email template",
           tags: ["Email"],
           operationId: "previewEmailTemplate",
@@ -96,7 +100,7 @@ export class EmailTemplatesController extends HttpController {
 
   private listTemplates = async (ctx: HttpContext) => {
     try {
-      const templates = await this.templates.listTemplates({
+      const templates = await this.templates.listTemplates(getHttpOperationContext(ctx), {
         limit: parseQueryNumber(ctx.query.limit),
         offset: parseQueryNumber(ctx.query.offset)
       });
@@ -109,7 +113,9 @@ export class EmailTemplatesController extends HttpController {
   private upsertTemplate = async (ctx: HttpContext) => {
     try {
       const payload = UpsertEmailTemplateInputSchema.parse(ctx.body);
-      return responder.success(await this.templates.upsertTemplate(payload));
+      return responder.success(
+        await this.templates.upsertTemplate(getHttpOperationContext(ctx), payload)
+      );
     } catch (error) {
       return responder.fromError(error);
     }
@@ -118,7 +124,7 @@ export class EmailTemplatesController extends HttpController {
   private previewTemplate = async (ctx: HttpContext) => {
     try {
       const payload = PreviewEmailTemplateInputSchema.parse(ctx.body);
-      return responder.success(await this.templates.render(payload));
+      return responder.success(await this.templates.render(getHttpOperationContext(ctx), payload));
     } catch (error) {
       return responder.fromError(error);
     }

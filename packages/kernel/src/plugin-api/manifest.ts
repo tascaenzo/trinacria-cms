@@ -7,6 +7,7 @@ export function definePluginManifest(input: DefinePluginManifestInput): PluginMa
   const capabilities = omitEmptyArray(input.capabilities)?.map(normalizeCapability);
   const dependencies = omitEmptyArray(input.dependencies);
   const entities = omitEmptyArray(input.entities);
+  const migrations = omitEmptyArray(input.migrations);
   const settings = omitEmptyArray(input.settings);
   const events = compactSection(input.events);
   const i18n = compactSection(input.i18n);
@@ -22,6 +23,7 @@ export function definePluginManifest(input: DefinePluginManifestInput): PluginMa
     ...(capabilities !== undefined ? { capabilities } : {}),
     ...(dependencies !== undefined ? { dependencies } : {}),
     ...(entities !== undefined ? { entities } : {}),
+    ...(migrations !== undefined ? { migrations } : {}),
     ...(settings !== undefined ? { settings } : {}),
     ...(events !== undefined ? { events } : {}),
     ...(i18n !== undefined ? { i18n } : {}),

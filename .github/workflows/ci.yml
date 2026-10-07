@@ -40,20 +40,29 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Install browser for distribution and E2E tests
+        run: npx playwright install --with-deps chromium
+
       - name: Format
         run: npm run format
 
       - name: Lint
-        run: npm run lint:affected
+        run: npm run lint
 
       - name: Typecheck
-        run: npm run typecheck:affected
+        run: npm run typecheck
 
       - name: Build
-        run: npm run build:affected
+        run: npm run build
 
       - name: Storybook build
         run: npm run storybook:build
+
+      - name: Public API contracts
+        run: npm run build && npm run public-api:check
+
+      - name: External tarball backend and admin
+        run: npm run release:test
 
       - name: SDK generated check
         run: npm run sdk:check
@@ -96,10 +105,13 @@ jobs:
           exit 1
 
       - name: Unit tests
-        run: npm run test:affected
+        run: npm run test
 
       - name: Integration tests
-        run: npm run test:integration:affected
+        run: npm run test:integration -- --concurrency=1
+
+      - name: First-run installer with real Mongo
+        run: npm run test -w @trinacria-cms/playground
 
       - name: Plugin package boundaries
         run: npm run boundaries:check
@@ -107,8 +119,8 @@ jobs:
       - name: Workspace dependency graph
         run: npm run dependencies:check
 
-      - name: Install E2E browser
-        run: npx playwright install --with-deps chromium
+      - name: Signing and starter template consistency
+        run: npm run signing:check && npm run template:check
 
       - name: Production-readiness E2E
         run: npm run e2e:ci
@@ -119,4 +131,17 @@ jobs:
         with:
           name: playwright-report
           path: playwright-report/
+          retention-days: 14
+
+      - name: Upload distribution and recovery evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: cms-foundation-evidence
+          # Only the explicitly listed redacted reports are uploaded from .tmp.
+          include-hidden-files: true
+          path: |
+            .tmp/release/external-host-result.json
+            .tmp/release/catalog-conformance-result.json
+            test-results/durable-queue-diagnostics.json
           retention-days: 14

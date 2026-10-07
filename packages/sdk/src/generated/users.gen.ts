@@ -8,7 +8,7 @@ export interface UsersApi {
   createUser(input: CreateUserRequest, options?: SdkRequestOverrides): Promise<CreateUserResponse>;
   getUserById(input: GetUserByIdRequest, options?: SdkRequestOverrides): Promise<GetUserByIdResponse>;
   inviteUser(input: InviteUserRequest, options?: SdkRequestOverrides): Promise<InviteUserResponse>;
-  listUsers(input: ListUsersRequest, options?: SdkRequestOverrides): Promise<ListUsersResponse>;
+  listUsers(input?: ListUsersRequest, options?: SdkRequestOverrides): Promise<ListUsersResponse>;
   updateUserProfile(input: UpdateUserProfileRequest, options?: SdkRequestOverrides): Promise<UpdateUserProfileResponse>;
   updateUserStatus(input: UpdateUserStatusRequest, options?: SdkRequestOverrides): Promise<UpdateUserStatusResponse>;
 }
@@ -22,6 +22,8 @@ export function createUsersApi(client: CmsSdkClientCore): UsersApi {
         pathParams: undefined,
         query: undefined,
         body: input.body,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,
@@ -33,6 +35,8 @@ export function createUsersApi(client: CmsSdkClientCore): UsersApi {
         pathParams: input.path,
         query: undefined,
         body: undefined,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,
@@ -44,17 +48,21 @@ export function createUsersApi(client: CmsSdkClientCore): UsersApi {
         pathParams: input.path,
         query: undefined,
         body: undefined,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,
       }),
-    listUsers: async (input, options) =>
+    listUsers: async (input = {}, options) =>
       client.request({
         method: "GET",
         path: "/v1/users",
         pathParams: undefined,
         query: input.query,
         body: undefined,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,
@@ -66,6 +74,8 @@ export function createUsersApi(client: CmsSdkClientCore): UsersApi {
         pathParams: input.path,
         query: undefined,
         body: input.body,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,
@@ -77,6 +87,8 @@ export function createUsersApi(client: CmsSdkClientCore): UsersApi {
         pathParams: input.path,
         query: undefined,
         body: input.body,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,

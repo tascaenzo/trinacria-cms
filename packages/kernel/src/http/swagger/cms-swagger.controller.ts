@@ -10,7 +10,9 @@ export class CmsSwaggerController extends HttpController {
     return this.router()
       .get(this.config.path ?? "/docs", this.renderDocs, {
         docs: {
-          excludeFromOpenApi: true
+          pluginId: "kernel",
+          excludeFromOpenApi: true,
+          exclusionReason: "Host documentation UI; not a business API"
         }
       })
       .build();

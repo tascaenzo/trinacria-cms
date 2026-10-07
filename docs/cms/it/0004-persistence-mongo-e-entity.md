@@ -1,5 +1,16 @@
 # 0004 - Persistence: EntityRegistry, DbAdapter, Mongo adapter
 
+Storage A0 attuale: `defineEntity` richiede `ownerPluginId`, il registry usa
+`get(entityName, ownerPluginId)`. I plugin pubblici usano `context.services.storage`
+senza namespace selezionabile. Nomi Mongo leggibili: `<entity>__plugin_<pluginId>`,
+con suffisso opzionale `__workspace_<workspaceId>`. Il registro ownership kernel conserva
+la tuple `[pluginId, workspaceId ?? null, entityName]` e verifica indici unici su tuple e
+nome fisico prima di CRUD e transazioni. I nomi nelle tabelle corrispondono alle collection
+attuali; caratteri speciali e separatori nei componenti vengono escapati reversibilmente.
+I vecchi layout bloccano lo storage senza modificare dati. Vedi il
+[naming delle collection](../architecture/plugin-platform/collection-naming.md).
+Vedi [servizi A0](./0007-creare-un-plugin.md#servizi-host-del-plugin-a0-implementato).
+
 Questo capitolo descrive il layer persistence e le nuove implicazioni del modello security plugin-contributed.
 
 ## 1. Entita canoniche
@@ -115,17 +126,17 @@ Namespace plugin `core-pack` produce collection con prefisso `plugin_core_pack__
 
 ```mermaid
 erDiagram
-  "kernel__installed_plugins" ||--o{ "plugin_core_pack__permissions" : "security source plugin"
-  "kernel__installed_plugins" ||--o{ "plugin_core_pack__roles" : "security owner plugin"
-  "plugin_core_pack__users" ||--o{ "users.roleAssignments[]" : "embedded"
-  "plugin_core_pack__roles" ||--o{ "roles.permissionGrants[]" : "embedded"
-  "plugin_core_pack__roles" ||--o{ "plugin_core_pack__role_policy_rules" : "roleCode"
-  "plugin_core_pack__permissions" ||--o{ "plugin_core_pack__roles" : "roles.permissions[] (materialized)"
-  "plugin_core_pack__api_keys" ||--o{ "plugin_core_pack__roles" : "roleCodes[]"
-  "plugin_core_pack__api_keys" ||--o{ "plugin_core_pack__permissions" : "permissionKeys[]"
-  "plugin_core_pack__settings" ||--o{ "plugin_core_pack__settings" : "stessa key, kind diverso"
+  "installed_plugins__plugin_kernel" ||--o{ "permissions__plugin_core-pack" : "security source plugin"
+  "installed_plugins__plugin_kernel" ||--o{ "roles__plugin_core-pack" : "security owner plugin"
+  "users__plugin_core-pack" ||--o{ "users.roleAssignments[]" : "embedded"
+  "roles__plugin_core-pack" ||--o{ "roles.permissionGrants[]" : "embedded"
+  "roles__plugin_core-pack" ||--o{ "role_policy_rules__plugin_core-pack" : "roleCode"
+  "permissions__plugin_core-pack" ||--o{ "roles__plugin_core-pack" : "roles.permissions[] (materialized)"
+  "api_keys__plugin_core-pack" ||--o{ "roles__plugin_core-pack" : "roleCodes[]"
+  "api_keys__plugin_core-pack" ||--o{ "permissions__plugin_core-pack" : "permissionKeys[]"
+  "settings__plugin_core-pack" ||--o{ "settings__plugin_core-pack" : "stessa key, kind diverso"
 
-  "kernel__installed_plugins" {
+  "installed_plugins__plugin_kernel" {
     string id
     string pluginId
     string version
@@ -134,14 +145,14 @@ erDiagram
     object meta
   }
 
-  "plugin_core_pack__users" {
+  "users__plugin_core-pack" {
     string id
     string email
     string status
     array roleAssignments
   }
 
-  "plugin_core_pack__roles" {
+  "roles__plugin_core-pack" {
     string id
     string code
     string status
@@ -149,14 +160,14 @@ erDiagram
     array permissionGrants
   }
 
-  "plugin_core_pack__permissions" {
+  "permissions__plugin_core-pack" {
     string id
     string key
     string sourcePluginId
     string status
   }
 
-  "plugin_core_pack__role_policy_rules" {
+  "role_policy_rules__plugin_core-pack" {
     string id
     string roleCode
     string effect
@@ -165,7 +176,7 @@ erDiagram
     string sourcePluginId
   }
 
-  "plugin_core_pack__api_keys" {
+  "api_keys__plugin_core-pack" {
     string id
     string lookupId
     string name
@@ -179,7 +190,7 @@ erDiagram
     datetime expiresAt
   }
 
-  "plugin_core_pack__settings" {
+  "settings__plugin_core-pack" {
     string id
     string key
     string kind
@@ -197,7 +208,7 @@ erDiagram
 
 ## 13. Snapshot operativo: documenti Mongo reali (shape)
 
-Esempio `plugin_core_pack__users`:
+Esempio `users__plugin_core-pack`:
 
 ```json
 {
@@ -219,7 +230,7 @@ Esempio `plugin_core_pack__users`:
 }
 ```
 
-Esempio `plugin_core_pack__roles`:
+Esempio `roles__plugin_core-pack`:
 
 ```json
 {
@@ -249,7 +260,7 @@ Esempio `plugin_core_pack__roles`:
 }
 ```
 
-Esempio `plugin_core_pack__permissions`:
+Esempio `permissions__plugin_core-pack`:
 
 ```json
 {
@@ -264,7 +275,7 @@ Esempio `plugin_core_pack__permissions`:
 }
 ```
 
-Esempio `plugin_core_pack__role_policy_rules`:
+Esempio `role_policy_rules__plugin_core-pack`:
 
 ```json
 {
@@ -280,7 +291,7 @@ Esempio `plugin_core_pack__role_policy_rules`:
 }
 ```
 
-Esempio `plugin_core_pack__api_keys`:
+Esempio `api_keys__plugin_core-pack`:
 
 ```json
 {
@@ -300,7 +311,7 @@ Esempio `plugin_core_pack__api_keys`:
 }
 ```
 
-Esempio `kernel__installed_plugins`:
+Esempio `installed_plugins__plugin_kernel`:
 
 ```json
 {
@@ -327,13 +338,13 @@ Esempio `kernel__installed_plugins`:
 
 Write path:
 
-1. insert in `plugin_core_pack__users`
+1. insert in `users__plugin_core-pack`
 2. `roleAssignments` inizialmente array vuoto
 
 Query indicativa:
 
 ```javascript
-db.plugin_core_pack__users.insertOne({
+db.users__plugin_core-pack.insertOne({
   email: "...",
   displayName: "...",
   status: "active",
@@ -354,7 +365,7 @@ Write path:
 Query indicativa:
 
 ```javascript
-db.plugin_core_pack__users.updateOne(
+db.users__plugin_core-pack.updateOne(
   { id: "core-pack:users:..." },
   {
     $set: {
@@ -376,7 +387,7 @@ db.plugin_core_pack__users.updateOne(
 
 Write path:
 
-1. insert ruolo in `plugin_core_pack__roles`
+1. insert ruolo in `roles__plugin_core-pack`
 2. materializza `permissions[]`
 3. persiste ownership grant in `permissionGrants[]`
 
@@ -384,7 +395,7 @@ Write path:
 
 Write path:
 
-1. insert documento in `plugin_core_pack__role_policy_rules`
+1. insert documento in `role_policy_rules__plugin_core-pack`
 2. nessun update su `roles` o `users`
 
 ### 14.5 `POST /v1/api-keys`
@@ -392,7 +403,7 @@ Write path:
 Write path:
 
 1. genera `lookupId` e secret raw one-shot
-2. salva solo `hash` del secret in `plugin_core_pack__api_keys`
+2. salva solo `hash` del secret in `api_keys__plugin_core-pack`
 3. persiste `roleCodes[]`, `permissionKeys[]` e `policyRules[]` come materiale authz del caller macchina
 
 Nota:
@@ -405,9 +416,9 @@ Nota:
 Read path:
 
 1. legge `users.roleAssignments[]`
-2. carica ruoli attivi da `plugin_core_pack__roles`
+2. carica ruoli attivi da `roles__plugin_core-pack`
 3. legge `roles.permissionGrants[]` (embedded)
-4. valida chiavi su `plugin_core_pack__permissions` attive
+4. valida chiavi su `permissions__plugin_core-pack` attive
 5. ritorna set unico di permission key
 
 ## 15. Conclusione
@@ -418,7 +429,7 @@ Il layer persistence combina astrazione e controllo operativo: schema unificato,
 
 Il kernel persiste lo stato runtime dei plugin in una collection dedicata nel namespace `kernel`:
 
-- collection: `kernel__installed_plugins`
+- collection: `installed_plugins__plugin_kernel`
 - chiave logica: `pluginId` (unique)
 - campi principali: `state`, `enabled`, `failureCount`, `disabledReason`, `manifest`, `updatedAt`
 - indici: `pluginId` unique, `state`, `enabled`, `updatedAt` desc
@@ -438,15 +449,17 @@ Nota attuale:
 
 | Collection                            | Owner namespace | Campi chiave                                                                                                                    | Indici principali                                             | Scopo                                                                                      |
 | ------------------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `kernel__installed_plugins`           | `kernel`        | `pluginId`, `state`, `enabled`, `failureCount`, `manifest`, `updatedAt`                                                         | `pluginId` unique, `state`, `enabled`, `updatedAt` desc       | Persistenza stato runtime plugin installati (audit/ops).                                   |
-| `plugin_core_pack__users`             | `core-pack`     | `id`, `email`, `status`, `roleAssignments[]`                                                                                    | `id` unique, `email` unique                                   | Anagrafica utenti e assegnazioni ruolo embedded.                                           |
-| `plugin_core_pack__roles`             | `core-pack`     | `id`, `code`, `ownerPluginId`, `permissions[]`, `permissionGrants[]`, `status`                                                  | `id` unique, `code` unique, `ownerPluginId`, `status`         | Catalogo ruoli e contributi permessi plugin-owned.                                         |
-| `plugin_core_pack__permissions`       | `core-pack`     | `id`, `key`, `sourcePluginId`, `status`                                                                                         | `id` unique, `key` unique, `sourcePluginId`, `status`         | Catalogo permessi canonici namespaced.                                                     |
-| `plugin_core_pack__role_policy_rules` | `core-pack`     | `id`, `roleCode`, `effect`, `permissionPattern`, `conditions[]`, `sourcePluginId`                                               | `id` unique, `roleCode`, `sourcePluginId`                     | Regole policy avanzate (`allow/deny`, wildcard, condizioni).                               |
-| `plugin_core_pack__settings`          | `core-pack`     | `id`, `key`, `kind`, `ownerPluginId`, `status`, `schema/defaultValue/value`, `cipherText`, `algorithm`, `keyVersion`, `version` | `id` unique, `(kind,key)` unique, `ownerPluginId+kind`, `key` | Store settings unificato con proiezioni logiche per definizioni, valori e segreti cifrati. |
+| `installed_plugins__plugin_kernel`           | `kernel`        | `pluginId`, `state`, `enabled`, `failureCount`, `manifest`, `updatedAt`                                                         | `pluginId` unique, `state`, `enabled`, `updatedAt` desc       | Persistenza stato runtime plugin installati (audit/ops).                                   |
+| `users__plugin_core-pack`             | `core-pack`     | `id`, `email`, `status`, `roleAssignments[]`                                                                                    | `id` unique, `email` unique                                   | Anagrafica utenti e assegnazioni ruolo embedded.                                           |
+| `roles__plugin_core-pack`             | `core-pack`     | `id`, `code`, `ownerPluginId`, `permissions[]`, `permissionGrants[]`, `status`                                                  | `id` unique, `code` unique, `ownerPluginId`, `status`         | Catalogo ruoli e contributi permessi plugin-owned.                                         |
+| `permissions__plugin_core-pack`       | `core-pack`     | `id`, `key`, `sourcePluginId`, `status`                                                                                         | `id` unique, `key` unique, `sourcePluginId`, `status`         | Catalogo permessi canonici namespaced.                                                     |
+| `role_policy_rules__plugin_core-pack` | `core-pack`     | `id`, `roleCode`, `effect`, `permissionPattern`, `conditions[]`, `sourcePluginId`                                               | `id` unique, `roleCode`, `sourcePluginId`                     | Regole policy avanzate (`allow/deny`, wildcard, condizioni).                               |
+| `settings__plugin_core-pack`          | `core-pack`     | `id`, `key`, `kind`, `ownerPluginId`, `status`, `schema/defaultValue/value`, `cipherText`, `algorithm`, `keyVersion`, `version` | `id` unique, `(kind,key)` unique, `ownerPluginId+kind`, `key` | Store settings unificato con proiezioni logiche per definizioni, valori e segreti cifrati. |
 
-Nota sul naming fisico:
+Nota sul naming fisico attuale (A0):
 
-- per i plugin normali, il Mongo adapter continua a usare il prefisso fisico `plugin_<pluginId_normalized>__<entity>`;
-- per il namespace riservato `kernel`, il naming e stato semplificato in `kernel__<entity>`;
-- il namespace logico non cambia: il runtime continua a ragionare con `pluginId = "kernel"`.
+- kernel e plugin usano `<entity>__plugin_<pluginId>`, con eventuale workspace;
+- il registro ownership conserva owner/workspace/entityName leggibili e verifica due indici unici;
+- il namespace logico resta `pluginId = "kernel"` per l'infrastruttura riservata all'host;
+- caratteri riservati e underscore doppi sono escapati senza normalizzazione lossy;
+- i vecchi layout richiedono una migrazione esplicita; non esiste fallback automatico.

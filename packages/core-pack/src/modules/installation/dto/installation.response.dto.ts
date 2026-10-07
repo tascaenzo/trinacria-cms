@@ -26,9 +26,38 @@ export const InstallationApiErrorSchema = s.object(
 /**
  * Public installation status model returned by `GET /v1/install/status`.
  */
+export const InstallationCheckSchema = s.object(
+  {
+    id: s.enum([
+      "database",
+      "transactions",
+      "write-access",
+      "runtime-keys",
+      "plugins",
+      "services",
+      "administrator",
+      "settings"
+    ] as const),
+    status: s.enum(["pass", "fail", "blocked"] as const),
+    message: s.string({ minLength: 1 })
+  },
+  { strict: true }
+);
 export const InstallationStatusSchema = s.object(
   {
     installed: s.boolean(),
+    phase: s.enum([
+      "prerequisites",
+      "ready",
+      "configuration",
+      "content",
+      "verification",
+      "complete"
+    ] as const),
+    canInstall: s.boolean(),
+    restartRequired: s.boolean(),
+    dataMode: s.enum(["empty", "demo"] as const).optional(),
+    checks: s.array(InstallationCheckSchema),
     installedAt: s.dateTimeString().optional(),
     adminUserId: s.string({ trim: true, minLength: 1 }).optional(),
     envFilePresent: s.boolean(),

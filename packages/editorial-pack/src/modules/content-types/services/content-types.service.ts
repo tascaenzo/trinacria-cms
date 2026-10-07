@@ -1,4 +1,11 @@
-import { createPluginDbScope, type DbAdapter } from "@trinacria-cms/kernel";
+import type { DbAdapter } from "@trinacria-cms/kernel";
+import type {
+  OperationAuthorizer,
+  OperationContext,
+  PluginEventPublisher
+} from "@trinacria-cms/kernel/contracts";
+import type { MongoDurableEventStore } from "@trinacria-cms/kernel/runtime";
+import { assertOperationContext, createPluginDbScope } from "@trinacria-cms/kernel/runtime";
 import {
   type CreateContentTypeInput,
   CreateContentTypeInputSchema,
@@ -10,7 +17,7 @@ import type {
   ContentTypeRecord,
   ContentWorkflow
 } from "../content-types.schemas.js";
-import type { ContentTypesRepository } from "../repositories/content-types.repository.js";
+import { ContentTypesRepository } from "../repositories/content-types.repository.js";
 
 const RESERVED_FIELD_KEYS = new Set([
   "id",
@@ -25,29 +32,64 @@ const RESERVED_FIELD_KEYS = new Set([
 ]);
 
 export class ContentTypeValidationError extends Error {
-  readonly code = "validation_error";
+  readonly code: string = "validation_error";
   constructor(message: string) {
     super(message);
     this.name = "ContentTypeValidationError";
   }
 }
 
+export class ContentTypeConflictError extends ContentTypeValidationError {
+  readonly code = "conflict";
+}
+
 export class ContentTypesService {
   constructor(
     private readonly repository: ContentTypesRepository,
-    private readonly db?: DbAdapter
+    private readonly db?: DbAdapter,
+    private readonly sessionDb?: DbAdapter,
+    private readonly authorization?: { context: OperationContext; authorizer: OperationAuthorizer },
+    private readonly durable?: MongoDurableEventStore,
+    private readonly publisher?: PluginEventPublisher
   ) {}
+
+  withAuthorization(context: OperationContext, authorizer: OperationAuthorizer) {
+    assertOperationContext(context);
+    return new ContentTypesService(
+      this.repository,
+      this.db,
+      this.sessionDb,
+      {
+        context,
+        authorizer
+      },
+      this.durable,
+      this.publisher
+    );
+  }
+  private async assertAction(action: "read" | "manage", id?: string) {
+    if (this.authorization)
+      await this.authorization.authorizer.assert(this.authorization.context, {
+        ownerPluginId: "editorial-pack",
+        resource: "content-types",
+        action,
+        resourceId: id
+      });
+  }
 
   async createContentType(
     input: CreateContentTypeInput,
     createdByUserId: string
   ): Promise<ContentTypeRecord> {
+    if (this.db) return this.atomic((service) => service.createContentType(input, createdByUserId));
+    await this.assertAction("manage");
     const parsed = CreateContentTypeInputSchema.parse(input);
     this.assertFieldsAreValid(parsed.fields);
+    this.assertDeliveryFields(parsed.delivery, parsed.fields);
     if (parsed.workflow) this.assertWorkflowIsValid(parsed.workflow);
     const existing = await this.repository.findByKey(parsed.key);
     if (existing) {
-      throw new ContentTypeValidationError(`Content type key "${parsed.key}" is already in use`);
+      throw new ContentTypeConflictError(`Content type key "${parsed.key}" is already in use`);
     }
     return this.repository.create({ ...parsed, createdByUserId });
   }
@@ -100,7 +142,16 @@ export class ContentTypesService {
     });
   }
 
+  async getContentTypeForEntry(id: string, fence = false) {
+    const record = await this.repository.findById(id);
+    if (!record || !fence) return record;
+    const locked = await this.repository.fence(id, record.version);
+    if (!locked) throw new ContentTypeConflictError("Il modello è cambiato. Aggiorna e riprova.");
+    return locked;
+  }
+
   async getContentType(id: string) {
+    await this.assertAction("read", id);
     return this.repository.findById(id);
   }
 
@@ -110,15 +161,22 @@ export class ContentTypesService {
     limit?: number;
     offset?: number;
   }) {
+    await this.assertAction("read");
     return this.repository.list(options);
   }
 
-  async updateContentType(id: string, input: UpdateContentTypeInput) {
+  async updateContentType(
+    id: string,
+    input: UpdateContentTypeInput
+  ): Promise<ContentTypeRecord | null> {
+    if (this.db) return this.atomic((service) => service.updateContentType(id, input));
+    await this.assertAction("manage", id);
     const parsed = UpdateContentTypeInputSchema.parse(input);
     if (parsed.fields) this.assertFieldsAreValid(parsed.fields);
     if (parsed.workflow) this.assertWorkflowIsValid(parsed.workflow);
     const current = await this.repository.findById(id);
     if (!current) return null;
+    this.assertDeliveryFields(parsed.delivery ?? current.delivery, parsed.fields ?? current.fields);
     if (await this.hasEntries(id)) {
       const nextFields = parsed.fields ?? current.fields;
       const incompatible =
@@ -151,38 +209,79 @@ export class ContentTypesService {
         (parsed.workflow !== undefined &&
           JSON.stringify(parsed.workflow) !== JSON.stringify(current.workflow));
       if (incompatible || workflowChanges)
-        throw new ContentTypeValidationError(
+        throw new ContentTypeConflictError(
           "Questo modello contiene entry: rimozione/cambio dei campi, nuovi campi obbligatori e cambi di workflow richiedono una migrazione esplicita."
         );
     }
-    return this.repository.update(id, parsed);
+    const updated = await this.repository.update(id, parsed, current.version);
+    if (!updated) throw new ContentTypeConflictError("Il modello è cambiato. Aggiorna e riprova.");
+    await this.publisher?.emit("delivery-invalidated", { scope: "content-type", id });
+    return updated;
   }
 
-  async deleteContentType(id: string) {
+  async deleteContentType(id: string): Promise<ContentTypeRecord | null> {
+    if (this.db) return this.atomic((service) => service.deleteContentType(id));
+    await this.assertAction("manage", id);
     await this.assertEmpty(id);
     return this.repository.softDelete(id);
   }
 
-  async restoreContentType(id: string) {
+  async restoreContentType(id: string): Promise<ContentTypeRecord | null> {
+    if (this.db) return this.atomic((service) => service.restoreContentType(id));
+    await this.assertAction("manage", id);
     return this.repository.restore(id);
   }
 
-  async permanentlyDeleteContentType(id: string) {
+  async permanentlyDeleteContentType(id: string): Promise<boolean> {
+    if (this.db) return this.atomic((service) => service.permanentlyDeleteContentType(id));
+    await this.assertAction("manage", id);
     await this.assertEmpty(id);
     return this.repository.hardDelete(id);
   }
 
+  private assertDeliveryFields(
+    delivery: ContentTypeRecord["delivery"],
+    fields: ContentTypeRecord["fields"]
+  ) {
+    if (delivery?.publicFields.some((key) => !fields.some((field) => field.key === key)))
+      throw new ContentTypeValidationError("Delivery publicFields must reference declared fields");
+  }
+
+  private async atomic<T>(work: (service: ContentTypesService) => Promise<T>): Promise<T> {
+    if (this.durable)
+      return this.durable.transaction("editorial-pack", (db, publisher) =>
+        work(
+          new ContentTypesService(
+            new ContentTypesRepository(db),
+            undefined,
+            db,
+            this.authorization,
+            undefined,
+            publisher
+          )
+        )
+      );
+    if (!this.db?.withTransaction)
+      throw new ContentTypeValidationError(
+        "Editorial writes require MongoDB replica-set transactions"
+      );
+    return this.db.withTransaction({ pluginId: "editorial-pack" }, (db) =>
+      work(
+        new ContentTypesService(new ContentTypesRepository(db), undefined, db, this.authorization)
+      )
+    );
+  }
+
   private async hasEntries(contentTypeId: string): Promise<boolean> {
-    if (!this.db) return false;
-    const entries = createPluginDbScope(this.db, "editorial-pack").repository("entries");
+    const db = this.sessionDb ?? this.db;
+    if (!db) return false;
+    const entries = createPluginDbScope(db, "editorial-pack").repository("entries");
     return !!(await entries.findOne({ filter: { contentTypeId } }));
   }
 
   private async assertEmpty(id: string) {
     if (await this.hasEntries(id))
-      throw new ContentTypeValidationError(
-        "Elimina o migra le entry prima di eliminare il modello."
-      );
+      throw new ContentTypeConflictError("Elimina o migra le entry prima di eliminare il modello.");
   }
 
   private assertFieldsAreValid(fields: readonly ContentTypeField[]) {

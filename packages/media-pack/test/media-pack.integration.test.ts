@@ -7,7 +7,7 @@ import { Readable } from "node:stream";
 import test from "node:test";
 import mongoose from "mongoose";
 import { CreateBucketCommand, DeleteBucketCommand, S3Client } from "@aws-sdk/client-s3";
-import { EntityRegistry, createMongoDbAdapter } from "@trinacria-cms/kernel";
+import { EntityRegistry, createMongoDbAdapter } from "@trinacria-cms/kernel/runtime";
 import {
   MEDIA_ACL_ENTRIES_ENTITY,
   MEDIA_ASSETS_ENTITY,
@@ -22,7 +22,7 @@ import {
   MediaUploadsRepository,
   MediaUploadsService,
   S3MediaStorageProvider
-} from "../src/index.js";
+} from "../src/runtime.js";
 
 const RUN_MONGO = process.env.TRINACRIA_RUN_MONGO_INTEGRATION === "1";
 const RUN_S3 = process.env.TRINACRIA_RUN_S3_INTEGRATION === "1";

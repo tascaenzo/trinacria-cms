@@ -1,0 +1,3974 @@
+// dist/contracts/api-contract.d.ts
+/**
+ * Standard API envelope for successful responses.
+ */
+export interface ApiSuccessResponse<TData> {
+    data: TData;
+    meta?: ApiResponseMeta;
+    requestId?: string;
+}
+/**
+ * Standard API envelope for failed responses.
+ */
+export interface ApiErrorResponse {
+    error: ApiError;
+    meta?: ApiResponseMeta;
+    requestId?: string;
+}
+/**
+ * Canonical API error model shared across controllers and SDK.
+ */
+export interface ApiError {
+    code: string;
+    message: string;
+    details?: Record<string, unknown>;
+}
+/**
+ * Optional metadata attached to API responses.
+ */
+export interface ApiResponseMeta {
+    pluginId?: string;
+    count?: number;
+    limit?: number;
+    offset?: number;
+    nextCursor?: string;
+}
+/**
+ * Helper to build a successful API envelope.
+ */
+export declare function apiSuccess<TData>(data: TData, meta?: ApiResponseMeta): ApiSuccessResponse<TData>;
+/**
+ * Helper to build a failed API envelope.
+ */
+export declare function apiError(code: string, message: string, details?: Record<string, unknown>, meta?: ApiResponseMeta): ApiErrorResponse;
+
+// dist/contracts/audit.d.ts
+/** Redacted operational audit; appending never accepts arbitrary payloads or secrets. */
+export interface AuditEntry {
+    id: string;
+    timestamp: string;
+    instanceId: string;
+    actorKind: "user" | "plugin" | "system";
+    actorId: string;
+    ownerPluginId: string;
+    action: string;
+    resourceId: string;
+    outcome: "allowed" | "denied" | "failed";
+    reason: string;
+    correlationId?: string;
+    revision?: number;
+    epoch?: number;
+}
+export interface AuditSink {
+    append(entry: Omit<AuditEntry, "id" | "timestamp">): Promise<void>;
+}
+
+// dist/contracts/authz-service.d.ts
+import type { NamespaceContext } from "./namespace-context.js";
+/**
+ * Uniform authorization request used by core and plugins.
+ * Checks always run inside an explicit namespace.
+ */
+export interface AuthorizationRequest {
+    /** Identifier of the user/service attempting the action. */
+    subjectId: string;
+    /** Requested action (e.g. "create", "read", "publish"). */
+    action: string;
+    /** Logical resource targeted by the policy (e.g. "content.entry"). */
+    resource: string;
+    /** Optional target resource ID for object-level policies. */
+    resourceId?: string;
+    /** Plugin/workspace context for tenant-aware policies. */
+    context: NamespaceContext;
+}
+/**
+ * Formal result of policy evaluation.
+ */
+export interface AuthorizationResult {
+    /** True when the request is authorized. */
+    allowed: boolean;
+    /** Optional reason useful for logging/audit/policy debugging. */
+    reason?: string;
+}
+/**
+ * Kernel AuthZ contract.
+ * `can` returns the decision; `assert` throws when unauthorized.
+ */
+export interface AuthzService {
+    can(request: AuthorizationRequest): Promise<AuthorizationResult>;
+    assert(request: AuthorizationRequest): Promise<void>;
+}
+
+// dist/contracts/cache-adapter.d.ts
+export interface CacheEntry<T> {
+    value: T;
+    expiresAt: number | null;
+}
+export interface CacheAdapter {
+    get<T>(namespace: string, key: string): Promise<T | undefined>;
+    set<T>(namespace: string, key: string, value: T, ttlSeconds?: number): Promise<void>;
+    del(namespace: string, key: string): Promise<void>;
+    delNamespace(namespace: string): Promise<void>;
+    clear(): Promise<void>;
+}
+
+// dist/contracts/cms-starter.d.ts
+import type { ModuleDefinition, Provider } from "@trinacria/core";
+import type { HttpMiddleware, OpenApiDocument } from "@trinacria/http";
+import type { PluginDiscoveryService, PluginDiscoverySource, PluginSourceSnapshot } from "./plugin-discovery.js";
+import type { KernelPluginDefinition, PluginEventDeliveryDiagnostic, PluginRuntime } from "./plugin-runtime.js";
+import type { PluginRuntimeStore } from "./plugin-runtime-store.js";
+import type { SecurePayloadKeyring } from "./secure-event-payloads.js";
+/**
+ * HTTP bootstrap configuration for the CMS starter.
+ */
+export interface CmsHttpConfig {
+    host?: string;
+    port?: number;
+    middlewares?: HttpMiddleware[];
+    openApi?: {
+        enabled?: boolean;
+        jsonPath?: string;
+        title: string;
+        version: string;
+        description?: string;
+        transformDocument?: (document: OpenApiDocument) => OpenApiDocument;
+        onDocumentGenerated?: (document: OpenApiDocument) => void;
+    };
+}
+export interface CmsSwaggerUiConfig {
+    enabled?: boolean;
+    path?: string;
+    openApiJsonPath?: string;
+    title?: string;
+}
+/**
+ * Starter contract for bootstrapping a minimal CMS application.
+ * App-specific modules and plugins can be injected at startup.
+ */
+export interface CmsStarterOptions {
+    coreVersion: string;
+    /** Environment-only startup selected by real host prerequisite checks. */
+    installerOnly?: boolean;
+    installation?: {
+        inspect: import("./installation.js").InstallationHost["inspect"];
+    };
+    durableEvents?: {
+        enabled?: boolean;
+        concurrency?: number;
+        pollMs?: number;
+    };
+    /** Host-verified deployed artifact fingerprints; enables the shared control plane. */
+    cluster?: {
+        instanceId?: string;
+        artifacts: Readonly<Record<string, import("./plugin-cluster.js").PluginArtifact>>;
+        reconcileMs?: number;
+        heartbeatMs?: number;
+        leaseMs?: number;
+        operationTimeoutMs?: number;
+    };
+    /** Explicit environment-only modules mounted when installerOnly or database setup requires them. */
+    offlineInstallerModules?: readonly ModuleDefinition[];
+    migrations?: {
+        instanceId?: string;
+        packageRoots?: Readonly<Record<string, string>>;
+        /** Installation-only, while readiness remains database-degraded. */
+        allowStartupWithoutDb?: boolean;
+    };
+    http?: CmsHttpConfig;
+    /**
+     * Enables Trinacria events plugin (`@trinacria/events`) for in-process pub/sub.
+     * Enabled by default.
+     */
+    enableEventsPlugin?: boolean;
+    swaggerUi?: CmsSwaggerUiConfig;
+    modules?: readonly ModuleDefinition[];
+    globalProviders?: readonly Provider[];
+    plugins?: readonly KernelPluginDefinition[];
+    pluginSources?: readonly PluginDiscoverySource[];
+    /** Real filesystem roots allowed for configured plugin imports. Defaults to cwd. */
+    pluginAllowedRoots?: readonly string[];
+    /**
+     * Optional discovery service override for tests or custom host applications.
+     * When omitted, the starter uses ConfiguredPluginDiscoveryService.
+     */
+    pluginDiscoveryService?: PluginDiscoveryService;
+    continueOnPluginDiscoveryError?: boolean;
+    enableHealthModule?: boolean;
+    /** Enables automatic calls to a PluginManifestProvisioner on plugin lifecycle. */
+    enablePluginManifestProvisioning?: boolean;
+    autoLoadPlugins?: boolean;
+    /** Host keyring; falls back only to explicit secure-payload environment configuration. */
+    securePayloads?: {
+        keyring?: SecurePayloadKeyring;
+        retentionMs?: number;
+    };
+    /**
+     * Optional custom persistence backend for plugin runtime state.
+     * If omitted, the starter auto-selects a default store (DbAdapter-backed when available).
+     */
+    pluginRuntimeStore?: PluginRuntimeStore;
+    /** Redacted delivery diagnostics; defaults to structured console warnings. */
+    onPluginEventDeliveryDiagnostic?: (diagnostic: PluginEventDeliveryDiagnostic) => void | Promise<void>;
+}
+/**
+ * Runtime handle returned by the CMS starter.
+ */
+export interface CmsHttpRouteInfo {
+    method: string;
+    path: string;
+    controllerName: string;
+    publicApi: boolean;
+    pluginId?: string;
+    operationId?: string;
+    exclusionReason?: string;
+}
+export interface CmsStarterHandle {
+    startupMode: "cms" | "installer";
+    runtime: PluginRuntime;
+    pluginSources: readonly PluginSourceSnapshot[];
+    getHttpRouteInventory(): readonly CmsHttpRouteInfo[];
+    shutdown(): Promise<void>;
+}
+
+// dist/contracts/db-adapter.d.ts
+import type { NamespaceContext } from "./namespace-context.js";
+/**
+ * Mongo-first query shape used by kernel repositories.
+ * The contract intentionally keeps a small abstract surface so services do not depend
+ * on the concrete Mongo driver API, while still mapping directly to Mongo concepts.
+ */
+export interface DbQuery<TData = unknown> {
+    /** Free-form Mongo-like filter predicate (normalized by the adapter). */
+    filter?: Record<string, unknown>;
+    /** Maximum number of records to return. */
+    limit?: number;
+    /** Pagination offset. */
+    offset?: number;
+    /** Field-based sorting. */
+    sort?: Record<string, "asc" | "desc">;
+    /** Field selection (projection style). */
+    projection?: Record<string, 0 | 1>;
+    /** Optional metadata for adapter-specific hints (tracing, lock mode, etc.). */
+    metadata?: Record<string, unknown>;
+    /** Optional parser to normalize/validate read records. */
+    parse?: (value: unknown) => TData;
+}
+/**
+ * Minimal CRUD contract for namespaced entities.
+ * Each plugin uses repositories isolated by its NamespaceContext.
+ */
+export interface DbRepository<TData = unknown> {
+    findOne(query: DbQuery<TData>): Promise<TData | null>;
+    findMany(query: DbQuery<TData>): Promise<readonly TData[]>;
+    /**
+     * Inserts a new record.
+     * Adapters can enrich partial payloads with generated fields (id, timestamps, etc.).
+     */
+    insertOne(data: Partial<TData>): Promise<TData>;
+    updateOne(query: DbQuery<TData>, patch: Partial<TData>): Promise<TData | null>;
+    deleteOne(query: DbQuery<TData>): Promise<boolean>;
+}
+/**
+ * Abstract transaction handle over Mongo sessions.
+ * Implementations define the exact session lifecycle and commit/rollback semantics.
+ */
+export interface DbTransaction {
+    commit(): Promise<void>;
+    rollback(): Promise<void>;
+}
+/**
+ * Mongo-first persistence entry point for the kernel.
+ *
+ * This contract deliberately mirrors Mongo concepts (filter objects, projection,
+ * sort descriptors) because Trinacria CMS is a Mongo-first platform. It is NOT
+ * an abstract multi-database adapter. Future support for other databases would
+ * require a new architectural decision, not a generic abstraction.
+ */
+export interface DbAdapter {
+    /** Returns entity-scoped repositories for plugin/workspace namespaces. */
+    repository<TData = unknown>(entityName: string, context: NamespaceContext): DbRepository<TData>;
+    /**
+     * Optional adapter capability to materialize declared entity indexes.
+     * Implementations that do not support it can omit this method.
+     */
+    ensureIndexes?(pluginId: string, entityNames: readonly string[]): Promise<void>;
+    /** Runs repositories on one session; commits atomically and retries transient conflicts. */
+    withTransaction?<T>(context: NamespaceContext, work: (adapter: DbAdapter) => Promise<T>): Promise<T>;
+    /** Starts a namespaced transaction. */
+    beginTransaction(context: NamespaceContext): Promise<DbTransaction>;
+    /** Exposes adapter health for health endpoints and readiness checks. */
+    healthCheck(): Promise<{
+        ok: true;
+    } | {
+        ok: false;
+        reason: string;
+    }>;
+}
+
+// dist/contracts/index.d.ts
+export * from "./api-contract.js";
+export * from "./audit.js";
+export * from "./authz-service.js";
+export * from "./cache-adapter.js";
+export * from "./cms-starter.js";
+export * from "./db-adapter.js";
+export * from "./installation.js";
+export * from "./kernel-admin-route-guard.js";
+export * from "./namespace-context.js";
+export type * from "./operations.js";
+export * from "./plugin-access-policy.js";
+export * from "./plugin-cluster.js";
+export * from "./plugin-discovery.js";
+export * from "./plugin-host-services.js";
+export * from "./plugin-manifest.js";
+export * from "./plugin-manifest-provisioner.js";
+export * from "./plugin-migrations.js";
+export * from "./plugin-nonce-store.js";
+export * from "./plugin-runtime.js";
+export * from "./plugin-runtime-store.js";
+export * from "./secure-event-payloads.js";
+
+// dist/contracts/installation.d.ts
+/** Host-only installation coordination. Plugin hooks must be idempotent. */
+export interface InstallationCheck {
+    id: "database" | "transactions" | "write-access" | "runtime-keys" | "plugins" | "services" | "administrator" | "settings";
+    status: "pass" | "fail" | "blocked";
+    message: string;
+}
+export interface PluginInstallationInput {
+    dataMode: "empty" | "demo";
+    adminUserId: string;
+}
+export interface InstallationHost {
+    inspect(): Promise<{
+        installed?: boolean;
+        checks: readonly InstallationCheck[];
+    }>;
+    initialize(input: PluginInstallationInput): Promise<void>;
+    verify(): Promise<readonly InstallationCheck[]>;
+}
+
+// dist/contracts/kernel-admin-route-guard.d.ts
+import type { HttpMiddleware } from "@trinacria/http";
+/**
+ * Optional integration bridge used by kernel-owned HTTP controllers when they
+ * must enforce admin-only access without depending on a specific auth plugin.
+ *
+ * A host plugin such as `core-pack` can provide the concrete middleware and
+ * matching OpenAPI security requirements.
+ */
+export interface KernelAdminRouteGuard {
+    middleware: HttpMiddleware;
+    security?: Record<string, string[]>[];
+}
+
+// dist/contracts/namespace-context.d.ts
+/**
+ * Minimal isolation context used by the kernel to separate
+ * data and services across plugins (and optionally workspaces).
+ */
+export interface NamespaceContext {
+    /** Unique identifier of the plugin that owns the resources. */
+    pluginId: string;
+    /** Workspace/tenant identifier when the plugin runs in multi-tenant mode. */
+    workspaceId?: string;
+}
+/**
+ * Builds a canonical namespace key to scope storage,
+ * cache, metrics, and other infrastructure services.
+ */
+export declare function buildNamespaceKey(context: NamespaceContext): string;
+
+// dist/contracts/operations.d.ts
+export type OperationActor = {
+    readonly kind: "user";
+    readonly subjectId: string;
+} | {
+    readonly kind: "plugin";
+    readonly pluginId: string;
+} | {
+    readonly kind: "system";
+    readonly purpose: string;
+};
+/** Created by trusted host adapters, never parsed from a request body. */
+export interface OperationContext {
+    readonly actor: OperationActor;
+    readonly source: "http" | "plugin" | "job" | "cli";
+    readonly requestId: string;
+    /** Named operation fixed by the runtime binding, never by business input. */
+    readonly operation?: string;
+    readonly workspaceId?: string;
+    readonly delegation?: {
+        readonly userId: string;
+    };
+}
+export interface OperationTarget {
+    readonly ownerPluginId: string;
+    readonly resource: string;
+    readonly action: string;
+    readonly resourceId?: string;
+}
+export interface OperationAuthorizer {
+    assert(context: OperationContext, target: OperationTarget): Promise<void>;
+    /** Authorizes every target before work and wraps its lifecycle. Without run, facades call assert. */
+    run?<T>(context: OperationContext, targets: readonly OperationTarget[], work: () => Promise<T>): Promise<T>;
+}
+export type ApplicationOperations<T> = {
+    [K in keyof T as T[K] extends (...args: never[]) => unknown ? K : never]: T[K] extends (...args: infer A) => infer R ? (context: OperationContext, ...args: A) => Promise<Awaited<R>> : never;
+};
+
+// dist/contracts/plugin-access-policy.d.ts
+import type { PluginManifestEmittedEvent } from "./plugin-manifest.js";
+import type { SecureEventPayloadRecord } from "./secure-event-payloads.js";
+export type PluginAccessGrantStatus = "pending" | "approved" | "denied" | "revoked";
+export type PluginAccessGrantType = "api";
+export interface PluginAccessGrant {
+    id?: string;
+    accessType?: PluginAccessGrantType;
+    producerPluginId: string;
+    consumerPluginId: string;
+    resource?: string;
+    action?: string;
+    operation?: string;
+    requiredPermission: string;
+    status: PluginAccessGrantStatus;
+    reason?: string;
+    approvedBy?: string;
+    approvedAt?: string;
+    updatedAt?: string;
+}
+export interface PluginEventSubscriptionAuthorizationRequest {
+    subscriberPluginId: string;
+    eventName: string;
+    eventOwnerPluginId: string;
+    eventVisibility: PluginManifestEmittedEvent["visibility"];
+    requiredPermission: string;
+}
+export interface PluginAccessAuthorizationResult {
+    allowed: boolean;
+    reason?: string;
+}
+export interface PluginEventSubscriptionAuthorizer {
+    canSubscribe(request: PluginEventSubscriptionAuthorizationRequest): Promise<PluginAccessAuthorizationResult> | PluginAccessAuthorizationResult;
+}
+export interface SecureEventPayloadAuthorizationRequest {
+    payload: SecureEventPayloadRecord;
+    consumerPluginId: string;
+    eventName: string;
+    requiredPermission: string;
+}
+export interface SecureEventPayloadAuthorizer {
+    canClaim(request: SecureEventPayloadAuthorizationRequest): Promise<PluginAccessAuthorizationResult> | PluginAccessAuthorizationResult;
+}
+
+// dist/contracts/plugin-cluster.d.ts
+import type { PluginRuntimeOperation } from "./plugin-runtime.js";
+export interface PluginArtifact {
+    version: string;
+    checksum: string;
+}
+export interface PluginDesiredState {
+    pluginId: string;
+    artifactVersion: string;
+    artifactChecksum: string;
+    enabled: boolean;
+    revision: number;
+    updatedBy: string;
+    reason: string;
+    updatedAt: string;
+}
+export interface PluginInstanceObservation {
+    instanceId: string;
+    observedRevision: number;
+    state: "loaded" | "disabled" | "failed";
+    reason?: string;
+    healthy: boolean;
+    artifactVersion: string;
+    artifactChecksum: string;
+}
+export interface PluginClusterSnapshot {
+    desired: PluginDesiredState;
+    instances: readonly PluginInstanceObservation[];
+}
+export interface PluginClusterOperation {
+    operationId: string;
+    pluginId: string;
+    operation: PluginRuntimeOperation;
+    desiredRevision: number;
+    status: "pending" | "succeeded" | "failed" | "partial";
+    submittedAt: string;
+    expiresAt: string;
+    participants: readonly string[];
+    instances: readonly PluginInstanceObservation[];
+}
+export interface PluginClusterOperationInput {
+    operation: PluginRuntimeOperation;
+    expectedRevision: number;
+    idempotencyKey: string;
+    reason?: string;
+}
+
+// dist/contracts/plugin-discovery.d.ts
+import type { KernelPluginDefinition } from "./plugin-runtime.js";
+export type PluginDiscoverySourceType = "workspace" | "package" | "local-path";
+export interface PluginDiscoverySource {
+    type: PluginDiscoverySourceType;
+    name: string;
+    entrypoint: string;
+    enabledByDefault?: boolean;
+}
+export type PluginSourceStatus = "discovered" | "failed" | "disabled";
+export interface PluginSourceSnapshot {
+    type: PluginDiscoverySourceType;
+    name: string;
+    entrypoint: string;
+    status: PluginSourceStatus;
+    pluginId?: string;
+    error?: string;
+}
+export interface PluginDiscoveryResult {
+    plugins: readonly KernelPluginDefinition[];
+    sources: readonly PluginSourceSnapshot[];
+}
+export interface PluginDiscoveryService {
+    discover(sources: readonly PluginDiscoverySource[]): Promise<PluginDiscoveryResult>;
+}
+
+// dist/contracts/plugin-host-services.d.ts
+import type { DbQuery } from "./db-adapter.js";
+import type { PluginEventPublisher } from "./plugin-runtime.js";
+import type { SecureEventPayloadClient } from "./secure-event-payloads.js";
+export type PluginJsonValue = null | boolean | number | string | PluginJsonValue[] | {
+    [key: string]: PluginJsonValue;
+};
+export type PluginQuery<T = unknown> = Omit<DbQuery<T>, "metadata">;
+export interface PluginRepository<T = unknown> {
+    findOne(query: PluginQuery<T>): Promise<T | null>;
+    findMany(query: PluginQuery<T>): Promise<readonly T[]>;
+    insertOne(data: Partial<T>): Promise<T>;
+    updateOne(query: PluginQuery<T>, patch: Partial<T>): Promise<T | null>;
+    deleteOne(query: PluginQuery<T>): Promise<boolean>;
+}
+export interface PluginStorage {
+    repository<T = unknown>(entityName: string): PluginRepository<T>;
+    transaction<T>(work: (storage: PluginStorage, events: PluginEventPublisher) => Promise<T>): Promise<T>;
+}
+export interface PluginSettings {
+    get(key: string): Promise<PluginJsonValue | null>;
+    set(key: string, value: PluginJsonValue): Promise<void>;
+}
+export interface PluginLogger {
+    info(message: string, metadata?: Record<string, unknown>): Promise<void>;
+    warn(message: string, metadata?: Record<string, unknown>): Promise<void>;
+    error(message: string, metadata?: Record<string, unknown>): Promise<void>;
+}
+export interface PluginOperationClient {
+    call<T = PluginJsonValue>(ownerPluginId: string, operation: string, input?: PluginJsonValue, options?: {
+        signal?: AbortSignal;
+    }): Promise<T>;
+}
+export interface PluginHostServices {
+    readonly storage: PluginStorage;
+    readonly securePayloads: SecureEventPayloadClient;
+    readonly settings: PluginSettings;
+    readonly events: PluginEventPublisher;
+    readonly logger: PluginLogger;
+    readonly operations: PluginOperationClient;
+}
+/** Host integration points. Callers' identities are supplied by the runtime. */
+export interface PluginSettingsHost {
+    get(pluginId: string, key: string): Promise<PluginJsonValue | null>;
+    set(pluginId: string, key: string, value: PluginJsonValue): Promise<void>;
+}
+export interface PluginOperationAuthorizationRequest {
+    callerPluginId: string;
+    ownerPluginId: string;
+    operation: string;
+    requiredPermission: string;
+}
+export interface PluginOperationAuthorizer {
+    canInvoke(request: PluginOperationAuthorizationRequest): Promise<{
+        allowed: boolean;
+    }> | {
+        allowed: boolean;
+    };
+}
+
+// dist/contracts/plugin-manifest-provisioner.d.ts
+import type { PluginManifest } from "./plugin-manifest.js";
+import type { PluginTranslationSource } from "./plugin-runtime.js";
+/**
+ * Kernel lifecycle capability that materializes a plugin manifest in the Core.
+ *
+ * Implementations synchronously provision manifest-owned resources (security,
+ * settings, translations, migrations, and future domains) when a plugin loads,
+ * and reverse that work before it is unregistered.
+ */
+export interface PluginManifestProvisioner {
+    provision(manifest: PluginManifest, i18nSources?: readonly PluginTranslationSource[]): Promise<void>;
+    deprovision(manifest: PluginManifest): Promise<void>;
+    defer?(manifest: PluginManifest): Promise<void> | void;
+    provisionDeferred?(): Promise<void>;
+}
+
+// dist/contracts/plugin-manifest.d.ts
+import type { PluginMigrationMetadata } from "./plugin-migrations.js";
+/**
+ * Dependency declared by a plugin toward another plugin.
+ * Used by runtime for compatibility validation and load ordering.
+ */
+export interface PluginManifestDependency {
+    /** Plugin required by the current plugin. */
+    pluginId: string;
+    /** Accepted semver version range. */
+    versionRange: string;
+    /** If true, the dependency may be missing without blocking load. */
+    optional?: boolean;
+}
+/**
+ * Declarative permission contributed by a plugin.
+ * `key` must be namespaced as `<pluginId>:<resource>:<action>`.
+ */
+export interface PluginManifestSecurityPermission {
+    key: string;
+    displayName: string;
+    description?: string;
+}
+/**
+ * Declarative role owned by a plugin.
+ * Other plugins can contribute grants to this role, but only the owner plugin
+ * is allowed to manage role metadata.
+ */
+export interface PluginManifestSecurityRole {
+    code: string;
+    name: string;
+    description?: string;
+}
+/**
+ * Declarative grants contributed by a plugin.
+ * Each grant targets one role and contributes plugin-owned permission keys.
+ */
+export interface PluginManifestSecurityGrant {
+    roleCode: string;
+    permissionKeys: readonly string[];
+}
+/**
+ * Optional condition attached to policy rules.
+ * Conditions are evaluated at authorization time.
+ */
+export type PluginManifestSecurityPolicyCondition = "resource_id_required" | "resource_id_equals_subject";
+/**
+ * Declarative policy rule contributed by a plugin.
+ * Rules can be wildcard-based and can either allow or deny.
+ */
+export interface PluginManifestSecurityPolicyRule {
+    roleCode: string;
+    effect: "allow" | "deny";
+    permissionPattern: string;
+    conditions?: readonly PluginManifestSecurityPolicyCondition[];
+}
+/**
+ * Security section contributed by a plugin.
+ * It is used by provisioning services to create/sync permissions, roles, and grants.
+ */
+export interface PluginManifestSecurity {
+    permissions?: readonly PluginManifestSecurityPermission[];
+    roles?: readonly PluginManifestSecurityRole[];
+    grants?: readonly PluginManifestSecurityGrant[];
+    policyRules?: readonly PluginManifestSecurityPolicyRule[];
+}
+/** Recursive JSON-compatible value type. */
+export type JsonValue = string | number | boolean | null | JsonValue[] | {
+    [key: string]: JsonValue;
+};
+export type PluginManifestSettingStatus = "active" | "disabled";
+/**
+ * Declarative setting owned by a plugin.
+ * `key` is fully qualified as `<pluginId>:<domain>:<name>`.
+ */
+export interface PluginManifestSetting {
+    /** Fully qualified key: <pluginId>:<domain>:<name> */
+    key: string;
+    /** Category/domain grouping for admin UI */
+    category: string;
+    /** Human-readable description */
+    description?: string;
+    /** JSON Schema for validation */
+    schema?: JsonValue;
+    /** Default value (native JS value, not JSON-stringified) */
+    defaultValue?: JsonValue;
+    /** Whether the setting is active or disabled */
+    status?: PluginManifestSettingStatus;
+    /** If true, the value is encrypted at rest */
+    secret?: boolean;
+    /** Whether non-admin plugins can mutate this setting */
+    mutable?: boolean;
+    /** Who can read this setting */
+    visibility?: "public" | "admin" | "internal";
+}
+export type PluginManifestEntityIndexDirection = 1 | -1 | "text";
+export interface PluginManifestEntityIndex {
+    name: string;
+    fields: Record<string, PluginManifestEntityIndexDirection>;
+    unique?: boolean;
+    sparse?: boolean;
+    /** Single-field Mongo TTL index. Runtime expiry checks remain mandatory. */
+    expireAfterSeconds?: number;
+    partialFilter?: Record<string, unknown>;
+}
+export interface PluginManifestEntityRepository {
+    mode: "standard" | "custom";
+    token?: string;
+}
+/**
+ * Declarative Mongo-backed entity contributed by a plugin.
+ * Entity names are plugin-local and become globally canonical through plugin ownership.
+ */
+export interface PluginManifestEntity {
+    name: string;
+    collection?: string;
+    displayName?: string;
+    schemaVersion: number;
+    documentSchema?: Record<string, unknown>;
+    indexes?: readonly PluginManifestEntityIndex[];
+    repository?: PluginManifestEntityRepository;
+}
+export type PluginManifestEventVisibility = "public" | "protected" | "private" | "audit";
+export type PluginManifestEventDelivery = "sync" | "async" | "deferred";
+export interface PluginManifestEmittedEvent {
+    name: string;
+    visibility: PluginManifestEventVisibility;
+    version: number;
+    delivery: PluginManifestEventDelivery;
+    payloadSchema?: Record<string, unknown>;
+}
+export interface PluginManifestEventSubscription {
+    eventName: string;
+    handler: string;
+    requiredPermission?: string;
+}
+export interface PluginManifestEvents {
+    emits?: readonly PluginManifestEmittedEvent[];
+    subscribes?: readonly PluginManifestEventSubscription[];
+}
+/** Lightweight declaration for one plugin-owned translation namespace. */
+export interface PluginManifestTranslationNamespace {
+    /** Plugin-local namespace, for example `admin`, `public`, or `mobile`. */
+    id: string;
+    /** Client surface allowed to resolve this namespace. */
+    surface: string;
+    /** Locales supplied by the package assets. Must include the English fallback. */
+    locales: readonly string[];
+    /** Stable source identifier matched to assets on the plugin definition, never a message payload. */
+    source: string;
+}
+/**
+ * Translations contributed by a plugin. Every translated plugin ships an
+ * English fallback; the Core imports the package assets on installation. A
+ * plugin can declare multiple namespaces for its admin, public site, and app UI.
+ */
+export interface PluginManifestI18n {
+    fallbackLocale: "en";
+    namespaces: readonly PluginManifestTranslationNamespace[];
+}
+export interface PluginManifestAdminNavigation {
+    id: string;
+    label: string;
+    /** Presentation hint rendered by compatible admin shells. */
+    icon?: string;
+    path?: string;
+    /** Collapsible sidebar section used to group related plugin navigation. */
+    group?: string;
+    requiredPermission?: string;
+    order?: number;
+}
+export interface PluginManifestAdminRoute {
+    id: string;
+    path: string;
+    label: string;
+    requiredPermission?: string;
+    componentRef?: string;
+    order?: number;
+}
+export interface PluginManifestAdminResource {
+    id: string;
+    label: string;
+    routeBase: string;
+    apiBase: string;
+    requiredPermission?: string;
+}
+export interface PluginManifestAdminWidget {
+    id: string;
+    label: string;
+    requiredPermission?: string;
+    componentRef?: string;
+    /** Initial constraints for the user-customizable dashboard grid. */
+    layout?: {
+        /** Default width applied before an operator customizes the dashboard. */
+        defaultColumnSpan?: 1 | 2 | 3 | 4;
+        /** Default height applied before an operator customizes the dashboard. */
+        defaultRowSpan?: 1 | 2 | 3;
+        /** @deprecated Use defaultColumnSpan for new widget declarations. */
+        columnSpan?: 1 | 2 | 3 | 4;
+        /** @deprecated Use defaultRowSpan for new widget declarations. */
+        rowSpan?: 1 | 2 | 3;
+        minColumnSpan?: 1 | 2 | 3 | 4;
+        maxColumnSpan?: 1 | 2 | 3 | 4;
+        minRowSpan?: 1 | 2 | 3;
+        maxRowSpan?: 1 | 2 | 3;
+    };
+}
+export interface PluginManifestAdminSettingsSection {
+    id: string;
+    label: string;
+    namespace?: string;
+    requiredPermission?: string;
+    kind?: "form" | "panel" | "custom";
+    componentRef?: string;
+    summary?: string;
+    category?: string;
+    settingKeys?: readonly string[];
+    data?: unknown;
+    actions?: readonly unknown[];
+    order?: number;
+}
+export interface PluginManifestAdmin {
+    navigation?: readonly PluginManifestAdminNavigation[];
+    routes?: readonly PluginManifestAdminRoute[];
+    resources?: readonly PluginManifestAdminResource[];
+    widgets?: readonly PluginManifestAdminWidget[];
+    settingsSections?: readonly PluginManifestAdminSettingsSection[];
+}
+/**
+ * Minimal public metadata describing an installable plugin.
+ * This contract is input for the runtime plugin registry.
+ */
+export interface PluginManifest {
+    /** Stable and unique plugin ID. */
+    id: string;
+    /** Human-readable plugin name for admin surfaces and registries. */
+    displayName?: string;
+    /** Short functional description. */
+    description?: string;
+    /** Plugin version (semver). */
+    version: string;
+    /** Required `@trinacria-cms/kernel` kernel version range. */
+    requiresCore: string;
+    /** Exposed functional capabilities (e.g. "content.read", "media.write"). */
+    capabilities?: readonly string[];
+    /** Dependencies toward other plugins. */
+    dependencies?: readonly PluginManifestDependency[];
+    /** Mongo-backed entities contributed by the plugin. */
+    entities?: readonly PluginManifestEntity[];
+    /** Serializable metadata for trusted deploy migrations; never contains functions. */
+    migrations?: readonly PluginMigrationMetadata[];
+    /** Centralized settings definitions contributed by the plugin. */
+    settings?: readonly PluginManifestSetting[];
+    /** Event contracts emitted or consumed by the plugin. */
+    events?: PluginManifestEvents;
+    /** Lightweight metadata for package-local translation assets. */
+    i18n?: PluginManifestI18n;
+    /** Declarative admin/backoffice contribution points. */
+    admin?: PluginManifestAdmin;
+    /** Optional security declarations to be provisioned by a security service. */
+    security?: PluginManifestSecurity;
+}
+
+// dist/contracts/plugin-migrations.d.ts
+import type { DbRepository } from "./db-adapter.js";
+import type { JsonValue } from "./plugin-manifest.js";
+/** Experimental deploy contract. Files are immutable, distributed code of a trusted plugin. */
+export interface PluginMigrationMetadata {
+    id: string;
+    checksum: string;
+    sourceFiles: readonly string[];
+    entities: readonly string[];
+    fromSchemaVersion: number;
+    toSchemaVersion: number;
+    kind: "transactional" | "batched" | "index";
+    destructive: boolean;
+    idempotent: boolean;
+    prerequisites?: readonly string[];
+}
+export interface MigrationBatchResult {
+    done: boolean;
+    checkpoint: JsonValue;
+}
+export interface MigrationContext {
+    readonly pluginId: string;
+    readonly workspaceId?: string;
+    readonly batchSize: number;
+    readonly checkpoint: JsonValue;
+    readonly signal: AbortSignal;
+    repository<T = unknown>(entityName: string): DbRepository<T>;
+    /** DDL is available only in index steps; create replacements before deleting old indexes. */
+    ensureIndexes(entityNames: readonly string[]): Promise<void>;
+}
+export interface PluginMigrationDefinition extends PluginMigrationMetadata {
+    run(context: MigrationContext): Promise<void> | Promise<MigrationBatchResult>;
+}
+export interface MigrationApplyOptions {
+    actorId: string;
+    artifactVersion: string;
+    artifactChecksum: string;
+    backupReference?: string;
+    allowDestructive?: boolean;
+    resumeFailed?: boolean;
+}
+
+// dist/contracts/plugin-nonce-store.d.ts
+/** Shared atomic anti-replay store. true only for the first insertion of a nonce hash. */
+export interface PluginNonceStore {
+    readonly shared: boolean;
+    consume(pluginId: string, nonceHash: string, expiresAt: Date): Promise<boolean>;
+}
+
+// dist/contracts/plugin-runtime-store.d.ts
+import type { PluginManifest } from "./plugin-manifest.js";
+import type { PluginLifecyclePhase, PluginRuntimeRecord, PluginRuntimeStatusReason, PluginState } from "./plugin-runtime.js";
+/**
+ * Persisted snapshot of a plugin runtime record.
+ * This shape is storage-facing and optimized for operational queries.
+ */
+export interface PersistedPluginRuntimeRecord {
+    id?: string;
+    pluginId: string;
+    version: string;
+    state: PluginState;
+    enabled: boolean;
+    failureCount: number;
+    lastFailurePhase?: PluginLifecyclePhase;
+    lastErrorCode?: string;
+    lastErrorName?: string;
+    lastErrorMessage?: string;
+    lastErrorDetails?: Record<string, unknown>;
+    statusReason?: PluginRuntimeStatusReason;
+    disabledReason?: string;
+    manifest: PluginManifest;
+    loadedAt?: string;
+    failedAt?: string;
+    disabledAt?: string;
+    createdAt: string;
+    updatedAt: string;
+}
+/**
+ * Optional persistence backend for plugin runtime state.
+ * Implementations can be in-memory or database-backed.
+ */
+export interface PluginRuntimeStore {
+    /**
+     * Performs one-time store setup (for example index creation).
+     */
+    initialize(): Promise<void>;
+    /**
+     * Upserts runtime state for one plugin.
+     */
+    upsert(record: PluginRuntimeRecord): Promise<void>;
+    /**
+     * Removes runtime state for one plugin.
+     */
+    remove(pluginId: string): Promise<void>;
+    /**
+     * Lists currently persisted plugin runtime records.
+     */
+    list(): Promise<readonly PersistedPluginRuntimeRecord[]>;
+}
+
+// dist/contracts/plugin-runtime.d.ts
+import type { PluginManifest, PluginManifestAdminNavigation, PluginManifestAdminResource, PluginManifestAdminRoute, PluginManifestAdminSettingsSection, PluginManifestAdminWidget, PluginManifestEmittedEvent, PluginManifestEntity, PluginManifestEventSubscription, PluginManifestSetting } from "./plugin-manifest.js";
+import type { PluginMigrationDefinition } from "./plugin-migrations.js";
+export type { PluginAccessAuthorizationResult as PluginEventSubscriptionAuthorizationResult, PluginEventSubscriptionAuthorizationRequest, PluginEventSubscriptionAuthorizer } from "./plugin-access-policy.js";
+import type { ModuleDefinition } from "@trinacria/core";
+import type { EventEnvelope } from "@trinacria/events";
+import type { PluginHostServices } from "./plugin-host-services.js";
+/**
+ * Lifecycle phases used for diagnostics when a plugin operation fails.
+ */
+export type PluginLifecyclePhase = "register" | "dependency-check" | "load" | "init" | "unload" | "rollback";
+export type PluginRuntimeOperation = "load" | "unload" | "reload" | "disable" | "enable";
+export interface PluginRuntimeOperationAvailability {
+    operation: PluginRuntimeOperation;
+    available: boolean;
+    reason?: string;
+}
+export interface PluginRuntimeDiagnostic {
+    name: string;
+    message: string;
+    code?: string;
+    details?: Record<string, unknown>;
+}
+export interface PluginRuntimeStatusReason {
+    code: string;
+    message: string;
+    details?: Record<string, unknown>;
+}
+/**
+ * Runtime context passed to plugin hooks.
+ */
+export interface KernelPluginRuntimeContext {
+    services: PluginHostServices;
+    pluginId: string;
+    manifest: PluginManifest;
+    /** Message assets live in package files and are never persisted in the manifest. */
+    i18nSources: readonly PluginTranslationSource[];
+}
+/** One package-local message dictionary loaded while its plugin is installed. */
+export interface PluginTranslationSource {
+    source: string;
+    locale: string;
+    messages: Readonly<Record<string, string>>;
+}
+export interface PluginEventPublisher {
+    emit(eventName: string, payload: unknown, options?: {
+        notBefore?: Date;
+        partitionKey?: string;
+        correlationId?: string;
+        causationId?: string;
+    }): Promise<void>;
+}
+/**
+ * Runtime-level hooks executed by the plugin orchestrator itself.
+ * They are useful for cross-cutting orchestration (for example security provisioning)
+ * without coupling plugin domain code into the runtime implementation.
+ */
+export interface PluginRuntimeLifecycleHooks {
+    /**
+     * Called after plugin modules/hooks completed successfully and before
+     * finalizing the plugin as loaded.
+     */
+    onAfterLoad?(context: KernelPluginRuntimeContext): Promise<void> | void;
+    /** Host preflight before any plugin code/modules run. */
+    onBeforeLoad?(definition: KernelPluginDefinition): Promise<void> | void;
+    /**
+     * Called before unregistering a plugin definition from the runtime catalog.
+     */
+    onBeforeUnregister?(context: KernelPluginRuntimeContext): Promise<void> | void;
+}
+/**
+ * Optional plugin hooks managed by the CMS kernel runtime.
+ * They are distinct from Trinacria plugin hooks and scoped to CMS plugins.
+ */
+export interface KernelPluginHooks {
+    /** First-run content provisioning; called again after interrupted attempts. */
+    onInstall?(context: KernelPluginRuntimeContext, input: import("./installation.js").PluginInstallationInput): Promise<void> | void;
+    onLoad?(context: KernelPluginRuntimeContext): Promise<void> | void;
+    onInit?(context: KernelPluginRuntimeContext): Promise<void> | void;
+    onUnload?(context: KernelPluginRuntimeContext): Promise<void> | void;
+}
+export interface KernelPluginEventHandlerContext {
+    services: PluginHostServices;
+    pluginId: string;
+    eventName: string;
+    handlerName: string;
+    /** Cooperative drain signal; ignored signals do not make a timed-out handler stopped. */
+    signal?: AbortSignal;
+    /** Present only for durable handlers: host-bound atomic vault-to-job transfer. */
+    secureJobs?: {
+        enqueueFromPayload(input: import("./secure-event-payloads.js").ClaimSecureEventPayloadInput): Promise<string>;
+    };
+}
+export type KernelPluginEventHandler = (payload: unknown, envelope: EventEnvelope, context: KernelPluginEventHandlerContext) => Promise<void> | void;
+/**
+ * Full plugin definition accepted by the kernel runtime.
+ * It binds a manifest to runtime modules and optional lifecycle hooks.
+ */
+export interface KernelPluginDefinition extends KernelPluginHooks {
+    manifest: PluginManifest;
+    migrations?: readonly PluginMigrationDefinition[];
+    i18nSources?: readonly PluginTranslationSource[];
+    modules?: readonly ModuleDefinition[];
+    eventHandlers?: Readonly<Record<string, KernelPluginEventHandler>>;
+}
+export interface PluginRuntimeRetryPolicy {
+    maxAttempts: number;
+    backoffMs?: number;
+}
+/** Redacted diagnostic for a skipped plugin event delivery. */
+export interface PluginEventDeliveryDiagnostic {
+    timestamp: Date;
+    pluginId: string;
+    ownerPluginId: string;
+    eventName: string;
+    eventId: string;
+    outcome: "denied" | "policy-error" | "inactive";
+    reason: "event_subscription_authorizer_missing" | "event_subscription_denied" | "event_subscription_policy_error" | "plugin_generation_inactive";
+}
+export interface PluginRuntimeEvent {
+    sequence: number;
+    timestamp: Date;
+    pluginId: string;
+    action: "register" | "unregister" | "load" | "unload" | "reload" | "disable" | "enable" | "load-many";
+    phase?: PluginLifecyclePhase;
+    success: boolean;
+    message?: string;
+    durationMs?: number;
+    stateBefore?: PluginState;
+    stateAfter?: PluginState;
+    details?: Record<string, unknown>;
+}
+export interface PluginDependencyEdgeSnapshot {
+    from: string;
+    to: string;
+    optional: boolean;
+    requiredRange: string;
+    status: "ok" | "missing" | "disabled" | "version-mismatch";
+    currentVersion?: string;
+}
+export interface PluginDependencyGraphSnapshot {
+    nodes: Array<{
+        pluginId: string;
+        state: PluginState;
+        version: string;
+    }>;
+    edges: PluginDependencyEdgeSnapshot[];
+    warnings: string[];
+}
+export interface PluginContributionSnapshot<TDeclaration> {
+    pluginId: string;
+    key: string;
+    declaration: TDeclaration;
+}
+export interface PluginAdminContributionSnapshot {
+    navigation: readonly PluginContributionSnapshot<PluginManifestAdminNavigation>[];
+    routes: readonly PluginContributionSnapshot<PluginManifestAdminRoute>[];
+    resources: readonly PluginContributionSnapshot<PluginManifestAdminResource>[];
+    widgets: readonly PluginContributionSnapshot<PluginManifestAdminWidget>[];
+    settingsSections: readonly PluginContributionSnapshot<PluginManifestAdminSettingsSection>[];
+}
+export interface PluginEventContributionSnapshot {
+    emits: readonly PluginContributionSnapshot<PluginManifestEmittedEvent>[];
+    subscribes: readonly PluginContributionSnapshot<PluginManifestEventSubscription>[];
+}
+export interface PluginContributionCatalogSnapshot {
+    entities: readonly PluginContributionSnapshot<PluginManifestEntity>[];
+    settings: readonly PluginContributionSnapshot<PluginManifestSetting>[];
+    events: PluginEventContributionSnapshot;
+    admin: PluginAdminContributionSnapshot;
+}
+/**
+ * Plugin lifecycle states inside the runtime registry.
+ * The concrete state machine will be enforced by the orchestrator.
+ */
+export type PluginState = "registered" | "loading" | "initializing" | "loaded" | "unloading" | "failed" | "disabled" | "unloaded";
+/**
+ * Runtime snapshot of a registered plugin.
+ * Useful for listing, health checks, and operational audit.
+ */
+export interface PluginRuntimeRecord {
+    /** Declarative plugin manifest. */
+    manifest: PluginManifest;
+    /** Current runtime lifecycle state. */
+    state: PluginState;
+    /** Latest lifecycle sequence for this activation, retained independently of the event buffer. */
+    lifecycleRevision?: number;
+    /** Timestamp set when the plugin enters loaded state. */
+    loadedAt?: Date;
+    /** Last relevant error during load/unload/lifecycle hooks. */
+    lastError?: Error;
+    /** Number of failed lifecycle attempts since runtime bootstrap. */
+    failureCount?: number;
+    /** Timestamp of the latest failure. */
+    failedAt?: Date;
+    /** Lifecycle phase where the latest failure happened. */
+    lastFailurePhase?: PluginLifecyclePhase;
+    /** Timestamp set when plugin becomes disabled. */
+    disabledAt?: Date;
+    /** Persistent disable reason (manual/operator choice). */
+    disabledReason?: string;
+    /** Runtime-facing explanation of the current plugin state. */
+    statusReason?: PluginRuntimeStatusReason;
+}
+/**
+ * Minimal contract for the plugin registry/orchestrator.
+ * Exposes runtime management operations without constraining implementation.
+ */
+export interface PluginRuntime {
+    /**
+     * Registers a plugin definition (or just a manifest) in the catalog
+     * without starting it.
+     */
+    register(plugin: PluginManifest | KernelPluginDefinition): Promise<void>;
+    /** Loads and initializes a plugin. */
+    load(pluginId: string): Promise<void>;
+    /** Unloads a plugin and releases resources. */
+    unload(pluginId: string): Promise<void>;
+    /**
+     * Performs an unload/load cycle using the latest registered definition.
+     * Useful for safe runtime module reload.
+     */
+    reload(pluginId: string): Promise<void>;
+    /**
+     * Removes a plugin definition from the runtime catalog.
+     * Plugin must not be loaded and must have no registered required dependents.
+     */
+    unregister(pluginId: string): Promise<void>;
+    /**
+     * Loads multiple plugins in topological order based on required dependencies.
+     */
+    loadMany(pluginIds?: readonly string[]): Promise<void>;
+    /** Disables a plugin to prevent activation. */
+    disable(pluginId: string, reason?: string): Promise<void>;
+    /** Re-enables a disabled plugin without loading it automatically. */
+    enable(pluginId: string): Promise<void>;
+    /** Returns a read-only view of all plugin runtime states. */
+    list(): readonly PluginRuntimeRecord[];
+    /** Returns the current dependency graph and warnings. */
+    describeDependencies(): PluginDependencyGraphSnapshot;
+    /** Returns manifest-derived plugin contributions indexed by canonical keys. */
+    describeContributions(): PluginContributionCatalogSnapshot;
+    /** Returns recent lifecycle events for diagnostics and audit. */
+    events(options?: {
+        pluginId?: string;
+        limit?: number;
+    }): readonly PluginRuntimeEvent[];
+    /**
+     * Emits an event on behalf of a loaded plugin.
+     * Implementations must enforce manifest-declared event contracts.
+     */
+    emitPluginEvent(pluginId: string, eventName: string, payload: unknown): Promise<void>;
+}
+
+// dist/contracts/secure-event-payloads.d.ts
+export interface EncryptedSecurePayload {
+    cipherText: string;
+    iv: string;
+    authTag: string;
+    algorithm: "aes-256-gcm";
+    keyVersion: string;
+}
+export type SecureEventPayloadStatus = "available" | "consumed" | "expired" | "revoked";
+export interface SecureEventPayloadRecord {
+    id: string;
+    producerPluginId: string;
+    eventName: string;
+    payloadType: string;
+    schemaVersion: number;
+    requiredPermission: string;
+    status: SecureEventPayloadStatus;
+    maxClaims: number;
+    claimCount: number;
+    expiresAt?: string;
+    authorizedConsumerPluginIds?: readonly string[];
+    createdAt: string;
+    updatedAt: string;
+    lastClaimedAt?: string;
+    lastClaimedByPluginId?: string;
+}
+export interface CreateSecureEventPayloadInput<TPayload = unknown> {
+    eventName: string;
+    payloadType: string;
+    schemaVersion: number;
+    requiredPermission: string;
+    payload: TPayload;
+    expiresAt?: string | Date;
+    maxClaims?: number;
+    authorizedConsumerPluginIds?: readonly string[];
+}
+export interface ClaimSecureEventPayloadInput {
+    payloadId: string;
+    eventName: string;
+    payloadType: string;
+    schemaVersion: number;
+    requiredPermission: string;
+}
+export interface SecureEventPayloadReadyEvent {
+    securePayloadId: string;
+    payloadType: string;
+    schemaVersion: number;
+}
+export interface ClaimSecureEventPayloadResult<TPayload = unknown> {
+    record: SecureEventPayloadRecord;
+    payload: TPayload;
+}
+export type { SecureEventPayloadAuthorizationRequest, SecureEventPayloadAuthorizer } from "./plugin-access-policy.js";
+export interface SecureEventPayloadClient {
+    create<TPayload = unknown>(input: CreateSecureEventPayloadInput<TPayload>): Promise<SecureEventPayloadRecord>;
+    claim<TPayload = unknown>(input: ClaimSecureEventPayloadInput): Promise<ClaimSecureEventPayloadResult<TPayload>>;
+    revoke(payloadId: string): Promise<SecureEventPayloadRecord>;
+}
+/** Key material is host configuration, not a plugin input. Strings are canonical base64. */
+export interface SecurePayloadKeyring {
+    activeKeyId: string;
+    keys: Readonly<Record<string, string | Uint8Array>>;
+}
+
+// dist/errors/core-error.d.ts
+/**
+ * Base error for the CMS core package.
+ * All typed core errors extend this class and carry a stable error code.
+ */
+export declare class CoreError extends Error {
+    readonly code: string;
+    readonly details?: Record<string, unknown>;
+    constructor(code: string, message: string, options?: {
+        cause?: unknown;
+        details?: Record<string, unknown>;
+    });
+}
+
+// dist/errors/db-errors.d.ts
+import { CoreError } from "./core-error.js";
+/**
+ * Raised when a DB adapter operation fails or is misconfigured.
+ */
+export declare class DbAdapterError extends CoreError {
+    constructor(message: string, details?: Record<string, unknown>);
+}
+
+// dist/errors/index.d.ts
+export * from "./core-error.js";
+export * from "./db-errors.js";
+export * from "./plugin-errors.js";
+
+// dist/errors/plugin-errors.d.ts
+import { CoreError } from "./core-error.js";
+/**
+ * Raised when a plugin manifest is missing required fields
+ * or contains invalid data.
+ */
+export declare class PluginManifestError extends CoreError {
+    constructor(message: string, details?: Record<string, unknown>);
+}
+/**
+ * Raised when a plugin cannot run with the current core version.
+ */
+export declare class PluginCompatibilityError extends CoreError {
+    constructor(message: string, details?: Record<string, unknown>);
+}
+/**
+ * Raised when runtime plugin operations fail (load/unload/disable/register).
+ */
+export declare class PluginRuntimeError extends CoreError {
+    constructor(message: string, details?: Record<string, unknown>);
+}
+/**
+ * Raised when dependency graph rules are violated
+ * (missing dependency, invalid version, cycle, unsafe unload).
+ */
+export declare class PluginDependencyError extends CoreError {
+    constructor(message: string, details?: Record<string, unknown>);
+}
+/**
+ * Raised when a runtime operation tries to move a plugin
+ * from one state to another using an invalid transition.
+ */
+export declare class PluginStateTransitionError extends CoreError {
+    constructor(message: string, details?: Record<string, unknown>);
+}
+/**
+ * Raised when plugin lifecycle hooks or module bridge operations fail.
+ */
+export declare class PluginLifecycleError extends CoreError {
+    constructor(message: string, details?: Record<string, unknown>);
+}
+
+// dist/http/api-http-utils.d.ts
+import { type HttpContext, type HttpResponse } from "@trinacria/http";
+import { type ApiErrorResponse, type ApiResponseMeta } from "../contracts/api-contract.js";
+/**
+ * Parses a numeric query parameter from Trinacria HttpContext query object.
+ */
+export declare function parseQueryNumber(value: string | string[] | undefined): number | undefined;
+/**
+ * Reads a path parameter by key with case-insensitive fallback.
+ * Some router adapters normalize parameter keys, so this helper keeps
+ * controllers stable when using camelCase route params.
+ */
+export declare function parsePathParam(params: Record<string, string | undefined> | undefined, key: string, aliases?: readonly string[]): string | undefined;
+export interface CookieSerializeOptions {
+    path?: string;
+    domain?: string;
+    httpOnly?: boolean;
+    secure?: boolean;
+    sameSite?: "Strict" | "Lax" | "None";
+    maxAgeSeconds?: number;
+    expiresAt?: Date;
+}
+/**
+ * Reads a request header value in a runtime-safe way.
+ * Returns the first value when a multi-value header is provided.
+ */
+export declare function getRequestHeader(ctx: Pick<HttpContext, "req">, name: string): string | undefined;
+/**
+ * Parses a Cookie header into a key/value map.
+ */
+export declare function parseCookieHeader(cookieHeader: string | undefined): Record<string, string>;
+/**
+ * Reads one cookie value from request context.
+ */
+export declare function getCookieValue(ctx: Pick<HttpContext, "req">, name: string): string | undefined;
+/**
+ * Serializes a Set-Cookie header value.
+ */
+export declare function serializeCookie(name: string, value: string, options?: CookieSerializeOptions): string;
+/**
+ * Maps unknown runtime errors to a canonical API error response.
+ */
+export declare function toApiErrorResponse(error: unknown): ApiErrorResponse;
+export interface PluginApiResponder {
+    success<TData>(data: TData, meta?: ApiResponseMeta): {
+        data: TData;
+        meta?: ApiResponseMeta;
+    };
+    list<TData>(data: readonly TData[], meta?: Omit<ApiResponseMeta, "count" | "pluginId">): {
+        data: readonly TData[];
+        meta?: ApiResponseMeta;
+    };
+    invalidRequest(message: string, details?: Record<string, unknown>): HttpResponse<ApiErrorResponse>;
+    notFound(message: string, details?: Record<string, unknown>): HttpResponse<ApiErrorResponse>;
+    fromError(error: unknown): HttpResponse<ApiErrorResponse>;
+}
+/**
+ * Creates a response helper bound to a plugin id.
+ * All response envelopes include `meta.pluginId`.
+ */
+export declare function createPluginApiResponder(pluginId: string): PluginApiResponder;
+export declare function getStatusCodeForApiError(code: string): number;
+/**
+ * Accepts either a ready OpenAPI schema object or a schema-like object exposing
+ * `toOpenApi()`, returning a plain OpenAPI schema object.
+ */
+export declare function toOpenApiSchema(schema: Record<string, unknown> | {
+    toOpenApi(): Record<string, unknown>;
+}): Record<string, unknown>;
+
+// dist/http/cors-preflight.controller.d.ts
+import { HttpController } from "@trinacria/http";
+export declare class KernelCorsPreflightController extends HttpController {
+    routes(): import("@trinacria/http").RouteDefinition[];
+    private preflight;
+}
+
+// dist/http/cors-preflight.tokens.d.ts
+import type { KernelCorsPreflightController } from "./cors-preflight.controller.js";
+export declare const KERNEL_CORS_PREFLIGHT_CONTROLLER: import("@trinacria/core").Token<KernelCorsPreflightController>;
+
+// dist/http/health/kernel-health.controller.d.ts
+import { HttpController } from "@trinacria/http";
+import type { KernelHealthService } from "../../runtime/system/kernel-health-service.js";
+export declare class KernelHealthHttpController extends HttpController {
+    private readonly healthService;
+    constructor(healthService: KernelHealthService);
+    routes(): import("@trinacria/http").RouteDefinition[];
+    private getHealth;
+    private getDependencies;
+}
+
+// dist/http/health/kernel-health.module.d.ts
+import { KernelHealthService } from "../../runtime/system/kernel-health-service.js";
+import { KernelHealthHttpController } from "./kernel-health.controller.js";
+export declare const KernelHealthHttpModule: Readonly<{
+    name: string;
+    providers: (import("@trinacria/core").FactoryProvider<KernelHealthService> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController>)[];
+    exports: (import("@trinacria/core").Token<KernelHealthService> | import("@trinacria/core").Token<KernelHealthHttpController>)[];
+}>;
+
+// dist/http/health/kernel-health.tokens.d.ts
+import type { KernelHealthHttpController } from "./kernel-health.controller.js";
+export declare const KERNEL_HEALTH_HTTP_CONTROLLER: import("@trinacria/core").Token<KernelHealthHttpController>;
+
+// dist/http/index.d.ts
+export * from "./api-http-utils.js";
+export * from "./cors-preflight.controller.js";
+export * from "./cors-preflight.tokens.js";
+export * from "./health/kernel-health.controller.js";
+export * from "./health/kernel-health.module.js";
+export * from "./health/kernel-health.tokens.js";
+export * from "./swagger/cms-swagger.controller.js";
+export * from "./system/kernel-system.controller.js";
+export * from "./system/kernel-system.errors.js";
+export * from "./system/kernel-system.schemas.js";
+export * from "./system/kernel-system.tokens.js";
+
+// dist/http/swagger/cms-swagger.controller.d.ts
+import { HttpController } from "@trinacria/http";
+import type { CmsSwaggerUiConfig } from "../../contracts/cms-starter.js";
+export declare class CmsSwaggerController extends HttpController {
+    private readonly config;
+    constructor(config: CmsSwaggerUiConfig);
+    routes(): import("@trinacria/http").RouteDefinition[];
+    private renderDocs;
+}
+
+// dist/http/system/deliveries.controller.d.ts
+import { HttpController } from "@trinacria/http";
+import type { OperationAuthorizer } from "../../contracts/operations.js";
+import type { MongoDurableEventStore } from "../../runtime/durable-events/durable-events.js";
+export declare class KernelDeliveriesController extends HttpController {
+    private readonly guard;
+    private readonly operations;
+    constructor(store: MongoDurableEventStore, authorizer: OperationAuthorizer, guard: import("../../contracts/kernel-admin-route-guard.js").KernelAdminRouteGuard);
+    routes(): import("@trinacria/http").RouteDefinition[];
+    private list;
+    private get;
+    private decide;
+}
+
+// dist/http/system/email-jobs.controller.d.ts
+import { HttpController } from "@trinacria/http";
+import type { OperationAuthorizer } from "../../contracts/operations.js";
+import type { SecureEmailJobStore } from "../../runtime/durable-events/secure-email-jobs.js";
+export declare class KernelEmailJobsController extends HttpController {
+    private readonly guard;
+    private readonly operations;
+    constructor(store: SecureEmailJobStore, authorizer: OperationAuthorizer, guard: import("../../contracts/kernel-admin-route-guard.js").KernelAdminRouteGuard);
+    routes(): import("@trinacria/http").RouteDefinition[];
+    private list;
+    private get;
+    private decide;
+}
+
+// dist/http/system/kernel-system.controller.d.ts
+import { HttpController } from "@trinacria/http";
+import type { KernelAdminRouteGuard } from "../../contracts/kernel-admin-route-guard.js";
+import type { KernelSystemOperations } from "../../runtime/operations/kernel-system-operations.js";
+export declare class KernelSystemHttpController extends HttpController {
+    private readonly system;
+    private readonly adminRouteGuard;
+    constructor(system: KernelSystemOperations, adminRouteGuard?: KernelAdminRouteGuard | null);
+    routes(): import("@trinacria/http").RouteDefinition[];
+    private listInstalledPlugins;
+    private listCapabilities;
+    private listPluginContributions;
+    private listAdminExtensions;
+    private listPluginSources;
+    private getInstalledPlugin;
+    private getPluginOperation;
+    private executePluginOperation;
+    private listPluginEvents;
+    private fromPluginOperationError;
+}
+
+// dist/http/system/kernel-system.errors.d.ts
+import { type HttpResponse } from "@trinacria/http";
+import type { ApiErrorResponse } from "../../contracts/api-contract.js";
+import type { KernelInstalledPluginSnapshot, KernelPluginEventSnapshot } from "../../runtime/system/kernel-system-service.js";
+export declare function fromPluginOperationError(pluginId: string, error: unknown, getInstalledPlugin: (id: string) => KernelInstalledPluginSnapshot | null, listPluginEvents: (id: string, limit: number) => readonly KernelPluginEventSnapshot[]): HttpResponse<ApiErrorResponse>;
+
+// dist/http/system/kernel-system.schemas.d.ts
+export declare const PluginSourceSchema: import("@trinacria/schema/dist/core").InternalSchema<{
+    status: "failed" | "disabled" | "discovered";
+    type: "workspace" | "package" | "local-path";
+    name: string;
+    entrypoint: string;
+} & {
+    pluginId?: string | undefined;
+    error?: string | undefined;
+}>;
+export declare const PluginInstanceObservationSchema: import("@trinacria/schema/dist/core").InternalSchema<{
+    instanceId: string;
+    state: "failed" | "disabled" | "loaded";
+    healthy: boolean;
+    observedRevision: number;
+    artifactVersion: string;
+    artifactChecksum: string;
+} & {
+    reason?: string | undefined;
+}>;
+export declare const KernelInstalledPluginSchema: import("@trinacria/schema/dist/core").InternalSchema<{
+    id: string;
+    state: "failed" | "disabled" | "registered" | "loading" | "initializing" | "loaded" | "unloading" | "unloaded";
+    dependencies: ({
+        pluginId: string;
+        status: "disabled" | "ok" | "missing" | "version-mismatch";
+        optional: boolean;
+        versionRange: string;
+    } & {
+        reason?: string | undefined;
+        state?: "failed" | "disabled" | "registered" | "loading" | "initializing" | "loaded" | "unloading" | "unloaded" | undefined;
+        currentVersion?: string | undefined;
+    })[];
+    version: string;
+    operations: ({
+        available: boolean;
+        operation: "load" | "unload" | "reload" | "disable" | "enable";
+    } & {
+        reason?: string | undefined;
+    })[];
+    executionMode: "local" | "cluster";
+    operationRevision: number;
+    requiresCore: string;
+    capabilities: string[];
+    security: {
+        permissions: number;
+        roles: number;
+        grants: number;
+        policyRules: number;
+    } & {};
+    failureCount: number;
+} & {
+    source?: ({
+        status: "failed" | "disabled" | "discovered";
+        type: "workspace" | "package" | "local-path";
+        name: string;
+        entrypoint: string;
+    } & {
+        pluginId?: string | undefined;
+        error?: string | undefined;
+    }) | undefined;
+    cluster?: ({
+        instances: ({
+            instanceId: string;
+            state: "failed" | "disabled" | "loaded";
+            healthy: boolean;
+            observedRevision: number;
+            artifactVersion: string;
+            artifactChecksum: string;
+        } & {
+            reason?: string | undefined;
+        })[];
+        desired: {
+            reason: string;
+            revision: number;
+            pluginId: string;
+            artifactVersion: string;
+            artifactChecksum: string;
+            enabled: boolean;
+            updatedBy: string;
+            updatedAt: string;
+        } & {};
+    } & {}) | undefined;
+    lastFailurePhase?: "register" | "dependency-check" | "load" | "init" | "unload" | "rollback" | undefined;
+    statusReason?: ({
+        code: string;
+        message: string;
+    } & {}) | undefined;
+    failedAt?: string | undefined;
+    disabledAt?: string | undefined;
+    disabledReason?: string | undefined;
+    loadedAt?: string | undefined;
+    lastError?: ({
+        name: string;
+        message: string;
+    } & {
+        code?: string | undefined;
+    }) | undefined;
+}>;
+export declare const KernelCapabilitySchema: import("@trinacria/schema/dist/core").InternalSchema<{
+    state: "failed" | "disabled" | "registered" | "loading" | "initializing" | "loaded" | "unloading" | "unloaded";
+    pluginId: string;
+    version: string;
+    capability: string;
+} & {}>;
+export declare const KernelSystemMetaSchema: import("@trinacria/schema/dist/core").InternalSchema<{} & {
+    count?: number | undefined;
+    pluginId?: "kernel" | undefined;
+}>;
+export declare const ListInstalledPluginsResponseSchema: import("@trinacria/schema/dist/core").InternalSchema<{
+    data: ({
+        id: string;
+        state: "failed" | "disabled" | "registered" | "loading" | "initializing" | "loaded" | "unloading" | "unloaded";
+        dependencies: ({
+            pluginId: string;
+            status: "disabled" | "ok" | "missing" | "version-mismatch";
+            optional: boolean;
+            versionRange: string;
+        } & {
+            reason?: string | undefined;
+            state?: "failed" | "disabled" | "registered" | "loading" | "initializing" | "loaded" | "unloading" | "unloaded" | undefined;
+            currentVersion?: string | undefined;
+        })[];
+        version: string;
+        operations: ({
+            available: boolean;
+            operation: "load" | "unload" | "reload" | "disable" | "enable";
+        } & {
+            reason?: string | undefined;
+        })[];
+        executionMode: "local" | "cluster";
+        operationRevision: number;
+        requiresCore: string;
+        capabilities: string[];
+        security: {
+            permissions: number;
+            roles: number;
+            grants: number;
+            policyRules: number;
+        } & {};
+        failureCount: number;
+    } & {
+        source?: ({
+            status: "failed" | "disabled" | "discovered";
+            type: "workspace" | "package" | "local-path";
+            name: string;
+            entrypoint: string;
+        } & {
+            pluginId?: string | undefined;
+            error?: string | undefined;
+        }) | undefined;
+        cluster?: ({
+            instances: ({
+                instanceId: string;
+                state: "failed" | "disabled" | "loaded";
+                healthy: boolean;
+                observedRevision: number;
+                artifactVersion: string;
+                artifactChecksum: string;
+            } & {
+                reason?: string | undefined;
+            })[];
+            desired: {
+                reason: string;
+                revision: number;
+                pluginId: string;
+                artifactVersion: string;
+                artifactChecksum: string;
+                enabled: boolean;
+                updatedBy: string;
+                updatedAt: string;
+            } & {};
+        } & {}) | undefined;
+        lastFailurePhase?: "register" | "dependency-check" | "load" | "init" | "unload" | "rollback" | undefined;
+        statusReason?: ({
+            code: string;
+            message: string;
+        } & {}) | undefined;
+        failedAt?: string | undefined;
+        disabledAt?: string | undefined;
+        disabledReason?: string | undefined;
+        loadedAt?: string | undefined;
+        lastError?: ({
+            name: string;
+            message: string;
+        } & {
+            code?: string | undefined;
+        }) | undefined;
+    })[];
+} & {
+    meta?: ({} & {
+        count?: number | undefined;
+        pluginId?: "kernel" | undefined;
+    }) | undefined;
+}>;
+export declare const GetInstalledPluginResponseSchema: import("@trinacria/schema/dist/core").InternalSchema<{
+    data: {
+        id: string;
+        state: "failed" | "disabled" | "registered" | "loading" | "initializing" | "loaded" | "unloading" | "unloaded";
+        dependencies: ({
+            pluginId: string;
+            status: "disabled" | "ok" | "missing" | "version-mismatch";
+            optional: boolean;
+            versionRange: string;
+        } & {
+            reason?: string | undefined;
+            state?: "failed" | "disabled" | "registered" | "loading" | "initializing" | "loaded" | "unloading" | "unloaded" | undefined;
+            currentVersion?: string | undefined;
+        })[];
+        version: string;
+        operations: ({
+            available: boolean;
+            operation: "load" | "unload" | "reload" | "disable" | "enable";
+        } & {
+            reason?: string | undefined;
+        })[];
+        executionMode: "local" | "cluster";
+        operationRevision: number;
+        requiresCore: string;
+        capabilities: string[];
+        security: {
+            permissions: number;
+            roles: number;
+            grants: number;
+            policyRules: number;
+        } & {};
+        failureCount: number;
+    } & {
+        source?: ({
+            status: "failed" | "disabled" | "discovered";
+            type: "workspace" | "package" | "local-path";
+            name: string;
+            entrypoint: string;
+        } & {
+            pluginId?: string | undefined;
+            error?: string | undefined;
+        }) | undefined;
+        cluster?: ({
+            instances: ({
+                instanceId: string;
+                state: "failed" | "disabled" | "loaded";
+                healthy: boolean;
+                observedRevision: number;
+                artifactVersion: string;
+                artifactChecksum: string;
+            } & {
+                reason?: string | undefined;
+            })[];
+            desired: {
+                reason: string;
+                revision: number;
+                pluginId: string;
+                artifactVersion: string;
+                artifactChecksum: string;
+                enabled: boolean;
+                updatedBy: string;
+                updatedAt: string;
+            } & {};
+        } & {}) | undefined;
+        lastFailurePhase?: "register" | "dependency-check" | "load" | "init" | "unload" | "rollback" | undefined;
+        statusReason?: ({
+            code: string;
+            message: string;
+        } & {}) | undefined;
+        failedAt?: string | undefined;
+        disabledAt?: string | undefined;
+        disabledReason?: string | undefined;
+        loadedAt?: string | undefined;
+        lastError?: ({
+            name: string;
+            message: string;
+        } & {
+            code?: string | undefined;
+        }) | undefined;
+    };
+} & {
+    meta?: ({} & {
+        count?: number | undefined;
+        pluginId?: "kernel" | undefined;
+    }) | undefined;
+}>;
+export declare const ListCapabilitiesResponseSchema: import("@trinacria/schema/dist/core").InternalSchema<{
+    data: ({
+        state: "failed" | "disabled" | "registered" | "loading" | "initializing" | "loaded" | "unloading" | "unloaded";
+        pluginId: string;
+        version: string;
+        capability: string;
+    } & {})[];
+} & {
+    meta?: ({} & {
+        count?: number | undefined;
+        pluginId?: "kernel" | undefined;
+    }) | undefined;
+}>;
+export declare const ListPluginSourcesResponseSchema: import("@trinacria/schema/dist/core").InternalSchema<{
+    data: ({
+        status: "failed" | "disabled" | "discovered";
+        type: "workspace" | "package" | "local-path";
+        name: string;
+        entrypoint: string;
+    } & {
+        pluginId?: string | undefined;
+        error?: string | undefined;
+    })[];
+} & {
+    meta?: ({} & {
+        count?: number | undefined;
+        pluginId?: "kernel" | undefined;
+    }) | undefined;
+}>;
+export declare const PluginContributionSnapshotSchema: import("@trinacria/schema/dist/core").InternalSchema<{
+    pluginId: string;
+    key: string;
+    declaration: {} & {};
+} & {}>;
+export declare const PluginContributionCatalogSchema: import("@trinacria/schema/dist/core").InternalSchema<{
+    admin: {
+        navigation: ({
+            pluginId: string;
+            key: string;
+            declaration: {} & {};
+        } & {})[];
+        routes: ({
+            pluginId: string;
+            key: string;
+            declaration: {} & {};
+        } & {})[];
+        resources: ({
+            pluginId: string;
+            key: string;
+            declaration: {} & {};
+        } & {})[];
+        widgets: ({
+            pluginId: string;
+            key: string;
+            declaration: {} & {};
+        } & {})[];
+        settingsSections: ({
+            pluginId: string;
+            key: string;
+            declaration: {} & {};
+        } & {})[];
+    } & {};
+    settings: ({
+        pluginId: string;
+        key: string;
+        declaration: {} & {};
+    } & {})[];
+    events: {
+        emits: ({
+            pluginId: string;
+            key: string;
+            declaration: {} & {};
+        } & {})[];
+        subscribes: ({
+            pluginId: string;
+            key: string;
+            declaration: {} & {};
+        } & {})[];
+    } & {};
+    entities: ({
+        pluginId: string;
+        key: string;
+        declaration: {} & {};
+    } & {})[];
+} & {}>;
+export declare const ListPluginContributionsResponseSchema: import("@trinacria/schema/dist/core").InternalSchema<{
+    data: {
+        admin: {
+            navigation: ({
+                pluginId: string;
+                key: string;
+                declaration: {} & {};
+            } & {})[];
+            routes: ({
+                pluginId: string;
+                key: string;
+                declaration: {} & {};
+            } & {})[];
+            resources: ({
+                pluginId: string;
+                key: string;
+                declaration: {} & {};
+            } & {})[];
+            widgets: ({
+                pluginId: string;
+                key: string;
+                declaration: {} & {};
+            } & {})[];
+            settingsSections: ({
+                pluginId: string;
+                key: string;
+                declaration: {} & {};
+            } & {})[];
+        } & {};
+        settings: ({
+            pluginId: string;
+            key: string;
+            declaration: {} & {};
+        } & {})[];
+        events: {
+            emits: ({
+                pluginId: string;
+                key: string;
+                declaration: {} & {};
+            } & {})[];
+            subscribes: ({
+                pluginId: string;
+                key: string;
+                declaration: {} & {};
+            } & {})[];
+        } & {};
+        entities: ({
+            pluginId: string;
+            key: string;
+            declaration: {} & {};
+        } & {})[];
+    } & {};
+} & {
+    meta?: ({} & {
+        count?: number | undefined;
+        pluginId?: "kernel" | undefined;
+    }) | undefined;
+}>;
+export declare const ListAdminExtensionsResponseSchema: import("@trinacria/schema/dist/core").InternalSchema<{
+    data: ({
+        admin: {} & {
+            navigation?: ({} & {})[] | undefined;
+            routes?: ({} & {})[] | undefined;
+            resources?: ({} & {})[] | undefined;
+            widgets?: ({} & {})[] | undefined;
+            settingsSections?: ({} & {})[] | undefined;
+        };
+        pluginId: string;
+        displayName: string;
+    } & {})[];
+} & {
+    meta?: ({} & {
+        count?: number | undefined;
+        pluginId?: "kernel" | undefined;
+    }) | undefined;
+}>;
+export declare const PluginOperationRequestSchema: import("@trinacria/schema/dist/core").InternalSchema<{
+    idempotencyKey: string;
+    operation: "load" | "unload" | "reload" | "disable" | "enable";
+    expectedRevision: number;
+} & {
+    reason?: string | undefined;
+}>;
+export declare const PluginOperationResultSchema: import("@trinacria/schema/dist/core").InternalSchema<{
+    pluginId: string;
+    status: "failed" | "pending" | "succeeded" | "partial";
+    operationId: string;
+    expiresAt: string;
+    instances: ({
+        instanceId: string;
+        state: "failed" | "disabled" | "loaded";
+        healthy: boolean;
+        observedRevision: number;
+        artifactVersion: string;
+        artifactChecksum: string;
+    } & {
+        reason?: string | undefined;
+    })[];
+    operation: "load" | "unload" | "reload" | "disable" | "enable";
+    desiredRevision: number;
+    submittedAt: string;
+    participants: string[];
+} & {}>;
+export declare const PluginOperationResponseSchema: import("@trinacria/schema/dist/core").InternalSchema<{
+    data: {
+        pluginId: string;
+        status: "failed" | "pending" | "succeeded" | "partial";
+        operationId: string;
+        expiresAt: string;
+        instances: ({
+            instanceId: string;
+            state: "failed" | "disabled" | "loaded";
+            healthy: boolean;
+            observedRevision: number;
+            artifactVersion: string;
+            artifactChecksum: string;
+        } & {
+            reason?: string | undefined;
+        })[];
+        operation: "load" | "unload" | "reload" | "disable" | "enable";
+        desiredRevision: number;
+        submittedAt: string;
+        participants: string[];
+    } & {};
+} & {
+    meta?: ({} & {
+        count?: number | undefined;
+        pluginId?: "kernel" | undefined;
+    }) | undefined;
+}>;
+export declare const PluginEventSchema: import("@trinacria/schema/dist/core").InternalSchema<{
+    timestamp: string;
+    action: "register" | "load" | "unload" | "reload" | "disable" | "enable" | "unregister" | "load-many";
+    pluginId: string;
+    sequence: number;
+    success: boolean;
+} & {
+    durationMs?: number | undefined;
+    phase?: "register" | "dependency-check" | "load" | "init" | "unload" | "rollback" | undefined;
+    stateBefore?: "failed" | "disabled" | "registered" | "loading" | "initializing" | "loaded" | "unloading" | "unloaded" | undefined;
+    stateAfter?: "failed" | "disabled" | "registered" | "loading" | "initializing" | "loaded" | "unloading" | "unloaded" | undefined;
+    message?: string | undefined;
+}>;
+export declare const PluginEventsResponseSchema: import("@trinacria/schema/dist/core").InternalSchema<{
+    data: ({
+        timestamp: string;
+        action: "register" | "load" | "unload" | "reload" | "disable" | "enable" | "unregister" | "load-many";
+        pluginId: string;
+        sequence: number;
+        success: boolean;
+    } & {
+        durationMs?: number | undefined;
+        phase?: "register" | "dependency-check" | "load" | "init" | "unload" | "rollback" | undefined;
+        stateBefore?: "failed" | "disabled" | "registered" | "loading" | "initializing" | "loaded" | "unloading" | "unloaded" | undefined;
+        stateAfter?: "failed" | "disabled" | "registered" | "loading" | "initializing" | "loaded" | "unloading" | "unloaded" | undefined;
+        message?: string | undefined;
+    })[];
+} & {
+    meta?: ({} & {
+        count?: number | undefined;
+        pluginId?: "kernel" | undefined;
+    }) | undefined;
+}>;
+export declare const PluginEventsQueryParameters: readonly [{
+    readonly name: "limit";
+    readonly in: "query";
+    readonly required: false;
+    readonly schema: {
+        readonly type: "integer";
+        readonly minimum: 1;
+        readonly maximum: 200;
+    };
+}];
+
+// dist/http/system/kernel-system.tokens.d.ts
+import type { KernelSystemHttpController } from "./kernel-system.controller.js";
+export declare const KERNEL_SYSTEM_HTTP_CONTROLLER: import("@trinacria/core").Token<KernelSystemHttpController>;
+
+// dist/index.d.ts
+import "./types/trinacria-http.js";
+export { type ApplicationContext, classProvider, createToken, defineModule, factoryProvider, type ModuleDefinition, type Provider, type Token, TrinacriaApp, valueProvider } from "@trinacria/core";
+export * from "@trinacria/events";
+export * from "@trinacria/http";
+export * from "@trinacria/schema";
+export * from "./contracts/index.js";
+export * from "./errors/index.js";
+export * from "./http/index.js";
+export * from "./plugin-api/index.js";
+export * from "./tokens/index.js";
+
+// dist/plugin-api/admin.d.ts
+import type { PluginManifestAdmin, PluginManifestAdminNavigation, PluginManifestAdminResource, PluginManifestAdminRoute, PluginManifestAdminSettingsSection, PluginManifestAdminWidget } from "../contracts/plugin-manifest.js";
+export declare function defineAdminRoute(input: PluginManifestAdminRoute): PluginManifestAdminRoute;
+export declare function defineAdminNavigation(input: PluginManifestAdminNavigation): PluginManifestAdminNavigation;
+export declare function defineAdminResource(input: PluginManifestAdminResource): PluginManifestAdminResource;
+export declare function defineAdminWidget(input: PluginManifestAdminWidget): PluginManifestAdminWidget;
+export declare function defineAdminSettingsSection(input: PluginManifestAdminSettingsSection): PluginManifestAdminSettingsSection;
+export declare function defineAdmin(input: PluginManifestAdmin): PluginManifestAdmin;
+
+// dist/plugin-api/events.d.ts
+import type { PluginManifestEmittedEvent, PluginManifestEventSubscription, PluginManifestEvents } from "../contracts/plugin-manifest.js";
+export declare function defineEmittedEvent(input: PluginManifestEmittedEvent): PluginManifestEmittedEvent;
+export declare function defineEventSubscription(input: PluginManifestEventSubscription): PluginManifestEventSubscription;
+export declare function defineEvents(input: PluginManifestEvents): PluginManifestEvents;
+
+// dist/plugin-api/http.d.ts
+export interface SuccessEnvelope<TData, TMeta = Record<string, unknown>> {
+    data: TData;
+    meta?: TMeta;
+}
+export interface ErrorEnvelope<TDetails = Record<string, unknown>> {
+    error: {
+        code: string;
+        message: string;
+        details?: TDetails;
+    };
+}
+export declare function successEnvelope<TData, TMeta = Record<string, unknown>>(data: TData, meta?: TMeta): SuccessEnvelope<TData, TMeta>;
+export declare function errorEnvelope<TDetails = Record<string, unknown>>(code: string, message: string, details?: TDetails): ErrorEnvelope<TDetails>;
+export interface SchemaParser<TValue> {
+    parse(value: unknown): TValue;
+}
+export declare function parseWithSchema<TValue>(schema: SchemaParser<TValue>, value: unknown): TValue;
+
+// dist/plugin-api/i18n.d.ts
+import type { PluginManifestI18n, PluginManifestTranslationNamespace } from "../contracts/plugin-manifest.js";
+/** Declares one lightweight namespace whose messages remain in package assets. */
+export declare function defineTranslationNamespace(input: PluginManifestTranslationNamespace): PluginManifestTranslationNamespace;
+/** Declares plugin translations and the mandatory English fallback. */
+export declare function defineI18n(input: PluginManifestI18n): PluginManifestI18n;
+
+// dist/plugin-api/index.d.ts
+export type { ApplicationOperations, OperationActor, OperationAuthorizer, OperationContext, OperationTarget } from "../contracts/operations.js";
+export type { PluginHostServices, PluginJsonValue, PluginLogger, PluginOperationClient, PluginQuery, PluginRepository, PluginSettings, PluginStorage } from "../contracts/plugin-host-services.js";
+export type { ClaimSecureEventPayloadInput, ClaimSecureEventPayloadResult, CreateSecureEventPayloadInput, SecureEventPayloadClient, SecureEventPayloadRecord } from "../contracts/secure-event-payloads.js";
+export type { PluginOperationDefinition, PluginOperationsProvider } from "../runtime/plugin-runtime/plugin-operation-provider.js";
+export * from "./admin.js";
+export * from "./events.js";
+export * from "./http.js";
+export * from "./i18n.js";
+export * from "./manifest.js";
+export * from "./naming.js";
+export * from "./security.js";
+export * from "./settings.js";
+
+// dist/plugin-api/manifest.d.ts
+import type { PluginManifest } from "../contracts/plugin-manifest.js";
+export type DefinePluginManifestInput = PluginManifest;
+export declare function definePluginManifest(input: DefinePluginManifestInput): PluginManifest;
+
+// dist/plugin-api/naming.d.ts
+export interface DefineQualifiedKeyInput {
+    pluginId: string;
+    segments: readonly string[];
+}
+export declare function defineQualifiedKey(input: DefineQualifiedKeyInput): string;
+export declare function normalizePluginId(pluginId: string): string;
+export declare function normalizeKeySegment(segment: string): string;
+export declare function normalizeCapability(capability: string): string;
+export declare function omitEmptyArray<T>(items: readonly T[] | undefined): readonly T[] | undefined;
+
+// dist/plugin-api/security.d.ts
+import type { PluginManifestSecurity, PluginManifestSecurityGrant, PluginManifestSecurityPermission, PluginManifestSecurityPolicyCondition, PluginManifestSecurityPolicyRule, PluginManifestSecurityRole } from "../contracts/plugin-manifest.js";
+export interface DefinePermissionOptions {
+    displayName: string;
+    description?: string;
+}
+export interface DefinePermissionInput extends DefinePermissionOptions {
+    pluginId: string;
+    resource: string;
+    action: string;
+}
+export interface DefinePermissionSetItem extends DefinePermissionOptions {
+    resource: string;
+    action: string;
+}
+export interface DefinedPermissionSet<T extends Record<string, DefinePermissionSetItem>> {
+    keys: {
+        readonly [K in keyof T]: string;
+    };
+    permissions: readonly PluginManifestSecurityPermission[];
+}
+export declare function definePermissionKey(pluginId: string, resource: string, action: string): string;
+export declare function definePermission(input: DefinePermissionInput): PluginManifestSecurityPermission;
+export declare function definePermissionSet<T extends Record<string, DefinePermissionSetItem>>(pluginId: string, items: T): DefinedPermissionSet<T>;
+export declare function defineRole(input: PluginManifestSecurityRole): PluginManifestSecurityRole;
+export declare function defineGrant(input: PluginManifestSecurityGrant): PluginManifestSecurityGrant;
+export interface DefinePolicyRuleInput {
+    roleCode: string;
+    effect?: "allow" | "deny";
+    permissionPattern: string;
+    conditions?: readonly PluginManifestSecurityPolicyCondition[];
+}
+export declare function definePolicyRule(input: DefinePolicyRuleInput): PluginManifestSecurityPolicyRule;
+export declare function defineSecurity(input: PluginManifestSecurity): PluginManifestSecurity;
+
+// dist/plugin-api/settings.d.ts
+import type { PluginManifestSetting } from "../contracts/plugin-manifest.js";
+export type DefineSettingInput = Omit<PluginManifestSetting, "key" | "category"> & {
+    pluginId: string;
+    domain: string;
+    name: string;
+    category?: string;
+};
+export declare function defineSettingKey(pluginId: string, domain: string, name: string): string;
+export declare function defineSetting(input: DefineSettingInput): PluginManifestSetting;
+export declare function defineStringSetting(input: Omit<DefineSettingInput, "schema" | "defaultValue"> & {
+    defaultValue?: string;
+    minLength?: number;
+    maxLength?: number;
+}): PluginManifestSetting;
+export declare function defineBooleanSetting(input: Omit<DefineSettingInput, "schema" | "defaultValue"> & {
+    defaultValue?: boolean;
+}): PluginManifestSetting;
+export declare function defineNumberSetting(input: Omit<DefineSettingInput, "schema" | "defaultValue"> & {
+    defaultValue?: number;
+    minimum?: number;
+    maximum?: number;
+}): PluginManifestSetting;
+
+// dist/runtime/bridge/trinacria-module-bridge.d.ts
+import type { ModuleDefinition } from "@trinacria/core";
+export interface TrinacriaModuleBridgeApp {
+    registerModule(module: ModuleDefinition): Promise<void>;
+    unregisterModule(module: ModuleDefinition): Promise<void>;
+    listModules(): string[];
+}
+export declare class TrinacriaModuleBridge {
+    private readonly app;
+    constructor(app: TrinacriaModuleBridgeApp);
+    registerModules(pluginId: string, modules: readonly ModuleDefinition[]): Promise<readonly ModuleDefinition[]>;
+    unregisterModules(_pluginId: string, modules: readonly ModuleDefinition[]): Promise<readonly unknown[]>;
+    private isModuleRegistered;
+    private errorToString;
+}
+
+// dist/runtime/cluster/plugin-cluster.d.ts
+import type { PluginArtifact, PluginClusterOperation, PluginClusterOperationInput, PluginClusterSnapshot, PluginDesiredState } from "../../contracts/plugin-cluster.js";
+import type { PluginRuntime } from "../../contracts/plugin-runtime.js";
+import { type EntityRegistry } from "../persistence/entity-registry.js";
+import { type HostTransactionRepositories } from "../persistence/host-unit-of-work.js";
+import type { MongoDbAdapter } from "../persistence/mongo-db-adapter.js";
+import type { PluginActivityRegistry } from "../plugin-runtime/plugin-activity.js";
+export declare const PLUGIN_CLUSTER_ENTITIES: {
+    ownerPluginId: string;
+    entityName: string;
+    schema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{} & {}>;
+    indexes?: readonly import("../index.js").EntityIndexDefinition[];
+}[];
+export declare class PluginClusterError extends Error {
+    readonly code: "plugin_cluster_conflict" | "plugin_cluster_unavailable" | "plugin_cluster_disabled" | "plugin_cluster_artifact_mismatch";
+    constructor(code: "plugin_cluster_conflict" | "plugin_cluster_unavailable" | "plugin_cluster_disabled" | "plugin_cluster_artifact_mismatch", message: string);
+}
+/** Deployed package fingerprint: immutable package.json + every dist byte; no manifest-only checksum. */
+export declare function computePluginArtifactChecksum(packageRoot: string): Promise<string>;
+export interface PluginClusterOptions {
+    instanceId: string;
+    artifacts: Readonly<Record<string, PluginArtifact>>;
+    activity: PluginActivityRegistry;
+    reconcileMs?: number;
+    heartbeatMs?: number;
+    leaseMs?: number;
+    operationTimeoutMs?: number;
+    now?: () => number;
+}
+/** Shared control plane. Local runtime state is only an observation of this desired state. */
+export declare class PluginClusterCoordinator {
+    private readonly adapter;
+    private readonly registry;
+    private readonly runtime;
+    private readonly options;
+    private readonly uow;
+    private readonly locks;
+    private lease?;
+    private readonly observations;
+    private heartbeatTimer?;
+    private reconcileTimer?;
+    private reconciling?;
+    private heartbeating?;
+    private closed;
+    private storeAvailable;
+    private readonly now;
+    readonly metrics: {
+        storeFailures: number;
+        reconcileFailures: number;
+        desiredLag: number;
+    };
+    constructor(adapter: MongoDbAdapter, registry: EntityRegistry, runtime: PluginRuntime, options: PluginClusterOptions);
+    private repository;
+    isInitialized(): boolean;
+    initialize(): Promise<void>;
+    start(): Promise<void>;
+    close(): Promise<void>;
+    private unavailable;
+    heartbeat(): Promise<void>;
+    private performHeartbeat;
+    assertActive(pluginId: string): Promise<void>;
+    private assertArtifact;
+    private assertLease;
+    /** Domain writes touch desired state and the instance lease in the same Mongo commit. */
+    fenceWrites(repositories: HostTransactionRepositories, namespaces: readonly {
+        pluginId: string;
+    }[]): Promise<void>;
+    submit(pluginId: string, input: PluginClusterOperationInput, actorId: string): Promise<PluginClusterOperation>;
+    /** Trusted deploy CLI only: disabled, drained hosts, maintenance and verified schema required. */
+    adoptDeployedArtifact(pluginId: string, expectedRevision: number, actorId: string, verifySchema: () => Promise<void>): Promise<PluginDesiredState>;
+    snapshot(pluginId: string): Promise<PluginClusterSnapshot>;
+    private instanceObservations;
+    status(operationId: string): Promise<PluginClusterOperation>;
+    reconcile(): Promise<void>;
+    private performReconcile;
+    readiness(): Promise<{
+        ok: boolean;
+        reason?: string;
+    }>;
+}
+
+// dist/runtime/cms-starter.d.ts
+import type { CmsStarterHandle, CmsStarterOptions } from "../contracts/cms-starter.js";
+export { bootstrapDiscoveredPlugins, type PluginBootstrapOptions, type PluginBootstrapResult } from "./cms-starter/plugin-bootstrap.js";
+export { createCmsStarterKernelModule } from "./cms-starter/starter-module.js";
+/**
+ * Starts a minimal CMS app with HTTP plugin, runtime token wiring, optional modules,
+ * and optional plugin registration/autoload.
+ */
+export declare function startCmsApp(options: CmsStarterOptions): Promise<CmsStarterHandle>;
+
+// dist/runtime/cms-starter/plugin-bootstrap.d.ts
+import type { PluginDiscoveryService, PluginDiscoverySource, PluginSourceSnapshot } from "../../contracts/plugin-discovery.js";
+import type { KernelPluginDefinition, PluginRuntime } from "../../contracts/plugin-runtime.js";
+export interface PluginBootstrapOptions {
+    runtime: Pick<PluginRuntime, "register" | "loadMany" | "list"> & {
+        reconcileDiscoveredPlugins?(pluginIds: readonly string[]): Promise<void>;
+    };
+    discoveryService: PluginDiscoveryService;
+    pluginSources: readonly PluginDiscoverySource[];
+    plugins?: readonly KernelPluginDefinition[];
+    autoLoadPlugins?: boolean;
+}
+export interface PluginBootstrapResult {
+    plugins: readonly KernelPluginDefinition[];
+    pluginSources: readonly PluginSourceSnapshot[];
+}
+export declare function bootstrapDiscoveredPlugins(options: PluginBootstrapOptions): Promise<PluginBootstrapResult>;
+
+// dist/runtime/cms-starter/starter-module.d.ts
+import { type TrinacriaApp } from "@trinacria/core";
+import type { CmsStarterOptions, CmsSwaggerUiConfig } from "../../contracts/cms-starter.js";
+import type { KernelAdminRouteGuard } from "../../contracts/kernel-admin-route-guard.js";
+import type { PluginSourceSnapshot } from "../../contracts/plugin-discovery.js";
+import type { PluginRuntime } from "../../contracts/plugin-runtime.js";
+import type { PluginRuntimeStore } from "../../contracts/plugin-runtime-store.js";
+import { KernelCorsPreflightController } from "../../http/cors-preflight.controller.js";
+import { KernelHealthHttpController } from "../../http/health/kernel-health.controller.js";
+import { CmsSwaggerController } from "../../http/swagger/cms-swagger.controller.js";
+import { KernelDeliveriesController } from "../../http/system/deliveries.controller.js";
+import { KernelEmailJobsController } from "../../http/system/email-jobs.controller.js";
+import { KernelSystemHttpController } from "../../http/system/kernel-system.controller.js";
+import { KernelHealthService } from "../system/kernel-health-service.js";
+import { KernelSystemService } from "../system/kernel-system-service.js";
+export interface CreateCmsStarterKernelModuleOptions {
+    app: TrinacriaApp;
+    options: CmsStarterOptions;
+    swaggerUi: CmsSwaggerUiConfig;
+    pluginSourceSnapshots: () => readonly PluginSourceSnapshot[];
+}
+export declare function createCmsStarterKernelModule({ app, options, swaggerUi, pluginSourceSnapshots }: CreateCmsStarterKernelModuleOptions): Readonly<{
+    name: string;
+    imports: never[];
+    providers: (import("@trinacria/core").FactoryProvider<KernelHealthService> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").FactoryProvider<PluginRuntimeStore> | import("@trinacria/core").FactoryProvider<PluginRuntime> | import("@trinacria/core").FactoryProvider<import("../../index.js").PluginDiscoveryService> | import("@trinacria/core").FactoryProvider<KernelSystemService> | import("@trinacria/core").FactoryProvider<KernelAdminRouteGuard> | import("@trinacria/core").FactoryProvider<import("../../index.js").ApplicationOperations<Pick<KernelSystemService, "listInstalledPlugins" | "listCapabilities" | "listPluginContributions" | "listAdminExtensions" | "listPluginSources" | "getInstalledPlugin" | "executeOperation" | "listPluginEvents" | "getPluginOperation">>> | import("@trinacria/core").ValueProvider<CmsSwaggerUiConfig>)[];
+    exports: (import("@trinacria/core").Token<KernelCorsPreflightController> | import("@trinacria/core").Token<PluginRuntime> | import("@trinacria/core").Token<PluginRuntimeStore> | import("@trinacria/core").Token<import("../../index.js").PluginDiscoveryService> | import("@trinacria/core").Token<KernelHealthService> | import("@trinacria/core").Token<KernelSystemService> | import("@trinacria/core").Token<KernelHealthHttpController> | import("@trinacria/core").Token<KernelSystemHttpController> | import("@trinacria/core").Token<KernelEmailJobsController> | import("@trinacria/core").Token<KernelDeliveriesController> | import("@trinacria/core").Token<CmsSwaggerController>)[];
+}>;
+
+// dist/runtime/durable-events/durable-events.d.ts
+import type { DbAdapter } from "../../contracts/db-adapter.js";
+import type { PluginEventPublisher } from "../../contracts/plugin-runtime.js";
+import { type EntityRegistry } from "../persistence/entity-registry.js";
+import { type HostTransactionRepositories } from "../persistence/host-unit-of-work.js";
+import type { MongoDbAdapter } from "../persistence/mongo-db-adapter.js";
+export interface DurableRecipient {
+    consumerPluginId: string;
+    handlerName: string;
+    handlerVersion: string;
+}
+export interface DurablePublication {
+    ownerPluginId: string;
+    eventName: string;
+    payloadVersion: number;
+    payload: unknown;
+    recipients: readonly DurableRecipient[];
+}
+export interface DurablePublishOptions {
+    notBefore?: Date;
+    partitionKey?: string;
+    correlationId?: string;
+    causationId?: string;
+}
+export interface DurableOutbox extends DurablePublication {
+    id: string;
+    occurredAt: Date;
+    notBefore: Date;
+    state: "materializing" | "materialized";
+    partitionKey?: string;
+    sequence?: number;
+    correlationId?: string;
+    causationId?: string;
+    purgeAt?: Date;
+}
+export type DeliveryStatus = "pending" | "running" | "retry" | "succeeded" | "blocked" | "dead-letter" | "cancelled";
+export interface DurableDelivery extends DurableRecipient {
+    id: string;
+    eventId: string;
+    ownerPluginId: string;
+    eventName: string;
+    payloadVersion: number;
+    status: DeliveryStatus;
+    attempt: number;
+    epoch: number;
+    createdAt: Date;
+    availableAt: Date;
+    leaseOwner?: string;
+    leaseUntil?: Date;
+    partitionKey?: string;
+    sequence?: number;
+    reason?: string;
+    completedAt?: Date;
+    purgeAt?: Date;
+}
+export declare const DURABLE_EVENT_ENTITIES: readonly [{
+    ownerPluginId: string;
+    entityName: string;
+    schema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{} & {}>;
+    indexes?: readonly import("../index.js").EntityIndexDefinition[];
+}, {
+    ownerPluginId: string;
+    entityName: string;
+    schema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{} & {}>;
+    indexes?: readonly import("../index.js").EntityIndexDefinition[];
+}, {
+    ownerPluginId: string;
+    entityName: string;
+    schema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{} & {}>;
+    indexes?: readonly import("../index.js").EntityIndexDefinition[];
+}, {
+    ownerPluginId: string;
+    entityName: string;
+    schema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{} & {}>;
+    indexes?: readonly import("../index.js").EntityIndexDefinition[];
+}];
+export declare class DurableDeliveryBlockedError extends Error {
+    readonly reason: "policy-denied" | "plugin-inactive" | "contract-mismatch" | "handler-missing";
+    readonly code = "durable_delivery_blocked";
+    constructor(reason: "policy-denied" | "plugin-inactive" | "contract-mismatch" | "handler-missing");
+}
+export declare class DurableDeliveryConflictError extends Error {
+    readonly code = "delivery_conflict";
+}
+export declare class DurableDeliveryLeaseError extends Error {
+    readonly code = "durable_delivery_lease_lost";
+    constructor();
+}
+export interface DurableEventHost {
+    describe(ownerPluginId: string, eventName: string, payload: unknown): Promise<DurablePublication>;
+    /** Must use the supplied session-bound adapter; external effects belong in a separate durable job. */
+    dispatch(delivery: DurableDelivery, outbox: DurableOutbox, adapter: DbAdapter, signal: AbortSignal, publisher: PluginEventPublisher, repositories: HostTransactionRepositories): Promise<void>;
+    additionalReadiness?(): Promise<{
+        ok: boolean;
+        reason?: string;
+    }>;
+    beforeDispatch?(delivery: DurableDelivery, outbox: DurableOutbox): Promise<void>;
+    assertConsumerActive?(consumerPluginId: string): Promise<void>;
+}
+export interface DurableEventOptions {
+    instanceId: string;
+    concurrency?: number;
+    leaseMs?: number;
+    heartbeatMs?: number;
+    deadlineMs?: number;
+    maxAttempts?: number;
+    pollMs?: number;
+    now?: () => number;
+    random?: () => number;
+}
+/** Mongo outbox + inbox. No dependency on the local event bus's deduplication state. */
+export declare class MongoDurableEventStore {
+    private readonly adapter;
+    private readonly registry;
+    private readonly host;
+    private readonly options;
+    private readonly uow;
+    private readonly now;
+    private readonly random;
+    private timer?;
+    private ticking?;
+    private closed;
+    private initialized;
+    private readonly pausedConsumers;
+    private readonly active;
+    readonly metrics: {
+        attempts: number;
+        completed: number;
+        blocked: number;
+        deadLetters: number;
+        expiredLeases: number;
+        storeFailures: number;
+        deadlineExceeded: number;
+    };
+    constructor(adapter: MongoDbAdapter, registry: EntityRegistry, host: DurableEventHost, options: DurableEventOptions);
+    private repository;
+    initialize(): Promise<void>;
+    isInitialized(): boolean;
+    private requireReady;
+    /** Only this owner plus kernel are allowed; plugin callers never receive the kernel repository object. */
+    transaction<T>(ownerPluginId: string, work: (adapter: DbAdapter, publisher: PluginEventPublisher) => Promise<T>): Promise<T>;
+    transactionWithKernel<T>(ownerPluginId: string, work: (adapter: DbAdapter, publisher: PluginEventPublisher, repositories: HostTransactionRepositories) => Promise<T>): Promise<T>;
+    private scopedAdapter;
+    private publisher;
+    publish(ownerPluginId: string, eventName: string, payload: unknown, options?: DurablePublishOptions): Promise<string>;
+    private append;
+    materialize(limit?: number): Promise<number>;
+    acquire(): Promise<DurableDelivery | null>;
+    private leaseFilter;
+    heartbeat(delivery: DurableDelivery): Promise<void>;
+    /** Public host hook for deterministic worker/crash integration tests. */
+    process(delivery: DurableDelivery): Promise<void>;
+    private releaseCompletedOutbox;
+    tick(): Promise<void>;
+    start(): Promise<void>;
+    close(): Promise<void>;
+    list(input?: {
+        ownerPluginId?: string;
+        consumerPluginId?: string;
+        eventId?: string;
+        status?: DeliveryStatus;
+        limit?: number;
+        offset?: number;
+    }): Promise<readonly DurableDelivery[]>;
+    get(id: string): Promise<DurableDelivery | null>;
+    decide(id: string, action: "retry" | "cancel", expectedEpoch: number, actorId: string, reason: string): Promise<DurableDelivery | null>;
+    readiness(): Promise<{
+        ok: boolean;
+        reason?: string;
+    }>;
+}
+
+// dist/runtime/durable-events/secure-email-jobs.d.ts
+import type { ClaimSecureEventPayloadInput, EncryptedSecurePayload, SecureEventPayloadRecord } from "../../contracts/secure-event-payloads.js";
+import { type EntityRegistry } from "../persistence/entity-registry.js";
+import { type HostTransactionRepositories } from "../persistence/host-unit-of-work.js";
+import type { MongoDbAdapter } from "../persistence/mongo-db-adapter.js";
+import type { SecureEventPayloadCrypto } from "../secure-payloads/secure-event-payloads.crypto.js";
+import type { SecureEventPayloadsService } from "../secure-payloads/secure-event-payloads.service.js";
+import { type DurableDelivery } from "./durable-events.js";
+export interface SecureEmailJob {
+    id: string;
+    eventId: string;
+    ownerPluginId: string;
+    consumerPluginId: "email-pack";
+    claim: ClaimSecureEventPayloadInput;
+    payloadAuthorization: SecureEventPayloadRecord;
+    encryptedPayload: EncryptedSecurePayload;
+    expiresAt: Date;
+    createdAt: Date;
+    availableAt: Date;
+    status: "pending" | "running" | "retry" | "succeeded" | "blocked" | "ambiguous" | "cancelled";
+    attempt: number;
+    epoch: number;
+    leaseOwner?: string;
+    leaseUntil?: Date;
+    reason?: string;
+    purgeAt?: Date;
+}
+export declare const SECURE_EMAIL_JOB_ENTITY: {
+    ownerPluginId: string;
+    entityName: string;
+    schema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{} & {}>;
+    indexes?: readonly import("../index.js").EntityIndexDefinition[];
+};
+export interface SecureEmailJobHost {
+    /** Includes fresh subscription/claim grants, schema and desired state, also for already transferred jobs. */
+    canSend(job: Omit<SecureEmailJob, "encryptedPayload">): Promise<boolean>;
+    send(payload: unknown, input: {
+        eventId: string;
+        idempotencyKey: string;
+        messageId: string;
+        signal: AbortSignal;
+    }): Promise<void>;
+    /** Only set for a provider whose documented key covers the whole retry window. SMTP does not. */
+    providerIdempotent?: boolean;
+}
+/** External effects deliberately execute outside Mongo transaction callbacks. */
+export declare class SecureEmailJobStore {
+    private readonly db;
+    private readonly vault;
+    private readonly crypto;
+    private readonly host;
+    private readonly options;
+    private timer?;
+    private running?;
+    private readonly now;
+    private closed;
+    private paused;
+    readonly metrics: {
+        sent: number;
+        blocked: number;
+        ambiguous: number;
+        failures: number;
+        expired: number;
+        deadlines: number;
+    };
+    constructor(db: MongoDbAdapter, registry: EntityRegistry, vault: SecureEventPayloadsService, crypto: SecureEventPayloadCrypto, host: SecureEmailJobHost, options: {
+        instanceId: string;
+        now?: () => number;
+        leaseMs?: number;
+        deadlineMs?: number;
+        pollMs?: number;
+    });
+    private repository;
+    initialize(): Promise<void>;
+    preflightClaim(delivery: DurableDelivery, input: ClaimSecureEventPayloadInput): Promise<void>;
+    private assertDelivery;
+    /** Called by the host inside the SAME transaction as delivery effects/inbox. No plaintext returns to the plugin. */
+    transfer(repositories: HostTransactionRepositories, delivery: DurableDelivery, input: ClaimSecureEventPayloadInput): Promise<string>;
+    acquire(): Promise<SecureEmailJob | null>;
+    private filter;
+    process(job: SecureEmailJob): Promise<void>;
+    tick(): Promise<void>;
+    start(): Promise<void>;
+    close(): Promise<void>;
+    decide(id: string, expectedEpoch: number, action: "retry" | "cancel", actorId: string, reason: string): Promise<void>;
+    /** Host key rotation; CAS never changes delivery status or claim count. */
+    reencryptBatch(oldKeyId: string, limit?: number): Promise<{
+        scanned: number;
+        changed: number;
+    }>;
+    readiness(): Promise<{
+        ok: boolean;
+        reason: string;
+    } | {
+        ok: boolean;
+        reason?: undefined;
+    }>;
+    get(id: string): Promise<{
+        id: string;
+        eventId: string;
+        ownerPluginId: string;
+        consumerPluginId: "email-pack";
+        expiresAt: Date;
+        createdAt: Date;
+        availableAt: Date;
+        status: "pending" | "running" | "retry" | "succeeded" | "blocked" | "ambiguous" | "cancelled";
+        attempt: number;
+        epoch: number;
+        leaseOwner?: string;
+        leaseUntil?: Date;
+        reason?: string;
+        purgeAt?: Date;
+    } | null>;
+    list(input?: {
+        status?: SecureEmailJob["status"];
+        ownerPluginId?: string;
+        eventId?: string;
+        limit?: number;
+        offset?: number;
+    }): Promise<readonly Omit<SecureEmailJob, "encryptedPayload" | "claim" | "payloadAuthorization">[]>;
+}
+
+// dist/runtime/index.d.ts
+export * from "./bridge/trinacria-module-bridge.js";
+export * from "./cluster/plugin-cluster.js";
+export * from "./cms-starter.js";
+export { type DeliveryStatus, DURABLE_EVENT_ENTITIES, type DurableDelivery, DurableDeliveryBlockedError, DurableDeliveryConflictError, DurableDeliveryLeaseError, type DurableEventHost, type DurableEventOptions, type DurableOutbox, type DurablePublication, type DurablePublishOptions, type DurableRecipient, MongoDurableEventStore } from "./durable-events/durable-events.js";
+export { SECURE_EMAIL_JOB_ENTITY, type SecureEmailJob, type SecureEmailJobHost, SecureEmailJobStore } from "./durable-events/secure-email-jobs.js";
+export * from "./migrations/maintenance.js";
+export * from "./migrations/migration-runner.js";
+export * from "./migrations/platform-locks.js";
+export * from "./migrations/platform-storage.js";
+export * from "./migrations/plugin-removal.js";
+export * from "./operations/application-operations.js";
+export * from "./operations/kernel-system-operations.js";
+export * from "./operations/operation-context.js";
+export * from "./persistence/entity-registry.js";
+export * from "./persistence/host-unit-of-work.js";
+export * from "./persistence/mongo-db-adapter.js";
+export * from "./persistence/plugin-nonce-store.js";
+export * from "./persistence/plugin-runtime-store.js";
+export * from "./persistence/public-request-limiter.js";
+export * from "./persistence/storage-ownership.js";
+export * from "./plugin-discovery/plugin-discovery-service.js";
+export * from "./plugin-manifest/plugin-manifest-validation.js";
+export * from "./plugin-manifest/semver.js";
+export * from "./plugin-namespace/permission-key.js";
+export type { CollisionRule, CollisionSeverity, ContributionIndex, NamespaceValidationResult, NamespaceValidator } from "./plugin-namespace/plugin-namespace.js";
+export * from "./plugin-namespace/plugin-namespace.js";
+export { createNamespaceValidator } from "./plugin-namespace/plugin-namespace-validator.js";
+export * from "./plugin-runtime/in-memory-plugin-runtime.js";
+export * from "./plugin-runtime/plugin-activity.js";
+export * from "./plugin-runtime/plugin-operation-provider.js";
+export { PluginContributionRegistry } from "./plugin-runtime/plugin-runtime-contributions.js";
+export * from "./secure-payloads/index.js";
+export * from "./system/kernel-health-service.js";
+export * from "./system/kernel-system-service.js";
+
+// dist/runtime/migrations/maintenance.d.ts
+import type { DbAdapter } from "../../contracts/db-adapter.js";
+import type { NamespaceContext } from "../../contracts/namespace-context.js";
+import type { HostTransactionRepositories, HostUnitOfWork } from "../persistence/host-unit-of-work.js";
+export declare class PlatformMaintenanceError extends Error {
+    readonly code = "platform_maintenance";
+    readonly statusCode = 503;
+}
+export declare class PlatformMaintenance {
+    private readonly adapter;
+    private readonly uow;
+    constructor(adapter: DbAdapter, uow: HostUnitOfWork);
+    initializeOwner(namespace: NamespaceContext): Promise<void>;
+    set(namespaces: readonly NamespaceContext[], enabled: boolean, actorId: string): Promise<void>;
+    assertActive(namespace: NamespaceContext): Promise<void>;
+    fenceActive(repositories: HostTransactionRepositories, namespace: NamespaceContext): Promise<void>;
+    fence(repositories: HostTransactionRepositories, namespaces: readonly NamespaceContext[]): Promise<void>;
+}
+
+// dist/runtime/migrations/migration-runner.d.ts
+import type { NamespaceContext } from "../../contracts/namespace-context.js";
+import type { JsonValue, PluginManifest } from "../../contracts/plugin-manifest.js";
+import type { MigrationApplyOptions, PluginMigrationDefinition, PluginMigrationMetadata } from "../../contracts/plugin-migrations.js";
+import type { MongoDbAdapter } from "../persistence/mongo-db-adapter.js";
+import { PlatformMaintenance } from "./maintenance.js";
+import { PlatformLocks } from "./platform-locks.js";
+export interface MigrationRecord {
+    id: string;
+    pluginId: string;
+    namespace: string;
+    migrationId: string;
+    checksum: string;
+    status: "running" | "applied" | "failed" | "baseline";
+    attempt: number;
+    checkpoint: JsonValue;
+    lockEpoch: number;
+    actor: string;
+    artifactVersion: string;
+    artifactChecksum: string;
+    updatedAt: string;
+    errorCode?: string;
+}
+export interface MigrationPlan {
+    pluginId: string;
+    workspaceId?: string;
+    pending: readonly PluginMigrationMetadata[];
+    versions: Readonly<Record<string, number>>;
+}
+export declare class PluginMigrationError extends Error {
+    readonly code = "plugin_migration_required";
+}
+/** Length-framed, path-sorted distributed file bytes. No imports or code execution. */
+export declare function computeMigrationChecksum(packageRoot: string, sourceFiles: readonly string[]): Promise<string>;
+export declare class PluginMigrationRunner {
+    private readonly adapter;
+    private readonly options;
+    readonly locks: PlatformLocks;
+    readonly maintenance: PlatformMaintenance;
+    private readonly uow;
+    private readonly history;
+    private readonly versions;
+    constructor(adapter: MongoDbAdapter, options: {
+        instanceId: string;
+        packageRoot: string;
+        leaseMs?: number;
+        heartbeatMs?: number;
+        batchSize?: number;
+    });
+    assertSchemaCompatible(manifest: PluginManifest, namespace?: NamespaceContext): Promise<void>;
+    verifyAppliedIntegrity(manifest: PluginManifest, definitions: readonly PluginMigrationDefinition[], namespace?: NamespaceContext, initializeBaseline?: boolean): Promise<void>;
+    status(namespace: NamespaceContext): Promise<readonly MigrationRecord[]>;
+    plan(manifest: PluginManifest, definitions: readonly PluginMigrationDefinition[], namespace?: NamespaceContext): Promise<MigrationPlan>;
+    apply(manifest: PluginManifest, definitions: readonly PluginMigrationDefinition[], options: MigrationApplyOptions, namespace?: NamespaceContext): Promise<void>;
+    private context;
+    private begin;
+    private commitStep;
+    private recordCommit;
+}
+
+// dist/runtime/migrations/platform-locks.d.ts
+import type { DbAdapter } from "../../contracts/db-adapter.js";
+import type { HostTransactionRepositories } from "../persistence/host-unit-of-work.js";
+export interface PlatformLease {
+    id: string;
+    ownerInstanceId: string;
+    epoch: number;
+}
+export declare class PlatformLeaseLostError extends Error {
+    readonly code = "platform_lease_lost";
+}
+export declare class PlatformLocks {
+    private readonly now;
+    private readonly repository;
+    constructor(adapter: DbAdapter, now?: () => number);
+    acquire(id: string, ownerInstanceId: string, leaseMs?: number): Promise<PlatformLease | null>;
+    renew(lease: PlatformLease, leaseMs?: number): Promise<void>;
+    release(lease: PlatformLease): Promise<void>;
+    isActive(lease: PlatformLease): Promise<boolean>;
+    /** Write the lock in the SAME transaction as data/checkpoint, causing takeover conflicts. */
+    fence(repositories: HostTransactionRepositories, lease: PlatformLease): Promise<void>;
+}
+
+// dist/runtime/migrations/platform-storage.d.ts
+import type { EntityRegistry } from "../persistence/entity-registry.js";
+export declare const PLATFORM_ENTITIES: readonly [{
+    ownerPluginId: string;
+    entityName: string;
+    schema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{
+        id: string;
+        count: number;
+        purgeAt: Date;
+    } & {}>;
+    indexes?: readonly import("../index.js").EntityIndexDefinition[];
+}, {
+    ownerPluginId: string;
+    entityName: string;
+    schema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{
+        id: string;
+        epoch: number;
+        ownerInstanceId: string;
+        leaseUntil: Date;
+        heartbeat: Date;
+        fenceRevision: number;
+    } & {}>;
+    indexes?: readonly import("../index.js").EntityIndexDefinition[];
+}, {
+    ownerPluginId: string;
+    entityName: string;
+    schema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{} & {}>;
+    indexes?: readonly import("../index.js").EntityIndexDefinition[];
+}, {
+    ownerPluginId: string;
+    entityName: string;
+    schema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{} & {}>;
+    indexes?: readonly import("../index.js").EntityIndexDefinition[];
+}, {
+    ownerPluginId: string;
+    entityName: string;
+    schema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{} & {}>;
+    indexes?: readonly import("../index.js").EntityIndexDefinition[];
+}, {
+    ownerPluginId: string;
+    entityName: string;
+    schema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{} & {}>;
+    indexes?: readonly import("../index.js").EntityIndexDefinition[];
+}];
+export declare const KERNEL_NAMESPACE: Readonly<{
+    pluginId: "kernel";
+}>;
+export declare function registerPlatformEntities(registry: EntityRegistry): void;
+export declare function duplicateKey(error: unknown): boolean;
+
+// dist/runtime/migrations/plugin-removal.d.ts
+import type { DbAdapter } from "../../contracts/db-adapter.js";
+import type { PluginRuntime } from "../../contracts/plugin-runtime.js";
+import type { PluginActivityRegistry } from "../plugin-runtime/plugin-activity.js";
+import type { PluginMigrationRunner } from "./migration-runner.js";
+export interface PluginRemovalHost {
+    authorizeOperator(actorId: string, action: "uninstall" | "purge", pluginId: string): Promise<void>;
+    /** Cluster drain/instance acknowledgement is provided by the deployment coordinator. */
+    drainInstances(pluginId: string): Promise<void>;
+    revokeCredentialsAndGrants(pluginId: string, actorId: string): Promise<void>;
+    detachArtifact(pluginId: string): Promise<void>;
+    planPurge(pluginId: string): Promise<{
+        references: readonly string[];
+        resources: readonly {
+            id: string;
+            ownerPluginId: string;
+        }[];
+        pendingDeliveries: number;
+    }>;
+    /** Deletes only resources in the operator-reviewed plan, never entire shared collections. */
+    purgeOwnedResources(pluginId: string, resources: readonly string[], backupReference: string): Promise<void>;
+}
+export declare class PluginRemovalService {
+    private readonly runtime;
+    private readonly activity;
+    private readonly runner;
+    private readonly adapter;
+    private readonly host;
+    private readonly options;
+    constructor(runtime: PluginRuntime, activity: PluginActivityRegistry, runner: PluginMigrationRunner, adapter: DbAdapter, host: PluginRemovalHost, options?: {
+        drainTimeoutMs?: number;
+    });
+    private preflight;
+    uninstall(pluginId: string, actorId: string): Promise<void>;
+    purge(pluginId: string, actorId: string, backupReference: string, expectedResources: readonly string[]): Promise<void>;
+    private audit;
+}
+
+// dist/runtime/operations/application-operations.d.ts
+import { type Token } from "@trinacria/core";
+import type { ApplicationOperations, OperationAuthorizer, OperationContext, OperationTarget } from "../../contracts/operations.js";
+export interface ApplicationOperationRule {
+    target: OperationTarget | ((args: readonly unknown[], context: OperationContext) => OperationTarget | readonly OperationTarget[]);
+    invoke?: (context: OperationContext, args: readonly unknown[]) => unknown;
+    prepare?: (args: readonly unknown[], context: OperationContext) => Promise<readonly unknown[]> | readonly unknown[];
+}
+/** Explicit, per-domain methods only; no repository or arbitrary business gateway. */
+export declare function createApplicationOperations<T extends object, K extends keyof T>(service: T, authorizer: OperationAuthorizer, rules: Record<K, ApplicationOperationRule>): ApplicationOperations<Pick<T, K>>;
+export declare function applicationOperationsProvider<T extends object, R>(token: Token<R>, implementation: Token<T>, create: (service: T, authorizer: OperationAuthorizer) => R): import("@trinacria/core").FactoryProvider<R>;
+
+// dist/runtime/operations/kernel-system-operations.d.ts
+import type { ApplicationOperations, OperationAuthorizer } from "../../contracts/operations.js";
+import type { KernelSystemService } from "../system/kernel-system-service.js";
+export type KernelSystemOperations = ApplicationOperations<Pick<KernelSystemService, "listInstalledPlugins" | "listCapabilities" | "listPluginContributions" | "listAdminExtensions" | "listPluginSources" | "getInstalledPlugin" | "executeOperation" | "listPluginEvents" | "getPluginOperation">>;
+export declare const KERNEL_SYSTEM_OPERATIONS: import("@trinacria/core").Token<ApplicationOperations<Pick<KernelSystemService, "listInstalledPlugins" | "listCapabilities" | "listPluginContributions" | "listAdminExtensions" | "listPluginSources" | "getInstalledPlugin" | "executeOperation" | "listPluginEvents" | "getPluginOperation">>>;
+export declare function createKernelSystemOperations(system: KernelSystemService, authorizer: OperationAuthorizer): KernelSystemOperations;
+
+// dist/runtime/operations/operation-context.d.ts
+import type { OperationContext, OperationTarget } from "../../contracts/operations.js";
+import { CoreError } from "../../errors/core-error.js";
+export declare function createUserOperationContext(subjectId: string, requestId?: string, source?: "http" | "cli"): OperationContext;
+export declare function createPluginOperationContext(pluginId: string, source?: "plugin" | "job" | "http", requestId?: string, operation?: string): OperationContext;
+/** Host delegation requires a previously authenticated user context, never a userId body. */
+export declare function createDelegatedPluginOperationContext(pluginId: string, user: OperationContext): OperationContext;
+export declare function createSystemOperationContext(purpose: "manifest-provisioning" | "plugin-bootstrap" | "migration" | "media-cleanup" | "secure-email-delivery" | "public-delivery", targets: readonly OperationTarget[], requestId?: string): OperationContext;
+export declare function assertOperationContext(context: OperationContext): void;
+export declare function systemOperationAllowed(context: OperationContext, target: OperationTarget): boolean;
+export declare function operationSubjectId(context: OperationContext): string;
+export declare function bindHttpOperationContext(http: object, context: OperationContext): void;
+export declare function getHttpOperationContext(http: object): OperationContext;
+export declare function operationForbidden(reason?: string): CoreError;
+
+// dist/runtime/persistence/entity-registry.d.ts
+import type { Schema } from "@trinacria/schema";
+export interface EntityIndexDefinition {
+    fields: Record<string, 1 | -1>;
+    unique?: boolean;
+    sparse?: boolean;
+    expireAfterSeconds?: number;
+    partialFilter?: Record<string, unknown>;
+    name?: string;
+}
+export interface EntityDefinition {
+    ownerPluginId: string;
+    entityName: string;
+    schema: Schema<unknown>;
+    indexes?: readonly EntityIndexDefinition[];
+}
+export declare function defineEntity<TSchema extends Schema<unknown>>(definition: {
+    ownerPluginId: string;
+    entityName: string;
+    schema: TSchema;
+    indexes?: readonly EntityIndexDefinition[];
+}): {
+    ownerPluginId: string;
+    entityName: string;
+    schema: TSchema;
+    indexes?: readonly EntityIndexDefinition[];
+};
+export declare class EntityRegistry {
+    private readonly entities;
+    register(definition: EntityDefinition): void;
+    get(entityName: string, ownerPluginId: string): EntityDefinition;
+}
+
+// dist/runtime/persistence/host-unit-of-work.d.ts
+import type { DbRepository } from "../../contracts/db-adapter.js";
+import type { NamespaceContext } from "../../contracts/namespace-context.js";
+import type { MongoDbAdapter } from "./mongo-db-adapter.js";
+export interface HostTransactionRepositories {
+    repository<T = unknown>(entityName: string, namespace: NamespaceContext): DbRepository<T>;
+}
+/** Host infrastructure only. Do not expose this object through PluginHostServices. */
+export declare class HostUnitOfWork {
+    private readonly adapter;
+    constructor(adapter: MongoDbAdapter);
+    run<T>(allowedNamespaces: readonly NamespaceContext[], work: (repositories: HostTransactionRepositories) => Promise<T>, options?: {
+        bypassMaintenance?: boolean;
+    }): Promise<T>;
+}
+
+// dist/runtime/persistence/mongo-db-adapter.d.ts
+import type { DbAdapter, DbRepository, DbTransaction } from "../../contracts/db-adapter.js";
+import type { NamespaceContext } from "../../contracts/namespace-context.js";
+import type { EntityRegistry } from "./entity-registry.js";
+import type { HostTransactionRepositories } from "./host-unit-of-work.js";
+import { type StorageOwnershipStore } from "./storage-ownership.js";
+interface MongoSessionLike {
+    startTransaction?(): void;
+    withTransaction?<T>(work: () => Promise<T>): Promise<T | undefined>;
+    commitTransaction(): Promise<void>;
+    abortTransaction(): Promise<void>;
+    endSession?(): Promise<void>;
+}
+interface MongoCursorLike<TData> {
+    sort(sort: Record<string, 1 | -1>): MongoCursorLike<TData>;
+    skip(value: number): MongoCursorLike<TData>;
+    limit(value: number): MongoCursorLike<TData>;
+    toArray(): Promise<TData[]>;
+}
+interface MongoCollectionLike<TData> {
+    findOne(filter?: Record<string, unknown>, options?: Record<string, unknown>): Promise<TData | null>;
+    find(filter?: Record<string, unknown>, options?: Record<string, unknown>): MongoCursorLike<TData>;
+    insertOne(document: TData, options?: Record<string, unknown>): Promise<{
+        insertedId?: unknown;
+    }>;
+    findOneAndUpdate(filter: Record<string, unknown>, patch: Partial<TData> | Record<string, unknown>, options?: Record<string, unknown>): Promise<{
+        value: TData | null;
+    } | TData | null>;
+    updateOne(filter: Record<string, unknown>, patch: Partial<TData> | Record<string, unknown>, options?: Record<string, unknown>): Promise<unknown>;
+    deleteOne(filter: Record<string, unknown>, options?: Record<string, unknown>): Promise<{
+        deletedCount?: number;
+    }>;
+    indexes?(): Promise<Array<{
+        name: string;
+        key: Record<string, 1 | -1>;
+        unique?: boolean;
+        sparse?: boolean;
+    }>>;
+    dropIndex?(name: string): Promise<unknown>;
+    createIndexes?(indexes: Array<{
+        key: Record<string, 1 | -1>;
+        unique?: boolean;
+        sparse?: boolean;
+        expireAfterSeconds?: number;
+        partialFilterExpression?: Record<string, unknown>;
+        name?: string;
+    }>): Promise<unknown>;
+}
+interface MongoConnectionLike {
+    collection<TData = unknown>(name: string): MongoCollectionLike<TData>;
+    startSession(): Promise<MongoSessionLike>;
+    db?: {
+        command(command: Record<string, unknown>): Promise<unknown>;
+    };
+}
+export interface MongoDbAdapterOptions {
+    connection: MongoConnectionLike;
+    entityRegistry: EntityRegistry;
+    ownershipStore?: StorageOwnershipStore;
+}
+export declare class MongoDbAdapter implements DbAdapter {
+    private readonly options;
+    private readonly transactionScope;
+    private needsWriteTransaction;
+    private readonly ownership;
+    private writeGuard?;
+    /** Host-only maintenance guard; plugins cannot replace or bypass it. */
+    setWriteGuard(guard: NonNullable<MongoDbAdapter["writeGuard"]>): void;
+    hasStoredRecords(namespace: NamespaceContext, entityName: string): Promise<boolean>;
+    private legacyCheck?;
+    private legacyCheckDatabase?;
+    constructor(options: MongoDbAdapterOptions);
+    initializeStorageOwnership(): Promise<void>;
+    private assertNoLegacyStorage;
+    repository<TData = unknown>(entityName: string, context: NamespaceContext): DbRepository<TData>;
+    beginTransaction(_context: NamespaceContext): Promise<DbTransaction>;
+    withTransaction<T>(context: NamespaceContext, work: (adapter: DbAdapter) => Promise<T>): Promise<T>;
+    runHostTransaction<T>(allowedNamespaces: readonly NamespaceContext[], work: (repositories: HostTransactionRepositories) => Promise<T>, transactionOptions?: {
+        bypassMaintenance?: boolean;
+    }): Promise<T>;
+    healthCheck(): Promise<{
+        ok: true;
+    } | {
+        ok: false;
+        reason: string;
+    }>;
+    ensureIndexes(pluginId: string, entityNames: readonly string[]): Promise<void>;
+    private resolveCollection;
+    private createRepository;
+    private applyParser;
+    private normalizeInsertPayload;
+    private normalizeReadRecord;
+    private asRecord;
+    private buildCanonicalId;
+}
+export declare function createMongoDbAdapter(options: MongoDbAdapterOptions): MongoDbAdapter;
+export {};
+
+// dist/runtime/persistence/plugin-nonce-store.d.ts
+import type { PluginNonceStore } from "../../contracts/plugin-nonce-store.js";
+import type { MongoDbAdapter } from "./mongo-db-adapter.js";
+export declare const PLUGIN_AUTH_NONCES_ENTITY: {
+    ownerPluginId: string;
+    entityName: string;
+    schema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{
+        pluginId: string;
+        expiresAt: Date;
+        nonceHash: string;
+    } & {}>;
+    indexes?: readonly import("./entity-registry.js").EntityIndexDefinition[];
+};
+export declare class MongoPluginNonceStore implements PluginNonceStore {
+    private readonly adapter;
+    readonly shared = true;
+    private initialization?;
+    constructor(adapter: MongoDbAdapter);
+    consume(pluginId: string, nonceHash: string, expiresAt: Date): Promise<boolean>;
+}
+/** Explicit dev/test store; full capacity refuses new nonces, never evicts valid entries. */
+export declare class MemoryPluginNonceStore implements PluginNonceStore {
+    private readonly maxEntries;
+    private readonly now;
+    readonly shared = false;
+    private readonly nonces;
+    constructor(maxEntries?: number, now?: () => number);
+    consume(pluginId: string, nonceHash: string, expiresAt: Date): Promise<boolean>;
+}
+
+// dist/runtime/persistence/plugin-runtime-store.d.ts
+import type { DbAdapter } from "../../contracts/db-adapter.js";
+import type { PluginRuntimeRecord } from "../../contracts/plugin-runtime.js";
+import type { PersistedPluginRuntimeRecord, PluginRuntimeStore } from "../../contracts/plugin-runtime-store.js";
+import { type EntityRegistry } from "./entity-registry.js";
+export declare const INSTALLED_PLUGINS_ENTITY: {
+    ownerPluginId: string;
+    entityName: string;
+    schema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{
+        id: string;
+        manifest: {
+            id: string;
+            version: string;
+            requiresCore: string;
+        } & {};
+        state: "failed" | "disabled" | "registered" | "loading" | "initializing" | "loaded" | "unloading" | "unloaded";
+        pluginId: string;
+        version: string;
+        enabled: boolean;
+        updatedAt: string;
+        createdAt: string;
+        failureCount: number;
+    } & {
+        lastFailurePhase?: "register" | "dependency-check" | "load" | "init" | "unload" | "rollback" | undefined;
+        statusReason?: ({
+            code: string;
+            message: string;
+        } & {}) | undefined;
+        failedAt?: string | undefined;
+        disabledAt?: string | undefined;
+        disabledReason?: string | undefined;
+        loadedAt?: string | undefined;
+        lastErrorCode?: string | undefined;
+        lastErrorName?: string | undefined;
+        lastErrorMessage?: string | undefined;
+        lastErrorDetails?: ({} & {}) | undefined;
+    }>;
+    indexes?: readonly import("./entity-registry.js").EntityIndexDefinition[];
+};
+export interface DbPluginRuntimeStoreOptions {
+    dbAdapter: DbAdapter;
+    entityRegistry?: EntityRegistry;
+    namespacePluginId?: string;
+    now?: () => Date;
+}
+export declare class InMemoryPluginRuntimeStore implements PluginRuntimeStore {
+    private readonly now;
+    private readonly records;
+    constructor(now?: () => Date);
+    initialize(): Promise<void>;
+    upsert(record: PluginRuntimeRecord): Promise<void>;
+    remove(pluginId: string): Promise<void>;
+    list(): Promise<readonly PersistedPluginRuntimeRecord[]>;
+}
+export declare class DbPluginRuntimeStore implements PluginRuntimeStore {
+    private readonly options;
+    private initialized;
+    private readonly namespacePluginId;
+    private readonly now;
+    constructor(options: DbPluginRuntimeStoreOptions);
+    initialize(): Promise<void>;
+    upsert(record: PluginRuntimeRecord): Promise<void>;
+    remove(pluginId: string): Promise<void>;
+    list(): Promise<readonly PersistedPluginRuntimeRecord[]>;
+    private getRepository;
+}
+export declare class DeferredPluginRuntimeStore implements PluginRuntimeStore {
+    private readonly factory;
+    private resolvedStore?;
+    private loading?;
+    constructor(factory: () => Promise<PluginRuntimeStore> | PluginRuntimeStore);
+    initialize(): Promise<void>;
+    upsert(record: PluginRuntimeRecord): Promise<void>;
+    remove(pluginId: string): Promise<void>;
+    list(): Promise<readonly PersistedPluginRuntimeRecord[]>;
+    private getStore;
+}
+export declare function createInMemoryPluginRuntimeStore(): PluginRuntimeStore;
+export declare function createDbPluginRuntimeStore(options: DbPluginRuntimeStoreOptions): PluginRuntimeStore;
+export declare function createDeferredPluginRuntimeStore(factory: () => Promise<PluginRuntimeStore> | PluginRuntimeStore): PluginRuntimeStore;
+export declare function assertInstalledPluginRecordShape(value: unknown): PersistedPluginRuntimeRecord;
+
+// dist/runtime/persistence/public-request-limiter.d.ts
+import type { DbAdapter } from "../../contracts/db-adapter.js";
+export declare const PUBLIC_REQUEST_LIMIT_ENTITY: {
+    ownerPluginId: string;
+    entityName: string;
+    schema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{
+        id: string;
+        count: number;
+        purgeAt: Date;
+    } & {}>;
+    indexes?: readonly import("./entity-registry.js").EntityIndexDefinition[];
+};
+export declare class PublicRequestLimitedError extends Error {
+    readonly code = "rate_limited";
+}
+export declare class PublicRequestLimiter {
+    private readonly db;
+    private readonly now;
+    constructor(db: DbAdapter, now?: () => number);
+    consume(clientId: string): Promise<void>;
+}
+
+// dist/runtime/persistence/storage-ownership.d.ts
+import type { NamespaceContext } from "../../contracts/namespace-context.js";
+export declare function canonicalStorageTuple(context: NamespaceContext, entityName: string): string;
+export declare function buildPhysicalCollectionName(context: NamespaceContext, entityName: string): string;
+export declare const STORAGE_OWNERSHIP_COLLECTION: string;
+export interface StorageOwnershipStore {
+    initialize(): Promise<void>;
+    ensure(context: NamespaceContext, entityName: string, session?: unknown): Promise<void>;
+}
+interface OwnershipCollection {
+    createIndexes?(indexes: Array<{
+        key: Record<string, 1 | -1>;
+        unique: boolean;
+        name: string;
+    }>): Promise<unknown>;
+    updateOne(filter: Record<string, unknown>, patch: Record<string, unknown>, options?: Record<string, unknown>): Promise<unknown>;
+    findOne(filter: Record<string, unknown>, options?: Record<string, unknown>): Promise<unknown>;
+}
+export declare class MongoStorageOwnershipStore implements StorageOwnershipStore {
+    private readonly source;
+    private readonly identity;
+    private initialization?;
+    private initializationIdentity?;
+    constructor(source: OwnershipCollection | (() => OwnershipCollection), identity?: () => unknown);
+    private collection;
+    initialize(): Promise<void>;
+    ensure(context: NamespaceContext, entityName: string, session?: unknown): Promise<void>;
+}
+/** Test implementation; production adapters default to the persistent Mongo store. */
+export declare class InMemoryStorageOwnershipStore implements StorageOwnershipStore {
+    readonly mappings: Map<string, string>;
+    initialize(): Promise<void>;
+    ensure(context: NamespaceContext, entityName: string): Promise<void>;
+}
+export {};
+
+// dist/runtime/plugin-discovery/plugin-discovery-service.d.ts
+import type { PluginDiscoveryResult, PluginDiscoveryService, PluginDiscoverySource } from "../../contracts/plugin-discovery.js";
+export interface ConfiguredPluginDiscoveryServiceOptions {
+    importer?: (entrypoint: string, source: PluginDiscoverySource) => Promise<unknown>;
+    continueOnError?: boolean;
+    allowedRoots?: readonly string[];
+    resolveModule?: (entrypoint: string) => string;
+}
+export declare class ConfiguredPluginDiscoveryService implements PluginDiscoveryService {
+    private readonly importer;
+    private readonly continueOnError;
+    private readonly allowedRoots;
+    private readonly resolveModule?;
+    constructor(options?: ConfiguredPluginDiscoveryServiceOptions);
+    discover(sources: readonly PluginDiscoverySource[]): Promise<PluginDiscoveryResult>;
+    private toSnapshot;
+}
+
+// dist/runtime/plugin-manifest/plugin-manifest-validation.d.ts
+import type { PluginManifest } from "../../contracts/plugin-manifest.js";
+export declare function validatePluginManifest(input: unknown): PluginManifest;
+export declare function assertPluginCompatibility(manifest: PluginManifest, coreVersion: string): void;
+
+// dist/runtime/plugin-manifest/semver.d.ts
+/** npm range semantics: strict parsing and opt-in prereleases. */
+export declare function satisfiesVersion(version: string, range: string): boolean;
+export declare function isValidVersion(value: string): boolean;
+export declare function isValidVersionRange(range: string): boolean;
+
+// dist/runtime/plugin-namespace/permission-key.d.ts
+export interface ParsedPermissionKey {
+    pluginId: string;
+    resource: string;
+    action: string;
+}
+export interface ParsedPermissionPattern {
+    pluginId: string;
+    resourcePattern: string;
+    actionPattern: string;
+}
+export declare function isValidPermissionKey(value: string): boolean;
+export declare function parsePermissionKey(value: string): ParsedPermissionKey | null;
+export declare function isPermissionOwnedByPlugin(pluginId: string, permissionKey: string): boolean;
+export declare function isValidPermissionPattern(value: string): boolean;
+export declare function parsePermissionPattern(value: string): ParsedPermissionPattern | null;
+export declare function isPermissionPatternOwnedByPlugin(pluginId: string, permissionPattern: string): boolean;
+export declare function matchesPermissionPattern(permissionPattern: string, permissionKey: string): boolean;
+
+// dist/runtime/plugin-namespace/plugin-namespace-validator.d.ts
+import type { CollisionRule, NamespaceValidator } from "./plugin-namespace.js";
+export declare function createNamespaceValidator(policy?: readonly CollisionRule[]): NamespaceValidator;
+
+// dist/runtime/plugin-namespace/plugin-namespace.d.ts
+import type { DbAdapter, DbRepository } from "../../contracts/db-adapter.js";
+import type { PluginManifest } from "../../contracts/plugin-manifest.js";
+export interface PluginDbScope {
+    repository<TData = unknown>(entityName: string): DbRepository<TData>;
+}
+export declare const RESERVED_PLUGIN_IDS: readonly ["core", "kernel", "system", "admin", "trinacria"];
+export declare const RESERVED_NAMESPACE_SEGMENTS: readonly ["core", "kernel", "system", "admin", "trinacria", "core-pack"];
+export interface ContributionCollision {
+    kind: string;
+    key: string;
+}
+export type CollisionSeverity = "error" | "warning";
+export interface CollisionRule {
+    kind: string;
+    severity: CollisionSeverity;
+}
+export interface NamespaceValidationResult {
+    valid: boolean;
+    errors: readonly string[];
+    warnings: readonly string[];
+}
+export declare const DEFAULT_COLLISION_POLICY: readonly CollisionRule[];
+export interface NamespaceValidator {
+    validatePluginId(id: string): NamespaceValidationResult;
+    validateManifest(manifest: PluginManifest): NamespaceValidationResult;
+    registerPlugin(manifest: PluginManifest): NamespaceValidationResult;
+    unregisterPlugin(pluginId: string): void;
+    isReserved(id: string): boolean;
+    getCollisionSnapshot(): ContributionIndex;
+}
+export interface ContributionIndex {
+    plugins: string[];
+    entities: Map<string, string>;
+    permissions: Map<string, string>;
+    routes: Map<string, string>;
+    resourceIds: Map<string, string>;
+    eventNames: Map<string, string>;
+    settingCanonicalKeys: Map<string, string>;
+}
+export declare function isReservedPluginId(value: string): boolean;
+export declare function isReservedNamespaceSegment(value: string): boolean;
+export declare function isValidPluginId(value: string): boolean;
+export declare function isValidNamespaceSegment(value: string): boolean;
+export declare function buildContributionKey(pluginId: string, localName: string): string;
+export declare function buildSettingKey(pluginId: string, namespace: string, key: string): string;
+export declare function findContributionCollisions(kind: string, keys: readonly string[]): ContributionCollision[];
+export declare function assertNoContributionCollisions(kind: string, keys: readonly string[]): void;
+export declare function buildNamespaceId(pluginId: string, entityName: string, resourceId: string): string;
+export interface ParsedNamespaceId {
+    pluginId: string;
+    entityName: string;
+    resourceId: string;
+}
+export declare function parseNamespaceId(namespaceId: string): ParsedNamespaceId;
+export declare function assertPluginOwnsNamespaceId(pluginId: string, namespaceId: string): void;
+export declare function createPluginDbScope(db: DbAdapter, pluginId: string): PluginDbScope;
+
+// dist/runtime/plugin-runtime/in-memory-plugin-runtime.d.ts
+import type { ApplicationContext } from "@trinacria/core";
+import type { DbAdapter } from "../../contracts/db-adapter.js";
+import type { KernelPluginDefinition, PluginContributionCatalogSnapshot, PluginDependencyGraphSnapshot, PluginEventDeliveryDiagnostic, PluginEventPublisher, PluginEventSubscriptionAuthorizer, PluginRuntime, PluginRuntimeEvent, PluginRuntimeLifecycleHooks, PluginRuntimeRecord, PluginRuntimeRetryPolicy } from "../../contracts/plugin-runtime.js";
+import type { PluginRuntimeStore } from "../../contracts/plugin-runtime-store.js";
+import { TrinacriaModuleBridge } from "../bridge/trinacria-module-bridge.js";
+import { type DurableDelivery, type DurableOutbox, type DurablePublication, type DurablePublishOptions, type MongoDurableEventStore } from "../durable-events/durable-events.js";
+import { PluginActivityRegistry } from "./plugin-activity.js";
+import { PluginContributionRegistry } from "./plugin-runtime-contributions.js";
+import { PluginRegistryManager } from "./plugin-runtime-registry.js";
+export type { PluginRuntimeLifecycleHooks, TrinacriaModuleBridge };
+export interface InMemoryPluginRuntimeOptions {
+    coreVersion: string;
+    activity?: PluginActivityRegistry;
+    assertPluginActive?: (pluginId: string) => Promise<void>;
+    app?: ApplicationContext;
+    lifecycleHooks?: PluginRuntimeLifecycleHooks;
+    retryPolicy?: PluginRuntimeRetryPolicy;
+    onEvent?: (event: PluginRuntimeEvent) => void;
+    runtimeStore?: PluginRuntimeStore;
+    eventBufferSize?: number;
+    eventSubscriptionAuthorizer?: PluginEventSubscriptionAuthorizer;
+    onDeliveryDiagnostic?: (diagnostic: PluginEventDeliveryDiagnostic) => void | Promise<void>;
+}
+export declare class InMemoryPluginRuntime implements PluginRuntime {
+    readonly activity: PluginActivityRegistry;
+    readonly registry: PluginRegistryManager;
+    readonly loadedContributions: PluginContributionRegistry;
+    readonly runtimeStore: PluginRuntimeStore;
+    private durableStore?;
+    /** Advanced host bootstrap only; never part of PluginHostServices. */
+    setDurableEventStore(store: MongoDurableEventStore): void;
+    private readonly coreVersion;
+    private readonly assertPluginActive?;
+    private readonly app?;
+    private readonly moduleBridge?;
+    private readonly lifecycleHooks?;
+    private readonly activeLoads;
+    private readonly hostServices;
+    private readonly retryPolicy?;
+    private readonly eventsLog;
+    private readonly eventSubscriptionAuthorizer?;
+    private readonly onDeliveryDiagnostic?;
+    private readonly pluginEventSubscriptions;
+    private runtimeStoreInitialization?;
+    private runtimeStoreHydrated;
+    constructor(options: InMemoryPluginRuntimeOptions);
+    register(plugin: KernelPluginDefinition | PluginRuntimeRecord["manifest"]): Promise<void>;
+    load(pluginId: string): Promise<void>;
+    unload(pluginId: string): Promise<void>;
+    reload(pluginId: string): Promise<void>;
+    unregister(pluginId: string): Promise<void>;
+    loadMany(pluginIds?: readonly string[]): Promise<void>;
+    reconcileDiscoveredPlugins(pluginIds: readonly string[]): Promise<void>;
+    disable(pluginId: string, reason?: string): Promise<void>;
+    enable(pluginId: string): Promise<void>;
+    list(): readonly PluginRuntimeRecord[];
+    events(options?: {
+        pluginId?: string;
+        limit?: number;
+    }): readonly PluginRuntimeEvent[];
+    emitPluginEvent(pluginId: string, eventName: string, payload: unknown, options?: DurablePublishOptions): Promise<void>;
+    describeDurablePublication(pluginId: string, eventName: string, payload: unknown): Promise<DurablePublication>;
+    dispatchDurableEvent(delivery: DurableDelivery, outbox: DurableOutbox, adapter: DbAdapter, signal: AbortSignal, events: PluginEventPublisher, secureJobs?: import("../../contracts/plugin-runtime.js").KernelPluginEventHandlerContext["secureJobs"]): Promise<void>;
+    assertDurableConsumerActive(pluginId: string): Promise<void>;
+    canSendSecureEmailJob(job: Omit<import("../durable-events/secure-email-jobs.js").SecureEmailJob, "encryptedPayload">): Promise<boolean>;
+    sendSecureEmailJob(payload: unknown, messageId: string): Promise<void>;
+    describeDependencies(): PluginDependencyGraphSnapshot;
+    describeContributions(): PluginContributionCatalogSnapshot;
+    /** Host-only: run owner-bound hooks, propagating failures to the installer. */
+    initializeInstallation(input: import("../../contracts/installation.js").PluginInstallationInput): Promise<void>;
+    private createContext;
+    private servicesForPlugin;
+    private markDisabled;
+    private errorToString;
+    private emitEvent;
+    private bindPluginEventSubscriptions;
+    private reportDeliveryDiagnostic;
+    private assertPluginEventSubscriptionsReady;
+    private unbindPluginEventSubscriptions;
+    private resolveEventBus;
+    private assertSubscriptionAllowed;
+    private resolveEventSubscriptionAuthorizer;
+    private resolveRegisteredEmittedEvent;
+    private resolveSubscriptionEventNames;
+    private resolveAttempts;
+    private isPermissionDeclaredByPlugin;
+    private isRetryableLoadError;
+    private sleep;
+    private ensureRuntimeStoreInitialized;
+}
+
+// dist/runtime/plugin-runtime/plugin-activity.d.ts
+export declare class PluginDrainError extends Error {
+    readonly code = "plugin_draining";
+}
+/** Host registry. A timeout never pretends that JavaScript has been stopped. */
+export declare class PluginActivityRegistry {
+    private readonly owners;
+    private state;
+    resume(owner: string): void;
+    block(owner: string): void;
+    run<T>(owners: readonly string[], work: (signal: AbortSignal) => Promise<T>): Promise<T>;
+    drain(owner: string, timeoutMs?: number): Promise<void>;
+    snapshot(owner: string): {
+        active: number;
+        blocked: boolean;
+    };
+}
+
+// dist/runtime/plugin-runtime/plugin-operation-provider.d.ts
+import { type DependencyList, type Token } from "@trinacria/core";
+import type { Schema } from "@trinacria/schema";
+import type { OperationContext } from "../../contracts/operations.js";
+import type { PluginEventPublisher } from "../../contracts/plugin-runtime.js";
+export interface PluginOperationDefinition {
+    name: string;
+    private?: boolean;
+    requiredPermission?: string;
+    input: Schema<unknown>;
+    invoke(input: unknown, context: {
+        operationContext: OperationContext;
+        callerPluginId: string;
+        ownerPluginId: string;
+        events: PluginEventPublisher;
+        signal?: AbortSignal;
+    }): Promise<unknown> | unknown;
+}
+export interface PluginOperationsProvider {
+    ownerPluginId: string;
+    operations: readonly PluginOperationDefinition[];
+}
+export declare const PLUGIN_OPERATIONS_PROVIDER_KIND: import("@trinacria/core").ProviderKind<PluginOperationsProvider>;
+/** Module composition helper. Dependencies are resolved by the host, never by a plugin context. */
+export declare function pluginOperationsProvider<TDependencies extends unknown[]>(token: Token<PluginOperationsProvider>, ownerPluginId: string, factory: (...dependencies: TDependencies) => readonly PluginOperationDefinition[], deps?: DependencyList): {
+    kind: import("@trinacria/core").ProviderKind<PluginOperationsProvider>;
+    useFactory: (...args: any[]) => import("@trinacria/core").MaybePromise<{
+        ownerPluginId: string;
+        operations: readonly PluginOperationDefinition[];
+    }>;
+    deps?: DependencyList;
+    token: Token<{
+        ownerPluginId: string;
+        operations: readonly PluginOperationDefinition[];
+    }>;
+    eager?: boolean;
+    lifecycle?: "managed" | "external";
+};
+
+// dist/runtime/plugin-runtime/plugin-runtime-contributions.d.ts
+import type { PluginManifest } from "../../contracts/plugin-manifest.js";
+import type { PluginContributionCatalogSnapshot } from "../../contracts/plugin-runtime.js";
+export declare class PluginContributionRegistry {
+    private readonly entities;
+    private readonly settings;
+    private readonly emittedEvents;
+    private readonly eventSubscriptions;
+    private readonly adminNavigation;
+    private readonly adminRoutes;
+    private readonly adminResources;
+    private readonly adminWidgets;
+    private readonly adminSettingsSections;
+    upsert(manifest: PluginManifest): void;
+    remove(pluginId: string): void;
+    snapshot(): PluginContributionCatalogSnapshot;
+    private add;
+    private assertNoGlobalAdminPathCollisions;
+    private assertUniqueAdminPath;
+    private clone;
+    private replaceWith;
+    private clear;
+    private removeFrom;
+    private copyInto;
+    private sorted;
+}
+
+// dist/runtime/plugin-runtime/plugin-runtime-registry.d.ts
+import type { ModuleDefinition } from "@trinacria/core";
+import type { KernelPluginDefinition, PluginRuntimeRecord, PluginState } from "../../contracts/plugin-runtime.js";
+import type { NamespaceValidator } from "../plugin-namespace/plugin-namespace.js";
+import { PluginContributionRegistry } from "./plugin-runtime-contributions.js";
+export declare class PluginRegistryManager {
+    readonly records: Map<string, PluginRuntimeRecord>;
+    readonly definitions: Map<string, KernelPluginDefinition>;
+    readonly pluginModules: Map<string, readonly ModuleDefinition[]>;
+    readonly registrationValidator: PluginContributionRegistry;
+    readonly namespaceValidator: NamespaceValidator;
+    getRecord(pluginId: string): PluginRuntimeRecord;
+    getDefinition(pluginId: string): KernelPluginDefinition;
+    assertNamespaceValid(manifest: PluginRuntimeRecord["manifest"]): void;
+    registerNamespace(manifest: PluginRuntimeRecord["manifest"]): void;
+    unregisterNamespace(pluginId: string): void;
+    removePlugin(pluginId: string): void;
+    transition(pluginId: string, nextState: PluginState): void;
+    normalizeDefinition(plugin: KernelPluginDefinition | PluginRuntimeRecord["manifest"]): KernelPluginDefinition;
+}
+
+// dist/runtime/secure-payloads/index.d.ts
+export * from "./secure-event-payloads.crypto.js";
+export * from "./secure-event-payloads.errors.js";
+export * from "./secure-event-payloads.repository.js";
+export * from "./secure-event-payloads.schemas.js";
+export * from "./secure-event-payloads.service.js";
+
+// dist/runtime/secure-payloads/secure-event-payloads.crypto.d.ts
+import type { EncryptedSecurePayload, SecurePayloadKeyring } from "../../contracts/secure-event-payloads.js";
+export declare class SecureEventPayloadCrypto {
+    private readonly keys;
+    readonly activeKeyId: string;
+    constructor(keyring: SecurePayloadKeyring);
+    encrypt(plaintext: string): EncryptedSecurePayload;
+    decrypt(payload: EncryptedSecurePayload): string;
+}
+/** Host configuration only; never log environment text or key material in errors. */
+export declare function readSecurePayloadKeyring(env?: Record<string, string | undefined>): SecurePayloadKeyring;
+
+// dist/runtime/secure-payloads/secure-event-payloads.errors.d.ts
+import { CoreError } from "../../errors/core-error.js";
+export declare class SecureEventPayloadError extends CoreError {
+    constructor(code: string, message: string, details?: Record<string, unknown>);
+}
+
+// dist/runtime/secure-payloads/secure-event-payloads.repository.d.ts
+import type { DbAdapter } from "../../contracts/db-adapter.js";
+import type { EncryptedSecurePayload, SecureEventPayloadRecord } from "../../contracts/secure-event-payloads.js";
+/** Internal persistence record: ciphertext and TTL metadata never cross the client API. */
+export interface StoredSecureEventPayloadRecord extends SecureEventPayloadRecord {
+    encryptedPayload: EncryptedSecurePayload;
+    storageRevision: number;
+    purgeAt?: Date;
+}
+export declare class SecureEventPayloadsRepository {
+    private readonly db;
+    constructor(db: DbAdapter);
+    initialize(): Promise<void>;
+    create(input: Omit<StoredSecureEventPayloadRecord, "id" | "createdAt" | "updatedAt" | "claimCount" | "status" | "storageRevision">, now: Date): Promise<StoredSecureEventPayloadRecord>;
+    findById(id: string): Promise<StoredSecureEventPayloadRecord | null>;
+    claimAvailable(snapshot: StoredSecureEventPayloadRecord, consumerId: string, now: Date, retentionMs: number): Promise<StoredSecureEventPayloadRecord | null>;
+    revokeAvailable(id: string, producerId: string, now: Date, retentionMs: number): Promise<StoredSecureEventPayloadRecord | null>;
+    expireAvailable(id: string, now: Date): Promise<void>;
+    reencrypt(snapshot: StoredSecureEventPayloadRecord, encryptedPayload: EncryptedSecurePayload, now: Date): Promise<StoredSecureEventPayloadRecord | null>;
+    findByKeyId(keyId: string, limit: number): Promise<readonly StoredSecureEventPayloadRecord[]>;
+    private update;
+    private parse;
+    private repository;
+}
+
+// dist/runtime/secure-payloads/secure-event-payloads.schemas.d.ts
+import { type Infer } from "@trinacria/schema";
+export declare const EncryptedSecurePayloadSchema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{
+    cipherText: string;
+    iv: string;
+    authTag: string;
+    algorithm: "aes-256-gcm";
+    keyVersion: string;
+} & {}>;
+export declare const SecureEventPayloadStatusSchema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<"available" | "consumed" | "expired" | "revoked">;
+export declare const SecureEventPayloadRecordSchema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{
+    id: string;
+    status: "available" | "consumed" | "expired" | "revoked";
+    updatedAt: string;
+    eventName: string;
+    createdAt: string;
+    producerPluginId: string;
+    payloadType: string;
+    schemaVersion: number;
+    requiredPermission: string;
+    encryptedPayload: {
+        cipherText: string;
+        iv: string;
+        authTag: string;
+        algorithm: "aes-256-gcm";
+        keyVersion: string;
+    } & {};
+    storageRevision: number;
+    maxClaims: number;
+    claimCount: number;
+} & {
+    purgeAt?: Date | undefined;
+    expiresAt?: string | undefined;
+    authorizedConsumerPluginIds?: string[] | undefined;
+    lastClaimedAt?: string | undefined;
+    lastClaimedByPluginId?: string | undefined;
+}>;
+export type SecureEventPayloadRecordShape = Infer<typeof SecureEventPayloadRecordSchema>;
+export declare const SECURE_EVENT_PAYLOADS_ENTITY: {
+    ownerPluginId: string;
+    entityName: string;
+    schema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{
+        id: string;
+        status: "available" | "consumed" | "expired" | "revoked";
+        updatedAt: string;
+        eventName: string;
+        createdAt: string;
+        producerPluginId: string;
+        payloadType: string;
+        schemaVersion: number;
+        requiredPermission: string;
+        encryptedPayload: {
+            cipherText: string;
+            iv: string;
+            authTag: string;
+            algorithm: "aes-256-gcm";
+            keyVersion: string;
+        } & {};
+        storageRevision: number;
+        maxClaims: number;
+        claimCount: number;
+    } & {
+        purgeAt?: Date | undefined;
+        expiresAt?: string | undefined;
+        authorizedConsumerPluginIds?: string[] | undefined;
+        lastClaimedAt?: string | undefined;
+        lastClaimedByPluginId?: string | undefined;
+    }>;
+    indexes?: readonly import("../index.js").EntityIndexDefinition[];
+};
+
+// dist/runtime/secure-payloads/secure-event-payloads.service.d.ts
+import type { DbAdapter } from "../../contracts/db-adapter.js";
+import type { ClaimSecureEventPayloadInput, SecureEventPayloadAuthorizer, SecureEventPayloadClient } from "../../contracts/secure-event-payloads.js";
+import type { SecureEventPayloadCrypto } from "./secure-event-payloads.crypto.js";
+import { SecureEventPayloadsRepository } from "./secure-event-payloads.repository.js";
+export interface SecureEventPayloadHost {
+    /** Advanced host composition only. Plugin contexts receive the bound client. */
+    forPlugin(pluginId: string): SecureEventPayloadClient;
+}
+export interface SecureEventPayloadServiceOptions {
+    now?: () => Date;
+    retentionMs?: number;
+}
+export declare class SecureEventPayloadsService implements SecureEventPayloadHost {
+    private readonly repository;
+    private readonly crypto;
+    private readonly authorizer?;
+    private readonly now;
+    private readonly retentionMs;
+    constructor(repository: SecureEventPayloadsRepository, crypto: SecureEventPayloadCrypto, authorizer?: (SecureEventPayloadAuthorizer | null) | undefined, options?: SecureEventPayloadServiceOptions);
+    /** Host-only session binding, used for atomic vault-to-job transfer. */
+    forTransaction(adapter: DbAdapter): SecureEventPayloadsService;
+    assertClaimAllowed(consumerId: string, input: ClaimSecureEventPayloadInput): Promise<void>;
+    forPlugin(pluginId: string): SecureEventPayloadClient;
+    private create;
+    private claim;
+    private revoke;
+    /** Host maintenance. Re-encryption never changes claim count/status or grants. */
+    reencrypt(payloadId: string): Promise<{
+        payloadId: string;
+        keyId: string;
+        changed: boolean;
+    }>;
+    reencryptBatch(keyId: string, limit?: number): Promise<{
+        scanned: number;
+        changed: number;
+    }>;
+    private clientCall;
+    private read;
+    private plaintext;
+    private assertStructure;
+    private clock;
+}
+
+// dist/runtime/system/kernel-health-service.d.ts
+import type { DbAdapter } from "../../contracts/db-adapter.js";
+import type { PluginDependencyGraphSnapshot, PluginRuntime, PluginState } from "../../contracts/plugin-runtime.js";
+export interface KernelHealthServiceOptions {
+    runtime: Pick<PluginRuntime, "list" | "describeDependencies">;
+    durableReadiness?: () => Promise<{
+        ok: boolean;
+        reason?: string;
+    }>;
+    clusterReadiness?: () => Promise<{
+        ok: boolean;
+        reason?: string;
+    }>;
+    dbAdapter?: Pick<DbAdapter, "healthCheck">;
+    dbHealthCheck?: () => Promise<{
+        ok: true;
+    } | {
+        ok: false;
+        reason: string;
+    }>;
+}
+export interface KernelRuntimeHealthSummary {
+    totalPlugins: number;
+    byState: Record<PluginState, number>;
+}
+export interface KernelHealthSnapshot {
+    timestamp: Date;
+    status: "ok" | "degraded" | "down";
+    runtime: KernelRuntimeHealthSummary;
+    dependencies: PluginDependencyGraphSnapshot;
+    db: {
+        ok: true;
+    } | {
+        ok: false;
+        reason: string;
+    } | {
+        ok: false;
+        reason: "not_configured";
+    };
+    issues: string[];
+}
+export declare class KernelHealthService {
+    private readonly options;
+    constructor(options: KernelHealthServiceOptions);
+    snapshot(): Promise<KernelHealthSnapshot>;
+    private buildRuntimeSummary;
+    private deriveStatus;
+    private collectIssues;
+}
+
+// dist/runtime/system/kernel-system-service.d.ts
+import type { PluginClusterOperation, PluginClusterOperationInput, PluginClusterSnapshot } from "../../contracts/plugin-cluster.js";
+import type { PluginSourceSnapshot } from "../../contracts/plugin-discovery.js";
+import type { PluginManifestAdmin } from "../../contracts/plugin-manifest.js";
+import type { PluginContributionCatalogSnapshot, PluginDependencyGraphSnapshot, PluginRuntime, PluginRuntimeDiagnostic, PluginRuntimeEvent, PluginRuntimeOperationAvailability, PluginRuntimeRecord, PluginState } from "../../contracts/plugin-runtime.js";
+import type { PluginClusterCoordinator } from "../cluster/plugin-cluster.js";
+export interface KernelInstalledPluginDependencySnapshot {
+    pluginId: string;
+    versionRange: string;
+    optional: boolean;
+    status: PluginDependencyGraphSnapshot["edges"][number]["status"];
+    currentVersion?: string;
+    state?: PluginState;
+    reason?: string;
+}
+export interface KernelInstalledPluginSnapshot {
+    cluster?: PluginClusterSnapshot;
+    executionMode: "local" | "cluster";
+    operationRevision: number;
+    id: string;
+    version: string;
+    requiresCore: string;
+    state: PluginState;
+    source?: PluginSourceSnapshot;
+    capabilities: readonly string[];
+    dependencies: readonly KernelInstalledPluginDependencySnapshot[];
+    security: {
+        permissions: number;
+        roles: number;
+        grants: number;
+        policyRules: number;
+    };
+    failureCount: number;
+    failedAt?: string;
+    lastFailurePhase?: PluginRuntimeRecord["lastFailurePhase"];
+    disabledAt?: string;
+    disabledReason?: string;
+    loadedAt?: string;
+    statusReason?: PluginRuntimeRecord["statusReason"];
+    lastError?: PluginRuntimeDiagnostic;
+    operations: readonly PluginRuntimeOperationAvailability[];
+}
+export interface KernelCapabilitySnapshot {
+    pluginId: string;
+    capability: string;
+    version: string;
+    state: PluginState;
+}
+export type KernelPluginOperationRequest = PluginClusterOperationInput;
+export type KernelPluginOperationResult = PluginClusterOperation;
+export interface KernelPluginEventSnapshot {
+    sequence: number;
+    timestamp: string;
+    pluginId: string;
+    action: PluginRuntimeEvent["action"];
+    success: boolean;
+    phase?: PluginRuntimeEvent["phase"];
+    message?: string;
+    durationMs?: number;
+    stateBefore?: PluginRuntimeEvent["stateBefore"];
+    stateAfter?: PluginRuntimeEvent["stateAfter"];
+    details?: PluginRuntimeEvent["details"];
+}
+export interface KernelAdminExtensionManifestSnapshot {
+    pluginId: string;
+    displayName: string;
+    admin: PluginManifestAdmin;
+}
+export interface KernelSystemServiceOptions {
+    coordinator?: () => Promise<PluginClusterCoordinator | null>;
+    pluginSources?: () => readonly PluginSourceSnapshot[];
+}
+export declare class KernelSystemService {
+    private readonly runtime;
+    private readonly options;
+    private localOperationRunning;
+    private readonly localOperations;
+    constructor(runtime: Pick<PluginRuntime, "list" | "describeDependencies" | "load" | "unload" | "reload" | "disable" | "enable" | "events" | "describeContributions">, options?: KernelSystemServiceOptions);
+    listInstalledPlugins(): Promise<readonly KernelInstalledPluginSnapshot[]>;
+    listCapabilities(): readonly KernelCapabilitySnapshot[];
+    listPluginContributions(): PluginContributionCatalogSnapshot;
+    listAdminExtensions(): readonly KernelAdminExtensionManifestSnapshot[];
+    listPluginSources(): readonly PluginSourceSnapshot[];
+    getInstalledPlugin(pluginId: string): Promise<KernelInstalledPluginSnapshot | null>;
+    executeOperation(pluginId: string, input: KernelPluginOperationRequest, actorId: string): Promise<KernelPluginOperationResult>;
+    getPluginOperation(operationId: string): Promise<KernelPluginOperationResult>;
+    private localRevision;
+    private pruneLocalOperations;
+    listPluginEvents(pluginId: string, limit?: number): readonly KernelPluginEventSnapshot[];
+    private toPluginSnapshot;
+    private findPluginSource;
+    private toCapabilitySnapshots;
+}
+
+// dist/tokens/capability-tokens.d.ts
+import { type Token } from "@trinacria/core";
+/**
+ * Creates a token with canonical naming for exported plugin capabilities.
+ */
+export declare function createCapabilityToken<T>(capabilityName: string): Token<T>;
+
+// dist/tokens/core-tokens.d.ts
+import type { AuditSink } from "../contracts/audit.js";
+import type { AuthzService } from "../contracts/authz-service.js";
+import type { CacheAdapter } from "../contracts/cache-adapter.js";
+import type { DbAdapter } from "../contracts/db-adapter.js";
+import type { InstallationHost } from "../contracts/installation.js";
+import type { KernelAdminRouteGuard } from "../contracts/kernel-admin-route-guard.js";
+import type { OperationAuthorizer } from "../contracts/operations.js";
+import type { PluginEventSubscriptionAuthorizer } from "../contracts/plugin-access-policy.js";
+import type { PluginDiscoveryService } from "../contracts/plugin-discovery.js";
+import type { PluginOperationAuthorizer, PluginSettingsHost } from "../contracts/plugin-host-services.js";
+import type { PluginManifestProvisioner } from "../contracts/plugin-manifest-provisioner.js";
+import type { PluginNonceStore } from "../contracts/plugin-nonce-store.js";
+import type { PluginRuntime } from "../contracts/plugin-runtime.js";
+import type { PluginRuntimeStore } from "../contracts/plugin-runtime-store.js";
+import type { SecureEventPayloadAuthorizer } from "../contracts/secure-event-payloads.js";
+import type { PluginClusterCoordinator } from "../runtime/cluster/plugin-cluster.js";
+import type { MongoDurableEventStore } from "../runtime/durable-events/durable-events.js";
+import type { SecureEmailJobStore } from "../runtime/durable-events/secure-email-jobs.js";
+import type { EntityRegistry } from "../runtime/persistence/entity-registry.js";
+import type { SecureEventPayloadHost } from "../runtime/secure-payloads/secure-event-payloads.service.js";
+import type { KernelHealthService } from "../runtime/system/kernel-health-service.js";
+import type { KernelSystemService } from "../runtime/system/kernel-system-service.js";
+/**
+ * Core DI tokens exposed as stable integration points for platform services.
+ */
+export declare const CORE_TOKENS: {
+    readonly INSTALLATION_HOST: import("@trinacria/core").Token<InstallationHost>;
+    readonly PUBLIC_REQUEST_LIMITER: import("@trinacria/core").Token<{
+        consume(clientId: string): Promise<void>;
+    }>;
+    readonly SECURE_EMAIL_JOBS: import("@trinacria/core").Token<SecureEmailJobStore>;
+    readonly DURABLE_EVENTS: import("@trinacria/core").Token<MongoDurableEventStore>;
+    readonly AUDIT_SINK: import("@trinacria/core").Token<AuditSink>;
+    readonly PLUGIN_CLUSTER_COORDINATOR: import("@trinacria/core").Token<PluginClusterCoordinator>;
+    readonly HTTP_ACCESS_COOKIE_NAME: import("@trinacria/core").Token<() => Promise<string>>;
+    readonly OPERATION_AUTHORIZER: import("@trinacria/core").Token<OperationAuthorizer>;
+    readonly OPERATION_POLICY: import("@trinacria/core").Token<OperationAuthorizer>;
+    readonly PLUGIN_SETTINGS_HOST: import("@trinacria/core").Token<PluginSettingsHost>;
+    readonly PLUGIN_OPERATION_AUTHORIZER: import("@trinacria/core").Token<PluginOperationAuthorizer>;
+    readonly PLUGIN_RUNTIME: import("@trinacria/core").Token<PluginRuntime>;
+    /** Read-only host view available to modules loaded after the starter. */
+    readonly PLUGIN_RUNTIME_VIEW: import("@trinacria/core").Token<{
+        list(): Promise<ReturnType<PluginRuntime["list"]>>;
+    }>;
+    readonly PLUGIN_RUNTIME_STORE: import("@trinacria/core").Token<PluginRuntimeStore>;
+    readonly PLUGIN_DISCOVERY_SERVICE: import("@trinacria/core").Token<PluginDiscoveryService>;
+    readonly PLUGIN_NONCE_STORE: import("@trinacria/core").Token<PluginNonceStore>;
+    readonly DB_ADAPTER: import("@trinacria/core").Token<DbAdapter>;
+    readonly CACHE_ADAPTER: import("@trinacria/core").Token<CacheAdapter>;
+    readonly ENTITY_REGISTRY: import("@trinacria/core").Token<EntityRegistry>;
+    readonly AUTHZ_SERVICE: import("@trinacria/core").Token<AuthzService>;
+    readonly PLUGIN_MANIFEST_PROVISIONER: import("@trinacria/core").Token<PluginManifestProvisioner>;
+    readonly SECURE_EVENT_PAYLOAD_HOST: import("@trinacria/core").Token<SecureEventPayloadHost>;
+    readonly SECURE_EVENT_PAYLOAD_AUTHORIZER: import("@trinacria/core").Token<SecureEventPayloadAuthorizer>;
+    readonly PLUGIN_EVENT_SUBSCRIPTION_AUTHORIZER: import("@trinacria/core").Token<PluginEventSubscriptionAuthorizer>;
+    readonly KERNEL_HEALTH_SERVICE: import("@trinacria/core").Token<KernelHealthService>;
+    readonly KERNEL_SYSTEM_SERVICE: import("@trinacria/core").Token<KernelSystemService>;
+    readonly KERNEL_ADMIN_ROUTE_GUARD: import("@trinacria/core").Token<KernelAdminRouteGuard>;
+    readonly LOGGER: import("@trinacria/core").Token<{
+        info(message: string, metadata?: Record<string, unknown>): void;
+        warn(message: string, metadata?: Record<string, unknown>): void;
+        error(message: string, metadata?: Record<string, unknown>): void;
+    }>;
+};
+
+// dist/tokens/index.d.ts
+export * from "./capability-tokens.js";
+export * from "./core-tokens.js";
+
+// dist/types/trinacria-http.d.ts
+/**
+ * Minimal augmentation for `@trinacria/http` route docs.
+ * The CMS uses extra OpenAPI parameter metadata that the upstream package
+ * does not type yet.
+ */
+declare module "@trinacria/http" {
+    interface RouteOpenApiParameter {
+        name: string;
+        in: "path" | "query" | "header" | "cookie";
+        required?: boolean;
+        description?: string;
+        schema?: Record<string, unknown>;
+    }
+    interface RouteOpenApiDocs {
+        parameters?: RouteOpenApiParameter[];
+        /** Canonical owner for SDK overlays. */
+        pluginId?: string;
+        /** Mandatory explanation for a CMS route excluded from OpenAPI. */
+        exclusionReason?: string;
+    }
+}
+export {};

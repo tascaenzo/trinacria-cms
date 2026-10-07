@@ -251,15 +251,23 @@ export function getStatusCodeForApiError(code: string): number {
   if (code === "not_found") {
     return 404;
   }
-  if (code === "conflict" || code.startsWith("installation_")) {
+  if (
+    code === "conflict" ||
+    code === "delivery_conflict" ||
+    code === "plugin_grant_conflict" ||
+    code === "plugin_cluster_conflict" ||
+    code.startsWith("installation_")
+  ) {
     return 409;
   }
-  if (code === "auth_forbidden_admin_required") {
+  if (code === "auth_forbidden_admin_required" || code === "operation_forbidden") {
     return 403;
   }
   if (code.startsWith("auth_")) {
     return 401;
   }
+  if (code.startsWith("plugin_cluster_") || code === "platform_lease_lost") return 503;
+  if (code === "platform_maintenance" || code === "plugin_draining") return 503;
   if (code === "internal_error") {
     return 500;
   }

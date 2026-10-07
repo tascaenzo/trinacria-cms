@@ -1,11 +1,15 @@
 import type { ApplicationContext } from "@trinacria/core";
 import { EVENT_BUS_TOKEN, type EventBus, type EventEnvelope } from "@trinacria/events";
+import type { DbAdapter } from "../../contracts/db-adapter.js";
+import type { PluginHostServices } from "../../contracts/plugin-host-services.js";
 import type { PluginManifestEmittedEvent } from "../../contracts/plugin-manifest.js";
 import type {
   KernelPluginDefinition,
   KernelPluginRuntimeContext,
   PluginContributionCatalogSnapshot,
   PluginDependencyGraphSnapshot,
+  PluginEventDeliveryDiagnostic,
+  PluginEventPublisher,
   PluginEventSubscriptionAuthorizer,
   PluginRuntime,
   PluginRuntimeEvent,
@@ -28,12 +32,22 @@ import {
   TrinacriaModuleBridge,
   type TrinacriaModuleBridgeApp
 } from "../bridge/trinacria-module-bridge.js";
+import {
+  type DurableDelivery,
+  DurableDeliveryBlockedError,
+  type DurableOutbox,
+  type DurablePublication,
+  type DurablePublishOptions,
+  type MongoDurableEventStore
+} from "../durable-events/durable-events.js";
 import { createInMemoryPluginRuntimeStore } from "../persistence/plugin-runtime-store.js";
 import {
   assertPluginCompatibility,
   validatePluginManifest
 } from "../plugin-manifest/plugin-manifest-validation.js";
 import { isPermissionOwnedByPlugin } from "../plugin-namespace/permission-key.js";
+import { PluginActivityRegistry } from "./plugin-activity.js";
+import { copyPluginJson, createPluginHostServices } from "./plugin-host-services.js";
 import { PluginContributionRegistry } from "./plugin-runtime-contributions.js";
 import {
   assertDependencyGraphWithoutCycles,
@@ -57,6 +71,8 @@ export type { PluginRuntimeLifecycleHooks, TrinacriaModuleBridge };
 
 export interface InMemoryPluginRuntimeOptions {
   coreVersion: string;
+  activity?: PluginActivityRegistry;
+  assertPluginActive?: (pluginId: string) => Promise<void>;
   app?: ApplicationContext;
   lifecycleHooks?: PluginRuntimeLifecycleHooks;
   retryPolicy?: PluginRuntimeRetryPolicy;
@@ -64,35 +80,55 @@ export interface InMemoryPluginRuntimeOptions {
   runtimeStore?: PluginRuntimeStore;
   eventBufferSize?: number;
   eventSubscriptionAuthorizer?: PluginEventSubscriptionAuthorizer;
+  onDeliveryDiagnostic?: (diagnostic: PluginEventDeliveryDiagnostic) => void | Promise<void>;
 }
 
 export class InMemoryPluginRuntime implements PluginRuntime {
+  readonly activity: PluginActivityRegistry;
   readonly registry = new PluginRegistryManager();
   readonly loadedContributions = new PluginContributionRegistry();
   readonly runtimeStore: PluginRuntimeStore;
 
+  private durableStore?: MongoDurableEventStore;
+  /** Advanced host bootstrap only; never part of PluginHostServices. */
+  setDurableEventStore(store: MongoDurableEventStore) {
+    this.durableStore = store;
+  }
   private readonly coreVersion: string;
+  private readonly assertPluginActive?: (pluginId: string) => Promise<void>;
   private readonly app?: ApplicationContext;
   private readonly moduleBridge?: TrinacriaModuleBridge;
   private readonly lifecycleHooks?: PluginRuntimeLifecycleHooks;
   private readonly activeLoads = new Set<string>();
+  private readonly hostServices = new Map<string, PluginHostServices>();
   private readonly retryPolicy?: PluginRuntimeRetryPolicy;
   private readonly eventsLog: PluginRuntimeEventLog;
   private readonly eventSubscriptionAuthorizer?: PluginEventSubscriptionAuthorizer;
-  private readonly pluginEventSubscriptions = new Map<string, readonly (() => void)[]>();
+  private readonly onDeliveryDiagnostic?: InMemoryPluginRuntimeOptions["onDeliveryDiagnostic"];
+  private readonly pluginEventSubscriptions = new Map<
+    string,
+    { generation: symbol; unsubs: Array<() => void> }
+  >();
   private runtimeStoreInitialization?: Promise<void>;
   private runtimeStoreHydrated = false;
 
   constructor(options: InMemoryPluginRuntimeOptions) {
     this.coreVersion = options.coreVersion;
+    this.assertPluginActive = options.assertPluginActive;
+    this.activity = options.activity ?? new PluginActivityRegistry();
     this.app = options.app;
     this.lifecycleHooks = options.lifecycleHooks;
     this.retryPolicy = options.retryPolicy;
     this.eventSubscriptionAuthorizer = options.eventSubscriptionAuthorizer;
+    this.onDeliveryDiagnostic = options.onDeliveryDiagnostic;
     this.runtimeStore = options.runtimeStore ?? createInMemoryPluginRuntimeStore();
     this.eventsLog = new PluginRuntimeEventLog({
       bufferSize: options.eventBufferSize,
-      onEvent: options.onEvent
+      onEvent: (event) => {
+        const record = this.registry.records.get(event.pluginId);
+        if (record) record.lifecycleRevision = event.sequence;
+        options.onEvent?.(event);
+      }
     });
 
     if (options.app) {
@@ -206,6 +242,14 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       );
     }
 
+    const definition = this.registry.getDefinition(pluginId);
+    if (
+      definition.manifest.events?.emits?.some((event) => event.delivery !== "sync") &&
+      !this.durableStore?.isInitialized()
+    )
+      throw new PluginRuntimeError("Durable producers require initialized Mongo outbox storage", {
+        pluginId
+      });
     this.activeLoads.add(pluginId);
     try {
       const attempts = this.resolveAttempts(record.state);
@@ -222,13 +266,18 @@ export class InMemoryPluginRuntime implements PluginRuntime {
             moduleBridge: this.moduleBridge,
             lifecycleHooks: this.lifecycleHooks,
             app: this.app,
+            services: (id) => this.servicesForPlugin(id),
             emitPluginEvent: (sourcePluginId, eventName, payload) =>
-              this.emitPluginEvent(sourcePluginId, eventName, payload)
+              this.emitPluginEvent(sourcePluginId, eventName, payload),
+            prepareEventSubscriptions: (id) => {
+              this.activity.resume(id);
+              this.hostServices.delete(id);
+              return this.assertPluginEventSubscriptionsReady(id);
+            },
+            bindEventSubscriptions: (id) => this.bindPluginEventSubscriptions(id),
+            unbindEventSubscriptions: (id) => this.unbindPluginEventSubscriptions(id)
           });
-          await this.assertPluginEventSubscriptionsReady(pluginId);
           await loadPluginInternal(ctx, pluginId, new Set<string>());
-          await this.bindPluginEventSubscriptions(pluginId);
-          await persistRecord(this.registry.records, this.runtimeStore, pluginId);
           this.emitEvent({
             pluginId,
             action: "load",
@@ -293,12 +342,15 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       moduleBridge: this.moduleBridge,
       lifecycleHooks: this.lifecycleHooks,
       app: this.app,
+      services: (id) => this.servicesForPlugin(id),
       emitPluginEvent: (sourcePluginId, eventName, payload) =>
         this.emitPluginEvent(sourcePluginId, eventName, payload)
     });
 
+    assertNoLoadedDependents(pluginId, this.registry.records);
     try {
       this.unbindPluginEventSubscriptions(pluginId);
+      await this.activity.drain(pluginId);
       await unloadPlugin(ctx, pluginId, assertNoLoadedDependents);
       this.emitEvent({
         pluginId,
@@ -378,6 +430,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     }
 
     this.registry.removePlugin(pluginId);
+    this.hostServices.delete(pluginId);
     this.unbindPluginEventSubscriptions(pluginId);
     this.loadedContributions.remove(pluginId);
     await this.runtimeStore.remove(pluginId);
@@ -437,6 +490,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
       });
       this.registry.registrationValidator.remove(pluginId);
       this.loadedContributions.remove(pluginId);
+      this.unbindPluginEventSubscriptions(pluginId);
       await persistRecord(this.registry.records, this.runtimeStore, pluginId);
     }
   }
@@ -448,6 +502,7 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     const details = reason ? new Error(reason) : undefined;
 
     if (record.state === "loaded") {
+      assertNoLoadedDependents(pluginId, this.registry.records);
       try {
         await this.unload(pluginId);
       } catch (error) {
@@ -515,7 +570,13 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     return this.eventsLog.list(options);
   }
 
-  async emitPluginEvent(pluginId: string, eventName: string, payload: unknown): Promise<void> {
+  async emitPluginEvent(
+    pluginId: string,
+    eventName: string,
+    payload: unknown,
+    options?: DurablePublishOptions
+  ): Promise<void> {
+    await this.assertPluginActive?.(pluginId);
     await this.ensureRuntimeStoreInitialized();
     const record = this.registry.getRecord(pluginId);
     if (record.state !== "loaded") {
@@ -534,6 +595,14 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     );
     validateEventPayload(event, payload);
 
+    if (event.delivery !== "sync") {
+      if (!this.durableStore?.isInitialized())
+        throw new PluginRuntimeError("Durable event storage unavailable", { pluginId });
+      if (event.delivery === "deferred" && !options?.notBefore)
+        throw new PluginRuntimeError("Deferred events require notBefore");
+      await this.durableStore.publish(pluginId, eventName, payload, options);
+      return;
+    }
     const bus = await this.resolveEventBus();
     if (!bus) {
       throw new PluginRuntimeError(
@@ -545,6 +614,203 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     await bus.emit(buildCanonicalEventName(record.manifest.id, event.name), payload);
   }
 
+  async describeDurablePublication(
+    pluginId: string,
+    eventName: string,
+    payload: unknown
+  ): Promise<DurablePublication> {
+    await this.assertPluginActive?.(pluginId);
+    const record = this.registry.getRecord(pluginId);
+    if (record.state !== "loaded")
+      throw new PluginRuntimeError("Event producer is inactive", { pluginId });
+    const event = resolveDeclaredEmittedEvent(pluginId, record.manifest.events?.emits, eventName);
+    if (event.delivery === "sync")
+      throw new PluginRuntimeError("Sync events cannot enter a transaction outbox");
+    validateEventPayload(event, payload);
+    const canonical = buildCanonicalEventName(pluginId, event.name);
+    const recipients = [...this.registry.records.values()].flatMap((consumer) =>
+      (consumer.manifest.events?.subscribes ?? [])
+        .filter(
+          (subscription) =>
+            (event.visibility !== "private" || consumer.manifest.id === pluginId) &&
+            this.resolveSubscriptionEventNames(subscription.eventName).includes(canonical)
+        )
+        .map((subscription) => ({
+          consumerPluginId: consumer.manifest.id,
+          handlerName: subscription.handler,
+          handlerVersion: consumer.manifest.version
+        }))
+    );
+    return {
+      ownerPluginId: pluginId,
+      eventName: canonical,
+      payloadVersion: event.version,
+      payload,
+      recipients
+    };
+  }
+  async dispatchDurableEvent(
+    delivery: DurableDelivery,
+    outbox: DurableOutbox,
+    adapter: DbAdapter,
+    signal: AbortSignal,
+    events: PluginEventPublisher,
+    secureJobs?: import("../../contracts/plugin-runtime.js").KernelPluginEventHandlerContext["secureJobs"]
+  ): Promise<void> {
+    const consumer = this.registry.records.get(delivery.consumerPluginId),
+      definition = this.registry.definitions.get(delivery.consumerPluginId);
+    const binding = this.pluginEventSubscriptions.get(delivery.consumerPluginId);
+    const generation = binding?.generation;
+    const active = () =>
+      consumer &&
+      this.registry.records.get(delivery.consumerPluginId)?.state === "loaded" &&
+      this.pluginEventSubscriptions.get(delivery.consumerPluginId)?.generation === generation &&
+      !this.activity.snapshot(delivery.consumerPluginId).blocked;
+    if (!active() || !definition) throw new DurableDeliveryBlockedError("plugin-inactive");
+    const producer = this.registry.records.get(delivery.ownerPluginId);
+    const current = producer?.manifest.events?.emits?.find(
+      (event) => buildCanonicalEventName(delivery.ownerPluginId, event.name) === delivery.eventName
+    );
+    if (
+      !current ||
+      current.delivery === "sync" ||
+      current.version !== delivery.payloadVersion ||
+      consumer!.manifest.version !== delivery.handlerVersion
+    )
+      throw new DurableDeliveryBlockedError("contract-mismatch");
+    const subscription = definition.manifest.events?.subscribes?.find(
+      (subscription) =>
+        subscription.handler === delivery.handlerName &&
+        this.resolveSubscriptionEventNames(subscription.eventName).includes(delivery.eventName)
+    );
+    const handler = definition.eventHandlers?.[delivery.handlerName];
+    if (!subscription || !handler) throw new DurableDeliveryBlockedError("handler-missing");
+    try {
+      await this.assertPluginActive?.(delivery.consumerPluginId);
+      await this.assertPluginActive?.(delivery.ownerPluginId);
+      await this.assertSubscriptionAllowed(
+        delivery.consumerPluginId,
+        delivery.eventName,
+        subscription.requiredPermission
+      );
+    } catch {
+      throw new DurableDeliveryBlockedError("policy-denied");
+    }
+    signal.throwIfAborted();
+    if (!active()) throw new DurableDeliveryBlockedError("plugin-inactive");
+    try {
+      validateEventPayload(current, outbox.payload);
+    } catch {
+      throw new DurableDeliveryBlockedError("contract-mismatch");
+    }
+    const services = this.servicesForPlugin(delivery.consumerPluginId);
+    const transactionServices = createPluginHostServices({
+      app: this.app,
+      manifest: consumer!.manifest,
+      events,
+      storageAdapter: adapter,
+      assertActive: () => {
+        signal.throwIfAborted();
+        if (!active()) throw new DurableDeliveryBlockedError("plugin-inactive");
+      },
+      ownerManifest: (id) => this.registry.records.get(id)?.manifest,
+      ownerLoaded: (id) => this.registry.records.get(id)?.state === "loaded",
+      ownerEvents: (id) => this.servicesForPlugin(id).events
+    });
+    // Cross-plugin operations/settings/vault claims must not escape this transaction callback.
+    const forbidden = async () => {
+      throw new PluginRuntimeError(
+        "Durable handlers use scoped storage, outbox and secure jobs; external effects are separate jobs"
+      );
+    };
+    await this.activity.run([delivery.consumerPluginId], async (activitySignal) => {
+      const combined = AbortSignal.any([signal, activitySignal]);
+      await handler(
+        outbox.payload,
+        {
+          id: outbox.id,
+          name: outbox.eventName,
+          payload: outbox.payload,
+          publishedAt: outbox.occurredAt,
+          version: outbox.payloadVersion,
+          source: outbox.ownerPluginId,
+          headers: {
+            ...(outbox.correlationId ? { correlationId: outbox.correlationId } : {}),
+            ...(outbox.causationId ? { causationId: outbox.causationId } : {})
+          }
+        },
+        {
+          pluginId: delivery.consumerPluginId,
+          eventName: delivery.eventName,
+          handlerName: delivery.handlerName,
+          signal: combined,
+          secureJobs,
+          services: Object.freeze({
+            ...services,
+            storage: transactionServices.storage,
+            events,
+            settings: { get: services.settings.get, set: forbidden },
+            operations: { call: forbidden },
+            securePayloads: { create: forbidden, claim: forbidden, revoke: forbidden }
+          })
+        }
+      );
+      combined.throwIfAborted();
+      if (!active()) throw new DurableDeliveryBlockedError("plugin-inactive");
+    });
+  }
+  async assertDurableConsumerActive(pluginId: string): Promise<void> {
+    if (
+      this.registry.records.get(pluginId)?.state !== "loaded" ||
+      this.activity.snapshot(pluginId).blocked
+    )
+      throw new DurableDeliveryBlockedError("plugin-inactive");
+    try {
+      await this.assertPluginActive?.(pluginId);
+    } catch {
+      throw new DurableDeliveryBlockedError("plugin-inactive");
+    }
+  }
+  async canSendSecureEmailJob(
+    job: Omit<import("../durable-events/secure-email-jobs.js").SecureEmailJob, "encryptedPayload">
+  ): Promise<boolean> {
+    try {
+      await this.assertDurableConsumerActive("email-pack");
+      await this.assertDurableConsumerActive(job.ownerPluginId);
+      const subscription = this.registry.records
+        .get("email-pack")
+        ?.manifest.events?.subscribes?.find((subscription) =>
+          this.resolveSubscriptionEventNames(subscription.eventName).includes(job.claim.eventName)
+        );
+      if (!subscription) return false;
+      await this.assertSubscriptionAllowed(
+        "email-pack",
+        job.claim.eventName,
+        subscription.requiredPermission
+      );
+      if (!this.app?.hasToken(CORE_TOKENS.SECURE_EVENT_PAYLOAD_AUTHORIZER)) return false;
+      const policy = await this.app.resolve(CORE_TOKENS.SECURE_EVENT_PAYLOAD_AUTHORIZER);
+      return (
+        (
+          await policy.canClaim({
+            payload: job.payloadAuthorization,
+            consumerPluginId: "email-pack",
+            eventName: job.claim.eventName,
+            requiredPermission: job.claim.requiredPermission
+          })
+        )?.allowed === true
+      );
+    } catch {
+      return false;
+    }
+  }
+  async sendSecureEmailJob(payload: unknown, messageId: string): Promise<void> {
+    await this.assertDurableConsumerActive("email-pack");
+    await this.servicesForPlugin("email-pack").operations.call("email-pack", "send-job", {
+      payload: copyPluginJson(payload),
+      messageId
+    });
+  }
   describeDependencies(): PluginDependencyGraphSnapshot {
     return describePluginDependencyGraph(this.registry.records);
   }
@@ -553,23 +819,58 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     return this.loadedContributions.snapshot();
   }
 
-  private createContext(definition: KernelPluginDefinition): KernelPluginRuntimeContext {
-    if (!this.app) {
-      throw new PluginRuntimeError(
-        `Plugin "${definition.manifest.id}" requires an ApplicationContext to run lifecycle hooks`,
-        { pluginId: definition.manifest.id }
-      );
+  /** Host-only: run owner-bound hooks, propagating failures to the installer. */
+  async initializeInstallation(
+    input: import("../../contracts/installation.js").PluginInstallationInput
+  ): Promise<void> {
+    for (const record of this.list()) {
+      if (record.state !== "loaded")
+        throw new Error("Installation requires all configured plugins to be loaded");
+      const definition = this.registry.getDefinition(record.manifest.id);
+      await this.activity.run([record.manifest.id], async () => {
+        await definition.onInstall?.(this.createContext(definition), input);
+      });
     }
+  }
+
+  private createContext(definition: KernelPluginDefinition): KernelPluginRuntimeContext {
     return {
-      app: this.app,
+      services: this.servicesForPlugin(definition.manifest.id),
       pluginId: definition.manifest.id,
       manifest: definition.manifest,
-      i18nSources: definition.i18nSources ?? [],
-      events: {
-        emit: (eventName, payload) =>
-          this.emitPluginEvent(definition.manifest.id, eventName, payload)
-      }
+      i18nSources: definition.i18nSources ?? []
     };
+  }
+
+  private servicesForPlugin(pluginId: string): PluginHostServices {
+    const existing = this.hostServices.get(pluginId);
+    if (existing) return existing;
+    const services = createPluginHostServices({
+      app: this.app,
+      manifest: this.registry.getDefinition(pluginId).manifest,
+      events: {
+        emit: (name, payload, options) => this.emitPluginEvent(pluginId, name, payload, options)
+      },
+      storageTransaction: this.durableStore
+        ? (work) => this.durableStore!.transaction(pluginId, work)
+        : undefined,
+      ownerEvents: (id) => this.servicesForPlugin(id).events,
+      runOperation: (ownerId, work) => this.activity.run([pluginId, ownerId], work),
+      assertActive: () => {
+        if (
+          this.hostServices.get(pluginId) !== services ||
+          !["loading", "initializing", "loaded", "unloading"].includes(
+            this.registry.records.get(pluginId)?.state ?? ""
+          )
+        ) {
+          throw new PluginRuntimeError("Plugin host services are inactive", { pluginId });
+        }
+      },
+      ownerManifest: (id) => this.registry.records.get(id)?.manifest,
+      ownerLoaded: (id) => this.registry.records.get(id)?.state === "loaded"
+    });
+    this.hostServices.set(pluginId, services);
+    return services;
   }
 
   private markDisabled(pluginId: string, reason?: string, error?: unknown): void {
@@ -610,49 +911,131 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     if (subscribedEvents.length === 0) return;
 
     const bus = await this.resolveEventBus();
-    if (!bus) {
-      throw new PluginRuntimeError(
-        `Plugin "${pluginId}" declares event subscriptions but event bus is not available`,
-        { pluginId }
-      );
-    }
 
     const eventHandlers = definition.eventHandlers ?? {};
-    const unsubs: Array<() => void> = [];
+    const binding = { generation: Symbol(pluginId), unsubs: [] as Array<() => void> };
+    this.pluginEventSubscriptions.set(pluginId, binding);
 
-    for (const subscription of subscribedEvents) {
-      const eventNames = this.resolveSubscriptionEventNames(subscription.eventName);
-      for (const eventName of eventNames) {
-        await this.assertSubscriptionAllowed(pluginId, eventName, subscription.requiredPermission);
-      }
-      const runtimeHandler = eventHandlers[subscription.handler];
-      if (!runtimeHandler) {
-        throw new PluginRuntimeError(
-          `Plugin "${pluginId}" is missing runtime handler "${subscription.handler}" for event "${subscription.eventName}"`,
-          { pluginId }
-        );
-      }
-
-      for (const eventName of eventNames) {
-        const off = bus.on(eventName, async (payload, envelope) => {
-          if (!this.app) {
-            throw new PluginRuntimeError(
-              `Plugin "${pluginId}" cannot handle event "${eventName}" without an ApplicationContext`,
-              { pluginId }
-            );
-          }
-          await runtimeHandler(payload, envelope as EventEnvelope, {
-            app: this.app,
+    try {
+      for (const subscription of subscribedEvents) {
+        const eventNames = this.resolveSubscriptionEventNames(subscription.eventName);
+        for (const eventName of eventNames) {
+          await this.assertSubscriptionAllowed(
             pluginId,
             eventName,
-            handlerName: subscription.handler
-          });
-        });
-        unsubs.push(off);
-      }
-    }
+            subscription.requiredPermission
+          );
+        }
+        const runtimeHandler = eventHandlers[subscription.handler];
+        if (!runtimeHandler) {
+          throw new PluginRuntimeError(
+            `Plugin "${pluginId}" is missing runtime handler "${subscription.handler}" for event "${subscription.eventName}"`,
+            { pluginId }
+          );
+        }
 
-    this.pluginEventSubscriptions.set(pluginId, unsubs);
+        for (const eventName of eventNames) {
+          const owner = readEventOwnerPluginId(eventName);
+          const declaration = this.registry.records
+            .get(owner)
+            ?.manifest.events?.emits?.find(
+              (event) => buildCanonicalEventName(owner, event.name) === eventName
+            );
+          if (declaration?.delivery !== "sync") continue;
+          if (!bus)
+            throw new PluginRuntimeError("Sync subscriptions require the local event bus", {
+              pluginId
+            });
+          const off = bus.on(eventName, async (payload, envelope) => {
+            const isActive = () =>
+              this.registry.records.get(pluginId)?.state === "loaded" &&
+              !this.activity.snapshot(pluginId).blocked &&
+              this.pluginEventSubscriptions.get(pluginId)?.generation === binding.generation;
+            const diagnostic = (
+              outcome: PluginEventDeliveryDiagnostic["outcome"],
+              reason: PluginEventDeliveryDiagnostic["reason"]
+            ) =>
+              this.reportDeliveryDiagnostic({
+                timestamp: new Date(),
+                pluginId,
+                ownerPluginId: readEventOwnerPluginId(eventName),
+                eventName,
+                eventId: envelope.id,
+                outcome,
+                reason
+              });
+
+            if (!isActive()) {
+              await diagnostic("inactive", "plugin_generation_inactive");
+              return;
+            }
+            try {
+              await this.assertPluginActive?.(pluginId);
+              await this.assertPluginActive?.(readEventOwnerPluginId(eventName));
+              await this.assertSubscriptionAllowed(
+                pluginId,
+                eventName,
+                subscription.requiredPermission
+              );
+            } catch (error) {
+              const reason =
+                error instanceof PluginRuntimeError ? error.details?.reason : undefined;
+              if (reason === "event_subscription_policy_error") {
+                await diagnostic("policy-error", reason);
+              } else {
+                await diagnostic(
+                  "denied",
+                  reason === "event_subscription_authorizer_missing"
+                    ? reason
+                    : "event_subscription_denied"
+                );
+              }
+              return;
+            }
+            // The policy may have awaited while this generation was unloaded or replaced.
+            try {
+              await this.assertPluginActive?.(pluginId);
+            } catch {
+              await diagnostic("inactive", "plugin_generation_inactive");
+              return;
+            }
+            if (!isActive()) {
+              await diagnostic("inactive", "plugin_generation_inactive");
+              return;
+            }
+            if (!this.app) {
+              throw new PluginRuntimeError(
+                `Plugin "${pluginId}" cannot handle event "${eventName}" without an ApplicationContext`,
+                { pluginId }
+              );
+            }
+            // Application errors retain the event bus's normal stopOnError semantics.
+            await this.activity.run([pluginId], async (signal) =>
+              runtimeHandler(payload, envelope as EventEnvelope, {
+                services: this.servicesForPlugin(pluginId),
+                pluginId,
+                eventName,
+                handlerName: subscription.handler,
+                signal
+              })
+            );
+          });
+          binding.unsubs.push(off);
+        }
+      }
+    } catch (error) {
+      this.unbindPluginEventSubscriptions(pluginId);
+      throw error;
+    }
+  }
+
+  private async reportDeliveryDiagnostic(diagnostic: PluginEventDeliveryDiagnostic): Promise<void> {
+    try {
+      await this.onDeliveryDiagnostic?.(diagnostic);
+    } catch {
+      // Never log the callback error: it may include payloads or credentials.
+      console.error("[kernel:plugin-events] Delivery diagnostic callback failed");
+    }
   }
 
   private async assertPluginEventSubscriptionsReady(pluginId: string): Promise<void> {
@@ -661,12 +1044,19 @@ export class InMemoryPluginRuntime implements PluginRuntime {
     if (subscribedEvents.length === 0) return;
 
     const bus = await this.resolveEventBus();
-    if (!bus) {
-      throw new PluginRuntimeError(
-        `Plugin "${pluginId}" declares event subscriptions but event bus is not available`,
-        { pluginId }
-      );
-    }
+    const hasSync = subscribedEvents.some((subscription) =>
+      this.resolveSubscriptionEventNames(subscription.eventName).some((name) => {
+        const owner = readEventOwnerPluginId(name);
+        return this.registry.records
+          .get(owner)
+          ?.manifest.events?.emits?.some(
+            (event) =>
+              buildCanonicalEventName(owner, event.name) === name && event.delivery === "sync"
+          );
+      })
+    );
+    if (hasSync && !bus)
+      throw new PluginRuntimeError("Sync subscriptions require the local event bus", { pluginId });
 
     const eventHandlers = definition.eventHandlers ?? {};
     for (const subscription of subscribedEvents) {
@@ -684,16 +1074,16 @@ export class InMemoryPluginRuntime implements PluginRuntime {
   }
 
   private unbindPluginEventSubscriptions(pluginId: string): void {
-    const unsubs = this.pluginEventSubscriptions.get(pluginId);
-    if (!unsubs || unsubs.length === 0) return;
-    for (const off of unsubs) {
+    const binding = this.pluginEventSubscriptions.get(pluginId);
+    // Invalidate even if the bus has already taken a snapshot of these listeners.
+    this.pluginEventSubscriptions.delete(pluginId);
+    for (const off of binding?.unsubs ?? []) {
       try {
         off();
       } catch {
-        // Ignore subscriber teardown issues during runtime state transitions.
+        // A detached generation cannot deliver even if subscriber teardown fails.
       }
     }
-    this.pluginEventSubscriptions.delete(pluginId);
   }
 
   private async resolveEventBus(): Promise<EventBus | null> {
@@ -742,21 +1132,44 @@ export class InMemoryPluginRuntime implements PluginRuntime {
         { pluginId: subscriberPluginId }
       );
     }
-    const authorizer = await this.resolveEventSubscriptionAuthorizer();
-    if (!authorizer) {
-      return;
+    let authorizer: PluginEventSubscriptionAuthorizer | null;
+    try {
+      authorizer = await this.resolveEventSubscriptionAuthorizer();
+    } catch {
+      throw new PluginRuntimeError("Event subscription policy could not be resolved", {
+        pluginId: subscriberPluginId,
+        reason: "event_subscription_policy_error"
+      });
     }
-    const decision = await authorizer.canSubscribe({
-      subscriberPluginId,
-      eventName,
-      eventOwnerPluginId: ownerPluginId,
-      eventVisibility: event.visibility,
-      requiredPermission: permission
-    });
-    if (!decision.allowed) {
+    if (!authorizer) {
+      throw new PluginRuntimeError(
+        `Plugin "${subscriberPluginId}" requires an event subscription authorizer for "${eventName}"; configure eventSubscriptionAuthorizer or the Core policy provider`,
+        { pluginId: subscriberPluginId, reason: "event_subscription_authorizer_missing" }
+      );
+    }
+    let allowed: boolean;
+    try {
+      const decision = await authorizer.canSubscribe({
+        subscriberPluginId,
+        eventName,
+        eventOwnerPluginId: ownerPluginId,
+        eventVisibility: event.visibility,
+        requiredPermission: permission
+      });
+      if (!decision || typeof decision.allowed !== "boolean") {
+        throw new Error("Invalid policy decision");
+      }
+      allowed = decision.allowed === true;
+    } catch {
+      throw new PluginRuntimeError("Event subscription policy failed", {
+        pluginId: subscriberPluginId,
+        reason: "event_subscription_policy_error"
+      });
+    }
+    if (!allowed) {
       throw new PluginRuntimeError(
         `Plugin "${subscriberPluginId}" is not authorized to subscribe to event "${eventName}"`,
-        { pluginId: subscriberPluginId, reason: decision.reason }
+        { pluginId: subscriberPluginId, reason: "event_subscription_denied" }
       );
     }
   }

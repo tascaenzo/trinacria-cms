@@ -157,3 +157,16 @@ export const AuthErrorResponseSchema = s.object(
   },
   { strict: true }
 );
+
+export const AuthAcceptedResponseSchema = s.object({
+  data: s.object({ accepted: s.literal(true) }),
+  meta: AuthResponseMetaSchema.optional()
+});
+export const AuthCompletedResponseSchema = s.object({
+  data: s.object({ completed: s.literal(true) }),
+  meta: AuthResponseMetaSchema.optional()
+});
+export const AuthDisabledResponseSchema = s.object({
+  data: s.object({ disabled: s.literal(true) }),
+  meta: AuthResponseMetaSchema.optional()
+});

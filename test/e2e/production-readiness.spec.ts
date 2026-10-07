@@ -1,5 +1,7 @@
+import { buildPluginAuthHeaders as signPluginRequest } from "@trinacria-cms/core-pack/plugin-api";
+import { createCmsSdkClient } from "@trinacria-cms/sdk";
 import { expect, request as apiRequest, test, type Page } from "@playwright/test";
-import { createHash, createHmac } from "node:crypto";
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import {
@@ -11,6 +13,7 @@ import {
   E2E_DOWN_API_URL,
   E2E_OBSERVABILITY_TOKEN,
   E2E_PLUGIN_AUTH_SECRET
+  , E2E_PUBLIC_SITE_URL
 } from "./e2e-env.js";
 import { smokeBackupAndRestoreE2eDatabase } from "./mongo-lifecycle.js";
 import { extractFlowToken, readLatestSecureEmail } from "./secure-email-reader.js";
@@ -70,6 +73,8 @@ test.describe.serial("production readiness baseline", () => {
       page.getByRole("button", { name: "Initialise CMS" }).click()
     ]);
     expect(bootstrapResponse.ok()).toBe(true);
+    await expect(page.getByRole("button", { name: "Enter backoffice" })).toBeVisible();
+    await page.getByRole("button", { name: "Enter backoffice" }).click();
 
     await expect(page.getByText(`${E2E_ADMIN.firstName} ${E2E_ADMIN.lastName}`)).toBeVisible();
     await expect(page.getByRole("heading", { name: "Panoramica", exact: true })).toBeVisible();
@@ -188,7 +193,7 @@ test.describe.serial("production readiness baseline", () => {
       const settingsResponse = await adminClient.get("/v1/settings/definitions?limit=200&offset=0");
       expect(settingsResponse.status()).toBe(200);
       const settingsBody = await settingsResponse.json();
-      expect(settingsBody.data.map((definition: { key: string }) => definition.key)).toContain(
+      expect(settingsBody.data.map((definition: { key: string }) => definition.key)).not.toContain(
         "core-pack:security:plugin_access_grants"
       );
       const serializedSettings = JSON.stringify(settingsBody);
@@ -197,18 +202,11 @@ test.describe.serial("production readiness baseline", () => {
       );
       expect(serializedSettings).not.toContain(E2E_OBSERVABILITY_TOKEN);
 
-      // Plugin grants are deliberately hidden from Settings; their operational API remains covered.
-      const grantPath = `/v1/settings/values/${encodeURIComponent("core-pack:security:plugin_access_grants")}`;
-      const grantResponse = await adminClient.get(grantPath);
+      const grantResponse = await adminClient.get("/v1/security/plugin-grants");
       expect(grantResponse.status()).toBe(200);
-      const originalGrants = (await grantResponse.json()).data.value;
-      expect(Array.isArray(originalGrants)).toBe(true);
-      expect(originalGrants.length).toBeGreaterThan(0);
-      const changedGrants = originalGrants.map((grant: { status: string }, index: number) => index === 0
-        ? { ...grant, status: grant.status === "approved" ? "denied" : "approved" } : grant);
-      expect((await adminClient.put(grantPath, { data: { value: changedGrants, updatedBy: "e2e" } })).status()).toBe(200);
-      expect((await (await adminClient.get(grantPath)).json()).data.value).toEqual(changedGrants);
-      expect((await adminClient.put(grantPath, { data: { value: originalGrants, updatedBy: "e2e" } })).status()).toBe(200);
+      expect((await grantResponse.json()).data).toEqual([]);
+      expect(JSON.stringify(extensionsBody)).not.toContain("core-pack-plugin-permissions-settings");
+      expect((await publicClient.get("/v1/security/plugin-grants")).status()).toBe(401);
 
       const templatesResponse = await adminClient.get("/v1/email/templates");
       expect(templatesResponse.status()).toBe(200);
@@ -239,6 +237,19 @@ test.describe.serial("production readiness baseline", () => {
   });
 
   test("rejects signed plugin request replay", async () => {
+    const adminClient = await createBearerClient(await loginAsAdmin());
+    const deniedPath = "/v1/settings/definitions?ownerPluginId=email-pack&limit=20&offset=0";
+    const deniedClient = await apiRequest.newContext({ baseURL: E2E_API_URL, extraHTTPHeaders: buildPluginAuthHeaders({ pluginId: "email-pack", secret: E2E_PLUGIN_AUTH_SECRET, method: "GET", path: deniedPath, body: undefined, nonce: "e2e-before-api-approval" }) });
+    try {
+      const denied = await deniedClient.get(deniedPath);
+      expect(denied.status()).toBe(403);
+      await expect(denied.json()).resolves.toMatchObject({ error: { code: "operation_forbidden" } });
+    } finally { await deniedClient.dispose(); }
+    const requested = (await (await adminClient.get("/v1/security/plugin-grants")).json()).data.find((grant: any) => grant.accessType === "api" && grant.producerPluginId === "email-pack" && grant.consumerPluginId === "email-pack" && grant.resource === "settings" && grant.action === "read");
+    expect(requested).toBeTruthy();
+    const approval = await adminClient.post(`/v1/security/plugin-grants/${requested.id}/approve`, { data: { expectedRevision: requested.revision, reason: "e2e-approval" } });
+    expect(approval.status()).toBe(200);
+    const approved = (await approval.json()).data;
     const path = "/v1/settings/definitions?ownerPluginId=email-pack&limit=20&offset=0";
     const headers = buildPluginAuthHeaders({
       pluginId: "email-pack",
@@ -261,6 +272,10 @@ test.describe.serial("production readiness baseline", () => {
         error: { code: "plugin_auth_nonce_replay" }
       });
     } finally {
+      expect((await adminClient.post(`/v1/security/plugin-grants/${approved.id}/revoke`, { data: { expectedRevision: approved.revision, reason: "e2e-revocation" } })).status()).toBe(200);
+      const revokedClient = await apiRequest.newContext({ baseURL: E2E_API_URL, extraHTTPHeaders: buildPluginAuthHeaders({ pluginId: "email-pack", secret: E2E_PLUGIN_AUTH_SECRET, method: "GET", path, body: undefined, nonce: "e2e-after-api-revocation" }) });
+      try { expect((await revokedClient.get(path)).status()).toBe(403); } finally { await revokedClient.dispose(); }
+      await adminClient.dispose();
       await client.dispose();
     }
   });
@@ -496,12 +511,11 @@ test.describe.serial("production readiness baseline", () => {
     const outboundEntries = logs
       .split("\n")
       .filter((line) => line.includes('"event":"outbound_email"'))
-      .map((line) => JSON.parse(line) as { event: string; text: string; html?: string });
+      .map((line) => JSON.parse(line) as { event: string; recipientCount: number; messageId?: string; [key: string]: unknown });
     expect(outboundEntries.length).toBeGreaterThanOrEqual(3);
     expect(outboundEntries.every((entry) => entry.event === "outbound_email")).toBe(true);
-    expect(
-      outboundEntries.every((entry) => `${entry.text}${entry.html ?? ""}`.includes("[REDACTED]"))
-    ).toBe(true);
+    expect(outboundEntries.every(entry => entry.recipientCount > 0)).toBe(true);
+    for (const entry of outboundEntries) for (const field of ["to", "from", "replyTo", "subject", "text", "html"]) expect(entry).not.toHaveProperty(field);
   });
 
   test("backs up and restores the installed Mongo dataset into an isolated database", async () => {
@@ -515,7 +529,7 @@ test.describe.serial("production readiness baseline", () => {
       const modelResponse = await client.post("/v1/editorial/content-types", { data: {
         key: "quality-page", name: "Quality Page", fields: [], workflowId: "direct"
       } });
-      expect(modelResponse.status()).toBe(200);
+      expect(modelResponse.status(), await modelResponse.text()).toBe(200);
       const model = (await modelResponse.json()).data;
       const created = await client.post("/v1/editorial/entries", { data: {
         contentTypeId: model.id, title: "Quality Entry", data: {}
@@ -523,7 +537,7 @@ test.describe.serial("production readiness baseline", () => {
       expect(created.status()).toBe(200);
       const entry = (await created.json()).data;
       expect((await client.post("/v1/editorial/entries", { data: { contentTypeId: model.id, data: {} } })).status()).toBe(200);
-      expect((await client.patch(`/v1/editorial/content-types/${model.id}`, { data: { workflowId: "review" } })).status()).toBe(400);
+      expect((await client.patch(`/v1/editorial/content-types/${model.id}`, { data: { workflowId: "review" } })).status()).toBe(409);
       await loginThroughUi(page);
       await page.goto(`/editorial-entry-detail?entryId=${encodeURIComponent(entry.id)}`);
       await page.getByLabel("Slug", { exact: true }).fill("quality-entry");
@@ -591,6 +605,98 @@ test.describe.serial("production readiness baseline", () => {
     }
   });
 
+
+  test("Editorial SDK roundtrip matches live OpenAPI and reports validation/conflicts", async () => {
+    const openApiResponse = await fetch(`${E2E_API_URL}/openapi.json`);
+    expect(openApiResponse.status).toBe(200);
+    const document = await openApiResponse.json();
+    const grantItem = document.paths["/v1/security/plugin-grants"].get.responses["200"].content["application/json"].schema.properties.data.items;
+    expect(grantItem.properties.accessType).toEqual({ enum: ["api"] });
+    expect(grantItem.properties).not.toHaveProperty("eventName");
+    const operations = Object.entries(document.paths).filter(([path]) => path.startsWith("/v1/editorial")).flatMap(([, methods]) => Object.values(methods as Record<string, {operationId: string}>));
+    expect(operations).toHaveLength(25);
+    expect(new Set(operations.map(op => op.operationId)).size).toBe(25);
+    for (const id of ["publishEditorialEntrySnapshot", "createEditorialPreviewToken", "listEditorialPreviewSites"]) expect(operations.some(op => op.operationId === id)).toBe(true);
+    expect(document.components.securitySchemes.cookieAuth.name).toBe("cms_access_token");
+    expect(document.paths["/v1/editorial/entries"].get["x-cms-plugin-id"]).toBe("editorial-pack");
+    expect(document["x-cms-route-inventory"].every((r: {publicApi: boolean; exclusionReason?:string}) => r.publicApi || r.exclusionReason)).toBe(true);
+    const token = await loginAsAdmin();
+    const sdk = createCmsSdkClient({ baseUrl: E2E_API_URL, getAccessToken: () => token });
+    const model = await sdk.editorial.createEditorialContentType({ body: { key: "sdk-roundtrip", name: "SDK roundtrip", workflowId: "review", fields: [{ key: "payload", label: "Payload", type: "json", required: false, multiple: false }] } });
+    await sdk.editorial.updateEditorialContentType({ path: { id: model.data.id }, body: { name: "SDK model updated" } });
+    expect((await sdk.editorial.getEditorialContentType({ path: { id: model.data.id } })).data.name).toBe("SDK model updated");
+    expect((await sdk.editorial.listEditorialContentTypes({ query: { limit: 100 } })).data.some(m => m.id === model.data.id)).toBe(true);
+    const entry = await sdk.editorial.createEditorialEntry({ body: { contentTypeId: model.data.id, reviewerUserId: (await sdk.auth.getAuthenticatedUser()).data.id, data: { payload: { nested: [null, { valid: true }] } } } });
+    expect((await sdk.editorial.getEditorialEntry({ path: { id: entry.data.id } })).data.data).toEqual(entry.data.data);
+    const updated = await sdk.editorial.updateEditorialEntry({ path: { id: entry.data.id }, body: { title: "Typed client", expectedVersion: entry.data.version } });
+    expect(updated.data.title).toBe("Typed client");
+    await expect(sdk.editorial.updateEditorialEntry({ path: { id: entry.data.id }, body: { title: "Stale", expectedVersion: entry.data.version } })).rejects.toMatchObject({ status: 409, data: { error: { code: "conflict" } } });
+    await expect(sdk.editorial.listEditorialEntries({ query: { limit: 101 } })).rejects.toMatchObject({ status: 400 });
+    await sdk.editorial.createEditorialEntryRevision({ path: { id: entry.data.id } });
+    const history = await sdk.editorial.listEditorialEntryRevisions({ path: { id: entry.data.id } });
+    expect(history.data.length).toBeGreaterThan(0);
+    expect(history.meta?.count).toBe(history.data.length);
+    const path = { id: entry.data.id };
+    expect((await sdk.editorial.submitEditorialEntry({ path })).data.status).toBe("in_review");
+    expect((await sdk.editorial.requestEditorialEntryChanges({ path })).data.status).toBe("draft");
+    await sdk.editorial.transitionEditorialEntry({ path, body: { transitionId: "submit" } });
+    await sdk.editorial.approveEditorialEntry({ path });
+    expect((await sdk.editorial.publishEditorialEntry({ path })).data.status).toBe("published");
+    expect((await sdk.editorial.unpublishEditorialEntry({ path })).data.status).toBe("draft");
+    expect((await sdk.editorial.listEditorialEntries({ query: { contentTypeId: model.data.id } })).meta?.count).toBe(1);
+    await expect(createCmsSdkClient({ baseUrl: E2E_API_URL }).editorial.getEditorialEntry({ path })).rejects.toMatchObject({ status: 401 });
+    await sdk.editorial.restoreEditorialEntryRevision({ path: { id: entry.data.id, revisionId: history.data[0].id } });
+    await sdk.editorial.deleteEditorialEntry({ path: { id: entry.data.id } });
+    await sdk.editorial.deleteEditorialContentType({ path: { id: model.data.id } });
+    expect((await sdk.editorial.listDeletedEditorialContentTypes()).data.some(m => m.id === model.data.id)).toBe(true);
+    await sdk.editorial.restoreEditorialContentType({ path: { id: model.data.id } });
+    await sdk.editorial.deleteEditorialContentType({ path: { id: model.data.id } });
+    await sdk.editorial.permanentlyDeleteEditorialContentType({ path: { id: model.data.id } });
+  });
+
+  test("single-instance plugin management works in the backoffice without grant approvals", async ({ page }) => {
+    await loginThroughUi(page);
+    const token = await loginAsAdmin();
+    const sdk = createCmsSdkClient({ baseUrl: E2E_API_URL, getAccessToken: () => token });
+    const snapshot = (await sdk.system.listInstalledPlugins()).data.find(plugin => plugin.id === "email-pack")!;
+    expect(snapshot.executionMode).toBe("local"); expect(snapshot.cluster).toBeUndefined();
+    await page.goto("/settings?section=core-pack-plugin-management-settings");
+    const row = page.getByRole("row").filter({ hasText: "email-pack" });
+    await expect(row).toContainText("loaded");
+    try {
+      await row.getByRole("button", { name: "Disable", exact: true }).click();
+      const dialog = page.getByRole("dialog", { name: "Disable", exact: true });
+      await dialog.getByRole("button", { name: "Confirm", exact: true }).click();
+      await expect(row).toContainText("disabled");
+      await row.getByRole("button", { name: "Enable", exact: true }).click();
+      await expect(row).toContainText("registered");
+      await row.getByRole("button", { name: "Load", exact: true }).click();
+      await expect(row).toContainText("loaded");
+      await expect(sdk.system.executePluginOperation({ path: { pluginId: "email-pack" }, body: { operation: "reload", expectedRevision: snapshot.operationRevision, idempotencyKey: crypto.randomUUID() } })).rejects.toMatchObject({ status: 409 });
+      expect((await sdk.system.listInstalledPlugins()).data.find(plugin => plugin.id === "email-pack")?.executionMode).toBe("local");
+    } finally {
+      const current = (await sdk.system.listInstalledPlugins()).data.find(plugin => plugin.id === "email-pack")!;
+      if (current.state === "disabled") await sdk.system.executePluginOperation({ path: { pluginId: current.id }, body: { operation: "enable", expectedRevision: current.operationRevision, idempotencyKey: crypto.randomUUID() } });
+      const enabled = (await sdk.system.listInstalledPlugins()).data.find(plugin => plugin.id === "email-pack")!;
+      if (enabled.state !== "loaded") await sdk.system.executePluginOperation({ path: { pluginId: enabled.id }, body: { operation: "load", expectedRevision: enabled.operationRevision, idempotencyKey: crypto.randomUUID() } });
+    }
+  });
+
+  test("Media SDK uploads and downloads byte-identical content", async () => {
+    const token = await loginAsAdmin();
+    const sdk = createCmsSdkClient({ baseUrl: E2E_API_URL, getAccessToken: () => token });
+    const bytes = new Uint8Array([65, 255, 128, 66]);
+    const session = await sdk.media.startMediaUpload({ body: { filename: "sdk-bytes.txt", mimeType: "text/plain", byteSize: bytes.length, checksumSha256: createHash("sha256").update(bytes).digest("hex") } });
+    const path = { id: session.data.session.id };
+    await sdk.media.receiveMediaUploadContent({ path, body: bytes });
+    const asset = await sdk.media.completeMediaUpload({ path });
+    const access = await sdk.media.createMediaAccessUrl({ path: { id: asset.data.id } });
+    const url = new URL(access.data.url, E2E_API_URL);
+    const downloaded = await sdk.media.deliverLocalMediaAsset({ path: { storageKey: asset.data.storageKey }, query: { expires: Number(url.searchParams.get("expires")), signature: url.searchParams.get("signature")! } });
+    expect(downloaded).toEqual(bytes);
+    await sdk.media.deleteMediaAsset({ path: { id: asset.data.id } });
+  });
+
   test("media browser uploads real bytes and reports a failed upload", async ({ page }) => {
     await loginThroughUi(page);
     await page.goto("/media-assets");
@@ -645,6 +751,58 @@ test.describe.serial("production readiness baseline", () => {
     await page.getByRole("button", { name: "Crea cartella", exact: true }).click();
     await expect(page.getByText("Cartella creata.").first()).toBeVisible();
     await expect(page.getByText("Quality Folder", { exact: true }).first()).toBeVisible();
+  });
+  test("public site previews working copies, publishes immutable snapshots and removes unpublished content", async ({ page, context, request }) => {
+    const token = await loginAsAdmin(), sdk = createCmsSdkClient({ baseUrl: E2E_API_URL, getAccessToken: () => token });
+    const model = (await sdk.editorial.createEditorialContentType({ body: { key: "public-e2e", name: "Public site test", workflowId: "direct", fields: [
+      { key: "excerpt", label: "Excerpt", type: "text", required: false, multiple: false },
+      { key: "internal", label: "Internal notes", type: "text", required: false, multiple: false }
+    ], delivery: { enabled: true, publicFields: ["excerpt"], exposeTitle: true, exposeSlug: true, exposeBody: true } } })).data;
+    const entry = (await sdk.editorial.createEditorialEntry({ body: { contentTypeId: model.id, title: "Public reference article", slug: "reference", data: { excerpt: "Public summary", internal: "private-note-e0-must-never-appear" }, body: { version: 1, blocks: [{ id: "paragraph", type: "paragraph", version: 1, data: { text: "</script><script>window.e0Xss=true</script>" } }] } } })).data;
+    const url = `${E2E_PUBLIC_SITE_URL}/content/public-e2e/reference`;
+    expect((await request.get(url)).status()).toBe(404);
+    await loginThroughUi(page);
+    await page.goto(`/editorial-entry-detail?entryId=${encodeURIComponent(entry.id)}`);
+    const popupPromise = page.waitForEvent("popup");
+    await page.getByRole("button", { name: "Anteprima sul sito", exact: true }).click();
+    const preview = await popupPromise;
+    await expect(preview.getByRole("heading", { name: "Public reference article", exact: true })).toBeVisible();
+    await expect(preview.getByLabel("Anteprima privata")).toBeVisible();
+    expect(new URL(preview.url()).search).toBe("");
+    expect(await preview.evaluate(() => (window as unknown as { e0Xss?: boolean }).e0Xss)).toBeUndefined();
+    expect((await context.cookies(E2E_PUBLIC_SITE_URL)).some(cookie => cookie.name === "__Host-trinacria-preview" && cookie.secure && cookie.httpOnly)).toBe(true);
+    expect((await context.cookies(E2E_PUBLIC_SITE_URL)).some(cookie => cookie.name.includes("access_token") || cookie.name.includes("refresh_token"))).toBe(false);
+    const previewResponse = await request.get(preview.url(), { headers: { cookie: (await context.cookies(E2E_PUBLIC_SITE_URL)).map(cookie => `${cookie.name}=${cookie.value}`).join("; ") } });
+    expect(previewResponse.headers()["cache-control"]).toBe("private, no-store");
+    expect(previewResponse.headers()["x-robots-tag"]).toContain("noindex");
+    const published = (await sdk.editorial.publishEditorialEntry({ path: { id: entry.id } })).data;
+    const publicPage = await context.newPage();
+    const errors: string[] = []; publicPage.on("pageerror", error => errors.push(error.message));
+    const initial = await publicPage.goto(url);
+    expect(initial?.status()).toBe(200);
+    await expect(publicPage.getByRole("heading", { name: "Public reference article", exact: true })).toBeVisible();
+    expect(await publicPage.content()).not.toContain("private-note-e0-must-never-appear");
+    expect(await publicPage.evaluate(() => (window as unknown as { e0Xss?: boolean }).e0Xss)).toBeUndefined();
+    expect(initial?.headers()["content-security-policy"]).toContain("frame-ancestors 'none'");
+    expect(await publicPage.locator('link[rel="canonical"]').getAttribute("href")).toBe(url);
+    await sdk.editorial.updateEditorialEntry({ path: { id: entry.id }, body: { title: "Working change", expectedVersion: published.version! } });
+    await publicPage.reload(); await expect(publicPage.getByRole("heading", { name: "Public reference article", exact: true })).toBeVisible();
+    await preview.reload(); await expect(preview.getByRole("heading", { name: "Working change", exact: true })).toBeVisible();
+    await page.reload();
+    const republish = page.waitForResponse(response => response.request().method() === "POST" && response.url().endsWith(`/entries/${entry.id}/publication`));
+    await page.getByRole("button", { name: "Ripubblica sul sito", exact: true }).click(); expect((await republish).status()).toBe(200);
+    await expect.poll(async () => (await sdk.system.listEventDeliveries({ query: { ownerPluginId: "editorial-pack", consumerPluginId: "editorial-pack", status: "succeeded", limit: 100 } })).data.filter(delivery => delivery.eventName === "editorial-pack:delivery-invalidated").length, { timeout: 10000 }).toBeGreaterThanOrEqual(2);
+    await publicPage.reload(); await expect(publicPage.getByRole("heading", { name: "Working change", exact: true })).toBeVisible();
+    await publicPage.setViewportSize({ width: 375, height: 812 });
+    expect(await publicPage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await publicPage.keyboard.press("Tab"); await expect(publicPage.getByRole("link", { name: "Vai al contenuto" })).toBeFocused();
+    await sdk.editorial.unpublishEditorialEntry({ path: { id: entry.id } });
+    expect((await publicPage.reload())?.status()).toBe(404);
+    const attack = await request.post(`${E2E_PUBLIC_SITE_URL}/preview`, { headers: { Origin: "https://attacker.example" }, form: { token: "invalid", siteId: "public-site" } }); expect(attack.status()).toBe(403);
+    await preview.getByRole("button", { name: "Esci dall’anteprima" }).click(); await expect(preview).toHaveURL(`${E2E_PUBLIC_SITE_URL}/`);
+    expect((await context.cookies(E2E_PUBLIC_SITE_URL)).some(cookie => cookie.name === "__Host-trinacria-preview")).toBe(false);
+    expect(errors).toEqual([]);
+    await publicPage.close(); await preview.close();
   });
 });
 
@@ -724,39 +882,7 @@ function buildPluginAuthHeaders(input: {
   body: unknown;
   nonce: string;
 }): Record<string, string> {
-  const timestamp = Math.floor(Date.now() / 1000);
-  const canonical = [
-    input.method.toUpperCase(),
-    new URL(input.path, E2E_API_URL).pathname,
-    String(timestamp),
-    input.nonce,
-    input.pluginId.toLowerCase(),
-    createHash("sha256").update(serializeCanonical(input.body), "utf8").digest("hex")
-  ].join("\n");
-  const signature = createHmac("sha256", input.secret).update(canonical, "utf8").digest("hex");
-
-  return {
-    "x-cms-plugin-id": input.pluginId.toLowerCase(),
-    "x-cms-plugin-ts": String(timestamp),
-    "x-cms-plugin-nonce": input.nonce,
-    "x-cms-plugin-signature": signature
-  };
-}
-
-function serializeCanonical(value: unknown): string {
-  if (value === undefined) return "";
-  if (value === null) return "null";
-  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-    return JSON.stringify(value);
-  }
-  if (Array.isArray(value)) return `[${value.map(serializeCanonical).join(",")}]`;
-  if (typeof value === "object") {
-    return `{${Object.entries(value as Record<string, unknown>)
-      .sort(([left], [right]) => left.localeCompare(right))
-      .map(([key, item]) => `${JSON.stringify(key)}:${serializeCanonical(item)}`)
-      .join(",")}}`;
-  }
-  return JSON.stringify(String(value));
+  return signPluginRequest({ ...input, keyId: "e2e-current", nonce: input.nonce.padEnd(24, "0") });
 }
 
 async function loginThroughUi(page: Page): Promise<void> {

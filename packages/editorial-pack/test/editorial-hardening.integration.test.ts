@@ -1,13 +1,19 @@
+import { PUBLICATION_POINTERS_ENTITY, PUBLICATION_SNAPSHOTS_ENTITY } from "../src/modules/publications/publications.schemas.js";
 import assert from "node:assert/strict";
 import test from "node:test";
 import mongoose from "mongoose";
-import { createMongoDbAdapter, EntityRegistry, type DbAdapter } from "@trinacria-cms/kernel";
+import { type DbAdapter } from "@trinacria-cms/kernel";
+import { createMongoDbAdapter, EntityRegistry, buildPhysicalCollectionName } from "@trinacria-cms/kernel/runtime";
 import { CONTENT_TYPES_ENTITY } from "../src/modules/content-types/content-types.schemas.js";
 import { ContentTypesRepository } from "../src/modules/content-types/repositories/content-types.repository.js";
 import { ContentTypesService } from "../src/modules/content-types/services/content-types.service.js";
 import { ENTRIES_ENTITY } from "../src/modules/entries/entries.schemas.js";
 import { EntriesRepository } from "../src/modules/entries/repositories/entries.repository.js";
 import { EntriesService } from "../src/modules/entries/services/entries.service.js";
+import { createUserOperationContext } from "@trinacria-cms/kernel/runtime";
+import { CoreOperationAuthorizer } from "@trinacria-cms/core-pack/runtime";
+import { EditorialEntryOperations } from "../src/operations/editorial-entry-operations.js";
+import { createContentTypeOperations } from "../src/operations/content-type-operations.js";
 import { ENTRY_REVISIONS_ENTITY } from "../src/modules/revisions/revisions.schemas.js";
 import { RevisionsRepository } from "../src/modules/revisions/revisions.repository.js";
 
@@ -21,13 +27,13 @@ test("editorial Mongo invariants, access policies, atomic history and schema saf
   const connection = await mongoose.createConnection(uri, { dbName }).asPromise();
   try {
     const registry = new EntityRegistry();
-    for (const entity of [CONTENT_TYPES_ENTITY, ENTRIES_ENTITY, ENTRY_REVISIONS_ENTITY]) registry.register(entity);
+    for (const entity of [CONTENT_TYPES_ENTITY, ENTRIES_ENTITY, ENTRY_REVISIONS_ENTITY, PUBLICATION_POINTERS_ENTITY, PUBLICATION_SNAPSHOTS_ENTITY]) registry.register(entity);
     const db = createMongoDbAdapter({ connection, entityRegistry: registry });
-    const collection = connection.collection("plugin_editorial_pack__entries");
+    const collection = connection.collection(buildPhysicalCollectionName({ pluginId: "editorial-pack" }, "entries"));
     await collection.createIndex({ contentTypeId: 1, slug: 1 }, {
       name: "entries_content_type_slug_unique", unique: true, sparse: true
     });
-    await db.ensureIndexes("editorial-pack", ["content_types", "entries", "entry_revisions"]);
+    await db.ensureIndexes("editorial-pack", ["content_types", "entries", "entry_revisions", "publication_pointers", "publication_snapshots"]);
     const typesRepository = new ContentTypesRepository(db);
     const types = new ContentTypesService(typesRepository, db);
     const repository = new EntriesRepository(db);
@@ -94,6 +100,70 @@ test("editorial Mongo invariants, access policies, atomic history and schema saf
       await typesRepository.update(model.id, { fields: [{ key: "required_value", label: "Required", type: "text", required: true, multiple: false }] });
       await assert.rejects(service.restoreRevision(first.id, published.id, owner), /required/);
       await typesRepository.update(model.id, { fields: [] });
+    });
+    await t.test("application publication, initial published state and restore require publish", async () => {
+      const context = createUserOperationContext("author");
+      const authorizer = new CoreOperationAuthorizer({ can: async (request: { action: string }) => ({ allowed: ["create", "read", "update", "submit", "restore"].includes(request.action) }) } as never);
+      const operations = new EditorialEntryOperations(service, authorizer);
+      await assert.rejects(operations.transitionEntry(context, first.id, "publish"), (error: unknown) => (error as { code: string }).code === "operation_forbidden");
+      await assert.rejects(operations.getEntry(context, second.id));
+      const listed = await operations.listEntries(context, { limit: 1, offset: 1, accessFilter: {} } as never);
+      assert.equal(listed.every((entry) => entry.ownerUserId === "author"), true);
+      const publishedType = await types.createContentType({ key: "published-initial", name: "Initial public", fields: [], workflow: { preset: "custom", states: [{ key: "published", label: "Published", initial: true }], transitions: [] } }, "manager");
+      await assert.rejects(operations.createEntry(context, { contentTypeId: publishedType.id, data: {} }), (error: unknown) => (error as { code: string }).code === "operation_forbidden");
+      await service.transitionEntry(first.id, "publish", manager);
+      const history = (await service.listRevisions(first.id, manager))!;
+      await assert.rejects(operations.updateEntry(context, first.id, { title: "unsafe live edit" }), (error: unknown) => (error as { code: string }).code === "operation_forbidden");
+      await assert.rejects(operations.restoreRevision(context, first.id, history[0].id), (error: unknown) => (error as { code: string }).code === "operation_forbidden");
+      await service.transitionEntry(first.id, "unpublish", manager);
+      const restored = await operations.restoreRevision(context, first.id, history[0].id);
+      assert.equal(restored?.status, "draft");
+      const modelOps = createContentTypeOperations(types, authorizer);
+      await assert.rejects(modelOps.deleteContentType(context, publishedType.id), (error: unknown) => (error as { code: string }).code === "operation_forbidden");
+    });
+    await t.test("a concurrent workflow change conflicts, retries and cannot bypass publish", async () => {
+      const raceModel = await types.createContentType({ key: "workflow-race", name: "Race", fields: [], workflow: { preset: "custom", states: [{ key: "draft", label: "Draft", initial: true }, { key: "in_review", label: "Review", initial: false }], transitions: [{ key: "submit", label: "Submit", from: "draft", to: "in_review", requiredPermission: "submit" }] } }, "manager");
+      const entry = await service.createEntry({ contentTypeId: raceModel.id, data: {} }, "author");
+      let release!: () => void, ready!: () => void, armed = true, reads = 0;
+      const barrier = new Promise<void>((resolve) => { release = resolve; });
+      const entered = new Promise<void>((resolve) => { ready = resolve; });
+      const racing: DbAdapter = { ...db, repository: db.repository.bind(db), beginTransaction: db.beginTransaction.bind(db), healthCheck: db.healthCheck.bind(db), withTransaction: (namespace, work) => db.withTransaction!(namespace, async (scoped) => work({ ...scoped, repository: (name, scope) => {
+        const repository = scoped.repository(name, scope);
+        if (name !== "content_types") return repository;
+        return { ...repository, findOne: async (query) => { const result = await repository.findOne(query); reads++; if (armed && result) { armed = false; ready(); await barrier; } return result; } };
+      } })) };
+      const events: unknown[] = [];
+      const implementation = new EntriesService(repository, types, revisions, settings as never, racing);
+      implementation.setPublisher({ emit: async (_name, payload) => { events.push(payload); } });
+      const authorizer = new CoreOperationAuthorizer({ can: async (request: { action: string }) => ({ allowed: ["read", "update", "submit", "create"].includes(request.action) }) } as never);
+      const operations = new EditorialEntryOperations(implementation, authorizer);
+      const pending = operations.transitionEntry(createUserOperationContext("author"), entry.id, "submit");
+      const rejected = assert.rejects(pending, (error: unknown) => (error as { code: string }).code === "operation_forbidden");
+      await entered;
+      try {
+        await typesRepository.update(raceModel.id, { workflow: { preset: "custom", states: [{ key: "draft", label: "Draft", initial: true }, { key: "published", label: "Published", initial: false }], transitions: [{ key: "submit", label: "Submit", from: "draft", to: "published", requiredPermission: "submit" }] } });
+      } finally { release(); }
+      await rejected;
+      assert.ok(reads >= 2, "transaction rereads its model on retry");
+      assert.equal((await repository.findById(entry.id))?.status, "draft");
+      assert.equal((await revisions.listByEntryId(entry.id)).length, 1);
+      assert.equal(events.length, 0);
+    });
+    await t.test("concurrent model mutation and first entry creation cannot both use incompatible schemas", async () => {
+      const raceModel = await types.createContentType({ key: "schema-race", name: "Schema race", fields: [] }, "manager");
+      let release!: () => void, ready!: () => void, armed = true;
+      const barrier = new Promise<void>((resolve) => { release = resolve; });
+      const entered = new Promise<void>((resolve) => { ready = resolve; });
+      const racing: DbAdapter = { ...db, repository: db.repository.bind(db), beginTransaction: db.beginTransaction.bind(db), healthCheck: db.healthCheck.bind(db), withTransaction: (namespace, work) => db.withTransaction!(namespace, async (scoped) => work({ ...scoped, repository: (name, scope) => {
+        const records = scoped.repository(name, scope);
+        return name !== "content_types" ? records : { ...records, findOne: async (query) => { const result = await records.findOne(query); if (armed && result) { armed = false; ready(); await barrier; } return result; } };
+      } })) };
+      const pending = new EntriesService(repository, types, revisions, settings as never, racing).createEntry({ contentTypeId: raceModel.id, data: {} }, "author");
+      const rejected = assert.rejects(pending, /required/);
+      await entered;
+      try { await types.updateContentType(raceModel.id, { fields: [{ key: "new_required", label: "Required", type: "text", required: true, multiple: false }] }); } finally { release(); }
+      await rejected;
+      assert.equal((await repository.list({ contentTypeId: raceModel.id })).length, 0);
     });
     await t.test("populated models block destructive updates and deletion", async () => {
       await assert.rejects(types.updateContentType(model.id, { fields: [{ key: "mandatory", label: "Mandatory", type: "text", required: true, multiple: false }] }), /migrazione/);

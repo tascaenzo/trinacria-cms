@@ -1,10 +1,9 @@
+import { type Infer, s } from "@trinacria-cms/kernel";
 import {
   defineEntity,
-  type Infer,
   isValidPermissionKey,
-  isValidPermissionPattern,
-  s
-} from "@trinacria-cms/kernel";
+  isValidPermissionPattern
+} from "@trinacria-cms/kernel/runtime";
 
 export const RoleStatusSchema = s.enum(["active", "disabled"] as const);
 
@@ -77,6 +76,7 @@ export type RoleRecord = Infer<typeof RoleRecordSchema>;
  * It defines schema and logical indexes in one place.
  */
 export const ROLES_ENTITY = defineEntity({
+  ownerPluginId: "core-pack",
   entityName: "roles",
   schema: RoleRecordSchema,
   indexes: [

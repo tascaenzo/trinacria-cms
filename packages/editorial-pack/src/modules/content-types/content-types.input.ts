@@ -3,7 +3,8 @@ import {
   ContentTypeFieldSchema,
   ContentTypeOwnershipScopeSchema,
   ContentTypeStatusSchema,
-  ContentWorkflowSchema
+  ContentWorkflowSchema,
+  DeliveryConfigSchema
 } from "./content-types.schemas.js";
 
 export const CreateContentTypeInputSchema = s.object(
@@ -19,6 +20,7 @@ export const CreateContentTypeInputSchema = s.object(
     description: s.string({ trim: true, maxLength: 500 }).optional(),
     icon: s.string({ trim: true, minLength: 1, maxLength: 80 }).optional(),
     fields: s.array(ContentTypeFieldSchema, { unique: false }),
+    delivery: DeliveryConfigSchema.optional(),
     taxonomyIds: s.array(s.string({ trim: true, minLength: 1 }), { unique: true }).optional(),
     workflowId: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
     workflow: ContentWorkflowSchema.optional(),
@@ -38,6 +40,7 @@ export const UpdateContentTypeInputSchema = s.object(
     clearIcon: s.boolean().optional(),
     status: ContentTypeStatusSchema.optional(),
     fields: s.array(ContentTypeFieldSchema, { unique: false }).optional(),
+    delivery: DeliveryConfigSchema.optional(),
     taxonomyIds: s.array(s.string({ trim: true, minLength: 1 }), { unique: true }).optional(),
     workflowId: s.string({ trim: true, minLength: 1, maxLength: 120 }).optional(),
     clearWorkflow: s.boolean().optional(),

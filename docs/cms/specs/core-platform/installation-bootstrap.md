@@ -1,242 +1,178 @@
-# Installation e bootstrap core
+# Installazione e primo avvio
 
-## Stato
+Stato: implementato. Aggiornamento: 2026-10-05.
 
-- Milestone: `M4.0 - Core Platform Specifications`
-- Stato: `draft`
-- Scope: low-level specification
-- Ultimo aggiornamento: `2026-05-28`
+## Stato e configurazione
 
-## Decisione
+Lo stato autorevole è il record `{ kind: "install_state", key: "core-pack" }` in
+`settings__plugin_core-pack`. Il playground lo legge da Mongo a ogni avvio;
+il servizio legge lo stato senza cache locale. Eliminare il database riporta
+il CMS al wizard. Il normale riavvio conserva installazione e credenziali.
 
-Il bootstrap crea una baseline CMS sicura e idempotente: admin user, ruoli,
-permission, settings baseline.
+Il file `.env` è una modalità di configurazione; sono valide anche variabili
+iniettate dal processo, da Docker o da un secret manager. La presenza del file
+non decide se l'installazione può procedere. Il wizard non scrive configurazioni
+o segreti sul server.
 
-MongoDB deve essere configurato manualmente dall'operatore tramite file `.env`
-prima di avviare il wizard di installazione. Se il database non e configurato,
-il backoffice mostra una guida per il setup del `.env` e chiede il riavvio.
+## Verifica dei requisiti
 
-L'installazione e un flusso in 2 step (Sito + Admin) che invia i dati a
-`POST /v1/install/bootstrap`. Il backend presuppone che MongoDB sia gia
-raggiungibile (connesso all'avvio via dotenv).
+Il playground esegue `inspectInstallationPrerequisites` prima di caricare i plugin.
+`GET /v1/install/status` ripete i controlli e restituisce un elenco strutturato,
+con esito `pass`, `fail` o `blocked` e un codice messaggio traducibile:
 
-L'app puo avviarsi in **setup mode** (senza MongoDB) se:
+| Controllo | Verifica reale | Intervento quando fallisce |
+| --- | --- | --- |
+| `database` | Connessione e `ping` con l'URI effettivo del processo | Correggere URI, credenziali o raggiungibilità |
+| `transactions` | `hello`: replica set o cluster sharded | Configurare Mongo per le transazioni |
+| `write-access` | Inserimento, aggiornamento, lettura e cancellazione nella collezione settings, dentro una transazione annullata | Assegnare lettura e scrittura sul DB del CMS |
+| `runtime-keys` | Validazione del keyring tramite lo stesso validatore del vault | Configurare ID attivo e chiavi valide |
 
-- Il file `.env` non esiste
-- Le variabili `MONGO_*` non sono configurate
-- La connessione MongoDB fallisce all'avvio
+La prova non persiste dati né stampa credenziali, URI o materiale crittografico.
+Il client Mongo della verifica è indipendente dal ciclo di vita Mongoose del CMS.
+Il provisioning dei plugin verifica inoltre indici, schemi e servizi durante l'avvio.
+Le regole di hardening production (JWT, CORS, cookie e secret injection) restano
+quelle del [runbook production](../../it/0020-runbook-deploy-production.md).
 
-In setup mode, solo gli endpoint di installazione sono accessibili.
+Se un requisito fallisce, il kernel usa `installerOnly`: registra gli endpoint
+ambientali, conserva i plugin nel catalogo senza caricarli e non inizializza
+servizi persistenti o vault. `/ready` risponde 503; le API dei plugin non sono
+montate. La pagina **Prerequisiti di installazione** mostra una checklist compatta
+con esiti testuali, le istruzioni per i soli controlli falliti e il pulsante
+**Ripeti i controlli**. Le istruzioni uguali vengono mostrate una sola volta;
+i controlli dipendenti bloccati non duplicano la stessa correzione. Gli esempi
+di configurazione sono espandibili e includono solo le variabili da correggere.
+Dopo aver corretto la configurazione occorre riavviare il processo per caricare
+i plugin: il refresh della guida non promuove un runtime incompleto a CMS attivo.
+Se Mongo è leggibile, la guida conserva anche l'informazione che il CMS era già installato.
 
-## Responsabilita
+## Wizard e dati iniziali
 
-| Area              | Owner          | Responsabilita                  |
-| ----------------- | -------------- | ------------------------------- |
-| Setup mode        | `kernel`       | Avvio senza MongoDB             |
-| Install state     | `core-pack`    | Stato installazione             |
-| Admin user        | `core-pack`    | Primo utente amministratore     |
-| Baseline security | `core-pack`    | ruoli/permission default        |
-| Runtime bootstrap | `kernel`       | start app e plugin provisioning |
-| UI bootstrap      | `admin-kernel` | pagina installazione            |
-| Guida .env        | `admin-kernel` | Setup `.env` se non configurato |
+Il backoffice verifica i prerequisiti prima del wizard. Se tutti gli esiti sono
+`pass` e il runtime non richiede un riavvio, apre direttamente il setup (o il
+login, se il CMS è già installato). Dopo un nuovo controllo positivo il passaggio
+è automatico; finché un requisito manca, i form del setup non sono accessibili.
 
-## Flusso di installazione
+Il wizard ha tre passi: **Sito**, **Amministratore**, **Riepilogo**, rappresentati
+dallo stepper del design system, con colonne uguali e indicazione del passo
+corrente anche su mobile. Non ripete i banner dei prerequisiti. Alla fine mostra
+la conferma e il pulsante di accesso; il dettaglio dei controlli è espandibile.
+La scelta iniziale è:
 
-### Setup mode (pre-installazione)
+- `empty`: modelli articolo e pagina, nessun contenuto editoriale;
+- `demo`: stessi modelli e due contenuti in bozza, assegnati al nuovo amministratore.
 
-```
-1. App avviata → tenta connessione MongoDB
-2. Se connessione fallisce o .env non configurato:
-   a. HTTP server parte comunque in setup mode
-   b. Tutti gli endpoint tranne /v1/install/* return 503 (Service Unavailable)
-   c. GET /v1/install/status → { installed: false, envFilePresent: false, dbConfigured: false }
-3. Se connessione OK ma installed = false:
-   a. HTTP server parte normalmente
-   b. Wizard di installazione mostrato (2 step: Sito + Admin)
-```
+Non viene più creato contenuto di esempio durante `onLoad` dell'Editorial Pack.
+Il dataset mock completo di sviluppo è separato: [script dedicato](../../../../scripts/dev/README.md).
 
-### Guida .env (se database non configurato)
+`POST /v1/install/bootstrap` accetta nome/cognome, email, password e conferma,
+siteName, siteTagline, locale, timezone e `dataMode`. La password richiede
+10–200 caratteri. `dataMode` omesso equivale a `empty`; la UI presenta entrambe le scelte.
+Locale e timezone omessi usano `en-US` e `UTC`; tagline omessa è una stringa vuota.
 
-```
-1. GET /v1/install/status → envFilePresent == false || dbConfigured == false
-2. Backoffice mostra InstallationDatabaseGuidePage:
-   a. Istruzioni per creare/aggiornare .env
-   b. Percorso del file .env evidenziato
-   c. "Riavvia l'applicazione dopo aver configurato il file"
-3. Operatore configura .env, riavvia l'app
-4. Al nuovo avvio, GET /v1/install/status → envFilePresent == true && dbConfigured == true
-5. Backoffice mostra InstallationBootstrapPage
-```
+## Transazioni, concorrenza e ripresa
 
-### Bootstrap completo (POST /v1/install/bootstrap)
+1. Validazione input e nuova verifica dei requisiti.
+2. Acquisizione del lease condiviso `cms-installation` in `platform_locks__plugin_kernel`.
+   Durata 30 secondi, rinnovo ogni 10 secondi, identificativo del proprietario ed epoch.
+3. Provisioning idempotente di manifest, ruoli, permessi e definizioni delle impostazioni.
+4. Un'unica transazione core crea/riattiva l'admin, salva hash scrypt e ruolo admin,
+   scrive tutte le impostazioni richieste, registra l'evento durabile dell'utente e
+   salva il checkpoint `content` con adminUserId, adminEmail e dataMode.
+5. Esecuzione degli hook `onInstall` dei plugin caricati, attraverso i loro servizi proprietari.
+6. Checkpoint `verification` e controllo finale.
+7. Transazione finale: `installed=true`, fase `complete`, data e adminUserId.
+8. Rilascio del lease; se il processo termina improvvisamente il lease scade.
 
-```
-1. Validazione input
-2. Provisioning baseline security (ruoli, permessi)
-3. Creazione admin user (firstName, lastName, email)
-4. Hashing password e salvataggio credenziali locali
-5. Assegnazione ruolo admin
-6. Salvataggio settings sito (siteName, tagline, locale, timezone)
-7. Mark installed = true
-8. Return { status, adminUser }
-```
+Le transazioni core scrivono anche il fence del lease. Un runner che ha perso
+il lease non può commettere il checkpoint o chiudere l'installazione. Una seconda
+richiesta contemporanea riceve 409 `installation_in_progress`.
 
-### Dopo installazione
+Un errore nelle impostazioni o nell'outbox annulla l'intera transazione core:
+non vengono conservati utenti o credenziali parziali. Un errore successivo negli
+hook o nei controlli finali conserva il checkpoint e lascia `installed=false`.
+Il login resta bloccato finché l'installazione non è completata.
 
-```
-1. POST /v1/install/bootstrap → 409 (gia installato)
-2. GET /v1/install/status → { installed: true, dbConfigured: true }
-3. App funziona normalmente
-4. Riavvio futuro → legge .env, connette MongoDB, avvia normalmente
-```
+Per riprendere si reinvia il bootstrap con email, password e scelta contenuti
+originali. Il servizio verifica la password già salvata prima di aggiornare dati:
+credenziali diverse o cambio di modalità restituiscono 409
+`installation_resume_mismatch`. Le impostazioni del sito possono essere corrette
+al nuovo tentativo. Non è necessario eliminare il database.
 
-## Modello dati
+La baseline dei manifest e i dati dei plugin non costituiscono una singola
+transazione globale. Per questo ogni hook deve essere **idempotente**, con
+identificatori naturali o unici per i suoi dati. L'Editorial Pack controlla
+separatamente i due slug demo: dopo un'interruzione crea solo quello mancante,
+senza duplicare utenti, revisioni o eventi di creazione già commessi.
 
-### Installation State
+## Controllo finale e accesso
 
-```ts
-export interface InstallationStateDocument {
-  id: "default";
-  installed: boolean;
-  installedAt?: Date;
-  installedByUserId?: string;
-  corePackVersion: string;
-  schemaVersion: number;
-  updatedAt: Date;
-}
-```
+Prima di `installed=true`, il backend verifica:
 
-### Input DTO (InstallBootstrapInput)
+- requisiti ancora validi;
+- tutti i plugin configurati caricati;
+- health di runtime, dipendenze, servizi durabili e cluster (se attivo);
+- admin attivo, credenziali verificabili e ruolo admin;
+- rilettura delle quattro impostazioni sito con i valori attesi;
+- completamento senza errori degli hook di installazione.
 
-```ts
-export interface InstallBootstrapInput {
-  // Admin account
-  firstName: string; // 1-60 chars
-  lastName: string; // 1-60 chars
-  email: string; // email validata
-  password: string; // 10-200 chars
-  confirmPassword: string; // deve matchare password
+La risposta contiene gli esiti e il record admin. La UI accetta il risultato
+solo se tutti i controlli passano, esegue il login e mostra **Installazione verificata**
+con il pulsante **Entra nel backoffice**. Se il login fallisce dopo il completamento,
+lo stato installato rimane corretto e si può usare la normale schermata di accesso.
 
-  // Site settings
-  siteName: string; // 1-120 chars
-  siteTagline?: string; // max 160 chars
-  locale?: string; // pattern: "^[a-z]{2}(-[A-Z]{2})?$"
-  timezone?: string; // IANA timezone, 3-120 chars
-}
-```
+## API e persistenza
 
-### Response DTO
+| Metodo | Percorso | Risultato |
+| --- | --- | --- |
+| GET | `/v1/install/status` | Stato Mongo, fase, dataMode, canInstall, restartRequired, checks e metadati ambientali |
+| POST | `/v1/install/bootstrap` | `{ status, adminUser }` dopo verifica e commit |
 
-```ts
-export interface InstallationBootstrapResult {
-  status: InstallationStatus;
-  adminUser: UserRecord;
-}
-```
+Fasi pubbliche: `prerequisites`, `ready`, `configuration`, `content`, `verification`, `complete`.
+`configuration` è riservata al modello; la configurazione core viene commessa
+atomicamente passando direttamente da `ready` a `content`.
+`canInstall` indica che un CMS non ancora installato ha superato i requisiti;
+non garantisce l'assenza di un'altra richiesta in corso, protetta dal lease.
 
-### User Record (aggiornato)
+Lo stato interno conserva solo i dati della ripresa, mai la password in chiaro.
+Le credenziali sono in `local_credentials__plugin_core-pack`, gli utenti e i loro
+ruoli incorporati in `users__plugin_core-pack`. Settings e credenziali hanno indici
+unici su `{kind,key}` e `{userId}`; gli utenti hanno email unica. L'outbox è in
+`event_outbox__plugin_kernel`.
 
-```ts
-export interface UserRecord {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  status: "active" | "suspended";
-  createdAt: string;
-  updatedAt: string;
-}
-```
+| Codice | HTTP | Significato |
+| --- | --- | --- |
+| `validation_error` / `password_mismatch` | 400 | Correggere l'input |
+| `installation_already_completed` | 409 | Usare il normale login |
+| `installation_in_progress` | 409 | Attendere la richiesta attiva, poi verificare lo stato |
+| `installation_resume_mismatch` | 409 | Usare credenziali e scelta originali |
+| `platform_maintenance` / `platform_lease_lost` | 503 | Requisiti, verifica finale o lease non validi |
+| `internal_error` | 500 | Errore di provisioning; stato non completato, ripresa possibile |
 
-## API HTTP
+SDK e OpenAPI sono generati dalle stesse DTO dei controller.
 
-| Method | Path                    | Auth | Setup Mode |
-| ------ | ----------------------- | ---- | ---------- |
-| `GET`  | `/v1/install/status`    | none | pubblico   |
-| `POST` | `/v1/install/bootstrap` | none | pubblico   |
+## Estensione per altri plugin e host
 
-`GET /v1/install/status` ritorna anche `dbConfigured` in setup mode.
+Il kernel espone `KernelPluginHooks.onInstall(context, { dataMode, adminUserId })`.
+L'hook usa i normali servizi del proprietario, deve propagare gli errori e deve
+supportare riesecuzioni. Un plugin senza dati iniziali non deve dichiararlo.
+`onLoad` rimane dedicato all'avvio ordinario e non deve inserire dati demo.
 
-## Storage Mongo
+Un host basato su `startCmsApp` può configurare `installation.inspect` con i propri
+controlli e selezionare `installerOnly` quando falliscono. Il playground implementa
+la verifica Mongo/keyring completa; il controllo predefinito del kernel verifica
+la connettività dell'adapter. Gli host esterni devono definire esplicitamente i
+requisiti specifici del proprio deployment.
 
-Collections:
+## Verifiche automatiche
 
-- `core-pack__settings` (`kind: "install_state"` for installation state)
-- `core-pack__local_credentials`
-- `core-pack__users`
-- `core-pack__user_roles`
-- `core-pack__roles`
-- `core-pack__permissions`
+Test unitari: errori nelle impostazioni, requisiti bloccati, ripresa con le stesse
+credenziali e rifiuto di takeover, fallimento del controllo finale.
 
-Indici:
+Test Mongo: rollback di admin/credenziali/outbox, installer concorrenti su stato
+condiviso, checkpoint persistiti e una sola creazione durabile dell'utente.
 
-| Collection                     | Index                 | Unique |
-| ------------------------------ | --------------------- | ------ |
-| `core-pack__settings`          | `{ kind: 1, key: 1 }` | yes    |
-| `core-pack__local_credentials` | `{ userId: 1 }`       | yes    |
-| `core-pack__users`             | `{ email: 1 }`        | yes    |
+Test host: chiavi mancanti con Mongo sano, stato installato conservato in modalità
+guida, installazione vuota, riavvio, database eliminato, demo interrotta dopo il
+primo contenuto e ripresa senza duplicati. Tutti usano database temporanei.
 
-## Security e permission
-
-### Setup mode
-
-- Solo endpoint di installazione sono pubblici
-- Ogni altra richiesta → 503
-- Nessun dato sensibile esposto
-
-### Prima dell'installazione
-
-- `GET /v1/install/status` pubblico
-- `POST /v1/install/bootstrap` pubblico solo se `installed = false`
-
-### Dopo installazione
-
-- `POST /v1/install/bootstrap` → 409
-- `GET /v1/install/status` rimane pubblico (solo stato)
-- Bootstrap admin ha ruolo `admin` con tutte le permission core
-- Password salvata solo come hash (scrypt)
-
-## Errori
-
-| Code                         | HTTP | Quando                                    |
-| ---------------------------- | ---- | ----------------------------------------- |
-| `installation_already_done`  | 409  | installazione gia chiusa                  |
-| `installation_input_invalid` | 400  | input non valido                          |
-| `installation_failed`        | 500  | bootstrap fallito                         |
-| `password_mismatch`          | 400  | password e confirmPassword non coincidono |
-
-## Lifecycle
-
-1. Avvio app → setup mode se DB non raggiungibile
-2. Se env non configurato → guida .env → riavvio
-3. GET /v1/install/status → verifica stato
-4. POST /v1/install/bootstrap con dati sito + admin
-5. Creazione admin user con firstName e lastName separati
-6. Creazione ruoli/permission baseline
-7. Salvataggio settings sito
-8. Mark installed
-9. Audit eventi
-
-## Compatibilita e versioning
-
-- `schemaVersion` permette evoluzione bootstrap
-- `InstallBootstrapInput` puo ricevere nuovi campi opzionali senza breaking
-- `UserRecord` puo evolvere con nuovi campi (backward compatibile)
-- Il formato `.env` e compatibile con docker-compose e Node --env-file
-
-## Dipendenze
-
-- `dotenv` (npm): lettura .env all'avvio
-
-## Acceptance criteria
-
-- [ ] App parte in setup mode senza MongoDB
-- [ ] Se env non configurato, guida .env mostrata con richiesta riavvio
-- [ ] Dopo setup .env e riavvio, wizard 2 step (Sito + Admin) mostrato
-- [ ] Form installazione raccoglie solo sito + admin
-- [ ] .env non viene scritto dal wizard (gia presente)
-- [ ] Dopo installazione, app funziona senza riavvio
-- [ ] Al riavvio successivo, legge .env e parte normalmente
-- [ ] Nome e cognome admin persistiti come campi separati
-- [ ] Settings sito persistiti e leggibili
-- [ ] Installazione non ripetibile (409)
+Test browser: wizard, schermata di verifica e accesso al backoffice.

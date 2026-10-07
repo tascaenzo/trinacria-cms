@@ -1,4 +1,5 @@
-import { defineEntity, type Infer, s } from "@trinacria-cms/kernel";
+import { type Infer, s } from "@trinacria-cms/kernel";
+import { defineEntity } from "@trinacria-cms/kernel/runtime";
 
 export const ContentTypeStatusSchema = s.enum(["active", "archived"] as const);
 export const ContentTypeFieldKindSchema = s.enum([
@@ -93,6 +94,28 @@ export const ContentTypeFieldSchema = s.object(
 
 export type ContentTypeField = Infer<typeof ContentTypeFieldSchema>;
 
+export const DeliveryConfigSchema = s.object(
+  {
+    enabled: s.boolean(),
+    publicFields: s.array(s.string({ pattern: /^[a-z][a-z0-9_]*$/, maxLength: 80 }), {
+      unique: true,
+      maxItems: 100
+    }),
+    exposeTitle: s.boolean(),
+    exposeBody: s.boolean(),
+    exposeSlug: s.boolean()
+  },
+  { strict: true }
+);
+export type DeliveryConfig = Infer<typeof DeliveryConfigSchema>;
+export const disabledDelivery = (): DeliveryConfig => ({
+  enabled: false,
+  publicFields: [],
+  exposeTitle: false,
+  exposeBody: false,
+  exposeSlug: false
+});
+
 export const ContentTypeRecordSchema = s.object(
   {
     id: s.string({ trim: true, minLength: 1 }),
@@ -114,6 +137,9 @@ export const ContentTypeRecordSchema = s.object(
     // Kept only to read existing records created before model navigation became mandatory.
     showInMainNavigation: s.boolean().optional(),
     ownershipScope: ContentTypeOwnershipScopeSchema,
+    version: s.number({ int: true, min: 1 }),
+    delivery: DeliveryConfigSchema.optional(),
+    deliveryConfigVersion: s.number({ int: true, min: 1 }).optional(),
     createdByUserId: s.string({ trim: true, minLength: 1 }),
     createdAt: s.dateTimeString(),
     updatedAt: s.dateTimeString(),
@@ -125,6 +151,7 @@ export const ContentTypeRecordSchema = s.object(
 export type ContentTypeRecord = Infer<typeof ContentTypeRecordSchema>;
 
 export const CONTENT_TYPES_ENTITY = defineEntity({
+  ownerPluginId: "editorial-pack",
   entityName: "content_types",
   schema: ContentTypeRecordSchema,
   indexes: [

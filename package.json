@@ -22,6 +22,8 @@
     "dev:backoffice": "npm run build && turbo run dev --ui=tui --filter=@trinacria-cms/backoffice...",
     "dev:playground:watch": "npm run dev -w @trinacria-cms/playground",
     "dev:backoffice:watch": "npm run dev -w @trinacria-cms/backoffice",
+    "db:mock:plan": "npm run build && node scripts/dev/reset-mock-db.mjs",
+    "db:mock:reset": "npm run build && node scripts/dev/reset-mock-db.mjs --reset",
     "storybook": "npm run storybook -w @trinacria-cms/trinacria-ui",
     "storybook:build": "turbo run storybook:build",
     "pree2e": "npm run build",
@@ -50,9 +52,17 @@
     "format": "biome format .",
     "format:write": "biome format --write .",
     "dependencies:check": "node scripts/check-workspace-dependencies.mjs",
-    "check": "npm run format && npm run lint && npm run typecheck && npm run test && npm run dependencies:check && npm run boundaries:check",
+    "check": "npm run format && npm run lint && npm run typecheck && npm run test && npm run dependencies:check && npm run boundaries:check && npm run public-api:check && npm run signing:check && npm run template:check",
     "check:write": "biome check --write .",
-    "boundaries:check": "node scripts/check-plugin-boundaries.mjs"
+    "boundaries:check": "node scripts/check-plugin-boundaries.mjs",
+    "public-api:check": "node scripts/check-public-api.mjs",
+    "public-api:update": "node scripts/check-public-api.mjs --update",
+    "release:pack": "npm run build && node scripts/release/pack.mjs",
+    "release:test": "npm run build && node scripts/release/external-host.mjs",
+    "signing:check": "node scripts/sync-plugin-signing.mjs",
+    "signing:update": "node scripts/sync-plugin-signing.mjs --update",
+    "template:update": "node scripts/sync-plugin-template.mjs --update",
+    "template:check": "node scripts/sync-plugin-template.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.5",
@@ -65,5 +75,6 @@
   "engines": {
     "node": ">=24.21.0 <25",
     "npm": ">=11.16.0 <12"
-  }
+  },
+  "type": "module"
 }

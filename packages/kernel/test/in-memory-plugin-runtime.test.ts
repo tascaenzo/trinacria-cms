@@ -339,7 +339,7 @@ test("describeContributions exposes manifest-derived plugin declarations", async
       }
     ],
     events: {
-      emits: [{ name: "post-published", visibility: "public", version: 1 }]
+      emits: [{ name: "post-published", visibility: "public", version: 1 , delivery: "sync" }]
     },
     admin: {
       routes: [{ id: "posts", path: "/blog/posts", label: "Posts" }]
@@ -390,7 +390,7 @@ test("runtime binds manifest event subscriptions and dispatches plugin handlers"
           name: "user-created",
           visibility: "public",
           version: 1
-        }
+        , delivery: "sync" }
       ]
     }
   });
@@ -453,7 +453,7 @@ test("runtime emits only manifest-declared plugin events and validates payload s
               resetUrl: { type: "string" }
             }
           }
-        }
+        , delivery: "sync" }
       ]
     }
   });
@@ -492,8 +492,8 @@ test("runtime enforces event subscription visibility rules", async () => {
     requiresCore: "^0.1.0",
     events: {
       emits: [
-        { name: "private-user-token-created", visibility: "private", version: 1 },
-        { name: "user-email-verification-requested", visibility: "protected", version: 1 }
+        { name: "private-user-token-created", visibility: "private", version: 1 , delivery: "sync" },
+        { name: "user-email-verification-requested", visibility: "protected", version: 1 , delivery: "sync" }
       ]
     },
     security: {
@@ -570,7 +570,11 @@ test("runtime enforces event subscription visibility rules", async () => {
     }
   });
 
-  await runtime.load("cms/plugin-email");
+  await assert.rejects(() => runtime.load("cms/plugin-email"), (error: unknown) => {
+    assert.ok(error instanceof PluginRuntimeError);
+    assert.equal(error.details?.reason, "event_subscription_authorizer_missing");
+    return true;
+  });
 });
 
 test("runtime supports explicit authorization for protected event subscribers", async () => {
@@ -593,7 +597,7 @@ test("runtime supports explicit authorization for protected event subscribers", 
     version: "1.0.0",
     requiresCore: "^0.1.0",
     events: {
-      emits: [{ name: "secure-event-payload-ready", visibility: "protected", version: 1 }]
+      emits: [{ name: "secure-event-payload-ready", visibility: "protected", version: 1 , delivery: "sync" }]
     },
     security: {
       permissions: [
@@ -1028,3 +1032,14 @@ function createFakeAppWithEventBus(): {
 
   return { app: appWithEvents, bus };
 }
+
+test("runtime rejects incompatible minor and undeclared core prereleases", async () => {
+  for (const coreVersion of ["0.2.0", "0.1.1-beta.1"]) {
+    const runtime = new InMemoryPluginRuntime({ coreVersion });
+    await assert.rejects(runtime.register({ id: "range-check", version: "0.1.0", requiresCore: "^0.1.0" }), PluginCompatibilityError);
+  }
+  const runtime = new InMemoryPluginRuntime({ coreVersion: "0.2.0-beta.2" });
+  await runtime.register({ id: "beta-check", version: "0.2.0-beta.2", requiresCore: "^0.2.0-beta.1" });
+  await runtime.register({ id: "dependency-check", version: "0.2.0-beta.2", requiresCore: "^0.2.0-beta.1", dependencies: [{ pluginId: "beta-check", versionRange: "^0.2.0" }] });
+  await assert.rejects(runtime.load("dependency-check"), PluginDependencyError);
+});

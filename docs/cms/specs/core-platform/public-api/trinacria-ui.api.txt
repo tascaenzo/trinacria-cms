@@ -1,0 +1,1427 @@
+// dist/components/atoms/badge/badge.d.ts
+import type { BadgeProps } from "./badge.types.js";
+export declare function Badge({ children, className, tone, ...props }: BadgeProps): import("react").JSX.Element;
+
+// dist/components/atoms/badge/badge.types.d.ts
+import type { HTMLAttributes, PropsWithChildren } from "react";
+export interface BadgeProps extends PropsWithChildren, HTMLAttributes<HTMLSpanElement> {
+    tone?: "neutral" | "accent" | "info" | "success" | "warning" | "danger";
+}
+
+// dist/components/atoms/badge/index.d.ts
+export * from "./badge.js";
+export * from "./badge.types.js";
+
+// dist/components/atoms/button/button.d.ts
+import type { ButtonProps } from "./button.types.js";
+/**
+ * Button follows the shell rhythm used across the dashboard: compact sizing,
+ * restrained radius, and contrast-first variants instead of decorative chrome.
+ */
+export declare const Button: import("react").ForwardRefExoticComponent<ButtonProps & import("react").RefAttributes<HTMLButtonElement>>;
+
+// dist/components/atoms/button/button.types.d.ts
+export type { ButtonBaseProps as ButtonProps } from "../../primitives/button-base/button-base.types.js";
+
+// dist/components/atoms/button/index.d.ts
+export * from "./button.js";
+export * from "./button.types.js";
+
+// dist/components/atoms/checkbox/checkbox.d.ts
+import type { CheckboxProps } from "./checkbox.types.js";
+export declare const Checkbox: import("react").ForwardRefExoticComponent<CheckboxProps & import("react").RefAttributes<HTMLInputElement>>;
+
+// dist/components/atoms/checkbox/checkbox.types.d.ts
+import type { InputHTMLAttributes, ReactNode } from "react";
+export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
+    label: ReactNode;
+    description?: ReactNode;
+    error?: ReactNode;
+}
+
+// dist/components/atoms/checkbox/index.d.ts
+export * from "./checkbox.js";
+export * from "./checkbox.types.js";
+
+// dist/components/atoms/date-picker/date-picker.d.ts
+import type { DatePickerProps } from "./date-picker.types.js";
+export declare function DatePicker({ "aria-describedby": ariaDescribedBy, "aria-invalid": ariaInvalid, "aria-label": ariaLabel, className, clearLabel, clearText, defaultValue, disabled, error, hint, id, label, locale, max, min, name, nextMonthLabel, onValueChange, placeholder, previousMonthLabel, value, weekdayLabels, ...props }: DatePickerProps): import("react").JSX.Element;
+
+// dist/components/atoms/date-picker/date-picker.types.d.ts
+import type { HTMLAttributes, ReactNode } from "react";
+export interface DatePickerProps extends Omit<HTMLAttributes<HTMLDivElement>, "defaultValue" | "onChange"> {
+    label?: ReactNode;
+    hint?: ReactNode;
+    error?: ReactNode;
+    placeholder?: string;
+    value?: string;
+    defaultValue?: string;
+    onValueChange?: (value: string) => void;
+    disabled?: boolean;
+    min?: string;
+    max?: string;
+    name?: string;
+    clearLabel?: string;
+    clearText?: string;
+    previousMonthLabel?: string;
+    nextMonthLabel?: string;
+    locale?: string;
+    weekdayLabels?: readonly string[];
+}
+
+// dist/components/atoms/date-picker/index.d.ts
+export * from "./date-picker.js";
+export * from "./date-picker.types.js";
+
+// dist/components/atoms/date-time-picker/date-time-picker.d.ts
+import type { DateTimePickerProps } from "./date-time-picker.types.js";
+export declare function DateTimePicker({ className, dateLabel, defaultValue, disabled, error, hint, id, label, minuteStep, name, onValueChange, timeLabel, value, ...props }: DateTimePickerProps): import("react").JSX.Element;
+
+// dist/components/atoms/date-time-picker/date-time-picker.types.d.ts
+import type { HTMLAttributes, ReactNode } from "react";
+export interface DateTimePickerProps extends Omit<HTMLAttributes<HTMLDivElement>, "defaultValue" | "onChange"> {
+    label?: ReactNode;
+    hint?: ReactNode;
+    error?: ReactNode;
+    name?: string;
+    value?: string;
+    defaultValue?: string;
+    onValueChange?: (value: string) => void;
+    disabled?: boolean;
+    minuteStep?: number;
+    dateLabel?: string;
+    timeLabel?: string;
+}
+
+// dist/components/atoms/date-time-picker/index.d.ts
+export * from "./date-time-picker.js";
+export * from "./date-time-picker.types.js";
+
+// dist/components/atoms/drop-indicator/drop-indicator.d.ts
+/** A neutral insertion affordance for sortable lists, blocks and columns. */
+export declare function DropIndicator(): import("react").JSX.Element;
+
+// dist/components/atoms/drop-indicator/index.d.ts
+export * from "./drop-indicator.js";
+
+// dist/components/atoms/field/field.d.ts
+import type { HTMLAttributes, LabelHTMLAttributes, PropsWithChildren } from "react";
+export declare function FieldGroup({ children, className, ...props }: PropsWithChildren<HTMLAttributes<HTMLDivElement>>): import("react").JSX.Element;
+export declare function Field({ children, className, ...props }: PropsWithChildren<HTMLAttributes<HTMLDivElement>>): import("react").JSX.Element;
+export declare function FieldLabel({ children, className, ...props }: PropsWithChildren<LabelHTMLAttributes<HTMLLabelElement>>): import("react").JSX.Element;
+export declare function FieldDescription({ children, className, ...props }: PropsWithChildren<HTMLAttributes<HTMLParagraphElement>>): import("react").JSX.Element;
+export declare function FieldHint({ children, className, ...props }: PropsWithChildren<HTMLAttributes<HTMLParagraphElement>>): import("react").JSX.Element;
+export declare function FieldError({ children, className, ...props }: PropsWithChildren<HTMLAttributes<HTMLParagraphElement>>): import("react").JSX.Element;
+
+// dist/components/atoms/field/field.types.d.ts
+import type { HTMLAttributes, LabelHTMLAttributes, PropsWithChildren } from "react";
+export type FieldGroupProps = PropsWithChildren<HTMLAttributes<HTMLDivElement>>;
+export type FieldProps = PropsWithChildren<HTMLAttributes<HTMLDivElement>>;
+export type FieldLabelProps = PropsWithChildren<LabelHTMLAttributes<HTMLLabelElement>>;
+export type FieldDescriptionProps = PropsWithChildren<HTMLAttributes<HTMLParagraphElement>>;
+
+// dist/components/atoms/field/index.d.ts
+export * from "./field.js";
+export * from "./field.types.js";
+
+// dist/components/atoms/form-control/form-control.d.ts
+import type { FormControlShellProps, FormControlSurfaceProps } from "./form-control.types.js";
+export declare function useFormControlIds(id?: string, _name?: string): {
+    controlId: string;
+    errorId: string;
+    hintId: string;
+    labelId: string;
+};
+export declare function buildFormControlAria(options: {
+    describedBy?: string;
+    error?: unknown;
+    errorId: string;
+    hint?: unknown;
+    hintId: string;
+}): {
+    describedBy: string | undefined;
+    errorMessage: string | undefined;
+};
+export declare function formControlClassName(options?: {
+    className?: string;
+    disabled?: boolean;
+    error?: unknown;
+    multiline?: boolean;
+    withFocusWithin?: boolean;
+}): string;
+export declare function FormControlShell({ children, className, controlId, error, errorId, hint, hintId, label, labelFor, labelId, ...props }: FormControlShellProps): import("react").JSX.Element;
+export declare function FormControlSurface({ children, className, disabled, error, ...props }: FormControlSurfaceProps): import("react").JSX.Element;
+
+// dist/components/atoms/form-control/form-control.types.d.ts
+import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
+export interface FormControlShellProps extends PropsWithChildren<HTMLAttributes<HTMLDivElement>> {
+    error?: ReactNode;
+    hint?: ReactNode;
+    label?: ReactNode;
+    controlId?: string;
+    errorId?: string;
+    hintId?: string;
+    labelId?: string;
+    labelFor?: string;
+}
+export interface FormControlSurfaceProps extends PropsWithChildren<HTMLAttributes<HTMLDivElement>> {
+    disabled?: boolean;
+    error?: ReactNode;
+}
+
+// dist/components/atoms/form-control/index.d.ts
+export * from "./form-control.js";
+export * from "./form-control.types.js";
+
+// dist/components/atoms/icon-button/icon-button.d.ts
+import type { IconButtonProps } from "./icon-button.types.js";
+export declare function IconButton({ icon, label, size, title, ...props }: IconButtonProps): import("react").JSX.Element;
+
+// dist/components/atoms/icon-button/icon-button.types.d.ts
+import type { ButtonBaseProps } from "../../primitives/button-base/button-base.types.js";
+import type { IconName } from "../icon/icon.js";
+export interface IconButtonProps extends Omit<ButtonBaseProps, "children" | "iconOnly"> {
+    icon: IconName;
+    label: string;
+}
+
+// dist/components/atoms/icon-button/index.d.ts
+export * from "./icon-button.js";
+export * from "./icon-button.types.js";
+
+// dist/components/atoms/icon-tile/icon-tile.d.ts
+import type { IconTileProps } from "./icon-tile.types.js";
+export declare function IconTile({ icon, tone, size, label, className, ...props }: IconTileProps): import("react").JSX.Element;
+
+// dist/components/atoms/icon-tile/icon-tile.types.d.ts
+import type { HTMLAttributes } from "react";
+import type { IconName } from "../icon/icon.js";
+export interface IconTileProps extends HTMLAttributes<HTMLSpanElement> {
+    icon: IconName;
+    tone?: "neutral" | "accent" | "info" | "success" | "warning" | "danger";
+    size?: "sm" | "md" | "lg";
+    label?: string;
+}
+
+// dist/components/atoms/icon-tile/index.d.ts
+export * from "./icon-tile.js";
+export type * from "./icon-tile.types.js";
+
+// dist/components/atoms/icon/icon.d.ts
+import { type LucideIcon } from "lucide-react";
+import type { IconProps } from "./icon.types.js";
+declare const ICONS: Record<string, LucideIcon>;
+export type IconName = keyof typeof ICONS;
+export declare const ICON_NAMES: string[];
+/**
+ * Icon keeps the icon registry inside the UI package so admin contributions can
+ * stay string-based and not depend on React icon components directly.
+ */
+export declare function Icon({ className, name, ...props }: IconProps): import("react").JSX.Element | null;
+export {};
+
+// dist/components/atoms/icon/icon.types.d.ts
+import type { SVGProps } from "react";
+import type { IconName } from "./icon.js";
+export interface IconProps extends SVGProps<SVGSVGElement> {
+    name: IconName;
+}
+
+// dist/components/atoms/icon/index.d.ts
+export * from "./icon.js";
+export * from "./icon.types.js";
+
+// dist/components/atoms/input/index.d.ts
+export * from "./input.js";
+export * from "./input.types.js";
+
+// dist/components/atoms/input/input.d.ts
+import type { InputProps } from "./input.types.js";
+/**
+ * Input follows a compact admin-focused styling with restrained radius and
+ * subtle focus treatment inspired by modern dashboard UIs.
+ */
+export declare const Input: import("react").ForwardRefExoticComponent<InputProps & import("react").RefAttributes<HTMLInputElement>>;
+
+// dist/components/atoms/input/input.types.d.ts
+import type { InputHTMLAttributes, ReactNode } from "react";
+export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+    label?: ReactNode;
+    hint?: ReactNode;
+    error?: ReactNode;
+    containerClassName?: string;
+}
+
+// dist/components/atoms/number-input/index.d.ts
+export * from "./number-input.js";
+export * from "./number-input.types.js";
+
+// dist/components/atoms/number-input/number-input.d.ts
+import type { NumberInputProps } from "./number-input.types.js";
+export declare const NumberInput: import("react").ForwardRefExoticComponent<NumberInputProps & import("react").RefAttributes<HTMLInputElement>>;
+
+// dist/components/atoms/number-input/number-input.types.d.ts
+import type { InputHTMLAttributes, ReactNode } from "react";
+export interface NumberInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "prefix" | "type"> {
+    label?: ReactNode;
+    hint?: ReactNode;
+    error?: ReactNode;
+    prefix?: ReactNode;
+    suffix?: ReactNode;
+    containerClassName?: string;
+}
+
+// dist/components/atoms/radio-group/index.d.ts
+export * from "./radio-group.js";
+export * from "./radio-group.types.js";
+
+// dist/components/atoms/radio-group/radio-group.d.ts
+import type { RadioGroupProps } from "./radio-group.types.js";
+export declare function RadioGroup({ className, error, hint, label, name, onValueChange, options, orientation, value, ...props }: RadioGroupProps): import("react").JSX.Element;
+
+// dist/components/atoms/radio-group/radio-group.types.d.ts
+import type { FieldsetHTMLAttributes, ReactNode } from "react";
+export interface RadioOption {
+    description?: ReactNode;
+    disabled?: boolean;
+    label: ReactNode;
+    value: string;
+}
+export interface RadioGroupProps extends Omit<FieldsetHTMLAttributes<HTMLFieldSetElement>, "onChange"> {
+    label?: ReactNode;
+    hint?: ReactNode;
+    error?: ReactNode;
+    name: string;
+    onValueChange?: (value: string) => void;
+    options: RadioOption[];
+    orientation?: "vertical" | "horizontal";
+    value?: string;
+}
+
+// dist/components/atoms/search-field/index.d.ts
+export * from "./search-field.js";
+export * from "./search-field.types.js";
+
+// dist/components/atoms/search-field/search-field.d.ts
+import type { SearchFieldProps } from "./search-field.types.js";
+export declare const SearchField: import("react").ForwardRefExoticComponent<SearchFieldProps & import("react").RefAttributes<HTMLInputElement>>;
+
+// dist/components/atoms/search-field/search-field.types.d.ts
+import type { InputHTMLAttributes } from "react";
+export interface SearchFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
+    clearLabel?: string;
+    searchLabel?: string;
+}
+
+// dist/components/atoms/select/index.d.ts
+export * from "./select.js";
+export * from "./select.types.js";
+
+// dist/components/atoms/select/select.d.ts
+import type { SelectProps } from "./select.types.js";
+export declare const Select: import("react").ForwardRefExoticComponent<SelectProps & import("react").RefAttributes<HTMLSelectElement>>;
+
+// dist/components/atoms/select/select.types.d.ts
+import type { PropsWithChildren, ReactNode, SelectHTMLAttributes } from "react";
+export interface SelectProps extends PropsWithChildren, SelectHTMLAttributes<HTMLSelectElement> {
+    label?: ReactNode;
+    hint?: ReactNode;
+    error?: ReactNode;
+    containerClassName?: string;
+}
+
+// dist/components/atoms/switch/index.d.ts
+export * from "./switch.js";
+export * from "./switch.types.js";
+
+// dist/components/atoms/switch/switch.d.ts
+import type { SwitchProps } from "./switch.types.js";
+export declare const Switch: import("react").ForwardRefExoticComponent<SwitchProps & import("react").RefAttributes<HTMLInputElement>>;
+
+// dist/components/atoms/switch/switch.types.d.ts
+import type { InputHTMLAttributes, ReactNode } from "react";
+export interface SwitchProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
+    compact?: boolean;
+    label: ReactNode;
+    description?: ReactNode;
+    error?: ReactNode;
+}
+
+// dist/components/atoms/textarea/index.d.ts
+export * from "./textarea.js";
+export * from "./textarea.types.js";
+
+// dist/components/atoms/textarea/textarea.d.ts
+import type { TextareaProps } from "./textarea.types.js";
+export declare const Textarea: import("react").ForwardRefExoticComponent<TextareaProps & import("react").RefAttributes<HTMLTextAreaElement>>;
+
+// dist/components/atoms/textarea/textarea.types.d.ts
+import type { ReactNode, TextareaHTMLAttributes } from "react";
+export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
+    label?: ReactNode;
+    hint?: ReactNode;
+    error?: ReactNode;
+    containerClassName?: string;
+}
+
+// dist/components/atoms/time-picker/index.d.ts
+export * from "./time-picker.js";
+export * from "./time-picker.types.js";
+
+// dist/components/atoms/time-picker/time-picker.d.ts
+import type { TimePickerProps } from "./time-picker.types.js";
+export declare function TimePicker({ "aria-describedby": ariaDescribedBy, "aria-invalid": ariaInvalid, "aria-label": ariaLabel, className, clearLabel, clearText, confirmLabel, defaultValue, disabled, error, hint, hourLabel, id, label, minuteLabel, minuteStep, name, onValueChange, placeholder, popupLabel, value, ...props }: TimePickerProps): import("react").JSX.Element;
+
+// dist/components/atoms/time-picker/time-picker.types.d.ts
+import type { HTMLAttributes, ReactNode } from "react";
+export interface TimePickerProps extends Omit<HTMLAttributes<HTMLDivElement>, "defaultValue" | "onChange"> {
+    label?: ReactNode;
+    hint?: ReactNode;
+    error?: ReactNode;
+    placeholder?: string;
+    value?: string;
+    defaultValue?: string;
+    onValueChange?: (value: string) => void;
+    disabled?: boolean;
+    minuteStep?: number;
+    name?: string;
+    popupLabel?: string;
+    hourLabel?: string;
+    minuteLabel?: string;
+    clearLabel?: string;
+    clearText?: string;
+    confirmLabel?: string;
+}
+
+// dist/components/molecules/button-group/button-group.d.ts
+import type { ButtonGroupProps } from "./button-group.types.js";
+export declare function ButtonGroup({ children, className, orientation, wrap, ...props }: ButtonGroupProps): import("react").JSX.Element;
+
+// dist/components/molecules/button-group/button-group.types.d.ts
+import type { HTMLAttributes, PropsWithChildren } from "react";
+export interface ButtonGroupProps extends PropsWithChildren, HTMLAttributes<HTMLDivElement> {
+    orientation?: "horizontal" | "vertical";
+    wrap?: boolean;
+}
+
+// dist/components/molecules/button-group/index.d.ts
+export * from "./button-group.js";
+export * from "./button-group.types.js";
+
+// dist/components/molecules/card/card.d.ts
+import type { HTMLAttributes, PropsWithChildren } from "react";
+import type { CardHeadingProps, CardProps } from "./card.types.js";
+/**
+ * Card mirrors the dashboard surfaces: light border, moderate radius, and a
+ * quiet shadow so data modules stay separated without feeling heavy.
+ */
+export declare function Card({ children, className, title, eyebrow, elevation, headingLevel, padding, ...props }: CardProps): import("react").JSX.Element;
+export declare function CardHeader({ children, className, ...props }: PropsWithChildren<HTMLAttributes<HTMLDivElement>>): import("react").JSX.Element;
+/** Canonical heading used by operational cards and dashboard widgets. */
+export declare function CardHeading({ actions, className, description, icon, headingLevel, title, ...props }: CardHeadingProps): import("react").JSX.Element;
+export declare function CardTitle({ as: Heading, children, className, ...props }: PropsWithChildren<HTMLAttributes<HTMLHeadingElement>> & {
+    as?: "h2" | "h3" | "h4";
+}): import("react").JSX.Element;
+export declare function CardDescription({ children, className, ...props }: PropsWithChildren<HTMLAttributes<HTMLParagraphElement>>): import("react").JSX.Element;
+export declare function CardContent({ children, className, ...props }: PropsWithChildren<HTMLAttributes<HTMLDivElement>>): import("react").JSX.Element;
+export declare function CardActions({ children, className, ...props }: PropsWithChildren<HTMLAttributes<HTMLDivElement>>): import("react").JSX.Element;
+
+// dist/components/molecules/card/card.types.d.ts
+import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
+import type { IconName } from "../../atoms/icon/icon.js";
+export interface CardProps extends PropsWithChildren, Omit<HTMLAttributes<HTMLDivElement>, "title"> {
+    title?: ReactNode;
+    eyebrow?: ReactNode;
+    headingLevel?: 2 | 3 | 4;
+    /** Set to none when composing the card with CardHeader, CardContent and CardActions. */
+    padding?: "md" | "none";
+    elevation?: "none" | "sm";
+}
+export interface CardHeadingProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
+    title: ReactNode;
+    description?: ReactNode;
+    icon?: IconName;
+    actions?: ReactNode;
+    headingLevel?: 2 | 3 | 4;
+}
+
+// dist/components/molecules/card/index.d.ts
+export * from "./card.js";
+export * from "./card.types.js";
+
+// dist/components/molecules/centered-panel/centered-panel.d.ts
+import type { CenteredPanelProps } from "./centered-panel.types.js";
+export declare function CenteredPanel({ children, title, description, eyebrow }: CenteredPanelProps): import("react").JSX.Element;
+
+// dist/components/molecules/centered-panel/centered-panel.types.d.ts
+import type { PropsWithChildren, ReactNode } from "react";
+export type CenteredPanelProps = PropsWithChildren<{
+    title: ReactNode;
+    description?: ReactNode;
+    eyebrow?: ReactNode;
+}>;
+
+// dist/components/molecules/centered-panel/index.d.ts
+export * from "./centered-panel.js";
+export type * from "./centered-panel.types.js";
+
+// dist/components/molecules/color-swatch-grid/color-swatch-grid.d.ts
+import type { ColorSwatchGridProps } from "./color-swatch-grid.types.js";
+/** Accessible palette grid with no assumptions about the consuming domain. */
+export declare function ColorSwatchGrid({ disabled, label, onSelect, options, renderSwatch, selected }: ColorSwatchGridProps): import("react").JSX.Element;
+
+// dist/components/molecules/color-swatch-grid/color-swatch-grid.types.d.ts
+import type { ReactNode } from "react";
+export interface ColorSwatchOption {
+    value: string;
+    label: string;
+    backgroundColor: string;
+    foregroundColor?: string;
+}
+export interface ColorSwatchGridProps {
+    label: string;
+    options: readonly ColorSwatchOption[];
+    selected?: string;
+    onSelect: (value: string) => void;
+    disabled?: boolean;
+    renderSwatch?: (option: ColorSwatchOption) => ReactNode;
+}
+
+// dist/components/molecules/color-swatch-grid/index.d.ts
+export * from "./color-swatch-grid.js";
+export * from "./color-swatch-grid.types.js";
+
+// dist/components/molecules/combobox/combobox.d.ts
+import type { ComboboxProps } from "./combobox.types.js";
+export declare function Combobox({ "aria-describedby": ariaDescribedBy, "aria-label": ariaLabel, "aria-labelledby": ariaLabelledBy, allowClear, className, clearLabel, closeOptionsLabel, defaultValue, disabled, emptyText, error, hint, id, label, name, onValueChange, openOptionsLabel, options, placeholder, searchPlaceholder, value, ...props }: ComboboxProps): import("react").JSX.Element;
+
+// dist/components/molecules/combobox/combobox.types.d.ts
+import type { HTMLAttributes, ReactNode } from "react";
+import type { IconName } from "../../atoms/icon/icon.js";
+export interface ComboboxOption {
+    value: string;
+    label: string;
+    description?: ReactNode;
+    meta?: ReactNode;
+    keywords?: string[];
+    icon?: IconName;
+    disabled?: boolean;
+}
+export interface ComboboxProps extends Omit<HTMLAttributes<HTMLDivElement>, "onChange"> {
+    options: ComboboxOption[];
+    value?: string;
+    defaultValue?: string;
+    onValueChange?: (value: string) => void;
+    placeholder?: string;
+    searchPlaceholder?: string;
+    emptyText?: string;
+    label?: ReactNode;
+    hint?: ReactNode;
+    error?: ReactNode;
+    id?: string;
+    name?: string;
+    disabled?: boolean;
+    allowClear?: boolean;
+    clearLabel?: string;
+    closeOptionsLabel?: string;
+    openOptionsLabel?: string;
+}
+
+// dist/components/molecules/combobox/index.d.ts
+export * from "./combobox.js";
+export * from "./combobox.types.js";
+
+// dist/components/molecules/context-menu/context-menu.d.ts
+import { type PropsWithChildren } from "react";
+import type { ContextMenuProps } from "./context-menu.types.js";
+export { DropdownMenuItem as ContextMenuItem, DropdownMenuSeparator as ContextMenuSeparator } from "../dropdown-menu/dropdown-menu.js";
+/** An anchored menu with shared menu items, keyboard navigation and viewport bounds. */
+export declare function ContextMenu({ children, label, x, y, onClose }: PropsWithChildren<ContextMenuProps>): import("react").JSX.Element;
+
+// dist/components/molecules/context-menu/context-menu.types.d.ts
+export interface ContextMenuProps {
+    label: string;
+    x: number;
+    y: number;
+    onClose: () => void;
+}
+
+// dist/components/molecules/context-menu/index.d.ts
+export * from "./context-menu.js";
+export type * from "./context-menu.types.js";
+
+// dist/components/molecules/dialog/dialog.d.ts
+import type { DialogProps } from "./dialog.types.js";
+/**
+ * Dialog is a lightweight in-repo modal primitive used for admin create/edit
+ * flows without introducing an external headless UI dependency.
+ */
+export declare function Dialog({ children, description, eyebrow, closeLabel, closeShortcutLabel, closeVariant, chrome, footer, headerActions, onClose, open, title, variant, width }: DialogProps): import("react").JSX.Element | null;
+
+// dist/components/molecules/dialog/dialog.types.d.ts
+import type { PropsWithChildren, ReactNode } from "react";
+export interface DialogProps extends PropsWithChildren {
+    open: boolean;
+    title: ReactNode;
+    description?: ReactNode;
+    onClose: () => void;
+    footer?: ReactNode;
+    headerActions?: ReactNode;
+    width?: "md" | "lg" | "xl" | "fullscreen";
+    variant?: "modal" | "drawer";
+    chrome?: "standard" | "workspace";
+    eyebrow?: ReactNode;
+    closeLabel?: string;
+    closeShortcutLabel?: string;
+    closeVariant?: "button" | "icon";
+}
+
+// dist/components/molecules/dialog/index.d.ts
+export * from "./dialog.js";
+export * from "./dialog.types.js";
+
+// dist/components/molecules/disclosure/disclosure.d.ts
+import type { DisclosureProps } from "./disclosure.types.js";
+export declare function Disclosure({ children, className, contentClassName, summary, summaryClassName, ...props }: DisclosureProps): import("react").JSX.Element;
+
+// dist/components/molecules/disclosure/disclosure.types.d.ts
+import type { DetailsHTMLAttributes, ReactNode } from "react";
+export interface DisclosureProps extends DetailsHTMLAttributes<HTMLDetailsElement> {
+    summary: ReactNode;
+    contentClassName?: string;
+    summaryClassName?: string;
+}
+
+// dist/components/molecules/disclosure/index.d.ts
+export * from "./disclosure.js";
+export * from "./disclosure.types.js";
+
+// dist/components/molecules/dropdown-menu/dropdown-menu.d.ts
+import { type PropsWithChildren } from "react";
+import type { DropdownMenuItemProps, DropdownMenuLabelProps, DropdownMenuProps } from "./dropdown-menu.types.js";
+export declare function DropdownMenu({ align, children, className, contentClassName, defaultOpen, menuLabel, onOpenChange, open, side, trigger, ...props }: PropsWithChildren<DropdownMenuProps>): import("react").JSX.Element;
+export declare function DropdownMenuLabel({ children, className, ...props }: DropdownMenuLabelProps): import("react").JSX.Element;
+export declare function DropdownMenuSeparator({ className, ...props }: DropdownMenuLabelProps): import("react").JSX.Element;
+export declare function DropdownMenuItem({ children, className, closeOnSelect, description, icon, onClick, title, tone, ...props }: PropsWithChildren<DropdownMenuItemProps>): import("react").JSX.Element;
+
+// dist/components/molecules/dropdown-menu/dropdown-menu.types.d.ts
+import type { ButtonHTMLAttributes, HTMLAttributes, PropsWithChildren, ReactNode } from "react";
+import type { IconName } from "../../atoms/icon/icon.js";
+export interface DropdownMenuProps extends HTMLAttributes<HTMLDivElement> {
+    trigger: ReactNode;
+    align?: "start" | "end";
+    side?: "top" | "bottom";
+    contentClassName?: string;
+    open?: boolean;
+    defaultOpen?: boolean;
+    onOpenChange?: (open: boolean) => void;
+    menuLabel?: string;
+}
+export interface DropdownMenuItemProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "title"> {
+    icon?: IconName;
+    title?: ReactNode;
+    description?: ReactNode;
+    tone?: "neutral" | "danger";
+    closeOnSelect?: boolean;
+}
+export type DropdownMenuLabelProps = PropsWithChildren<HTMLAttributes<HTMLDivElement>>;
+
+// dist/components/molecules/dropdown-menu/index.d.ts
+export * from "./dropdown-menu.js";
+export * from "./dropdown-menu.types.js";
+
+// dist/components/molecules/feedback/feedback.d.ts
+import type { ReactNode } from "react";
+import type { EmptyStateProps, FeedbackBannerProps } from "./feedback.types.js";
+export declare function FeedbackBanner({ "aria-live": ariaLive, className, message, role, title, tone, ...props }: FeedbackBannerProps): import("react").JSX.Element;
+export declare function ErrorBanner({ message, ...props }: Omit<FeedbackBannerProps, "tone" | "message"> & {
+    message: ReactNode;
+}): import("react").JSX.Element;
+export declare function EmptyState({ action, children, className, text, title, ...props }: EmptyStateProps): import("react").JSX.Element;
+
+// dist/components/molecules/feedback/feedback.types.d.ts
+import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
+export interface FeedbackBannerProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
+    title?: ReactNode;
+    message: ReactNode;
+    tone?: "neutral" | "info" | "success" | "warning" | "danger";
+}
+export interface EmptyStateProps extends PropsWithChildren<Omit<HTMLAttributes<HTMLDivElement>, "title">> {
+    title?: ReactNode;
+    text: ReactNode;
+    action?: ReactNode;
+}
+
+// dist/components/molecules/feedback/index.d.ts
+export * from "./feedback.js";
+export * from "./feedback.types.js";
+
+// dist/components/molecules/info-card/index.d.ts
+export * from "./info-card.js";
+export * from "./info-card.types.js";
+
+// dist/components/molecules/info-card/info-card.d.ts
+import type { InfoCardProps } from "./info-card.types.js";
+export declare function InfoCard({ action, children, className, description, eyebrow, title, tone, ...props }: InfoCardProps): import("react").JSX.Element;
+
+// dist/components/molecules/info-card/info-card.types.d.ts
+import type { HTMLAttributes, ReactNode } from "react";
+export interface InfoCardProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
+    title?: ReactNode;
+    description?: ReactNode;
+    eyebrow?: ReactNode;
+    action?: ReactNode;
+    tone?: "default" | "soft" | "dashed";
+}
+
+// dist/components/molecules/json-view/index.d.ts
+export * from "./json-view.js";
+export * from "./json-view.types.js";
+
+// dist/components/molecules/json-view/json-view.d.ts
+import type { JsonViewDialogProps, JsonViewProps } from "./json-view.types.js";
+/**
+ * JsonView gives admin operators an inspectable structured viewer for runtime
+ * payloads, configuration documents, and debug snapshots.
+ */
+export declare function JsonView({ className, collapseAllLabel, copiedLabel, copyErrorLabel, copyLabel, defaultExpandedDepth, expandAllLabel, showToolbar, title, value, ...props }: JsonViewProps): import("react").JSX.Element;
+export declare function JsonViewDialog({ closeLabel, closeShortcutLabel, description, onClose, open, payloadTitle, title, value, variant, width }: JsonViewDialogProps): import("react").JSX.Element;
+
+// dist/components/molecules/json-view/json-view.types.d.ts
+import type { HTMLAttributes } from "react";
+import type { DialogProps } from "../dialog/dialog.types.js";
+export interface JsonViewProps extends HTMLAttributes<HTMLElement> {
+    copiedLabel?: string;
+    copyErrorLabel?: string;
+    copyLabel?: string;
+    defaultExpandedDepth?: number;
+    expandAllLabel?: string;
+    collapseAllLabel?: string;
+    showToolbar?: boolean;
+    title?: string;
+    value: unknown;
+}
+export interface JsonViewDialogProps {
+    closeLabel?: string;
+    closeShortcutLabel?: string;
+    description?: string;
+    onClose: () => void;
+    open: boolean;
+    payloadTitle?: string;
+    title: string;
+    value: unknown;
+    variant?: DialogProps["variant"];
+    width?: DialogProps["width"];
+}
+
+// dist/components/molecules/mobile-record/index.d.ts
+export * from "./mobile-record.js";
+export * from "./mobile-record.types.js";
+
+// dist/components/molecules/mobile-record/mobile-record.d.ts
+import type { HTMLAttributes, PropsWithChildren } from "react";
+import type { MobileRecordCardProps, MobileRecordFieldProps } from "./mobile-record.types.js";
+export declare function MobileRecordList({ children, className, ...props }: PropsWithChildren<HTMLAttributes<HTMLDivElement>>): import("react").JSX.Element;
+export declare function MobileRecordCard({ actions, badges, children, className, subtitle, title }: MobileRecordCardProps): import("react").JSX.Element;
+export declare function MobileRecordField({ className, label, value, ...props }: MobileRecordFieldProps): import("react").JSX.Element;
+
+// dist/components/molecules/mobile-record/mobile-record.types.d.ts
+import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
+export interface MobileRecordCardProps extends PropsWithChildren {
+    title: ReactNode;
+    subtitle?: ReactNode;
+    badges?: ReactNode;
+    actions?: ReactNode;
+    className?: string;
+}
+export interface MobileRecordFieldProps extends HTMLAttributes<HTMLDivElement> {
+    label: ReactNode;
+    value: ReactNode;
+}
+
+// dist/components/molecules/notification/index.d.ts
+export * from "./notification.js";
+export * from "./notification.types.js";
+
+// dist/components/molecules/notification/notification.d.ts
+import type { NotificationProps, NotificationStackProps } from "./notification.types.js";
+export declare function Notification({ action, "aria-live": ariaLive, className, description, dismissLabel, icon, meta, onDismiss, role, title, tone, ...props }: NotificationProps): import("react").JSX.Element;
+export declare function NotificationStack({ children, className, ...props }: NotificationStackProps): import("react").JSX.Element;
+
+// dist/components/molecules/notification/notification.types.d.ts
+import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
+import type { IconName } from "../../atoms/icon/icon.js";
+export type NotificationTone = "neutral" | "info" | "success" | "warning" | "danger";
+export interface NotificationProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
+    title?: ReactNode;
+    description?: ReactNode;
+    tone?: NotificationTone;
+    icon?: IconName | null;
+    meta?: ReactNode;
+    action?: ReactNode;
+    onDismiss?: () => void;
+    dismissLabel?: string;
+}
+export type NotificationStackProps = PropsWithChildren<HTMLAttributes<HTMLDivElement>>;
+
+// dist/components/molecules/page-canvas/index.d.ts
+export * from "./page-canvas.js";
+export type * from "./page-canvas.types.js";
+
+// dist/components/molecules/page-canvas/page-canvas.d.ts
+import type { PageCanvasProps } from "./page-canvas.types.js";
+/** Page spacing belongs to the library; domain code only chooses content width. */
+export declare function PageCanvas({ width, className, ...props }: PageCanvasProps): import("react").JSX.Element;
+
+// dist/components/molecules/page-canvas/page-canvas.types.d.ts
+import type { HTMLAttributes } from "react";
+export interface PageCanvasProps extends HTMLAttributes<HTMLDivElement> {
+    width?: "full" | "form" | "document";
+}
+
+// dist/components/molecules/page-section/index.d.ts
+export * from "./page-section.js";
+export * from "./page-section.types.js";
+
+// dist/components/molecules/page-section/page-section.d.ts
+import type { HTMLAttributes, PropsWithChildren } from "react";
+import type { ContentSectionProps, PageHeaderProps } from "./page-section.types.js";
+export declare function PageHeader({ actions, className, description, eyebrow, title, ...props }: PageHeaderProps): import("react").JSX.Element;
+export declare function ActionBar({ children, className, ...props }: PropsWithChildren<HTMLAttributes<HTMLDivElement>>): import("react").JSX.Element;
+/** A quiet, divider-led section for long document and form pages. */
+export declare function ContentSection({ actions, children, className, description, eyebrow, headingLevel, title, ...props }: ContentSectionProps): import("react").JSX.Element;
+
+// dist/components/molecules/page-section/page-section.types.d.ts
+import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
+export interface PageHeaderProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
+    eyebrow?: ReactNode;
+    title: ReactNode;
+    description?: ReactNode;
+    actions?: ReactNode;
+}
+export interface ContentSectionProps extends PropsWithChildren<Omit<HTMLAttributes<HTMLElement>, "title">> {
+    eyebrow?: ReactNode;
+    title: ReactNode;
+    description?: ReactNode;
+    actions?: ReactNode;
+    headingLevel?: 2 | 3 | 4;
+}
+
+// dist/components/molecules/pagination/index.d.ts
+export * from "./pagination.js";
+export * from "./pagination.types.js";
+
+// dist/components/molecules/pagination/pagination.d.ts
+import type { PaginationProps } from "./pagination.types.js";
+export declare function Pagination({ className, mobilePageLabel, nextLabel, onPageChange, onPageSizeChange, page, pageSize, pageSizeOptions, pageLabel, pageSizeLabel, paginationLabel, previousLabel, siblingCount, summaryLabel, totalItems, ...props }: PaginationProps): import("react").JSX.Element;
+
+// dist/components/molecules/pagination/pagination.types.d.ts
+import type { HTMLAttributes } from "react";
+export interface PaginationProps extends HTMLAttributes<HTMLElement> {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    onPageChange?: (page: number) => void;
+    onPageSizeChange?: (pageSize: number) => void;
+    pageSizeOptions?: number[];
+    siblingCount?: number;
+    previousLabel?: string;
+    nextLabel?: string;
+    paginationLabel?: string;
+    pageLabel?: (page: number) => string;
+    pageSizeLabel?: string;
+    mobilePageLabel?: (page: number, totalPages: number) => string;
+    summaryLabel?: (params: {
+        start: number;
+        end: number;
+        totalItems: number;
+    }) => string;
+}
+
+// dist/components/molecules/property-list/index.d.ts
+export * from "./property-list.js";
+export * from "./property-list.types.js";
+
+// dist/components/molecules/property-list/property-list.d.ts
+import type { PropertyItemProps, PropertyListProps } from "./property-list.types.js";
+export declare function PropertyList({ children, className, columns, variant, ...props }: PropertyListProps): import("react").JSX.Element;
+export declare function PropertyItem({ className, hint, label, value, ...props }: PropertyItemProps): import("react").JSX.Element;
+
+// dist/components/molecules/property-list/property-list.types.d.ts
+import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
+export interface PropertyListProps extends PropsWithChildren<HTMLAttributes<HTMLDListElement>> {
+    columns?: 1 | 2 | 3;
+    variant?: "cards" | "linear" | "key-value";
+}
+export interface PropertyItemProps extends HTMLAttributes<HTMLDivElement> {
+    label: ReactNode;
+    value: ReactNode;
+    hint?: ReactNode;
+}
+
+// dist/components/molecules/selectable-card/index.d.ts
+export * from "./selectable-card.js";
+export * from "./selectable-card.types.js";
+
+// dist/components/molecules/selectable-card/selectable-card.d.ts
+import type { SelectableCardProps } from "./selectable-card.types.js";
+export declare const SelectableCard: import("react").ForwardRefExoticComponent<SelectableCardProps & import("react").RefAttributes<HTMLButtonElement>>;
+
+// dist/components/molecules/selectable-card/selectable-card.types.d.ts
+import type { ButtonHTMLAttributes, PropsWithChildren } from "react";
+export interface SelectableCardProps extends PropsWithChildren, ButtonHTMLAttributes<HTMLButtonElement> {
+    selected?: boolean;
+    padding?: "sm" | "md";
+}
+
+// dist/components/molecules/stat-card/index.d.ts
+export * from "./stat-card.js";
+export * from "./stat-card.types.js";
+
+// dist/components/molecules/stat-card/stat-card.d.ts
+import type { StatCardProps } from "./stat-card.types.js";
+export declare function StatCard({ badge, className, description, icon, label, meta, tone, value, ...props }: StatCardProps): import("react").JSX.Element;
+
+// dist/components/molecules/stat-card/stat-card.types.d.ts
+import type { HTMLAttributes, ReactNode } from "react";
+import type { IconName } from "../../atoms/icon/icon.js";
+export type StatCardTone = "neutral" | "info" | "success" | "warning" | "danger";
+export interface StatCardProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
+    label: ReactNode;
+    value: ReactNode;
+    description?: ReactNode;
+    icon?: IconName;
+    meta?: ReactNode;
+    badge?: ReactNode;
+    tone?: StatCardTone;
+}
+
+// dist/components/molecules/stepper/index.d.ts
+export * from "./stepper.js";
+export * from "./stepper.types.js";
+
+// dist/components/molecules/stepper/stepper.d.ts
+import type { StepperProps } from "./stepper.types.js";
+export declare function Stepper({ items, currentStep, ariaLabel }: StepperProps): import("react").JSX.Element;
+
+// dist/components/molecules/stepper/stepper.types.d.ts
+export interface StepperItem {
+    id: string;
+    label: string;
+    description?: string;
+}
+export interface StepperProps {
+    items: readonly StepperItem[];
+    currentStep: string;
+    ariaLabel?: string;
+}
+
+// dist/components/molecules/tabs/index.d.ts
+export { Tabs } from "./tabs.js";
+export type { TabItem, TabsProps } from "./tabs.types.js";
+
+// dist/components/molecules/tabs/tabs.d.ts
+import type { TabsProps } from "./tabs.types.js";
+export declare function Tabs({ ariaLabel, children, className, items, onValueChange, panelClassName, value, ...props }: TabsProps): import("react").JSX.Element;
+
+// dist/components/molecules/tabs/tabs.types.d.ts
+import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
+export interface TabItem {
+    value: string;
+    label: ReactNode;
+    count?: number;
+    disabled?: boolean;
+}
+export interface TabsProps extends PropsWithChildren<Omit<HTMLAttributes<HTMLDivElement>, "onChange">> {
+    items: readonly TabItem[];
+    value: string;
+    onValueChange: (value: string) => void;
+    ariaLabel?: string;
+    panelClassName?: string;
+}
+
+// dist/components/molecules/toast/index.d.ts
+export * from "./toast.js";
+export * from "./toast.types.js";
+
+// dist/components/molecules/toast/toast.d.ts
+import { type ReactNode } from "react";
+import type { ToastContextValue, ToastProviderProps } from "./toast.types.js";
+export declare function ToastProvider({ children, maxVisible, placement }: ToastProviderProps): import("react").JSX.Element;
+export declare function ToastViewport({ children, placement }: {
+    children: ReactNode;
+    placement: NonNullable<ToastProviderProps["placement"]>;
+}): import("react").JSX.Element;
+export declare function useToast(): ToastContextValue;
+
+// dist/components/molecules/toast/toast.types.d.ts
+import type { PropsWithChildren, ReactNode } from "react";
+import type { IconName } from "../../atoms/icon/icon.js";
+import type { NotificationTone } from "../notification/notification.types.js";
+export interface ToastInput {
+    id?: string;
+    title?: ReactNode;
+    description?: ReactNode;
+    tone?: NotificationTone;
+    icon?: IconName | null;
+    meta?: ReactNode;
+    action?: ReactNode;
+    duration?: number;
+}
+export interface ToastRecord extends ToastInput {
+    id: string;
+}
+export interface ToastProviderProps extends PropsWithChildren {
+    placement?: "top-right" | "top-left" | "bottom-right" | "bottom-left";
+    maxVisible?: number;
+}
+export interface ToastContextValue {
+    toasts: readonly ToastRecord[];
+    pushToast: (toast: ToastInput) => string;
+    dismissToast: (id: string) => void;
+    dismissAll: () => void;
+}
+
+// dist/components/molecules/toolbar/index.d.ts
+export * from "./toolbar.js";
+export type * from "./toolbar.types.js";
+
+// dist/components/molecules/toolbar/toolbar.d.ts
+import type { ToolbarButtonProps, ToolbarProps, ToolbarSelectProps } from "./toolbar.types.js";
+/** Compact actions with normal tab navigation, suitable for editors and inspectors. */
+export declare function Toolbar({ label, className, hiddenUntilFocus, wrap, ...props }: ToolbarProps): import("react").JSX.Element;
+export declare const ToolbarButton: import("react").ForwardRefExoticComponent<ToolbarButtonProps & import("react").RefAttributes<HTMLButtonElement>>;
+export declare const ToolbarSelect: import("react").ForwardRefExoticComponent<ToolbarSelectProps & import("react").RefAttributes<HTMLSelectElement>>;
+
+// dist/components/molecules/toolbar/toolbar.types.d.ts
+import type { HTMLAttributes, SelectHTMLAttributes } from "react";
+import type { IconName } from "../../atoms/icon/icon.js";
+import type { ButtonBaseProps } from "../../primitives/button-base/button-base.types.js";
+export interface ToolbarProps extends HTMLAttributes<HTMLDivElement> {
+    label: string;
+    hiddenUntilFocus?: boolean;
+    wrap?: boolean;
+}
+export interface ToolbarButtonProps extends Omit<ButtonBaseProps, "size" | "iconOnly"> {
+    label: string;
+    icon?: IconName;
+}
+export interface ToolbarSelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
+    label: string;
+}
+
+// dist/components/organisms/data-table/data-table.d.ts
+import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
+import type { DataTableBodyProps, DataTableCellProps, DataTableHeadCellProps, DataTableHeadProps, DataTableProps, DataTableTableProps } from "./data-table.types.js";
+export declare function DataTable({ children, className, empty, mobile, ...props }: PropsWithChildren<DataTableProps>): import("react").JSX.Element;
+export declare function DataTableTable({ children, className, ...props }: DataTableTableProps): import("react").JSX.Element;
+export declare function DataTableHead({ children, className, ...props }: DataTableHeadProps): import("react").JSX.Element;
+export declare function DataTableBody({ children, className, ...props }: DataTableBodyProps): import("react").JSX.Element;
+export declare function DataTableHeaderRow({ children, className, ...props }: PropsWithChildren<HTMLAttributes<HTMLTableRowElement>>): import("react").JSX.Element;
+export declare function DataTableHeadCell({ children, className, ...props }: DataTableHeadCellProps): import("react").JSX.Element;
+export declare function DataTableRow({ children, className, ...props }: PropsWithChildren<HTMLAttributes<HTMLTableRowElement>>): import("react").JSX.Element;
+export declare function DataTableCell({ children, className, ...props }: DataTableCellProps): import("react").JSX.Element;
+export declare function DataTablePrimaryCell({ children, className, meta, ...props }: DataTableCellProps & {
+    meta?: ReactNode;
+}): import("react").JSX.Element;
+
+// dist/components/organisms/data-table/data-table.types.d.ts
+import type { HTMLAttributes, PropsWithChildren, ReactNode, TableHTMLAttributes, TdHTMLAttributes, ThHTMLAttributes } from "react";
+export interface DataTableProps extends HTMLAttributes<HTMLDivElement> {
+    empty?: ReactNode;
+    mobile?: ReactNode;
+}
+export type DataTableTableProps = PropsWithChildren<TableHTMLAttributes<HTMLTableElement>>;
+export type DataTableHeadProps = PropsWithChildren<HTMLAttributes<HTMLTableSectionElement>>;
+export type DataTableBodyProps = PropsWithChildren<HTMLAttributes<HTMLTableSectionElement>>;
+export type DataTableCellProps = PropsWithChildren<TdHTMLAttributes<HTMLTableCellElement>>;
+export type DataTableHeadCellProps = PropsWithChildren<ThHTMLAttributes<HTMLTableCellElement>>;
+
+// dist/components/organisms/data-table/index.d.ts
+export * from "./data-table.js";
+export * from "./data-table.types.js";
+
+// dist/components/organisms/detail-section/detail-section.d.ts
+import type { DetailSectionProps } from "./detail-section.types.js";
+export declare function DetailSection({ actions, children, className, description, eyebrow, headingLevel, title, ...props }: DetailSectionProps): import("react").JSX.Element;
+
+// dist/components/organisms/detail-section/detail-section.types.d.ts
+import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
+export interface DetailSectionProps extends PropsWithChildren<Omit<HTMLAttributes<HTMLDivElement>, "title">> {
+    title: ReactNode;
+    description?: ReactNode;
+    actions?: ReactNode;
+    eyebrow?: ReactNode;
+    headingLevel?: 2 | 3 | 4;
+}
+
+// dist/components/organisms/detail-section/index.d.ts
+export * from "./detail-section.js";
+export * from "./detail-section.types.js";
+
+// dist/components/organisms/filter-bar/filter-bar.d.ts
+import type { FilterBarProps } from "./filter-bar.types.js";
+export declare function FilterBar({ actions, children, className, summary, ...props }: FilterBarProps): import("react").JSX.Element;
+
+// dist/components/organisms/filter-bar/filter-bar.types.d.ts
+import type { FormHTMLAttributes, PropsWithChildren, ReactNode } from "react";
+export interface FilterBarProps extends PropsWithChildren<FormHTMLAttributes<HTMLFormElement>> {
+    actions?: ReactNode;
+    summary?: ReactNode;
+}
+
+// dist/components/organisms/filter-bar/index.d.ts
+export * from "./filter-bar.js";
+export * from "./filter-bar.types.js";
+
+// dist/components/organisms/form-section/form-section.d.ts
+import type { FormSectionProps } from "./form-section.types.js";
+export declare function FormSection({ actions, children, className, description, error, headingLevel, title, variant, ...props }: FormSectionProps): import("react").JSX.Element;
+
+// dist/components/organisms/form-section/form-section.types.d.ts
+import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
+export interface FormSectionProps extends PropsWithChildren<Omit<HTMLAttributes<HTMLDivElement>, "title">> {
+    title?: ReactNode;
+    description?: ReactNode;
+    error?: ReactNode;
+    actions?: ReactNode;
+    headingLevel?: 2 | 3;
+    variant?: "panel" | "plain";
+}
+
+// dist/components/organisms/form-section/index.d.ts
+export * from "./form-section.js";
+export * from "./form-section.types.js";
+
+// dist/components/organisms/key-value-panel/index.d.ts
+export * from "./key-value-panel.js";
+export * from "./key-value-panel.types.js";
+
+// dist/components/organisms/key-value-panel/key-value-panel.d.ts
+import type { PropsWithChildren } from "react";
+import type { KeyValueItemProps, KeyValuePanelProps } from "./key-value-panel.types.js";
+export declare function KeyValuePanel({ children, className, ...props }: PropsWithChildren<KeyValuePanelProps>): import("react").JSX.Element;
+export declare function KeyValueItem({ className, label, value, ...props }: KeyValueItemProps): import("react").JSX.Element;
+
+// dist/components/organisms/key-value-panel/key-value-panel.types.d.ts
+import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
+export type KeyValuePanelProps = PropsWithChildren<HTMLAttributes<HTMLDivElement>>;
+export interface KeyValueItemProps extends HTMLAttributes<HTMLDivElement> {
+    label: ReactNode;
+    value: ReactNode;
+}
+
+// dist/components/organisms/resource-page/index.d.ts
+export * from "./resource-page.js";
+export * from "./resource-page.types.js";
+
+// dist/components/organisms/resource-page/resource-page.d.ts
+import type { ResourcePageProps } from "./resource-page.types.js";
+export declare function ResourcePage({ children, className, feedback, header, sidebar, toolbar, ...props }: ResourcePageProps): import("react").JSX.Element;
+
+// dist/components/organisms/resource-page/resource-page.types.d.ts
+import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
+export interface ResourcePageProps extends PropsWithChildren<HTMLAttributes<HTMLDivElement>> {
+    header?: ReactNode;
+    toolbar?: ReactNode;
+    feedback?: ReactNode;
+    sidebar?: ReactNode;
+}
+
+// dist/components/organisms/resource-table/index.d.ts
+export * from "./resource-table.js";
+export * from "./resource-table.types.js";
+
+// dist/components/organisms/resource-table/resource-table.d.ts
+/**
+ * Compatibility names for older resource screens. They intentionally reuse the
+ * canonical DataTable primitives so every admin table shares density, borders,
+ * hover states and responsive behaviour.
+ */
+export { DataTable as ResourceTable, DataTableBody as ResourceTableBody, DataTableCell as ResourceTableCell, DataTableHead as ResourceTableHead, DataTableHeadCell as ResourceTableHeadCell, DataTableHeaderRow as ResourceTableHeaderRow, DataTablePrimaryCell as ResourceTablePrimaryCell, DataTableRow as ResourceTableRow, DataTableTable as ResourceTableElement } from "../data-table/data-table.js";
+
+// dist/components/organisms/resource-table/resource-table.types.d.ts
+import type { HTMLAttributes, PropsWithChildren, ReactNode, TableHTMLAttributes, TdHTMLAttributes, ThHTMLAttributes } from "react";
+export interface ResourceTableProps extends HTMLAttributes<HTMLDivElement> {
+    empty?: ReactNode;
+    mobile?: ReactNode;
+}
+export type ResourceTableElementProps = PropsWithChildren<TableHTMLAttributes<HTMLTableElement>>;
+export type ResourceTableCellProps = PropsWithChildren<TdHTMLAttributes<HTMLTableCellElement>>;
+export type ResourceTableHeadCellProps = PropsWithChildren<ThHTMLAttributes<HTMLTableCellElement>>;
+
+// dist/components/organisms/resource-toolbar/index.d.ts
+export * from "./resource-toolbar.js";
+export * from "./resource-toolbar.types.js";
+
+// dist/components/organisms/resource-toolbar/resource-toolbar.d.ts
+import type { ResourceToolbarProps } from "./resource-toolbar.types.js";
+export declare function ResourceToolbar({ actions, className, filters, leading, ...props }: ResourceToolbarProps): import("react").JSX.Element;
+
+// dist/components/organisms/resource-toolbar/resource-toolbar.types.d.ts
+import type { HTMLAttributes, ReactNode } from "react";
+export interface ResourceToolbarProps extends HTMLAttributes<HTMLDivElement> {
+    leading?: ReactNode;
+    filters?: ReactNode;
+    actions?: ReactNode;
+}
+
+// dist/components/organisms/settings-section-layout/index.d.ts
+export * from "./settings-section-layout.js";
+export * from "./settings-section-layout.types.js";
+
+// dist/components/organisms/settings-section-layout/settings-section-layout.d.ts
+import type { SettingsSectionLayoutProps } from "./settings-section-layout.types.js";
+export declare function SettingsSectionLayout({ actions, children, className, description, feedback, headerActions, headingLevel, title, width, ...props }: SettingsSectionLayoutProps): import("react").JSX.Element;
+
+// dist/components/organisms/settings-section-layout/settings-section-layout.types.d.ts
+import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
+export type SettingsSectionWidth = "form" | "wide" | "full";
+export interface SettingsSectionLayoutProps extends PropsWithChildren<Omit<HTMLAttributes<HTMLElement>, "title">> {
+    actions?: ReactNode;
+    description?: ReactNode;
+    feedback?: ReactNode;
+    headerActions?: ReactNode;
+    title: ReactNode;
+    width?: SettingsSectionWidth;
+    headingLevel?: 2 | 3;
+}
+
+// dist/components/organisms/state-stack/index.d.ts
+export * from "./state-stack.js";
+export * from "./state-stack.types.js";
+
+// dist/components/organisms/state-stack/state-stack.d.ts
+import type { PropsWithChildren } from "react";
+import type { StateStackProps } from "./state-stack.types.js";
+export declare function StateStack({ children, className, empty, error, isEmpty, isLoading, loading, ...props }: PropsWithChildren<StateStackProps>): import("react").JSX.Element;
+
+// dist/components/organisms/state-stack/state-stack.types.d.ts
+import type { HTMLAttributes, ReactNode } from "react";
+export interface StateStackProps extends HTMLAttributes<HTMLDivElement> {
+    loading?: ReactNode;
+    error?: ReactNode;
+    empty?: ReactNode;
+    isLoading?: boolean;
+    isEmpty?: boolean;
+}
+
+// dist/components/organisms/summary-grid/index.d.ts
+export * from "./summary-grid.js";
+export * from "./summary-grid.types.js";
+
+// dist/components/organisms/summary-grid/summary-grid.d.ts
+import type { SummaryCardProps, SummaryGridProps } from "./summary-grid.types.js";
+export declare function SummaryGrid({ children, className, ...props }: SummaryGridProps): import("react").JSX.Element;
+export declare function SummaryCard({ badge, className, description, label, value, ...props }: SummaryCardProps): import("react").JSX.Element;
+
+// dist/components/organisms/summary-grid/summary-grid.types.d.ts
+import type { HTMLAttributes, PropsWithChildren, ReactNode } from "react";
+export type SummaryGridProps = PropsWithChildren<HTMLAttributes<HTMLDivElement>>;
+/** @deprecated Prefer StatCard for new metric summaries. */
+export interface SummaryCardProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
+    label: ReactNode;
+    value: ReactNode;
+    description?: ReactNode;
+    badge?: ReactNode;
+}
+
+// dist/components/primitives/button-base/button-base.d.ts
+import type { ButtonBaseProps } from "./button-base.types.js";
+export declare function getButtonBaseClassName({ className, iconOnly, size, variant }: Pick<ButtonBaseProps, "className" | "iconOnly" | "size" | "variant">): string;
+/**
+ * ButtonBase centralizes the visual grammar for interactive button-like
+ * controls so Button, IconButton, and grouped actions stay aligned.
+ */
+export declare const ButtonBase: import("react").ForwardRefExoticComponent<ButtonBaseProps & import("react").RefAttributes<HTMLButtonElement>>;
+
+// dist/components/primitives/button-base/button-base.types.d.ts
+import type { ButtonHTMLAttributes, PropsWithChildren } from "react";
+export type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger";
+export type ButtonSize = "sm" | "md" | "lg";
+export interface ButtonBaseProps extends PropsWithChildren, ButtonHTMLAttributes<HTMLButtonElement> {
+    variant?: ButtonVariant;
+    size?: ButtonSize;
+    isLoading?: boolean;
+    iconOnly?: boolean;
+}
+
+// dist/components/primitives/button-base/index.d.ts
+export * from "./button-base.js";
+export * from "./button-base.types.js";
+
+// dist/components/primitives/eyebrow/eyebrow.d.ts
+import type { EyebrowProps } from "./eyebrow.types.js";
+export declare function Eyebrow({ children, className, ...props }: EyebrowProps): import("react").JSX.Element;
+
+// dist/components/primitives/eyebrow/eyebrow.types.d.ts
+import type { HTMLAttributes, PropsWithChildren } from "react";
+export type EyebrowProps = PropsWithChildren<HTMLAttributes<HTMLParagraphElement>>;
+
+// dist/components/primitives/eyebrow/index.d.ts
+export * from "./eyebrow.js";
+export * from "./eyebrow.types.js";
+
+// dist/components/primitives/overlay-surface/index.d.ts
+export * from "./overlay-surface.js";
+export * from "./overlay-surface.types.js";
+
+// dist/components/primitives/overlay-surface/overlay-surface.d.ts
+import type { OverlaySurfaceProps } from "./overlay-surface.types.js";
+export declare const OverlaySurface: import("react").ForwardRefExoticComponent<OverlaySurfaceProps & import("react").RefAttributes<HTMLDivElement>>;
+
+// dist/components/primitives/overlay-surface/overlay-surface.types.d.ts
+import type { HTMLAttributes } from "react";
+export type OverlaySurfaceVariant = "popover" | "modal" | "drawer";
+export interface OverlaySurfaceProps extends HTMLAttributes<HTMLDivElement> {
+    variant?: OverlaySurfaceVariant;
+}
+
+// dist/components/primitives/panel/index.d.ts
+export * from "./panel.js";
+export * from "./panel.types.js";
+
+// dist/components/primitives/panel/panel.d.ts
+import type { PanelProps } from "./panel.types.js";
+export declare function Panel({ as: Component, children, className, elevation, radius, tone, ...props }: PanelProps): import("react").JSX.Element;
+
+// dist/components/primitives/panel/panel.types.d.ts
+import type { HTMLAttributes, PropsWithChildren } from "react";
+export interface PanelProps extends PropsWithChildren<HTMLAttributes<HTMLElement>> {
+    as?: "article" | "aside" | "div" | "pre" | "section";
+    tone?: "default" | "soft" | "dashed" | "custom";
+    elevation?: "none" | "sm";
+    radius?: "lg" | "xl";
+}
+
+// dist/components/primitives/text/index.d.ts
+export * from "./text.js";
+export * from "./text.types.js";
+
+// dist/components/primitives/text/text.d.ts
+import type { BodyTextProps } from "./text.types.js";
+export declare function BodyText({ children, className, tone, ...props }: BodyTextProps): import("react").JSX.Element;
+
+// dist/components/primitives/text/text.types.d.ts
+import type { HTMLAttributes, PropsWithChildren } from "react";
+export interface BodyTextProps extends PropsWithChildren<HTMLAttributes<HTMLParagraphElement>> {
+    tone?: "default" | "muted" | "subtle";
+}
+
+// dist/index.d.ts
+export * from "./components/atoms/badge/index.js";
+export * from "./components/atoms/button/index.js";
+export * from "./components/atoms/checkbox/index.js";
+export * from "./components/atoms/date-picker/index.js";
+export * from "./components/atoms/date-time-picker/index.js";
+export * from "./components/atoms/drop-indicator/index.js";
+export * from "./components/atoms/field/index.js";
+export * from "./components/atoms/form-control/index.js";
+export * from "./components/atoms/icon/index.js";
+export * from "./components/atoms/icon-button/index.js";
+export * from "./components/atoms/icon-tile/index.js";
+export * from "./components/atoms/input/index.js";
+export * from "./components/atoms/number-input/index.js";
+export * from "./components/atoms/radio-group/index.js";
+export * from "./components/atoms/search-field/index.js";
+export * from "./components/atoms/select/index.js";
+export * from "./components/atoms/switch/index.js";
+export * from "./components/atoms/textarea/index.js";
+export * from "./components/atoms/time-picker/index.js";
+export * from "./components/molecules/button-group/index.js";
+export * from "./components/molecules/card/index.js";
+export * from "./components/molecules/centered-panel/index.js";
+export * from "./components/molecules/color-swatch-grid/index.js";
+export * from "./components/molecules/combobox/index.js";
+export * from "./components/molecules/context-menu/index.js";
+export * from "./components/molecules/dialog/index.js";
+export * from "./components/molecules/disclosure/index.js";
+export * from "./components/molecules/dropdown-menu/index.js";
+export * from "./components/molecules/feedback/index.js";
+export * from "./components/molecules/info-card/index.js";
+export * from "./components/molecules/json-view/index.js";
+export * from "./components/molecules/mobile-record/index.js";
+export * from "./components/molecules/notification/index.js";
+export * from "./components/molecules/page-canvas/index.js";
+export * from "./components/molecules/page-section/index.js";
+export * from "./components/molecules/pagination/index.js";
+export * from "./components/molecules/property-list/index.js";
+export * from "./components/molecules/selectable-card/index.js";
+export * from "./components/molecules/stat-card/index.js";
+export * from "./components/molecules/stepper/index.js";
+export * from "./components/molecules/tabs/index.js";
+export * from "./components/molecules/toast/index.js";
+export * from "./components/molecules/toolbar/index.js";
+export * from "./components/organisms/data-table/index.js";
+export * from "./components/organisms/detail-section/index.js";
+export * from "./components/organisms/filter-bar/index.js";
+export * from "./components/organisms/form-section/index.js";
+export * from "./components/organisms/key-value-panel/index.js";
+export * from "./components/organisms/resource-page/index.js";
+export * from "./components/organisms/resource-table/index.js";
+export * from "./components/organisms/resource-toolbar/index.js";
+export * from "./components/organisms/settings-section-layout/index.js";
+export * from "./components/organisms/state-stack/index.js";
+export * from "./components/organisms/summary-grid/index.js";
+export * from "./components/primitives/button-base/index.js";
+export * from "./components/primitives/eyebrow/index.js";
+export * from "./components/primitives/overlay-surface/index.js";
+export * from "./components/primitives/panel/index.js";
+export * from "./components/primitives/text/index.js";
+export * from "./shell/admin-shell/index.js";
+export * from "./utils/class-names.js";
+
+// dist/shell/admin-shell/admin-shell.d.ts
+import type { AdminShellProps } from "./admin-shell.types.js";
+/**
+ * AdminShell owns the dashboard frame: responsive sidebar, compact header, and
+ * a plugin-aware navigation surface that stays stable while pages change.
+ */
+export declare function AdminShell({ activeRouteId, activeNavigationParams, children, closeSidebarLabel, collapseSidebarLabel, expandSidebarLabel, headerActions, hideHeader, hiddenNavigationIds, navigation, navigationLabel, onNavigate, openSidebarLabel, sidebarFooter, statusBadges, subtitle, title }: AdminShellProps): import("react").JSX.Element;
+
+// dist/shell/admin-shell/admin-shell.types.d.ts
+import type { PropsWithChildren, ReactNode } from "react";
+export interface AdminShellNavigationItem {
+    id: string;
+    routeId: string;
+    title: string;
+    icon?: string;
+    group?: string;
+    badge?: string;
+    order?: number;
+    params?: Readonly<Record<string, string>>;
+}
+export interface AdminShellStatusBadge {
+    label: string;
+    value: string;
+    tone?: "default" | "success" | "warning";
+}
+export interface AdminShellProps extends PropsWithChildren {
+    title: string;
+    subtitle?: string;
+    activeRouteId: string;
+    activeNavigationParams?: string;
+    navigation: readonly AdminShellNavigationItem[];
+    hiddenNavigationIds?: readonly string[];
+    onNavigate: (routeId: string, params?: URLSearchParams) => void;
+    statusBadges?: readonly AdminShellStatusBadge[];
+    headerActions?: ReactNode;
+    sidebarFooter?: ReactNode;
+    hideHeader?: boolean;
+    navigationLabel?: string;
+    openSidebarLabel?: string;
+    closeSidebarLabel?: string;
+    expandSidebarLabel?: string;
+    collapseSidebarLabel?: string;
+}
+
+// dist/shell/admin-shell/index.d.ts
+export * from "./admin-shell.js";
+export * from "./admin-shell.types.js";
+
+// dist/utils/class-names.d.ts
+/**
+ * Small local class merger used to avoid pulling an external utility package
+ * for a very small need in the admin design system.
+ */
+export declare function cn(...values: Array<string | false | null | undefined>): string;

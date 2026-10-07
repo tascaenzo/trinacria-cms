@@ -1,12 +1,11 @@
-import { EVENT_BUS_TOKEN } from "@trinacria/events";
 import {
   CORE_TOKENS,
   classProvider,
   defineModule,
-  type EntityRegistry,
   factoryProvider,
   httpProvider
 } from "@trinacria-cms/kernel";
+import type { EntityRegistry } from "@trinacria-cms/kernel/runtime";
 import { CorePackCacheModule } from "../cache/cache.module.js";
 import { CORE_PACK_CACHE_SERVICE_TOKEN } from "../cache/cache.tokens.js";
 import { CorePackSecurityModule } from "../security/security.module.js";
@@ -72,7 +71,8 @@ export const CorePackInstallationModule = defineModule({
       CORE_PACK_MANIFEST_PROVISIONING_SERVICE_TOKEN,
       PASSWORD_HASHING_SERVICE_TOKEN,
       SETTINGS_SERVICE_TOKEN,
-      EVENT_BUS_TOKEN
+      CORE_TOKENS.DURABLE_EVENTS,
+      CORE_TOKENS.INSTALLATION_HOST
     ]),
     httpProvider(CORE_PACK_INSTALLATION_CONTROLLER_TOKEN, InstallationController, [
       CORE_PACK_INSTALLATION_SERVICE_TOKEN

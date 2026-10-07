@@ -1,5 +1,11 @@
 # 0020 - Runbook deploy production
 
+Dal 3 ottobre 2026 il playground avvia una sola istanza CMS per default, con plugin
+fidati in-process e senza approvazioni dei collegamenti tra servizi.
+`PLAYGROUND_CLUSTER_ENABLED=true` abilita il profilo multi-istanza. Il replica set Mongo
+serve alle transazioni anche con un solo processo CMS. Vedi il
+[modello standard](../architecture/plugin-platform/trusted-plugin-model.md).
+
 Questo runbook descrive il profilo minimo per portare Trinacria CMS in staging/production in modo
 controllato. Non sostituisce hardening infrastrutturale del provider, ma definisce cio che deve
 essere vero per l'applicazione.
@@ -41,7 +47,6 @@ con backup, verifica su staging e controllo degli stati editoriali.
 | `CMS_PUBLIC_ORIGIN`     | consigliata  | Origine pubblica API/CMS usata anche per link e CSRF trusted origins. |
 | `VITE_CMS_API_BASE_URL` | consigliata  | Base URL usata dal backoffice quando servito separatamente.           |
 | `LOG_FORMAT=json`       | si           | Log strutturati per collector esterno.                                |
-| `CMS_INSTALLED=true`    | post-install | Segnale operativo per checklist; non sostituisce lo stato DB.         |
 
 ### HTTP, reverse proxy, CORS e CSRF
 
@@ -71,7 +76,9 @@ con backup, verifica su staging e controllo degli stati editoriali.
 | --------------------------------- | ----------- | ----------------------------------------------------------------------------- |
 | `CMS_SETTINGS_MASTER_KEY`         | si          | Chiave per secret settings. Deve essere stabile tra restart.                  |
 | `CMS_SETTINGS_MASTER_KEY_VERSION` | consigliata | Versione logica persistita con il ciphertext.                                 |
-| `CMS_SECURE_PAYLOAD_MASTER_KEY`   | consigliata | Chiave separata per secure payload; se assente usa `CMS_SETTINGS_MASTER_KEY`. |
+| `CMS_SECURE_PAYLOAD_ACTIVE_KEY_ID` | si | ID writer attivo del vault A2. |
+| `CMS_SECURE_PAYLOAD_KEYS_JSON` | si | JSON ID → base64 di 32 byte casuali; nessun fallback settings/master. |
+| `CMS_SECURE_PAYLOAD_RETENTION_MS` | opzionale | Default 86400000; retention TTL indipendente dall'autorizzazione. |
 
 ### Observability
 
@@ -101,15 +108,15 @@ CMS_JWT_COOKIE_SAME_SITE=lax
 
 CMS_SETTINGS_MASTER_KEY=replace-with-runtime-secret
 CMS_SETTINGS_MASTER_KEY_VERSION=v1
-CMS_SECURE_PAYLOAD_MASTER_KEY=replace-with-runtime-secret
+CMS_SECURE_PAYLOAD_ACTIVE_KEY_ID=v1
+CMS_SECURE_PAYLOAD_KEYS_JSON='{"v1":"<base64-of-32-random-bytes-from-secret-manager>"}'
 
 LOG_FORMAT=json
 OBSERVABILITY_TOKEN=replace-with-runtime-secret
-CMS_INSTALLED=true
 ```
 
 Nota: `CMS_JWT_SECRET_FILE` e supportato dal playground. Per `CMS_SETTINGS_MASTER_KEY` e
-`CMS_SECURE_PAYLOAD_MASTER_KEY`, usare il secret manager della piattaforma per iniettare valori come
+`CMS_SECURE_PAYLOAD_KEYS_JSON`, usare il secret manager della piattaforma per iniettare valori come
 variabili ambiente. Non committare mai valori reali.
 
 ## Mongo
@@ -222,7 +229,7 @@ infrastrutturali.
 - [ ] `CMS_CSRF_TRUSTED_ORIGINS` esplicito se si usano cookie
 - [ ] `CMS_JWT_SECRET` o `CMS_JWT_SECRET_FILE` forte
 - [ ] `CMS_SETTINGS_MASTER_KEY` stabile e secret
-- [ ] `CMS_SECURE_PAYLOAD_MASTER_KEY` stabile o consapevolmente condiviso con settings master key
+- [ ] Keyring vault esplicito, tutte le chiavi richieste da record/backup presenti e active ID corretto
 - [ ] `OBSERVABILITY_TOKEN` configurato
 - [ ] `/ready` ok
 - [ ] `/health` ok o degraded spiegato
@@ -232,3 +239,12 @@ infrastrutturali.
 - [ ] login/logout admin provati
 - [ ] settings provider email provati
 - [ ] reset password provato senza token nei log/eventi pubblici
+
+
+Per generazione/configurazione valida, CAS, TTL e rotazione completa v1→v2 vedere
+il [runbook vault A2](../architecture/plugin-platform/secure-payload-keyring-runbook.md).
+Il placeholder nell'esempio non è una chiave valida. Non avviare writer senza materiale
+casuale di 32 byte iniettato dal secret manager.
+
+Lo stato di installazione viene letto da Mongo. Per il primo avvio, i controlli e
+la ripresa consultare [Installazione e bootstrap](../specs/core-platform/installation-bootstrap.md).

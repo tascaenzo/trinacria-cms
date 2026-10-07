@@ -47,8 +47,6 @@ const NAVIGATION_EVENT = "trinacria-cms:backoffice-navigation";
 export interface EditorialEntryDetailPageContext {
   cms: CmsClient;
   apiBaseUrl?: string;
-  /** Optional public preview URL. Supports {id} and {slug} placeholders. */
-  previewUrl?: string;
   navigateToRoute?: EditorialNavigator;
 }
 
@@ -58,8 +56,7 @@ type PreviewDevice = "desktop" | "tablet" | "mobile";
 export function EditorialEntryDetailPage({
   apiBaseUrl,
   cms,
-  navigateToRoute,
-  previewUrl
+  navigateToRoute
 }: EditorialEntryDetailPageContext) {
   const entryId = useRouteEntryId();
   const [entry, setEntry] = useState<EditorialEntryRecord | null>(null);
@@ -87,6 +84,9 @@ export function EditorialEntryDetailPage({
   const [isCloseConfirmationOpen, setIsCloseConfirmationOpen] = useState(false);
   const [recoveryDraft, setRecoveryDraft] = useState<EntryDraft | null>(null);
   const [previewDevice, setPreviewDevice] = useState<PreviewDevice>("desktop");
+  const [previewSites, setPreviewSites] = useState<{ siteId: string; origin: string }[]>([]);
+  const [previewSiteId, setPreviewSiteId] = useState("");
+  const [isPublishing, setIsPublishing] = useState(false);
   const { pushToast } = useToast();
   const showEditorialError = useCallback((currentError: unknown, fallback: string) => {
     setError(toEditorialDisplayError(currentError, fallback));
@@ -112,13 +112,9 @@ export function EditorialEntryDetailPage({
     try {
       setIsLoading(true);
       setError(null);
-      const entryResponse = await cms.request<{ data: EditorialEntryRecord }>({
-        method: "GET",
-        path: `/v1/editorial/entries/${entryId}`
-      });
-      const modelResponse = await cms.request<{ data: EditorialContentType }>({
-        method: "GET",
-        path: `/v1/editorial/content-types/${entryResponse.data.contentTypeId}`
+      const entryResponse = await cms.editorial.getEditorialEntry({ path: { id: entryId } });
+      const modelResponse = await cms.editorial.getEditorialContentType({
+        path: { id: entryResponse.data.contentTypeId }
       });
       const serverDraft = toEntryDraft(entryResponse.data);
       setEntry(entryResponse.data);
@@ -144,6 +140,83 @@ export function EditorialEntryDetailPage({
   }, [cms, entryId, resetDraft]);
 
   useEffect(() => void load(), [load]);
+  useEffect(() => {
+    const abort = new AbortController();
+    void cms.preview
+      .listEditorialPreviewSites({ signal: abort.signal })
+      .then((response) => {
+        if (abort.signal.aborted) return;
+        setPreviewSites(response.data);
+        setPreviewSiteId(response.data[0]?.siteId ?? "");
+      })
+      .catch(() => {
+        if (!abort.signal.aborted) setPreviewSites([]);
+      });
+    return () => abort.abort();
+  }, [cms]);
+
+  const republish = async () => {
+    if (!entry?.version || isDirty || isSaving || isPublishing) return;
+    setIsPublishing(true);
+    setError(null);
+    try {
+      const response = await cms.editorial.publishEditorialEntrySnapshot({
+        path: { id: entry.id },
+        body: { expectedVersion: entry.version }
+      });
+      setEntry(response.data);
+      markSaved(toEntryDraft(response.data));
+      pushToast({
+        tone: "success",
+        title: "Sito pubblico",
+        description: "Snapshot ripubblicato.",
+        duration: 4000
+      });
+    } catch (error) {
+      showEditorialError(error, "Ripubblicazione non riuscita. Ricarica il contenuto e riprova.");
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+  const openSitePreview = async () => {
+    if (!entry || isDirty || isSaving || isPublishing || !previewSiteId) return;
+    setIsPublishing(true);
+    setError(null);
+    try {
+      const response = await cms.preview.createEditorialPreviewToken({
+        path: { id: entry.id },
+        body: { siteId: previewSiteId }
+      });
+      const expected = previewSites.find((site) => site.siteId === previewSiteId);
+      if (!expected || response.data.formAction !== `${expected.origin}/preview`)
+        throw new Error("Invalid preview destination");
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = response.data.formAction;
+      form.target = "_blank";
+      form.rel = "noopener";
+      for (const [name, value] of Object.entries({
+        token: response.data.token,
+        siteId: previewSiteId
+      })) {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = name;
+        input.value = value;
+        form.append(input);
+      }
+      document.body.append(form);
+      try {
+        form.submit();
+      } finally {
+        form.remove();
+      }
+    } catch (error) {
+      showEditorialError(error, "Non è stato possibile aprire l’anteprima del sito.");
+    } finally {
+      setIsPublishing(false);
+    }
+  };
 
   const save = useCallback(
     async (mode: "manual" | "auto" = "manual") => {
@@ -153,9 +226,8 @@ export function EditorialEntryDetailPage({
         setIsAutosaving(mode === "auto");
         setError(null);
         setMessage(null);
-        const response = await cms.request<{ data: EditorialEntryRecord }>({
-          method: "PATCH",
-          path: `/v1/editorial/entries/${entry.id}`,
+        const response = await cms.editorial.updateEditorialEntry({
+          path: { id: entry.id },
           body: toEntryUpdatePayload(entry, draftRef.current)
         });
         setEntry(response.data);
@@ -353,6 +425,57 @@ export function EditorialEntryDetailPage({
                     Stato corrente: <strong>{entry.status}</strong>. Salva prima di eseguire una
                     transizione dal desk.
                   </p>
+                  {contentType.delivery?.enabled ? (
+                    <div className="mt-4 grid gap-3">
+                      <p className="text-sm text-(--color-ink-muted)">
+                        Le modifiche salvate restano nella copia di lavoro fino alla
+                        ripubblicazione.
+                      </p>
+                      {entry.status === "published" ? (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          disabled={isDirty || isSaving || isPublishing}
+                          onClick={() => void republish()}
+                        >
+                          Ripubblica sul sito
+                        </Button>
+                      ) : null}
+                      {previewSites.length ? (
+                        <>
+                          <Select
+                            label="Sito di anteprima"
+                            value={previewSiteId}
+                            disabled={isPublishing}
+                            onChange={(event) => setPreviewSiteId(event.currentTarget.value)}
+                          >
+                            {previewSites.map((site) => (
+                              <option key={site.siteId} value={site.siteId}>
+                                {site.siteId}
+                              </option>
+                            ))}
+                          </Select>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            disabled={isDirty || isSaving || isPublishing}
+                            onClick={() => void openSitePreview()}
+                          >
+                            Anteprima sul sito
+                          </Button>
+                        </>
+                      ) : (
+                        <p className="text-sm text-(--color-ink-muted)">
+                          L’anteprima del sito richiede una destinazione configurata dall’operatore.
+                        </p>
+                      )}
+                      {isDirty ? (
+                        <p className="text-sm text-(--color-ink-muted)">
+                          Salva le modifiche prima di aprire l’anteprima o ripubblicare.
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </div>
                 <Input
                   label="Pubblica non prima di"
@@ -412,20 +535,12 @@ export function EditorialEntryDetailPage({
               <div
                 className={`mx-auto min-h-[calc(100vh-8rem)] w-full bg-(--color-surface) transition-[width] ${previewDeviceClass(previewDevice)}`}
               >
-                {resolvePublicPreviewUrl(previewUrl, entry, draft) ? (
-                  <iframe
-                    className="min-h-[calc(100vh-8rem)] w-full border-0 bg-white"
-                    src={resolvePublicPreviewUrl(previewUrl, entry, draft) ?? undefined}
-                    title="Anteprima sito"
-                  />
-                ) : (
-                  <EditorialDocumentPreview
-                    apiBaseUrl={apiBaseUrl}
-                    cms={cms}
-                    document={draft.body}
-                    title={draft.title}
-                  />
-                )}
+                <EditorialDocumentPreview
+                  apiBaseUrl={apiBaseUrl}
+                  cms={cms}
+                  document={draft.body}
+                  title={draft.title}
+                />
               </div>
             </div>
           ) : (
@@ -774,17 +889,6 @@ function previewDeviceClass(device: PreviewDevice) {
   if (device === "mobile") return "max-w-[26rem] border-x border-(--color-border) px-3 py-4";
   if (device === "tablet") return "max-w-[56rem] border-x border-(--color-border) px-5 py-5";
   return "max-w-none";
-}
-
-function resolvePublicPreviewUrl(
-  template: string | undefined,
-  entry: EditorialEntryRecord,
-  draft: EntryDraft
-) {
-  if (!template?.trim()) return null;
-  return template
-    .replaceAll("{id}", encodeURIComponent(entry.id))
-    .replaceAll("{slug}", encodeURIComponent(draft.slug || entry.slug || ""));
 }
 
 function LoadingEditor() {

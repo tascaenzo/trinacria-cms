@@ -15,6 +15,11 @@ import {
   s,
   toOpenApiSchema
 } from "@trinacria-cms/kernel";
+import { getHttpOperationContext } from "@trinacria-cms/kernel/runtime";
+import type {
+  MediaAssetOperations,
+  MediaDirectoryOperations
+} from "../../operations/media-operations.js";
 import { MEDIA_PACK_PLUGIN_ID } from "../../plugin/media-pack.constants.js";
 import {
   MediaAccessUrlResponseSchema,
@@ -87,12 +92,13 @@ export class MediaAssetsController extends HttpController {
   private readonly canManageSettings: HttpMiddleware;
 
   constructor(
-    private readonly assets: MediaAssetsService,
-    private readonly directories: MediaDirectoriesService,
+    private readonly assets: MediaAssetOperations,
+    private readonly directories: MediaDirectoryOperations,
     private readonly providers: MediaProviderRegistry,
     private readonly storageConfig: MediaStorageConfigService,
     auth: JwtAuthService,
-    authz: AuthzService
+    authz: AuthzService,
+    private readonly signedAssets: MediaAssetsService
   ) {
     super();
     this.authenticated = createJwtAuthMiddleware(auth, { requireAdmin: false });
@@ -109,6 +115,7 @@ export class MediaAssetsController extends HttpController {
       .get("/v1/media/assets", this.listAssets, {
         middlewares: [this.authenticated, this.canRead],
         docs: {
+          pluginId: "media-pack",
           summary: "List accessible media assets",
           tags: ["Media"],
           operationId: "listMediaAssets",
@@ -166,6 +173,7 @@ export class MediaAssetsController extends HttpController {
       })
       .get("/v1/media/local/:storageKey", this.deliverLocalAsset, {
         docs: {
+          pluginId: "media-pack",
           summary: "Deliver a local media object using a signed URL",
           tags: ["Media"],
           operationId: "deliverLocalMediaAsset",
@@ -174,7 +182,11 @@ export class MediaAssetsController extends HttpController {
             queryParameter("signature", { type: "string" }, true)
           ],
           responses: {
-            200: { description: "Media bytes", schema: { type: "string", format: "binary" } },
+            200: {
+              description: "Media bytes",
+              contentType: "application/octet-stream",
+              schema: { type: "string", format: "binary" }
+            },
             404: {
               description: "Media object not found",
               schema: toOpenApiSchema(MediaApiErrorResponseSchema)
@@ -293,8 +305,7 @@ export class MediaAssetsController extends HttpController {
 
   private listAssets = async (ctx: HttpContext) => {
     try {
-      const user = getAuthenticatedUser(ctx);
-      const assets = await this.assets.listAssets({
+      const assets = await this.assets.listAssets(getHttpOperationContext(ctx), {
         ...(typeof ctx.query.directoryId === "string"
           ? { directoryId: ctx.query.directoryId }
           : {}),
@@ -302,38 +313,28 @@ export class MediaAssetsController extends HttpController {
         limit: parseQueryNumber(ctx.query.limit),
         offset: parseQueryNumber(ctx.query.offset)
       });
-      const visible = (
-        await Promise.all(
-          assets.map(async (asset) =>
-            (await this.assets.canAccessAsset(asset.id, { userId: user.id }, "read")) ? asset : null
-          )
-        )
-      ).filter((asset): asset is NonNullable<typeof asset> => asset !== null);
-      return responder.list(visible);
+      return responder.list(assets);
     } catch (error) {
       return responder.fromError(error);
     }
   };
 
   private getAsset = async (ctx: HttpContext) => {
-    const asset = await this.readableAsset(ctx);
-    return asset ? responder.success(asset) : responder.notFound("Media asset not found");
+    try {
+      const asset = await this.readableAsset(ctx);
+      return asset ? responder.success(asset) : responder.notFound("Media asset not found");
+    } catch (error) {
+      return responder.fromError(error);
+    }
   };
 
   private updateAsset = async (ctx: HttpContext) => {
     const id = ctx.params.id;
     if (!id) return responder.invalidRequest("Missing asset id");
     try {
-      const user = getAuthenticatedUser(ctx);
-      if (!(await this.assets.canAccessAsset(id, { userId: user.id }, "write"))) return forbidden();
       const input = UpdateAssetSchema.parse(ctx.body);
-      if (
-        input.directoryId &&
-        !(await this.assets.canAccessDirectory(input.directoryId, { userId: user.id }, "write"))
-      ) {
-        return forbidden();
-      }
-      const updated = await this.assets.updateAsset(id, {
+
+      const updated = await this.assets.updateAsset(getHttpOperationContext(ctx), id, {
         ...(input.displayName !== undefined ? { displayName: input.displayName } : {}),
         ...(input.clearDirectory ? { directoryId: null } : {}),
         ...(input.directoryId ? { directoryId: input.directoryId } : {})
@@ -342,7 +343,11 @@ export class MediaAssetsController extends HttpController {
       const asset =
         input.visibility === undefined
           ? updated
-          : await this.assets.updateAssetVisibility(updated.id, input.visibility);
+          : await this.assets.updateAssetVisibility(
+              getHttpOperationContext(ctx),
+              updated.id,
+              input.visibility
+            );
       return asset ? responder.success(asset) : responder.notFound("Media asset not found");
     } catch (error) {
       return responder.fromError(error);
@@ -350,27 +355,28 @@ export class MediaAssetsController extends HttpController {
   };
 
   private deleteAsset = async (ctx: HttpContext) => {
-    const id = ctx.params.id;
-    if (!id) return responder.invalidRequest("Missing asset id");
-    const user = getAuthenticatedUser(ctx);
-    if (!(await this.assets.canAccessAsset(id, { userId: user.id }, "manage"))) return forbidden();
-    const asset = await this.assets.deleteAsset(id);
-    return asset ? responder.success(asset) : responder.notFound("Media asset not found");
+    try {
+      const id = ctx.params.id;
+      if (!id) return responder.invalidRequest("Missing asset id");
+
+      const asset = await this.assets.deleteAsset(getHttpOperationContext(ctx), id);
+      return asset ? responder.success(asset) : responder.notFound("Media asset not found");
+    } catch (error) {
+      return responder.fromError(error);
+    }
   };
 
   private accessUrl = async (ctx: HttpContext) => {
-    const asset = await this.readableAsset(ctx);
-    if (!asset) return responder.notFound("Media asset not found");
-    if (asset.status !== "ready") return responder.invalidRequest("Media asset is not ready");
     try {
+      const asset = await this.readableAsset(ctx);
+      if (!asset) return responder.notFound("Media asset not found");
+      if (asset.status !== "ready") return responder.invalidRequest("Media asset is not ready");
       const expiresInSeconds = parseQueryNumber(ctx.query.expiresInSeconds) ?? 300;
       if (expiresInSeconds < 1 || expiresInSeconds > 3600) {
         return responder.invalidRequest("expiresInSeconds must be between 1 and 3600");
       }
       return responder.success(
-        await this.providers
-          .get(asset.providerId)
-          .createReadUrl({ storageKey: asset.storageKey, expiresInSeconds })
+        await this.assets.accessUrl(getHttpOperationContext(ctx), asset.id, expiresInSeconds)
       );
     } catch (error) {
       return responder.fromError(error);
@@ -378,11 +384,14 @@ export class MediaAssetsController extends HttpController {
   };
 
   private listShares = async (ctx: HttpContext) => {
-    const id = ctx.params.id;
-    if (!id) return responder.invalidRequest("Missing asset id");
-    const user = getAuthenticatedUser(ctx);
-    if (!(await this.assets.canAccessAsset(id, { userId: user.id }, "share"))) return forbidden();
-    return responder.list(await this.assets.listAssetShares(id));
+    try {
+      const id = ctx.params.id;
+      if (!id) return responder.invalidRequest("Missing asset id");
+
+      return responder.list(await this.assets.listAssetShares(getHttpOperationContext(ctx), id));
+    } catch (error) {
+      return responder.fromError(error);
+    }
   };
 
   private deliverLocalAsset = async (ctx: HttpContext) => {
@@ -395,7 +404,7 @@ export class MediaAssetsController extends HttpController {
       if (!(provider instanceof LocalDiskMediaStorageProvider)) {
         return responder.notFound("Local media storage is not configured");
       }
-      const asset = await this.assets.getAssetByStorage("local-disk", storageKey);
+      const asset = await this.signedAssets.getAssetByStorage("local-disk", storageKey);
       if (!asset || asset.status !== "ready") return responder.notFound("Media object not found");
       const contentType = asset.mimeType.startsWith("text/")
         ? `${asset.mimeType}; charset=utf-8`
@@ -434,10 +443,12 @@ export class MediaAssetsController extends HttpController {
     const id = ctx.params.id;
     if (!id) return responder.invalidRequest("Missing asset id");
     try {
-      const user = getAuthenticatedUser(ctx);
-      if (!(await this.assets.canAccessAsset(id, { userId: user.id }, "share"))) return forbidden();
       const input = SharesSchema.parse(ctx.body);
-      const shares = await this.assets.replaceAssetShares(id, user.id, input.grants);
+      const shares = await this.assets.replaceAssetShares(
+        getHttpOperationContext(ctx),
+        id,
+        input.grants
+      );
       return responder.list(shares);
     } catch (error) {
       return responder.fromError(error);
@@ -449,9 +460,7 @@ export class MediaAssetsController extends HttpController {
     const shareId = ctx.params.shareId;
     if (!id || !shareId) return responder.invalidRequest("Missing media asset or share id");
     try {
-      const user = getAuthenticatedUser(ctx);
-      if (!(await this.assets.canAccessAsset(id, { userId: user.id }, "share"))) return forbidden();
-      const removed = await this.assets.removeAssetShare(id, shareId);
+      const removed = await this.assets.removeAssetShare(getHttpOperationContext(ctx), id, shareId);
       return removed
         ? responder.success({ deleted: true })
         : responder.notFound("Media asset share not found");
@@ -462,19 +471,12 @@ export class MediaAssetsController extends HttpController {
 
   private listDirectories = async (ctx: HttpContext) => {
     try {
-      const user = getAuthenticatedUser(ctx);
       const parentId = typeof ctx.query.parentId === "string" ? ctx.query.parentId : undefined;
-      const directories = await this.directories.listDirectories(parentId);
-      const visible = (
-        await Promise.all(
-          directories.map(async (directory) =>
-            (await this.assets.canAccessDirectory(directory.id, { userId: user.id }, "read"))
-              ? directory
-              : null
-          )
-        )
-      ).filter((directory): directory is NonNullable<typeof directory> => directory !== null);
-      return responder.list(visible);
+      const directories = await this.directories.listDirectories(
+        getHttpOperationContext(ctx),
+        parentId
+      );
+      return responder.list(directories);
     } catch (error) {
       return responder.fromError(error);
     }
@@ -482,18 +484,11 @@ export class MediaAssetsController extends HttpController {
 
   private createDirectory = async (ctx: HttpContext) => {
     try {
-      const user = getAuthenticatedUser(ctx);
       const input = DirectorySchema.parse(ctx.body);
       if (!input.name) return responder.invalidRequest("Directory name is required");
-      if (
-        input.parentId &&
-        !(await this.assets.canAccessDirectory(input.parentId, { userId: user.id }, "write"))
-      ) {
-        return forbidden();
-      }
+
       return responder.success(
-        await this.directories.createDirectory({
-          ownerUserId: user.id,
+        await this.directories.createDirectory(getHttpOperationContext(ctx), {
           name: input.name,
           ...(input.parentId ? { parentId: input.parentId } : {}),
           ...(input.visibility ? { visibility: input.visibility } : {}),
@@ -509,19 +504,12 @@ export class MediaAssetsController extends HttpController {
     const id = ctx.params.id;
     if (!id) return responder.invalidRequest("Missing directory id");
     try {
-      const user = getAuthenticatedUser(ctx);
-      const current = await this.directories.getDirectory(id);
+      const current = await this.directories.getDirectory(getHttpOperationContext(ctx), id);
       if (!current) return responder.notFound("Media directory not found");
-      if (!(await this.assets.canAccessDirectory(id, { userId: user.id }, "manage")))
-        return forbidden();
+
       const input = DirectorySchema.parse(ctx.body);
-      if (
-        input.parentId &&
-        !(await this.assets.canAccessDirectory(input.parentId, { userId: user.id }, "write"))
-      ) {
-        return forbidden();
-      }
-      const directory = await this.directories.updateDirectory(id, {
+
+      const directory = await this.directories.updateDirectory(getHttpOperationContext(ctx), id, {
         ...(input.name !== undefined ? { name: input.name } : {}),
         ...(input.clearParent ? { parentId: null } : {}),
         ...(input.parentId ? { parentId: input.parentId } : {}),
@@ -540,12 +528,10 @@ export class MediaAssetsController extends HttpController {
     const id = ctx.params.id;
     if (!id) return responder.invalidRequest("Missing directory id");
     try {
-      const user = getAuthenticatedUser(ctx);
-      const current = await this.directories.getDirectory(id);
+      const current = await this.directories.getDirectory(getHttpOperationContext(ctx), id);
       if (!current) return responder.notFound("Media directory not found");
-      if (!(await this.assets.canAccessDirectory(id, { userId: user.id }, "manage")))
-        return forbidden();
-      const directory = await this.directories.deleteDirectory(id);
+
+      const directory = await this.directories.deleteDirectory(getHttpOperationContext(ctx), id);
       return directory
         ? responder.success(directory)
         : responder.notFound("Media directory not found");
@@ -557,30 +543,29 @@ export class MediaAssetsController extends HttpController {
   private async readableAsset(ctx: HttpContext) {
     const id = ctx.params.id;
     if (!id) return null;
-    const user = getAuthenticatedUser(ctx);
-    if (!(await this.assets.canAccessAsset(id, { userId: user.id }, "read"))) return null;
-    return this.assets.getAsset(id);
+    return this.assets.getAsset(getHttpOperationContext(ctx), id);
   }
 
   private listDirectoryShares = async (ctx: HttpContext) => {
     const id = ctx.params.id;
     if (!id) return responder.invalidRequest("Missing directory id");
-    const user = getAuthenticatedUser(ctx);
-    if (!(await this.assets.canAccessDirectory(id, { userId: user.id }, "share")))
-      return forbidden();
-    return responder.list(await this.assets.listDirectoryShares(id));
+    try {
+      return responder.list(
+        await this.assets.listDirectoryShares(getHttpOperationContext(ctx), id)
+      );
+    } catch (error) {
+      return responder.fromError(error);
+    }
   };
 
   private replaceDirectoryShares = async (ctx: HttpContext) => {
     const id = ctx.params.id;
     if (!id) return responder.invalidRequest("Missing directory id");
     try {
-      const user = getAuthenticatedUser(ctx);
-      if (!(await this.assets.canAccessDirectory(id, { userId: user.id }, "share"))) {
-        return forbidden();
-      }
       const input = SharesSchema.parse(ctx.body);
-      return responder.list(await this.assets.replaceDirectoryShares(id, user.id, input.grants));
+      return responder.list(
+        await this.assets.replaceDirectoryShares(getHttpOperationContext(ctx), id, input.grants)
+      );
     } catch (error) {
       return responder.fromError(error);
     }
@@ -591,11 +576,11 @@ export class MediaAssetsController extends HttpController {
     const shareId = ctx.params.shareId;
     if (!id || !shareId) return responder.invalidRequest("Missing media directory or share id");
     try {
-      const user = getAuthenticatedUser(ctx);
-      if (!(await this.assets.canAccessDirectory(id, { userId: user.id }, "share"))) {
-        return forbidden();
-      }
-      const removed = await this.assets.removeDirectoryShare(id, shareId);
+      const removed = await this.assets.removeDirectoryShare(
+        getHttpOperationContext(ctx),
+        id,
+        shareId
+      );
       return removed
         ? responder.success({ deleted: true })
         : responder.notFound("Media directory share not found");
@@ -603,15 +588,6 @@ export class MediaAssetsController extends HttpController {
       return responder.fromError(error);
     }
   };
-}
-
-function forbidden() {
-  return response(
-    apiError("media_access_denied", "Media object access denied", undefined, {
-      pluginId: MEDIA_PACK_PLUGIN_ID
-    }),
-    { status: 403 }
-  );
 }
 
 function encodeHeaderFilename(value: string) {
@@ -633,6 +609,7 @@ function mediaDocs(
   return {
     summary,
     tags: ["Media"],
+    pluginId: "media-pack",
     operationId,
     security: [{ bearerAuth: [] }],
     ...(requestSchema

@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { ModuleDefinition } from "@trinacria/core";
 import { factoryProvider, TrinacriaApp } from "@trinacria/core";
 import { createEventsPlugin } from "@trinacria/events";
@@ -9,14 +10,16 @@ import type {
 } from "../contracts/plugin-discovery.js";
 import type { PluginRuntime } from "../contracts/plugin-runtime.js";
 import { CORE_TOKENS } from "../tokens/core-tokens.js";
+import { PluginClusterCoordinator } from "./cluster/plugin-cluster.js";
 import { registerAppModules } from "./cms-starter/app-modules.js";
-import { createOpenApiConfig, resolveSwaggerUiConfig } from "./cms-starter/openapi.js";
+import { registerDurableEventHost } from "./cms-starter/durable-event-host.js";
+import { createOpenApiHooks, resolveSwaggerUiConfig } from "./cms-starter/openapi.js";
 import { bootstrapDiscoveredPlugins } from "./cms-starter/plugin-bootstrap.js";
+import { registerPluginNonceHost } from "./cms-starter/plugin-nonce-host.js";
+import { registerSecurePayloadHostProvider } from "./cms-starter/secure-payload-host.js";
 import { createCmsStarterKernelModule } from "./cms-starter/starter-module.js";
-import { SecureEventPayloadCrypto } from "./secure-payloads/secure-event-payloads.crypto.js";
-import { SecureEventPayloadsRepository } from "./secure-payloads/secure-event-payloads.repository.js";
-import { SECURE_EVENT_PAYLOADS_ENTITY } from "./secure-payloads/secure-event-payloads.schemas.js";
-import { SecureEventPayloadsService } from "./secure-payloads/secure-event-payloads.service.js";
+import { MongoDbAdapter } from "./persistence/mongo-db-adapter.js";
+import { InMemoryPluginRuntime } from "./plugin-runtime/in-memory-plugin-runtime.js";
 
 export {
   bootstrapDiscoveredPlugins,
@@ -31,15 +34,38 @@ export { createCmsStarterKernelModule } from "./cms-starter/starter-module.js";
  */
 export async function startCmsApp(options: CmsStarterOptions): Promise<CmsStarterHandle> {
   const app = new TrinacriaApp();
+  let cluster: PluginClusterCoordinator | undefined;
+  if (options.cluster)
+    app.registerGlobalProvider(
+      factoryProvider(
+        CORE_TOKENS.PLUGIN_CLUSTER_COORDINATOR,
+        () =>
+          new Proxy({} as PluginClusterCoordinator, {
+            get(_target, property) {
+              if (property === "isInitialized") return () => cluster?.isInitialized() ?? false;
+              if (typeof Reflect.get(PluginClusterCoordinator.prototype, property) !== "function")
+                return undefined;
+              return (...args: unknown[]) => {
+                if (!cluster) return Promise.reject(new Error("Cluster is not initialized"));
+                const method = Reflect.get(cluster, property);
+                return typeof method === "function" ? method.apply(cluster, args) : method;
+              };
+            }
+          }),
+        []
+      )
+    );
   const swaggerUi = resolveSwaggerUiConfig(options);
   let pluginSourceSnapshots: readonly PluginSourceSnapshot[] = [];
 
+  const openApiHooks = createOpenApiHooks(options.http?.openApi, app);
   app.use(
     createHttpPlugin({
       host: options.http?.host ?? "0.0.0.0",
       port: options.http?.port ?? 3000,
       middlewares: options.http?.middlewares ?? [],
-      openApi: createOpenApiConfig(options.http?.openApi)
+      openApi: openApiHooks.config,
+      onRoutesRebuilt: openApiHooks.onRoutesRebuilt
     })
   );
 
@@ -50,7 +76,9 @@ export async function startCmsApp(options: CmsStarterOptions): Promise<CmsStarte
   for (const provider of options.globalProviders ?? []) {
     app.registerGlobalProvider(provider);
   }
-  registerSecurePayloadStoreProvider(app);
+  registerSecurePayloadHostProvider(app, options);
+  registerPluginNonceHost(app);
+  const durable = registerDurableEventHost(app, options);
 
   const kernelModule = createCmsStarterKernelModule({
     app,
@@ -61,58 +89,75 @@ export async function startCmsApp(options: CmsStarterOptions): Promise<CmsStarte
 
   await app.registerModule(kernelModule);
   await registerAppModules(app, withKernelModuleImports(options.modules ?? [], kernelModule));
-  await app.start();
+  try {
+    await app.start();
 
-  const runtime = await app.resolve<PluginRuntime>(CORE_TOKENS.PLUGIN_RUNTIME);
-  const discoveryService = await app.resolve<PluginDiscoveryService>(
-    CORE_TOKENS.PLUGIN_DISCOVERY_SERVICE
-  );
-  const pluginBootstrap = await bootstrapDiscoveredPlugins({
-    runtime,
-    discoveryService,
-    pluginSources: options.pluginSources ?? [],
-    plugins: options.plugins ?? [],
-    autoLoadPlugins: options.autoLoadPlugins
-  });
-  pluginSourceSnapshots = pluginBootstrap.pluginSources;
-
-  return {
-    runtime,
-    pluginSources: pluginBootstrap.pluginSources,
-    shutdown: async () => {
-      await app.shutdown();
-    }
-  };
-}
-
-function registerSecurePayloadStoreProvider(app: TrinacriaApp): void {
-  if (
-    !app.hasToken(CORE_TOKENS.DB_ADAPTER) ||
-    app.hasToken(CORE_TOKENS.SECURE_EVENT_PAYLOAD_STORE)
-  ) {
-    return;
-  }
-
-  app.registerGlobalProvider(
-    factoryProvider(CORE_TOKENS.SECURE_EVENT_PAYLOAD_STORE, async () => {
-      const dbAdapter = await app.resolve(CORE_TOKENS.DB_ADAPTER);
-      if (app.hasToken(CORE_TOKENS.ENTITY_REGISTRY)) {
-        const registry = await app.resolve(CORE_TOKENS.ENTITY_REGISTRY);
-        registry.register(SECURE_EVENT_PAYLOADS_ENTITY);
-      }
-      const authorizer = app.hasToken(CORE_TOKENS.SECURE_EVENT_PAYLOAD_AUTHORIZER)
-        ? await app.resolve(CORE_TOKENS.SECURE_EVENT_PAYLOAD_AUTHORIZER)
-        : null;
-      return new SecureEventPayloadsService(
-        new SecureEventPayloadsRepository(dbAdapter),
-        new SecureEventPayloadCrypto({
-          masterKey: process.env.CMS_SECURE_PAYLOAD_MASTER_KEY,
-          keyVersion: process.env.CMS_SECURE_PAYLOAD_KEY_VERSION
-        }),
-        authorizer
+    const runtime = await app.resolve<PluginRuntime>(CORE_TOKENS.PLUGIN_RUNTIME);
+    const discoveryService = await app.resolve<PluginDiscoveryService>(
+      CORE_TOKENS.PLUGIN_DISCOVERY_SERVICE
+    );
+    const pluginBootstrap = await bootstrapDiscoveredPlugins({
+      runtime,
+      discoveryService,
+      pluginSources: options.pluginSources ?? [],
+      plugins: options.plugins ?? [],
+      autoLoadPlugins: false
+    });
+    pluginSourceSnapshots = pluginBootstrap.pluginSources;
+    const installerOnly =
+      options.installerOnly ||
+      (options.migrations?.allowStartupWithoutDb &&
+        app.hasToken(CORE_TOKENS.DB_ADAPTER) &&
+        !(await (await app.resolve(CORE_TOKENS.DB_ADAPTER)).healthCheck()).ok);
+    if (!installerOnly && runtime instanceof InMemoryPluginRuntime)
+      await durable.initialize(runtime);
+    if (installerOnly) {
+      if (!options.offlineInstallerModules?.length)
+        throw new Error(
+          "Offline installation requires explicit environment-only installer modules"
+        );
+      await registerAppModules(
+        app,
+        withKernelModuleImports(options.offlineInstallerModules, kernelModule)
       );
-    }, [])
-  );
+    }
+    if (options.cluster && !installerOnly) {
+      const adapter = await app.resolve(CORE_TOKENS.DB_ADAPTER),
+        registry = await app.resolve(CORE_TOKENS.ENTITY_REGISTRY);
+      if (!(adapter instanceof MongoDbAdapter) || !(runtime instanceof InMemoryPluginRuntime))
+        throw new Error("Cluster coordination requires the Mongo host runtime");
+      const health = await adapter.healthCheck();
+      if (!health.ok) throw new Error("Cluster coordination requires a healthy database");
+      cluster = new PluginClusterCoordinator(adapter, registry, runtime, {
+        ...options.cluster,
+        instanceId: options.cluster.instanceId ?? randomUUID(),
+        activity: runtime.activity
+      });
+      await cluster.initialize();
+      await cluster.start();
+    }
+
+    if (!installerOnly && !options.cluster && options.autoLoadPlugins !== false)
+      await runtime.loadMany(pluginBootstrap.plugins.map((plugin) => plugin.manifest.id));
+    if (!installerOnly) await durable.start();
+
+    return {
+      startupMode: installerOnly ? "installer" : "cms",
+      runtime,
+      getHttpRouteInventory: openApiHooks.getInventory,
+      pluginSources: pluginBootstrap.pluginSources,
+      shutdown: async () => {
+        await durable.close();
+        await cluster?.close();
+        await app.shutdown();
+      }
+    };
+  } catch (error) {
+    await durable.close().catch(() => {});
+    await cluster?.close().catch(() => {});
+    await app.shutdown().catch(() => {});
+    throw error;
+  }
 }
 
 function withKernelModuleImports(

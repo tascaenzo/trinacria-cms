@@ -28,6 +28,8 @@ export const SecureEventPayloadRecordSchema = s.object(
     schemaVersion: s.number({ int: true, min: 1, max: 100 }),
     requiredPermission: s.string({ trim: true, toLowerCase: true, minLength: 3, maxLength: 220 }),
     encryptedPayload: EncryptedSecurePayloadSchema,
+    storageRevision: s.number({ int: true, min: 1, max: Number.MAX_SAFE_INTEGER }),
+    purgeAt: s.date().optional(),
     status: SecureEventPayloadStatusSchema,
     maxClaims: s.number({ int: true, min: 1, max: 100 }),
     claimCount: s.number({ int: true, min: 0 }),
@@ -48,6 +50,7 @@ export const SecureEventPayloadRecordSchema = s.object(
 export type SecureEventPayloadRecordShape = Infer<typeof SecureEventPayloadRecordSchema>;
 
 export const SECURE_EVENT_PAYLOADS_ENTITY = defineEntity({
+  ownerPluginId: "kernel",
   entityName: "secure_event_payloads",
   schema: SecureEventPayloadRecordSchema,
   indexes: [
@@ -55,6 +58,8 @@ export const SECURE_EVENT_PAYLOADS_ENTITY = defineEntity({
     { fields: { producerPluginId: 1, eventName: 1 }, name: "secure_event_payloads_event_idx" },
     { fields: { payloadType: 1, schemaVersion: 1 }, name: "secure_event_payloads_type_idx" },
     { fields: { status: 1, createdAt: 1 }, name: "secure_event_payloads_status_created_idx" },
-    { fields: { expiresAt: 1 }, name: "secure_event_payloads_expires_at_idx" }
+    { fields: { expiresAt: 1 }, name: "secure_event_payloads_expires_at_idx" },
+    { fields: { purgeAt: 1 }, expireAfterSeconds: 0, name: "secure_event_payloads_retention_ttl" },
+    { fields: { "encryptedPayload.keyVersion": 1, id: 1 }, name: "secure_event_payloads_key_idx" }
   ] as const
 });

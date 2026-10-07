@@ -6,6 +6,8 @@ import {
   parseQueryNumber,
   toOpenApiSchema
 } from "@trinacria-cms/kernel";
+import { getHttpOperationContext } from "@trinacria-cms/kernel/runtime";
+import type { PermissionsOperations } from "../../operations/access-operations.js";
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import { createJwtAuthMiddleware } from "../auth/auth.middleware.js";
 import type { JwtAuthService } from "../auth/services/auth.service.js";
@@ -19,7 +21,6 @@ import {
   UpdatePermissionInputSchema,
   UpdatePermissionStatusInputSchema
 } from "./dto/index.js";
-import type { PermissionsService } from "./services/permissions.service.js";
 
 const responder = createPluginApiResponder(CORE_PACK_PLUGIN_ID);
 
@@ -45,7 +46,7 @@ export class PermissionsController extends HttpController {
   private readonly adminAuthMiddleware: HttpMiddleware;
 
   constructor(
-    private readonly permissions: PermissionsService,
+    private readonly permissions: PermissionsOperations,
     auth: JwtAuthService
   ) {
     super();
@@ -59,6 +60,7 @@ export class PermissionsController extends HttpController {
       .get("/v1/permissions", this.listPermissions, {
         middlewares: [this.adminAuthMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "List permissions",
           tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
           operationId: "listPermissions",
@@ -75,6 +77,7 @@ export class PermissionsController extends HttpController {
       .get("/v1/permissions/:id", this.getPermissionById, {
         middlewares: [this.adminAuthMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Get permission by id",
           tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
           operationId: "getPermissionById",
@@ -94,6 +97,7 @@ export class PermissionsController extends HttpController {
       .post("/v1/permissions", this.createPermission, {
         middlewares: [this.adminAuthMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Create permission",
           tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
           operationId: "createPermission",
@@ -117,6 +121,7 @@ export class PermissionsController extends HttpController {
       .patch("/v1/permissions/:id", this.updatePermission, {
         middlewares: [this.adminAuthMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Update permission",
           tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
           operationId: "updatePermission",
@@ -140,6 +145,7 @@ export class PermissionsController extends HttpController {
       .patch("/v1/permissions/:id/status", this.updatePermissionStatus, {
         middlewares: [this.adminAuthMiddleware],
         docs: {
+          pluginId: "core-pack",
           summary: "Update permission status",
           tags: [CORE_PACK_OPENAPI_TAGS.PERMISSIONS],
           operationId: "updatePermissionStatus",
@@ -169,7 +175,10 @@ export class PermissionsController extends HttpController {
         limit: parseQueryNumber(ctx.query.limit),
         offset: parseQueryNumber(ctx.query.offset)
       });
-      const permissions = await this.permissions.listPermissions(query);
+      const permissions = await this.permissions.listPermissions(
+        getHttpOperationContext(ctx),
+        query
+      );
       return responder.list(permissions, {
         limit: query.limit,
         offset: query.offset
@@ -186,7 +195,7 @@ export class PermissionsController extends HttpController {
     }
 
     try {
-      const permission = await this.permissions.getPermissionById(id);
+      const permission = await this.permissions.getPermissionById(getHttpOperationContext(ctx), id);
       if (!permission) {
         return responder.notFound(`Permission "${id}" not found`);
       }
@@ -199,7 +208,10 @@ export class PermissionsController extends HttpController {
   private createPermission = async (ctx: HttpContext) => {
     try {
       const payload = CreatePermissionInputSchema.parse(ctx.body);
-      const created = await this.permissions.createPermission(payload);
+      const created = await this.permissions.createPermission(
+        getHttpOperationContext(ctx),
+        payload
+      );
       return responder.success(created);
     } catch (error) {
       return responder.fromError(error);
@@ -214,7 +226,11 @@ export class PermissionsController extends HttpController {
 
     try {
       const payload = UpdatePermissionInputSchema.parse(ctx.body);
-      const updated = await this.permissions.updatePermission(id, payload);
+      const updated = await this.permissions.updatePermission(
+        getHttpOperationContext(ctx),
+        id,
+        payload
+      );
       if (!updated) {
         return responder.notFound(`Permission "${id}" not found`);
       }
@@ -234,8 +250,8 @@ export class PermissionsController extends HttpController {
       const payload = UpdatePermissionStatusInputSchema.parse(ctx.body);
       const updated =
         payload.status === "active"
-          ? await this.permissions.activatePermission(id)
-          : await this.permissions.disablePermission(id);
+          ? await this.permissions.activatePermission(getHttpOperationContext(ctx), id)
+          : await this.permissions.disablePermission(getHttpOperationContext(ctx), id);
       if (!updated) {
         return responder.notFound(`Permission "${id}" not found`);
       }

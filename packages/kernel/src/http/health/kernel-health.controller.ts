@@ -107,6 +107,7 @@ export class KernelHealthHttpController extends HttpController {
     return this.router()
       .get("/health", this.getHealth, {
         docs: {
+          pluginId: "kernel",
           summary: "Read aggregated kernel health",
           tags: ["Kernel Health"],
           operationId: "getKernelHealth",
@@ -120,6 +121,7 @@ export class KernelHealthHttpController extends HttpController {
       })
       .get("/health/dependencies", this.getDependencies, {
         docs: {
+          pluginId: "kernel",
           summary: "Read plugin dependency graph snapshot",
           tags: ["Kernel Health"],
           operationId: "getKernelDependencyGraph",

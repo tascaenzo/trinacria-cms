@@ -20,7 +20,8 @@ export class UsersService {
 
   constructor(
     private readonly repository: UsersRepository,
-    events?: EventBus
+    events?: Pick<EventBus, "emit">,
+    private readonly atomic?: <T>(work: (service: UsersService) => Promise<T>) => Promise<T>
   ) {
     this.eventPublisher = new UserLifecycleEventPublisher(events);
   }
@@ -29,6 +30,7 @@ export class UsersService {
     input: CreateUserInput,
     options?: { source?: CorePackUserEventSource }
   ): Promise<UserRecord> {
+    if (this.atomic) return this.atomic((service) => service.createUser(input, options));
     const existing = await this.repository.findByEmail(input.email);
     if (existing) {
       throw new Error(`User with email "${input.email}" already exists`);
@@ -62,6 +64,7 @@ export class UsersService {
   }
 
   async updateUserProfile(id: string, input: UpdateUserProfileInput): Promise<UserRecord | null> {
+    if (this.atomic) return this.atomic((service) => service.updateUserProfile(id, input));
     const existing = await this.repository.findById(id);
     if (!existing) return null;
     const updated = await this.repository.updateProfile(id, input);
@@ -91,6 +94,7 @@ export class UsersService {
     input: UpdateUserStatusInput,
     options?: { reason?: CorePackUserStatusChangedPayload["reason"] }
   ): Promise<UserRecord | null> {
+    if (this.atomic) return this.atomic((service) => service.setUserStatus(id, input, options));
     const existing = await this.repository.findById(id);
     if (!existing) return null;
     const updated = await this.repository.updateStatus(id, input);

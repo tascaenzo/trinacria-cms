@@ -10,6 +10,7 @@ import type {
   PluginManifestEventSubscription,
   PluginManifestSetting
 } from "./plugin-manifest.js";
+import type { PluginMigrationDefinition } from "./plugin-migrations.js";
 
 export type {
   PluginAccessAuthorizationResult as PluginEventSubscriptionAuthorizationResult,
@@ -17,8 +18,9 @@ export type {
   PluginEventSubscriptionAuthorizer
 } from "./plugin-access-policy.js";
 
-import type { ApplicationContext, ModuleDefinition } from "@trinacria/core";
+import type { ModuleDefinition } from "@trinacria/core";
 import type { EventEnvelope } from "@trinacria/events";
+import type { PluginHostServices } from "./plugin-host-services.js";
 
 /**
  * Lifecycle phases used for diagnostics when a plugin operation fails.
@@ -56,12 +58,11 @@ export interface PluginRuntimeStatusReason {
  * Runtime context passed to plugin hooks.
  */
 export interface KernelPluginRuntimeContext {
-  app: ApplicationContext;
+  services: PluginHostServices;
   pluginId: string;
   manifest: PluginManifest;
   /** Message assets live in package files and are never persisted in the manifest. */
   i18nSources: readonly PluginTranslationSource[];
-  events: PluginEventPublisher;
 }
 
 /** One package-local message dictionary loaded while its plugin is installed. */
@@ -72,7 +73,16 @@ export interface PluginTranslationSource {
 }
 
 export interface PluginEventPublisher {
-  emit(eventName: string, payload: unknown): Promise<void>;
+  emit(
+    eventName: string,
+    payload: unknown,
+    options?: {
+      notBefore?: Date;
+      partitionKey?: string;
+      correlationId?: string;
+      causationId?: string;
+    }
+  ): Promise<void>;
 }
 
 /**
@@ -86,6 +96,8 @@ export interface PluginRuntimeLifecycleHooks {
    * finalizing the plugin as loaded.
    */
   onAfterLoad?(context: KernelPluginRuntimeContext): Promise<void> | void;
+  /** Host preflight before any plugin code/modules run. */
+  onBeforeLoad?(definition: KernelPluginDefinition): Promise<void> | void;
   /**
    * Called before unregistering a plugin definition from the runtime catalog.
    */
@@ -97,16 +109,29 @@ export interface PluginRuntimeLifecycleHooks {
  * They are distinct from Trinacria plugin hooks and scoped to CMS plugins.
  */
 export interface KernelPluginHooks {
+  /** First-run content provisioning; called again after interrupted attempts. */
+  onInstall?(
+    context: KernelPluginRuntimeContext,
+    input: import("./installation.js").PluginInstallationInput
+  ): Promise<void> | void;
   onLoad?(context: KernelPluginRuntimeContext): Promise<void> | void;
   onInit?(context: KernelPluginRuntimeContext): Promise<void> | void;
   onUnload?(context: KernelPluginRuntimeContext): Promise<void> | void;
 }
 
 export interface KernelPluginEventHandlerContext {
-  app: ApplicationContext;
+  services: PluginHostServices;
   pluginId: string;
   eventName: string;
   handlerName: string;
+  /** Cooperative drain signal; ignored signals do not make a timed-out handler stopped. */
+  signal?: AbortSignal;
+  /** Present only for durable handlers: host-bound atomic vault-to-job transfer. */
+  secureJobs?: {
+    enqueueFromPayload(
+      input: import("./secure-event-payloads.js").ClaimSecureEventPayloadInput
+    ): Promise<string>;
+  };
 }
 
 export type KernelPluginEventHandler = (
@@ -121,6 +146,7 @@ export type KernelPluginEventHandler = (
  */
 export interface KernelPluginDefinition extends KernelPluginHooks {
   manifest: PluginManifest;
+  migrations?: readonly PluginMigrationDefinition[];
   i18nSources?: readonly PluginTranslationSource[];
   modules?: readonly ModuleDefinition[];
   eventHandlers?: Readonly<Record<string, KernelPluginEventHandler>>;
@@ -129,6 +155,21 @@ export interface KernelPluginDefinition extends KernelPluginHooks {
 export interface PluginRuntimeRetryPolicy {
   maxAttempts: number;
   backoffMs?: number;
+}
+
+/** Redacted diagnostic for a skipped plugin event delivery. */
+export interface PluginEventDeliveryDiagnostic {
+  timestamp: Date;
+  pluginId: string;
+  ownerPluginId: string;
+  eventName: string;
+  eventId: string;
+  outcome: "denied" | "policy-error" | "inactive";
+  reason:
+    | "event_subscription_authorizer_missing"
+    | "event_subscription_denied"
+    | "event_subscription_policy_error"
+    | "plugin_generation_inactive";
 }
 
 export interface PluginRuntimeEvent {
@@ -221,6 +262,8 @@ export interface PluginRuntimeRecord {
   manifest: PluginManifest;
   /** Current runtime lifecycle state. */
   state: PluginState;
+  /** Latest lifecycle sequence for this activation, retained independently of the event buffer. */
+  lifecycleRevision?: number;
   /** Timestamp set when the plugin enters loaded state. */
   loadedAt?: Date;
   /** Last relevant error during load/unload/lifecycle hooks. */

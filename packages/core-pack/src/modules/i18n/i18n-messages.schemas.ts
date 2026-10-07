@@ -1,4 +1,5 @@
-import { defineEntity, type Infer, s } from "@trinacria-cms/kernel";
+import { type Infer, s } from "@trinacria-cms/kernel";
+import { defineEntity } from "@trinacria-cms/kernel/runtime";
 
 const LocaleSchema = s
   .string({ trim: true, minLength: 2, maxLength: 35 })
@@ -28,6 +29,7 @@ export type TranslationMessageRecord = Infer<typeof TranslationMessageRecordSche
 
 /** Central registry of granular plugin translations. */
 export const I18N_MESSAGES_ENTITY = defineEntity({
+  ownerPluginId: "core-pack",
   entityName: "i18n_messages",
   schema: TranslationMessageRecordSchema,
   indexes: [

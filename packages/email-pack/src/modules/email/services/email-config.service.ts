@@ -1,4 +1,4 @@
-import type { RuntimeConfigService, SettingsService } from "@trinacria-cms/core-pack";
+import type { RuntimeConfigService, SettingsService } from "@trinacria-cms/core-pack/runtime";
 import { EMAIL_PACK_PLUGIN_ID } from "../../../plugin/email-pack.constants.js";
 import type { EmailDeliveryConfig, EmailProvider } from "../email.types.js";
 

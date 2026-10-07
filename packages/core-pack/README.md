@@ -96,7 +96,7 @@ Required request headers:
 
 Environment variables:
 
-- `CMS_PLUGIN_AUTH_KEYS_JSON`: JSON map `{ "<pluginId>": "<shared-secret>" }`
+- `CMS_PLUGIN_AUTH_KEYS_JSON`: JSON map `{ "<pluginId>": { "current": { "id": "key-2026", "secret": "<at-least-32-bytes>" } } }`
 - `CMS_PLUGIN_AUTH_MAX_SKEW_SECONDS`: allowed timestamp drift (default `300`)
 - `CMS_SETTINGS_MASTER_KEY`: master key for AES-256-GCM encryption at rest
 - `CMS_SETTINGS_MASTER_KEY_VERSION`: key version persisted with ciphertext metadata
@@ -135,3 +135,12 @@ npm run build -w @trinacria-cms/core-pack
 npm run typecheck -w @trinacria-cms/core-pack
 npm run test -w @trinacria-cms/core-pack
 ```
+
+## Plugin trust model
+
+Installed in-process extensions are trusted. The default integration policy uses runtime
+manifests and declared dependencies without per-service database approvals or grant
+fences. User authorization, delegated permissions, secrets, ownership and transactions
+remain enforced. Signed external HTTP settings clients retain their separate access
+policy. The standard admin no longer exposes a plugin approval center. See the
+[current architecture decision](../../docs/cms/architecture/plugin-platform/trusted-plugin-model.md).

@@ -22,6 +22,7 @@ export const EMAIL_PACK_MANIFEST: PluginManifest = definePluginManifest({
   version: "0.1.0",
   requiresCore: "^0.1.0",
   capabilities: [...EMAIL_PACK_CAPABILITY_LIST],
+  entities: [{ name: "email_templates", schemaVersion: 1 }],
   dependencies: [
     {
       pluginId: "core-pack",

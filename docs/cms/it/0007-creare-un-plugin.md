@@ -1,5 +1,9 @@
 # 0007 - Come progettare un nuovo plugin in modo professionale
 
+Modello aggiornato il 3 ottobre 2026: plugin fidati in-process, nessuna approvazione
+DB per integrazioni locali, lifecycle single-instance e cluster opzionale.
+Vedi il [contratto operativo corrente](../architecture/plugin-platform/trusted-plugin-model.md).
+
 Questo capitolo descrive lo standard pratico per creare plugin compatibili con il kernel e con il provisioning del manifest del `core-pack`.
 
 ## 1. Decisione iniziale
@@ -231,3 +235,157 @@ consumare l'SDK, non URL o fetch duplicati nel componente React.
 Per il percorso operativo completo, inclusi onboarding, ruoli, settings,
 operazioni plugin e audit lifecycle, segui
 [0022 - Beta team onboarding](./0022-beta-team-onboarding.md).
+
+## Autorizzazione degli eventi
+
+Le sottoscrizioni protected/audit richiedono permesso dichiarato dall'owner e decisione
+positiva della policy. Authorizer assente fallisce il load; Core fornisce il provider DI.
+Host minimali devono fornire un authorizer esplicito ristretto. La policy viene verificata
+a ogni consegna usando manifest e dipendenze locali, senza grant DB da approvare.
+La disattivazione blocca nuove attività e attende il lavoro tracciato già in corso.
+Unload/reload invalida le generazioni precedenti; un binding parziale viene ripulito con
+rollback moduli, anche per dipendenze ricorsive. Diagnostica redatta disponibile tramite
+onDeliveryDiagnostic del runtime o onPluginEventDeliveryDiagnostic dello starter.
+I plugin in-process restano fidati: A1 non introduce una sandbox.
+
+## Servizi host del plugin (A0 implementato)
+
+Hook lifecycle e handler eventi ricevono `context.services`; `context.app` e il container/bus
+senza restrizioni non fanno più parte del contratto plugin. Usare i tipi pubblici
+`PluginHostServices`, `PluginStorage`, `PluginRepository`, `PluginQuery` da
+`@trinacria-cms/kernel/plugin-api` e gli helper manifest esistenti.
+
+```ts
+async function onLoad(context: { services: PluginHostServices }) {
+  const items = await context.services.storage.repository("items").findMany({ limit: 20 });
+  await context.services.logger.info("Plugin inizializzato", { action: "initialize" });
+}
+```
+
+Dichiarare `items` nel manifest e registrarne lo schema nel modulo con
+`defineEntity({ ownerPluginId: "your-plugin", entityName: "items", schema })` da
+`@trinacria-cms/kernel/runtime`. Storage fissa l'owner; findMany ha default/massimo 100,
+rifiuta metadata del driver. `storage.transaction(work)` mantiene owner/sessione, rifiuta
+annidamenti e invalida i repository alla fine del tentativo. I servizi conservati scadono
+con unload/reload. Settings get/set ammette soltanto chiavi proprie dichiarate; secrets e
+chiavi altrui sono negati. Il publisher è `services.events.emit`. Il logger fissa l'owner
+e limita i metadata; usare messaggi fissi senza dati sensibili.
+
+Per servizi applicativi composti dall'host usare `pluginOperationsProvider` da `@trinacria-cms/kernel/runtime`:
+le dipendenze DI esplicite sono risolte nella composizione del modulo, che deve esportare
+il token del provider. Chiamare `services.operations.call(ownerPluginId, name, jsonInput)`;
+input validato da schema, input/output JSON copiati (1 MiB, profondità 32). Private è solo
+owner. Ogni chiamata cross-plugin richiede permesso dichiarato dall'owner e dipendenza
+nel manifest. La policy standard Core verifica questi contratti in memoria, senza
+approvazioni DB né fence sui grant. Assenza della policy nega. `{ signal }` abilita cancellation
+cooperativa. I pack ufficiali usano operazioni private nominate per inizializzazione,
+cleanup e consegna email, senza restituire istanze di servizi o secrets raw ai chiamanti.
+
+La discovery importa soltanto file configurati sotto root realpath autorizzate. Default:
+`process.cwd()`; l'host configura `pluginAllowedRoots` nelle opzioni di `startCmsApp` per
+root package/workspace aggiuntive. URL HTTP/data/node, query/fragment e symlink fuori root
+sono rifiutati prima dell'import. Package fidati fissati nel lockfile e revisionati:
+questo confine API non isola il codice in-process.
+
+Mongo usa nomi leggibili: `<entity>__plugin_<pluginId>`, con suffisso opzionale
+`__workspace_<workspaceId>`. Esempi: `users__plugin_core-pack` ed
+`entries__plugin_editorial-pack`. Trattini e underscore singoli sono conservati;
+caratteri riservati e underscore doppi hanno un escaping reversibile.
+Il registro ownership mantiene gli indici unici tuple/nome fisico. I layout precedenti
+richiedono migrazione esplicita o database di sviluppo vuoto, senza reset automatico.
+Vedi [naming delle collection](../architecture/plugin-platform/collection-naming.md). `HostUnitOfWork` è
+infrastruttura avanzata dell'host e non è esposto da servizi/plugin-api.
+
+## Payload sensibili (A2 implementato)
+
+Usare `context.services.securePayloads`, di tipo pubblico `SecureEventPayloadClient`,
+per create/claim/revoke. Producer/consumer sono fissati dal runtime; non passarli nel body.
+Claim richiede eventName, payloadType, schemaVersion e requiredPermission corrispondenti.
+Record restituiti e policy non contengono ciphertext; solo un claim CAS riuscito restituisce
+plaintext. Scadenza/stato/limiti/destinatario negano prima della policy; policy assente,
+errata o negativa nega. Allowlist vuota nega tutti. Massimo tre tentativi, policy rivalutata.
+
+```ts
+const result = await context.services.securePayloads.claim<{ message: string }>({
+  payloadId: notification.securePayloadId,
+  eventName: context.eventName,
+  payloadType: "producer:message",
+  schemaVersion: 1,
+  requiredPermission: "producer:payload:read"
+});
+```
+
+Lo starter richiede keyring esplicito anche in sviluppo: `CMS_SECURE_PAYLOAD_ACTIVE_KEY_ID`
+e `CMS_SECURE_PAYLOAD_KEYS_JSON` (chiavi base64 di 32 byte casuali). Nessun fallback.
+Retention terminale default 24 ore con TTL, separata dall’autorizzazione della scadenza.
+Configurazione, errori e rotazione CAS riprendibile sono nel [runbook A2](../architecture/plugin-platform/secure-payload-keyring-runbook.md).
+
+## Operazioni applicative (A3)
+
+Usare `context.services.operations.call(owner, name, input)` per un'operazione business
+registrata. Il runtime crea il contesto plugin certificato: non inviare actor, userId
+oppure un OperationContext nel payload. Le integrazioni fidate sono autorizzate dalla configurazione; pubblicare
+una entry verifica anche azione del workflow e publish. I settings propri dichiarati e non segreti usano la capability scoped, senza grant
+API verso se stessi. Operazioni Settings cross-plugin richiedono dipendenza e permesso
+dichiarati; i client HTTP firmati conservano grant espliciti separati.
+Le integrazioni host usano facade con il contesto come primo argomento; una delega
+richiede un contesto utente già autenticato e verifica entrambi i principal.
+Il codice in-process resta fidato. Vedi il [modello standard](../architecture/plugin-platform/trusted-plugin-model.md).
+
+## Export pubblici dopo B0
+
+Helper di authoring da kernel/plugin-api, tipi da kernel/contracts e firma Settings
+da core-pack/plugin-api. La composizione host usa il subpath experimental `/runtime`
+di kernel e pack; repository e servizi raw sono assenti dalle root dei pack.
+Vedi la [baseline degli otto package](../specs/core-platform/public-api/README.md).
+Semver segue i range npm rigorosi: ^0.1.0 esclude 0.2.0 e prerelease richiedono ammissione esplicita.
+
+## SDK overlay (B1)
+
+```sh
+trinacria-sdk ./openapi.json ./generated/catalog --mode overlay --owner catalog-plugin
+```
+
+Import `createPluginSdk` from the generated index and call it with the existing CMS
+client. The overlay uses `@trinacria-cms/sdk/runtime` and leaves official groups intact.
+The output directory must be dedicated; generated files are tracked by its ownership
+marker. Unsupported schemas and sanitized operation/tag collisions stop generation.
+See `packages/sdk/README.md` for HTTP authentication and binary transports.
+
+## Starter catalogo esterno (D0)
+
+```sh
+create-trinacria-plugin ./catalog-plugin catalog-plugin
+cd catalog-plugin
+npm install
+npm run build
+npm test
+trinacria-sdk ./openapi.json ./generated/catalog --mode overlay --owner catalog-plugin
+```
+
+Registrare il backend esplicitamente dopo Core. Importare `/admin-manifest` per i
+metadata puri e `/admin` per i renderer React; ricompilare l'host admin fidato. La pagina
+supporta CRUD, paginazione limitata, conflitti di versione e recupero da errore API.
+Il backend non richiede React. Il README generato e il
+[runbook sviluppatore esterno](../architecture/plugin-platform/external-plugin-runbook.md)
+spiegano contratti di integrazione, eventi durevoli, lifecycle e prova umana indipendente.
+
+## Contenuti del primo avvio
+
+L'hook opzionale `onInstall(context, { dataMode, adminUserId })` prepara i dati
+iniziali tramite i servizi del plugin e propaga gli errori all'installer. Ogni seed
+deve essere idempotente: dopo un'interruzione l'hook viene richiamato. `onLoad`
+inizializza il runtime ordinario e non deve inserire dati demo.
+Vedi il [contratto di installazione](../specs/core-platform/installation-bootstrap.md).
+
+## Conformità completa
+
+`cms-plugin-conformance` restituisce `status: incomplete` per i soli controlli statici.
+Con `--scenario ./conformance.mjs` devono passare le nove funzioni obbligatorie e il
+teardown: `status: passed, complete: true`. Un errore produce exit 1 e identifica
+lo scenario fallito. I log console vanno a stderr; stdout contiene il report JSON.
+`npm run release:test` esegue il modulo di riferimento con pacchetti fisici esterni,
+Mongo/browser/SDK reali e recovery di documenti, indici, media e configurazione.
+L'acceptance umana indipendente resta separata. Usare il
+[runbook autore](../architecture/plugin-platform/external-plugin-runbook.md) e la
+[procedura del team](../architecture/plugin-platform/single-instance-acceptance.md).

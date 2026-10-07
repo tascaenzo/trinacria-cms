@@ -1,7 +1,7 @@
 {
   "name": "@trinacria-cms/kernel",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -44,9 +44,35 @@
     "@trinacria/core": "0.1.1",
     "@trinacria/events": "0.1.1",
     "@trinacria/http": "0.1.1",
-    "@trinacria/schema": "0.1.1"
+    "@trinacria/schema": "0.1.1",
+    "semver": "^7.8.5"
   },
   "peerDependencies": {
     "mongoose": ">=9 <10"
+  },
+  "devDependencies": {
+    "@types/semver": "^7.8.0"
+  },
+  "license": "MIT",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "scripts/cms.mjs",
+    "scripts/create-trinacria-plugin.mjs",
+    "scripts/plugin-conformance.mjs",
+    "templates/catalog-v1.json"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "engines": {
+    "node": ">=24.21.0 <25"
+  },
+  "bin": {
+    "cms": "./scripts/cms.mjs",
+    "create-trinacria-plugin": "./scripts/create-trinacria-plugin.mjs",
+    "cms-plugin-conformance": "./scripts/plugin-conformance.mjs"
   }
 }

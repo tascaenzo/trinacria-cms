@@ -21,7 +21,27 @@ export const OFFICIAL_SDK_PLUGIN_CATALOG: readonly OfficialSdkPluginCatalogEntry
   },
   {
     pluginId: "core-pack",
-    apiGroups: ["auth", "installation", "users", "roles", "permissions", "security", "settings"],
+    apiGroups: [
+      "auth",
+      "installation",
+      "users",
+      "roles",
+      "permissions",
+      "security",
+      "settings",
+      "internationalization"
+    ],
     description: "Official identity, installation, security, and settings APIs"
-  }
+  },
+  {
+    pluginId: "editorial-pack",
+    apiGroups: ["editorial", "delivery", "preview"],
+    description: "Content models, immutable public snapshots and scoped previews"
+  },
+  {
+    pluginId: "media-pack",
+    apiGroups: ["media", "delivery"],
+    description: "Assets, uploads, directories and sharing"
+  },
+  { pluginId: "email-pack", apiGroups: ["email"], description: "Email template management" }
 ]);

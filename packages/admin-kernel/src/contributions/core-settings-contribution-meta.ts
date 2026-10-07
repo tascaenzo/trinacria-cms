@@ -36,13 +36,6 @@ export const OFFICIAL_CORE_SETTINGS_SECTION_META: Record<
     order: 40,
     category: "user_flows"
   },
-  "core-pack:core-pack-plugin-permissions-settings": {
-    titleKey: "settings.section.plugin_permissions.title",
-    summary: "Admin approvals for sensitive plugin event access and secure payload claims.",
-    summaryKey: "settings.section.plugin_permissions.summary",
-    order: 50,
-    settingKeys: ["core-pack:security:plugin_access_grants"]
-  },
   "core-pack:core-pack-plugin-management-settings": {
     title: "Plugins",
     summary: "Plugin installati e azioni disponibili nel runtime corrente.",

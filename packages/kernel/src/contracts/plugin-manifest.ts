@@ -1,3 +1,5 @@
+import type { PluginMigrationMetadata } from "./plugin-migrations.js";
+
 /**
  * Dependency declared by a plugin toward another plugin.
  * Used by runtime for compatibility validation and load ordering.
@@ -114,6 +116,8 @@ export interface PluginManifestEntityIndex {
   fields: Record<string, PluginManifestEntityIndexDirection>;
   unique?: boolean;
   sparse?: boolean;
+  /** Single-field Mongo TTL index. Runtime expiry checks remain mandatory. */
+  expireAfterSeconds?: number;
   partialFilter?: Record<string, unknown>;
 }
 
@@ -144,7 +148,7 @@ export interface PluginManifestEmittedEvent {
   name: string;
   visibility: PluginManifestEventVisibility;
   version: number;
-  delivery?: PluginManifestEventDelivery;
+  delivery: PluginManifestEventDelivery;
   payloadSchema?: Record<string, unknown>;
 }
 
@@ -276,6 +280,8 @@ export interface PluginManifest {
   dependencies?: readonly PluginManifestDependency[];
   /** Mongo-backed entities contributed by the plugin. */
   entities?: readonly PluginManifestEntity[];
+  /** Serializable metadata for trusted deploy migrations; never contains functions. */
+  migrations?: readonly PluginMigrationMetadata[];
   /** Centralized settings definitions contributed by the plugin. */
   settings?: readonly PluginManifestSetting[];
   /** Event contracts emitted or consumed by the plugin. */

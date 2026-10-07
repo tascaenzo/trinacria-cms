@@ -6,6 +6,7 @@ import {
   PageCanvas,
   Panel,
   Select,
+  Switch,
   Textarea
 } from "@trinacria-cms/trinacria-ui";
 import { useEffect, useState } from "react";
@@ -136,6 +137,55 @@ export function EditorialContentTypeDetailPage({
             onRemove={detail.removeField}
             onMove={detail.moveField}
           />
+        </ContentTypeDetailSection>
+
+        <ContentTypeDetailSection
+          title="Sito pubblico"
+          description="Scegli quali dati possono apparire sul sito. I nuovi campi restano interni finché non li abiliti."
+        >
+          <div className="grid gap-4">
+            <Switch
+              label="Abilita la pubblicazione sul sito"
+              checked={detail.delivery.enabled}
+              disabled={detail.isSaving}
+              onChange={(event) =>
+                detail.setDelivery({ ...detail.delivery, enabled: event.currentTarget.checked })
+              }
+            />
+            {(
+              [
+                ["exposeTitle", "Titolo pubblico"],
+                ["exposeSlug", "Slug pubblico"],
+                ["exposeBody", "Documento pubblico"]
+              ] as const
+            ).map(([key, label]) => (
+              <Switch
+                key={key}
+                label={label}
+                checked={detail.delivery[key]}
+                disabled={detail.isSaving}
+                onChange={(event) =>
+                  detail.setDelivery({ ...detail.delivery, [key]: event.currentTarget.checked })
+                }
+              />
+            ))}
+            {detail.fields.map((field) => (
+              <Switch
+                key={field.key}
+                label={`Campo pubblico: ${field.label}`}
+                checked={detail.delivery.publicFields.includes(field.key)}
+                disabled={detail.isSaving}
+                onChange={(event) =>
+                  detail.setDelivery({
+                    ...detail.delivery,
+                    publicFields: event.currentTarget.checked
+                      ? [...detail.delivery.publicFields, field.key]
+                      : detail.delivery.publicFields.filter((key) => key !== field.key)
+                  })
+                }
+              />
+            ))}
+          </div>
         </ContentTypeDetailSection>
 
         <ContentTypeDetailSection

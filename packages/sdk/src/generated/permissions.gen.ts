@@ -7,7 +7,7 @@ import type { CreatePermissionRequest, CreatePermissionResponse, GetPermissionBy
 export interface PermissionsApi {
   createPermission(input: CreatePermissionRequest, options?: SdkRequestOverrides): Promise<CreatePermissionResponse>;
   getPermissionById(input: GetPermissionByIdRequest, options?: SdkRequestOverrides): Promise<GetPermissionByIdResponse>;
-  listPermissions(input: ListPermissionsRequest, options?: SdkRequestOverrides): Promise<ListPermissionsResponse>;
+  listPermissions(input?: ListPermissionsRequest, options?: SdkRequestOverrides): Promise<ListPermissionsResponse>;
   updatePermission(input: UpdatePermissionRequest, options?: SdkRequestOverrides): Promise<UpdatePermissionResponse>;
   updatePermissionStatus(input: UpdatePermissionStatusRequest, options?: SdkRequestOverrides): Promise<UpdatePermissionStatusResponse>;
 }
@@ -21,6 +21,8 @@ export function createPermissionsApi(client: CmsSdkClientCore): PermissionsApi {
         pathParams: undefined,
         query: undefined,
         body: input.body,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,
@@ -32,17 +34,21 @@ export function createPermissionsApi(client: CmsSdkClientCore): PermissionsApi {
         pathParams: input.path,
         query: undefined,
         body: undefined,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,
       }),
-    listPermissions: async (input, options) =>
+    listPermissions: async (input = {}, options) =>
       client.request({
         method: "GET",
         path: "/v1/permissions",
         pathParams: undefined,
         query: input.query,
         body: undefined,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,
@@ -54,6 +60,8 @@ export function createPermissionsApi(client: CmsSdkClientCore): PermissionsApi {
         pathParams: input.path,
         query: undefined,
         body: input.body,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,
@@ -65,6 +73,8 @@ export function createPermissionsApi(client: CmsSdkClientCore): PermissionsApi {
         pathParams: input.path,
         query: undefined,
         body: input.body,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,

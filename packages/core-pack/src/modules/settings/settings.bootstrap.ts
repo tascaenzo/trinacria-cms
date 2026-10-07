@@ -1,6 +1,5 @@
 import { CORE_PACK_PLUGIN_ID } from "../../plugin/core-pack.constants.js";
 import type { JsonValue } from "./_shared/settings-json.js";
-import { PLUGIN_ACCESS_GRANTS_SETTING_KEY } from "./plugin-access/plugin-access-policy.service.js";
 import type { SettingsDefinition, SettingsService } from "./services/settings.service.js";
 
 export interface CorePackSettingDefinitionSeed {
@@ -402,17 +401,6 @@ export const CORE_PACK_SETTING_DEFINITION_SEEDS: readonly CorePackSettingDefinit
       } as JsonValue
     },
     {
-      key: "core-pack:plugin_auth:nonce_cache_max_entries",
-      category: "auth",
-      description: "Maximum in-memory nonce entries kept for replay protection.",
-      defaultValue: 10000,
-      schema: {
-        type: "number",
-        minimum: 100,
-        maximum: 200000
-      } as JsonValue
-    },
-    {
       key: "core-pack:settings:master_key_version",
       category: "security",
       description: "Key version label persisted with encrypted secrets.",
@@ -431,68 +419,6 @@ export const CORE_PACK_SETTING_DEFINITION_SEEDS: readonly CorePackSettingDefinit
       defaultValue: false,
       schema: {
         type: "boolean"
-      } as JsonValue
-    },
-    {
-      key: PLUGIN_ACCESS_GRANTS_SETTING_KEY,
-      category: "security",
-      description:
-        "Admin-managed plugin permission center grants for sensitive event subscriptions and secure payload claims.",
-      defaultValue: [
-        {
-          id: "event-subscription|core-pack|email-pack|core-pack:secure-event-payload-ready|*|email-pack:email:send",
-          accessType: "event-subscription",
-          producerPluginId: "core-pack",
-          consumerPluginId: "email-pack",
-          eventName: "core-pack:secure-event-payload-ready",
-          requiredPermission: "email-pack:email:send",
-          status: "approved",
-          reason: "Official transactional email delivery plugin"
-        },
-        {
-          id: "secure-payload-claim|core-pack|email-pack|core-pack:secure-event-payload-ready|email-pack:send-email-request|email-pack:email:send",
-          accessType: "secure-payload-claim",
-          producerPluginId: "core-pack",
-          consumerPluginId: "email-pack",
-          eventName: "core-pack:secure-event-payload-ready",
-          payloadType: "email-pack:send-email-request",
-          requiredPermission: "email-pack:email:send",
-          status: "approved",
-          reason: "Official transactional email delivery plugin"
-        }
-      ] as JsonValue,
-      schema: {
-        type: "array",
-        items: {
-          type: "object",
-          required: [
-            "producerPluginId",
-            "consumerPluginId",
-            "eventName",
-            "requiredPermission",
-            "status"
-          ],
-          properties: {
-            id: { type: "string" },
-            accessType: {
-              type: "string",
-              enum: ["event-subscription", "secure-payload-claim", "setting", "api"]
-            },
-            producerPluginId: { type: "string" },
-            consumerPluginId: { type: "string" },
-            eventName: { type: "string" },
-            payloadType: { type: "string" },
-            requiredPermission: { type: "string" },
-            status: {
-              type: "string",
-              enum: ["pending", "approved", "denied", "revoked"]
-            },
-            reason: { type: "string" },
-            approvedBy: { type: "string" },
-            approvedAt: { type: "string" },
-            updatedAt: { type: "string" }
-          }
-        }
       } as JsonValue
     },
     {

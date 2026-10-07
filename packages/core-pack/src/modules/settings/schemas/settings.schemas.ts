@@ -1,5 +1,6 @@
 import { createSchema } from "@trinacria/schema/dist/core/index.js";
-import { defineEntity, type Infer, type Schema, s } from "@trinacria-cms/kernel";
+import { type Infer, type Schema, s } from "@trinacria-cms/kernel";
+import { defineEntity } from "@trinacria-cms/kernel/runtime";
 import { isJsonValue, type JsonValue } from "../_shared/settings-json.js";
 import { isValidSettingKey } from "../_shared/settings-key.js";
 
@@ -92,6 +93,9 @@ export const SettingRecordSchema = s.object(
 
     // Installation-state fields.
     installed: s.boolean().optional(),
+    phase: s.enum(["configuration", "content", "verification", "complete"] as const).optional(),
+    dataMode: s.enum(["empty", "demo"] as const).optional(),
+    adminEmail: s.string({ email: true }).optional(),
     installedAt: s.dateTimeString().optional(),
     adminUserId: s.string({ trim: true, minLength: 1 }).optional(),
 
@@ -190,6 +194,7 @@ export type SettingSecretRecord = Infer<typeof SettingSecretRecordSchema>;
  * All settings records are stored in this single collection.
  */
 export const SETTINGS_ENTITY = defineEntity({
+  ownerPluginId: "core-pack",
   entityName: "settings",
   schema: SettingRecordSchema,
   indexes: [

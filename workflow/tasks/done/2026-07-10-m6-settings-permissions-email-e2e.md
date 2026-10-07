@@ -7,7 +7,7 @@ Validare le principali superfici operative del backoffice basate su admin contri
 ## Scope
 
 - settings generici e valori tipizzati
-- permission center e grant plugin
+- autorizzazioni dei plugin
 - email provider settings
 - email template preview e salvataggio
 - `/v1/admin/extensions` come sorgente primaria e fallback legacy controllato
@@ -22,8 +22,8 @@ Validare le principali superfici operative del backoffice basate su admin contri
 - [x] snapshot OpenAPI e metodo SDK `system.listAdminExtensions()`
 - [x] catalogo settings e definizione permission grant senza leakage secret
 - [x] seed e preview template email con variabili renderizzate
-- [x] write flow UI settings, permission center ed email template editor
+- [x] write flow UI settings, controlli accesso ed email template editor
 
 ## Verifica completata
 
-- `npm run e2e:ci`: write flow settings, permission center e template email passati
+- `npm run e2e:ci`: write flow settings, controlli accesso e template email passati

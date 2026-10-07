@@ -5,14 +5,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Readable } from "node:stream";
 import test from "node:test";
-import {
-  validatePluginManifest,
-  type DbAdapter,
-  type DbQuery,
-  type DbRepository,
-  type DbTransaction,
-  type NamespaceContext
-} from "@trinacria-cms/kernel";
+import { type DbAdapter, type DbQuery, type DbRepository, type DbTransaction, type NamespaceContext } from "@trinacria-cms/kernel";
+import { validatePluginManifest } from "@trinacria-cms/kernel/runtime";
 import {
   MEDIA_ACL_ENTRIES_ENTITY,
   MEDIA_ASSETS_ENTITY,
@@ -31,7 +25,7 @@ import {
   MediaProviderRegistry,
   type MediaStorageProvider,
   type MediaStorageConfigService
-} from "../src/index.js";
+} from "../src/runtime.js";
 import { parseCsv, serializeCsv } from "../src/admin/file-manager/csv-editor.js";
 
 test("media-pack manifest declares its foundation contributions", () => {

@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "mode": "official",
+  "files": [
+    "auth.gen.ts",
+    "delivery.gen.ts",
+    "editorial.gen.ts",
+    "email.gen.ts",
+    "index.ts",
+    "installation.gen.ts",
+    "internationalization.gen.ts",
+    "kernelHealth.gen.ts",
+    "media.gen.ts",
+    "permissions.gen.ts",
+    "preview.gen.ts",
+    "roles.gen.ts",
+    "security.gen.ts",
+    "settings.gen.ts",
+    "system.gen.ts",
+    "types.gen.ts",
+    "users.gen.ts"
+  ]
+}

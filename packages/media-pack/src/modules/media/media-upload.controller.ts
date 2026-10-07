@@ -15,6 +15,8 @@ import {
   s,
   toOpenApiSchema
 } from "@trinacria-cms/kernel";
+import { getHttpOperationContext } from "@trinacria-cms/kernel/runtime";
+import type { MediaUploadOperations } from "../../operations/media-operations.js";
 import { MEDIA_PACK_PLUGIN_ID } from "../../plugin/media-pack.constants.js";
 import {
   MediaApiErrorResponseSchema,
@@ -44,7 +46,7 @@ export class MediaUploadController extends HttpController {
   private readonly canUpload: HttpMiddleware;
 
   constructor(
-    private readonly uploads: MediaUploadsService,
+    private readonly uploads: MediaUploadOperations,
     auth: JwtAuthService,
     authz: AuthzService
   ) {
@@ -58,6 +60,7 @@ export class MediaUploadController extends HttpController {
       .post("/v1/media/uploads", this.startUpload, {
         middlewares: [this.authenticated, this.canUpload],
         docs: {
+          pluginId: "media-pack",
           summary: "Create a media upload session",
           tags: ["Media"],
           operationId: "startMediaUpload",
@@ -78,12 +81,14 @@ export class MediaUploadController extends HttpController {
       .put("/v1/media/uploads/:id/content", this.receiveContent, {
         middlewares: [this.authenticated, this.canUpload],
         docs: {
+          pluginId: "media-pack",
           summary: "Stream content into a media upload session",
           tags: ["Media"],
           operationId: "receiveMediaUploadContent",
           security: [{ bearerAuth: [] }],
           requestBody: {
             required: true,
+            contentType: "application/octet-stream",
             schema: { type: "string", format: "binary" }
           },
           responses: {
@@ -101,6 +106,7 @@ export class MediaUploadController extends HttpController {
       .post("/v1/media/uploads/:id/complete", this.completeUpload, {
         middlewares: [this.authenticated, this.canUpload],
         docs: {
+          pluginId: "media-pack",
           summary: "Complete a media upload and create the asset",
           tags: ["Media"],
           operationId: "completeMediaUpload",
@@ -123,9 +129,10 @@ export class MediaUploadController extends HttpController {
   private startUpload = async (ctx: HttpContext) => {
     try {
       const payload = StartMediaUploadInputSchema.parse(ctx.body);
-      const user = getAuthenticatedUser(ctx);
       return responder.success(
-        await this.uploads.startUpload({ ...payload, ownerUserId: user.id })
+        await this.uploads.startUpload(getHttpOperationContext(ctx), {
+          ...payload
+        })
       );
     } catch (error) {
       return toMediaErrorResponse(error);
@@ -143,9 +150,11 @@ export class MediaUploadController extends HttpController {
       return responder.invalidRequest("Media upload content stream is missing");
     }
     try {
-      const user = getAuthenticatedUser(ctx);
       return responder.success(
-        await this.uploads.receiveContent({ uploadId, ownerUserId: user.id, body: ctx.body })
+        await this.uploads.receiveContent(getHttpOperationContext(ctx), {
+          uploadId,
+          body: ctx.body
+        })
       );
     } catch (error) {
       return toMediaErrorResponse(error);
@@ -156,9 +165,10 @@ export class MediaUploadController extends HttpController {
     const uploadId = ctx.params.id;
     if (!uploadId) return responder.invalidRequest("Missing upload id");
     try {
-      const user = getAuthenticatedUser(ctx);
       return responder.success(
-        await this.uploads.completeUpload({ uploadId, ownerUserId: user.id })
+        await this.uploads.completeUpload(getHttpOperationContext(ctx), {
+          uploadId
+        })
       );
     } catch (error) {
       return toMediaErrorResponse(error);

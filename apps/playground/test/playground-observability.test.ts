@@ -1,11 +1,8 @@
 import assert from "node:assert/strict";
 import { IncomingMessage, ServerResponse } from "node:http";
 import test from "node:test";
-import type {
-  HttpContext,
-  KernelHealthSnapshot,
-  PluginContributionCatalogSnapshot
-} from "@trinacria-cms/kernel";
+import type { HttpContext, PluginContributionCatalogSnapshot } from "@trinacria-cms/kernel";
+import type { KernelHealthSnapshot } from "@trinacria-cms/kernel/runtime";
 import {
   createObservabilityMiddlewares,
   createOpsChecklistItems,

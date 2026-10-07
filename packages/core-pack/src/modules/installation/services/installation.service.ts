@@ -1,22 +1,42 @@
+import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import type { EventBus } from "@trinacria/events";
-import type { PluginManifestProvisioner } from "@trinacria-cms/kernel";
+import type {
+  DbAdapter,
+  InstallationCheck,
+  InstallationHost,
+  PluginEventPublisher,
+  PluginManifestProvisioner
+} from "@trinacria-cms/kernel";
+import {
+  type MongoDurableEventStore,
+  type PlatformLease,
+  PlatformLocks
+} from "@trinacria-cms/kernel/runtime";
 import { CORE_PACK_ADMIN_I18N_SOURCES } from "../../../admin-i18n/index.js";
 import { CORE_PACK_MANIFEST } from "../../../plugin/core-pack.manifest.js";
 import { CORE_PACK_ADMIN_ROLE } from "../../../plugin/core-pack.security.js";
 import type { UserAccessService } from "../../security/user-access/user-access.service.js";
+import { SettingsDefinitionsRepository } from "../../settings/definitions/settings-definitions.repository.js";
+import { SettingsSecretsRepository } from "../../settings/secrets/settings-secrets.repository.js";
 import type { SettingsService } from "../../settings/services/settings.service.js";
-import type { UsersRepository } from "../../users/repositories/users.repository.js";
+import { SettingsValuesRepository } from "../../settings/values/settings-values.repository.js";
+import { UsersRepository } from "../../users/repositories/users.repository.js";
 import { UserLifecycleEventPublisher } from "../../users/services/user-lifecycle-event-publisher.js";
 import type { UserRecord } from "../../users/users.schemas.js";
 import type { InstallBootstrapInput } from "../dto/installation.input.dto.js";
-import type { InstallationStateRepository } from "../repositories/installation-state.repository.js";
-import type { LocalCredentialsRepository } from "../repositories/local-credentials.repository.js";
+import type { InstallationStateRecord } from "../installation.schemas.js";
+import { InstallationStateRepository } from "../repositories/installation-state.repository.js";
+import { LocalCredentialsRepository } from "../repositories/local-credentials.repository.js";
 import type { PasswordHashingService } from "./password-hashing.service.js";
 
 export interface InstallationStatus {
   installed: boolean;
+  phase: "prerequisites" | "ready" | "configuration" | "content" | "verification" | "complete";
+  canInstall: boolean;
+  restartRequired: boolean;
+  dataMode?: "empty" | "demo";
+  checks: readonly InstallationCheck[];
   installedAt?: string;
   adminUserId?: string;
   envFilePresent: boolean;
@@ -57,11 +77,9 @@ export class PasswordMismatchError extends Error {
  * - save site settings
  * - persist installation state
  *
- * MongoDB is expected to be pre-configured via .env at application startup.
+ * Host prerequisites determine readiness; interrupted attempts remain retryable.
  */
 export class InstallationService {
-  private readonly userEvents: UserLifecycleEventPublisher;
-
   constructor(
     private readonly installationState: InstallationStateRepository,
     private readonly localCredentials: LocalCredentialsRepository,
@@ -70,127 +88,222 @@ export class InstallationService {
     private readonly manifestProvisioning: PluginManifestProvisioner,
     private readonly passwordHashing: PasswordHashingService,
     private readonly settings: SettingsService,
-    events?: EventBus
-  ) {
-    this.userEvents = new UserLifecycleEventPublisher(events);
-  }
+    private readonly durable?: MongoDurableEventStore,
+    private readonly host?: InstallationHost
+  ) {}
 
   async getStatus(): Promise<InstallationStatus> {
-    const envStatus = readInstallationEnvironmentStatus();
+    const checks = (await this.host?.inspect())?.checks ?? [];
     try {
-      const state = await this.installationState.ensureCreated();
-      return this.toStatus(state, envStatus);
+      const state = await this.installationState.get();
+      return this.toStatus(state ?? { installed: false }, checks);
     } catch {
-      return {
-        installed: false,
-        envFilePresent: envStatus.envFilePresent,
-        dbConfigured: envStatus.dbConfigured,
-        envFilePath: envStatus.envFilePath
-      };
+      return this.toStatus({ installed: false }, [
+        ...checks.filter((check) => check.id !== "database"),
+        { id: "database", status: "fail", message: "configure-mongo" }
+      ]);
     }
   }
 
   async bootstrap(input: InstallBootstrapInput): Promise<InstallationBootstrapResult> {
-    const state = await this.installationState.ensureCreated();
-    if (state.installed) {
-      throw new InstallationAlreadyCompletedError();
-    }
-
-    // Validate password confirmation
-    if (input.password !== input.confirmPassword) {
-      throw new PasswordMismatchError();
-    }
-
-    // Security baseline
-    await this.manifestProvisioning.provision(CORE_PACK_MANIFEST, CORE_PACK_ADMIN_I18N_SOURCES);
-    await this.manifestProvisioning.provisionDeferred?.();
-
-    // Admin user
-    const adminUser = await this.upsertAdminUser(input);
-    const password = await this.passwordHashing.hashPassword(input.password);
-    await this.localCredentials.upsert({
-      userId: adminUser.id,
-      algorithm: password.algorithm,
-      passwordHash: password.passwordHash,
-      passwordSalt: password.passwordSalt
-    });
-
-    await this.userAccess.assignRoleToUser(adminUser.id, CORE_PACK_ADMIN_ROLE.code);
-
-    // Site settings
-    await this.provisionSiteSettings(input, adminUser.id);
-
-    // Mark installed
-    const installed = await this.installationState.markInstalled(adminUser.id);
-    return {
-      status: this.toStatus(installed, readInstallationEnvironmentStatus()),
-      adminUser
+    if (input.password !== input.confirmPassword) throw new PasswordMismatchError();
+    if ((await this.host?.inspect())?.checks.some((check) => check.status !== "pass"))
+      throw Object.assign(new Error("Resolve the installation prerequisites before continuing"), {
+        code: "platform_maintenance"
+      });
+    const db = this.installationState.getAdapter();
+    const locks = new PlatformLocks(db);
+    const lease = await locks.acquire("cms-installation", randomUUID());
+    if (!lease)
+      throw Object.assign(
+        new Error("Another installation is already running. Retry after it finishes."),
+        { code: "installation_in_progress" }
+      );
+    let leaseFailure: unknown;
+    let renewal = Promise.resolve();
+    const heartbeat = setInterval(() => {
+      renewal = renewal
+        .then(() => locks.renew(lease))
+        .catch((error) => {
+          leaseFailure = error;
+        });
+    }, 10000);
+    heartbeat.unref();
+    const assertLease = () => {
+      if (leaseFailure) throw leaseFailure;
     };
+    try {
+      const state = await this.installationState.ensureCreated();
+      if (state.installed) throw new InstallationAlreadyCompletedError();
+      const dataMode = input.dataMode ?? "empty";
+      // A resumed attempt must prove ownership of the admin created by the first attempt.
+      if (state.adminUserId) {
+        const credential = await this.localCredentials.findByUserId(state.adminUserId);
+        if (
+          state.adminEmail !== input.email ||
+          state.dataMode !== dataMode ||
+          !credential ||
+          !(await this.passwordHashing.verifyPassword(input.password, credential))
+        )
+          throw Object.assign(
+            new Error("Resume with the original administrator credentials and content choice"),
+            { code: "installation_resume_mismatch" }
+          );
+      }
+      await this.manifestProvisioning.provision(CORE_PACK_MANIFEST, CORE_PACK_ADMIN_I18N_SOURCES);
+      await this.manifestProvisioning.provisionDeferred?.();
+      assertLease();
+      const password = await this.passwordHashing.hashPassword(input.password);
+      const adminUser = await this.transaction(locks, lease, async (transactionDb, publisher) => {
+        const users = transactionDb ? new UsersRepository(transactionDb) : this.users;
+        const credentials = transactionDb
+          ? new LocalCredentialsRepository(transactionDb)
+          : this.localCredentials;
+        const access = transactionDb ? this.userAccess.forDb(transactionDb) : this.userAccess;
+        const settings = transactionDb
+          ? this.settings.forRepositories(
+              new SettingsDefinitionsRepository(transactionDb),
+              new SettingsValuesRepository(transactionDb),
+              new SettingsSecretsRepository(transactionDb)
+            )
+          : this.settings;
+        const installation = transactionDb
+          ? new InstallationStateRepository(transactionDb)
+          : this.installationState;
+        const user = await this.writeAdminUser(
+          input,
+          users,
+          new UserLifecycleEventPublisher(publisher)
+        );
+        await credentials.upsert({ userId: user.id, ...password });
+        await access.assignRoleToUser(user.id, CORE_PACK_ADMIN_ROLE.code);
+        await this.provisionSiteSettings(input, user.id, settings);
+        await installation.checkpoint({
+          phase: "content",
+          dataMode,
+          adminEmail: input.email,
+          adminUserId: user.id
+        });
+        return user;
+      });
+      assertLease();
+      await this.host?.initialize({ dataMode, adminUserId: adminUser.id });
+      assertLease();
+      await this.transaction(locks, lease, async (transactionDb) => {
+        await (transactionDb
+          ? new InstallationStateRepository(transactionDb)
+          : this.installationState
+        ).checkpoint({ phase: "verification" });
+      });
+      const checks = await this.verify(input, adminUser.id);
+      if (checks.some((check) => check.status !== "pass"))
+        throw Object.assign(
+          new Error(
+            "Installation verification failed. Check the services and retry with the same administrator."
+          ),
+          { code: "platform_maintenance" }
+        );
+      assertLease();
+      const installed = await this.transaction(locks, lease, (transactionDb) =>
+        (transactionDb
+          ? new InstallationStateRepository(transactionDb)
+          : this.installationState
+        ).markInstalled(adminUser.id)
+      );
+      return {
+        status: this.toStatus(installed, checks),
+        adminUser: (await this.users.findById(adminUser.id)) ?? adminUser
+      };
+    } finally {
+      clearInterval(heartbeat);
+      await renewal;
+      await locks.release(lease).catch(() => {});
+    }
+  }
+
+  private async transaction<T>(
+    locks: PlatformLocks,
+    lease: PlatformLease,
+    work: (db?: DbAdapter, publisher?: PluginEventPublisher) => Promise<T>
+  ): Promise<T> {
+    if (!this.durable) return work();
+    return this.durable.transactionWithKernel("core-pack", async (db, publisher, repositories) => {
+      await locks.fence(repositories, lease);
+      return work(db, publisher);
+    });
+  }
+
+  private siteValues(input: InstallBootstrapInput): [string, string][] {
+    return [
+      ["core-pack:site:name", input.siteName],
+      ["core-pack:branding:tagline", input.siteTagline ?? ""],
+      ["core-pack:cms:locale", input.locale ?? "en-US"],
+      ["core-pack:cms:timezone", input.timezone ?? "UTC"]
+    ];
   }
 
   private async provisionSiteSettings(
     input: InstallBootstrapInput,
-    adminUserId: string
+    adminUserId: string,
+    settings: SettingsService
   ): Promise<void> {
-    if (input.siteName) {
-      try {
-        await this.settings.upsertValue({
-          requesterPluginId: "core-pack",
-          key: "core-pack:site:name",
-          value: input.siteName,
-          updatedBy: adminUserId
-        });
-      } catch {
-        // Settings provisioning is non-fatal for bootstrap
-      }
-    }
-    if (input.siteTagline) {
-      try {
-        await this.settings.upsertValue({
-          requesterPluginId: "core-pack",
-          key: "core-pack:branding:tagline",
-          value: input.siteTagline,
-          updatedBy: adminUserId
-        });
-      } catch {
-        // non-fatal
-      }
-    }
-    if (input.locale) {
-      try {
-        await this.settings.upsertValue({
-          requesterPluginId: "core-pack",
-          key: "core-pack:cms:locale",
-          value: input.locale,
-          updatedBy: adminUserId
-        });
-      } catch {
-        // non-fatal
-      }
-    }
-    if (input.timezone) {
-      try {
-        await this.settings.upsertValue({
-          requesterPluginId: "core-pack",
-          key: "core-pack:cms:timezone",
-          value: input.timezone,
-          updatedBy: adminUserId
-        });
-      } catch {
-        // non-fatal
-      }
-    }
+    for (const [key, value] of this.siteValues(input))
+      await settings.upsertValue({
+        requesterPluginId: "core-pack",
+        key,
+        value,
+        updatedBy: adminUserId
+      });
   }
 
-  private async upsertAdminUser(input: InstallBootstrapInput): Promise<UserRecord> {
-    const existing = await this.users.findByEmail(input.email);
+  private async verify(
+    input: InstallBootstrapInput,
+    adminUserId: string
+  ): Promise<InstallationCheck[]> {
+    const checks = [
+      ...((await this.host?.inspect())?.checks ?? []),
+      ...((await this.host?.verify()) ?? [])
+    ];
+    const user = await this.users.findById(adminUserId);
+    const credential = await this.localCredentials.findByUserId(adminUserId);
+    const roles = await this.userAccess.listUserRoles(adminUserId);
+    const adminReady =
+      user?.status === "active" &&
+      roles.some((role) => role.roleCode === "admin") &&
+      credential &&
+      (await this.passwordHashing.verifyPassword(input.password, credential));
+    checks.push({
+      id: "administrator",
+      status: adminReady ? "pass" : "fail",
+      message: adminReady ? "administrator-ready" : "administrator-not-ready"
+    });
+    const values = await Promise.all(
+      this.siteValues(input).map(
+        async ([key, expected]) =>
+          (await this.settings.getResolvedValueByKey(key))?.value === expected
+      )
+    );
+    checks.push({
+      id: "settings",
+      status: values.every(Boolean) ? "pass" : "fail",
+      message: values.every(Boolean) ? "settings-ready" : "settings-not-ready"
+    });
+    return checks;
+  }
+
+  private async writeAdminUser(
+    input: InstallBootstrapInput,
+    users: UsersRepository,
+    events: UserLifecycleEventPublisher
+  ): Promise<UserRecord> {
+    const existing = await users.findByEmail(input.email);
     if (!existing) {
-      const created = await this.users.create({
+      const created = await users.create({
         email: input.email,
         firstName: input.firstName,
         lastName: input.lastName
       });
-      await this.userEvents.userCreated({
+      await events.userCreated({
         userId: created.id,
         status: created.status,
         source: "system"
@@ -202,13 +315,13 @@ export class InstallationService {
       return existing;
     }
 
-    const reactivated = await this.users.updateStatus(existing.id, {
+    const reactivated = await users.updateStatus(existing.id, {
       status: "active"
     });
     if (!reactivated) {
       throw new Error(`User "${existing.id}" disappeared during activation`);
     }
-    await this.userEvents.userStatusChanged({
+    await events.userStatusChanged({
       userId: reactivated.id,
       previousStatus: existing.status,
       status: reactivated.status,
@@ -218,20 +331,20 @@ export class InstallationService {
   }
 
   private toStatus(
-    state: {
-      installed: boolean;
-      installedAt?: string;
-      adminUserId?: string;
-    },
-    envStatus: { envFilePresent: boolean; dbConfigured: boolean; envFilePath: string }
+    state: Pick<InstallationStateRecord, "installed"> & Partial<InstallationStateRecord>,
+    checks: readonly InstallationCheck[]
   ): InstallationStatus {
+    const ready = checks.every((check) => check.status === "pass");
     return {
+      ...readInstallationEnvironmentStatus(),
       installed: state.installed,
       installedAt: state.installedAt,
       adminUserId: state.adminUserId,
-      envFilePresent: envStatus.envFilePresent,
-      dbConfigured: envStatus.dbConfigured,
-      envFilePath: envStatus.envFilePath
+      phase: state.installed ? "complete" : !ready ? "prerequisites" : (state.phase ?? "ready"),
+      dataMode: state.dataMode,
+      canInstall: !state.installed && ready,
+      restartRequired: false,
+      checks
     };
   }
 }
@@ -244,7 +357,7 @@ function resolveEnvFilePath(): string {
   return join(process.cwd(), ".env");
 }
 
-function readInstallationEnvironmentStatus(): {
+export function readInstallationEnvironmentStatus(): {
   envFilePresent: boolean;
   dbConfigured: boolean;
   envFilePath: string;

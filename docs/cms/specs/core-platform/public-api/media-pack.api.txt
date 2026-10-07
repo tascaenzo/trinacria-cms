@@ -1,0 +1,1458 @@
+// dist/admin/file-manager/file-manager.types.d.ts
+import type { createCmsSdkClient } from "@trinacria-cms/sdk";
+export type CmsClient = ReturnType<typeof createCmsSdkClient>;
+export type Visibility = "private" | "restricted" | "public";
+export type PrincipalType = "user" | "role" | "plugin";
+export type ShareAction = "read" | "write" | "manage" | "share";
+export interface ApiEnvelope<T> {
+    data: T;
+}
+export interface MediaDirectory {
+    id: string;
+    parentId?: string;
+    name: string;
+    visibility: Visibility;
+    inheritAcl: boolean;
+}
+export interface MediaAsset {
+    id: string;
+    directoryId?: string;
+    displayName: string;
+    originalFilename: string;
+    mimeType: string;
+    byteSize: number;
+    width?: number;
+    height?: number;
+    status: string;
+    visibility: Visibility;
+    updatedAt: string;
+}
+export interface MediaFileManagerSelection {
+    asset: MediaAsset;
+    url: string;
+}
+export interface MediaShare {
+    id: string;
+    principalType: PrincipalType;
+    principalId: string;
+    actions: readonly ShareAction[];
+    expiresAt?: string;
+}
+export type DeleteTarget = {
+    kind: "asset";
+    value: MediaAsset;
+} | {
+    kind: "directory";
+    value: MediaDirectory;
+};
+export interface MediaFileManagerContext {
+    cms: CmsClient;
+    apiBaseUrl?: string;
+    acceptedMimeTypes?: readonly string[];
+    presentation?: "page" | "modal";
+    selectionMode?: "manage" | "single";
+    open?: boolean;
+    onClose?: () => void;
+    onSelect?: (selection: MediaFileManagerSelection) => void;
+    selectLabel?: string;
+    t?: (key: string, fallback?: string) => string;
+}
+export type FileManagerViewMode = "icons" | "list";
+export type MediaVisibility = Visibility;
+export type MediaPrincipalType = PrincipalType;
+export type MediaShareAction = ShareAction;
+
+// dist/admin/index.d.ts
+import { FileManager, MediaFileManager, type MediaFileManagerContext } from "./media-file-manager.js";
+import { MediaFileManagerModalDemo } from "./media-file-manager-modal-demo.js";
+import { MediaFileManagerWidget } from "./media-file-manager-widget.js";
+import { MediaStorageSettings, type MediaStorageSettingsContext } from "./media-storage-settings.js";
+import { MediaUploadPolicySettings, type MediaUploadPolicySettingsContext } from "./media-upload-policy-settings.js";
+/** React renderers intentionally live with the Media feature, not in the shell. */
+export declare const MEDIA_PACK_ADMIN_RENDERERS: {
+    pages: {
+        "media-pack:file-manager": (context: MediaFileManagerContext) => import("react").JSX.Element;
+    };
+    settingsSections: {
+        "media-pack:storage-settings": (context: MediaStorageSettingsContext) => import("react").JSX.Element;
+        "media-pack:upload-policy-settings": (context: MediaUploadPolicySettingsContext) => import("react").JSX.Element;
+    };
+};
+export type { MediaAsset, MediaFileManagerContext, MediaFileManagerSelection } from "./media-file-manager.js";
+export { FileManager, MediaFileManager, MediaFileManagerModalDemo, MediaFileManagerWidget, MediaStorageSettings, MediaUploadPolicySettings };
+
+// dist/admin/media-file-manager-modal-demo.d.ts
+import { type MediaFileManagerContext } from "./media-file-manager.js";
+/** Integration example: the same manager can be embedded as a full-screen picker. */
+export declare function MediaFileManagerModalDemo(context: MediaFileManagerContext): import("react").JSX.Element;
+
+// dist/admin/media-file-manager-widget.d.ts
+import type { createCmsSdkClient } from "@trinacria-cms/sdk";
+type CmsClient = ReturnType<typeof createCmsSdkClient>;
+export interface MediaFileManagerWidgetContext {
+    cms: CmsClient;
+    locale: string;
+    navigateToRoute?: (routeId: string) => void;
+    routes: readonly {
+        id: string;
+    }[];
+}
+/** Dashboard overview for the media library with a direct file-manager action. */
+export declare function MediaFileManagerWidget({ cms, locale, navigateToRoute, routes }: MediaFileManagerWidgetContext): import("react").JSX.Element;
+export {};
+
+// dist/admin/media-file-manager.d.ts
+import type { MediaFileManagerContext } from "./file-manager/file-manager.types.js";
+export type { MediaAsset, MediaFileManagerContext, MediaFileManagerSelection } from "./file-manager/file-manager.types.js";
+export declare function MediaFileManager({ acceptedMimeTypes, apiBaseUrl, cms, onClose, onSelect, open, presentation, selectLabel, selectionMode }: MediaFileManagerContext): import("react").JSX.Element;
+/** Alias intended for consumers that embed the reusable Media file manager. */
+export declare const FileManager: typeof MediaFileManager;
+
+// dist/admin/media-storage-settings.d.ts
+import type { createCmsSdkClient } from "@trinacria-cms/sdk";
+type CmsClient = ReturnType<typeof createCmsSdkClient>;
+export interface MediaStorageSettingsContext {
+    cms: CmsClient;
+    onDirtyChange?: (isDirty: boolean) => void;
+    t: (key: string, fallback?: string) => string;
+}
+export declare function MediaStorageSettings({ cms, onDirtyChange, t }: MediaStorageSettingsContext): import("react").JSX.Element;
+export {};
+
+// dist/admin/media-upload-policy-settings.d.ts
+import type { createCmsSdkClient } from "@trinacria-cms/sdk";
+type CmsClient = ReturnType<typeof createCmsSdkClient>;
+export interface MediaUploadPolicySettingsContext {
+    cms: CmsClient;
+    onDirtyChange?: (isDirty: boolean) => void;
+    t: (key: string, fallback?: string) => string;
+}
+export declare function MediaUploadPolicySettings({ cms, onDirtyChange, t }: MediaUploadPolicySettingsContext): import("react").JSX.Element;
+export {};
+
+// dist/index.d.ts
+export type { MediaAclEntryRecord, MediaAssetRecord, MediaDirectoryRecord, MediaUploadSessionRecord } from "./modules/media/media.schemas.js";
+export type { MediaAssetReference, MediaAssetUsePurpose, MediaAssetUseResult, MediaStorageProvider, MediaStorageProviderKind, MediaStoredObject } from "./modules/media/media-storage.types.js";
+export type { MediaAssetOperations, MediaDirectoryOperations, MediaUploadOperations } from "./operations/media-operations.js";
+export { MEDIA_ASSET_OPERATIONS, MEDIA_DIRECTORY_OPERATIONS, MEDIA_UPLOAD_OPERATIONS } from "./operations/media-operations.js";
+export * from "./plugin/index.js";
+
+// dist/modules/index.d.ts
+export * from "./media/index.js";
+export { MediaPackRootModule } from "./media-pack-root.module.js";
+
+// dist/modules/media-pack-root.module.d.ts
+import { type ModuleDefinition } from "@trinacria-cms/kernel";
+export declare const MediaPackRootModule: ModuleDefinition;
+
+// dist/modules/media/index.d.ts
+export { MediaPackMediaModule } from "./media.module.js";
+export type { MediaAclEntryRecord, MediaAssetRecord, MediaDirectoryRecord, MediaUploadSessionRecord } from "./media.schemas.js";
+export { MEDIA_ACL_ENTRIES_ENTITY, MEDIA_ASSETS_ENTITY, MEDIA_DIRECTORIES_ENTITY, MEDIA_UPLOADS_ENTITY, MediaAclActionSchema, MediaAclEntryRecordSchema, MediaAssetRecordSchema, MediaAssetStatusSchema, MediaAssetVisibilitySchema, MediaDirectoryRecordSchema, MediaPrincipalTypeSchema, MediaUploadSessionRecordSchema, MediaUploadStatusSchema } from "./media.schemas.js";
+export { MEDIA_ASSETS_CONTROLLER_TOKEN, MEDIA_ASSETS_REPOSITORY_TOKEN, MEDIA_ASSETS_SERVICE_TOKEN, MEDIA_DIRECTORIES_REPOSITORY_TOKEN, MEDIA_DIRECTORIES_SERVICE_TOKEN, MEDIA_DOMAIN_EVENTS_SERVICE_TOKEN, MEDIA_ENTITY_REGISTRATION_TOKEN, MEDIA_LOCAL_DISK_PROVIDER_TOKEN, MEDIA_PROVIDER_REGISTRY_INITIALIZATION_TOKEN, MEDIA_PROVIDER_REGISTRY_TOKEN, MEDIA_STORAGE_CONFIG_SERVICE_TOKEN, MEDIA_UPLOAD_CONTROLLER_TOKEN, MEDIA_UPLOADS_REPOSITORY_TOKEN, MEDIA_UPLOADS_SERVICE_TOKEN } from "./media.tokens.js";
+export { MediaAssetsController } from "./media-assets.controller.js";
+export { MediaProviderRegistry } from "./media-provider-registry.service.js";
+export { MEDIA_PACK_SETTING_DEFINITIONS } from "./media-settings.js";
+export type { CompleteMediaStorageUploadInput, CreateMediaStorageReadUrlInput, CreateMediaStorageUploadInput, CreateMediaStorageUploadResult, MediaAssetReference, MediaAssetsService as MediaAssetsServiceContract, MediaAssetUsePurpose, MediaAssetUseResult, MediaStorageProvider, MediaStorageProviderKind, MediaStoredObject } from "./media-storage.types.js";
+export { MediaUploadController } from "./media-upload.controller.js";
+export type { LocalDiskMediaStorageProviderOptions } from "./providers/local-disk-media-storage.provider.js";
+export { LocalDiskMediaStorageProvider } from "./providers/local-disk-media-storage.provider.js";
+export type { S3MediaStorageProviderOptions } from "./providers/s3-media-storage.provider.js";
+export { S3MediaStorageProvider } from "./providers/s3-media-storage.provider.js";
+export type { CreateMediaAssetInput, ListMediaAssetsOptions, ReplaceMediaAssetAccessInput } from "./repositories/media-assets.repository.js";
+export { MediaAssetsRepository } from "./repositories/media-assets.repository.js";
+export type { CreateMediaDirectoryInput } from "./repositories/media-directories.repository.js";
+export { MediaDirectoriesRepository } from "./repositories/media-directories.repository.js";
+export type { CreateMediaUploadSessionInput } from "./repositories/media-uploads.repository.js";
+export { MediaUploadsRepository } from "./repositories/media-uploads.repository.js";
+export { MediaAssetsService } from "./services/media-assets.service.js";
+export { MediaDirectoriesService, MediaDirectoryError } from "./services/media-directories.service.js";
+export { MediaDomainEventsService } from "./services/media-domain-events.service.js";
+export type { MediaUploadPolicy } from "./services/media-storage-config.service.js";
+export { MediaStorageConfigService } from "./services/media-storage-config.service.js";
+export type { StartedMediaUpload, StartMediaUploadInput } from "./services/media-uploads.service.js";
+export { MediaUploadError, MediaUploadsService } from "./services/media-uploads.service.js";
+
+// dist/modules/media/media-assets.controller.d.ts
+import { type JwtAuthService } from "@trinacria-cms/core-pack";
+import { type AuthzService, HttpController } from "@trinacria-cms/kernel";
+import type { MediaAssetOperations, MediaDirectoryOperations } from "../../operations/media-operations.js";
+import type { MediaProviderRegistry } from "./media-provider-registry.service.js";
+import type { MediaAssetsService } from "./services/media-assets.service.js";
+import type { MediaStorageConfigService } from "./services/media-storage-config.service.js";
+/** Domain HTTP surface for assets, directories, sharing and delivery URLs. */
+export declare class MediaAssetsController extends HttpController {
+    private readonly assets;
+    private readonly directories;
+    private readonly providers;
+    private readonly storageConfig;
+    private readonly signedAssets;
+    private readonly authenticated;
+    private readonly canRead;
+    private readonly canUpdate;
+    private readonly canDelete;
+    private readonly canManageDirectories;
+    private readonly canManageShares;
+    private readonly canManageSettings;
+    constructor(assets: MediaAssetOperations, directories: MediaDirectoryOperations, providers: MediaProviderRegistry, storageConfig: MediaStorageConfigService, auth: JwtAuthService, authz: AuthzService, signedAssets: MediaAssetsService);
+    routes(): import("@trinacria/http").RouteDefinition[];
+    private listAssets;
+    private getAsset;
+    private updateAsset;
+    private deleteAsset;
+    private accessUrl;
+    private listShares;
+    private deliverLocalAsset;
+    private providerHealth;
+    private replaceShares;
+    private deleteShare;
+    private listDirectories;
+    private createDirectory;
+    private updateDirectory;
+    private deleteDirectory;
+    private readableAsset;
+    private listDirectoryShares;
+    private replaceDirectoryShares;
+    private deleteDirectoryShare;
+}
+
+// dist/modules/media/media-provider-registry.service.d.ts
+import type { MediaStorageProvider } from "./media-storage.types.js";
+/**
+ * In-memory registry for media-pack storage adapters. The registry owns adapter
+ * selection only; limits, ACL and asset state remain media domain concerns.
+ */
+export declare class MediaProviderRegistry {
+    private readonly providers;
+    register(provider: MediaStorageProvider): void;
+    replace(provider: MediaStorageProvider): void;
+    get(providerId: string): MediaStorageProvider;
+    list(): readonly MediaStorageProvider[];
+}
+
+// dist/modules/media/media-settings.d.ts
+import type { PluginManifestSetting } from "@trinacria-cms/kernel";
+export declare const MEDIA_PACK_SETTING_DEFINITIONS: readonly PluginManifestSetting[];
+/**
+ * Safe bootstrap values until the settings service is injected into the media
+ * runtime. They mirror the manifest defaults above and are not user input.
+ */
+export declare const MEDIA_PACK_DEFAULT_UPLOAD_POLICY: Readonly<{
+    providerId: "local-disk";
+    maxFileBytes: 25000000;
+    maxImagePixels: 40000000;
+    allowedMimeTypes: string[];
+}>;
+
+// dist/modules/media/media-storage.types.d.ts
+export type MediaStorageProviderKind = "local-disk" | "s3-compatible" | "custom";
+export interface MediaStoredObject {
+    storageKey: string;
+    byteSize: number;
+    /** First bytes read by a direct-upload provider for server-side signature validation. */
+    contentPrefix?: Uint8Array;
+    checksum?: {
+        algorithm: "sha256";
+        value: string;
+    };
+}
+export interface CreateMediaStorageUploadInput {
+    uploadId: string;
+    storageKey: string;
+    contentType?: string;
+    expectedByteSize: number;
+    checksumSha256?: string;
+}
+export interface CreateMediaStorageUploadResult {
+    method: "proxy" | "presigned";
+    uploadUrl: string;
+    expiresAt: string;
+    requiredHeaders?: Readonly<Record<string, string>>;
+}
+export interface CompleteMediaStorageUploadInput {
+    uploadId: string;
+    storageKey: string;
+    checksumSha256?: string;
+}
+export interface CreateMediaStorageReadUrlInput {
+    storageKey: string;
+    expiresInSeconds: number;
+}
+export interface MediaStorageProvider {
+    readonly id: string;
+    readonly kind: MediaStorageProviderKind;
+    health(): Promise<{
+        status: "ok" | "degraded" | "down";
+    }>;
+    createUpload(input: CreateMediaStorageUploadInput): Promise<CreateMediaStorageUploadResult>;
+    writeUpload(uploadId: string, body: AsyncIterable<Uint8Array>): Promise<void>;
+    discardUpload(uploadId: string): Promise<void>;
+    completeUpload(input: CompleteMediaStorageUploadInput): Promise<MediaStoredObject>;
+    createReadUrl(input: CreateMediaStorageReadUrlInput): Promise<{
+        url: string;
+        expiresAt: string;
+    }>;
+    /** Optional host streaming capability for revocable public delivery; never exposes a signed URL. */
+    readObject?(input: {
+        storageKey: string;
+        signal?: AbortSignal;
+    }): Promise<AsyncIterable<Uint8Array>>;
+    deleteObject(input: {
+        storageKey: string;
+    }): Promise<void>;
+}
+export interface MediaAssetReference {
+    assetId: string;
+}
+export type MediaAssetUsePurpose = "authoring" | "publication" | "delivery";
+export interface MediaAssetUseResult {
+    assetId: string;
+    usable: boolean;
+    reason?: "not_found" | "not_ready" | "deleted" | "access_denied" | "not_publishable";
+}
+export interface MediaAssetsService {
+    validateUse(input: {
+        references: readonly MediaAssetReference[];
+        actor: {
+            userId?: string;
+            pluginId?: string;
+            roleCodes?: readonly string[];
+        };
+        purpose: MediaAssetUsePurpose;
+    }): Promise<readonly MediaAssetUseResult[]>;
+}
+
+// dist/modules/media/media-upload.controller.d.ts
+import { type JwtAuthService } from "@trinacria-cms/core-pack";
+import { type AuthzService, HttpController, type HttpMiddleware } from "@trinacria-cms/kernel";
+import type { MediaUploadOperations } from "../../operations/media-operations.js";
+export declare class MediaUploadController extends HttpController {
+    private readonly uploads;
+    private readonly authenticated;
+    private readonly canUpload;
+    constructor(uploads: MediaUploadOperations, auth: JwtAuthService, authz: AuthzService);
+    routes(): import("@trinacria/http").RouteDefinition[];
+    private startUpload;
+    private receiveContent;
+    private completeUpload;
+}
+export declare function createMediaPermissionMiddleware(authz: AuthzService, resource: string, action: string): HttpMiddleware;
+
+// dist/modules/media/media.module.d.ts
+import { type ModuleDefinition } from "@trinacria-cms/kernel";
+export declare const MediaPackMediaModule: ModuleDefinition;
+
+// dist/modules/media/media.schemas.d.ts
+import { type Infer } from "@trinacria-cms/kernel";
+export declare const MediaAssetStatusSchema: import("@trinacria/schema/dist/core").InternalSchema<"uploading" | "processing" | "ready" | "rejected" | "quarantined" | "deleted">;
+export declare const MediaAssetVisibilitySchema: import("@trinacria/schema/dist/core").InternalSchema<"private" | "restricted" | "public">;
+export declare const MediaPrincipalTypeSchema: import("@trinacria/schema/dist/core").InternalSchema<"user" | "role" | "plugin">;
+export declare const MediaAclActionSchema: import("@trinacria/schema/dist/core").InternalSchema<"read" | "write" | "manage" | "share">;
+export declare const MediaUploadStatusSchema: import("@trinacria/schema/dist/core").InternalSchema<"rejected" | "pending" | "content_received" | "completed" | "expired">;
+export declare const MediaAssetRecordSchema: import("@trinacria/schema/dist/core").InternalSchema<{
+    id: string;
+    ownerUserId: string;
+    uploadedByUserId: string;
+    displayName: string;
+    originalFilename: string;
+    mimeType: string;
+    byteSize: number;
+    checksum: {
+        algorithm: "sha256";
+        value: string;
+    } & {};
+    providerId: string;
+    storageKey: string;
+    status: "uploading" | "processing" | "ready" | "rejected" | "quarantined" | "deleted";
+    visibility: "private" | "restricted" | "public";
+    aclVersion: number;
+    createdAt: string;
+    updatedAt: string;
+} & {
+    directoryId?: string | undefined;
+    width?: number | undefined;
+    height?: number | undefined;
+    durationMs?: number | undefined;
+    deletedAt?: string | undefined;
+}>;
+export type MediaAssetRecord = Infer<typeof MediaAssetRecordSchema>;
+export declare const MediaDirectoryRecordSchema: import("@trinacria/schema/dist/core").InternalSchema<{
+    id: string;
+    ownerUserId: string;
+    visibility: "private" | "restricted" | "public";
+    createdAt: string;
+    updatedAt: string;
+    name: string;
+    inheritAcl: boolean;
+} & {
+    deletedAt?: string | undefined;
+    parentId?: string | undefined;
+}>;
+export type MediaDirectoryRecord = Infer<typeof MediaDirectoryRecordSchema>;
+export declare const MediaAclEntryRecordSchema: import("@trinacria/schema/dist/core").InternalSchema<{
+    id: string;
+    createdAt: string;
+    updatedAt: string;
+    targetType: "asset" | "directory";
+    targetId: string;
+    principalType: "user" | "role" | "plugin";
+    principalId: string;
+    actions: ("read" | "write" | "manage" | "share")[];
+    createdByUserId: string;
+} & {
+    expiresAt?: string | undefined;
+}>;
+export type MediaAclEntryRecord = Infer<typeof MediaAclEntryRecordSchema>;
+export declare const MediaUploadSessionRecordSchema: import("@trinacria/schema/dist/core").InternalSchema<{
+    id: string;
+    ownerUserId: string;
+    displayName: string;
+    originalFilename: string;
+    mimeType: string;
+    providerId: string;
+    storageKey: string;
+    status: "rejected" | "pending" | "content_received" | "completed" | "expired";
+    createdAt: string;
+    updatedAt: string;
+    expiresAt: string;
+    expectedByteSize: number;
+} & {
+    directoryId?: string | undefined;
+    replacementAssetId?: string | undefined;
+    expectedChecksumSha256?: string | undefined;
+    assetId?: string | undefined;
+    rejectionReason?: string | undefined;
+}>;
+export type MediaUploadSessionRecord = Infer<typeof MediaUploadSessionRecordSchema>;
+export declare const MEDIA_ASSETS_ENTITY: {
+    ownerPluginId: string;
+    entityName: string;
+    schema: import("@trinacria/schema/dist/core").InternalSchema<{
+        id: string;
+        ownerUserId: string;
+        uploadedByUserId: string;
+        displayName: string;
+        originalFilename: string;
+        mimeType: string;
+        byteSize: number;
+        checksum: {
+            algorithm: "sha256";
+            value: string;
+        } & {};
+        providerId: string;
+        storageKey: string;
+        status: "uploading" | "processing" | "ready" | "rejected" | "quarantined" | "deleted";
+        visibility: "private" | "restricted" | "public";
+        aclVersion: number;
+        createdAt: string;
+        updatedAt: string;
+    } & {
+        directoryId?: string | undefined;
+        width?: number | undefined;
+        height?: number | undefined;
+        durationMs?: number | undefined;
+        deletedAt?: string | undefined;
+    }>;
+    indexes?: readonly import("@trinacria-cms/kernel/runtime").EntityIndexDefinition[];
+};
+export declare const MEDIA_DIRECTORIES_ENTITY: {
+    ownerPluginId: string;
+    entityName: string;
+    schema: import("@trinacria/schema/dist/core").InternalSchema<{
+        id: string;
+        ownerUserId: string;
+        visibility: "private" | "restricted" | "public";
+        createdAt: string;
+        updatedAt: string;
+        name: string;
+        inheritAcl: boolean;
+    } & {
+        deletedAt?: string | undefined;
+        parentId?: string | undefined;
+    }>;
+    indexes?: readonly import("@trinacria-cms/kernel/runtime").EntityIndexDefinition[];
+};
+export declare const MEDIA_ACL_ENTRIES_ENTITY: {
+    ownerPluginId: string;
+    entityName: string;
+    schema: import("@trinacria/schema/dist/core").InternalSchema<{
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        targetType: "asset" | "directory";
+        targetId: string;
+        principalType: "user" | "role" | "plugin";
+        principalId: string;
+        actions: ("read" | "write" | "manage" | "share")[];
+        createdByUserId: string;
+    } & {
+        expiresAt?: string | undefined;
+    }>;
+    indexes?: readonly import("@trinacria-cms/kernel/runtime").EntityIndexDefinition[];
+};
+export declare const MEDIA_UPLOADS_ENTITY: {
+    ownerPluginId: string;
+    entityName: string;
+    schema: import("@trinacria/schema/dist/core").InternalSchema<{
+        id: string;
+        ownerUserId: string;
+        displayName: string;
+        originalFilename: string;
+        mimeType: string;
+        providerId: string;
+        storageKey: string;
+        status: "rejected" | "pending" | "content_received" | "completed" | "expired";
+        createdAt: string;
+        updatedAt: string;
+        expiresAt: string;
+        expectedByteSize: number;
+    } & {
+        directoryId?: string | undefined;
+        replacementAssetId?: string | undefined;
+        expectedChecksumSha256?: string | undefined;
+        assetId?: string | undefined;
+        rejectionReason?: string | undefined;
+    }>;
+    indexes?: readonly import("@trinacria-cms/kernel/runtime").EntityIndexDefinition[];
+};
+
+// dist/modules/media/media.tokens.d.ts
+import type { MediaAssetsController } from "./media-assets.controller.js";
+import type { MediaProviderRegistry } from "./media-provider-registry.service.js";
+import type { MediaUploadController } from "./media-upload.controller.js";
+import type { LocalDiskMediaStorageProvider } from "./providers/local-disk-media-storage.provider.js";
+import type { MediaAssetsRepository } from "./repositories/media-assets.repository.js";
+import type { MediaDirectoriesRepository } from "./repositories/media-directories.repository.js";
+import type { MediaUploadsRepository } from "./repositories/media-uploads.repository.js";
+import type { MediaAssetsService } from "./services/media-assets.service.js";
+import type { MediaDirectoriesService } from "./services/media-directories.service.js";
+import type { MediaDomainEventsService } from "./services/media-domain-events.service.js";
+import type { MediaStorageConfigService } from "./services/media-storage-config.service.js";
+import type { MediaUploadsService } from "./services/media-uploads.service.js";
+export declare const MEDIA_PROVIDER_REGISTRY_TOKEN: import("@trinacria/core").Token<MediaProviderRegistry>;
+export declare const MEDIA_ASSETS_REPOSITORY_TOKEN: import("@trinacria/core").Token<MediaAssetsRepository>;
+export declare const MEDIA_ASSETS_SERVICE_TOKEN: import("@trinacria/core").Token<MediaAssetsService>;
+export declare const MEDIA_UPLOADS_REPOSITORY_TOKEN: import("@trinacria/core").Token<MediaUploadsRepository>;
+export declare const MEDIA_DIRECTORIES_REPOSITORY_TOKEN: import("@trinacria/core").Token<MediaDirectoriesRepository>;
+export declare const MEDIA_DIRECTORIES_SERVICE_TOKEN: import("@trinacria/core").Token<MediaDirectoriesService>;
+export declare const MEDIA_UPLOADS_SERVICE_TOKEN: import("@trinacria/core").Token<MediaUploadsService>;
+export declare const MEDIA_STORAGE_CONFIG_SERVICE_TOKEN: import("@trinacria/core").Token<MediaStorageConfigService>;
+export declare const MEDIA_DOMAIN_EVENTS_SERVICE_TOKEN: import("@trinacria/core").Token<MediaDomainEventsService>;
+export declare const MEDIA_UPLOAD_CONTROLLER_TOKEN: import("@trinacria/core").Token<MediaUploadController>;
+export declare const MEDIA_ASSETS_CONTROLLER_TOKEN: import("@trinacria/core").Token<MediaAssetsController>;
+export declare const MEDIA_LOCAL_DISK_PROVIDER_TOKEN: import("@trinacria/core").Token<LocalDiskMediaStorageProvider>;
+export declare const MEDIA_PROVIDER_REGISTRY_INITIALIZATION_TOKEN: import("@trinacria/core").Token<boolean>;
+export declare const MEDIA_ENTITY_REGISTRATION_TOKEN: import("@trinacria/core").Token<boolean>;
+
+// dist/modules/media/providers/local-disk-media-storage.provider.d.ts
+import type { Readable } from "node:stream";
+import type { CompleteMediaStorageUploadInput, CreateMediaStorageReadUrlInput, CreateMediaStorageUploadInput, CreateMediaStorageUploadResult, MediaStorageProvider, MediaStoredObject } from "../media-storage.types.js";
+export interface LocalDiskMediaStorageProviderOptions {
+    rootDirectory: string;
+    uploadUrlBasePath?: string;
+}
+/**
+ * Local filesystem adapter. Bytes are staged under the provider root, then
+ * atomically promoted to their opaque storage key after completion.
+ */
+export declare class LocalDiskMediaStorageProvider implements MediaStorageProvider {
+    readonly id = "local-disk";
+    readonly kind: "local-disk";
+    private readonly rootDirectory;
+    private readonly uploadUrlBasePath;
+    private readonly readUrlSecret;
+    constructor(options: LocalDiskMediaStorageProviderOptions);
+    health(): Promise<{
+        status: "ok" | "degraded" | "down";
+    }>;
+    createUpload(input: CreateMediaStorageUploadInput): Promise<CreateMediaStorageUploadResult>;
+    writeUpload(uploadId: string, body: AsyncIterable<Uint8Array>): Promise<void>;
+    /** Compatibility alias for integrations that use the local provider directly. */
+    stageUpload(uploadId: string, body: AsyncIterable<Uint8Array>): Promise<void>;
+    discardUpload(uploadId: string): Promise<void>;
+    completeUpload(input: CompleteMediaStorageUploadInput): Promise<MediaStoredObject>;
+    createReadUrl(input: CreateMediaStorageReadUrlInput): Promise<{
+        url: string;
+        expiresAt: string;
+    }>;
+    openVerifiedReadStream(input: {
+        storageKey: string;
+        expiresAtMs: number;
+        signature: string;
+    }): Readable;
+    readObject(input: {
+        storageKey: string;
+        signal?: AbortSignal;
+    }): Promise<AsyncIterable<Uint8Array>>;
+    deleteObject(input: {
+        storageKey: string;
+    }): Promise<void>;
+    private stagingPath;
+    private storagePath;
+    private resolveWithinRoot;
+    private assertUploadId;
+    private hashFile;
+    private readFilePrefix;
+    private signReadUrl;
+}
+
+// dist/modules/media/providers/s3-media-storage.provider.d.ts
+import type { CompleteMediaStorageUploadInput, CreateMediaStorageReadUrlInput, CreateMediaStorageUploadInput, CreateMediaStorageUploadResult, MediaStorageProvider, MediaStoredObject } from "../media-storage.types.js";
+export interface S3MediaStorageProviderOptions {
+    endpoint?: string;
+    region: string;
+    bucket: string;
+    accessKeyId: string;
+    secretAccessKey: string;
+    forcePathStyle?: boolean;
+}
+/** S3-compatible provider using a private staging object and presigned reads. */
+export declare class S3MediaStorageProvider implements MediaStorageProvider {
+    private readonly options;
+    readonly id = "s3-compatible";
+    readonly kind: "s3-compatible";
+    private readonly client;
+    constructor(options: S3MediaStorageProviderOptions);
+    health(): Promise<{
+        status: "ok" | "degraded" | "down";
+    }>;
+    createUpload(input: CreateMediaStorageUploadInput): Promise<CreateMediaStorageUploadResult>;
+    writeUpload(uploadId: string, body: AsyncIterable<Uint8Array>): Promise<void>;
+    discardUpload(uploadId: string): Promise<void>;
+    completeUpload(input: CompleteMediaStorageUploadInput): Promise<MediaStoredObject>;
+    createReadUrl(input: CreateMediaStorageReadUrlInput): Promise<{
+        url: string;
+        expiresAt: string;
+    }>;
+    readObject(input: {
+        storageKey: string;
+        signal?: AbortSignal;
+    }): Promise<AsyncIterable<Uint8Array>>;
+    deleteObject(input: {
+        storageKey: string;
+    }): Promise<void>;
+    private stagingKey;
+    private readObjectPrefix;
+}
+
+// dist/modules/media/repositories/media-assets.repository.d.ts
+import type { DbAdapter } from "@trinacria-cms/kernel";
+import { type MediaAclEntryRecord, type MediaAssetRecord } from "../media.schemas.js";
+export interface CreateMediaAssetInput {
+    directoryId?: string;
+    ownerUserId: string;
+    uploadedByUserId: string;
+    displayName: string;
+    originalFilename: string;
+    mimeType: string;
+    byteSize: number;
+    checksum: {
+        algorithm: "sha256";
+        value: string;
+    };
+    width?: number;
+    height?: number;
+    durationMs?: number;
+    providerId: string;
+    storageKey: string;
+    status?: MediaAssetRecord["status"];
+    visibility?: MediaAssetRecord["visibility"];
+}
+export interface ReplaceMediaAssetAccessInput {
+    assetId: string;
+    principalType: "user" | "role" | "plugin";
+    principalId: string;
+    actions: readonly ("read" | "write" | "manage" | "share")[];
+    createdByUserId: string;
+    expiresAt?: string;
+}
+export interface ListMediaAssetsOptions {
+    directoryId?: string;
+    rootOnly?: boolean;
+    status?: MediaAssetRecord["status"];
+    limit?: number;
+    offset?: number;
+}
+export declare class MediaAssetsRepository {
+    private readonly db;
+    private scope?;
+    constructor(db: DbAdapter);
+    create(input: CreateMediaAssetInput): Promise<MediaAssetRecord>;
+    findById(id: string): Promise<MediaAssetRecord | null>;
+    findByStorage(providerId: string, storageKey: string): Promise<MediaAssetRecord | null>;
+    list(options?: ListMediaAssetsOptions): Promise<readonly MediaAssetRecord[]>;
+    updateDetails(id: string, input: {
+        displayName?: string;
+        directoryId?: string | null;
+    }): Promise<MediaAssetRecord | null>;
+    replaceContent(id: string, input: {
+        uploadedByUserId: string;
+        originalFilename: string;
+        mimeType: string;
+        byteSize: number;
+        checksum: MediaAssetRecord["checksum"];
+        providerId: string;
+        storageKey: string;
+        width?: number;
+        height?: number;
+    }): Promise<MediaAssetRecord | null>;
+    updateVisibility(id: string, visibility: MediaAssetRecord["visibility"]): Promise<MediaAssetRecord | null>;
+    bumpAclVersion(id: string): Promise<MediaAssetRecord | null>;
+    softDelete(id: string): Promise<MediaAssetRecord | null>;
+    listDeletedBefore(cutoff: string): Promise<readonly MediaAssetRecord[]>;
+    hardDelete(id: string): Promise<boolean>;
+    listAccessEntries(assetId: string): Promise<readonly MediaAclEntryRecord[]>;
+    listAccessEntriesForTarget(targetType: MediaAclEntryRecord["targetType"], targetId: string): Promise<readonly MediaAclEntryRecord[]>;
+    replaceAccess(input: ReplaceMediaAssetAccessInput): Promise<MediaAclEntryRecord>;
+    deleteAccessEntryForTarget(targetType: MediaAclEntryRecord["targetType"], targetId: string, entryId: string): Promise<boolean>;
+    deleteAccessEntriesForTarget(targetType: MediaAclEntryRecord["targetType"], targetId: string): Promise<number>;
+    replaceAccessForTarget(input: ReplaceMediaAssetAccessInput & {
+        targetType: MediaAclEntryRecord["targetType"];
+    }): Promise<MediaAclEntryRecord>;
+    private assets;
+    private aclEntries;
+    private scopeForPlugin;
+}
+
+// dist/modules/media/repositories/media-directories.repository.d.ts
+import type { DbAdapter } from "@trinacria-cms/kernel";
+import { type MediaDirectoryRecord } from "../media.schemas.js";
+export interface CreateMediaDirectoryInput {
+    ownerUserId: string;
+    name: string;
+    parentId?: string;
+    visibility?: MediaDirectoryRecord["visibility"];
+    inheritAcl?: boolean;
+}
+export declare class MediaDirectoriesRepository {
+    private readonly db;
+    private scope?;
+    constructor(db: DbAdapter);
+    create(input: CreateMediaDirectoryInput): Promise<MediaDirectoryRecord>;
+    findById(id: string): Promise<MediaDirectoryRecord | null>;
+    list(parentId?: string): Promise<readonly MediaDirectoryRecord[]>;
+    update(id: string, input: {
+        name?: string;
+        parentId?: string | null;
+        visibility?: MediaDirectoryRecord["visibility"];
+        inheritAcl?: boolean;
+    }): Promise<MediaDirectoryRecord | null>;
+    softDelete(id: string): Promise<MediaDirectoryRecord | null>;
+    private repository;
+}
+
+// dist/modules/media/repositories/media-uploads.repository.d.ts
+import type { DbAdapter } from "@trinacria-cms/kernel";
+import { type MediaUploadSessionRecord } from "../media.schemas.js";
+export interface CreateMediaUploadSessionInput {
+    ownerUserId: string;
+    providerId: string;
+    replacementAssetId?: string;
+    directoryId?: string;
+    displayName?: string;
+    originalFilename: string;
+    mimeType: string;
+    expectedByteSize: number;
+    expectedChecksumSha256?: string;
+    expiresAt: string;
+}
+export declare class MediaUploadsRepository {
+    private readonly db;
+    private scope?;
+    constructor(db: DbAdapter);
+    create(input: CreateMediaUploadSessionInput): Promise<MediaUploadSessionRecord>;
+    findById(id: string): Promise<MediaUploadSessionRecord | null>;
+    markContentReceived(id: string): Promise<MediaUploadSessionRecord | null>;
+    markCompleted(id: string, assetId: string): Promise<MediaUploadSessionRecord | null>;
+    markRejected(id: string, reason: string): Promise<MediaUploadSessionRecord | null>;
+    markExpired(id: string): Promise<MediaUploadSessionRecord | null>;
+    listExpiredActiveSessions(now?: number): Promise<readonly MediaUploadSessionRecord[]>;
+    listTerminalSessionsBefore(cutoff: string): Promise<readonly MediaUploadSessionRecord[]>;
+    delete(id: string): Promise<boolean>;
+    private update;
+    private repository;
+}
+
+// dist/modules/media/services/media-assets.service.d.ts
+import type { MediaAssetRecord } from "../media.schemas.js";
+import type { MediaAssetsService as MediaAssetsServiceContract, MediaAssetUseResult } from "../media-storage.types.js";
+import type { CreateMediaAssetInput, MediaAssetsRepository, ReplaceMediaAssetAccessInput } from "../repositories/media-assets.repository.js";
+import type { MediaDirectoriesRepository } from "../repositories/media-directories.repository.js";
+import type { MediaDomainEventsService } from "./media-domain-events.service.js";
+export declare class MediaAssetsService implements MediaAssetsServiceContract {
+    private readonly repository;
+    private readonly directories?;
+    private readonly events?;
+    constructor(repository: MediaAssetsRepository, directories?: MediaDirectoriesRepository | undefined, events?: MediaDomainEventsService | undefined);
+    createAsset(input: CreateMediaAssetInput): Promise<MediaAssetRecord>;
+    getAsset(assetId: string): Promise<MediaAssetRecord | null>;
+    getAssetByStorage(providerId: string, storageKey: string): Promise<MediaAssetRecord | null>;
+    listAssets(options?: Parameters<MediaAssetsRepository["list"]>[0]): Promise<readonly ({
+        id: string;
+        ownerUserId: string;
+        uploadedByUserId: string;
+        displayName: string;
+        originalFilename: string;
+        mimeType: string;
+        byteSize: number;
+        checksum: {
+            algorithm: "sha256";
+            value: string;
+        } & {};
+        providerId: string;
+        storageKey: string;
+        status: "uploading" | "processing" | "ready" | "rejected" | "quarantined" | "deleted";
+        visibility: "private" | "restricted" | "public";
+        aclVersion: number;
+        createdAt: string;
+        updatedAt: string;
+    } & {
+        directoryId?: string | undefined;
+        width?: number | undefined;
+        height?: number | undefined;
+        durationMs?: number | undefined;
+        deletedAt?: string | undefined;
+    })[]>;
+    updateAsset(assetId: string, input: Parameters<MediaAssetsRepository["updateDetails"]>[1]): Promise<MediaAssetRecord | null>;
+    replaceAssetContent(assetId: string, input: Parameters<MediaAssetsRepository["replaceContent"]>[1]): Promise<MediaAssetRecord | null>;
+    updateAssetVisibility(assetId: string, visibility: MediaAssetRecord["visibility"]): Promise<MediaAssetRecord | null>;
+    deleteAsset(assetId: string): Promise<MediaAssetRecord | null>;
+    listDeletedAssetsBefore(cutoff: string): Promise<readonly ({
+        id: string;
+        ownerUserId: string;
+        uploadedByUserId: string;
+        displayName: string;
+        originalFilename: string;
+        mimeType: string;
+        byteSize: number;
+        checksum: {
+            algorithm: "sha256";
+            value: string;
+        } & {};
+        providerId: string;
+        storageKey: string;
+        status: "uploading" | "processing" | "ready" | "rejected" | "quarantined" | "deleted";
+        visibility: "private" | "restricted" | "public";
+        aclVersion: number;
+        createdAt: string;
+        updatedAt: string;
+    } & {
+        directoryId?: string | undefined;
+        width?: number | undefined;
+        height?: number | undefined;
+        durationMs?: number | undefined;
+        deletedAt?: string | undefined;
+    })[]>;
+    hardDeleteAsset(assetId: string): Promise<boolean>;
+    shareAsset(input: ReplaceMediaAssetAccessInput): Promise<{
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        targetType: "asset" | "directory";
+        targetId: string;
+        principalType: "user" | "role" | "plugin";
+        principalId: string;
+        actions: ("read" | "write" | "manage" | "share")[];
+        createdByUserId: string;
+    } & {
+        expiresAt?: string | undefined;
+    }>;
+    listAssetShares(assetId: string): Promise<readonly ({
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        targetType: "asset" | "directory";
+        targetId: string;
+        principalType: "user" | "role" | "plugin";
+        principalId: string;
+        actions: ("read" | "write" | "manage" | "share")[];
+        createdByUserId: string;
+    } & {
+        expiresAt?: string | undefined;
+    })[]>;
+    removeAssetShare(assetId: string, shareId: string): Promise<boolean>;
+    shareDirectory(input: Omit<ReplaceMediaAssetAccessInput, "assetId"> & {
+        directoryId: string;
+    }): Promise<{
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        targetType: "asset" | "directory";
+        targetId: string;
+        principalType: "user" | "role" | "plugin";
+        principalId: string;
+        actions: ("read" | "write" | "manage" | "share")[];
+        createdByUserId: string;
+    } & {
+        expiresAt?: string | undefined;
+    }>;
+    listDirectoryShares(directoryId: string): Promise<readonly ({
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        targetType: "asset" | "directory";
+        targetId: string;
+        principalType: "user" | "role" | "plugin";
+        principalId: string;
+        actions: ("read" | "write" | "manage" | "share")[];
+        createdByUserId: string;
+    } & {
+        expiresAt?: string | undefined;
+    })[]>;
+    replaceAssetShares(assetId: string, createdByUserId: string, grants: readonly MediaGrant[]): Promise<readonly ({
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        targetType: "asset" | "directory";
+        targetId: string;
+        principalType: "user" | "role" | "plugin";
+        principalId: string;
+        actions: ("read" | "write" | "manage" | "share")[];
+        createdByUserId: string;
+    } & {
+        expiresAt?: string | undefined;
+    })[]>;
+    replaceDirectoryShares(directoryId: string, createdByUserId: string, grants: readonly MediaGrant[]): Promise<readonly ({
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        targetType: "asset" | "directory";
+        targetId: string;
+        principalType: "user" | "role" | "plugin";
+        principalId: string;
+        actions: ("read" | "write" | "manage" | "share")[];
+        createdByUserId: string;
+    } & {
+        expiresAt?: string | undefined;
+    })[]>;
+    removeDirectoryShare(directoryId: string, shareId: string): Promise<boolean>;
+    canAccessAsset(assetId: string, actor: {
+        userId?: string;
+        pluginId?: string;
+        roleCodes?: readonly string[];
+    }, action: "read" | "write" | "manage" | "share"): Promise<boolean>;
+    canAccessDirectory(directoryId: string, actor: {
+        userId?: string;
+        pluginId?: string;
+        roleCodes?: readonly string[];
+    }, action: "read" | "write" | "manage" | "share"): Promise<boolean>;
+    validateUse(input: Parameters<MediaAssetsServiceContract["validateUse"]>[0]): Promise<MediaAssetUseResult[]>;
+    private validateReference;
+    private hasAccessEntry;
+    private inheritedDirectoryAccessEntries;
+}
+type MediaGrant = Omit<ReplaceMediaAssetAccessInput, "assetId" | "createdByUserId">;
+export {};
+
+// dist/modules/media/services/media-directories.service.d.ts
+import type { MediaDirectoryRecord } from "../media.schemas.js";
+import type { MediaAssetsRepository } from "../repositories/media-assets.repository.js";
+import type { CreateMediaDirectoryInput, MediaDirectoriesRepository } from "../repositories/media-directories.repository.js";
+export declare class MediaDirectoryError extends Error {
+    readonly code: "media_directory_not_found" | "media_directory_cycle" | "media_directory_not_empty";
+    constructor(code: "media_directory_not_found" | "media_directory_cycle" | "media_directory_not_empty", message: string);
+}
+export declare class MediaDirectoriesService {
+    private readonly repository;
+    private readonly assets?;
+    constructor(repository: MediaDirectoriesRepository, assets?: MediaAssetsRepository | undefined);
+    createDirectory(input: CreateMediaDirectoryInput): Promise<MediaDirectoryRecord>;
+    getDirectory(directoryId: string): Promise<MediaDirectoryRecord | null>;
+    listDirectories(parentId?: string): Promise<readonly MediaDirectoryRecord[]>;
+    updateDirectory(directoryId: string, input: Parameters<MediaDirectoriesRepository["update"]>[1]): Promise<MediaDirectoryRecord | null>;
+    deleteDirectory(directoryId: string): Promise<MediaDirectoryRecord | null>;
+    private assertValidParent;
+}
+
+// dist/modules/media/services/media-domain-events.service.d.ts
+export interface MediaEventPublisher {
+    emit(eventName: string, payload: unknown): Promise<void>;
+}
+/** Keeps media domain services independent from runtime lifecycle globals. */
+export declare class MediaDomainEventsService {
+    private publisher?;
+    setPublisher(publisher: MediaEventPublisher | undefined): void;
+    emit(eventName: "asset-ready" | "asset-deleted" | "asset-access-changed", payload: unknown): Promise<void>;
+}
+
+// dist/modules/media/services/media-storage-config.service.d.ts
+import type { RuntimeConfigService, SettingsService } from "@trinacria-cms/core-pack/runtime";
+import type { MediaProviderRegistry } from "../media-provider-registry.service.js";
+import type { MediaStorageProvider } from "../media-storage.types.js";
+export interface MediaUploadPolicy {
+    maxFileBytes: number;
+    maxImagePixels: number;
+    allowedMimeTypes: readonly string[];
+}
+/** Resolves protected/secret provider settings into the currently selected adapter. */
+export declare class MediaStorageConfigService {
+    private readonly runtime;
+    private readonly settings;
+    private selectedProviderKey?;
+    constructor(runtime: RuntimeConfigService, settings: SettingsService);
+    resolveDefaultProvider(registry: MediaProviderRegistry): Promise<MediaStorageProvider>;
+    getUploadPolicy(): Promise<MediaUploadPolicy>;
+    getDeletedAssetRetentionDays(): Promise<number>;
+    private readSecret;
+}
+
+// dist/modules/media/services/media-uploads.service.d.ts
+import type { MediaAssetRecord, MediaUploadSessionRecord } from "../media.schemas.js";
+import type { MediaProviderRegistry } from "../media-provider-registry.service.js";
+import type { CreateMediaStorageUploadResult } from "../media-storage.types.js";
+import type { MediaUploadsRepository } from "../repositories/media-uploads.repository.js";
+import type { MediaAssetsService } from "./media-assets.service.js";
+import type { MediaDomainEventsService } from "./media-domain-events.service.js";
+import type { MediaStorageConfigService } from "./media-storage-config.service.js";
+export declare class MediaUploadError extends Error {
+    readonly code: "media_upload_not_found" | "media_upload_expired" | "media_upload_state_invalid" | "media_file_too_large" | "media_mime_type_denied" | "media_content_invalid" | "media_checksum_required" | "media_byte_size_mismatch" | "media_upload_stream_invalid" | "media_directory_not_writable" | "media_image_dimensions_invalid" | "media_image_too_large" | "media_asset_not_editable";
+    constructor(code: "media_upload_not_found" | "media_upload_expired" | "media_upload_state_invalid" | "media_file_too_large" | "media_mime_type_denied" | "media_content_invalid" | "media_checksum_required" | "media_byte_size_mismatch" | "media_upload_stream_invalid" | "media_directory_not_writable" | "media_image_dimensions_invalid" | "media_image_too_large" | "media_asset_not_editable", message: string);
+}
+export interface StartMediaUploadInput {
+    ownerUserId: string;
+    accessActor?: {
+        userId?: string;
+        pluginId?: string;
+    };
+    filename: string;
+    mimeType: string;
+    byteSize: number;
+    checksumSha256?: string;
+    directoryId?: string;
+    displayName?: string;
+    replacementAssetId?: string;
+}
+export interface StartedMediaUpload {
+    session: MediaUploadSessionRecord;
+    upload: CreateMediaStorageUploadResult;
+}
+export declare class MediaUploadsService {
+    private readonly uploads;
+    private readonly assets;
+    private readonly providers;
+    private readonly config?;
+    private readonly events?;
+    constructor(uploads: MediaUploadsRepository, assets: MediaAssetsService, providers: MediaProviderRegistry, config?: MediaStorageConfigService | undefined, events?: MediaDomainEventsService | undefined);
+    /** Host operations inspect only a session belonging to the authenticated actor. */
+    getOwnedSession(uploadId: string, ownerUserId: string): Promise<{
+        id: string;
+        ownerUserId: string;
+        displayName: string;
+        originalFilename: string;
+        mimeType: string;
+        providerId: string;
+        storageKey: string;
+        status: "rejected" | "pending" | "content_received" | "completed" | "expired";
+        createdAt: string;
+        updatedAt: string;
+        expiresAt: string;
+        expectedByteSize: number;
+    } & {
+        directoryId?: string | undefined;
+        replacementAssetId?: string | undefined;
+        expectedChecksumSha256?: string | undefined;
+        assetId?: string | undefined;
+        rejectionReason?: string | undefined;
+    }>;
+    startUpload(input: StartMediaUploadInput): Promise<StartedMediaUpload>;
+    receiveContent(input: {
+        uploadId: string;
+        ownerUserId: string;
+        body: AsyncIterable<Uint8Array>;
+    }): Promise<MediaUploadSessionRecord>;
+    cleanupExpired(now?: number): Promise<number>;
+    private cleanupDeletedAssets;
+    private getUploadPolicy;
+    completeUpload(input: {
+        uploadId: string;
+        ownerUserId: string;
+        accessActor?: {
+            userId?: string;
+            pluginId?: string;
+        };
+    }): Promise<MediaAssetRecord>;
+    private assertActiveSession;
+    private assertCompletableSession;
+}
+
+// dist/operations/media-operations.d.ts
+import type { OperationAuthorizer, OperationContext } from "@trinacria-cms/kernel/contracts";
+import type { MediaProviderRegistry } from "../modules/media/media-provider-registry.service.js";
+import type { MediaAssetsService } from "../modules/media/services/media-assets.service.js";
+import type { MediaDirectoriesService } from "../modules/media/services/media-directories.service.js";
+import type { MediaUploadsService, StartMediaUploadInput } from "../modules/media/services/media-uploads.service.js";
+export declare const MEDIA_ASSET_OPERATIONS: import("@trinacria/core").Token<MediaAssetOperations>;
+export declare const MEDIA_DIRECTORY_OPERATIONS: import("@trinacria/core").Token<MediaDirectoryOperations>;
+export declare const MEDIA_UPLOAD_OPERATIONS: import("@trinacria/core").Token<MediaUploadOperations>;
+export declare class MediaAssetOperations {
+    private readonly assets;
+    private readonly authorizer;
+    private readonly providers;
+    constructor(assets: MediaAssetsService, authorizer: OperationAuthorizer, providers: MediaProviderRegistry);
+    private assert;
+    canAccessAsset(context: OperationContext, id: string, access: "read" | "write" | "manage" | "share"): Promise<boolean>;
+    canAccessDirectory(context: OperationContext, id: string, access: "read" | "write" | "manage" | "share"): Promise<boolean>;
+    getAsset(context: OperationContext, id: string): Promise<({
+        id: string;
+        ownerUserId: string;
+        uploadedByUserId: string;
+        displayName: string;
+        originalFilename: string;
+        mimeType: string;
+        byteSize: number;
+        checksum: {
+            algorithm: "sha256";
+            value: string;
+        } & {};
+        providerId: string;
+        storageKey: string;
+        status: "uploading" | "processing" | "ready" | "rejected" | "quarantined" | "deleted";
+        visibility: "private" | "restricted" | "public";
+        aclVersion: number;
+        createdAt: string;
+        updatedAt: string;
+    } & {
+        directoryId?: string | undefined;
+        width?: number | undefined;
+        height?: number | undefined;
+        durationMs?: number | undefined;
+        deletedAt?: string | undefined;
+    }) | null>;
+    listAssets(context: OperationContext, options?: Parameters<MediaAssetsService["listAssets"]>[0]): Promise<({
+        id: string;
+        ownerUserId: string;
+        uploadedByUserId: string;
+        displayName: string;
+        originalFilename: string;
+        mimeType: string;
+        byteSize: number;
+        checksum: {
+            algorithm: "sha256";
+            value: string;
+        } & {};
+        providerId: string;
+        storageKey: string;
+        status: "uploading" | "processing" | "ready" | "rejected" | "quarantined" | "deleted";
+        visibility: "private" | "restricted" | "public";
+        aclVersion: number;
+        createdAt: string;
+        updatedAt: string;
+    } & {
+        directoryId?: string | undefined;
+        width?: number | undefined;
+        height?: number | undefined;
+        durationMs?: number | undefined;
+        deletedAt?: string | undefined;
+    })[]>;
+    updateAsset(context: OperationContext, id: string, input: Parameters<MediaAssetsService["updateAsset"]>[1]): Promise<({
+        id: string;
+        ownerUserId: string;
+        uploadedByUserId: string;
+        displayName: string;
+        originalFilename: string;
+        mimeType: string;
+        byteSize: number;
+        checksum: {
+            algorithm: "sha256";
+            value: string;
+        } & {};
+        providerId: string;
+        storageKey: string;
+        status: "uploading" | "processing" | "ready" | "rejected" | "quarantined" | "deleted";
+        visibility: "private" | "restricted" | "public";
+        aclVersion: number;
+        createdAt: string;
+        updatedAt: string;
+    } & {
+        directoryId?: string | undefined;
+        width?: number | undefined;
+        height?: number | undefined;
+        durationMs?: number | undefined;
+        deletedAt?: string | undefined;
+    }) | null>;
+    updateAssetVisibility(context: OperationContext, id: string, visibility: Parameters<MediaAssetsService["updateAssetVisibility"]>[1]): Promise<({
+        id: string;
+        ownerUserId: string;
+        uploadedByUserId: string;
+        displayName: string;
+        originalFilename: string;
+        mimeType: string;
+        byteSize: number;
+        checksum: {
+            algorithm: "sha256";
+            value: string;
+        } & {};
+        providerId: string;
+        storageKey: string;
+        status: "uploading" | "processing" | "ready" | "rejected" | "quarantined" | "deleted";
+        visibility: "private" | "restricted" | "public";
+        aclVersion: number;
+        createdAt: string;
+        updatedAt: string;
+    } & {
+        directoryId?: string | undefined;
+        width?: number | undefined;
+        height?: number | undefined;
+        durationMs?: number | undefined;
+        deletedAt?: string | undefined;
+    }) | null>;
+    deleteAsset(context: OperationContext, id: string): Promise<({
+        id: string;
+        ownerUserId: string;
+        uploadedByUserId: string;
+        displayName: string;
+        originalFilename: string;
+        mimeType: string;
+        byteSize: number;
+        checksum: {
+            algorithm: "sha256";
+            value: string;
+        } & {};
+        providerId: string;
+        storageKey: string;
+        status: "uploading" | "processing" | "ready" | "rejected" | "quarantined" | "deleted";
+        visibility: "private" | "restricted" | "public";
+        aclVersion: number;
+        createdAt: string;
+        updatedAt: string;
+    } & {
+        directoryId?: string | undefined;
+        width?: number | undefined;
+        height?: number | undefined;
+        durationMs?: number | undefined;
+        deletedAt?: string | undefined;
+    }) | null>;
+    listAssetShares(context: OperationContext, id: string): Promise<readonly ({
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        targetType: "asset" | "directory";
+        targetId: string;
+        principalType: "user" | "role" | "plugin";
+        principalId: string;
+        actions: ("read" | "write" | "manage" | "share")[];
+        createdByUserId: string;
+    } & {
+        expiresAt?: string | undefined;
+    })[]>;
+    replaceAssetShares(context: OperationContext, id: string, grants: Parameters<MediaAssetsService["replaceAssetShares"]>[2]): Promise<readonly ({
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        targetType: "asset" | "directory";
+        targetId: string;
+        principalType: "user" | "role" | "plugin";
+        principalId: string;
+        actions: ("read" | "write" | "manage" | "share")[];
+        createdByUserId: string;
+    } & {
+        expiresAt?: string | undefined;
+    })[]>;
+    removeAssetShare(context: OperationContext, id: string, shareId: string): Promise<boolean>;
+    private directoryShare;
+    listDirectoryShares(context: OperationContext, id: string): Promise<readonly ({
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        targetType: "asset" | "directory";
+        targetId: string;
+        principalType: "user" | "role" | "plugin";
+        principalId: string;
+        actions: ("read" | "write" | "manage" | "share")[];
+        createdByUserId: string;
+    } & {
+        expiresAt?: string | undefined;
+    })[]>;
+    replaceDirectoryShares(context: OperationContext, id: string, grants: Parameters<MediaAssetsService["replaceDirectoryShares"]>[2]): Promise<readonly ({
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        targetType: "asset" | "directory";
+        targetId: string;
+        principalType: "user" | "role" | "plugin";
+        principalId: string;
+        actions: ("read" | "write" | "manage" | "share")[];
+        createdByUserId: string;
+    } & {
+        expiresAt?: string | undefined;
+    })[]>;
+    removeDirectoryShare(context: OperationContext, id: string, shareId: string): Promise<boolean>;
+    validateUse(context: OperationContext, input: Omit<Parameters<MediaAssetsService["validateUse"]>[0], "actor">): Promise<import("../index.js").MediaAssetUseResult[]>;
+    accessUrl(context: OperationContext, id: string, expiresInSeconds?: number): Promise<{
+        url: string;
+        expiresAt: string;
+    }>;
+}
+export declare class MediaDirectoryOperations {
+    private readonly directories;
+    private readonly assets;
+    private readonly authorizer;
+    constructor(directories: MediaDirectoriesService, assets: MediaAssetsService, authorizer: OperationAuthorizer);
+    private assert;
+    getDirectory(context: OperationContext, id: string): Promise<({
+        id: string;
+        ownerUserId: string;
+        visibility: "private" | "restricted" | "public";
+        createdAt: string;
+        updatedAt: string;
+        name: string;
+        inheritAcl: boolean;
+    } & {
+        deletedAt?: string | undefined;
+        parentId?: string | undefined;
+    }) | null>;
+    listDirectories(context: OperationContext, parentId?: string): Promise<({
+        id: string;
+        ownerUserId: string;
+        visibility: "private" | "restricted" | "public";
+        createdAt: string;
+        updatedAt: string;
+        name: string;
+        inheritAcl: boolean;
+    } & {
+        deletedAt?: string | undefined;
+        parentId?: string | undefined;
+    })[]>;
+    createDirectory(context: OperationContext, input: Omit<Parameters<MediaDirectoriesService["createDirectory"]>[0], "ownerUserId">): Promise<{
+        id: string;
+        ownerUserId: string;
+        visibility: "private" | "restricted" | "public";
+        createdAt: string;
+        updatedAt: string;
+        name: string;
+        inheritAcl: boolean;
+    } & {
+        deletedAt?: string | undefined;
+        parentId?: string | undefined;
+    }>;
+    updateDirectory(context: OperationContext, id: string, input: Parameters<MediaDirectoriesService["updateDirectory"]>[1]): Promise<({
+        id: string;
+        ownerUserId: string;
+        visibility: "private" | "restricted" | "public";
+        createdAt: string;
+        updatedAt: string;
+        name: string;
+        inheritAcl: boolean;
+    } & {
+        deletedAt?: string | undefined;
+        parentId?: string | undefined;
+    }) | null>;
+    deleteDirectory(context: OperationContext, id: string): Promise<({
+        id: string;
+        ownerUserId: string;
+        visibility: "private" | "restricted" | "public";
+        createdAt: string;
+        updatedAt: string;
+        name: string;
+        inheritAcl: boolean;
+    } & {
+        deletedAt?: string | undefined;
+        parentId?: string | undefined;
+    }) | null>;
+}
+export declare class MediaUploadOperations {
+    private readonly uploads;
+    private readonly assets;
+    private readonly authorizer;
+    constructor(uploads: MediaUploadsService, assets: MediaAssetsService, authorizer: OperationAuthorizer);
+    private assert;
+    cleanupExpired(context: OperationContext, now?: number): Promise<number>;
+    private assertSession;
+    startUpload(context: OperationContext, input: Omit<StartMediaUploadInput, "ownerUserId" | "accessActor">): Promise<import("../runtime.js").StartedMediaUpload>;
+    receiveContent(context: OperationContext, input: Omit<Parameters<MediaUploadsService["receiveContent"]>[0], "ownerUserId" | "accessActor">): Promise<{
+        id: string;
+        ownerUserId: string;
+        displayName: string;
+        originalFilename: string;
+        mimeType: string;
+        providerId: string;
+        storageKey: string;
+        status: "rejected" | "pending" | "content_received" | "completed" | "expired";
+        createdAt: string;
+        updatedAt: string;
+        expiresAt: string;
+        expectedByteSize: number;
+    } & {
+        directoryId?: string | undefined;
+        replacementAssetId?: string | undefined;
+        expectedChecksumSha256?: string | undefined;
+        assetId?: string | undefined;
+        rejectionReason?: string | undefined;
+    }>;
+    completeUpload(context: OperationContext, input: Omit<Parameters<MediaUploadsService["completeUpload"]>[0], "ownerUserId" | "accessActor">): Promise<{
+        id: string;
+        ownerUserId: string;
+        uploadedByUserId: string;
+        displayName: string;
+        originalFilename: string;
+        mimeType: string;
+        byteSize: number;
+        checksum: {
+            algorithm: "sha256";
+            value: string;
+        } & {};
+        providerId: string;
+        storageKey: string;
+        status: "uploading" | "processing" | "ready" | "rejected" | "quarantined" | "deleted";
+        visibility: "private" | "restricted" | "public";
+        aclVersion: number;
+        createdAt: string;
+        updatedAt: string;
+    } & {
+        directoryId?: string | undefined;
+        width?: number | undefined;
+        height?: number | undefined;
+        durationMs?: number | undefined;
+        deletedAt?: string | undefined;
+    }>;
+}
+
+// dist/plugin/index.d.ts
+export * from "./media-pack.constants.js";
+export * from "./media-pack.manifest.js";
+export * from "./media-pack.plugin.js";
+export * from "./media-pack.security.js";
+export * from "./media-pack-admin.manifest.js";
+
+// dist/plugin/media-pack-admin.manifest.d.ts
+import type { PluginManifestAdmin } from "@trinacria-cms/kernel/contracts";
+/** Declarative admin contribution; a host can attach richer picker components later. */
+export declare const MEDIA_PACK_ADMIN_MANIFEST: PluginManifestAdmin;
+
+// dist/plugin/media-pack.constants.d.ts
+export declare const MEDIA_PACK_PLUGIN_ID = "media-pack";
+
+// dist/plugin/media-pack.manifest.d.ts
+import type { PluginManifest } from "@trinacria-cms/kernel";
+export declare const MEDIA_PACK_MANIFEST: PluginManifest;
+
+// dist/plugin/media-pack.plugin.d.ts
+import type { KernelPluginDefinition } from "@trinacria-cms/kernel/contracts";
+export declare function createMediaPackPlugin(): KernelPluginDefinition;
+export declare const MEDIA_PACK_PLUGIN: KernelPluginDefinition;
+
+// dist/plugin/media-pack.security.d.ts
+export declare const MEDIA_PACK_CAPABILITIES: {
+    readonly ASSETS: "media.assets";
+    readonly DIRECTORIES: "media.directories";
+    readonly STORAGE: "media.storage";
+};
+export type MediaPackCapability = (typeof MEDIA_PACK_CAPABILITIES)[keyof typeof MEDIA_PACK_CAPABILITIES];
+export declare const MEDIA_PACK_CAPABILITY_LIST: readonly MediaPackCapability[];
+export declare const MEDIA_PACK_PERMISSION_KEYS: {
+    readonly ASSETS_READ: string;
+    readonly ASSETS_UPLOAD: string;
+    readonly ASSETS_UPDATE: string;
+    readonly ASSETS_DELETE: string;
+    readonly DIRECTORIES_MANAGE: string;
+    readonly SHARES_MANAGE: string;
+    readonly SETTINGS_MANAGE: string;
+};
+export type MediaPackPermissionKey = (typeof MEDIA_PACK_PERMISSION_KEYS)[keyof typeof MEDIA_PACK_PERMISSION_KEYS];
+export declare const MEDIA_PACK_PERMISSION_DEFINITIONS: readonly import("@trinacria-cms/kernel").PluginManifestSecurityPermission[];
+export declare const MEDIA_PACK_PERMISSION_KEY_LIST: readonly MediaPackPermissionKey[];
+
+// dist/runtime.d.ts
+export * from "./modules/index.js";
+export * from "./operations/media-operations.js";
+export * from "./plugin/index.js";

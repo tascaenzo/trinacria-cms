@@ -1,11 +1,12 @@
+import type { DbAdapter } from "@trinacria-cms/kernel";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
-import type { PermissionsRepository } from "../../permissions/repositories/permissions.repository.js";
-import type { RoleGrantsRepository } from "../../roles/grants/role-grants.repository.js";
-import type { RolesRepository } from "../../roles/repositories/roles.repository.js";
-import type { UsersRepository } from "../../users/repositories/users.repository.js";
+import { PermissionsRepository } from "../../permissions/repositories/permissions.repository.js";
+import { RoleGrantsRepository } from "../../roles/grants/role-grants.repository.js";
+import { RolesRepository } from "../../roles/repositories/roles.repository.js";
+import { UsersRepository } from "../../users/repositories/users.repository.js";
 import { type AuthorizationRule, dedupeAuthorizationRules } from "../policies/authz-rules.js";
-import type { RolePolicyRulesRepository } from "../role-policy-rules/role-policy-rules.repository.js";
-import type { UserRolesRepository } from "./user-roles.repository.js";
+import { RolePolicyRulesRepository } from "../role-policy-rules/role-policy-rules.repository.js";
+import { UserRolesRepository } from "./user-roles.repository.js";
 
 /**
  * Coordinates user-role assignments and effective permission resolution.
@@ -19,6 +20,18 @@ export class UserAccessService {
     private readonly permissions: PermissionsRepository,
     private readonly userRoles: UserRolesRepository
   ) {}
+
+  /** Host-only transaction rebinding. */
+  forDb(db: DbAdapter): UserAccessService {
+    return new UserAccessService(
+      new UsersRepository(db),
+      new RolesRepository(db),
+      new RoleGrantsRepository(db),
+      new RolePolicyRulesRepository(db),
+      new PermissionsRepository(db),
+      new UserRolesRepository(db)
+    );
+  }
 
   async assignRoleToUser(userId: string, roleCode: string) {
     const user = await this.assertUserExists(userId);

@@ -6,6 +6,7 @@ import type { PluginDiscoverySource } from "../src/contracts/plugin-discovery.js
 
 test("ConfiguredPluginDiscoveryService discovers configured plugin definitions", async () => {
   const service = new ConfiguredPluginDiscoveryService({
+    resolveModule: () => import.meta.url,
     importer: async () => ({
       plugin: {
         manifest: {
@@ -35,6 +36,7 @@ test("ConfiguredPluginDiscoveryService discovers configured plugin definitions",
 test("ConfiguredPluginDiscoveryService skips disabled sources without importing", async () => {
   let imported = false;
   const service = new ConfiguredPluginDiscoveryService({
+    resolveModule: () => import.meta.url,
     importer: async () => {
       imported = true;
       return {};
@@ -55,6 +57,7 @@ test("ConfiguredPluginDiscoveryService skips disabled sources without importing"
 
 test("ConfiguredPluginDiscoveryService records failed sources when configured to continue", async () => {
   const service = new ConfiguredPluginDiscoveryService({
+    resolveModule: () => import.meta.url,
     continueOnError: true,
     importer: async () => {
       throw new Error("module not found");
@@ -70,6 +73,7 @@ test("ConfiguredPluginDiscoveryService records failed sources when configured to
 
 test("ConfiguredPluginDiscoveryService fails fast by default", async () => {
   const service = new ConfiguredPluginDiscoveryService({
+    resolveModule: () => import.meta.url,
     importer: async () => ({})
   });
 
@@ -82,6 +86,7 @@ test("ConfiguredPluginDiscoveryService fails fast by default", async () => {
 test("ConfiguredPluginDiscoveryService resolves local-path sources to file URLs", async () => {
   let importedEntrypoint = "";
   const service = new ConfiguredPluginDiscoveryService({
+    resolveModule: () => import.meta.url,
     importer: async (entrypoint) => {
       importedEntrypoint = entrypoint;
       return {
@@ -100,12 +105,12 @@ test("ConfiguredPluginDiscoveryService resolves local-path sources to file URLs"
     {
       type: "local-path",
       name: "local-pack",
-      entrypoint: "./plugins/local-pack/index.mjs"
+      entrypoint: import.meta.url
     }
   ]);
 
   assert.equal(importedEntrypoint.startsWith("file://"), true);
-  assert.equal(importedEntrypoint.endsWith("/plugins/local-pack/index.mjs"), true);
+  assert.equal(importedEntrypoint.endsWith("/packages/kernel/test/plugin-discovery-service.test.ts"), true);
 });
 
 function createSource(name: string): PluginDiscoverySource {

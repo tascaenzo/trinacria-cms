@@ -1,24 +1,46 @@
-import { isAbsolute, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { realpath } from "node:fs/promises";
+import { isAbsolute, relative, resolve, sep } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import type { PluginDiscoverySource } from "../../contracts/plugin-discovery.js";
 import type { PluginManifest } from "../../contracts/plugin-manifest.js";
 import type { KernelPluginDefinition } from "../../contracts/plugin-runtime.js";
 import { PluginManifestError } from "../../errors/plugin-errors.js";
 import { validatePluginManifest } from "../plugin-manifest/plugin-manifest-validation.js";
 
-export function resolveEntrypoint(source: PluginDiscoverySource): string {
-  if (source.type !== "local-path") {
-    return source.entrypoint;
-  }
-
-  if (source.entrypoint.startsWith("file://")) {
-    return source.entrypoint;
-  }
-
-  const absolutePath = isAbsolute(source.entrypoint)
-    ? source.entrypoint
-    : resolve(process.cwd(), source.entrypoint);
-  return pathToFileURL(absolutePath).href;
+export async function resolveEntrypoint(
+  source: PluginDiscoverySource,
+  allowedRoots: readonly string[],
+  resolveModule: (entrypoint: string) => string = (entrypoint) => import.meta.resolve(entrypoint)
+): Promise<string> {
+  const entry = source.entrypoint;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(entry) && !entry.startsWith("file:"))
+    throw new PluginManifestError("Only configured local plugin files are allowed");
+  if (
+    source.type === "package" &&
+    (entry.startsWith(".") || isAbsolute(entry) || entry.startsWith("file:"))
+  )
+    throw new PluginManifestError("Package sources require a bare package entrypoint");
+  const url = entry.startsWith("file:")
+    ? new URL(entry)
+    : source.type === "local-path" || isAbsolute(entry) || entry.startsWith(".")
+      ? pathToFileURL(resolve(process.cwd(), entry))
+      : new URL(resolveModule(entry));
+  if (url.protocol !== "file:" || url.search || url.hash)
+    throw new PluginManifestError(
+      "Plugin entrypoint must resolve to a local file without query or fragment"
+    );
+  const target = await realpath(fileURLToPath(url));
+  const roots = await Promise.all(allowedRoots.map((root) => realpath(root)));
+  if (
+    !roots.some((root) => {
+      const child = relative(root, target);
+      return (
+        child === "" || (!child.startsWith(`..${sep}`) && child !== ".." && !isAbsolute(child))
+      );
+    })
+  )
+    throw new PluginManifestError("Plugin entrypoint escapes the host allowed roots");
+  return pathToFileURL(target).href;
 }
 
 export async function defaultImporter(entrypoint: string): Promise<unknown> {

@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
+import type { DbAdapter } from "@trinacria-cms/kernel";
+import { createPluginDbScope, type PluginDbScope } from "@trinacria-cms/kernel/runtime";
 import { EDITORIAL_PACK_PLUGIN_ID } from "../../../plugin/editorial-pack.constants.js";
+import { editorialPagination } from "../../editorial-pagination.js";
 import type { CreateEntryInput, UpdateEntryInput } from "../entries.input.js";
 import { type EntryRecord, EntryRecordSchema } from "../entries.schemas.js";
 
@@ -58,9 +60,8 @@ export class EntriesRepository {
     if (options.status) filter.status = options.status.trim();
     return this.repository().findMany({
       filter,
-      limit: options.limit,
-      offset: options.offset,
-      sort: { updatedAt: "desc" },
+      ...editorialPagination(options),
+      sort: { updatedAt: "desc", id: "asc" },
       parse: (value: unknown) => EntryRecordSchema.parse(value)
     });
   }

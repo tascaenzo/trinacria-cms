@@ -1,4 +1,5 @@
-import { defineEntity, type Infer, s } from "@trinacria-cms/kernel";
+import { type Infer, s } from "@trinacria-cms/kernel";
+import { defineEntity } from "@trinacria-cms/kernel/runtime";
 
 export const MediaAssetStatusSchema = s.enum([
   "uploading",
@@ -114,6 +115,7 @@ export const MediaUploadSessionRecordSchema = s.object(
 export type MediaUploadSessionRecord = Infer<typeof MediaUploadSessionRecordSchema>;
 
 export const MEDIA_ASSETS_ENTITY = defineEntity({
+  ownerPluginId: "media-pack",
   entityName: "assets",
   schema: MediaAssetRecordSchema,
   indexes: [
@@ -126,6 +128,7 @@ export const MEDIA_ASSETS_ENTITY = defineEntity({
 });
 
 export const MEDIA_DIRECTORIES_ENTITY = defineEntity({
+  ownerPluginId: "media-pack",
   entityName: "directories",
   schema: MediaDirectoryRecordSchema,
   indexes: [
@@ -135,6 +138,7 @@ export const MEDIA_DIRECTORIES_ENTITY = defineEntity({
 });
 
 export const MEDIA_ACL_ENTRIES_ENTITY = defineEntity({
+  ownerPluginId: "media-pack",
   entityName: "acl_entries",
   schema: MediaAclEntryRecordSchema,
   indexes: [
@@ -148,6 +152,7 @@ export const MEDIA_ACL_ENTRIES_ENTITY = defineEntity({
 });
 
 export const MEDIA_UPLOADS_ENTITY = defineEntity({
+  ownerPluginId: "media-pack",
   entityName: "uploads",
   schema: MediaUploadSessionRecordSchema,
   indexes: [

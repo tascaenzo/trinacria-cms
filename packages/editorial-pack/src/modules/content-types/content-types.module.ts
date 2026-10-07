@@ -2,16 +2,20 @@ import {
   CORE_PACK_JWT_AUTH_SERVICE_TOKEN,
   CorePackAuthModule,
   CorePackSecurityModule
-} from "@trinacria-cms/core-pack";
+} from "@trinacria-cms/core-pack/runtime";
 import {
   CORE_TOKENS,
   classProvider,
   defineModule,
-  type EntityRegistry,
   factoryProvider,
   httpProvider,
   type ModuleDefinition
 } from "@trinacria-cms/kernel";
+import type { EntityRegistry } from "@trinacria-cms/kernel/runtime";
+import {
+  CONTENT_TYPE_OPERATIONS,
+  createContentTypeOperations
+} from "../../operations/content-type-operations.js";
 import { ContentTypesController } from "./content-types.controller.js";
 import { CONTENT_TYPES_ENTITY } from "./content-types.schemas.js";
 import {
@@ -36,17 +40,24 @@ export const EditorialContentTypesModule: ModuleDefinition = defineModule({
       [CORE_TOKENS.ENTITY_REGISTRY]
     ),
     classProvider(CONTENT_TYPES_REPOSITORY_TOKEN, ContentTypesRepository, [CORE_TOKENS.DB_ADAPTER]),
-    classProvider(CONTENT_TYPES_SERVICE_TOKEN, ContentTypesService, [
-      CONTENT_TYPES_REPOSITORY_TOKEN,
-      CORE_TOKENS.DB_ADAPTER
+    factoryProvider(
+      CONTENT_TYPES_SERVICE_TOKEN,
+      (repository, db, durable) =>
+        new ContentTypesService(repository, db, undefined, undefined, durable),
+      [CONTENT_TYPES_REPOSITORY_TOKEN, CORE_TOKENS.DB_ADAPTER, CORE_TOKENS.DURABLE_EVENTS]
+    ),
+    factoryProvider(CONTENT_TYPE_OPERATIONS, createContentTypeOperations, [
+      CONTENT_TYPES_SERVICE_TOKEN,
+      CORE_TOKENS.OPERATION_AUTHORIZER
     ]),
     httpProvider(CONTENT_TYPES_CONTROLLER_TOKEN, ContentTypesController, [
-      CONTENT_TYPES_SERVICE_TOKEN,
+      CONTENT_TYPE_OPERATIONS,
       CORE_PACK_JWT_AUTH_SERVICE_TOKEN,
       CORE_TOKENS.AUTHZ_SERVICE
     ])
   ],
   exports: [
+    CONTENT_TYPE_OPERATIONS,
     CONTENT_TYPES_ENTITY_REGISTRATION_TOKEN,
     CONTENT_TYPES_REPOSITORY_TOKEN,
     CONTENT_TYPES_SERVICE_TOKEN,

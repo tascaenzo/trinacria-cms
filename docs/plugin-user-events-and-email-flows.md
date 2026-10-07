@@ -52,11 +52,8 @@ The event only carries metadata:
 }
 ```
 
-`email-pack` can claim the payload only when the permission center contains an
-approved grant for both:
-
-- event subscription
-- secure payload claim
+`email-pack` declares its subscription and send permission in the manifest. The host
+checks the installed-plugin policy and the payload recipient list before an atomic claim.
 
 The claimed payload contains the actual email request, including template key,
 recipient, locale, and template variables. That payload is protected by the
@@ -138,8 +135,8 @@ export const myPlugin = {
 };
 ```
 
-For sensitive secure payload events, a plugin must declare the subscription and
-an admin must approve the request in the plugin permission center. See
+For sensitive secure payload events, declare the subscription and permission in the
+manifest; the producer specifies the authorized consumers of each payload. See
 [`plugin-secure-events.md`](./plugin-secure-events.md).
 
 ## Security rules

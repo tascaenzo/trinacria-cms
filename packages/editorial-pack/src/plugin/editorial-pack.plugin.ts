@@ -1,27 +1,25 @@
 import type { KernelPluginDefinition } from "@trinacria-cms/kernel/contracts";
-import { CONTENT_TYPES_SERVICE_TOKEN } from "../modules/content-types/content-types.tokens.js";
-import type { ContentTypesService } from "../modules/content-types/services/content-types.service.js";
 import { EditorialPackRootModule } from "../modules/editorial-pack-root.module.js";
-import { ENTRIES_SERVICE_TOKEN } from "../modules/entries/entries.tokens.js";
-import type { EntriesService } from "../modules/entries/services/entries.service.js";
+import { invalidateDeliveryCache } from "../modules/publications/delivery-cache.js";
 import { EDITORIAL_PACK_MANIFEST } from "./editorial-pack.manifest.js";
-
 export function createEditorialPackPlugin(): KernelPluginDefinition {
   return {
     manifest: EDITORIAL_PACK_MANIFEST,
     modules: [EditorialPackRootModule],
+    eventHandlers: {
+      async invalidateDelivery(payload, envelope, context) {
+        await invalidateDeliveryCache(context.services.storage, payload, envelope.id);
+      }
+    },
+    async onInstall(context, input) {
+      if (input.dataMode === "demo")
+        await context.services.operations.call("editorial-pack", "initializeDemo", {
+          adminUserId: input.adminUserId
+        });
+    },
     async onLoad(context) {
-      const contentTypes = await context.app.resolve<ContentTypesService>(
-        CONTENT_TYPES_SERVICE_TOKEN
-      );
-      await contentTypes.ensureDefaultContentTypes();
-      const entries = await context.app.resolve<EntriesService>(ENTRIES_SERVICE_TOKEN);
-      entries.setPublisher(undefined);
-      // Bootstrap runs before the plugin reaches loaded state; lifecycle events start afterward.
-      await entries.ensureDefaultBlogContent();
-      entries.setPublisher(context.events);
+      await context.services.operations.call("editorial-pack", "initialize", {});
     }
   };
 }
-
 export const EDITORIAL_PACK_PLUGIN = createEditorialPackPlugin();

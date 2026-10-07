@@ -1,4 +1,5 @@
-import { defineEntity, type Infer, s } from "@trinacria-cms/kernel";
+import { type Infer, s } from "@trinacria-cms/kernel";
+import { defineEntity } from "@trinacria-cms/kernel/runtime";
 
 export const AuthMfaCredentialRecordSchema = s.object(
   {
@@ -18,6 +19,7 @@ export const AuthMfaCredentialRecordSchema = s.object(
 export type AuthMfaCredentialRecord = Infer<typeof AuthMfaCredentialRecordSchema>;
 
 export const AUTH_MFA_CREDENTIALS_ENTITY = defineEntity({
+  ownerPluginId: "core-pack",
   entityName: "auth_mfa_credentials",
   schema: AuthMfaCredentialRecordSchema,
   indexes: [
@@ -46,6 +48,7 @@ export type AuthMfaChallengePurpose = Infer<typeof AuthMfaChallengePurposeSchema
 export type AuthMfaChallengeRecord = Infer<typeof AuthMfaChallengeRecordSchema>;
 
 export const AUTH_MFA_CHALLENGES_ENTITY = defineEntity({
+  ownerPluginId: "core-pack",
   entityName: "auth_mfa_challenges",
   schema: AuthMfaChallengeRecordSchema,
   indexes: [

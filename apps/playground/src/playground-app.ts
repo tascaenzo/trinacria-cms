@@ -1,14 +1,23 @@
-import { createCorePackMongoGlobalProviders, createCorePackPlugin } from "@trinacria-cms/core-pack";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { createCorePackPlugin } from "@trinacria-cms/core-pack";
+import {
+  CorePackOfflineInstallerModule,
+  createCorePackMongoGlobalProviders,
+  inspectInstallationPrerequisites
+} from "@trinacria-cms/core-pack/runtime";
 import { createEditorialPackPlugin } from "@trinacria-cms/editorial-pack";
 import { createEmailPackPlugin } from "@trinacria-cms/email-pack";
-import {
-  type CmsStarterHandle,
-  createInMemoryPluginRuntimeStore,
-  EVENT_BUS_TOKEN,
-  type KernelPluginDefinition,
-  type PluginDiscoverySource,
-  startCmsApp
+import type {
+  CmsStarterHandle,
+  KernelPluginDefinition,
+  PluginDiscoverySource
 } from "@trinacria-cms/kernel";
+import {
+  computePluginArtifactChecksum,
+  createInMemoryPluginRuntimeStore,
+  startCmsApp
+} from "@trinacria-cms/kernel/runtime";
 import { createMediaPackPlugin } from "@trinacria-cms/media-pack";
 import {
   applyProductionSecurityDefaults,
@@ -55,10 +64,49 @@ export async function createPlaygroundCmsApp(): Promise<PlaygroundCmsApp> {
   const port = Number(process.env.HTTP_PORT ?? process.env.PORT ?? "3000");
   const smokeMode = process.env.PLAYGROUND_EVENT_SMOKE === "1";
   const smokeStandalone = process.env.PLAYGROUND_EVENT_SMOKE_STANDALONE === "1";
-  const installationMode = !isCmsInstalled();
+  const prerequisites = smokeStandalone
+    ? undefined
+    : await inspectInstallationPrerequisites(mongoUri);
+  const installationMode = !prerequisites?.installed;
+  const installerOnly = prerequisites?.checks.some((check) => check.status !== "pass") ?? false;
+  const clusterEnabled = readPlaygroundClusterEnabled(process.env.PLAYGROUND_CLUSTER_ENABLED);
 
+  const plugins = createPlaygroundPlugins(smokeStandalone);
+  const artifacts: Record<string, { version: string; checksum: string }> = {};
+  if (clusterEnabled && !smokeStandalone)
+    for (const plugin of plugins) {
+      const root = plugin.manifest.id.startsWith("playground/")
+        ? resolve(dirname(fileURLToPath(import.meta.url)), "..")
+        : resolve(
+            dirname(fileURLToPath(import.meta.resolve(`@trinacria-cms/${plugin.manifest.id}`))),
+            ".."
+          );
+      artifacts[plugin.manifest.id] = {
+        version: plugin.manifest.version,
+        checksum: await computePluginArtifactChecksum(root)
+      };
+    }
+  if (clusterEnabled && !smokeStandalone && process.env.PLAYGROUND_TEAM_ONBOARDING_PLUGIN === "1") {
+    const root = resolve(
+      dirname(fileURLToPath(import.meta.resolve("@trinacria-cms/example-team-onboarding-plugin"))),
+      ".."
+    );
+    artifacts["team-onboarding"] = {
+      version: "0.1.0",
+      checksum: await computePluginArtifactChecksum(root)
+    };
+  }
   const handle = await startCmsApp({
     coreVersion: "0.1.0",
+    ...(clusterEnabled && !smokeStandalone && process.env.E2E_READINESS_FIXTURE !== "degraded"
+      ? { cluster: { artifacts } }
+      : {}),
+    installerOnly,
+    installation: smokeStandalone
+      ? undefined
+      : { inspect: async () => inspectInstallationPrerequisites(mongoUri) },
+    offlineInstallerModules: [CorePackOfflineInstallerModule],
+    migrations: { allowStartupWithoutDb: installerOnly },
     http: {
       host,
       port,
@@ -78,13 +126,24 @@ export async function createPlaygroundCmsApp(): Promise<PlaygroundCmsApp> {
       enabled: security.docsEnabled
     },
     modules: [createPlaygroundObservabilityModule({ config: observability, logger, metrics })],
-    globalProviders: createGlobalProviders({ mongoUri, installationMode, smokeStandalone }),
-    plugins: createPlaygroundPlugins(smokeStandalone),
+    globalProviders: createGlobalProviders({
+      mongoUri,
+      installationMode: installerOnly,
+      smokeStandalone
+    }),
+    plugins,
     pluginSources: createPlaygroundPluginSources(smokeStandalone),
-    pluginRuntimeStore: installationMode ? createInMemoryPluginRuntimeStore() : undefined,
-    enablePluginManifestProvisioning: smokeStandalone ? false : !installationMode,
+    pluginRuntimeStore: installerOnly ? createInMemoryPluginRuntimeStore() : undefined,
+    enablePluginManifestProvisioning: !smokeStandalone && !installerOnly,
     autoLoadPlugins: true
   });
+
+  if (process.env.PLAYGROUND_EVENT_SMOKE === "1") {
+    await handle.runtime.emitPluginEvent("playground/event-emitter", "smoke-triggered", {
+      source: "playground/event-emitter",
+      at: new Date().toISOString()
+    });
+  }
 
   return {
     handle,
@@ -98,6 +157,13 @@ export async function createPlaygroundCmsApp(): Promise<PlaygroundCmsApp> {
     observability,
     logger
   };
+}
+
+/** Multiple CMS instances require an explicit opt-in; a Mongo replica set does not imply a CMS cluster. */
+export function readPlaygroundClusterEnabled(value?: string): boolean {
+  if (value === undefined || value === "false" || value === "0") return false;
+  if (value === "true" || value === "1") return true;
+  throw new Error("PLAYGROUND_CLUSTER_ENABLED must be true, false, 1 or 0");
 }
 
 function createGlobalProviders({
@@ -154,10 +220,6 @@ function createPlaygroundPluginSources(smokeStandalone: boolean): readonly Plugi
   ];
 }
 
-function isCmsInstalled(): boolean {
-  return process.env.CMS_INSTALLED?.trim().toLowerCase() === "true";
-}
-
 function createPlaygroundEventSmokePlugins(): readonly KernelPluginDefinition[] {
   if (process.env.PLAYGROUND_EVENT_SMOKE !== "1") {
     return [];
@@ -199,19 +261,12 @@ function createPlaygroundEventSmokePlugins(): readonly KernelPluginDefinition[] 
         emits: [
           {
             name: "smoke-triggered",
-            visibility: "private",
-            version: 1
+            visibility: "public",
+            version: 1,
+            delivery: "sync"
           }
         ]
       }
-    },
-    async onInit(context) {
-      const bus = await context.app.resolve(EVENT_BUS_TOKEN);
-      await bus.emit("playground/event-emitter:smoke-triggered", {
-        source: context.pluginId,
-        at: new Date().toISOString()
-      });
-      console.log("[playground:event-smoke] emitter emitted smoke-triggered");
     }
   };
 

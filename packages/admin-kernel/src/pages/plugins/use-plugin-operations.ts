@@ -91,10 +91,33 @@ export function usePluginOperations({ includeEvents = true }: { includeEvents?: 
       setOperationError(null);
 
       try {
+        const snapshot = plugins.find((plugin) => plugin.id === pluginId);
+        if (!snapshot) throw new Error("Plugin non presente nell'inventario corrente.");
         const response = await cms.system.executePluginOperation({
           path: { pluginId },
-          body: { operation, ...(reason ? { reason } : {}) }
+          body: {
+            operation,
+            expectedRevision: snapshot.operationRevision,
+            idempotencyKey: crypto.randomUUID(),
+            ...(reason ? { reason } : {})
+          }
         });
+        let result = response.data;
+        const deadline = Date.now() + 35000;
+        while (result.status === "pending" && Date.now() < deadline) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          result = (
+            await cms.system.getPluginOperation({ path: { operationId: result.operationId } })
+          ).data;
+        }
+        if (result.status !== "succeeded")
+          throw new Error(
+            result.status === "partial"
+              ? "Operazione applicata soltanto da alcune istanze. Consulta lo stato del cluster."
+              : result.status === "pending"
+                ? "Le istanze stanno ancora applicando l'operazione. Aggiorna lo stato prima di riprovare."
+                : "Le istanze non hanno completato l'operazione."
+          );
         await Promise.all([
           refreshPlugins(),
           includeEvents ? refreshEvents(pluginId) : Promise.resolve()
@@ -105,7 +128,7 @@ export function usePluginOperations({ includeEvents = true }: { includeEvents?: 
           description: `${pluginId}: ${pluginOperationLabel(operation)}.`,
           duration: 4000
         });
-        return response.data;
+        return result;
       } catch (error) {
         const message = toDisplayError(error);
         setOperationError(message);
@@ -120,7 +143,7 @@ export function usePluginOperations({ includeEvents = true }: { includeEvents?: 
         setIsRunningOperation(null);
       }
     },
-    [includeEvents, pushToast, refreshEvents, refreshPlugins]
+    [includeEvents, pushToast, refreshEvents, refreshPlugins, plugins]
   );
 
   useEffect(() => {

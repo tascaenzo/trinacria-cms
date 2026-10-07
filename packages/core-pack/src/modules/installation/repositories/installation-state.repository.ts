@@ -1,4 +1,5 @@
-import { createPluginDbScope, type DbAdapter, type PluginDbScope } from "@trinacria-cms/kernel";
+import type { DbAdapter } from "@trinacria-cms/kernel";
+import { createPluginDbScope, type PluginDbScope } from "@trinacria-cms/kernel/runtime";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import type { CacheService } from "../../cache/services/cache.service.js";
 import {
@@ -20,10 +21,28 @@ export class InstallationStateRepository {
   ) {}
 
   async get(): Promise<InstallationStateRecord | null> {
-    if (!this.cache) {
-      return this.getFromDb();
-    }
-    return this.cache.getOrCompute(CACHE_NAMESPACE, "state", () => this.getFromDb());
+    // Installation is a shared control record. Read Mongo, never a per-process cache.
+    return this.getFromDb();
+  }
+
+  getAdapter(): DbAdapter {
+    return this.db;
+  }
+
+  async checkpoint(input: {
+    phase: "configuration" | "content" | "verification" | "complete";
+    dataMode?: "empty" | "demo";
+    adminEmail?: string;
+    adminUserId?: string;
+  }): Promise<InstallationStateRecord> {
+    const current = await this.ensureCreated();
+    const updated = await this.repository().updateOne(
+      { filter: { id: current.id, installed: false } },
+      { ...input, updatedAt: new Date().toISOString() }
+    );
+    if (!updated) throw new Error("Installation checkpoint could not be written");
+    await this.cache?.invalidate(CACHE_NAMESPACE);
+    return InstallationStateRecordSchema.parse(updated);
   }
 
   private async getFromDb(): Promise<InstallationStateRecord | null> {
@@ -38,13 +57,20 @@ export class InstallationStateRepository {
     if (existing) return existing;
 
     const now = new Date().toISOString();
-    const created = await this.repository().insertOne({
-      kind: INSTALLATION_STATE_KIND,
-      key: INSTALLATION_STATE_KEY,
-      installed: false,
-      createdAt: now,
-      updatedAt: now
-    });
+    let created: unknown;
+    try {
+      created = await this.repository().insertOne({
+        kind: INSTALLATION_STATE_KIND,
+        key: INSTALLATION_STATE_KEY,
+        installed: false,
+        createdAt: now,
+        updatedAt: now
+      });
+    } catch (error) {
+      const concurrent = await this.get();
+      if (concurrent) return concurrent;
+      throw error;
+    }
     await this.cache?.invalidate(CACHE_NAMESPACE);
     return InstallationStateRecordSchema.parse(created);
   }
@@ -56,6 +82,7 @@ export class InstallationStateRepository {
       { filter: { id: current.id } },
       {
         installed: true,
+        phase: "complete",
         installedAt: now,
         adminUserId: adminUserId.trim(),
         updatedAt: now

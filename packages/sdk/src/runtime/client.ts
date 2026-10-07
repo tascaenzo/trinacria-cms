@@ -18,13 +18,12 @@ export function createCmsSdkClientCore(options: CmsSdkClientOptions): CmsSdkClie
 
   return {
     async request<TData = unknown>(request: SdkOperationRequest): Promise<TData> {
-      const timeout = createRequestTimeout(request.signal, requestTimeoutMs);
       const url = buildUrl(baseUrl, request.path, request.pathParams, request.query);
       const defaultHeaders = (await options.getDefaultHeaders?.()) ?? {};
       const accessToken = await options.getAccessToken?.();
       const apiKey = (await options.getApiKey?.()) ?? options.apiKey;
       const headers: Record<string, string> = {
-        accept: "application/json",
+        accept: request.responseType === "binary" ? "application/octet-stream" : "application/json",
         ...defaultHeaders,
         ...(request.headers ?? {})
       };
@@ -36,20 +35,28 @@ export function createCmsSdkClientCore(options: CmsSdkClientOptions): CmsSdkClie
         headers[apiKeyHeaderName] = apiKey;
       }
 
-      let body: string | undefined;
+      let body: string | Uint8Array | undefined;
       if (request.body !== undefined) {
-        body = JSON.stringify(request.body);
+        if (request.bodyType === "binary") {
+          if (!(request.body instanceof Uint8Array)) {
+            throw new CmsSdkConfigurationError("Binary SDK requests require Uint8Array");
+          }
+          body = request.body;
+        } else body = JSON.stringify(request.body);
         if (!headers["content-type"]) {
-          headers["content-type"] = "application/json";
+          headers["content-type"] =
+            request.bodyType === "binary" ? "application/octet-stream" : "application/json";
         }
       }
 
+      const timeout = createRequestTimeout(request.signal, requestTimeoutMs);
       try {
         const response = await transport.request<TData>({
           url,
           method: request.method,
           headers,
           body,
+          responseType: request.responseType,
           credentials: request.credentials ?? options.credentials,
           signal: timeout.signal
         });

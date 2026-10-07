@@ -90,3 +90,23 @@ test("sdk core client attaches a timeout signal by default", async () => {
 
   assert.ok(calls[0]?.signal);
 });
+
+
+test("binary uploads preserve bytes and downloads preserve non-UTF8 data; errors remain JSON", async () => {
+  const bytes = new Uint8Array([0, 255, 128, 65]);
+  let status = 200;
+  const client = createCmsSdkClientCore({
+    baseUrl: "http://fixture.invalid",
+    fetch: async (_url, init) => {
+      assert.deepEqual(init?.body, bytes);
+      assert.equal(init?.headers?.["content-type"], "application/octet-stream");
+      return { status, headers: { forEach(fn) { fn("application/json", "content-type"); } },
+        text: async () => JSON.stringify({ error: { code: "denied" } }),
+        arrayBuffer: async () => bytes.slice().buffer };
+    }
+  });
+  const result = await client.request<Uint8Array>({ method: "PUT", path: "/binary", body: bytes, bodyType: "binary", responseType: "binary" });
+  assert.deepEqual(result, bytes);
+  status = 403;
+  await assert.rejects(client.request({ method: "PUT", path: "/binary", body: bytes, bodyType: "binary", responseType: "binary" }), (error) => error instanceof CmsSdkHttpError && error.status === 403 && error.data.error.code === "denied");
+});

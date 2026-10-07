@@ -1,14 +1,13 @@
 import {
   CORE_TOKENS,
   classProvider,
-  createMongoDbAdapter,
   createToken,
   defineModule,
-  EntityRegistry,
   factoryProvider,
   type Provider,
   valueProvider
 } from "@trinacria-cms/kernel";
+import { createMongoDbAdapter, EntityRegistry } from "@trinacria-cms/kernel/runtime";
 import mongoose, { type ConnectOptions } from "mongoose";
 
 export interface CorePackMongoModuleOptions {
@@ -36,10 +35,7 @@ class CorePackMongoConnection {
       if (!this.config.allowStartupWithoutDb) {
         throw error;
       }
-      console.warn(
-        "[core-pack] MongoDB unavailable at startup; continuing in installation mode:",
-        error instanceof Error ? error.message : error
-      );
+      console.warn("[core-pack] MongoDB unavailable at startup; continuing in installation mode");
     }
   }
 

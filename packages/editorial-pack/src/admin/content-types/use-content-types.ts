@@ -34,16 +34,8 @@ export function useContentTypes(cms: CmsClient) {
       setIsLoading(true);
       setError(null);
       const [activeResponse, deletedResponse] = await Promise.all([
-        cms.request<{ data: readonly EditorialContentType[] }>({
-          method: "GET",
-          path: "/v1/editorial/content-types",
-          query: { limit: 100, offset: 0 }
-        }),
-        cms.request<{ data: readonly EditorialContentType[] }>({
-          method: "GET",
-          path: "/v1/editorial/content-types/deleted",
-          query: { limit: 100, offset: 0 }
-        })
+        cms.editorial.listEditorialContentTypes({ query: { limit: 100, offset: 0 } }),
+        cms.editorial.listDeletedEditorialContentTypes({ query: { limit: 100, offset: 0 } })
       ]);
       setContentTypes(activeResponse.data);
       setDeletedContentTypes(deletedResponse.data);
@@ -61,14 +53,14 @@ export function useContentTypes(cms: CmsClient) {
   }, [refresh]);
 
   const mutate = async (
-    request: { method: "DELETE" | "POST"; path: string },
+    operation: () => Promise<unknown>,
     successMessage: string,
     errorFallback: string
   ) => {
     try {
       setIsMutating(true);
       setError(null);
-      await cms.request(request);
+      await operation();
       await refresh();
       pushToast({
         tone: "success",
@@ -94,30 +86,21 @@ export function useContentTypes(cms: CmsClient) {
 
   const deleteContentType = (contentType: EditorialContentType) =>
     mutate(
-      {
-        method: "DELETE",
-        path: `/v1/editorial/content-types/${contentType.id}`
-      },
+      () => cms.editorial.deleteEditorialContentType({ path: { id: contentType.id } }),
       "Modello eliminato.",
       "Non è stato possibile eliminare il modello."
     );
 
   const restoreContentType = (contentType: EditorialContentType) =>
     mutate(
-      {
-        method: "POST",
-        path: `/v1/editorial/content-types/${contentType.id}/restore`
-      },
+      () => cms.editorial.restoreEditorialContentType({ path: { id: contentType.id } }),
       "Modello ripristinato.",
       "Non è stato possibile ripristinare il modello."
     );
 
   const permanentlyDeleteContentType = (contentType: EditorialContentType) =>
     mutate(
-      {
-        method: "DELETE",
-        path: `/v1/editorial/content-types/${contentType.id}/permanent`
-      },
+      () => cms.editorial.permanentlyDeleteEditorialContentType({ path: { id: contentType.id } }),
       "Modello eliminato definitivamente.",
       "Non è stato possibile eliminare definitivamente il modello."
     );
@@ -143,9 +126,7 @@ export function useCreateContentType(cms: CmsClient) {
     try {
       setIsCreating(true);
       setError(null);
-      const response = await cms.request<{ data: EditorialContentType }>({
-        method: "POST",
-        path: "/v1/editorial/content-types",
+      const response = await cms.editorial.createEditorialContentType({
         body: toCreatePayload(draft)
       });
       pushToast({

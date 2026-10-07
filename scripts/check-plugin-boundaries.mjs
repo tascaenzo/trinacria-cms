@@ -68,6 +68,34 @@ function frontendFiles(path) {
   );
 }
 
+// Manifest helpers are shared with the browser. Backend composition helpers belong
+// in kernel/runtime; a core CJS barrel here executes server logger initialization.
+function visitSharedPluginApi(path, seen = new Set()) {
+  if (seen.has(path)) return;
+  seen.add(path);
+  for (const specifier of runtimeImports(path)) {
+    if (
+      specifier === "@trinacria/core" ||
+      specifier === "@trinacria-cms/kernel" ||
+      specifier === "@trinacria-cms/kernel/runtime" ||
+      specifier.startsWith("node:") ||
+      specifier.includes("/runtime/")
+    ) {
+      errors.push(
+        `${relative(root, path)}: shared plugin-api imports backend runtime ${specifier}`
+      );
+    }
+    if (specifier.startsWith(".")) {
+      const target = resolve(dirname(path), specifier);
+      const source = [target.replace(/\.js$/, ".ts"), target.replace(/\.js$/, ".tsx")].find(
+        existsSync
+      );
+      if (source) visitSharedPluginApi(source, seen);
+    }
+  }
+}
+visitSharedPluginApi(resolve(root, "packages/kernel/src/plugin-api/index.ts"));
+
 for (const pack of packs) {
   visitBackend(resolve(root, "packages", pack, "src/index.ts"));
   for (const file of frontendFiles(resolve(root, "packages", pack, "src/admin"))) {

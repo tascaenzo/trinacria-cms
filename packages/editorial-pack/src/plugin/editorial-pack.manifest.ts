@@ -6,6 +6,16 @@ import {
   definePluginManifest,
   defineSecurity
 } from "@trinacria-cms/kernel/plugin-api";
+import { PREVIEW_CREDENTIALS_ENTITY } from "../modules/preview/preview.schemas.js";
+import {
+  DELIVERY_CACHE_ENTITY,
+  DELIVERY_CACHE_EPOCHS_ENTITY,
+  DeliveryInvalidationSchema
+} from "../modules/publications/delivery-cache.js";
+import {
+  PUBLICATION_POINTERS_ENTITY,
+  PUBLICATION_SNAPSHOTS_ENTITY
+} from "../modules/publications/publications.schemas.js";
 import { EDITORIAL_PACK_SETTING_DEFINITIONS } from "../modules/settings/editorial-pack-settings.js";
 import { EDITORIAL_PACK_PLUGIN_ID } from "./editorial-pack.constants.js";
 import {
@@ -44,6 +54,20 @@ export const EDITORIAL_PACK_MANIFEST: PluginManifest = definePluginManifest({
     { pluginId: "media-pack", versionRange: "^0.1.0" }
   ],
   entities: [
+    ...[
+      PUBLICATION_POINTERS_ENTITY,
+      PUBLICATION_SNAPSHOTS_ENTITY,
+      PREVIEW_CREDENTIALS_ENTITY,
+      DELIVERY_CACHE_ENTITY,
+      DELIVERY_CACHE_EPOCHS_ENTITY
+    ].map((entity) => ({
+      name: entity.entityName,
+      schemaVersion: 1,
+      indexes: entity.indexes?.map((index) => {
+        if (!index.name) throw new Error("Publication index name required");
+        return { ...index, name: index.name };
+      })
+    })),
     {
       name: "content_types",
       schemaVersion: 1,
@@ -99,7 +123,17 @@ export const EDITORIAL_PACK_MANIFEST: PluginManifest = definePluginManifest({
   settings: [...EDITORIAL_PACK_SETTING_DEFINITIONS],
   admin: EDITORIAL_PACK_ADMIN_MANIFEST,
   events: defineEvents({
+    subscribes: [
+      { eventName: "editorial-pack:delivery-invalidated", handler: "invalidateDelivery" }
+    ],
     emits: [
+      defineEmittedEvent({
+        name: "delivery-invalidated",
+        visibility: "private",
+        version: 1,
+        delivery: "async",
+        payloadSchema: DeliveryInvalidationSchema.toOpenApi()
+      }),
       defineEmittedEvent({
         name: "entry-created",
         visibility: "protected",

@@ -26,8 +26,12 @@ export function createFetchTransport(fetchImpl?: FetchLike): SdkTransport {
       });
 
       const headers = readHeaders(response.headers);
-      const rawText = await response.text();
-      const data = parseResponseBody<TData>(rawText, headers["content-type"]);
+      let data: TData;
+      if (request.responseType === "binary" && response.status >= 200 && response.status < 300) {
+        if (!response.arrayBuffer)
+          throw new CmsSdkConfigurationError("Binary SDK responses require fetch.arrayBuffer()");
+        data = new Uint8Array(await response.arrayBuffer()) as TData;
+      } else data = parseResponseBody<TData>(await response.text(), headers["content-type"]);
 
       return {
         status: response.status,

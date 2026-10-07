@@ -1,3 +1,4 @@
+import { MemoryPluginNonceStore } from "@trinacria-cms/kernel/runtime";
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { HttpContext } from "@trinacria-cms/kernel";
@@ -6,7 +7,7 @@ import { buildPluginAuthHeaders } from "../src/modules/settings/auth/plugin-auth
 import { SettingsPluginAuthService } from "../src/modules/settings/auth/plugin-auth.service.js";
 
 const PLUGIN_ID = "core-pack";
-const PLUGIN_SECRET = "super-secret-key-for-tests";
+const PLUGIN_SECRET = "super-secret-key-for-tests-with-at-least-32-bytes";
 
 test("Settings access middleware authenticates admin bearer reads", async () => {
   const middleware = createSettingsAccessMiddleware(
@@ -58,6 +59,7 @@ test("Settings access middleware authenticates signed plugin reads", async () =>
   const path = "/v1/settings/values/core-pack:site:title";
   const headers = buildPluginAuthHeaders({
     pluginId: PLUGIN_ID,
+    keyId: "current",
     secret: PLUGIN_SECRET,
     method: "GET",
     path,
@@ -103,11 +105,12 @@ test("Settings access middleware rejects missing credentials", async () => {
 function createPluginAuthService() {
   return new SettingsPluginAuthService(
     {
-      async getSecret(pluginId: string) {
-        return pluginId === PLUGIN_ID ? PLUGIN_SECRET : null;
+      async getKey(pluginId: string, keyId: string) {
+        return pluginId === PLUGIN_ID ? { id: keyId, secret: PLUGIN_SECRET } : null;
       }
     },
-    null
+    null,
+    new MemoryPluginNonceStore()
   );
 }
 

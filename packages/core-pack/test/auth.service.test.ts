@@ -1,3 +1,5 @@
+import { randomBytes } from "node:crypto";
+import { matchesMongoFilter } from "../../../test/helpers/mongo-like-filter.js";
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import test from "node:test";
@@ -510,13 +512,12 @@ test("AuthUserFlowsService requests password reset through secure email payloads
     false
   );
 
-  const claim = await runtime.securePayloads.claim<{
+  const claim = await runtime.securePayloads.forPlugin("email-pack").claim<{
     to: string;
     templateKey: string;
     variables: { resetUrl: string };
   }>({
     payloadId: (runtime.emittedEvents[0]?.payload as { securePayloadId: string }).securePayloadId,
-    consumerPluginId: "email-pack",
     eventName: "core-pack:secure-event-payload-ready",
     payloadType: "email-pack:send-email-request",
     schemaVersion: 1,
@@ -644,7 +645,8 @@ function createRuntime(): Runtime {
   const authUsers = new AuthUsersRepository(db);
   const securePayloads = new SecureEventPayloadsService(
     new SecureEventPayloadsRepository(db),
-    new SecureEventPayloadCrypto({ masterKey: "core-pack-auth-flow-test-key" })
+    new SecureEventPayloadCrypto({ activeKeyId: "test-v1", keys: { "test-v1": randomBytes(32) } }),
+    { canClaim: () => ({ allowed: true }) }
   );
   const emittedEvents: Array<{ eventName: string; payload: unknown }> = [];
   const events = {
@@ -684,7 +686,7 @@ function createRuntime(): Runtime {
     passwordHashing,
     new AuthFlowTokensRepository(db),
     config,
-    securePayloads,
+    securePayloads.forPlugin("core-pack"),
     events as never
   );
 
@@ -794,7 +796,7 @@ function matchesFilter(
   filter: Record<string, unknown> | undefined
 ): boolean {
   if (!filter) return true;
-  return Object.entries(filter).every(([key, value]) => item[key] === value);
+  return matchesMongoFilter(item, filter);
 }
 
 function applySort<TData extends Record<string, unknown>>(

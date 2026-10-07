@@ -1,0 +1,589 @@
+// dist/backoffice-app.d.ts
+import type { BackofficeModule } from "./module.js";
+export interface BackofficeAppProps {
+    modules?: readonly BackofficeModule[];
+}
+/**
+ * BackofficeApp centralizes runtime discovery, session bootstrap, and module
+ * composition so host apps only provide initialization options.
+ */
+export declare function BackofficeApp({ modules }: BackofficeAppProps): import("react").JSX.Element;
+
+// dist/contracts.d.ts
+export * from "./contracts/index.js";
+
+// dist/contracts/access.d.ts
+/**
+ * A capability or permission guard controls whether a route, navigation item,
+ * widget, settings section, resource, or action should be visible.
+ */
+export interface AdminAccessGuard {
+    pluginId?: string;
+    capability?: string;
+    permissionKey?: string;
+}
+
+// dist/contracts/action.d.ts
+import type { AdminAccessGuard } from "./access.js";
+import type { AdminEndpointBinding, AdminEndpointPolicyHint } from "./endpoint.js";
+export type AdminActionIntent = "create" | "read" | "update" | "delete" | "custom";
+export type AdminRecordGuardOperator = "equals" | "notEquals" | "in" | "notIn";
+export interface AdminRecordGuard {
+    field: string;
+    operator: AdminRecordGuardOperator;
+    value?: string | number | boolean | null;
+    values?: readonly (string | number | boolean | null)[];
+}
+export interface AdminActionDefinition {
+    id: string;
+    pluginId?: string;
+    intent: AdminActionIntent;
+    title: string;
+    titleKey?: string;
+    endpoint: AdminEndpointBinding;
+    input?: {
+        schema?: unknown;
+        valuePath?: string;
+    };
+    policy?: AdminEndpointPolicyHint;
+    order?: number;
+    guards?: readonly AdminAccessGuard[];
+    recordGuards?: readonly AdminRecordGuard[];
+}
+
+// dist/contracts/endpoint.d.ts
+export type AdminContributionMode = "declarative" | "react";
+export interface AdminEndpointBinding {
+    method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+    path: string;
+}
+export interface AdminEndpointPolicyHint {
+    allowedPathPrefixes?: readonly string[];
+}
+export interface AdminJsonDataBinding {
+    endpoint?: AdminEndpointBinding;
+    valuePath?: string;
+    schema?: unknown;
+    policy?: AdminEndpointPolicyHint;
+}
+
+// dist/contracts/index.d.ts
+export * from "./access.js";
+export * from "./action.js";
+export * from "./endpoint.js";
+export * from "./manifest.js";
+export * from "./navigation.js";
+export * from "./page.js";
+export * from "./registry.js";
+export * from "./resource.js";
+export * from "./settings.js";
+export * from "./widget.js";
+
+// dist/contracts/manifest.d.ts
+import type { AdminNavigationItem } from "./navigation.js";
+import type { AdminRouteDefinition } from "./page.js";
+import type { AdminResourceDefinition } from "./resource.js";
+import type { AdminSettingsSectionDefinition } from "./settings.js";
+import type { AdminDashboardWidgetDefinition } from "./widget.js";
+/**
+ * A plugin contribution is the frontend equivalent of a backend manifest: it
+ * declares which routes, navigation entries, and widgets a plugin adds.
+ */
+export interface AdminPluginContribution {
+    pluginId: string;
+    displayName: string;
+    displayNameKey?: string;
+    routes: readonly AdminRouteDefinition[];
+    navigation: readonly AdminNavigationItem[];
+    resources?: readonly AdminResourceDefinition[];
+    widgets?: readonly AdminDashboardWidgetDefinition[];
+    settings?: readonly AdminSettingsSectionDefinition[];
+}
+/** Structured contribution manifest intended for plugin authors. */
+export interface AdminExtensionManifest {
+    pluginId: string;
+    displayName: string;
+    displayNameKey?: string;
+    admin?: {
+        pages?: readonly AdminRouteDefinition[];
+        navigation?: readonly AdminNavigationItem[];
+        dashboard?: {
+            widgets?: readonly AdminDashboardWidgetDefinition[];
+        };
+        settings?: {
+            sections?: readonly AdminSettingsSectionDefinition[];
+        };
+        resources?: readonly AdminResourceDefinition[];
+    };
+    i18n?: readonly unknown[];
+}
+export type SafeAdminExtensionManifest = AdminExtensionManifest & {
+    readonly __safeAdminExtensionManifestBrand: unique symbol;
+};
+
+// dist/contracts/navigation.d.ts
+import type { AdminAccessGuard } from "./access.js";
+/**
+ * Navigation items point to a route and carry presentational hints used by the
+ * shell to group and order links.
+ */
+export interface AdminNavigationItem {
+    id: string;
+    routeId: string;
+    title: string;
+    titleKey?: string;
+    icon?: string;
+    group?: string;
+    groupKey?: string;
+    badge?: string;
+    order?: number;
+    /** Optional query parameters to apply when opening the route. */
+    params?: Readonly<Record<string, string>>;
+    guards?: readonly AdminAccessGuard[];
+}
+
+// dist/contracts/page.d.ts
+import type { AdminAccessGuard } from "./access.js";
+import type { AdminContributionMode, AdminJsonDataBinding } from "./endpoint.js";
+export type AdminPageKind = "resource" | "document" | "dashboard" | "custom";
+/**
+ * Route metadata is framework-agnostic. It describes an admin feature surface
+ * without forcing React-specific rendering concerns.
+ */
+export interface AdminRouteDefinition {
+    id: string;
+    path: string;
+    pluginId: string;
+    mode?: AdminContributionMode;
+    kind?: AdminPageKind;
+    title: string;
+    titleKey?: string;
+    summary?: string;
+    summaryKey?: string;
+    componentRef?: string;
+    hideShellHeader?: boolean;
+    data?: AdminJsonDataBinding;
+    order?: number;
+    guards?: readonly AdminAccessGuard[];
+}
+
+// dist/contracts/registry.d.ts
+import type { AdminNavigationItem } from "./navigation.js";
+import type { AdminRouteDefinition } from "./page.js";
+import type { AdminResourceDefinition } from "./resource.js";
+import type { AdminSettingsSectionDefinition } from "./settings.js";
+import type { AdminDashboardWidgetDefinition } from "./widget.js";
+/** Runtime plugin state used by the admin shell. */
+export interface AdminRuntimePluginInfo {
+    pluginId: string;
+    installed: boolean;
+    version?: string;
+    state?: string;
+    capabilities: readonly string[];
+}
+/** Flattened, shell-ready view after merging contributions and runtime state. */
+export interface AdminRegistrySnapshot {
+    routes: readonly AdminRouteDefinition[];
+    navigation: readonly AdminNavigationItem[];
+    resources: readonly AdminResourceDefinition[];
+    widgets: readonly AdminDashboardWidgetDefinition[];
+    settings: readonly AdminSettingsSectionDefinition[];
+}
+
+// dist/contracts/resource.d.ts
+import type { AdminAccessGuard } from "./access.js";
+import type { AdminActionDefinition } from "./action.js";
+export interface AdminResourceFieldDefinition {
+    key: string;
+    label: string;
+    labelKey?: string;
+    kind?: "text" | "status" | "datetime" | "json" | "secret" | "tags";
+    primary?: boolean;
+    table?: boolean;
+    form?: boolean;
+}
+export interface AdminResourceDetailSectionDefinition {
+    id: string;
+    title: string;
+    titleKey?: string;
+    fields?: readonly string[];
+}
+export interface AdminResourceDetailDefinition {
+    title?: string;
+    titleKey?: string;
+    titleField?: string;
+    subtitleField?: string;
+    fields?: readonly string[];
+    sections?: readonly AdminResourceDetailSectionDefinition[];
+    showJson?: boolean;
+}
+/**
+ * Resource definitions describe administrable data surfaces independently from
+ * the concrete React page that renders them.
+ */
+export interface AdminResourceDefinition {
+    id: string;
+    pluginId: string;
+    entityName: string;
+    routeId?: string;
+    title: string;
+    titleKey?: string;
+    summary?: string;
+    summaryKey?: string;
+    order?: number;
+    capabilities?: {
+        list?: string;
+        read?: string;
+        create?: string;
+        update?: string;
+        delete?: string;
+    };
+    fields?: readonly AdminResourceFieldDefinition[];
+    detail?: AdminResourceDetailDefinition | false;
+    actions?: readonly AdminActionDefinition[];
+    guards?: readonly AdminAccessGuard[];
+}
+
+// dist/contracts/settings.d.ts
+import type { AdminAccessGuard } from "./access.js";
+import type { AdminActionDefinition } from "./action.js";
+import type { AdminContributionMode, AdminJsonDataBinding } from "./endpoint.js";
+export type AdminSettingsSectionKind = "form" | "panel" | "custom";
+/**
+ * Settings sections let plugins project configuration pages into a shared
+ * settings area while remaining logically isolated.
+ */
+export interface AdminSettingsSectionDefinition {
+    id: string;
+    pluginId: string;
+    mode?: AdminContributionMode;
+    kind?: AdminSettingsSectionKind;
+    componentRef?: string;
+    title: string;
+    titleKey?: string;
+    summary?: string;
+    summaryKey?: string;
+    category?: string;
+    settingKeys?: readonly string[];
+    data?: AdminJsonDataBinding;
+    actions?: readonly AdminActionDefinition[];
+    order?: number;
+    guards?: readonly AdminAccessGuard[];
+}
+
+// dist/contracts/widget.d.ts
+import type { AdminAccessGuard } from "./access.js";
+import type { AdminContributionMode, AdminJsonDataBinding } from "./endpoint.js";
+export type AdminDashboardWidgetKind = "metric" | "status" | "card" | "list" | "chart" | "custom";
+export interface AdminDashboardWidgetLayout {
+    /** Default width in the four-column desktop dashboard grid. */
+    defaultColumnSpan?: 1 | 2 | 3 | 4;
+    /** Default height in dashboard grid rows. */
+    defaultRowSpan?: 1 | 2 | 3;
+    /** @deprecated Use defaultColumnSpan for new widget declarations. */
+    columnSpan?: 1 | 2 | 3 | 4;
+    /** @deprecated Use defaultRowSpan for new widget declarations. */
+    rowSpan?: 1 | 2 | 3;
+    /** Optional lower width bound enforced while users resize a widget. */
+    minColumnSpan?: 1 | 2 | 3 | 4;
+    /** Optional upper width bound enforced while users resize a widget. */
+    maxColumnSpan?: 1 | 2 | 3 | 4;
+    /** Optional lower height bound enforced while users resize a widget. */
+    minRowSpan?: 1 | 2 | 3;
+    /** Optional upper height bound enforced while users resize a widget. */
+    maxRowSpan?: 1 | 2 | 3;
+}
+/** Dashboard widgets are plugin-contributed summaries mounted in overview screens. */
+export interface AdminDashboardWidgetDefinition {
+    id: string;
+    pluginId: string;
+    mode?: AdminContributionMode;
+    kind?: AdminDashboardWidgetKind;
+    componentRef?: string;
+    title: string;
+    titleKey?: string;
+    summary?: string;
+    summaryKey?: string;
+    data?: AdminJsonDataBinding;
+    layout?: AdminDashboardWidgetLayout;
+    order?: number;
+    guards?: readonly AdminAccessGuard[];
+}
+
+// dist/index.d.ts
+export * from "./backoffice-app.js";
+export * from "./contracts.js";
+export * from "./init.js";
+export * from "./lib/i18n.js";
+export * from "./module.js";
+export * from "./runtime/admin-endpoint-policy.js";
+export * from "./runtime/admin-extension-manifest.js";
+export * from "./runtime/admin-manifest-sanitizer.js";
+export * from "./runtime/admin-route-runtime.js";
+export * from "./runtime/plugin-admin-manifest-adapter.js";
+
+// dist/init.d.ts
+import ReactDOM from "react-dom/client";
+import type { BackofficeModule } from "./module.js";
+export interface MountBackofficeOptions {
+    apiBaseUrl?: string;
+    basePath?: string;
+    modules?: readonly BackofficeModule[];
+}
+/**
+ * mountBackoffice gives host apps a single entrypoint: configure SDK access,
+ * provide modules, and mount the shared admin application.
+ */
+export declare function mountBackoffice(container: Element, options?: MountBackofficeOptions): ReactDOM.Root;
+
+// dist/lib/i18n.d.ts
+import { type ReactNode } from "react";
+export type Locale = string;
+export type TranslationDictionary = Readonly<Record<string, string>>;
+export type TranslateFn = (key: string, fallback?: string) => string;
+export interface I18nBundle {
+    pluginId: string;
+    dictionaries: Readonly<Partial<Record<Locale, TranslationDictionary>>>;
+}
+export interface I18nValue {
+    locale: Locale;
+    setLocale: (locale: Locale) => void;
+    t: TranslateFn;
+}
+export declare function defineI18nBundle<T extends I18nBundle>(bundle: T): T;
+export declare function createTranslate(locale: Locale, bundles: readonly I18nBundle[], fallbackLocale?: Locale): TranslateFn;
+export declare function I18nProvider({ children, value }: {
+    children: ReactNode;
+    value: I18nValue;
+}): import("react").FunctionComponentElement<import("react").ProviderProps<I18nValue | null>>;
+export declare function useI18n(): I18nValue;
+
+// dist/module.d.ts
+import type { AdminExtensionManifest, AdminNavigationItem } from "./contracts.js";
+import type { I18nBundle } from "./lib/i18n.js";
+import type { AdminDashboardWidgetRenderer, AdminPageRenderer, AdminSettingsSectionRenderer } from "./runtime/admin-renderers.js";
+import type { RenderableAdminContribution } from "./runtime/admin-route-runtime.js";
+export interface BackofficeRendererRegistry {
+    pages?: Record<string, AdminPageRenderer>;
+    dashboardWidgets?: Record<string, AdminDashboardWidgetRenderer>;
+    settingsSections?: Record<string, AdminSettingsSectionRenderer>;
+}
+export interface BackofficeDynamicNavigation {
+    load: (context: {
+        cms: typeof import("./runtime/cms-sdk.js").cms;
+    }) => Promise<readonly AdminNavigationItem[]>;
+    /** Browser event emitted after the underlying navigation data changes. */
+    refreshEvent?: string;
+}
+/**
+ * A backoffice module is the frontend equivalent of a CMS plugin pack: it can
+ * contribute one or more admin surfaces without owning the shell bootstrap.
+ */
+export interface BackofficeModule {
+    id: string;
+    contributions?: readonly RenderableAdminContribution[];
+    manifests?: readonly AdminExtensionManifest[];
+    renderers?: BackofficeRendererRegistry;
+    i18n?: readonly I18nBundle[];
+    dynamicNavigation?: BackofficeDynamicNavigation;
+}
+/**
+ * defineBackofficeModule keeps module declarations lightweight while preserving
+ * full type inference for custom monorepo extensions.
+ */
+export declare function defineBackofficeModule<T extends BackofficeModule>(module: T): T;
+
+// dist/runtime/admin-endpoint-policy.d.ts
+import type { AdminActionDefinition, AdminEndpointBinding, AdminExtensionManifest } from "../contracts.js";
+export type AdminEndpointSurface = "data" | "action";
+export interface AdminEndpointPolicyOptions {
+    allowedPathPrefixes?: readonly string[];
+    requireActionGuards?: boolean;
+}
+export interface AdminEndpointPolicyResult {
+    ok: boolean;
+    reason?: string;
+}
+export declare function validateAdminEndpointBinding(endpoint: AdminEndpointBinding | undefined, surface: AdminEndpointSurface, options?: AdminEndpointPolicyOptions): AdminEndpointPolicyResult;
+export declare function validateAdminActionDefinition(action: AdminActionDefinition, ownerPluginId: string, options?: AdminEndpointPolicyOptions): AdminEndpointPolicyResult;
+export declare function sanitizeAdminExtensionManifest(manifest: AdminExtensionManifest, options?: AdminEndpointPolicyOptions): AdminExtensionManifest;
+export declare function isMutationMethod(method: string | undefined): boolean;
+
+// dist/runtime/admin-extension-manifest.d.ts
+import type { AdminExtensionManifest, SafeAdminExtensionManifest } from "../contracts.js";
+import { type AdminEndpointPolicyOptions } from "./admin-manifest-sanitizer.js";
+import type { RenderableAdminContribution } from "./admin-route-runtime.js";
+/**
+ * Converts an already-sanitized plugin-authoring manifest into the flattened
+ * contribution shape consumed by the registry.
+ */
+export declare function normalizeAdminExtensionManifest(manifest: SafeAdminExtensionManifest): RenderableAdminContribution;
+export declare function normalizeAdminExtensionManifests(manifests: readonly SafeAdminExtensionManifest[]): readonly RenderableAdminContribution[];
+/** Safe default for raw manifests loaded from APIs or plugin packages. */
+export declare function normalizeSafeAdminExtensionManifest(manifest: AdminExtensionManifest, options?: AdminEndpointPolicyOptions): RenderableAdminContribution;
+export declare function normalizeSafeAdminExtensionManifests(manifests: readonly AdminExtensionManifest[], options?: AdminEndpointPolicyOptions): readonly RenderableAdminContribution[];
+export declare function toSafeAdminExtensionManifest(manifest: AdminExtensionManifest, options?: AdminEndpointPolicyOptions): SafeAdminExtensionManifest;
+
+// dist/runtime/admin-manifest-sanitizer.d.ts
+export { type AdminEndpointPolicyOptions, type AdminEndpointPolicyResult, type AdminEndpointSurface, sanitizeAdminExtensionManifest, validateAdminActionDefinition, validateAdminEndpointBinding } from "./admin-endpoint-policy.js";
+
+// dist/runtime/admin-renderers.d.ts
+import type { ReactNode } from "react";
+import type { AdminDashboardWidgetRenderContext, AdminPageRenderContext, AdminSettingsSectionRenderContext } from "./admin-route-runtime.js";
+export type AdminSettingsSectionRenderer = (context: AdminSettingsSectionRenderContext) => ReactNode;
+export type AdminDashboardWidgetRenderer = (context: AdminDashboardWidgetRenderContext) => ReactNode;
+export type AdminPageRenderer = (context: AdminPageRenderContext) => ReactNode;
+export interface AdminRendererRegistryInput {
+    pages?: ReadonlyMap<string, AdminPageRenderer>;
+    dashboardWidgets?: ReadonlyMap<string, AdminDashboardWidgetRenderer>;
+    settingsSections?: ReadonlyMap<string, AdminSettingsSectionRenderer>;
+}
+export declare function resolveAdminPageRenderer(componentRef: string | undefined, renderers?: AdminRendererRegistryInput): AdminPageRenderer | undefined;
+export declare function resolveAdminSettingsSectionRenderer(componentRef: string | undefined, renderers?: AdminRendererRegistryInput): AdminSettingsSectionRenderer | undefined;
+export declare function resolveAdminDashboardWidgetRenderer(componentRef: string | undefined, renderers?: AdminRendererRegistryInput): AdminDashboardWidgetRenderer | undefined;
+
+// dist/runtime/admin-route-runtime.d.ts
+import type { ReactNode } from "react";
+import type { AdminDashboardWidgetDefinition, AdminPluginContribution, AdminRegistrySnapshot, AdminResourceDefinition, AdminRouteDefinition, AdminRuntimePluginInfo, AdminSettingsSectionDefinition } from "../contracts.js";
+import type { Locale, TranslateFn } from "../lib/i18n.js";
+import { type AdminRendererRegistryInput } from "./admin-renderers.js";
+/**
+ * Page render context carries the minimum runtime state every screen needs in
+ * order to render capability-aware admin content.
+ */
+export interface AdminPageRenderContext {
+    route: AdminRouteDefinition;
+    routes: readonly AdminRouteDefinition[];
+    runtimePlugins: readonly AdminRuntimePluginInfo[];
+    capabilityIndex: ReadonlyMap<string, Set<string>>;
+    resources: readonly AdminResourceDefinition[];
+    settings: readonly RenderableAdminSettingsSection[];
+    widgets: readonly RenderableAdminDashboardWidget[];
+    locale: Locale;
+    /** Whether the authenticated operator may enter dashboard layout editing mode. */
+    canCustomizeDashboard?: boolean;
+    /** Route navigation supplied by the shell for widget-level quick actions. */
+    navigateToRoute?: (routeId: string, params?: URLSearchParams) => void;
+    /** Base path used by direct browser uploads and other binary endpoints. */
+    apiBaseUrl?: string;
+    cms: typeof import("./cms-sdk.js").cms;
+    t: TranslateFn;
+}
+/**
+ * Renderable routes extend the framework-agnostic contract with the concrete
+ * React rendering function used by the backoffice application.
+ */
+export interface RenderableAdminRoute extends AdminRouteDefinition {
+    render: (context: AdminPageRenderContext) => ReactNode;
+}
+export interface AdminDashboardWidgetRenderContext extends Omit<AdminPageRenderContext, "route"> {
+    widget: RenderableAdminDashboardWidget;
+}
+export interface AdminSettingsSectionRenderContext extends Omit<AdminPageRenderContext, "route"> {
+    /** Reports unsaved local state to the shared settings workspace. */
+    onDirtyChange?: (isDirty: boolean) => void;
+    section: RenderableAdminSettingsSection;
+}
+export interface RenderableAdminDashboardWidget extends AdminDashboardWidgetDefinition {
+    render?: (context: AdminDashboardWidgetRenderContext) => ReactNode;
+}
+export interface RenderableAdminSettingsSection extends AdminSettingsSectionDefinition {
+    render?: (context: AdminSettingsSectionRenderContext) => ReactNode;
+}
+/**
+ * Renderable contributions are what the React backoffice mounts after the base
+ * contract has been adapted to a real UI framework.
+ */
+export interface RenderableAdminContribution extends Omit<AdminPluginContribution, "routes" | "widgets" | "settings"> {
+    routes: readonly RenderableAdminRoute[];
+    widgets?: readonly RenderableAdminDashboardWidget[];
+    settings?: readonly RenderableAdminSettingsSection[];
+}
+export interface RenderableAdminRegistrySnapshot extends Omit<AdminRegistrySnapshot, "routes" | "widgets" | "settings"> {
+    routes: readonly RenderableAdminRoute[];
+    widgets: readonly RenderableAdminDashboardWidget[];
+    settings: readonly RenderableAdminSettingsSection[];
+}
+/**
+ * The registry builder merges static admin contributions with runtime discovery
+ * so the shell only exposes routes that make sense for the current CMS instance.
+ */
+export declare function buildAdminRegistry(contributions: readonly RenderableAdminContribution[], runtimePlugins: readonly AdminRuntimePluginInfo[], t: TranslateFn, userPermissionKeys?: readonly string[], renderers?: AdminRendererRegistryInput): RenderableAdminRegistrySnapshot;
+
+// dist/runtime/cms-sdk.d.ts
+import { createCmsSdkClient } from "@trinacria-cms/sdk";
+type CmsClient = ReturnType<typeof createCmsSdkClient>;
+export interface ConfigureBackofficeSdkOptions {
+    baseUrl?: string;
+    sdk?: ReturnType<typeof createCmsSdkClient>;
+}
+export declare const cms: CmsClient;
+export declare function configureBackofficeSdk(options?: ConfigureBackofficeSdkOptions): CmsClient;
+/** Base URL shared by the generated SDK and lightweight runtime endpoints. */
+export declare function getBackofficeApiBaseUrl(): string;
+export {};
+
+// dist/runtime/plugin-admin-manifest-adapter.d.ts
+import type { AdminDashboardWidgetLayout, AdminExtensionManifest, AdminSettingsSectionKind } from "../contracts.js";
+import type { BackofficeModule } from "../module.js";
+interface PluginAdminRouteDeclaration {
+    id: string;
+    path: string;
+    label: string;
+    requiredPermission?: string;
+    componentRef?: string;
+    order?: number;
+}
+interface PluginAdminNavigationDeclaration {
+    id: string;
+    label: string;
+    icon?: string;
+    path?: string;
+    group?: string;
+    requiredPermission?: string;
+    order?: number;
+}
+interface PluginAdminResourceDeclaration {
+    id: string;
+    label: string;
+    routeBase: string;
+    apiBase: string;
+    requiredPermission?: string;
+}
+interface PluginAdminWidgetDeclaration {
+    id: string;
+    label: string;
+    requiredPermission?: string;
+    componentRef?: string;
+    layout?: AdminDashboardWidgetLayout;
+}
+interface PluginAdminSettingsSectionDeclaration {
+    id: string;
+    label: string;
+    namespace?: string;
+    requiredPermission?: string;
+    kind?: AdminSettingsSectionKind;
+    componentRef?: string;
+    summary?: string;
+    category?: string;
+    settingKeys?: readonly string[];
+    data?: unknown;
+    actions?: readonly unknown[];
+    order?: number;
+}
+export interface PluginAdminManifestDeclaration {
+    routes?: readonly PluginAdminRouteDeclaration[];
+    navigation?: readonly PluginAdminNavigationDeclaration[];
+    resources?: readonly PluginAdminResourceDeclaration[];
+    widgets?: readonly PluginAdminWidgetDeclaration[];
+    settingsSections?: readonly PluginAdminSettingsSectionDeclaration[];
+}
+export interface DefinePluginBackofficeModuleInput {
+    pluginId: string;
+    displayName: string;
+    displayNameKey?: string;
+    admin: PluginAdminManifestDeclaration;
+}
+export declare function definePluginBackofficeModule(input: DefinePluginBackofficeModuleInput): BackofficeModule;
+export declare function createAdminExtensionManifestFromPluginAdmin(input: DefinePluginBackofficeModuleInput): AdminExtensionManifest;
+export {};

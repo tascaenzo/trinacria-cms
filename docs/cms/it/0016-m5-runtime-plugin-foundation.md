@@ -137,3 +137,23 @@ TRINACRIA_RUN_MONGO_INTEGRATION=1 npm run test:integration -w @trinacria-cms/ker
 - trasformare M5 in un dominio editoriale
 - aggiungere marketplace remoto o installazione npm runtime
 - ignorare OpenAPI/SDK quando cambia un DTO
+
+## Autorizzazione degli eventi
+
+Le sottoscrizioni protected/audit richiedono permesso dichiarato dall'owner e decisione
+positiva della policy. Authorizer assente fallisce il load; Core fornisce il provider DI.
+Host minimali devono fornire un authorizer esplicito ristretto. La policy viene verificata
+a ogni consegna: la revoca blocca le valutazioni successive, mentre gli handler già
+iniziati possono finire. Dopo un load fallito, l'approvazione richiede nuovo load.
+Unload/reload invalida le generazioni precedenti; un binding parziale viene ripulito con
+rollback moduli, anche per dipendenze ricorsive. Diagnostica redatta disponibile tramite
+onDeliveryDiagnostic del runtime o onPluginEventDeliveryDiagnostic dello starter.
+I plugin in-process restano fidati: A1 non introduce una sandbox.
+
+## Contesto plugin attuale
+
+A0 sostituisce il container con `context.services` vincolato alla generazione: storage,
+settings, eventi, logger e operazioni nominate. Ownership delle entità e nomi Mongo hash
+sono verificati; transazioni riservate all'host coprono dominio e kernel atomicamente.
+Vedi [guida ai servizi plugin](./0007-creare-un-plugin.md#servizi-host-del-plugin-a0-implementato)
+per contratto disponibile, root discovery e requisiti del database di sviluppo.

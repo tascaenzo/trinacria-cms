@@ -1,3 +1,9 @@
+import { randomUUID } from "node:crypto";
+import type {
+  PluginClusterOperation,
+  PluginClusterOperationInput,
+  PluginClusterSnapshot
+} from "../../contracts/plugin-cluster.js";
 import type { PluginSourceSnapshot } from "../../contracts/plugin-discovery.js";
 import type { PluginManifest, PluginManifestAdmin } from "../../contracts/plugin-manifest.js";
 import type {
@@ -17,6 +23,7 @@ import {
   PluginRuntimeError,
   PluginStateTransitionError
 } from "../../errors/plugin-errors.js";
+import type { PluginClusterCoordinator } from "../cluster/plugin-cluster.js";
 import {
   describeAvailableOperations,
   toRuntimeDiagnostic
@@ -33,6 +40,9 @@ export interface KernelInstalledPluginDependencySnapshot {
 }
 
 export interface KernelInstalledPluginSnapshot {
+  cluster?: PluginClusterSnapshot;
+  executionMode: "local" | "cluster";
+  operationRevision: number;
   id: string;
   version: string;
   requiresCore: string;
@@ -64,16 +74,8 @@ export interface KernelCapabilitySnapshot {
   state: PluginState;
 }
 
-export interface KernelPluginOperationRequest {
-  operation: PluginRuntimeOperation;
-  reason?: string;
-}
-
-export interface KernelPluginOperationResult {
-  plugin: KernelInstalledPluginSnapshot;
-  operation: PluginRuntimeOperation;
-  executedAt: string;
-}
+export type KernelPluginOperationRequest = PluginClusterOperationInput;
+export type KernelPluginOperationResult = PluginClusterOperation;
 
 export interface KernelPluginEventSnapshot {
   sequence: number;
@@ -96,10 +98,20 @@ export interface KernelAdminExtensionManifestSnapshot {
 }
 
 export interface KernelSystemServiceOptions {
+  coordinator?: () => Promise<PluginClusterCoordinator | null>;
   pluginSources?: () => readonly PluginSourceSnapshot[];
 }
 
 export class KernelSystemService {
+  private localOperationRunning = false;
+  private readonly localOperations = new Map<
+    string,
+    {
+      signature: string;
+      result: KernelPluginOperationResult;
+      completion: Promise<KernelPluginOperationResult>;
+    }
+  >();
   constructor(
     private readonly runtime: Pick<
       PluginRuntime,
@@ -116,10 +128,21 @@ export class KernelSystemService {
     private readonly options: KernelSystemServiceOptions = {}
   ) {}
 
-  listInstalledPlugins(): readonly KernelInstalledPluginSnapshot[] {
+  async listInstalledPlugins(): Promise<readonly KernelInstalledPluginSnapshot[]> {
     const records = this.runtime.list();
     const dependencies = this.runtime.describeDependencies();
-    return records.map((record) => this.toPluginSnapshot(record, dependencies));
+    const cluster = await this.options.coordinator?.();
+    return Promise.all(
+      records.map(async (record) => {
+        const snapshot = cluster ? await cluster.snapshot(record.manifest.id) : undefined;
+        return {
+          ...this.toPluginSnapshot(record, dependencies),
+          executionMode: cluster ? ("cluster" as const) : ("local" as const),
+          operationRevision: snapshot?.desired.revision ?? this.localRevision(record.manifest.id),
+          ...(snapshot ? { cluster: snapshot } : {})
+        };
+      })
+    );
   }
 
   listCapabilities(): readonly KernelCapabilitySnapshot[] {
@@ -147,79 +170,100 @@ export class KernelSystemService {
     return this.options.pluginSources?.() ?? [];
   }
 
-  getInstalledPlugin(pluginId: string): KernelInstalledPluginSnapshot | null {
-    return this.listInstalledPlugins().find((record) => record.id === pluginId) ?? null;
+  async getInstalledPlugin(pluginId: string): Promise<KernelInstalledPluginSnapshot | null> {
+    return (await this.listInstalledPlugins()).find((record) => record.id === pluginId) ?? null;
   }
-
   async executeOperation(
     pluginId: string,
-    input: KernelPluginOperationRequest
+    input: KernelPluginOperationRequest,
+    actorId: string
   ): Promise<KernelPluginOperationResult> {
-    const snapshot = this.getInstalledPlugin(pluginId);
-    if (!snapshot) {
-      throw new PluginRuntimeError(`Plugin "${pluginId}" is not registered`, {
-        pluginId
-      });
+    input = structuredClone(input);
+    const coordinator = await this.options.coordinator?.();
+    if (coordinator) return coordinator.submit(pluginId, input, actorId);
+    this.pruneLocalOperations();
+    const key = JSON.stringify([actorId, input.idempotencyKey]);
+    const signature = JSON.stringify([
+      pluginId,
+      input.operation,
+      input.expectedRevision,
+      input.reason
+    ]);
+    const previous = this.localOperations.get(key);
+    if (previous) {
+      if (previous.signature !== signature)
+        throw new PluginStateTransitionError("Idempotency key already used for another command");
+      return structuredClone(await previous.completion);
     }
-
-    const availability = snapshot.operations.find((item) => item.operation === input.operation);
-    if (!availability?.available) {
-      throw new PluginStateTransitionError(
-        availability?.reason ??
-          `Operation "${input.operation}" is not available for plugin "${pluginId}"`,
-        {
-          pluginId,
-          operation: input.operation,
-          state: snapshot.state
-        }
-      );
-    }
-
-    switch (input.operation) {
-      case "load":
-        await this.runtime.load(pluginId);
-        break;
-      case "unload":
-        await this.runtime.unload(pluginId);
-        break;
-      case "reload":
-        await this.runtime.reload(pluginId);
-        break;
-      case "disable":
-        await this.runtime.disable(pluginId, input.reason);
-        break;
-      case "enable":
-        await this.runtime.enable(pluginId);
-        break;
-      default:
-        throw new CoreError(
-          "KERNEL_PLUGIN_OPERATION_UNSUPPORTED",
-          `Unsupported plugin operation "${input.operation}"`,
-          {
-            details: {
-              pluginId,
-              operation: input.operation
-            }
-          }
-        );
-    }
-
-    const updated = this.getInstalledPlugin(pluginId);
-    if (!updated) {
-      throw new PluginDependencyError(
-        `Plugin "${pluginId}" became unavailable after "${input.operation}"`,
-        {
-          pluginId,
-          operation: input.operation
-        }
-      );
-    }
-
-    return {
-      plugin: updated,
+    if (this.localOperationRunning)
+      throw new PluginStateTransitionError("A local plugin lifecycle operation is already running");
+    const snapshot = this.runtime.list().find((record) => record.manifest.id === pluginId);
+    if (!snapshot) throw new CoreError("not_found", "Plugin not found");
+    if (input.expectedRevision !== this.localRevision(pluginId))
+      throw new PluginStateTransitionError("Plugin state changed; refresh before retrying");
+    const availability = describeAvailableOperations(
+      snapshot,
+      this.runtime.describeDependencies()
+    ).find((entry) => entry.operation === input.operation);
+    if (!availability?.available)
+      throw new PluginStateTransitionError(availability?.reason ?? "Invalid plugin operation");
+    if (this.localOperations.size >= 1000)
+      this.localOperations.delete(this.localOperations.keys().next().value!);
+    const result: KernelPluginOperationResult = {
+      operationId: randomUUID(),
+      pluginId,
       operation: input.operation,
-      executedAt: new Date().toISOString()
+      desiredRevision: this.localRevision(pluginId),
+      status: "pending",
+      submittedAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 300000).toISOString(),
+      participants: ["local"],
+      instances: []
     };
+    this.localOperationRunning = true;
+    const completion = Promise.resolve().then(async () => {
+      try {
+        if (input.operation === "disable")
+          await this.runtime.disable(pluginId, input.reason ?? `Disabled by ${actorId}`);
+        else await this.runtime[input.operation](pluginId);
+        result.status = "succeeded";
+        return result;
+      } catch (error) {
+        result.status = "failed";
+        throw error;
+      } finally {
+        result.desiredRevision = this.localRevision(pluginId);
+        this.localOperationRunning = false;
+      }
+    });
+    this.localOperations.set(key, { signature, result, completion });
+    return structuredClone(await completion);
+  }
+  async getPluginOperation(operationId: string): Promise<KernelPluginOperationResult> {
+    const coordinator = await this.options.coordinator?.();
+    if (coordinator) return coordinator.status(operationId);
+    this.pruneLocalOperations();
+    const operation = [...this.localOperations.values()].find(
+      (entry) => entry.result.operationId === operationId
+    );
+    if (!operation) throw new CoreError("not_found", "Plugin operation not found or expired");
+    return structuredClone(operation.result);
+  }
+
+  private localRevision(pluginId: string): number {
+    const revision = this.runtime
+      .list()
+      .find((record) => record.manifest.id === pluginId)?.lifecycleRevision;
+    if (revision !== undefined) return revision;
+    return Math.max(
+      1,
+      ...this.runtime.events({ pluginId, limit: 1 }).map((event) => event.sequence)
+    );
+  }
+  private pruneLocalOperations(): void {
+    for (const [key, entry] of this.localOperations)
+      if (entry.result.status !== "pending" && Date.parse(entry.result.expiresAt) <= Date.now())
+        this.localOperations.delete(key);
   }
 
   listPluginEvents(pluginId: string, limit = 20): readonly KernelPluginEventSnapshot[] {
@@ -240,6 +284,8 @@ export class KernelSystemService {
 
     return {
       id: record.manifest.id,
+      executionMode: "local",
+      operationRevision: this.localRevision(record.manifest.id),
       version: record.manifest.version,
       requiresCore: record.manifest.requiresCore,
       state: record.state,

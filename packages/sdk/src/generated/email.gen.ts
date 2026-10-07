@@ -5,20 +5,22 @@ import type { CmsSdkClientCore, SdkRequestOverrides } from "../runtime/types.js"
 import type { ListEmailTemplatesRequest, ListEmailTemplatesResponse, PreviewEmailTemplateRequest, PreviewEmailTemplateResponse, UpsertEmailTemplateRequest, UpsertEmailTemplateResponse } from "./types.gen.js";
 
 export interface EmailApi {
-  listEmailTemplates(options?: SdkRequestOverrides): Promise<ListEmailTemplatesResponse>;
+  listEmailTemplates(input?: ListEmailTemplatesRequest, options?: SdkRequestOverrides): Promise<ListEmailTemplatesResponse>;
   previewEmailTemplate(input: PreviewEmailTemplateRequest, options?: SdkRequestOverrides): Promise<PreviewEmailTemplateResponse>;
   upsertEmailTemplate(input: UpsertEmailTemplateRequest, options?: SdkRequestOverrides): Promise<UpsertEmailTemplateResponse>;
 }
 
 export function createEmailApi(client: CmsSdkClientCore): EmailApi {
   return {
-    listEmailTemplates: async (options) =>
+    listEmailTemplates: async (input = {}, options) =>
       client.request({
         method: "GET",
         path: "/v1/email/templates",
         pathParams: undefined,
-        query: undefined,
+        query: input.query,
         body: undefined,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,
@@ -30,6 +32,8 @@ export function createEmailApi(client: CmsSdkClientCore): EmailApi {
         pathParams: undefined,
         query: undefined,
         body: input.body,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,
@@ -41,6 +45,8 @@ export function createEmailApi(client: CmsSdkClientCore): EmailApi {
         pathParams: undefined,
         query: undefined,
         body: input.body,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,

@@ -76,7 +76,7 @@ Signature model:
 
 Runtime configuration:
 
-- `CMS_PLUGIN_AUTH_KEYS_JSON`: map `{ pluginId: secret }`
+- `CMS_PLUGIN_AUTH_KEYS_JSON`: map `{ pluginId: { current: { id, secret }, previous?: { id, secret, acceptUntil } } }`
 - `CMS_PLUGIN_AUTH_MAX_SKEW_SECONDS`: allowed clock drift (default 300s)
 - `PluginAuthKeyProvider`: DI extension point to resolve secrets from Vault/KMS instead of env.
 

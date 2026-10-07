@@ -123,6 +123,14 @@ export class LocalDiskMediaStorageProvider implements MediaStorageProvider {
     return createReadStream(this.storagePath(input.storageKey));
   }
 
+  async readObject(input: {
+    storageKey: string;
+    signal?: AbortSignal;
+  }): Promise<AsyncIterable<Uint8Array>> {
+    await stat(this.storagePath(input.storageKey));
+    return createReadStream(this.storagePath(input.storageKey), { signal: input.signal });
+  }
+
   async deleteObject(input: { storageKey: string }): Promise<void> {
     await rm(this.storagePath(input.storageKey), { force: true });
   }

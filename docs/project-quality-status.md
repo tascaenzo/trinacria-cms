@@ -1,8 +1,52 @@
-# Stato e qualità del progetto — 1 ottobre 2026
+# Stato e qualità del progetto — 7 ottobre 2026
 
 Questa è la fonte aggiornata per lo stato del checkout dopo il consolidamento di qualità,
 l’aggiornamento delle dipendenze, l’unificazione UI e la revisione Tailwind 4.3.
 Le milestone M1–M6 documentano risultati storici; non descrivono da sole Editorial e Media.
+
+## Consolidamento corrente — 5 ottobre 2026
+
+Completati primo avvio riprendibile, prerequisiti separati dal wizard e collection
+leggibili. La suite di riferimento D0 esegue tutti i nove scenari nel backend esterno
+fisico tramite CLI distribuita: `status:passed, complete:true`. Include upgrade 0.1→0.2,
+reinstallazione esplicita, CRUD/browser/overlay e restore completo su DB separato.
+
+Verifica locale con Node 24.21.0/npm 11.16.0: **605 test ordinari passati**, 34 integrazioni
+opt-in saltate nel comando ordinario; suite **45 test d'integrazione passati senza skip**
+con Mongo/Redis/S3 attivi, **12 test playground senza skip** incluso primo avvio Mongo,
+**28/28 Chromium**, build **15/15**, Storybook **11/11**, SDK, API, signing e template verdi.
+I conteggi delle sezioni precedenti sono risultati storici delle rispettive consegne.
+
+La prima prova positiva registrata con sei plugin misura 8.13 s per avvio e primo login, RSS circa 327 MiB,
+50 letture HTTP seriali dopo cinque warmup: mediana 9.14 ms, p95 10.06 ms. Restore e
+verifica locale richiedono 10.76 s su 27 collection/69 indici e un media reale. Queste
+misure descrivono la fixture, non la capacità o il recovery time del vostro deployment.
+
+CI aggiornata per installare Chromium prima della prova di distribuzione, eseguire
+le suite complete e conservare le evidenze. Nessun file compilato senza sorgente viene
+ammesso nei tarball. DB mock conservato: 31 collection, 4 utenti, 13 entry e 3 media.
+La CI remota completa è passata il 7 ottobre sul candidato `937ebf6`, in PR e push:
+report di nove scenari/upgrade/restore scaricati e validati, otto digest di pacchetto
+registrati. Corretti riconoscimento ANSI di Vite, deadline della fixture, upload dei
+JSON sotto `.tmp` e orologio del test HTTP al cambio di minuto.
+Staging e partecipante indipendente restano da registrare;
+G2/G3/G4 rimangono aperti per le rispettive acceptance.
+[Procedura del team](cms/architecture/plugin-platform/single-instance-acceptance.md) ·
+[Consegna e verifiche](../workflow/tasks/done/2026-10-05-cms-foundation-consolidation.md) ·
+[Prima verifica remota](../workflow/tasks/done/2026-10-07-pr-ci-first-verification.md).
+
+## Modello standard dei plugin
+
+Plugin installati fidati nello stesso processo, contratti dei manifest senza approvazioni
+DB, singola istanza per default e cluster opzionale. Permessi utente, deleghe, ownership,
+schema, vault cifrato/atomico, transazioni e migrazioni rimangono attivi. I client HTTP
+firmati mantengono accessi espliciti e anti-replay. Settings → Plugins permette
+load/unload/disable/enable con revisioni stabili e drain anche senza cluster.
+
+Il codice dei percorsi sperimentali non utilizzati è stato eliminato insieme a test,
+export e documenti obsoleti. [Modello corrente](cms/architecture/plugin-platform/trusted-plugin-model.md)
+e [registro di pulizia e verifiche](../workflow/tasks/done/2026-10-03-plugin-code-and-docs-cleanup.md).
+La prova umana dello starter e l'acceptance del deployment restano aperte.
 
 ## Funzionalità presenti
 
@@ -16,7 +60,7 @@ Le milestone M1–M6 documentano risultati storici; non descrivono da sole Edito
 Il prodotto resta una beta avanzata. La specifica editoriale comprende anche capacità future
 (tassonomie dedicate, pubblicazione automatica pianificata, migrazioni guidate) che non devono
 essere dedotte dall'esistenza dei relativi campi o permessi. Le chiamate editoriali admin usano
-il metodo generico `cms.request`; l'estensione dei metodi SDK generati resta un task distinto.
+i 22 metodi SDK generati; OpenAPI e overlay esterni sono verificati dal blocco B1.
 
 ## Interventi di consolidamento
 
@@ -119,7 +163,82 @@ Eliminati i gestori duplicati nel trigger dropdown e il cast `as never` del ref.
 ContextMenu rispetta ora `closeOnSelect={false}` e le selezioni annullate con `preventDefault()`.
 API pubbliche, tema e layout sono conservati.
 
-Ultima verifica ordinaria: 470 test passati, di cui 96 in trinacria-ui; check completo,
+Verifica ordinaria di questo intervento: 470 test passati, di cui 96 in trinacria-ui; check completo,
 build e Storybook verdi. Sei test aggiunti coprono navigazione, selezione persistente/annullata
 e trigger standard/custom. Le integrazioni Mongo/S3/Redis e i 17 scenari Chromium restano
 quelli registrati nella verifica precedente: non sono stati rieseguiti per questo refactor.
+
+
+## Piattaforma plugin A0/A1 — 1 ottobre 2026
+
+Implementati contesti `services` senza app/container diretto, ownership entità/storage
+persistente con nomi hash canonici, discovery sotto root realpath host, transazioni
+cross-namespace riservate all'host e operazioni nominate con identità fissata dal runtime.
+Pack ufficiali e consumer aggiornati insieme, senza alias di retrocompatibilità.
+A1 nega eventi protected/audit senza policy e rivaluta ogni consegna con diagnostica
+redatta, rollback dei binding e invalidazione generazioni.
+
+Verifica della consegna A0 su Node 24.21.0/npm 11.16.0 senza cache Turbo: 512 test passati,
+7 integrazioni opt-in saltate nella suite ordinaria; format/lint/typecheck/guardrail,
+dipendenze, confini e build passano. SDK allineato, import backend senza React,
+11 integrazioni Mongo passate e 17/17 Chromium. Redis/S3 non ripetuti in A0; i risultati
+precedenti restano storici. Nessuna modifica UI: Storybook non ripetuto.
+
+Collezioni Mongo del layout precedente bloccano lo storage esplicitamente: usare un DB
+vuoto oppure pianificare recupero dati verificato. Nessun reset dei DB di sviluppo.
+Il progetto non è mai stato rilasciato e i plugin in-process restano fidati; non è una sandbox.
+Alla consegna A0 il blocco successivo era A2; policy applicativa completa, grant condivisi,
+API/SDK Editorial e consegna durevole restano aperti. Vedi [piano M8](./cms/architecture/plugin-platform-implementation-plan.md)
+e [consegna A0](../workflow/tasks/done/2026-10-01-plugin-host-context-and-storage-boundaries.md).
+
+
+## Vault A2 — 1 ottobre 2026
+
+Claim CAS con retry/policy, identità host e DTO senza ciphertext implementati. Scadenza,
+stato, limiti e destinatario non possono essere superati da authorizer permissivi.
+Keyring esplicito obbligatorio anche in sviluppo; retention 24h configurabile con TTL.
+Rotazione CAS e comando inventario/apply riprendibile verificati. Corretto anche il
+bootstrap: la policy Core registrata dopo la costruzione del vault è risolta al claim.
+
+Verifica corrente su Node 24.21.0/npm 11.16.0 senza cache Turbo: **541 passati, 13 skip
+opt-in** in check, **17 integrazioni Mongo, 2 skip Redis/S3**, **17/17 Chromium** e build
+12/12 task. SDK generato allineato; import backend senza React passati. Redis/S3 e
+Storybook non ripetuti: nessuna modifica nei relativi percorsi. CI remota non eseguita.
+
+Nessun reset dei dati di sviluppo, nessun fallback delle chiavi. A0/A1/A2 completati;
+alla consegna A2 il prossimo blocco era A3 autorizzazione applicativa. [Consegna A2](../workflow/tasks/done/2026-10-01-secure-payload-atomic-claim-and-keyring.md)
+e [runbook](cms/architecture/plugin-platform/secure-payload-keyring-runbook.md).
+
+## Operazioni applicative A3 — 2 ottobre 2026
+
+Implementati contesti certificati host, authorizer Core, doppio controllo delle deleghe
+utente/plugin e facade nei sei domini Editorial/Media/Settings/Accesso/Runtime/Email.
+Principal e approver non sono ricavati dal body. Permessi di secrets, grants e runtime
+manage separati; nuovi privilegi operativi assegnati al solo admin. Editorial rivaluta
+workflow e permessi nella sessione; fence modello su retry, restore preserva lo stato.
+Media filtra ACL prima di paginare e ricontrolla replacement a ogni fase. Grant API
+approvati/revocati in Settings e operazioni nominate con contesto fissato dal runtime.
+
+Verifica senza cache, Node 24.21.0/npm 11.16.0: **561 passati, 13 skip opt-in** in check,
+**20 integrazioni Mongo, 2 skip Redis/S3**, **17/17 Chromium**, build **12/12 task**.
+SDK generato allineato e import backend con React/react-dom bloccati passati.
+Docker avviato dopo il primo tentativo di integrazione: nessun reset dei dati di sviluppo.
+Storybook non ripetuto (UI invariata), Redis/S3 non attivati, CI remota non eseguita.
+
+A0/A1/A2/A3 e G1 coperti; prossimo B0/B1, export pubblici e OpenAPI/SDK Editorial.
+M8 resta aperta. Store grant condiviso C2 e outbox/inbox/job C1 implementati e sottoposti a prove Mongo;
+plugin in-process fidati. [Consegna](../workflow/tasks/done/2026-10-02-application-operation-authorization.md)
+e [inventario](cms/architecture/plugin-platform/application-operation-inventory.md).
+
+## Piattaforma plugin e sito pubblico
+
+Il generatore e i tool conformità sono distribuiti nel tarball kernel. Catalogo e consumer
+sono verificati fuori dal monorepo con CRUD, permessi, evento protetto atomico, lifecycle,
+uninstall conservativo, overlay SDK e Chromium. L'upgrade catalogo 0.1→0.2 conserva i dati.
+Le integrazioni locali non creano approvazioni né interrogano i grant HTTP.
+
+Il sito pubblico ha snapshot separati dalla working copy, delivery Media, preview,
+SSR/SEO, cache e invalidazioni persistenti. I controlli automatici sono registrati nei
+rispettivi task; prova umana dello starter e deployment del team rimangono aperti.
+[Runbook sito](cms/architecture/plugin-platform/public-site-runbook.md) ·
+[Milestone M8](../workflow/milestones/M8-public-plugin-platform.md).

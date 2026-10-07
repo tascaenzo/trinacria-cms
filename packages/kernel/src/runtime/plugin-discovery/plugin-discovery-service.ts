@@ -16,6 +16,8 @@ import {
 export interface ConfiguredPluginDiscoveryServiceOptions {
   importer?: (entrypoint: string, source: PluginDiscoverySource) => Promise<unknown>;
   continueOnError?: boolean;
+  allowedRoots?: readonly string[];
+  resolveModule?: (entrypoint: string) => string;
 }
 
 export class ConfiguredPluginDiscoveryService implements PluginDiscoveryService {
@@ -24,10 +26,14 @@ export class ConfiguredPluginDiscoveryService implements PluginDiscoveryService 
     source: PluginDiscoverySource
   ) => Promise<unknown>;
   private readonly continueOnError: boolean;
+  private readonly allowedRoots: readonly string[];
+  private readonly resolveModule?: (entrypoint: string) => string;
 
   constructor(options: ConfiguredPluginDiscoveryServiceOptions = {}) {
     this.importer = options.importer ?? defaultImporter;
     this.continueOnError = options.continueOnError ?? false;
+    this.allowedRoots = [...(options.allowedRoots ?? [process.cwd()])];
+    this.resolveModule = options.resolveModule;
   }
 
   async discover(sources: readonly PluginDiscoverySource[]): Promise<PluginDiscoveryResult> {
@@ -41,7 +47,15 @@ export class ConfiguredPluginDiscoveryService implements PluginDiscoveryService 
       }
 
       try {
-        const loaded = await this.importer(resolveEntrypoint(source), source);
+        const supportedKeys = ["type", "name", "entrypoint", "enabledByDefault"];
+        if (Object.keys(source).some((key) => !supportedKeys.includes(key)))
+          throw new PluginManifestError("Unsupported plugin source configuration");
+        const entrypoint = await resolveEntrypoint(source, this.allowedRoots, this.resolveModule);
+        if (new URL(entrypoint).pathname.endsWith(".json"))
+          throw new PluginManifestError(
+            "Plugin sources must export an executable plugin definition"
+          );
+        const loaded = await this.importer(entrypoint, source);
         const plugin = normalizeDiscoveredPlugin(loaded, source);
         plugins.push(plugin);
         snapshots.push(this.toSnapshot(source, "discovered", plugin.manifest.id));

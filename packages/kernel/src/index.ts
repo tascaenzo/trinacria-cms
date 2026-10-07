@@ -21,5 +21,4 @@ export * from "./contracts/index.js";
 export * from "./errors/index.js";
 export * from "./http/index.js";
 export * from "./plugin-api/index.js";
-export * from "./runtime/index.js";
 export * from "./tokens/index.js";

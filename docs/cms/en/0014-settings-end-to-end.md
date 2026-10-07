@@ -162,7 +162,7 @@ Response:
 ```json
 {
   "data": {
-    "id": "plugin_core_pack__settings:42",
+    "id": "settings__plugin_core-pack:42",
     "key": "core-pack:site:name",
     "ownerPluginId": "core-pack",
     "value": "Trinacria Editorial",

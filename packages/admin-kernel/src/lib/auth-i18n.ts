@@ -86,7 +86,11 @@ export function getLocalizedInstallationError(
     return null;
   }
 
-  if (error.code === "installation_already_completed" || error.status === 409) {
+  if (error.code === "installation_in_progress") return t("auth.installation.error.in_progress");
+  if (error.code === "installation_resume_mismatch")
+    return t("auth.installation.error.resume_mismatch");
+  if (error.code === "platform_maintenance") return t("auth.installation.error.prerequisites");
+  if (error.code === "installation_already_completed") {
     return t("auth.installation.error.already_completed");
   }
   if (error.code === "password_mismatch") {

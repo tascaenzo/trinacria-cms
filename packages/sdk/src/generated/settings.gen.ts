@@ -11,8 +11,8 @@ export interface SettingsApi {
   getSettingsGroupById(input: GetSettingsGroupByIdRequest, options?: SdkRequestOverrides): Promise<GetSettingsGroupByIdResponse>;
   getSettingsObservability(options?: SdkRequestOverrides): Promise<GetSettingsObservabilityResponse>;
   getSettingValueByKey(input: GetSettingValueByKeyRequest, options?: SdkRequestOverrides): Promise<GetSettingValueByKeyResponse>;
-  listSettingDefinitions(input: ListSettingDefinitionsRequest, options?: SdkRequestOverrides): Promise<ListSettingDefinitionsResponse>;
-  listSettingsGroups(options?: SdkRequestOverrides): Promise<ListSettingsGroupsResponse>;
+  listSettingDefinitions(input?: ListSettingDefinitionsRequest, options?: SdkRequestOverrides): Promise<ListSettingDefinitionsResponse>;
+  listSettingsGroups(input?: ListSettingsGroupsRequest, options?: SdkRequestOverrides): Promise<ListSettingsGroupsResponse>;
   revealSettingSecret(input: RevealSettingSecretRequest, options?: SdkRequestOverrides): Promise<RevealSettingSecretResponse>;
   upsertSettingDefinition(input: UpsertSettingDefinitionRequest, options?: SdkRequestOverrides): Promise<UpsertSettingDefinitionResponse>;
   upsertSettingSecret(input: UpsertSettingSecretRequest, options?: SdkRequestOverrides): Promise<UpsertSettingSecretResponse>;
@@ -29,6 +29,8 @@ export function createSettingsApi(client: CmsSdkClientCore): SettingsApi {
         pathParams: input.path,
         query: undefined,
         body: undefined,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,
@@ -40,6 +42,8 @@ export function createSettingsApi(client: CmsSdkClientCore): SettingsApi {
         pathParams: input.path,
         query: undefined,
         body: undefined,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,
@@ -51,6 +55,8 @@ export function createSettingsApi(client: CmsSdkClientCore): SettingsApi {
         pathParams: input.path,
         query: undefined,
         body: undefined,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,
@@ -62,6 +68,8 @@ export function createSettingsApi(client: CmsSdkClientCore): SettingsApi {
         pathParams: input.path,
         query: undefined,
         body: undefined,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,
@@ -73,6 +81,8 @@ export function createSettingsApi(client: CmsSdkClientCore): SettingsApi {
         pathParams: undefined,
         query: undefined,
         body: undefined,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,
@@ -84,28 +94,34 @@ export function createSettingsApi(client: CmsSdkClientCore): SettingsApi {
         pathParams: input.path,
         query: undefined,
         body: undefined,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,
       }),
-    listSettingDefinitions: async (input, options) =>
+    listSettingDefinitions: async (input = {}, options) =>
       client.request({
         method: "GET",
         path: "/v1/settings/definitions",
         pathParams: undefined,
         query: input.query,
         body: undefined,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,
       }),
-    listSettingsGroups: async (options) =>
+    listSettingsGroups: async (input = {}, options) =>
       client.request({
         method: "GET",
         path: "/v1/settings/groups",
         pathParams: undefined,
-        query: undefined,
+        query: input.query,
         body: undefined,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,
@@ -117,6 +133,8 @@ export function createSettingsApi(client: CmsSdkClientCore): SettingsApi {
         pathParams: input.path,
         query: undefined,
         body: undefined,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,
@@ -128,6 +146,8 @@ export function createSettingsApi(client: CmsSdkClientCore): SettingsApi {
         pathParams: undefined,
         query: undefined,
         body: input.body,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,
@@ -139,6 +159,8 @@ export function createSettingsApi(client: CmsSdkClientCore): SettingsApi {
         pathParams: input.path,
         query: undefined,
         body: input.body,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,
@@ -150,6 +172,8 @@ export function createSettingsApi(client: CmsSdkClientCore): SettingsApi {
         pathParams: input.path,
         query: undefined,
         body: input.body,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,
@@ -161,6 +185,8 @@ export function createSettingsApi(client: CmsSdkClientCore): SettingsApi {
         pathParams: input.path,
         query: undefined,
         body: input.body,
+        bodyType: "json",
+        responseType: "json",
         headers: options?.headers,
         credentials: options?.credentials,
         signal: options?.signal,

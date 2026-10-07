@@ -5,7 +5,7 @@ import type {
   GetInstallationStatusResponse,
   LoginWithPasswordResponse
 } from "@trinacria-cms/sdk";
-import { AdminShell, Card, SearchField } from "@trinacria-cms/trinacria-ui";
+import { AdminShell, Button, Card, Disclosure, SearchField } from "@trinacria-cms/trinacria-ui";
 import { type ReactNode, useActionState, useCallback, useEffect, useMemo, useState } from "react";
 import { BackofficeShellStatus } from "./backoffice-app/backoffice-shell-status.js";
 import { BackofficeUserMenu } from "./backoffice-app/backoffice-user-menu.js";
@@ -13,6 +13,7 @@ import { useAuthenticatedRoleLabel } from "./backoffice-app/use-authenticated-ro
 import { useBackofficeRouteState } from "./backoffice-app/use-backoffice-route-state.js";
 import { useBackofficeShellRuntime } from "./backoffice-app/use-backoffice-shell-runtime.js";
 import { AuthScreenLayout } from "./components/auth-screen-layout.js";
+import { InstallationChecks } from "./components/installation-checks.js";
 import {
   getLocalizedInstallationError,
   getLocalizedLoginError,
@@ -33,7 +34,7 @@ import { getSdkErrorDetails, type SdkErrorDetails } from "./lib/sdk-errors.js";
 import { formatUserName } from "./lib/user-formatting.js";
 import type { BackofficeModule } from "./module.js";
 import { InstallationBootstrapPage } from "./pages/installation-bootstrap-page.js";
-import { InstallationDatabaseGuidePage } from "./pages/installation-database-guide-page.js";
+import { InstallationPrerequisitesPage } from "./pages/installation-prerequisites-page.js";
 import { LoginPage } from "./pages/login-page.js";
 import { MfaLoginPage, MfaRecoveryCodesPage } from "./pages/mfa-login-page.js";
 import { readRequiredString } from "./runtime/action-state.js";
@@ -55,7 +56,10 @@ type PasswordLoginResult = LoginWithPasswordResponse["data"];
 type LoginSession = Exclude<PasswordLoginResult, { status: string }>;
 type MfaChallenge = Extract<PasswordLoginResult, { status: string }>;
 type LoginActionState = FormActionState<LoginSession>;
-type InstallationActionState = FormActionState<LoginSession>;
+type InstallationActionState = FormActionState<{
+  session: LoginSession;
+  status: InstallationStatus;
+}>;
 type MfaSession = CompleteLoginMfaEnrollmentResponse["data"] | CompleteMfaLoginResponse["data"];
 
 const USER_MENU_NAVIGATION_IDS = ["nav-settings"] as const;
@@ -80,6 +84,8 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
   const [locale, setLocale] = useState<SupportedLocale>(() => readBackofficeLocale());
   const [activeRouteId, activeNavigationParams, navigateTo] = useBackofficeRouteState();
   const [authUser, setAuthUser] = useState<AuthenticatedUser | null>(null);
+  const [installationCompletionDismissed, setInstallationCompletionDismissed] = useState(false);
+  const [isRefreshingInstallation, setIsRefreshingInstallation] = useState(false);
   const [installationStatus, setInstallationStatus] = useState<InstallationStatus | null>(null);
   const [bootstrapError, setBootstrapError] = useState<SdkErrorDetails | null>(null);
   const [isBootstrappingApp, setIsBootstrappingApp] = useState(true);
@@ -257,13 +263,14 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
       const email = readRequiredString(formData, "email");
       const password = readRequiredString(formData, "password");
 
-      await cms.installation.bootstrapInstallation({
+      const bootstrap = await cms.installation.bootstrapInstallation({
         body: {
           firstName: readRequiredString(formData, "firstName"),
           lastName: readRequiredString(formData, "lastName"),
           email,
           password,
           confirmPassword: readRequiredString(formData, "confirmPassword"),
+          dataMode: formData.get("dataMode") === "demo" ? "demo" : "empty",
           siteName: readRequiredString(formData, "siteName"),
           siteTagline: formData.get("siteTagline")?.toString() || undefined,
           locale: formData.get("locale")?.toString() || undefined,
@@ -271,6 +278,12 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
         }
       });
 
+      if (
+        !bootstrap.data.status.installed ||
+        bootstrap.data.status.checks.some((check) => check.status !== "pass")
+      )
+        throw new Error("Installation verification failed");
+      setInstallationStatus(bootstrap.data.status);
       const loginResponse = await cms.auth.loginWithPassword({
         body: {
           email,
@@ -291,7 +304,7 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
       return {
         ok: true,
         error: null,
-        data: loginResponse.data
+        data: { session: loginResponse.data, status: bootstrap.data.status }
       };
     } catch (currentError) {
       return {
@@ -300,7 +313,7 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
         data: null
       };
     }
-  }, createIdleFormActionState<LoginSession>());
+  }, createIdleFormActionState<{ session: LoginSession; status: InstallationStatus }>());
 
   useEffect(() => {
     if (!loginState.ok || !loginState.data) {
@@ -309,22 +322,6 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
 
     completeLogin(loginState.data);
   }, [completeLogin, loginState]);
-
-  useEffect(() => {
-    if (!installationActionState.ok || !installationActionState.data) {
-      return;
-    }
-
-    setInstallationStatus((previous) => ({
-      installed: true,
-      envFilePresent: previous?.envFilePresent ?? true,
-      dbConfigured: previous?.dbConfigured ?? true,
-      envFilePath: previous?.envFilePath ?? ".env",
-      installedAt: previous?.installedAt,
-      adminUserId: previous?.adminUserId
-    }));
-    completeLogin(installationActionState.data);
-  }, [completeLogin, installationActionState]);
 
   useEffect(() => {
     if (mfaChallenge?.status !== "mfa_enrollment_required") return;
@@ -458,6 +455,18 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
     }
   }
 
+  async function refreshInstallationStatus() {
+    setIsRefreshingInstallation(true);
+    setBootstrapError(null);
+    try {
+      setInstallationStatus((await cms.installation.getInstallationStatus()).data);
+    } catch (error) {
+      setBootstrapError(getSdkErrorDetails(error));
+    } finally {
+      setIsRefreshingInstallation(false);
+    }
+  }
+
   function renderWithI18n(node: ReactNode) {
     return (
       <I18nProvider
@@ -505,22 +514,75 @@ export function BackofficeApp({ modules = [] }: BackofficeAppProps) {
       >
         <div className="grid gap-4 text-sm text-(--color-ink-muted)">
           <p>{t("auth.installation.error.communication_detail")}</p>
+          <Button
+            type="button"
+            onClick={() => void refreshInstallationStatus()}
+            disabled={isRefreshingInstallation}
+          >
+            {t("auth.installation.refresh_checks")}
+          </Button>
         </div>
       </AuthScreenLayout>
     );
   }
 
-  if (installationStatus && !installationStatus.installed) {
-    const requiresDatabaseGuide =
-      !installationStatus.envFilePresent || !installationStatus.dbConfigured;
-    if (requiresDatabaseGuide) {
-      return renderWithI18n(
-        <InstallationDatabaseGuidePage envFilePath={installationStatus.envFilePath ?? ".env"} />
-      );
-    }
+  if (
+    installationActionState.ok &&
+    installationActionState.data &&
+    !installationCompletionDismissed
+  ) {
+    const completed = installationActionState.data;
+    return renderWithI18n(
+      <AuthScreenLayout
+        variant="minimal"
+        eyebrow={t("auth.installation.eyebrow")}
+        heroTitle={t("auth.installation.complete_title")}
+        heroBody={t("auth.installation.complete_body")}
+        formTitle={t("auth.installation.complete_title")}
+        formSummary={t("auth.installation.complete_body")}
+        formBadgeLabel={t("auth.installation.form_badge_label")}
+        formBadgeHint={t("auth.installation.form_badge_hint")}
+        heroMetrics={[]}
+        heroHighlights={[]}
+      >
+        <div className="grid gap-5">
+          <Disclosure summary={t("auth.installation.verification_details")}>
+            <InstallationChecks checks={completed.status.checks} />
+          </Disclosure>
+          <Button
+            type="button"
+            onClick={() => {
+              setInstallationCompletionDismissed(true);
+              completeLogin(completed.session);
+            }}
+          >
+            {t("auth.installation.enter_backoffice")}
+          </Button>
+        </div>
+      </AuthScreenLayout>
+    );
+  }
 
+  if (
+    installationStatus &&
+    (installationStatus.restartRequired ||
+      installationStatus.checks.some((check) => check.status !== "pass"))
+  ) {
+    return renderWithI18n(
+      <InstallationPrerequisitesPage
+        envFilePath={installationStatus.envFilePath ?? ".env"}
+        checks={installationStatus.checks}
+        restartRequired={installationStatus.restartRequired}
+        isRefreshing={isRefreshingInstallation}
+        onRefresh={() => void refreshInstallationStatus()}
+      />
+    );
+  }
+
+  if (installationStatus && !installationStatus.installed) {
     return renderWithI18n(
       <InstallationBootstrapPage
+        dataMode={installationStatus.dataMode}
         action={submitInstallation}
         isSubmitting={isInstalling}
         state={{

@@ -5,13 +5,12 @@ import {
   HttpController,
   type HttpMiddleware,
   httpProvider,
-  type KernelHealthService,
-  type KernelHealthSnapshot,
   type PluginContributionCatalogSnapshot,
   type PluginRuntime,
   requestId,
   response
 } from "@trinacria-cms/kernel";
+import type { KernelHealthService, KernelHealthSnapshot } from "@trinacria-cms/kernel/runtime";
 
 const REQUEST_ID_STATE_KEY = "requestId";
 const MAX_RECENT_ERRORS = 25;
@@ -243,13 +242,25 @@ class PlaygroundObservabilityController extends HttpController {
   routes() {
     return this.router()
       .get("/metrics", this.getMetrics, {
-        docs: { excludeFromOpenApi: true }
+        docs: {
+          excludeFromOpenApi: true,
+          exclusionReason: "Host operational probe, protected by deployment policy",
+          pluginId: "kernel"
+        }
       })
       .get("/ready", this.getReadiness, {
-        docs: { excludeFromOpenApi: true }
+        docs: {
+          excludeFromOpenApi: true,
+          exclusionReason: "Host operational probe, protected by deployment policy",
+          pluginId: "kernel"
+        }
       })
       .get("/ops/checklist", this.getChecklist, {
-        docs: { excludeFromOpenApi: true }
+        docs: {
+          excludeFromOpenApi: true,
+          exclusionReason: "Host operational probe, protected by deployment policy",
+          pluginId: "kernel"
+        }
       })
       .build();
   }
@@ -458,9 +469,8 @@ export function createOpsChecklistItems(
     {
       id: "login",
       label: "Login flow",
-      status: process.env.CMS_INSTALLED?.trim().toLowerCase() === "true" ? "manual" : "warn",
+      status: corePackLoaded ? "manual" : "warn",
       details: {
-        installedFlag: process.env.CMS_INSTALLED === "true",
         manualCheck: "Submit admin credentials through the backoffice login screen"
       }
     },

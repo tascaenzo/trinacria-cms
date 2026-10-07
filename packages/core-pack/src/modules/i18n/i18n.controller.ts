@@ -38,6 +38,7 @@ export class I18nController extends HttpController {
     return this.router()
       .get("/v1/i18n/:locale", this.getLocale, {
         docs: {
+          pluginId: "core-pack",
           summary: "Resolve installed plugin translations for a locale",
           tags: [CORE_PACK_OPENAPI_TAGS.I18N],
           operationId: "getI18nBundle",

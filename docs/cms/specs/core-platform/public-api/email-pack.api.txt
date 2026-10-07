@@ -1,0 +1,332 @@
+// dist/admin/components/email-template-manager.d.ts
+import type { createCmsSdkClient, EmailApi } from "@trinacria-cms/sdk";
+type CmsClient = ReturnType<typeof createCmsSdkClient>;
+export interface EmailTemplateManagerContext {
+    cms: CmsClient & {
+        email: EmailApi;
+    };
+    onDirtyChange?: (isDirty: boolean) => void;
+    t: (key: string, fallback?: string) => string;
+}
+export declare function EmailTemplateManager({ cms, onDirtyChange, t }: EmailTemplateManagerContext): import("react").JSX.Element;
+export {};
+
+// dist/admin/index.d.ts
+import { EmailTemplateManager, type EmailTemplateManagerContext } from "./components/email-template-manager.js";
+export declare const EMAIL_PACK_ADMIN_RENDERERS: {
+    settingsSections: {
+        "email-pack:email-template-manager": (context: EmailTemplateManagerContext) => import("react").JSX.Element;
+    };
+};
+export { EmailTemplateManager };
+
+// dist/index.d.ts
+export type { EmailTemplateRecord, EmailTemplateStatus } from "./modules/email-templates/email-templates.schemas.js";
+export type { EmailDeliveryOperations, EmailTemplateOperations } from "./operations/email-operations.js";
+export { EMAIL_DELIVERY_OPERATIONS, EMAIL_TEMPLATE_OPERATIONS } from "./operations/email-operations.js";
+export * from "./plugin/index.js";
+
+// dist/modules/email-templates/dto/email-templates.response.dto.d.ts
+export declare const ListEmailTemplatesResponseOpenApiSchema: Record<string, unknown>;
+export declare const EmailTemplateResponseOpenApiSchema: Record<string, unknown>;
+export declare const PreviewEmailTemplateResponseOpenApiSchema: Record<string, unknown>;
+
+// dist/modules/email-templates/email-template-defaults.d.ts
+import type { EmailTemplateSeed } from "./email-templates.types.js";
+export declare const EMAIL_PACK_DEFAULT_EMAIL_TEMPLATES: readonly EmailTemplateSeed[];
+
+// dist/modules/email-templates/email-templates.controller.d.ts
+import { HttpController, type KernelAdminRouteGuard } from "@trinacria-cms/kernel";
+import type { EmailTemplateOperations } from "../../operations/email-operations.js";
+export declare class EmailTemplatesController extends HttpController {
+    private readonly templates;
+    private readonly adminRouteGuard;
+    constructor(templates: EmailTemplateOperations, adminRouteGuard: KernelAdminRouteGuard);
+    routes(): import("@trinacria/http").RouteDefinition[];
+    private listTemplates;
+    private upsertTemplate;
+    private previewTemplate;
+}
+
+// dist/modules/email-templates/email-templates.module.d.ts
+import { type ModuleDefinition } from "@trinacria-cms/kernel";
+export declare const EmailPackEmailTemplatesModule: ModuleDefinition;
+
+// dist/modules/email-templates/email-templates.schemas.d.ts
+import { type Infer } from "@trinacria-cms/kernel";
+export declare const EmailTemplateStatusSchema: import("@trinacria/schema/dist/core").InternalSchema<"active" | "draft" | "disabled">;
+export type EmailTemplateStatus = Infer<typeof EmailTemplateStatusSchema>;
+export declare const EmailTemplateRecordSchema: import("@trinacria/schema/dist/core").InternalSchema<{
+    id: string;
+    key: string;
+    locale: string;
+    name: string;
+    subject: string;
+    textBody: string;
+    variables: string[];
+    status: "active" | "draft" | "disabled";
+    source: "seed" | "custom";
+    createdAt: string;
+    updatedAt: string;
+} & {
+    description?: string | undefined;
+    htmlBody?: string | undefined;
+}>;
+export type EmailTemplateRecord = Infer<typeof EmailTemplateRecordSchema>;
+export declare const EMAIL_TEMPLATES_ENTITY: {
+    ownerPluginId: string;
+    entityName: string;
+    schema: import("@trinacria/schema/dist/core").InternalSchema<{
+        id: string;
+        key: string;
+        locale: string;
+        name: string;
+        subject: string;
+        textBody: string;
+        variables: string[];
+        status: "active" | "draft" | "disabled";
+        source: "seed" | "custom";
+        createdAt: string;
+        updatedAt: string;
+    } & {
+        description?: string | undefined;
+        htmlBody?: string | undefined;
+    }>;
+    indexes?: readonly import("@trinacria-cms/kernel/runtime").EntityIndexDefinition[];
+};
+
+// dist/modules/email-templates/email-templates.tokens.d.ts
+import type { EmailTemplatesController } from "./email-templates.controller.js";
+import type { EmailTemplatesRepository } from "./repositories/email-templates.repository.js";
+import type { EmailTemplatesService } from "./services/email-templates.service.js";
+export declare const EMAIL_TEMPLATES_REPOSITORY_TOKEN: import("@trinacria/core").Token<EmailTemplatesRepository>;
+export declare const EMAIL_TEMPLATES_SERVICE_TOKEN: import("@trinacria/core").Token<EmailTemplatesService>;
+export declare const EMAIL_TEMPLATES_ENTITY_REGISTRATION_TOKEN: import("@trinacria/core").Token<boolean>;
+export declare const EMAIL_TEMPLATES_CONTROLLER_TOKEN: import("@trinacria/core").Token<EmailTemplatesController>;
+
+// dist/modules/email-templates/email-templates.types.d.ts
+import type { EmailTemplateStatus } from "./email-templates.schemas.js";
+export interface EmailTemplateSeed {
+    key: string;
+    locale: string;
+    name: string;
+    description?: string;
+    subject: string;
+    textBody: string;
+    htmlBody?: string;
+    variables: readonly string[];
+}
+export interface UpsertEmailTemplateInput extends EmailTemplateSeed {
+    status?: EmailTemplateStatus;
+}
+export interface RenderEmailTemplateInput {
+    key: string;
+    locale?: string;
+    fallbackLocale?: string;
+    variables: Record<string, string | number | boolean | null | undefined>;
+}
+export interface RenderedEmailTemplate {
+    templateKey: string;
+    locale: string;
+    subject: string;
+    text: string;
+    html?: string;
+}
+
+// dist/modules/email-templates/index.d.ts
+export * from "./dto/email-templates.response.dto.js";
+export * from "./email-template-defaults.js";
+export * from "./email-templates.controller.js";
+export * from "./email-templates.module.js";
+export * from "./email-templates.schemas.js";
+export * from "./email-templates.tokens.js";
+export * from "./email-templates.types.js";
+export * from "./repositories/email-templates.repository.js";
+export * from "./services/email-templates.service.js";
+
+// dist/modules/email-templates/repositories/email-templates.repository.d.ts
+import type { DbAdapter } from "@trinacria-cms/kernel";
+import { type EmailTemplateRecord, type EmailTemplateStatus } from "../email-templates.schemas.js";
+import type { EmailTemplateSeed, UpsertEmailTemplateInput } from "../email-templates.types.js";
+export declare class EmailTemplatesRepository {
+    private readonly db;
+    private scope?;
+    constructor(db: DbAdapter);
+    seedDefaults(seeds: readonly EmailTemplateSeed[]): Promise<readonly EmailTemplateRecord[]>;
+    create(input: UpsertEmailTemplateInput): Promise<EmailTemplateRecord>;
+    upsert(input: UpsertEmailTemplateInput): Promise<EmailTemplateRecord>;
+    findByKeyAndLocale(key: string, locale: string): Promise<EmailTemplateRecord | null>;
+    list(options?: {
+        status?: EmailTemplateStatus;
+        limit?: number;
+        offset?: number;
+    }): Promise<readonly EmailTemplateRecord[]>;
+    private repository;
+}
+
+// dist/modules/email-templates/services/email-templates.service.d.ts
+import type { EmailTemplateRecord } from "../email-templates.schemas.js";
+import type { RenderEmailTemplateInput, RenderedEmailTemplate } from "../email-templates.types.js";
+import type { EmailTemplatesRepository } from "../repositories/email-templates.repository.js";
+export declare class EmailTemplatesService {
+    private readonly repository;
+    constructor(repository: EmailTemplatesRepository);
+    seedDefaults(): Promise<readonly EmailTemplateRecord[]>;
+    listTemplates(options?: {
+        limit?: number;
+        offset?: number;
+    }): Promise<readonly EmailTemplateRecord[]>;
+    getTemplate(key: string, locale?: string): Promise<EmailTemplateRecord | null>;
+    upsertTemplate(input: Parameters<EmailTemplatesRepository["upsert"]>[0]): Promise<{
+        id: string;
+        key: string;
+        locale: string;
+        name: string;
+        subject: string;
+        textBody: string;
+        variables: string[];
+        status: "active" | "draft" | "disabled";
+        source: "seed" | "custom";
+        createdAt: string;
+        updatedAt: string;
+    } & {
+        description?: string | undefined;
+        htmlBody?: string | undefined;
+    }>;
+    render(input: RenderEmailTemplateInput): Promise<RenderedEmailTemplate>;
+}
+
+// dist/modules/email/email-request.types.d.ts
+export declare const EMAIL_SEND_REQUEST_PAYLOAD_TYPE: "email-pack:send-email-request";
+export declare const EMAIL_SEND_REQUEST_SCHEMA_VERSION: 1;
+export interface EmailSendRequestPayload {
+    to: string | readonly string[];
+    templateKey?: string;
+    locale?: string;
+    variables?: Record<string, string | number | boolean | null | undefined>;
+    subject?: string;
+    text?: string;
+    html?: string;
+    replyTo?: string;
+}
+
+// dist/modules/email/email-settings.d.ts
+import type { PluginManifestSetting } from "@trinacria-cms/kernel";
+export declare const EMAIL_PACK_SETTING_DEFINITIONS: readonly PluginManifestSetting[];
+
+// dist/modules/email/email.module.d.ts
+import { type ModuleDefinition } from "@trinacria-cms/kernel";
+export declare const EmailPackModule: ModuleDefinition;
+
+// dist/modules/email/email.tokens.d.ts
+import type { EmailConfigService } from "./services/email-config.service.js";
+import type { EmailDeliveryService } from "./services/email-delivery.service.js";
+export declare const EMAIL_PACK_EMAIL_CONFIG_SERVICE_TOKEN: import("@trinacria/core").Token<EmailConfigService>;
+export declare const EMAIL_PACK_EMAIL_DELIVERY_SERVICE_TOKEN: import("@trinacria/core").Token<EmailDeliveryService>;
+
+// dist/modules/email/email.types.d.ts
+export type EmailProvider = "disabled" | "console" | "smtp";
+export interface SendEmailInput {
+    to: string | readonly string[];
+    subject: string;
+    text: string;
+    html?: string;
+    replyTo?: string;
+    messageId?: string;
+}
+export interface MailSender {
+    send(input: SendEmailInput): Promise<void>;
+}
+export interface EmailDeliveryConfig {
+    provider: EmailProvider;
+    fromAddress: string;
+    fromName?: string;
+    replyTo?: string;
+    smtp?: {
+        host: string;
+        port: number;
+        secure: boolean;
+        username?: string;
+        password?: string;
+    };
+}
+
+// dist/modules/email/index.d.ts
+export { EmailPackModule } from "./email.module.js";
+export { EMAIL_PACK_EMAIL_CONFIG_SERVICE_TOKEN, EMAIL_PACK_EMAIL_DELIVERY_SERVICE_TOKEN } from "./email.tokens.js";
+export type { EmailDeliveryConfig, EmailProvider, MailSender, SendEmailInput } from "./email.types.js";
+export type { EmailSendRequestPayload } from "./email-request.types.js";
+export { EMAIL_SEND_REQUEST_PAYLOAD_TYPE, EMAIL_SEND_REQUEST_SCHEMA_VERSION } from "./email-request.types.js";
+export { EMAIL_PACK_SETTING_DEFINITIONS } from "./email-settings.js";
+export { EmailConfigService } from "./services/email-config.service.js";
+export { EmailDeliveryConfigurationError, EmailDeliveryDisabledError, EmailDeliveryService } from "./services/email-delivery.service.js";
+
+// dist/modules/email/services/email-config.service.d.ts
+import type { RuntimeConfigService, SettingsService } from "@trinacria-cms/core-pack/runtime";
+import type { EmailDeliveryConfig } from "../email.types.js";
+export declare class EmailConfigService {
+    private readonly config;
+    private readonly settings;
+    constructor(config: RuntimeConfigService, settings: SettingsService);
+    readConfig(): Promise<EmailDeliveryConfig>;
+    private readString;
+    private readOptionalString;
+    private readSmtpPassword;
+}
+
+// dist/modules/email/services/email-delivery.service.d.ts
+import type { SendEmailInput } from "../email.types.js";
+import type { EmailConfigService } from "./email-config.service.js";
+export declare class EmailDeliveryDisabledError extends Error {
+    readonly code: "email_delivery_disabled";
+    constructor();
+}
+export declare class EmailDeliveryConfigurationError extends Error {
+    readonly code: "email_delivery_configuration_error";
+    constructor(message: string);
+}
+export declare class EmailDeliveryService {
+    private readonly config;
+    constructor(config: EmailConfigService);
+    send(input: SendEmailInput): Promise<void>;
+}
+
+// dist/modules/index.d.ts
+export * from "./email/index.js";
+export * from "./email-templates/index.js";
+
+// dist/operations/email-operations.d.ts
+import type { ApplicationOperations, OperationAuthorizer } from "@trinacria-cms/kernel/contracts";
+import type { EmailDeliveryService } from "../modules/email/services/email-delivery.service.js";
+import type { EmailTemplatesService } from "../modules/email-templates/services/email-templates.service.js";
+export type EmailTemplateOperations = ApplicationOperations<Pick<EmailTemplatesService, "listTemplates" | "getTemplate" | "upsertTemplate" | "render">>;
+export type EmailDeliveryOperations = ApplicationOperations<Pick<EmailDeliveryService, "send">>;
+export declare const EMAIL_TEMPLATE_OPERATIONS: import("@trinacria/core").Token<ApplicationOperations<Pick<EmailTemplatesService, "listTemplates" | "getTemplate" | "upsertTemplate" | "render">>>;
+export declare const EMAIL_DELIVERY_OPERATIONS: import("@trinacria/core").Token<ApplicationOperations<Pick<EmailDeliveryService, "send">>>;
+export declare function createEmailTemplateOperations(service: EmailTemplatesService, authorizer: OperationAuthorizer): EmailTemplateOperations;
+export declare function createEmailDeliveryOperations(service: EmailDeliveryService, authorizer: OperationAuthorizer): EmailDeliveryOperations;
+
+// dist/plugin/email-pack-admin.manifest.d.ts
+export declare const EMAIL_PACK_ADMIN_MANIFEST: import("@trinacria-cms/kernel").PluginManifestAdmin;
+
+// dist/plugin/email-pack.constants.d.ts
+export declare const EMAIL_PACK_PLUGIN_ID = "email-pack";
+
+// dist/plugin/email-pack.manifest.d.ts
+import type { PluginManifest } from "@trinacria-cms/kernel";
+export declare const EMAIL_PACK_MANIFEST: PluginManifest;
+
+// dist/plugin/email-pack.plugin.d.ts
+import type { KernelPluginDefinition } from "@trinacria-cms/kernel/contracts";
+export declare function createEmailPackPlugin(): KernelPluginDefinition;
+
+// dist/plugin/index.d.ts
+export * from "./email-pack.constants.js";
+export * from "./email-pack.manifest.js";
+export * from "./email-pack.plugin.js";
+export * from "./email-pack-admin.manifest.js";
+
+// dist/runtime.d.ts
+export * from "./modules/index.js";
+export * from "./operations/email-operations.js";
+export * from "./plugin/index.js";

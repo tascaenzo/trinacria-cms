@@ -1,15 +1,6 @@
 import { type Infer, s } from "@trinacria-cms/kernel";
+import { EditorialJsonObjectSchema } from "./editorial-json.js";
 import { EntryBodySchema } from "./structured-document.js";
-
-const JsonScalarSchema = s.union([s.string(), s.number(), s.boolean()]);
-const JsonObjectSchema = s.record(s.string({ trim: true, minLength: 1 }), JsonScalarSchema);
-const JsonValueSchema = s.union([
-  JsonScalarSchema,
-  JsonObjectSchema,
-  s.array(JsonScalarSchema),
-  s.array(JsonObjectSchema)
-]);
-const FreeformObjectSchema = s.record(s.string({ trim: true, minLength: 1 }), JsonValueSchema);
 
 export const CreateEntryInputSchema = s.object(
   {
@@ -25,7 +16,7 @@ export const CreateEntryInputSchema = s.object(
       })
       .optional(),
     body: EntryBodySchema.optional(),
-    data: FreeformObjectSchema,
+    data: EditorialJsonObjectSchema,
     reviewerUserId: s.string({ trim: true, minLength: 1 }).optional(),
     scheduledAt: s.dateTimeString().optional()
   },
@@ -50,7 +41,7 @@ export const UpdateEntryInputSchema = s.object(
     clearSlug: s.boolean().optional(),
     body: EntryBodySchema.optional(),
     clearBody: s.boolean().optional(),
-    data: FreeformObjectSchema.optional(),
+    data: EditorialJsonObjectSchema.optional(),
     reviewerUserId: s.string({ trim: true, minLength: 1 }).optional(),
     clearReviewer: s.boolean().optional(),
     scheduledAt: s.dateTimeString().optional(),

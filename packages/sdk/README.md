@@ -1,280 +1,72 @@
 # @trinacria-cms/sdk
 
-Zero-dependency runtime SDK for Trinacria CMS.
-
-## Goals
-
-- no runtime dependencies
-- generated from OpenAPI snapshot
-- usable in browser, React, Node, and custom transports
-
-## Published SDK vs generated overlay
-
-`@trinacria-cms/sdk` is the default public SDK. It is meant to work even
-outside the monorepo and already ships the official API groups exposed by the
-kernel and the official `core-pack`.
-
-Current built-in official catalog:
-
-- `kernel`: `kernelHealth`, `system`
-- `core-pack`: `auth`, `installation`, `users`, `roles`, `permissions`, `settings`, `security`
-
-You can inspect this static catalog at runtime through:
-
-- `OFFICIAL_SDK_PLUGIN_CATALOG`
-- `client.official`
-
-When a project uses custom plugins or custom application modules inside a
-monorepo, the recommended model is:
-
-1. keep using the published SDK as the stable base package
-2. regenerate the OpenAPI-derived layer from the real application instance
-3. consume the generated overlay for custom endpoints that the public SDK
-   cannot know in advance
-
-This is intentionally similar to the Prisma workflow: one stable shared package
-plus a generated project-local extension.
-
-## Usage
-
-### Browser / native fetch
+Zero-dependency runtime SDK for browser and Node. The generated official client covers
+kernel, Core, Editorial, Media, Email and the delivery/preview groups.
+`OFFICIAL_SDK_PLUGIN_CATALOG` / `client.official` list the 138 generated operations.
+The original 22 Editorial IDs are retained; explicit republication and preview issuance
+are additional methods. Anonymous delivery reads only publication snapshots. Preview
+credentials are scoped sessions; never transfer an admin JWT to a public site.
 
 ```ts
 import { createCmsSdkClient } from "@trinacria-cms/sdk";
-
-const client = createCmsSdkClient({
-  baseUrl: "http://localhost:3000",
-  credentials: "include"
-});
-
-const status = await client.installation.getInstallationStatus();
-const plugins = await client.system.listInstalledPlugins();
+const cms = createCmsSdkClient({ baseUrl: "https://cms.example", credentials: "include" });
+const models = await cms.editorial.listEditorialContentTypes();
 ```
 
-### Node with undici
+Bearer authentication uses `getAccessToken()` or per-request authorization headers.
+Cookie mutations require the server's CSRF/origin policy; configure trusted origins.
+`apiKey` is a generic client header option, not a promise that a server route accepts it.
+Owner-signed plugin requests require all six protocol v2 signature headers and canonical signing.
+OpenAPI security describes these modes separately, with the actual configured cookie name.
+
+## Project-local overlay
+
+Capture your application's `/openapi.json` explicitly, then run the distributed CLI:
+
+```sh
+trinacria-sdk ./openapi.json ./generated/catalog --mode overlay --owner catalog-plugin
+# Documents without ownership metadata can use repeated --operation <operationId>.
+```
 
 ```ts
-import { fetch } from "undici";
-import { createCmsSdkClient } from "@trinacria-cms/sdk";
-
-const client = createCmsSdkClient({
-  baseUrl: "http://localhost:3000",
-  fetch
-});
-
-const me = await client.auth.getAuthenticatedUser({
-  headers: {
-    authorization: "Bearer <token>"
-  }
-});
-
-const capabilities = await client.system.listInstalledCapabilities();
+import { createPluginSdk } from "./generated/catalog/index.js";
+const catalog = createPluginSdk(cms);
+// catalog has its own groups; no mutation of the official client.
 ```
 
-### Custom transport with axios
+Overlay imports use the public `@trinacria-cms/sdk/runtime` subpath and compile outside
+this repository. HTTP input is fetched only when an explicit URL is supplied. Generation
+is deterministic and rejects unsupported schemas, unresolved/recursive refs, sanitized
+ID/tag collisions, reserved groups and unsupported response media types.
 
-```ts
-import axios from "axios";
-import { createCmsSdkClient } from "@trinacria-cms/sdk";
+Output must be a dedicated directory. The CLI refuses project/root/node_modules targets,
+symlinks and nonempty unmarked directories. It removes only obsolete files recorded in
+`.trinacria-sdk-generator.json`, preserving manually maintained files.
 
-const client = createCmsSdkClient({
-  baseUrl: "http://localhost:3000",
-  transport: {
-    async request(input) {
-      const response = await axios.request({
-        url: input.url,
-        method: input.method,
-        headers: input.headers,
-        data: input.body,
-        withCredentials: input.credentials === "include"
-      });
+## JSON and binary transport
 
-      return {
-        status: response.status,
-        headers: response.headers,
-        data: response.data
-      };
-    }
-  }
-});
-```
+JSON operations serialize the typed body. Binary uploads accept `Uint8Array` and send
+raw bytes as `application/octet-stream`; binary downloads return `Uint8Array`. HTTP
+errors retain JSON envelopes and throw `CmsSdkHttpError`, even for binary operations.
+A custom fetch implementation needs `arrayBuffer()` for binary responses. Native Node
+and browser fetch already provide it. A custom transport must honor `responseType`,
+return raw bytes for successful binary responses and preserve status/headers/error bodies.
+Credentials, headers and abort signals are forwarded; requests time out after 30 seconds
+by default (`requestTimeoutMs: 0` disables the automatic timeout).
 
-## Generation
+## Repository verification
 
-The generated layer lives in `src/generated/`.
-
-Regenerate it with:
-
-```bash
-npm run generate -w @trinacria-cms/sdk
-```
-
-The current generator reads:
-
-- `openapi/trinacria-cms.openapi.json`
-
-and writes:
-
-- `src/generated/types.gen.ts`
-- `src/generated/<tag>.gen.ts`
-- `src/generated/index.ts`
-
-The generated layer augments the published SDK surface. It does not replace the
-runtime package.
-
-## Monorepo workflow
-
-Recommended flow in a monorepo:
-
-1. start or update the CMS backend
-2. refresh the local OpenAPI snapshot
-3. regenerate the SDK package
-4. consume `@trinacria-cms/sdk` from frontend apps
-
-Root scripts:
-
-```bash
-npm run sdk:snapshot
+```sh
+CMS_OPENAPI_URL=http://127.0.0.1:3000/openapi.json npm run sdk:snapshot
 npm run sdk:generate
 npm run sdk:check
 npm run sdk:build
 ```
 
-Notes:
-
-- `sdk:snapshot` downloads `/openapi.json` from `http://127.0.0.1:3000/openapi.json` by default
-- you can override the source with `CMS_OPENAPI_URL` or by passing a URL argument
-- `sdk:snapshot` also applies a small normalization layer for OpenAPI fields that the current `@trinacria/http` generator does not serialize yet, such as explicit query parameters on list endpoints
-- `sdk:check` regenerates the SDK and fails if `packages/sdk/src/generated` is not aligned with the committed code
-
-Example:
-
-```bash
-CMS_OPENAPI_URL=http://127.0.0.1:3000/openapi.json npm run sdk:snapshot
-npm run sdk:generate
-```
-
-Recommended usage in a monorepo:
-
-1. official SDK stays the default dependency used by all apps
-2. `sdk:snapshot` reads the real application contract
-3. `sdk:generate` refreshes project-specific groups
-4. frontend or backend apps import the same package and gain the additional
-   generated API groups
-
-This means:
-
-- outside the monorepo you can publish and use `@trinacria-cms/sdk` directly
-- inside the monorepo you can extend it with custom plugin contracts
-
-## Using it from a frontend app in the same monorepo
-
-In the frontend workspace package:
-
-```json
-{
-  "dependencies": {
-    "@trinacria-cms/sdk": "0.1.0"
-  }
-}
-```
-
-Then:
-
-```ts
-import { createCmsSdkClient } from "@trinacria-cms/sdk";
-
-export const cms = createCmsSdkClient({
-  baseUrl: "http://127.0.0.1:3000",
-  credentials: "include"
-});
-```
-
-You can keep one shared client instance per app and reuse:
-
-- `cms.kernelHealth`
-- `cms.system`
-- `cms.auth`
-- `cms.installation`
-- `cms.users`
-- `cms.roles`
-- `cms.permissions`
-- `cms.settings`
-- `cms.security`
-- custom generated groups, when present
-
-## Runtime discovery
-
-The default SDK now includes discovery helpers and system endpoints intended for
-admin apps, CLIs, and dynamic UIs.
-
-Kernel endpoints:
-
-- `GET /v1/system/plugins`
-- `GET /v1/system/plugins/:pluginId`
-- `POST /v1/system/plugins/:pluginId/operations`
-- `GET /v1/system/plugins/:pluginId/events?limit=20`
-- `GET /v1/system/plugins/sources`
-- `GET /v1/system/capabilities`
-
-Example:
-
-```ts
-import { createCmsSdkClient, hasCapability, isPluginInstalled } from "@trinacria-cms/sdk";
-
-const cms = createCmsSdkClient({
-  baseUrl: "http://127.0.0.1:3000"
-});
-
-const plugins = await cms.system.listInstalledPlugins();
-const capabilities = await cms.system.listInstalledCapabilities();
-const events = await cms.system.listPluginEvents({
-  path: { pluginId: "core-pack" },
-  query: { limit: 20 }
-});
-
-const hasCorePack = isPluginInstalled(plugins.data, "core-pack");
-const canManageSettings = hasCapability(capabilities.data, "core-pack", "settings.service");
-```
-
-## Authentication modes
-
-The SDK runtime can work with these common models:
-
-- browser cookies through `credentials: "include"`
-- bearer JWT through `getAccessToken()` or per-request headers
-
-## Settings groups
-
-`core-pack` exposes grouped settings APIs for operator-facing forms. These are
-the preferred APIs for backoffice screens because they hide low-level runtime
-keys and return coherent groups instead of raw key/value rows.
-
-Current SDK methods:
-
-- `cms.settings.listSettingsGroups()`
-- `cms.settings.getSettingsGroupById({ path: { groupId } })`
-- `cms.settings.upsertSettingsGroupValues({ path: { groupId }, body })`
-
-Low-level definition/value/secret methods still exist for plugin tooling,
-diagnostics, and owner-signed operations.
-
-## Backoffice consumer
-
-The monorepo also includes [apps/backoffice](../../apps/backoffice),
-a thin Vite host that consumes the SDK through `@trinacria-cms/admin-kernel`.
-
-The app itself should stay small. Session bootstrap, runtime discovery, official
-admin pages and resource registry logic live in `admin-kernel`.
-
-## Important note
-
-The SDK can only generate what is actually declared in OpenAPI.
-
-If an endpoint is missing:
-
-- query parameters
-- requestBody schema
-- response schema
-
-then the generated client will reflect that limitation. In that case the OpenAPI document must be improved at the source.
+Snapshot capture validates the server document without patching missing parameters.
+The real router inventory validates every public route against OpenAPI during bootstrap;
+operational exclusions require explicit reasons. `sdk:check` additionally detects drift
+between the versioned snapshot and generated code. HTTP tests exercise Editorial and
+binary Media operations against the running CMS. Dynamic Editorial `data` is JSON;
+content type validation remains a server responsibility. List `meta.count` is the number
+of returned records, not the total number of matches.

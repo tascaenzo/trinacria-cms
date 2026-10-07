@@ -53,16 +53,8 @@ export function EditorialOverviewPage({ cms, navigateToRoute }: EditorialOvervie
       setError(null);
       const user = await cms.auth.getAuthenticatedUser();
       const [entryResult, contentTypeResult, permissionResult] = await Promise.all([
-        cms.request<{ data: readonly EditorialEntryRecord[] }>({
-          method: "GET",
-          path: "/v1/editorial/entries",
-          query: { limit: 100, offset: 0 }
-        }),
-        cms.request<{ data: readonly EditorialContentType[] }>({
-          method: "GET",
-          path: "/v1/editorial/content-types",
-          query: { limit: 100, offset: 0 }
-        }),
+        cms.editorial.listEditorialEntries({ query: { limit: 100, offset: 0 } }),
+        cms.editorial.listEditorialContentTypes({ query: { limit: 100, offset: 0 } }),
         cms.security.listUserEffectivePermissions({ path: { id: user.data.id } })
       ]);
       setEntries(entryResult.data);

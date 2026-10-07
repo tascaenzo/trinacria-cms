@@ -23,6 +23,7 @@ interface ModelDraft {
   icon: ModelIcon;
   workflow: ContentWorkflow;
   fields: readonly ContentTypeField[];
+  delivery: NonNullable<EditorialContentType["delivery"]>;
 }
 
 const EMPTY_DRAFT: ModelDraft = {
@@ -30,7 +31,14 @@ const EMPTY_DRAFT: ModelDraft = {
   description: "",
   icon: "file-text",
   workflow: workflowFromPreset("review"),
-  fields: []
+  fields: [],
+  delivery: {
+    enabled: false,
+    publicFields: [],
+    exposeTitle: false,
+    exposeBody: false,
+    exposeSlug: false
+  }
 };
 
 export function useContentTypeDetail(cms: CmsClient, modelId: string | null) {
@@ -54,10 +62,7 @@ export function useContentTypeDetail(cms: CmsClient, modelId: string | null) {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await cms.request<{ data: EditorialContentType }>({
-        method: "GET",
-        path: `/v1/editorial/content-types/${modelId}`
-      });
+      const response = await cms.editorial.getEditorialContentType({ path: { id: modelId } });
       setModel(response.data);
       setDraft(toModelDraft(response.data));
     } catch (currentError) {
@@ -96,9 +101,8 @@ export function useContentTypeDetail(cms: CmsClient, modelId: string | null) {
     try {
       setIsSaving(true);
       setError(null);
-      const response = await cms.request<{ data: EditorialContentType }>({
-        method: "PATCH",
-        path: `/v1/editorial/content-types/${model.id}`,
+      const response = await cms.editorial.updateEditorialContentType({
+        path: { id: model.id },
         body: {
           name: draft.name.trim(),
           ...(draft.description.trim()
@@ -106,7 +110,13 @@ export function useContentTypeDetail(cms: CmsClient, modelId: string | null) {
             : { clearDescription: true }),
           icon: draft.icon,
           workflow: draft.workflow,
-          fields: draft.fields
+          fields: draft.fields,
+          delivery: {
+            ...draft.delivery,
+            publicFields: draft.delivery.publicFields.filter((key) =>
+              draft.fields.some((field) => field.key === key)
+            )
+          }
         }
       });
       setModel(response.data);
@@ -147,6 +157,7 @@ export function useContentTypeDetail(cms: CmsClient, modelId: string | null) {
     setDescription: (description: string) => updateDraft({ description }),
     setIcon: (icon: ModelIcon) => updateDraft({ icon }),
     setWorkflow: (workflow: ContentWorkflow) => updateDraft({ workflow }),
+    setDelivery: (delivery: ModelDraft["delivery"]) => updateDraft({ delivery }),
     addField,
     updateField,
     removeField: (key: string) =>
@@ -164,7 +175,8 @@ function toModelDraft(model: EditorialContentType): ModelDraft {
     icon: isModelIcon(model.icon) ? model.icon : "file-text",
     workflow:
       model.workflow ?? workflowFromPreset(model.workflowId === "direct" ? "direct" : "review"),
-    fields: model.fields
+    fields: model.fields,
+    delivery: model.delivery ?? EMPTY_DRAFT.delivery
   };
 }
 

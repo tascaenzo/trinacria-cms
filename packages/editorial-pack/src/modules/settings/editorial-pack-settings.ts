@@ -1,7 +1,20 @@
 import type { JsonValue, PluginManifestSetting } from "@trinacria-cms/kernel";
 import { EDITORIAL_PACK_PLUGIN_ID } from "../../plugin/editorial-pack.constants.js";
+import { NavigationItemsSchema, PUBLIC_NAVIGATION_SETTING } from "../publications/navigation.js";
 
 export const EDITORIAL_PACK_SETTING_DEFINITIONS: readonly PluginManifestSetting[] = Object.freeze([
+  {
+    key: PUBLIC_NAVIGATION_SETTING,
+    category: "site",
+    description:
+      "Public site navigation: safe links and published content targets in display order.",
+    defaultValue: [],
+    schema: NavigationItemsSchema.toOpenApi() as JsonValue,
+    status: "active",
+    visibility: "admin",
+    mutable: true,
+    secret: false
+  },
   {
     key: `${EDITORIAL_PACK_PLUGIN_ID}:workflow:default_preset`,
     category: "workflow",
