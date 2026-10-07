@@ -1,4 +1,5 @@
 import type { DbAdapter } from "@trinacria-cms/kernel";
+import { CoreError } from "@trinacria-cms/kernel";
 import { createPluginDbScope, type PluginDbScope } from "@trinacria-cms/kernel/runtime";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import {
@@ -12,6 +13,7 @@ const ROLES_ENTITY_NAME = "roles";
 interface RoleDocument {
   id: string;
   code: string;
+  updatedAt: string;
   permissionGrants: Array<{
     permissionKey: string;
     sourcePluginId: string;
@@ -52,7 +54,7 @@ export class RoleGrantsRepository {
     );
     if (existing) return this.toRecord(role.code, existing);
 
-    const now = new Date().toISOString();
+    const now = new Date(Math.max(Date.now(), Date.parse(role.updatedAt) + 1)).toISOString();
     const createdGrant = EmbeddedRoleGrantSchema.parse({
       permissionKey: normalizedPermissionKey,
       sourcePluginId: normalizedSourcePluginId,
@@ -61,14 +63,16 @@ export class RoleGrantsRepository {
     });
     const nextGrants = [...role.permissionGrants, createdGrant];
 
-    await this.repository().updateOne(
-      { filter: { id: role.id } },
+    const updated = await this.repository().updateOne(
+      { filter: { id: role.id, updatedAt: role.updatedAt } },
       {
         permissionGrants: nextGrants,
         permissions: this.toPermissionKeys(nextGrants),
         updatedAt: now
       }
     );
+    if (!updated)
+      throw new CoreError("iam_revision_conflict", "Access changed; retry after reloading");
 
     return this.toRecord(role.code, createdGrant);
   }
@@ -125,15 +129,17 @@ export class RoleGrantsRepository {
     );
     if (nextGrants.length === target.permissionGrants.length) return false;
 
-    const now = new Date().toISOString();
-    await this.repository().updateOne(
-      { filter: { id: target.id } },
+    const now = new Date(Math.max(Date.now(), Date.parse(target.updatedAt) + 1)).toISOString();
+    const updated = await this.repository().updateOne(
+      { filter: { id: target.id, updatedAt: target.updatedAt } },
       {
         permissionGrants: nextGrants,
         permissions: this.toPermissionKeys(nextGrants),
         updatedAt: now
       }
     );
+    if (!updated)
+      throw new CoreError("iam_revision_conflict", "Access changed; retry after reloading");
     return true;
   }
 
@@ -153,11 +159,13 @@ export class RoleGrantsRepository {
     const deleted = role.permissionGrants.length;
     if (deleted === 0) return 0;
 
-    const now = new Date().toISOString();
-    await this.repository().updateOne(
-      { filter: { id: role.id } },
+    const now = new Date(Math.max(Date.now(), Date.parse(role.updatedAt) + 1)).toISOString();
+    const updated = await this.repository().updateOne(
+      { filter: { id: role.id, updatedAt: role.updatedAt } },
       { permissionGrants: [], permissions: [], updatedAt: now }
     );
+    if (!updated)
+      throw new CoreError("iam_revision_conflict", "Access changed; retry after reloading");
     return deleted;
   }
 
@@ -204,7 +212,7 @@ export class RoleGrantsRepository {
       : [];
     const permissionGrants = permissionGrantsRaw.map((item) => EmbeddedRoleGrantSchema.parse(item));
 
-    return { id, code, permissionGrants };
+    return { id, code, permissionGrants, updatedAt: String(record.updatedAt) };
   }
 
   private toRecord(

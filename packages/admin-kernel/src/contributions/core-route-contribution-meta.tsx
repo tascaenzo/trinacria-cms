@@ -1,7 +1,11 @@
 import type { ReactNode } from "react";
 import type { AdminRouteDefinition } from "../contracts.js";
 import { renderDeclarativeAdminPage } from "../declarative/components/declarative-page.js";
+import { DeclarativeResourcePage } from "../declarative/components/declarative-resource-page.js";
+import { useDeclarativeData } from "../declarative/hooks/use-declarative-data.js";
+import { getRecordIdentity } from "../declarative/utils/formatting.js";
 import { SettingsPage } from "../pages/settings-page.js";
+import { UserAccessPanel } from "../pages/user-access-panel.js";
 import type { AdminPageRenderContext } from "../runtime/admin-route-runtime.js";
 
 export const OFFICIAL_CORE_ROUTE_META: Record<
@@ -25,7 +29,7 @@ export const OFFICIAL_CORE_ROUTE_META: Record<
         allowedPathPrefixes: ["/admin", "/v1"]
       }
     },
-    render: renderDeclarativeAdminPage
+    render: (context) => <CoreUsersPage context={context} />
   },
   roles: {
     mode: "declarative",
@@ -99,3 +103,22 @@ export const OFFICIAL_CORE_COMPONENT_ROUTE_META: Record<
   "core-pack.permissions": "permissions",
   "core-pack.settings": "settings"
 };
+
+function CoreUsersPage({ context }: { context: AdminPageRenderContext }) {
+  const resource = context.resources.find((entry) => entry.routeId === context.route.id);
+  const dataState = useDeclarativeData(context.route.data);
+  return (
+    <DeclarativeResourcePage
+      context={context}
+      resource={resource}
+      dataState={dataState}
+      renderDetailExtras={(record) => (
+        <UserAccessPanel
+          key={getRecordIdentity(record)}
+          userId={getRecordIdentity(record) ?? ""}
+          t={context.t}
+        />
+      )}
+    />
+  );
+}

@@ -12,6 +12,7 @@ export const UserRecordSchema = s.object(
     /** Personal backoffice language preference. Legacy records may omit it. */
     locale: s.enum(["en", "it"] as const).optional(),
     status: UserStatusSchema,
+    sessionVersion: s.number({ int: true, min: 0 }).optional(),
     createdAt: s.dateTimeString(),
     updatedAt: s.dateTimeString()
   },

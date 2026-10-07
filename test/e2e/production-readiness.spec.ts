@@ -325,7 +325,7 @@ test.describe.serial("production readiness baseline", () => {
         const escalation = await userClient.get("/v1/admin/extensions");
         expect(escalation.status()).toBe(403);
         await expect(escalation.json()).resolves.toMatchObject({
-          error: { code: "auth_forbidden_admin_required" }
+          error: { code: "auth_forbidden_backoffice_required" }
         });
       } finally {
         await userClient.dispose();
@@ -403,6 +403,61 @@ test.describe.serial("production readiness baseline", () => {
     } finally {
       await adminClient.dispose();
     }
+  });
+
+  test("assigns and revokes an editorial role in the UI and opens the delegated profile", async ({ page, browser }) => {
+    const admin = await createBearerClient(await loginAsAdmin());
+    let userId: string;
+    try {
+      const response = await admin.get("/v1/users", { params: { search: INVITED_USER.email } });
+      const users = (await response.json()).data as Array<{ id: string; email: string }>;
+      userId = users.find(user => user.email === INVITED_USER.email)!.id;
+    } finally { await admin.dispose(); }
+    await loginThroughUi(page);
+    await page.goto(`/users?record=${encodeURIComponent(userId)}`);
+    await expect(page.getByRole("heading", { name: "Roles and access", exact: true })).toBeVisible();
+    await page.getByLabel("Assign role", { exact: true }).selectOption("author");
+    await page.getByRole("button", { name: "Assign role", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Remove role", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Remove role", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "Remove this role?" });
+    await dialog.getByRole("button", { name: "Remove role", exact: true }).click();
+    await expect(page.getByText("No roles assigned", { exact: true })).toBeVisible();
+    await page.getByLabel("Assign role", { exact: true }).selectOption("author");
+    await page.getByRole("button", { name: "Assign role", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Remove role", exact: true })).toBeVisible();
+    const operatorContext = await browser.newContext({ baseURL: E2E_APP_URL });
+    try {
+      const operator = await operatorContext.newPage();
+      await operator.goto("/");
+      await operator.locator('input[name="email"]').fill(INVITED_USER.email);
+      await operator.locator('input[name="password"]').fill(INVITED_USER.password);
+      await operator.locator('button[type="submit"]').click();
+      await expect(operator.getByText(`${INVITED_USER.firstName} ${INVITED_USER.lastName}`)).toBeVisible();
+      await expect(operator.getByRole("button", { name: "Users", exact: true })).toHaveCount(0);
+      await operator.goto("/profile");
+      await expect(operator.getByRole("heading", { name: "Your account", exact: true })).toBeVisible();
+      await expect(operator.getByRole("term").filter({ hasText: /^Assigned roles$/ })).toBeVisible();
+      expect(await operator.evaluate(async () => (await fetch("/cms/v1/admin/extensions", { credentials: "include" })).status)).toBe(200);
+      expect(await operator.evaluate(async () => (await fetch("/cms/v1/users", { credentials: "include" })).status)).toBe(403);
+      const permissions = await operator.evaluate(async (id) => (await fetch(`/cms/v1/users/${id}/permissions`, { credentials: "include" })).json(), userId);
+      expect(permissions.data).toContain("editorial-pack:backoffice:access");
+      const oldSession = await loginWithPassword(INVITED_USER.email, INVITED_USER.password);
+      await operator.getByRole("button", { name: "Actions", exact: true }).click();
+      await operator.getByRole("menuitem", { name: "Edit password", exact: true }).click();
+      const passwordDialog = operator.getByRole("dialog", { name: "Edit password", exact: true });
+      await passwordDialog.getByLabel("Current password", { exact: true }).fill(INVITED_USER.password);
+      await passwordDialog.getByLabel("New password", { exact: true }).fill("Invited-Changed-E2E-Password-2026!");
+      await passwordDialog.getByLabel("Confirm new password", { exact: true }).fill("Invited-Changed-E2E-Password-2026!");
+      await passwordDialog.getByRole("button", { name: "Save", exact: true }).click();
+      await expect(operator.getByText("Password changed.", { exact: true })).toBeVisible();
+      expect(await operator.evaluate(async () => (await fetch("/cms/v1/auth/me", { credentials: "include" })).status)).toBe(200);
+      const oldClient = await createBearerClient(oldSession.body.data!.accessToken!);
+      try { expect((await oldClient.get("/v1/auth/me")).status()).toBe(401); } finally { await oldClient.dispose(); }
+      await operator.reload();
+      await expect(operator.getByRole("heading", { name: "Your account", exact: true })).toBeVisible();
+
+    } finally { await operatorContext.close(); }
   });
 
   test("writes general settings and email templates from the backoffice", async ({

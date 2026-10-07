@@ -145,7 +145,7 @@ export function createSecurityApi(client: CmsSdkClientCore): SecurityApi {
         method: "GET",
         path: "/v1/users/:id/permissions",
         pathParams: input.path,
-        query: undefined,
+        query: input.query,
         body: undefined,
         bodyType: "json",
         responseType: "json",

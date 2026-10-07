@@ -64,11 +64,33 @@ export class AuthUsersRepository {
   }
 
   async updateStatus(id: string, status: "active" | "suspended"): Promise<UserRecord | null> {
+    const existing = await this.findById(id);
+    if (!existing) return null;
     const updated = await this.repository().updateOne(
       { filter: { id: id.trim() } },
-      { status, updatedAt: new Date().toISOString() }
+      {
+        status,
+        ...(existing.status !== status
+          ? { sessionVersion: (existing.sessionVersion ?? 0) + 1 }
+          : {}),
+        updatedAt: new Date().toISOString()
+      }
     );
     return updated ? this.parseUserRecord(updated) : null;
+  }
+
+  async revokeSessions(id: string): Promise<UserRecord | null> {
+    const user = await this.findById(id);
+    if (!user) return null;
+    const updated = await this.repository().updateOne(
+      { filter: { id, updatedAt: user.updatedAt } },
+      {
+        sessionVersion: (user.sessionVersion ?? 0) + 1,
+        updatedAt: new Date(Math.max(Date.now(), Date.parse(user.updatedAt) + 1)).toISOString()
+      }
+    );
+    if (!updated) throw new Error("User changed while revoking sessions");
+    return this.parseUserRecord(updated);
   }
 
   private repository() {

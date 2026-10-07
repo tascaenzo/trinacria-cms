@@ -1,6 +1,17 @@
 import type { AdminResourceDefinition } from "../contracts.js";
 
 const CORE_PACK_READONLY_PERMISSION_KEYS = [
+  "core-pack:backoffice:access",
+  "core-pack:plugins:manage",
+  "core-pack:plugin-grants:read",
+  "core-pack:plugin-grants:manage",
+  "core-pack:migrations:read",
+  "core-pack:migrations:apply",
+  "core-pack:deliveries:read",
+  "core-pack:deliveries:manage",
+  "core-pack:email-jobs:read",
+  "core-pack:email-jobs:manage",
+  "core-pack:audit:read",
   "core-pack:plugins:read",
   "core-pack:users:read",
   "core-pack:users:write",
@@ -16,7 +27,9 @@ const CORE_PACK_READONLY_PERMISSION_KEYS = [
 
 export const OFFICIAL_CORE_RESOURCE_META: Record<string, Partial<AdminResourceDefinition>> = {
   "core-pack:users": {
-    guards: [{ pluginId: "core-pack", capability: "users.read" }],
+    guards: [
+      { pluginId: "core-pack", capability: "users.read", permissionKey: "core-pack:users:read" }
+    ],
     titleKey: "official.resource.users.title",
     summary: "User records managed by the core identity module.",
     summaryKey: "official.resource.users.summary",
@@ -34,7 +47,13 @@ export const OFFICIAL_CORE_RESOURCE_META: Record<string, Partial<AdminResourceDe
         titleKey: "users.actions.create",
         endpoint: { method: "POST", path: "/v1/users" },
         policy: { allowedPathPrefixes: ["/admin", "/v1"] },
-        guards: [{ pluginId: "core-pack", capability: "users.write" }],
+        guards: [
+          {
+            pluginId: "core-pack",
+            capability: "users.write",
+            permissionKey: "core-pack:users:write"
+          }
+        ],
         input: {
           schema: {
             type: "object",
@@ -54,7 +73,13 @@ export const OFFICIAL_CORE_RESOURCE_META: Record<string, Partial<AdminResourceDe
         titleKey: "common.actions.edit",
         endpoint: { method: "PATCH", path: "/v1/users/:id" },
         policy: { allowedPathPrefixes: ["/admin", "/v1"] },
-        guards: [{ pluginId: "core-pack", capability: "users.write" }],
+        guards: [
+          {
+            pluginId: "core-pack",
+            capability: "users.write",
+            permissionKey: "core-pack:users:write"
+          }
+        ],
         input: {
           schema: {
             type: "object",
@@ -78,7 +103,13 @@ export const OFFICIAL_CORE_RESOURCE_META: Record<string, Partial<AdminResourceDe
         titleKey: "users.actions.invite",
         endpoint: { method: "POST", path: "/v1/users/:id/invite" },
         policy: { allowedPathPrefixes: ["/admin", "/v1"] },
-        guards: [{ pluginId: "core-pack", capability: "users.write" }]
+        guards: [
+          {
+            pluginId: "core-pack",
+            capability: "users.write",
+            permissionKey: "core-pack:users:write"
+          }
+        ]
       },
       {
         id: "request-password-reset",
@@ -87,7 +118,13 @@ export const OFFICIAL_CORE_RESOURCE_META: Record<string, Partial<AdminResourceDe
         titleKey: "users.actions.password_reset",
         endpoint: { method: "POST", path: "/v1/auth/password-reset/request" },
         policy: { allowedPathPrefixes: ["/admin", "/v1"] },
-        guards: [{ pluginId: "core-pack", capability: "users.write" }],
+        guards: [
+          {
+            pluginId: "core-pack",
+            capability: "users.write",
+            permissionKey: "core-pack:users:write"
+          }
+        ],
         input: {
           schema: {
             type: "object",
@@ -105,7 +142,13 @@ export const OFFICIAL_CORE_RESOURCE_META: Record<string, Partial<AdminResourceDe
         titleKey: "users.actions.email_verification",
         endpoint: { method: "POST", path: "/v1/auth/email-verification/request" },
         policy: { allowedPathPrefixes: ["/admin", "/v1"] },
-        guards: [{ pluginId: "core-pack", capability: "users.write" }],
+        guards: [
+          {
+            pluginId: "core-pack",
+            capability: "users.write",
+            permissionKey: "core-pack:users:write"
+          }
+        ],
         input: {
           schema: {
             type: "object",
@@ -151,7 +194,9 @@ export const OFFICIAL_CORE_RESOURCE_META: Record<string, Partial<AdminResourceDe
     ]
   },
   "core-pack:roles": {
-    guards: [{ pluginId: "core-pack", capability: "roles.read" }],
+    guards: [
+      { pluginId: "core-pack", capability: "roles.read", permissionKey: "core-pack:roles:read" }
+    ],
     titleKey: "official.resource.roles.title",
     summary: "Role records and embedded permission grants.",
     summaryKey: "official.resource.roles.summary",
@@ -169,7 +214,13 @@ export const OFFICIAL_CORE_RESOURCE_META: Record<string, Partial<AdminResourceDe
         titleKey: "roles.actions.create",
         endpoint: { method: "POST", path: "/v1/roles" },
         policy: { allowedPathPrefixes: ["/admin", "/v1"] },
-        guards: [{ pluginId: "core-pack", capability: "roles.write" }],
+        guards: [
+          {
+            pluginId: "core-pack",
+            capability: "roles.write",
+            permissionKey: "core-pack:roles:write"
+          }
+        ],
         input: {
           schema: {
             type: "object",
@@ -201,11 +252,23 @@ export const OFFICIAL_CORE_RESOURCE_META: Record<string, Partial<AdminResourceDe
         titleKey: "common.actions.edit",
         endpoint: { method: "PATCH", path: "/v1/roles/:id" },
         policy: { allowedPathPrefixes: ["/admin", "/v1"] },
-        guards: [{ pluginId: "core-pack", capability: "roles.write" }],
+        guards: [
+          {
+            pluginId: "core-pack",
+            capability: "roles.write",
+            permissionKey: "core-pack:roles:write"
+          }
+        ],
+        recordGuards: [{ field: "code", operator: "notEquals", value: "admin" }],
         input: {
           schema: {
             type: "object",
             properties: {
+              expectedUpdatedAt: {
+                type: "string",
+                "x-hidden": true,
+                "x-record-field": "updatedAt"
+              },
               name: { type: "string" },
               description: { type: "string" },
               status: { type: "string", enum: ["active", "disabled"] },
@@ -222,7 +285,28 @@ export const OFFICIAL_CORE_RESOURCE_META: Record<string, Partial<AdminResourceDe
                 }
               }
             },
-            required: ["name"]
+            required: ["name", "expectedUpdatedAt"]
+          }
+        }
+      },
+      {
+        id: "update-admin-role",
+        intent: "update",
+        title: "Edit",
+        titleKey: "common.actions.edit",
+        endpoint: { method: "PATCH", path: "/v1/roles/:id" },
+        policy: { allowedPathPrefixes: ["/admin", "/v1"] },
+        guards: [{ pluginId: "core-pack", permissionKey: "core-pack:roles:write" }],
+        recordGuards: [{ field: "code", operator: "equals", value: "admin" }],
+        input: {
+          schema: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              description: { type: "string" },
+              expectedUpdatedAt: { type: "string", "x-hidden": true, "x-record-field": "updatedAt" }
+            },
+            required: ["name", "expectedUpdatedAt"]
           }
         }
       }
@@ -255,7 +339,13 @@ export const OFFICIAL_CORE_RESOURCE_META: Record<string, Partial<AdminResourceDe
     ]
   },
   "core-pack:permissions": {
-    guards: [{ pluginId: "core-pack", capability: "permissions.read" }],
+    guards: [
+      {
+        pluginId: "core-pack",
+        capability: "permissions.read",
+        permissionKey: "core-pack:permissions:read"
+      }
+    ],
     titleKey: "official.resource.permissions.title",
     summary: "Canonical permission records contributed by plugins.",
     summaryKey: "official.resource.permissions.summary",
@@ -273,7 +363,13 @@ export const OFFICIAL_CORE_RESOURCE_META: Record<string, Partial<AdminResourceDe
         titleKey: "permissions.actions.create",
         endpoint: { method: "POST", path: "/v1/permissions" },
         policy: { allowedPathPrefixes: ["/admin", "/v1"] },
-        guards: [{ pluginId: "core-pack", capability: "permissions.write" }],
+        guards: [
+          {
+            pluginId: "core-pack",
+            capability: "permissions.write",
+            permissionKey: "core-pack:permissions:write"
+          }
+        ],
         input: {
           schema: {
             type: "object",
@@ -293,7 +389,13 @@ export const OFFICIAL_CORE_RESOURCE_META: Record<string, Partial<AdminResourceDe
         titleKey: "common.actions.edit",
         endpoint: { method: "PATCH", path: "/v1/permissions/:id" },
         policy: { allowedPathPrefixes: ["/admin", "/v1"] },
-        guards: [{ pluginId: "core-pack", capability: "permissions.write" }],
+        guards: [
+          {
+            pluginId: "core-pack",
+            capability: "permissions.write",
+            permissionKey: "core-pack:permissions:write"
+          }
+        ],
         recordGuards: [
           {
             field: "key",

@@ -30,7 +30,8 @@ export function createSettingsAccessMiddleware(
     if (options.allowAdmin && authToken) {
       try {
         const user = await auth.authenticateBearerToken(authToken, {
-          requireAdmin: true
+          requireAdmin: false,
+          requireBackoffice: true
         });
         ctx.state[AUTHENTICATED_USER_STATE_KEY] = user;
         bindHttpOperationContext(ctx, createUserOperationContext(user.id));
@@ -38,7 +39,10 @@ export function createSettingsAccessMiddleware(
         return next();
       } catch (error) {
         if (error instanceof JwtAuthError) {
-          if (error.code === "auth_forbidden_admin_required") {
+          if (
+            error.code === "auth_forbidden_admin_required" ||
+            error.code === "auth_forbidden_backoffice_required"
+          ) {
             return forbidden(error.code, error.message, error.details);
           }
           return unauthorized(error.code, error.message, error.details);

@@ -59,12 +59,8 @@ export class PermissionsRepository {
 
   async findByKey(key: string): Promise<PermissionRecord | null> {
     const normalizedKey = key.trim().toLowerCase();
-    if (!this.cache) {
-      return this.findByKeyFromDb(normalizedKey);
-    }
-    return this.cache.getOrCompute(CACHE_NAMESPACE, normalizedKey, () =>
-      this.findByKeyFromDb(normalizedKey)
-    );
+    // Authorization must observe revocation on the next operation across hosts.
+    return this.findByKeyFromDb(normalizedKey);
   }
 
   private async findByKeyFromDb(key: string): Promise<PermissionRecord | null> {

@@ -22,7 +22,7 @@ export const AUTHENTICATED_USER_STATE_KEY = "corePack.auth.authenticatedUser";
  */
 export function createJwtAuthMiddleware(
   auth: JwtAuthService,
-  options?: { requireAdmin?: boolean }
+  options?: { requireAdmin?: boolean; requireBackoffice?: boolean }
 ): HttpMiddleware {
   return async (ctx, next) => {
     const cookieConfig = await auth.getJwtCookieConfig();
@@ -38,7 +38,10 @@ export function createJwtAuthMiddleware(
       return next();
     } catch (error) {
       if (error instanceof JwtAuthError) {
-        if (error.code === "auth_forbidden_admin_required") {
+        if (
+          error.code === "auth_forbidden_admin_required" ||
+          error.code === "auth_forbidden_backoffice_required"
+        ) {
           return forbidden(error.code, error.message, error.details);
         }
         return unauthorized(error.code, error.message, error.details);

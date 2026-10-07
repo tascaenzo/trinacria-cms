@@ -18,6 +18,7 @@ import { CorePackI18nModule } from "../i18n/i18n.module.js";
 import { I18N_MESSAGES_SERVICE_TOKEN } from "../i18n/i18n-messages.tokens.js";
 import { CorePackPermissionsModule } from "../permissions/permissions.module.js";
 import { PERMISSIONS_REPOSITORY_TOKEN } from "../permissions/permissions.tokens.js";
+import { RolesRepository } from "../roles/repositories/roles.repository.js";
 import { CorePackRolesModule } from "../roles/roles.module.js";
 import { ROLE_GRANTS_REPOSITORY_TOKEN, ROLES_REPOSITORY_TOKEN } from "../roles/roles.tokens.js";
 import { CorePackSettingsModule } from "../settings/settings.module.js";
@@ -27,6 +28,7 @@ import {
 } from "../settings/settings.tokens.js";
 import { CorePackUsersModule } from "../users/users.module.js";
 import { USERS_REPOSITORY_TOKEN } from "../users/users.tokens.js";
+import { CorePackIamSafetyModule, IAM_SAFETY } from "./iam-safety.module.js";
 import { RolePolicyRulesController } from "./role-policy-rules/role-policy-rules.controller.js";
 import { RolePolicyRulesRepository } from "./role-policy-rules/role-policy-rules.repository.js";
 import { RolePolicyRulesService } from "./role-policy-rules/role-policy-rules.service.js";
@@ -59,6 +61,7 @@ export const CorePackSecurityModule = defineModule({
   name: "CorePackSecurityModule",
   imports: [
     CorePackAuthModule,
+    CorePackIamSafetyModule,
     CorePackUsersModule,
     CorePackRolesModule,
     CorePackPermissionsModule,
@@ -81,10 +84,18 @@ export const CorePackSecurityModule = defineModule({
     classProvider(CORE_PACK_ROLE_POLICY_RULES_REPOSITORY_TOKEN, RolePolicyRulesRepository, [
       CORE_TOKENS.DB_ADAPTER
     ]),
-    classProvider(CORE_PACK_ROLE_POLICY_RULES_SERVICE_TOKEN, RolePolicyRulesService, [
-      ROLES_REPOSITORY_TOKEN,
-      CORE_PACK_ROLE_POLICY_RULES_REPOSITORY_TOKEN
-    ]),
+    factoryProvider(
+      CORE_PACK_ROLE_POLICY_RULES_SERVICE_TOKEN,
+      (roles, rules, safety) =>
+        new RolePolicyRulesService(roles, rules, (work) =>
+          safety.mutate((db: import("@trinacria-cms/kernel").DbAdapter) =>
+            work(
+              new RolePolicyRulesService(new RolesRepository(db), new RolePolicyRulesRepository(db))
+            )
+          )
+        ),
+      [ROLES_REPOSITORY_TOKEN, CORE_PACK_ROLE_POLICY_RULES_REPOSITORY_TOKEN, IAM_SAFETY]
+    ),
     classProvider(
       CORE_PACK_MANIFEST_PROVISIONING_SERVICE_TOKEN,
       CorePackManifestProvisioningService,
@@ -97,14 +108,33 @@ export const CorePackSecurityModule = defineModule({
         I18N_MESSAGES_SERVICE_TOKEN
       ]
     ),
-    classProvider(CORE_PACK_USER_ACCESS_SERVICE_TOKEN, UserAccessService, [
-      USERS_REPOSITORY_TOKEN,
-      ROLES_REPOSITORY_TOKEN,
-      ROLE_GRANTS_REPOSITORY_TOKEN,
-      CORE_PACK_ROLE_POLICY_RULES_REPOSITORY_TOKEN,
-      PERMISSIONS_REPOSITORY_TOKEN,
-      CORE_PACK_USER_ROLES_REPOSITORY_TOKEN
-    ]),
+    factoryProvider(
+      CORE_PACK_USER_ACCESS_SERVICE_TOKEN,
+      (users, roles, grants, rules, permissions, assignments, safety) => {
+        const service = new UserAccessService(
+          users,
+          roles,
+          grants,
+          rules,
+          permissions,
+          assignments,
+          (work) =>
+            safety.mutate((db: import("@trinacria-cms/kernel").DbAdapter) =>
+              work(service.forDb(db))
+            )
+        );
+        return service;
+      },
+      [
+        USERS_REPOSITORY_TOKEN,
+        ROLES_REPOSITORY_TOKEN,
+        ROLE_GRANTS_REPOSITORY_TOKEN,
+        CORE_PACK_ROLE_POLICY_RULES_REPOSITORY_TOKEN,
+        PERMISSIONS_REPOSITORY_TOKEN,
+        CORE_PACK_USER_ROLES_REPOSITORY_TOKEN,
+        IAM_SAFETY
+      ]
+    ),
     classProvider(CORE_PACK_AUTHZ_SERVICE_TOKEN, CorePackAuthzService, [
       CORE_PACK_USER_ACCESS_SERVICE_TOKEN
     ]),

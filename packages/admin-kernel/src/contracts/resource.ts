@@ -52,5 +52,7 @@ export interface AdminResourceDefinition {
   fields?: readonly AdminResourceFieldDefinition[];
   detail?: AdminResourceDetailDefinition | false;
   actions?: readonly AdminActionDefinition[];
+  /** Host-populated candidates; permission decisions are evaluated for the selected record. */
+  contextualActions?: readonly AdminActionDefinition[];
   guards?: readonly AdminAccessGuard[];
 }

@@ -17,6 +17,11 @@ export const EDITORIAL_PACK_CAPABILITY_LIST: readonly EditorialPackCapability[] 
 );
 
 const EDITORIAL_PACK_PERMISSIONS = definePermissionSet(EDITORIAL_PACK_PLUGIN_ID, {
+  BACKOFFICE_ACCESS: {
+    resource: "backoffice",
+    action: "access",
+    displayName: "Access editorial backoffice"
+  },
   CONTENT_TYPES_READ: {
     resource: "content-types",
     action: "read",

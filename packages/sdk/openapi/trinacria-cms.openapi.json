@@ -3683,6 +3683,10 @@
                                     "suspended"
                                   ]
                                 },
+                                "sessionVersion": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
                                 "createdAt": {
                                   "type": "string",
                                   "format": "date-time"
@@ -3906,6 +3910,10 @@
                                 "active",
                                 "suspended"
                               ]
+                            },
+                            "sessionVersion": {
+                              "type": "integer",
+                              "minimum": 0
                             },
                             "createdAt": {
                               "type": "string",
@@ -4239,6 +4247,10 @@
                                 "active",
                                 "suspended"
                               ]
+                            },
+                            "sessionVersion": {
+                              "type": "integer",
+                              "minimum": 0
                             },
                             "createdAt": {
                               "type": "string",
@@ -4889,6 +4901,10 @@
                             "suspended"
                           ]
                         },
+                        "sessionVersion": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
@@ -5034,6 +5050,10 @@
                             "active",
                             "suspended"
                           ]
+                        },
+                        "sessionVersion": {
+                          "type": "integer",
+                          "minimum": 0
                         },
                         "createdAt": {
                           "type": "string",
@@ -5216,6 +5236,10 @@
                             "active",
                             "suspended"
                           ]
+                        },
+                        "sessionVersion": {
+                          "type": "integer",
+                          "minimum": 0
                         },
                         "createdAt": {
                           "type": "string",
@@ -5855,6 +5879,10 @@
                               "suspended"
                             ]
                           },
+                          "sessionVersion": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
                           "createdAt": {
                             "type": "string",
                             "format": "date-time"
@@ -5985,6 +6013,10 @@
                             "active",
                             "suspended"
                           ]
+                        },
+                        "sessionVersion": {
+                          "type": "integer",
+                          "minimum": 0
                         },
                         "createdAt": {
                           "type": "string",
@@ -6184,6 +6216,10 @@
                             "suspended"
                           ]
                         },
+                        "sessionVersion": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
@@ -6356,6 +6392,10 @@
                             "active",
                             "suspended"
                           ]
+                        },
+                        "sessionVersion": {
+                          "type": "integer",
+                          "minimum": 0
                         },
                         "createdAt": {
                           "type": "string",
@@ -6565,6 +6605,10 @@
                             "active",
                             "suspended"
                           ]
+                        },
+                        "sessionVersion": {
+                          "type": "integer",
+                          "minimum": 0
                         },
                         "createdAt": {
                           "type": "string",
@@ -7703,6 +7747,10 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "expectedUpdatedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
                   "name": {
                     "type": "string",
                     "minLength": 1,
@@ -7730,6 +7778,7 @@
                   }
                 },
                 "required": [
+                  "expectedUpdatedAt",
                   "name"
                 ],
                 "additionalProperties": false
@@ -7982,10 +8031,15 @@
                       "active",
                       "disabled"
                     ]
+                  },
+                  "expectedUpdatedAt": {
+                    "type": "string",
+                    "format": "date-time"
                   }
                 },
                 "required": [
-                  "status"
+                  "status",
+                  "expectedUpdatedAt"
                 ],
                 "additionalProperties": false
               }
@@ -14941,7 +14995,7 @@
     "/v1/users/{id}/permissions": {
       "get": {
         "operationId": "listUserEffectivePermissions",
-        "summary": "List effective permissions for a user",
+        "summary": "List allowed permissions for a user and optional resource context",
         "tags": [
           "Security"
         ],
@@ -15061,6 +15115,15 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "resourceId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 220
             }
           }
         ],

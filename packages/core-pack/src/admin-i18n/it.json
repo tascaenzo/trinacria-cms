@@ -684,5 +684,15 @@
   "auth.installation.status.fail": "Da correggere",
   "auth.installation.status.blocked": "In attesa",
   "auth.installation.blocked_hint": "Questo controllo potrà essere eseguito dopo aver risolto i requisiti precedenti.",
-  "auth.installation.failed_hint": "Segui le istruzioni qui sotto per risolvere questo requisito."
+  "auth.installation.failed_hint": "Segui le istruzioni qui sotto per risolvere questo requisito.",
+  "iam.title": "Ruoli e accessi",
+  "iam.loading": "Caricamento accessi…",
+  "iam.error": "Impossibile aggiornare gli accessi",
+  "iam.remove": "Rimuovi ruolo",
+  "iam.no_roles": "Nessun ruolo assegnato",
+  "iam.assign": "Assegna ruolo",
+  "iam.choose": "Scegli un ruolo",
+  "iam.global_permissions": "Azioni consentite senza il contesto di un singolo elemento",
+  "iam.remove_confirm": "Rimuovere questo ruolo?",
+  "iam.backoffice_required": "Non hai il permesso di accedere al backoffice"
 }

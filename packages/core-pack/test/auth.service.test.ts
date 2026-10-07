@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { matchesMongoFilter } from "../../../test/helpers/mongo-like-filter.js";
 import assert from "node:assert/strict";
-import { createHmac } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 import test from "node:test";
 import {
   type DbAdapter,
@@ -197,6 +197,11 @@ test("JwtAuthService enforces optional TOTP after a user enrolls", async () => {
   if (!("status" in challenge)) throw new Error("Expected an MFA challenge");
 
   const completed = await runtime.auth.completeMfaLogin(challenge.challengeId, createTotp(setup.manualKey));
+  await assert.rejects(runtime.auth.completeMfaLogin(challenge.challengeId, createTotp(setup.manualKey)), { code: "auth_mfa_challenge_invalid" });
+  const revoked = await runtime.auth.beginPasswordLogin({ email: "admin@example.com", password: "StrongPassword123!" });
+  if (!("status" in revoked)) throw new Error("Expected an MFA challenge");
+  await runtime.auth.changeAuthenticatedUserPassword(initial.user.id, { currentPassword: "StrongPassword123!", newPassword: "AnotherStrongPassword123!" });
+  await assert.rejects(runtime.auth.completeMfaLogin(revoked.challengeId, createTotp(setup.manualKey)), { code: "auth_mfa_challenge_invalid" });
   assert.equal(completed.user.email, "admin@example.com");
 });
 
@@ -483,6 +488,11 @@ test("AuthController changes the authenticated user password", async () => {
     password: "NewStrongPassword123!"
   });
   assert.equal(nextSession.user.email, "admin@example.com");
+  await assert.rejects(() => runtime.auth.authenticateBearerToken(session.accessToken),
+    (error: unknown) => error instanceof JwtAuthError && error.code === "auth_token_revoked");
+  await assert.rejects(() => runtime.auth.authenticateRefreshToken(session.refreshToken),
+    (error: unknown) => error instanceof JwtAuthError && error.code === "auth_token_revoked");
+  await runtime.auth.authenticateBearerToken(nextSession.accessToken);
 });
 
 test("AuthUserFlowsService requests password reset through secure email payloads", async () => {
@@ -598,6 +608,23 @@ test("AuthUserFlowsService honors public registration default status", async () 
   );
 });
 
+test("expired invites and consumed reset links cannot change credentials", async () => {
+  const runtime = createRuntime();
+  await seedCoreSettings(runtime.settings);
+  await runtime.installation.bootstrap({ email: "admin@example.com", firstName: "Admin", lastName: "User", password: "StrongPassword123!", confirmPassword: "StrongPassword123!", siteName: "Test" });
+  const user = await runtime.users.findByEmail("admin@example.com");
+  const invite = "ExpiredInviteToken12345678901234567890";
+  const expired = await runtime.tokens.create({ tokenType: "user_invite", tokenHash: createHash("sha256").update(invite).digest("hex"), email: user!.email, userId: user!.id, expiresAt: new Date(Date.now() - 1).toISOString() });
+  await assert.rejects(runtime.flows.acceptUserInvite({ token: invite, password: "AttackerPassword123!" }), { code: "invalid_request" });
+  assert.equal(await runtime.tokens.consume(expired.id), null);
+  const reset = "ResetToken12345678901234567890123456789";
+  const available = await runtime.tokens.create({ tokenType: "password_reset", tokenHash: createHash("sha256").update(reset).digest("hex"), email: user!.email, userId: user!.id, expiresAt: new Date(Date.now() + 60000).toISOString() });
+  await runtime.flows.completePasswordReset({ token: reset, newPassword: "UpdatedPassword123!" });
+  assert.equal(await runtime.tokens.consume(available.id), null);
+  await assert.rejects(runtime.flows.completePasswordReset({ token: reset, newPassword: "AttackerPassword123!" }), { code: "invalid_request" });
+  await runtime.auth.loginWithPassword({ email: user!.email, password: "UpdatedPassword123!" });
+});
+
 interface Runtime {
   auth: JwtAuthService;
   flows: AuthUserFlowsService;
@@ -607,6 +634,7 @@ interface Runtime {
   passwordHashing: PasswordHashingService;
   settings: SettingsService;
   securePayloads: SecureEventPayloadsService;
+  tokens: AuthFlowTokensRepository;
   emittedEvents: Array<{ eventName: string; payload: unknown }>;
 }
 
@@ -680,11 +708,12 @@ function createRuntime(): Runtime {
     db,
     new AuthMfaService(new AuthMfaRepository(db))
   );
+  const tokens = new AuthFlowTokensRepository(db);
   const flows = new AuthUserFlowsService(
     authUsers,
     localCredentials,
     passwordHashing,
-    new AuthFlowTokensRepository(db),
+    tokens,
     config,
     securePayloads.forPlugin("core-pack"),
     events as never
@@ -699,6 +728,7 @@ function createRuntime(): Runtime {
     passwordHashing,
     settings,
     securePayloads,
+    tokens,
     emittedEvents
   };
 }

@@ -10,6 +10,7 @@
 - [Piano tecnico piattaforma plugin](../docs/cms/architecture/plugin-platform-implementation-plan.md)
 - [Inventario operazioni A3](../docs/cms/architecture/plugin-platform/application-operation-inventory.md)
 - [M8 — Piattaforma plugin pubblica](milestones/M8-public-plugin-platform.md)
+- [Audit funzionale Core e pack dominio](../docs/cms/specs/domains/functional-audit.md)
 
 I risultati nei task completati descrivono la verifica della relativa fase; non sostituiscono
 il riepilogo corrente né implicano che tutte le funzionalità previste dalle specifiche siano disponibili.

@@ -469,9 +469,11 @@ Implementato in `@trinacria-cms/media-pack`:
 - contratto capability tipizzato `MEDIA_ASSETS_SERVICE_TOKEN` per
   `editorial-pack`.
 
-Restano da sviluppare con il futuro `editorial-pack` soltanto il componente UI
-picker concreto e il consumer che richiama `validateUse` durante authoring e
-pubblicazione. Non richiedono accesso diretto a Mongo o modifiche al media pack.
+Editorial implementa il picker tramite File Manager, la preview con URL
+autorizzate e il consumer `validateUse` in pubblicazione/delivery. I ruoli
+editoriali non ricevono automaticamente permission Media: configurare un ruolo
+aggiuntivo per gli autori che usano asset, mantenendo i controlli ACL. Vedere
+[audit funzionale](./functional-audit.md#matrice-media-e-collegamento-editorial).
 
 ## Decisioni operative v0
 
@@ -481,7 +483,7 @@ pubblicazione. Non richiedono accesso diretto a Mongo o modifiche al media pack.
 3. `local-disk` e raccomandato per sviluppo, test o deployment single-node con
    volume durevole. Deployment multi-replica devono usare S3-compatible.
 4. La cancellazione rende subito la reference non utilizzabile ed emette
-   `asset-deleted`; il futuro editorial pack deve bloccare una nuova
-   pubblicazione finche la reference non viene sostituita.
+   `asset-deleted`; Editorial blocca una nuova pubblicazione e rivalida la
+   delivery finche la reference non viene sostituita.
 5. Multipart e resumable non fanno parte della v0; il provider S3 usa upload
    presigned singolo con checksum SHA-256 obbligatorio.

@@ -354,6 +354,21 @@ export function buildAdminRegistry(
               }))
             }
           : resource.detail,
+      contextualActions: translateActions(
+        resource.actions?.filter((action) => action.intent !== "create"),
+        resource.pluginId,
+        runtimePlugins,
+        capabilityIndex,
+        new Set(
+          resource.actions?.flatMap(
+            (action) =>
+              action.guards?.flatMap((guard) =>
+                guard.permissionKey ? [guard.permissionKey] : []
+              ) ?? []
+          ) ?? []
+        ),
+        t
+      ),
       actions: translateActions(
         resource.actions,
         resource.pluginId,

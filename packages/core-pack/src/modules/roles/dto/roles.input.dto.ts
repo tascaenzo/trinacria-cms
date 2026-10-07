@@ -44,6 +44,7 @@ export type CreateRoleInput = Infer<typeof CreateRoleInputSchema>;
  */
 export const UpdateRoleInputSchema = s.object(
   {
+    expectedUpdatedAt: s.dateTimeString(),
     name: s.string({ trim: true, minLength: 1, maxLength: 120 }),
     description: s.string({ trim: true, maxLength: 500 }).optional(),
     status: RoleStatusSchema.optional(),
@@ -75,7 +76,8 @@ export type UpdateRoleInput = Infer<typeof UpdateRoleInputSchema>;
  */
 export const UpdateRoleStatusInputSchema = s.object(
   {
-    status: RoleStatusSchema
+    status: RoleStatusSchema,
+    expectedUpdatedAt: s.dateTimeString()
   },
   { strict: true }
 );

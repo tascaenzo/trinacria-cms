@@ -770,6 +770,7 @@ export type ChangeAuthenticatedUserPasswordResponse = {
   "lastName": string;
   "locale"?: "en" | "it";
   "status": "active" | "suspended";
+  "sessionVersion"?: number;
   "createdAt": string;
   "updatedAt": string;
 };
@@ -798,6 +799,7 @@ export type CompleteLoginMfaEnrollmentResponse = {
   "lastName": string;
   "locale"?: "en" | "it";
   "status": "active" | "suspended";
+  "sessionVersion"?: number;
   "createdAt": string;
   "updatedAt": string;
 };
@@ -868,6 +870,7 @@ export type CompleteMfaLoginResponse = {
   "lastName": string;
   "locale"?: "en" | "it";
   "status": "active" | "suspended";
+  "sessionVersion"?: number;
   "createdAt": string;
   "updatedAt": string;
 };
@@ -2785,6 +2788,7 @@ export type CreateUserResponse = {
   "lastName": string;
   "locale"?: "en" | "it";
   "status": "active" | "suspended";
+  "sessionVersion"?: number;
   "createdAt": string;
   "updatedAt": string;
 };
@@ -3178,6 +3182,7 @@ export type GetAuthenticatedUserResponse = {
   "lastName": string;
   "locale"?: "en" | "it";
   "status": "active" | "suspended";
+  "sessionVersion"?: number;
   "createdAt": string;
   "updatedAt": string;
 };
@@ -5448,6 +5453,7 @@ export type GetUserByIdResponse = {
   "lastName": string;
   "locale"?: "en" | "it";
   "status": "active" | "suspended";
+  "sessionVersion"?: number;
   "createdAt": string;
   "updatedAt": string;
 };
@@ -7355,6 +7361,9 @@ export type ListUserEffectivePermissionsRequest = {
   path: {
   "id": string;
 };
+  query?: {
+  "resourceId"?: string;
+};
 };
 
 export type ListUserEffectivePermissionsResponse = {
@@ -7405,6 +7414,7 @@ export type ListUsersResponse = {
   "lastName": string;
   "locale"?: "en" | "it";
   "status": "active" | "suspended";
+  "sessionVersion"?: number;
   "createdAt": string;
   "updatedAt": string;
 }>;
@@ -7436,6 +7446,7 @@ export type LoginWithPasswordResponse = {
   "lastName": string;
   "locale"?: "en" | "it";
   "status": "active" | "suspended";
+  "sessionVersion"?: number;
   "createdAt": string;
   "updatedAt": string;
 };
@@ -11630,6 +11641,7 @@ export type UpdateAuthenticatedUserProfileResponse = {
   "lastName": string;
   "locale"?: "en" | "it";
   "status": "active" | "suspended";
+  "sessionVersion"?: number;
   "createdAt": string;
   "updatedAt": string;
 };
@@ -12933,6 +12945,7 @@ export type UpdateRoleRequest = {
   "id": string;
 };
   body: {
+  "expectedUpdatedAt": string;
   "name": string;
   "description"?: string;
   "status"?: "active" | "disabled";
@@ -13005,6 +13018,7 @@ export type UpdateRoleStatusRequest = {
 };
   body: {
   "status": "active" | "disabled";
+  "expectedUpdatedAt": string;
 };
 };
 
@@ -13055,6 +13069,7 @@ export type UpdateUserProfileResponse = {
   "lastName": string;
   "locale"?: "en" | "it";
   "status": "active" | "suspended";
+  "sessionVersion"?: number;
   "createdAt": string;
   "updatedAt": string;
 };
@@ -13083,6 +13098,7 @@ export type UpdateUserStatusResponse = {
   "lastName": string;
   "locale"?: "en" | "it";
   "status": "active" | "suspended";
+  "sessionVersion"?: number;
   "createdAt": string;
   "updatedAt": string;
 };

@@ -13403,6 +13403,7 @@ export declare const EDITORIAL_PACK_CAPABILITIES: {
 export type EditorialPackCapability = (typeof EDITORIAL_PACK_CAPABILITIES)[keyof typeof EDITORIAL_PACK_CAPABILITIES];
 export declare const EDITORIAL_PACK_CAPABILITY_LIST: readonly EditorialPackCapability[];
 export declare const EDITORIAL_PACK_PERMISSION_KEYS: {
+    readonly BACKOFFICE_ACCESS: string;
     readonly CONTENT_TYPES_READ: string;
     readonly CONTENT_TYPES_MANAGE: string;
     readonly ENTRIES_READ: string;

@@ -684,5 +684,15 @@
   "auth.installation.status.fail": "Action required",
   "auth.installation.status.blocked": "Waiting",
   "auth.installation.blocked_hint": "This check can run after the preceding requirements are resolved.",
-  "auth.installation.failed_hint": "Follow the instructions below to resolve this requirement."
+  "auth.installation.failed_hint": "Follow the instructions below to resolve this requirement.",
+  "iam.title": "Roles and access",
+  "iam.loading": "Loading access…",
+  "iam.error": "Unable to update access",
+  "iam.remove": "Remove role",
+  "iam.no_roles": "No roles assigned",
+  "iam.assign": "Assign role",
+  "iam.choose": "Choose a role",
+  "iam.global_permissions": "Allowed actions without a record-specific context",
+  "iam.remove_confirm": "Remove this role?",
+  "iam.backoffice_required": "Backoffice access is required"
 }

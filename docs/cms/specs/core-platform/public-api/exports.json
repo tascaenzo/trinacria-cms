@@ -12892,6 +12892,13 @@
             ]
           },
           {
+            "symbol": "isPermissionAllowed",
+            "status": "experimental",
+            "origins": [
+              "packages/core-pack/dist/modules/security/policies/authz-rules.d.ts"
+            ]
+          },
+          {
             "symbol": "isValidSettingKey",
             "status": "experimental",
             "origins": [
@@ -17323,6 +17330,11 @@
           "origin": "packages/core-pack/dist/modules/index.d.ts"
         },
         {
+          "symbol": "isPermissionAllowed",
+          "status": "internal",
+          "origin": "packages/core-pack/dist/modules/index.d.ts"
+        },
+        {
           "symbol": "isValidSettingKey",
           "status": "internal",
           "origin": "packages/core-pack/dist/modules/index.d.ts"
@@ -19463,6 +19475,11 @@
           "origin": "packages/core-pack/dist/modules/security/index.d.ts"
         },
         {
+          "symbol": "isPermissionAllowed",
+          "status": "internal",
+          "origin": "packages/core-pack/dist/modules/security/index.d.ts"
+        },
+        {
           "symbol": "ListRolePolicyRulesResponseSchema",
           "status": "internal",
           "origin": "packages/core-pack/dist/modules/security/index.d.ts"
@@ -19606,6 +19623,16 @@
           "symbol": "RolePolicyRuleEffectSchema",
           "status": "internal",
           "origin": "packages/core-pack/dist/modules/security/role-policy-rules/role-policy-rules.schemas.d.ts"
+        },
+        {
+          "symbol": "createUserAccessService",
+          "status": "internal",
+          "origin": "packages/core-pack/dist/modules/security/services/iam-safety.service.d.ts"
+        },
+        {
+          "symbol": "IamSafetyService",
+          "status": "internal",
+          "origin": "packages/core-pack/dist/modules/security/services/iam-safety.service.d.ts"
         },
         {
           "symbol": "canonicalPluginJson",
@@ -22669,6 +22696,11 @@
         },
         {
           "symbol": "isJsonValue",
+          "status": "internal",
+          "origin": "packages/core-pack/dist/runtime.d.ts"
+        },
+        {
+          "symbol": "isPermissionAllowed",
           "status": "internal",
           "origin": "packages/core-pack/dist/runtime.d.ts"
         },

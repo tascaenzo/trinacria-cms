@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import type { EventBus } from "@trinacria/events";
+import { CoreError } from "@trinacria-cms/kernel";
 import type { SecureEventPayloadClient } from "@trinacria-cms/kernel/contracts";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import type { LocalCredentialsRepository } from "../../installation/repositories/local-credentials.repository.js";
@@ -64,7 +65,7 @@ export class AuthUserFlowsService {
     if (this.atomic) return this.atomic((service) => service.completePasswordReset(input));
     const record = await this.consumeFlowToken(input.token, "password_reset");
     if (!record.userId) {
-      throw new Error("Invalid password reset token");
+      throw new CoreError("invalid_request", "Invalid password reset token");
     }
     const password = await this.passwordHashing.hashPassword(input.newPassword);
     await this.localCredentials.upsert({
@@ -73,6 +74,7 @@ export class AuthUserFlowsService {
       passwordHash: password.passwordHash,
       passwordSalt: password.passwordSalt
     });
+    if (record.userId) await this.users.revokeSessions(record.userId);
     return { completed: true };
   }
 
@@ -129,11 +131,11 @@ export class AuthUserFlowsService {
   }): Promise<{ accepted: true }> {
     if (this.atomic) return this.atomic((service) => service.registerPublic(input));
     if (!(await this.getBoolean("core-pack:user_flows:public_registration_enabled", false))) {
-      throw new Error("Public registration is disabled");
+      throw new CoreError("invalid_request", "Public registration is disabled");
     }
     const existing = await this.users.findByEmail(input.email);
     if (existing) {
-      throw new Error(`User with email "${input.email}" already exists`);
+      throw new CoreError("conflict", `User with email "${input.email}" already exists`);
     }
     const requiresVerification = await this.getBoolean(
       "core-pack:user_flows:email_verification_required",
@@ -174,11 +176,11 @@ export class AuthUserFlowsService {
   }): Promise<{ accepted: true }> {
     if (this.atomic) return this.atomic((service) => service.sendUserInvite(input));
     if (!(await this.getBoolean("core-pack:user_flows:user_invites_enabled", true))) {
-      throw new Error("User invites are disabled");
+      throw new CoreError("invalid_request", "User invites are disabled");
     }
     const user = await this.users.findById(input.userId);
     if (!user) {
-      throw new Error(`User "${input.userId}" not found`);
+      throw new CoreError("not_found", `User "${input.userId}" not found`);
     }
     const ttl = await this.getNumber(
       "core-pack:user_flows:user_invite_token_ttl_minutes",
@@ -209,7 +211,7 @@ export class AuthUserFlowsService {
     if (this.atomic) return this.atomic((service) => service.acceptUserInvite(input));
     const record = await this.consumeFlowToken(input.token, "user_invite");
     if (!record.userId) {
-      throw new Error("Invalid invite token");
+      throw new CoreError("invalid_request", "Invalid invite token");
     }
     const password = await this.passwordHashing.hashPassword(input.password);
     await this.localCredentials.upsert({
@@ -218,6 +220,7 @@ export class AuthUserFlowsService {
       passwordHash: password.passwordHash,
       passwordSalt: password.passwordSalt
     });
+    if (record.userId) await this.users.revokeSessions(record.userId);
     const existing = await this.users.findById(record.userId);
     const updated = await this.users.updateStatus(record.userId, "active");
     if (updated) {
@@ -260,13 +263,15 @@ export class AuthUserFlowsService {
   ): Promise<{ userId?: string }> {
     const record = await this.tokens.findAvailableByHash(hashToken(plaintext), tokenType);
     if (!record) {
-      throw new Error("Invalid or expired token");
+      throw new CoreError("invalid_request", "Invalid or expired token");
     }
     if (Date.parse(record.expiresAt) <= Date.now()) {
       await this.tokens.expire(record.id);
-      throw new Error("Invalid or expired token");
+      throw new CoreError("invalid_request", "Invalid or expired token");
     }
-    await this.tokens.consume(record.id);
+    if (!(await this.tokens.consume(record.id))) {
+      throw new CoreError("invalid_request", "Invalid or expired token");
+    }
     return { userId: record.userId };
   }
 

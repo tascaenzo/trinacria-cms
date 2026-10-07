@@ -214,15 +214,17 @@ export function useDeclarativeActionController({
           <div className="grid gap-4">
             {hasFormFields ? (
               <div className="grid gap-4">
-                {formFields.map((field) => (
-                  <DeclarativeActionFormField
-                    key={field.key}
-                    field={field}
-                    onChange={(value) => updateDraftField(field.key, value)}
-                    optionState={optionStates[field.key]}
-                    value={draftFields[field.key] ?? defaultDraftFieldValue(field)}
-                  />
-                ))}
+                {formFields
+                  .filter((field) => !field.hidden)
+                  .map((field) => (
+                    <DeclarativeActionFormField
+                      key={field.key}
+                      field={field}
+                      onChange={(value) => updateDraftField(field.key, value)}
+                      optionState={optionStates[field.key]}
+                      value={draftFields[field.key] ?? defaultDraftFieldValue(field)}
+                    />
+                  ))}
               </div>
             ) : (
               <InfoCard

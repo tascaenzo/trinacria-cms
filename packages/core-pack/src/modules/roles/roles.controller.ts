@@ -51,7 +51,8 @@ export class RolesController extends HttpController {
   ) {
     super();
     this.adminAuthMiddleware = createJwtAuthMiddleware(auth, {
-      requireAdmin: true
+      requireAdmin: false,
+      requireBackoffice: true
     });
   }
 
@@ -240,8 +241,16 @@ export class RolesController extends HttpController {
       const payload = UpdateRoleStatusInputSchema.parse(ctx.body);
       const updated =
         payload.status === "active"
-          ? await this.roles.activateRole(getHttpOperationContext(ctx), id)
-          : await this.roles.disableRole(getHttpOperationContext(ctx), id);
+          ? await this.roles.activateRole(
+              getHttpOperationContext(ctx),
+              id,
+              payload.expectedUpdatedAt
+            )
+          : await this.roles.disableRole(
+              getHttpOperationContext(ctx),
+              id,
+              payload.expectedUpdatedAt
+            );
       if (!updated) {
         return responder.notFound(`Role "${id}" not found`);
       }

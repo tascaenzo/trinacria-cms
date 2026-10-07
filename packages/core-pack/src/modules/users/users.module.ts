@@ -11,6 +11,7 @@ import { createUsersOperations, USERS_OPERATIONS } from "../../operations/access
 import { AUTH_FLOW_OPERATIONS } from "../../operations/auth-flow-operations.js";
 import { CorePackAuthModule } from "../auth/auth.module.js";
 import { CORE_PACK_JWT_AUTH_SERVICE_TOKEN } from "../auth/auth.tokens.js";
+import { CorePackIamSafetyModule, IAM_SAFETY } from "../security/iam-safety.module.js";
 import { UsersRepository } from "./repositories/users.repository.js";
 import { UsersService } from "./services/users.service.js";
 import { UsersController } from "./users.controller.js";
@@ -27,7 +28,7 @@ import {
  */
 export const CorePackUsersModule = defineModule({
   name: "CorePackUsersModule",
-  imports: [CorePackAuthModule],
+  imports: [CorePackAuthModule, CorePackIamSafetyModule],
   providers: [
     factoryProvider(
       USERS_ENTITY_REGISTRATION_TOKEN,
@@ -43,14 +44,15 @@ export const CorePackUsersModule = defineModule({
       (
         repository,
         events,
-        durable: import("@trinacria-cms/kernel/runtime").MongoDurableEventStore
+        durable: import("@trinacria-cms/kernel/runtime").MongoDurableEventStore,
+        safety: import("../security/services/iam-safety.service.js").IamSafetyService
       ) =>
         new UsersService(repository, events, (work) =>
           durable.transaction("core-pack", (db, publisher) =>
-            work(new UsersService(new UsersRepository(db), publisher))
+            safety.verify(db, () => work(new UsersService(new UsersRepository(db), publisher)))
           )
         ),
-      [USERS_REPOSITORY_TOKEN, EVENT_BUS_TOKEN, CORE_TOKENS.DURABLE_EVENTS]
+      [USERS_REPOSITORY_TOKEN, EVENT_BUS_TOKEN, CORE_TOKENS.DURABLE_EVENTS, IAM_SAFETY]
     ),
     factoryProvider(USERS_OPERATIONS, createUsersOperations, [
       USERS_SERVICE_TOKEN,

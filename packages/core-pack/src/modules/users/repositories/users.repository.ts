@@ -67,10 +67,15 @@ export class UsersRepository {
 
   async updateStatus(id: string, input: UpdateUserStatusInput): Promise<UserRecord | null> {
     const parsedInput = UpdateUserStatusInputSchema.parse(input);
+    const existing = await this.findById(id);
+    if (!existing) return null;
     const updated = await this.repository().updateOne(
       { filter: { id } },
       {
         status: parsedInput.status,
+        ...(existing.status !== parsedInput.status
+          ? { sessionVersion: (existing.sessionVersion ?? 0) + 1 }
+          : {}),
         updatedAt: new Date().toISOString()
       }
     );
@@ -86,6 +91,7 @@ export class UsersRepository {
       lastName: string;
       status?: UpdateUserProfileInput["status"];
       updatedAt: string;
+      sessionVersion?: number;
     } = {
       firstName: parsedInput.firstName,
       lastName: parsedInput.lastName,
@@ -93,6 +99,9 @@ export class UsersRepository {
     };
     if (parsedInput.status) {
       changes.status = parsedInput.status;
+      const existing = await this.findById(id);
+      if (existing && existing.status !== parsedInput.status)
+        changes.sessionVersion = (existing.sessionVersion ?? 0) + 1;
     }
 
     const updated = await this.repository().updateOne({ filter: { id: id.trim() } }, changes);

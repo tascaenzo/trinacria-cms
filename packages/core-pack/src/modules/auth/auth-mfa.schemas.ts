@@ -35,6 +35,7 @@ export const AuthMfaChallengeRecordSchema = s.object(
   {
     id: s.string({ trim: true, minLength: 1 }),
     userId: s.string({ trim: true, minLength: 1 }),
+    sessionVersion: s.number({ int: true, min: 0 }),
     tokenHash: s.string({ trim: true, minLength: 32, maxLength: 128 }),
     purpose: AuthMfaChallengePurposeSchema,
     expiresAt: s.dateTimeString(),

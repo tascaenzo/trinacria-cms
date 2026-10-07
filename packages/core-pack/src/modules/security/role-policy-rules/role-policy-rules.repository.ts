@@ -1,4 +1,5 @@
 import type { DbAdapter } from "@trinacria-cms/kernel";
+import { CoreError } from "@trinacria-cms/kernel";
 import { createPluginDbScope, type PluginDbScope } from "@trinacria-cms/kernel/runtime";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import type { EmbeddedRolePolicyRule } from "../../roles/roles.schemas.js";
@@ -35,7 +36,7 @@ export class RolePolicyRulesRepository {
     const role = await this.findRoleByCode(normalized.roleCode);
     if (!role) throw new Error(`Role "${normalized.roleCode}" not found`);
 
-    const now = new Date().toISOString();
+    const now = this.nextRevision(role.updatedAt);
     const createdRule = EmbeddedRolePolicyRuleSchema.parse({
       effect: normalized.effect,
       permissionPattern: normalized.permissionPattern,
@@ -46,11 +47,12 @@ export class RolePolicyRulesRepository {
     });
 
     const allRules = [...role.policyRules, createdRule];
-    await this.repository().updateOne(
-      { filter: { id: role.id } },
+    const updated = await this.repository().updateOne(
+      { filter: { id: role.id, updatedAt: role.updatedAt } },
       { policyRules: allRules, updatedAt: now }
     );
 
+    this.assertUpdated(updated);
     return this.toRecord(role.code, createdRule);
   }
 
@@ -125,13 +127,14 @@ export class RolePolicyRulesRepository {
     if (index === -1) return false;
     const rules = [...role.policyRules];
     rules.splice(index, 1);
-    await this.repository().updateOne(
-      { filter: { id: role.id } },
+    const updated = await this.repository().updateOne(
+      { filter: { id: role.id, updatedAt: role.updatedAt } },
       {
         policyRules: rules,
-        updatedAt: new Date().toISOString()
+        updatedAt: this.nextRevision(role.updatedAt)
       }
     );
+    this.assertUpdated(updated);
     return true;
   }
 
@@ -146,13 +149,14 @@ export class RolePolicyRulesRepository {
       const remaining = role.policyRules.filter((rule) => rule.sourcePluginId !== normalizedSource);
       if (remaining.length === before) continue;
 
-      await this.repository().updateOne(
-        { filter: { id: role.id } },
+      const updated = await this.repository().updateOne(
+        { filter: { id: role.id, updatedAt: role.updatedAt } },
         {
           policyRules: remaining,
-          updatedAt: new Date().toISOString()
+          updatedAt: this.nextRevision(role.updatedAt)
         }
       );
+      this.assertUpdated(updated);
       deleted += before - remaining.length;
     }
     return deleted;
@@ -181,13 +185,14 @@ export class RolePolicyRulesRepository {
       conditions: [...patch.conditions],
       updatedAt: patch.updatedAt
     };
-    await this.repository().updateOne(
-      { filter: { id: role.id } },
+    const updated = await this.repository().updateOne(
+      { filter: { id: role.id, updatedAt: role.updatedAt } },
       {
         policyRules: rules,
-        updatedAt: patch.updatedAt
+        updatedAt: this.nextRevision(role.updatedAt)
       }
     );
+    this.assertUpdated(updated);
     return this.toRecord(role.code, rules[index]);
   }
 
@@ -244,6 +249,7 @@ export class RolePolicyRulesRepository {
   private async findRoleByCode(code: string): Promise<{
     id: string;
     code: string;
+    updatedAt: string;
     policyRules: EmbeddedRolePolicyRule[];
   } | null> {
     const raw = await this.repository().findOne({
@@ -256,6 +262,7 @@ export class RolePolicyRulesRepository {
   private parseRoleDocument(value: unknown): {
     id: string;
     code: string;
+    updatedAt: string;
     policyRules: EmbeddedRolePolicyRule[];
   } {
     const record = (value ?? {}) as Record<string, unknown>;
@@ -264,10 +271,20 @@ export class RolePolicyRulesRepository {
       code: String(record.code ?? "")
         .trim()
         .toLowerCase(),
+      updatedAt: String(record.updatedAt ?? ""),
       policyRules: Array.isArray(record.policyRules)
         ? (record.policyRules as EmbeddedRolePolicyRule[])
         : []
     };
+  }
+
+  private nextRevision(previous: string): string {
+    return new Date(Math.max(Date.now(), (Date.parse(previous) || 0) + 1)).toISOString();
+  }
+
+  private assertUpdated(updated: unknown) {
+    if (!updated)
+      throw new CoreError("iam_revision_conflict", "Role policies changed; reload before saving");
   }
 
   private repository() {

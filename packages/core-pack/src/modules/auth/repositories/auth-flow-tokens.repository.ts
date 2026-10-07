@@ -48,7 +48,7 @@ export class AuthFlowTokensRepository {
   async consume(id: string): Promise<AuthFlowTokenRecord | null> {
     const now = new Date().toISOString();
     const updated = await this.repository().updateOne(
-      { filter: { id: id.trim() } },
+      { filter: { id: id.trim(), status: "available" } },
       { status: "consumed", consumedAt: now, updatedAt: now }
     );
     return updated ? AuthFlowTokenRecordSchema.parse(updated) : null;
@@ -56,7 +56,7 @@ export class AuthFlowTokensRepository {
 
   async expire(id: string): Promise<AuthFlowTokenRecord | null> {
     const updated = await this.repository().updateOne(
-      { filter: { id: id.trim() } },
+      { filter: { id: id.trim(), status: "available" } },
       { status: "expired", updatedAt: new Date().toISOString() }
     );
     return updated ? AuthFlowTokenRecordSchema.parse(updated) : null;

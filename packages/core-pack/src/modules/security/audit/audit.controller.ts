@@ -49,7 +49,10 @@ export class SecurityAuditController extends HttpController {
   private readonly operations;
   constructor(store: SecurityAuditStore, authorizer: OperationAuthorizer, auth: JwtAuthService) {
     super();
-    this.middleware = createJwtAuthMiddleware(auth);
+    this.middleware = createJwtAuthMiddleware(auth, {
+      requireAdmin: false,
+      requireBackoffice: true
+    });
     this.operations = createApplicationOperations(store, authorizer, {
       list: { target: { ownerPluginId: "core-pack", resource: "audit", action: "read" } }
     });

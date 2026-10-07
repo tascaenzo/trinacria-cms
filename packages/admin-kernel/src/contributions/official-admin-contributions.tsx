@@ -118,6 +118,7 @@ function enrichRoute(route: RenderableAdminRoute): RenderableAdminRoute {
   return {
     ...route,
     ...routeMeta,
+    guards: [...(route.guards ?? []), ...(routeMeta.guards ?? [])],
     render
   };
 }
@@ -132,14 +133,19 @@ function getRouteMeta(route: AdminRouteDefinition) {
 function enrichNavigationItem(item: AdminNavigationItem): AdminNavigationItem {
   return {
     ...item,
-    ...OFFICIAL_CORE_NAV_META[item.id]
+    ...OFFICIAL_CORE_NAV_META[item.id],
+    guards: [...(item.guards ?? []), ...(OFFICIAL_CORE_NAV_META[item.id]?.guards ?? [])]
   };
 }
 
 function enrichResource(resource: AdminResourceDefinition): AdminResourceDefinition {
   return {
     ...resource,
-    ...OFFICIAL_CORE_RESOURCE_META[`${resource.pluginId}:${resource.entityName}`]
+    ...OFFICIAL_CORE_RESOURCE_META[`${resource.pluginId}:${resource.entityName}`],
+    guards: [
+      ...(resource.guards ?? []),
+      ...(OFFICIAL_CORE_RESOURCE_META[`${resource.pluginId}:${resource.entityName}`]?.guards ?? [])
+    ]
   };
 }
 

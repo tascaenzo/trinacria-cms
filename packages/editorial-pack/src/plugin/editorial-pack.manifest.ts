@@ -168,6 +168,7 @@ export const EDITORIAL_PACK_MANIFEST: PluginManifest = definePluginManifest({
       defineGrant({
         roleCode: "author",
         permissionKeys: [
+          EDITORIAL_PACK_PERMISSION_KEYS.BACKOFFICE_ACCESS,
           EDITORIAL_PACK_PERMISSION_KEYS.CONTENT_TYPES_READ,
           EDITORIAL_PACK_PERMISSION_KEYS.ENTRIES_READ,
           EDITORIAL_PACK_PERMISSION_KEYS.ENTRIES_CREATE,
@@ -179,6 +180,7 @@ export const EDITORIAL_PACK_MANIFEST: PluginManifest = definePluginManifest({
       defineGrant({
         roleCode: "reviewer",
         permissionKeys: [
+          EDITORIAL_PACK_PERMISSION_KEYS.BACKOFFICE_ACCESS,
           EDITORIAL_PACK_PERMISSION_KEYS.CONTENT_TYPES_READ,
           EDITORIAL_PACK_PERMISSION_KEYS.ENTRIES_READ,
           EDITORIAL_PACK_PERMISSION_KEYS.ENTRIES_REVIEW,
@@ -188,6 +190,7 @@ export const EDITORIAL_PACK_MANIFEST: PluginManifest = definePluginManifest({
       defineGrant({
         roleCode: "editor",
         permissionKeys: [
+          EDITORIAL_PACK_PERMISSION_KEYS.BACKOFFICE_ACCESS,
           EDITORIAL_PACK_PERMISSION_KEYS.CONTENT_TYPES_READ,
           EDITORIAL_PACK_PERMISSION_KEYS.ENTRIES_READ,
           EDITORIAL_PACK_PERMISSION_KEYS.ENTRIES_CREATE,
@@ -206,7 +209,10 @@ export const EDITORIAL_PACK_MANIFEST: PluginManifest = definePluginManifest({
         roleCode: "content-manager",
         permissionKeys: [...EDITORIAL_PACK_PERMISSION_KEY_LIST]
       }),
-      defineGrant({ roleCode: "admin", permissionKeys: [...EDITORIAL_PACK_PERMISSION_KEY_LIST] })
+      defineGrant({
+        roleCode: "admin",
+        permissionKeys: [...EDITORIAL_PACK_PERMISSION_KEY_LIST]
+      })
     ]
   })
 });

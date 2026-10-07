@@ -36,7 +36,7 @@ tokens, credentials, and personal data must stay out of public events. See
 - `permissions` are plugin-owned (`sourcePluginId`)
 - `roles` can be plugin-owned (`ownerPluginId`)
 - `roles.permissionGrants[]` stores per-plugin grant contributions (embedded)
-- `role_policy_rules` enables wildcard and conditional allow/deny rules
+- `roles.policyRules[]` stores wildcard and conditional allow/deny rules (embedded)
 - `users.roleAssignments[]` links users to roles for effective permission resolution (embedded)
 - provisioning is lifecycle-driven through `PluginManifestProvisioner`
 
@@ -144,3 +144,18 @@ fences. User authorization, delegated permissions, secrets, ownership and transa
 remain enforced. Signed external HTTP settings clients retain their separate access
 policy. The standard admin no longer exposes a plugin approval center. See the
 [current architecture decision](../../docs/cms/architecture/plugin-platform/trusted-plugin-model.md).
+
+## Operator access and local recovery
+
+Backoffice access is explicit and independent of the setup account. Domain
+`<pluginId>:backoffice:access` permissions enable the shared shell; each operation
+keeps its own permission checks. `roles.write` is full privileged IAM management.
+IAM transactions preserve at least one active administrator with local credentials.
+Role PATCH/status requests require `expectedUpdatedAt`. Password changes and user
+status changes revoke prior JWT/MFA sessions through a persisted session version.
+
+The package installs `cms-recover-admin --database NAME --email EXISTING_EMAIL`
+(`--reset-mfa` optionally). Set `MONGO_URI` in the environment and supply a new
+12–200 character password on stdin. The CLI restores the target's administrator
+access and revokes pending sessions/links; it exposes no HTTP endpoint. Follow
+the [complete recovery procedure](../../docs/cms/specs/domains/identity-access.md).

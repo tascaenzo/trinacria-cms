@@ -13,6 +13,25 @@ function identityTranslate(key: string, fallback?: string): string {
   return fallback ?? key;
 }
 
+test("official metadata preserves manifest permission guards on routes, navigation and resources", () => {
+  const guards = [{ permissionKey: "core-pack:users:read" }];
+  const [enriched] = withOfficialAdminRouteRenderers([{
+    pluginId: "core-pack", displayName: "Core",
+    routes: [{ id: "users", pluginId: "core-pack", path: "/users", title: "Users", guards, render: () => null }],
+    navigation: [{ id: "nav-users", routeId: "users", title: "Users", guards }],
+    resources: [{ id: "users", pluginId: "core-pack", entityName: "users", routeId: "users", title: "Users", guards }]
+  }]);
+  const plugin: AdminRuntimePluginInfo = { pluginId: "core-pack", installed: true, state: "loaded", version: "0.1.0", capabilities: ["users.read"] };
+  const denied = buildAdminRegistry([enriched!], [plugin], identityTranslate, []);
+  assert.equal(denied.routes.length, 0);
+  assert.equal(denied.navigation.length, 0);
+  assert.equal(denied.resources.length, 0);
+  const allowed = buildAdminRegistry([enriched!], [plugin], identityTranslate, ["core-pack:users:read"]);
+  assert.equal(allowed.routes.length, 1);
+  assert.equal(allowed.navigation.length, 1);
+  assert.equal(allowed.resources.length, 1);
+});
+
 test("buildAdminRegistry returns empty snapshot for no contributions", () => {
   const registry = buildAdminRegistry([], [], identityTranslate);
   assert.equal(registry.routes.length, 0);
@@ -289,7 +308,7 @@ test("buildAdminRegistry accepts wildcard permission grants for permission guard
   );
 });
 
-test("official core-pack route renderers use capability guards for sidebar visibility", () => {
+test("official core-pack route renderers require both capability and user permission for sidebar visibility", () => {
   const plugin: AdminRuntimePluginInfo = {
     pluginId: "core-pack",
     installed: true,
@@ -323,7 +342,7 @@ test("official core-pack route renderers use capability guards for sidebar visib
     }
   ]);
 
-  const registry = buildAdminRegistry(contribution, [plugin], identityTranslate);
+  const registry = buildAdminRegistry(contribution, [plugin], identityTranslate, ["core-pack:users:read"]);
 
   assert.deepEqual(
     registry.routes.map((route) => route.id),

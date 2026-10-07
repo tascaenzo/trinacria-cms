@@ -43,6 +43,8 @@ export interface DeclarativeActionFormFieldDefinition {
   label: string;
   kind: "text" | "number" | "boolean" | "json" | "stringArray";
   required: boolean;
+  hidden?: boolean;
+  recordField?: string;
   options?: readonly DeclarativeActionOption[];
   optionSource?: DeclarativeActionOptionSource;
 }
@@ -264,6 +266,11 @@ export function getActionFormFields(
       key,
       label: title,
       required: required.has(key),
+      hidden: typedDefinition["x-hidden"] === true,
+      recordField:
+        typeof typedDefinition["x-record-field"] === "string"
+          ? typedDefinition["x-record-field"]
+          : undefined,
       options: type === "array" ? itemEnumOptions : enumOptions,
       optionSource,
       kind:
@@ -323,7 +330,7 @@ export function createInitialDraftFields(
 
   return Object.fromEntries(
     fields.map((field) => {
-      const recordValue = readObjectPath(context?.record, field.key);
+      const recordValue = readObjectPath(context?.record, field.recordField ?? field.key);
       const fallbackValue = recordValue ?? sampleObject[field.key];
       return [field.key, serializeDraftFieldValue(field, fallbackValue)];
     })

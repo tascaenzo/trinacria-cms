@@ -3,6 +3,26 @@
 Tutte le milestone significative sono documentate qui.
 Il formato si ispira a [Keep a Changelog](https://keepachangelog.com/).
 
+## Audit funzionale e consolidamento IAM (2026-10-07)
+
+- Chiusi IAM-01–05: operatori delegati, accesso shell separato, protezione
+  transazionale dell'ultimo amministratore, ruoli dal dettaglio utente, CAS e
+  provenienza grant, permission effettive globali e per record.
+- Conservati i guard dei manifest nel renderer e aperta la discovery minima agli
+  autori. Impostazioni/audit applicano le permission della singola operazione.
+- Revoca sessioni su stato/password, challenge MFA e link account monouso;
+  cambio password autenticato rinnova i cookie della sessione corrente.
+- Aggiunta CLI locale `cms-recover-admin`, provata come processo separato con
+  Mongo reale; aggiornati SDK/OpenAPI, contratti pubblici e packaging.
+- Completate le matrici Editorial, Media, Email/settings e la procedura operativa;
+  capacità future distinte dal comportamento attuale. Nessun reset del DB mock.
+- Verificati 613 test ordinari, 44 integrazioni Mongo (Redis/S3 opzionali saltati:
+  2), Chromium 29/29, build 15/15, qualità/contratti e otto tarball locali.
+  Resa deterministica la sincronizzazione del test deadline degli eventi.
+- [Report e risultati](../../docs/cms/specs/domains/functional-audit.md),
+  [guida IAM](../../docs/cms/specs/domains/identity-access.md) e
+  [task](../tasks/done/2026-10-07-pack-functional-audit.md).
+
 ## Prima verifica remota del consolidamento (2026-10-07)
 
 - Aperta la PR #17 verso `unstable` e avviata la CI completa.

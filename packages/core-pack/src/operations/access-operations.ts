@@ -237,20 +237,26 @@ export function createUserAccessOperations(
       ]
     },
     listUserRoles: {
-      target: (args) => ({
-        ownerPluginId: "core-pack",
-        resource: "users",
-        action: "read",
-        ...(typeof args[0] === "string" ? { resourceId: args[0] } : {})
-      })
+      target: (args, context) =>
+        context.actor.kind === "user" && context.actor.subjectId === args[0]
+          ? []
+          : {
+              ownerPluginId: "core-pack",
+              resource: "users",
+              action: "read",
+              ...(typeof args[0] === "string" ? { resourceId: args[0] } : {})
+            }
     },
     resolveUserPermissions: {
-      target: (args) => ({
-        ownerPluginId: "core-pack",
-        resource: "users",
-        action: "read",
-        ...(typeof args[0] === "string" ? { resourceId: args[0] } : {})
-      })
+      target: (args, context) =>
+        context.actor.kind === "user" && context.actor.subjectId === args[0]
+          ? []
+          : {
+              ownerPluginId: "core-pack",
+              resource: "users",
+              action: "read",
+              ...(typeof args[0] === "string" ? { resourceId: args[0] } : {})
+            }
     }
   });
 }
