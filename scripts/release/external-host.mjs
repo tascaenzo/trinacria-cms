@@ -5,6 +5,7 @@ import { cp, lstat, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "nod
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { stripVTControlCharacters } from "node:util";
 import { chromium } from "@playwright/test";
 import { packRelease, repository } from "./pack.mjs";
 import { prepareCatalogV2 } from "./prepare-catalog-v2.mjs";
@@ -77,7 +78,7 @@ async function waitReady(child, marker) {
     );
     const onData = (data) => {
       output += data;
-      if (output.includes(marker)) {
+      if (stripVTControlCharacters(output).includes(marker)) {
         clearTimeout(timer);
         resolve();
       }

@@ -3,6 +3,13 @@
 Tutte le milestone significative sono documentate qui.
 Il formato si ispira a [Keep a Changelog](https://keepachangelog.com/).
 
+## Prima verifica remota del consolidamento (2026-10-07)
+
+- Aperta la PR #17 verso `unstable` e avviata la CI completa.
+- Corretto il riconoscimento della readiness Vite della fixture esterna: i colori
+  ANSI del runner interrompevano il marker testuale pur con server già avviato.
+- [Verifica e risultati](../tasks/todo/2026-10-07-pr-ci-first-verification.md).
+
 ## Consolidamento automatico delle basi CMS e plugin (2026-10-05)
 
 - Nove scenari D0 reali nello stesso comando di conformità da tarball; report distingue
