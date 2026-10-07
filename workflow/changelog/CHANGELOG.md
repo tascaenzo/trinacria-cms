@@ -13,6 +13,9 @@ Il formato si ispira a [Keep a Changelog](https://keepachangelog.com/).
 - Prima CI completa verde sul commit `d97ff83`: PR/push, nove scenari esterni,
   integrazioni 45/45, playground 12/12 e Chromium 28/28. Individuata e corretta
   l'esclusione dei report `.tmp` nell'upload; verifica download da completare sul nuovo run.
+- Reso deterministico l'orologio del test HTTP editoriale: il cambio di minuto reale
+  poteva creare due bucket corretti e far fallire l'assertion su un'unica finestra.
+  Aggiunta verifica HTTP del budget riaperto nella finestra successiva.
 - [Verifica e risultati](../tasks/todo/2026-10-07-pr-ci-first-verification.md).
 
 ## Consolidamento automatico delle basi CMS e plugin (2026-10-05)

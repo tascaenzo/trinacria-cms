@@ -44,4 +44,11 @@ Il download dell'artefatto iniziale contiene solo la diagnostica durevole: il de
 le cartelle nascoste solo per i tre percorsi redatti già elencati; il prossimo run
 deve confermare i report realmente scaricabili, senza caricare backup o credenziali.
 
+Il run `37584437615` sul commit `9733230` carica effettivamente i due JSON, ma
+la suite editoriale rileva un test intermittente: le richieste attraversano un
+cambio di minuto, creando due bucket legittimi invece dell'unico atteso dal test.
+Il test ora usa l'orologio iniettabile già esistente nel limiter, mantenendo tutte
+le richieste HTTP/Mongo reali; verifica anche che avanzare di un minuto riapra il
+budget. Nessun comportamento di produzione è stato cambiato per questo problema.
+
 Acceptance indipendente e staging restano aperte; questa verifica non le sostituisce.

@@ -43,7 +43,9 @@ test("anonymous HTTP delivery exposes immutable projections, validates Media and
   const authorizer = new CoreOperationAuthorizer({ async can() { return { allowed: false }; }, async assert() { throw new Error("Anonymous user has no admin permission"); } });
   let now = Date.now(); const cache = new SharedDeliveryCache(db, () => now);
   const delivery = new EditorialDeliveryService(publications, typesRepo, assets, authorizer, undefined, cache);
-  const limiter = new PublicRequestLimiter(db), router = new Router();
+  // Keep the HTTP budget in one window regardless of when CI crosses a real minute.
+  let requestNow = Date.now();
+  const limiter = new PublicRequestLimiter(db, () => requestNow), router = new Router();
   for (const controller of [new EditorialDeliveryController(delivery, limiter), new MediaPublicDeliveryController(assets, providers, authorizer, limiter)]) for (const route of controller.routes()) router.register(route);
   const server = new HttpServer(router);
   try {
@@ -150,5 +152,8 @@ test("anonymous HTTP delivery exposes immutable projections, validates Media and
     const blocked = await fetch(imagePath, { headers: { "x-forwarded-for": "203.0.113.123" } });
     assert.equal(blocked.status, 429, "media and editorial share budget; spoofed proxy headers do not reset it");
     assert.equal(blocked.headers.get("retry-after"), "60");
+    requestNow += 60000;
+    assert.equal((await fetch(imagePath)).status, 200, "the next minute opens a fresh shared HTTP budget");
+    assert.equal((await db.repository("public_request_limits", { pluginId: "kernel" }).findMany({})).length, 2);
   } finally { await server.close(); await store.close(); await connection.dropDatabase(); await connection.close(); await rm(root, { recursive: true, force: true }); }
 });
