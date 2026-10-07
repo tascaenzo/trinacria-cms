@@ -60,7 +60,10 @@ export function DeclarativeResourceTable({
   const statusField = tableFields.find((field) => field.kind === "status");
   const detailFields = tableFields.filter((field) => field.key !== primaryField?.key);
   const globalActions = resource.actions?.filter((action) => action.intent === "create") ?? [];
-  const recordActions = resource.actions?.filter((action) => action.intent !== "create") ?? [];
+  const recordActions =
+    (resource.contextualActions ?? resource.actions)?.filter(
+      (action) => action.intent !== "create"
+    ) ?? [];
   const records = useMemo(
     () => extractRecordList(dataState?.data, binding?.valuePath),
     [binding?.valuePath, dataState?.data]
@@ -104,6 +107,7 @@ export function DeclarativeResourceTable({
                       recordActions.length || record !== undefined ? (
                         <DeclarativeRowActionMenu
                           actions={recordActions}
+                          contextual={Boolean(resource.contextualActions)}
                           onOpenRecord={onOpenRecord}
                           onPrepareAction={onPrepareAction}
                           record={record}
@@ -211,6 +215,7 @@ export function DeclarativeResourceTable({
                         {recordActions.length || record !== undefined ? (
                           <DeclarativeRowActionMenu
                             actions={recordActions}
+                            contextual={Boolean(resource.contextualActions)}
                             onOpenRecord={onOpenRecord}
                             onPrepareAction={onPrepareAction}
                             record={record}

@@ -17,10 +17,41 @@ test("RolesService updates status through the main role update flow", async () =
 
   const updated = await service.updateRole(created.id, {
     name: "Editor",
+    expectedUpdatedAt: created.updatedAt,
     status: "disabled"
   });
 
   assert.equal(updated?.status, "disabled");
+});
+
+test("role edits retain plugin grant ownership, apply manual overrides and reject stale saves", async () => {
+  const db = createFakeDbAdapter();
+  const roles = new RolesRepository(db);
+  const grants = new RoleGrantsRepository(db);
+  const service = new RolesService(roles, grants);
+  const permissions = new PermissionsRepository(db);
+  await permissions.upsertOwnedPermission({ key: "sample:items:read", displayName: "Read items", sourcePluginId: "sample" });
+  await permissions.upsertOwnedPermission({ key: "sample:items:write", displayName: "Write items", sourcePluginId: "sample" });
+  const role = await service.createRole({ code: "author", name: "Author" });
+  await grants.upsert({ roleCode: role.code, permissionKey: "sample:items:read", sourcePluginId: "sample" });
+  const before = (await service.getRoleById(role.id))!;
+  const updated = (await service.updateRole(role.id, { name: "Author", permissions: ["sample:items:write"], expectedUpdatedAt: before.updatedAt }))!;
+  assert.deepEqual(updated.permissions, ["sample:items:write"]);
+  assert.equal((await grants.listBySourcePlugin("sample")).length, 1);
+  assert.equal((await grants.listBySourcePlugin("core-pack-manual")).length, 1);
+  await assert.rejects(() => service.updateRole(role.id, { name: "Stale", expectedUpdatedAt: before.updatedAt }),
+    (error: any) => error.code === "iam_revision_conflict");
+  assert.equal((await service.getRoleById(role.id))?.name, "Author");
+  await grants.deleteBySourcePlugin("sample");
+  assert.deepEqual((await service.getRoleById(role.id))?.permissions, ["sample:items:write"]);
+});
+
+test("role creation rejects unknown permissions without leaving a partial role", async () => {
+  const db = createFakeDbAdapter();
+  const service = new RolesService(new RolesRepository(db), new RoleGrantsRepository(db));
+  await assert.rejects(() => service.createRole({ code: "invalid", name: "Invalid", permissions: ["sample:missing:read"] }),
+    (error: any) => error.code === "invalid_request");
+  assert.deepEqual(await service.listRoles(), []);
 });
 
 test("PermissionsService keeps core-pack default permissions read-only", async () => {

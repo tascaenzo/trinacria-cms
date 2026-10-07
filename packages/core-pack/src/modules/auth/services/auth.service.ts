@@ -3,14 +3,16 @@ import type { DbAdapter } from "@trinacria-cms/kernel";
 import { decodeJwt, type JWTPayload, jwtVerify, SignJWT } from "jose";
 import type { InstallationStateRecord } from "../../installation/installation.schemas.js";
 import type { InstallationStateRepository } from "../../installation/repositories/installation-state.repository.js";
-import type { LocalCredentialsRepository } from "../../installation/repositories/local-credentials.repository.js";
+import { LocalCredentialsRepository } from "../../installation/repositories/local-credentials.repository.js";
 import type { PasswordHashingService } from "../../installation/services/password-hashing.service.js";
+import { isPermissionAllowed } from "../../security/policies/authz-rules.js";
+import { createUserAccessService } from "../../security/services/iam-safety.service.js";
 import type { RuntimeConfigService } from "../../settings/config/runtime-config.service.js";
 import type { UserRecord } from "../../users/users.schemas.js";
 import { type JwtCookieConfig, readJwtCookieConfig } from "../auth-session.js";
 import type { AuthBlacklistRepository } from "../repositories/auth-blacklist.repository.js";
 import type { AuthLoginAttemptRepository } from "../repositories/auth-login-attempt.repository.js";
-import type { AuthUsersRepository } from "../repositories/auth-users.repository.js";
+import { AuthUsersRepository } from "../repositories/auth-users.repository.js";
 import type { AuthMfaService, MfaMode } from "./auth-mfa.service.js";
 
 export interface LoginResult {
@@ -104,7 +106,11 @@ export class JwtAuthService {
     const mfa = this.getMfaService();
     const enabled = await mfa.hasEnabledFactor(authenticated.user.id);
     if (enabled) {
-      const challenge = await mfa.createChallenge(authenticated.user.id, "verify");
+      const challenge = await mfa.createChallenge(
+        authenticated.user.id,
+        "verify",
+        authenticated.user.sessionVersion ?? 0
+      );
       return {
         status: "mfa_required",
         challengeId: challenge.challengeId,
@@ -112,7 +118,11 @@ export class JwtAuthService {
       };
     }
     if (mfaMode === "required") {
-      const challenge = await mfa.createChallenge(authenticated.user.id, "enroll");
+      const challenge = await mfa.createChallenge(
+        authenticated.user.id,
+        "enroll",
+        authenticated.user.sessionVersion ?? 0
+      );
       return {
         status: "mfa_enrollment_required",
         challengeId: challenge.challengeId,
@@ -131,6 +141,9 @@ export class JwtAuthService {
     const challenge = await mfa.resolveChallenge(challengeId, "verify");
     const authConfig = await this.getAuthConfig();
     const user = await this.users.findById(challenge.userId);
+    if (user && (user.sessionVersion ?? 0) !== challenge.sessionVersion) {
+      throw new JwtAuthError("auth_mfa_challenge_invalid", "MFA challenge was revoked");
+    }
     if (!user || user.status !== "active" || !(await mfa.verifyCode(challenge.userId, code))) {
       if (user) {
         await this.recordFailedAttempt(
@@ -154,6 +167,9 @@ export class JwtAuthService {
     const mfa = this.getMfaService();
     const challenge = await mfa.resolveChallenge(challengeId, "enroll");
     const user = await this.users.findById(challenge.userId);
+    if (user && (user.sessionVersion ?? 0) !== challenge.sessionVersion) {
+      throw new JwtAuthError("auth_mfa_challenge_invalid", "MFA challenge was revoked");
+    }
     if (!user || user.status !== "active") {
       throw new JwtAuthError("auth_invalid_user", "JWT user is not active");
     }
@@ -167,6 +183,9 @@ export class JwtAuthService {
     const mfa = this.getMfaService();
     const challenge = await mfa.resolveChallenge(challengeId, "enroll");
     const user = await this.users.findById(challenge.userId);
+    if (user && (user.sessionVersion ?? 0) !== challenge.sessionVersion) {
+      throw new JwtAuthError("auth_mfa_challenge_invalid", "MFA challenge was revoked");
+    }
     if (!user || user.status !== "active") {
       throw new JwtAuthError("auth_invalid_user", "JWT user is not active");
     }
@@ -290,9 +309,13 @@ export class JwtAuthService {
 
   private async issueSession(
     user: UserRecord,
-    installation: InstallationStateRecord,
+    _installation: InstallationStateRecord,
     authConfig: Awaited<ReturnType<JwtAuthService["getAuthConfig"]>>
   ): Promise<LoginResult> {
+    const rules = await createUserAccessService(this.db).resolveUserAuthorizationRules(user.id);
+    const isAdmin = ["backoffice:access", "users:write", "roles:write", "permissions:write"].every(
+      (key) => isPermissionAllowed(rules, `core-pack:${key}`, user.id)
+    );
     const nowSeconds = Math.floor(Date.now() / 1000);
     const accessExp = nowSeconds + authConfig.accessTtlSeconds;
     const refreshExp = nowSeconds + authConfig.refreshTtlSeconds;
@@ -301,7 +324,8 @@ export class JwtAuthService {
         kind: "access",
         sub: user.id,
         pluginId: "core-pack",
-        isAdmin: Boolean(installation.adminUserId && installation.adminUserId === user.id),
+        isAdmin,
+        sessionVersion: user.sessionVersion ?? 0,
         jti: randomUUID(),
         iat: nowSeconds,
         exp: accessExp
@@ -313,7 +337,8 @@ export class JwtAuthService {
         kind: "refresh",
         sub: user.id,
         pluginId: "core-pack",
-        isAdmin: Boolean(installation.adminUserId && installation.adminUserId === user.id),
+        isAdmin,
+        sessionVersion: user.sessionVersion ?? 0,
         jti: randomUUID(),
         iat: nowSeconds,
         exp: refreshExp
@@ -335,7 +360,7 @@ export class JwtAuthService {
 
   async authenticateBearerToken(
     token: string,
-    options?: { requireAdmin?: boolean }
+    options?: { requireAdmin?: boolean; requireBackoffice?: boolean }
   ): Promise<UserRecord> {
     const normalizedToken = token.trim();
     if (!normalizedToken) {
@@ -355,9 +380,17 @@ export class JwtAuthService {
       throw new JwtAuthError("auth_invalid_user", "JWT user is not active");
     }
 
+    if (claims.sessionVersion !== (user.sessionVersion ?? 0))
+      throw new JwtAuthError("auth_token_revoked", "Session has been revoked");
+
     if (options?.requireAdmin ?? true) {
-      const state = await this.assertInstallationCompleted();
-      if (!state.adminUserId || state.adminUserId !== user.id) {
+      await this.assertInstallationCompleted();
+      const rules = await createUserAccessService(this.db).resolveUserAuthorizationRules(user.id);
+      if (
+        !["backoffice:access", "users:write", "roles:write", "permissions:write"].every((key) =>
+          isPermissionAllowed(rules, `core-pack:${key}`, user.id)
+        )
+      ) {
         throw new JwtAuthError(
           "auth_forbidden_admin_required",
           "Administrator privileges are required"
@@ -365,6 +398,15 @@ export class JwtAuthService {
       }
     }
 
+    if (options?.requireBackoffice) {
+      const permissions = await createUserAccessService(this.db).resolveUserPermissions(user.id);
+      if (!permissions.includes("core-pack:backoffice:access")) {
+        throw new JwtAuthError(
+          "auth_forbidden_backoffice_required",
+          "Backoffice access is required"
+        );
+      }
+    }
     return user;
   }
 
@@ -410,6 +452,8 @@ export class JwtAuthService {
       throw new JwtAuthError("auth_invalid_user", "JWT user is not active");
     }
 
+    if (claims.sessionVersion !== (user.sessionVersion ?? 0))
+      throw new JwtAuthError("auth_token_revoked", "Session has been revoked");
     return user;
   }
 
@@ -448,14 +492,21 @@ export class JwtAuthService {
     }
 
     const nextPassword = await this.passwordHashing.hashPassword(input.newPassword);
-    await this.localCredentials.upsert({
-      userId: user.id,
-      algorithm: nextPassword.algorithm,
-      passwordHash: nextPassword.passwordHash,
-      passwordSalt: nextPassword.passwordSalt
-    });
-
-    return user;
+    const persist = async (db: DbAdapter) => {
+      const credentials = new LocalCredentialsRepository(db);
+      const current = await credentials.findByUserId(user.id);
+      if (
+        !current ||
+        !(await this.passwordHashing.verifyPassword(input.currentPassword, current))
+      ) {
+        throw new JwtAuthError("auth_invalid_credentials", "Current password has changed");
+      }
+      await credentials.upsert({ userId: user.id, ...nextPassword });
+      return (await new AuthUsersRepository(db).revokeSessions(user.id))!;
+    };
+    return this.db.withTransaction
+      ? this.db.withTransaction({ pluginId: "core-pack" }, persist)
+      : persist(this.db);
   }
 
   async getJwtCookieConfig(): Promise<JwtCookieConfig> {
@@ -598,6 +649,7 @@ interface JwtClaims extends JWTPayload {
   sub: string;
   pluginId: string;
   isAdmin: boolean;
+  sessionVersion: number;
   jti?: string;
   iat: number;
   exp: number;
@@ -611,7 +663,8 @@ async function createJwtToken(claims: JwtClaims, secret: Uint8Array): Promise<st
   return new SignJWT({
     kind: claims.kind,
     pluginId: claims.pluginId,
-    isAdmin: claims.isAdmin
+    isAdmin: claims.isAdmin,
+    sessionVersion: claims.sessionVersion
   })
     .setProtectedHeader({ alg: "HS256", typ: "JWT" })
     .setSubject(claims.sub)
@@ -663,6 +716,9 @@ function normalizeClaims(payload: Partial<JwtClaims>): JwtClaims {
   const iat = Number(payload.iat);
   const exp = Number(payload.exp);
   const isAdmin = Boolean(payload.isAdmin);
+  const sessionVersion = Number(payload.sessionVersion);
+  if (!Number.isSafeInteger(sessionVersion) || sessionVersion < 0)
+    throw new JwtAuthError("auth_invalid_token", "Invalid session version");
   const jti = typeof payload.jti === "string" ? payload.jti.trim() : undefined;
 
   if (!kind || !sub || !pluginId || !Number.isFinite(iat) || !Number.isFinite(exp)) {
@@ -674,6 +730,7 @@ function normalizeClaims(payload: Partial<JwtClaims>): JwtClaims {
     sub,
     pluginId,
     isAdmin,
+    sessionVersion,
     ...(jti ? { jti } : {}),
     iat,
     exp

@@ -29,7 +29,14 @@ export class CoreOperationAuthorizer implements OperationAuthorizer {
   ): Promise<T> {
     assertOperationContext(context);
     for (const target of targets) await this.assert(context, target);
-    return work();
+    try {
+      const result = await work();
+      await this.recordMutations(context, targets, "allowed");
+      return result;
+    } catch (error) {
+      await this.recordMutations(context, targets, "failed");
+      throw error;
+    }
   }
   async assert(context: OperationContext, target: OperationTarget): Promise<void> {
     assertOperationContext(context);
@@ -59,6 +66,41 @@ export class CoreOperationAuthorizer implements OperationAuthorizer {
         this.metrics.auditFailures++;
       }
       throw error;
+    }
+  }
+  private async recordMutations(
+    context: OperationContext,
+    targets: readonly OperationTarget[],
+    outcome: "allowed" | "failed"
+  ) {
+    for (const target of targets) {
+      if (
+        target.ownerPluginId !== "core-pack" ||
+        !["users", "roles", "permissions"].includes(target.resource) ||
+        target.action !== "write"
+      )
+        continue;
+      const actor = context.actor;
+      try {
+        await this.audit?.append({
+          instanceId: "operation-policy",
+          actorKind: actor.kind,
+          actorId:
+            actor.kind === "user"
+              ? actor.subjectId
+              : actor.kind === "plugin"
+                ? actor.pluginId
+                : actor.purpose,
+          ownerPluginId: target.ownerPluginId,
+          action: `${target.resource}.${target.action}`,
+          resourceId: target.resourceId ?? target.resource,
+          outcome,
+          reason: outcome === "allowed" ? "iam-mutation-completed" : "iam-mutation-failed",
+          correlationId: context.requestId
+        });
+      } catch {
+        this.metrics.auditFailures++;
+      }
     }
   }
   private async check(context: OperationContext, target: OperationTarget): Promise<void> {

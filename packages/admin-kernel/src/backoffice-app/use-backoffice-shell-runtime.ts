@@ -39,8 +39,16 @@ export function useBackofficeShellRuntime({
   const [isShellLoading, setIsShellLoading] = useState(false);
   const [loadedShellUserId, setLoadedShellUserId] = useState<string | null>(null);
   const [dynamicNavigation, setDynamicNavigation] = useState<readonly AdminNavigationItem[]>([]);
+  const [accessRevision, setAccessRevision] = useState(0);
   const [navigationRevision, setNavigationRevision] = useState(0);
 
+  useEffect(() => {
+    const refresh = () => setAccessRevision((value) => value + 1);
+    window.addEventListener("trinacria-cms:access-updated", refresh);
+    return () => window.removeEventListener("trinacria-cms:access-updated", refresh);
+  }, []);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Access events deliberately reload permissions for the same authenticated user.
   useEffect(() => {
     if (!installationInstalled || !authUser) {
       setLoadedShellUserId(null);
@@ -88,6 +96,8 @@ export function useBackofficeShellRuntime({
       }
 
       if (permissionsResult.status === "fulfilled") {
+        if (!permissionsResult.value.data.includes("core-pack:backoffice:access"))
+          blockingErrors.push(t("iam.backoffice_required", "Backoffice access is required"));
         setUserPermissionKeys(permissionsResult.value.data);
       } else {
         setUserPermissionKeys([]);
@@ -106,7 +116,7 @@ export function useBackofficeShellRuntime({
     return () => {
       isMounted = false;
     };
-  }, [authUser, installationInstalled]);
+  }, [authUser, installationInstalled, accessRevision, t]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: Navigation events deliberately refresh data even when the user and modules are unchanged.
   useEffect(() => {

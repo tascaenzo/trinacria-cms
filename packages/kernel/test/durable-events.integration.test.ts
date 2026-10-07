@@ -22,7 +22,7 @@ test("durable outbox/inbox survive restart, rollback effects, lease takeover and
       if (failAfterEffect) throw new Error("secret token must not appear in diagnostics");
     }
   };
-  const options = { now: () => now, random: () => 0, leaseMs: 1000, heartbeatMs: 500, deadlineMs: 800, maxAttempts: 2 };
+  const options = { now: () => now, random: () => 0, leaseMs: 1000, heartbeatMs: 500, deadlineMs: 5000, maxAttempts: 2 };
   const one = new MongoDurableEventStore(first.db, first.registry, host, { ...options, instanceId: "one" });
   const two = new MongoDurableEventStore(second.db, second.registry, host, { ...options, instanceId: "two" });
   try {
@@ -95,14 +95,18 @@ test("deadline abort is cooperative: keep the lease until handler returns and ro
   let release!: () => void; const waiting = new Promise<void>(resolve => { release = resolve; });
   let arrived!: () => void; const arrival = new Promise<void>(resolve => { arrived = resolve; });
   let observedSignal: AbortSignal | undefined;
+  let processing: Promise<void> | undefined;
+  const now = Date.now();
   const store = new MongoDurableEventStore(db, registry, {
     async describe(ownerPluginId, name, payload) { return { ownerPluginId, eventName: `${ownerPluginId}:${name}`, payloadVersion: 1, payload, recipients: [{ consumerPluginId: "consumer", handlerName: "apply", handlerVersion: "1.0.0" }] }; },
     async dispatch(delivery, outbox, adapter, signal) { observedSignal = signal; arrived(); await waiting; await adapter.repository("items", { pluginId: "consumer" }).insertOne({ id: outbox.id }); }
-  }, { instanceId: "deadline", deadlineMs: 10, heartbeatMs: 50, leaseMs: 150 });
+  }, { instanceId: "deadline", now: () => now, deadlineMs: 1000, heartbeatMs: 5000, leaseMs: 30000 });
   try {
     await store.initialize(); await store.publish("producer", "ready", {}); await store.publish("producer", "ready", {}); await store.materialize();
-    const delivery = await store.acquire(); const processing = store.process(delivery!); await arrival;
-    await new Promise(resolve => setTimeout(resolve, 25)); assert.equal(observedSignal!.aborted, true); assert.equal(await store.acquire(), null); assert.equal((await store.get(delivery!.id))!.status, "running");
+    const delivery = await store.acquire(); processing = store.process(delivery!);
+    // Surface pre-dispatch failures instead of waiting forever for the handler.
+    await Promise.race([arrival, processing.then(() => { throw new Error("Handler did not start"); })]);
+    if (!observedSignal!.aborted) await new Promise<void>(resolve => observedSignal!.addEventListener("abort", () => resolve(), { once: true })); assert.equal(observedSignal!.aborted, true); assert.equal(await store.acquire(), null); assert.equal((await store.get(delivery!.id))!.status, "running");
     release(); await assert.rejects(processing, /deadline/); assert.equal((await db.repository("items", { pluginId: "consumer" }).findMany({})).length, 0); assert.equal(store.metrics.deadlineExceeded, 1);
-  } finally { release(); await store.close(); await connection.dropDatabase(); await connection.close(); }
+  } finally { release(); await processing?.catch(() => undefined); await store.close(); await connection.dropDatabase(); await connection.close(); }
 });

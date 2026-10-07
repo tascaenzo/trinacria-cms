@@ -27,6 +27,7 @@ export const CORE_PACK_CAPABILITY_LIST: readonly CorePackCapability[] = Object.f
 );
 
 const CORE_PACK_PERMISSIONS = definePermissionSet(CORE_PACK_PLUGIN_ID, {
+  BACKOFFICE_ACCESS: { resource: "backoffice", action: "access", displayName: "Access backoffice" },
   PLUGINS_MANAGE: { resource: "plugins", action: "manage", displayName: "Manage plugins" },
   PLUGIN_GRANTS_READ: {
     resource: "plugin-grants",
@@ -167,6 +168,7 @@ export const CORE_PACK_DEFAULT_ROLES = Object.freeze([
 
 export const CORE_PACK_READONLY_PERMISSION_KEY_LIST: readonly CorePackPermissionKey[] =
   Object.freeze([
+    CORE_PACK_PERMISSION_KEYS.BACKOFFICE_ACCESS,
     CORE_PACK_PERMISSION_KEYS.PLUGINS_READ,
     CORE_PACK_PERMISSION_KEYS.USERS_READ,
     CORE_PACK_PERMISSION_KEYS.ROLES_READ,

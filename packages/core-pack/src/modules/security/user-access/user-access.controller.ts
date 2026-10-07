@@ -4,6 +4,7 @@ import {
   HttpController,
   type HttpMiddleware,
   parsePathParam,
+  s,
   toOpenApiSchema
 } from "@trinacria-cms/kernel";
 import { getHttpOperationContext } from "@trinacria-cms/kernel/runtime";
@@ -34,7 +35,7 @@ export class UserAccessController extends HttpController {
   ) {
     super();
     this.adminAuthMiddleware = createJwtAuthMiddleware(auth, {
-      requireAdmin: true
+      requireAdmin: false
     });
   }
 
@@ -108,7 +109,14 @@ export class UserAccessController extends HttpController {
         middlewares: [this.adminAuthMiddleware],
         docs: {
           pluginId: "core-pack",
-          summary: "List effective permissions for a user",
+          summary: "List allowed permissions for a user and optional resource context",
+          parameters: [
+            {
+              name: "resourceId",
+              in: "query",
+              schema: { type: "string", minLength: 1, maxLength: 220 }
+            }
+          ],
           tags: [CORE_PACK_OPENAPI_TAGS.SECURITY],
           operationId: "listUserEffectivePermissions",
           security: [{ bearerAuth: [] }],
@@ -196,7 +204,13 @@ export class UserAccessController extends HttpController {
     try {
       const permissions = await this.access.resolveUserPermissions(
         getHttpOperationContext(ctx),
-        userId
+        userId,
+        s
+          .object(
+            { resourceId: s.string({ minLength: 1, maxLength: 220 }).optional() },
+            { strict: true }
+          )
+          .parse(ctx.query).resourceId
       );
       return responder.list(permissions);
     } catch (error) {

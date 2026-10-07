@@ -253,6 +253,11 @@ export function getStatusCodeForApiError(code: string): number {
   }
   if (
     code === "conflict" ||
+    code === "iam_last_admin" ||
+    code === "iam_protected_role" ||
+    code === "iam_protected_policy" ||
+    code === "iam_protected_permission" ||
+    code === "iam_revision_conflict" ||
     code === "delivery_conflict" ||
     code === "plugin_grant_conflict" ||
     code === "plugin_cluster_conflict" ||
@@ -260,7 +265,11 @@ export function getStatusCodeForApiError(code: string): number {
   ) {
     return 409;
   }
-  if (code === "auth_forbidden_admin_required" || code === "operation_forbidden") {
+  if (
+    code === "auth_forbidden_admin_required" ||
+    code === "auth_forbidden_backoffice_required" ||
+    code === "operation_forbidden"
+  ) {
     return 403;
   }
   if (code.startsWith("auth_")) {

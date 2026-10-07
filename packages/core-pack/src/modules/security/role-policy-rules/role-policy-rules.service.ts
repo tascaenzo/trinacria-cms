@@ -1,3 +1,4 @@
+import { CoreError } from "@trinacria-cms/kernel";
 import { isValidPermissionPattern } from "@trinacria-cms/kernel/runtime";
 import { CORE_PACK_MANUAL_POLICY_SOURCE } from "../../../plugin/core-pack.constants.js";
 import type { RolesRepository } from "../../roles/repositories/roles.repository.js";
@@ -5,6 +6,7 @@ import type {
   RolePolicyRulesRepository,
   UpsertRolePolicyRuleInput
 } from "./role-policy-rules.repository.js";
+import type { RolePolicyRuleRecord } from "./role-policy-rules.schemas.js";
 
 /**
  * Application service for role policy rule CRUD APIs.
@@ -12,7 +14,10 @@ import type {
 export class RolePolicyRulesService {
   constructor(
     private readonly roles: RolesRepository,
-    private readonly rules: RolePolicyRulesRepository
+    private readonly rules: RolePolicyRulesRepository,
+    private readonly atomic?: <T>(
+      work: (service: RolePolicyRulesService) => Promise<T>
+    ) => Promise<T>
   ) {}
 
   async listByRoleCode(roleCode: string) {
@@ -28,13 +33,15 @@ export class RolePolicyRulesService {
       permissionPattern: string;
       conditions?: readonly ("resource_id_required" | "resource_id_equals_subject")[];
     }
-  ) {
+  ): Promise<RolePolicyRuleRecord | null> {
+    if (this.atomic) return this.atomic((service) => service.create(roleCode, input));
     const role = await this.roles.findByCode(roleCode);
     if (!role) return null;
 
     const normalizedPattern = input.permissionPattern.trim().toLowerCase();
     if (!isValidPermissionPattern(normalizedPattern)) {
-      throw new Error(
+      throw new CoreError(
+        "invalid_request",
         `Invalid permission pattern "${input.permissionPattern}". Expected '<pluginId>:<resource|*>:<action|*>'`
       );
     }
@@ -48,7 +55,7 @@ export class RolePolicyRulesService {
     };
     const existing = await this.rules.findOne(candidate);
     if (existing) {
-      throw new Error("Role policy rule already exists");
+      throw new CoreError("conflict", "Role policy rule already exists");
     }
 
     return this.rules.upsert(candidate);
@@ -62,7 +69,8 @@ export class RolePolicyRulesService {
       permissionPattern: string;
       conditions?: readonly ("resource_id_required" | "resource_id_equals_subject")[];
     }
-  ) {
+  ): Promise<RolePolicyRuleRecord | null> {
+    if (this.atomic) return this.atomic((service) => service.update(roleCode, id, input));
     const role = await this.roles.findByCode(roleCode);
     if (!role) return null;
 
@@ -70,10 +78,12 @@ export class RolePolicyRulesService {
     if (!existing || existing.roleCode !== role.code) {
       return null;
     }
+    this.assertManualRule(existing);
 
     const normalizedPattern = input.permissionPattern.trim().toLowerCase();
     if (!isValidPermissionPattern(normalizedPattern)) {
-      throw new Error(
+      throw new CoreError(
+        "invalid_request",
         `Invalid permission pattern "${input.permissionPattern}". Expected '<pluginId>:<resource|*>:<action|*>'`
       );
     }
@@ -87,6 +97,7 @@ export class RolePolicyRulesService {
   }
 
   async delete(roleCode: string, id: string): Promise<boolean | null> {
+    if (this.atomic) return this.atomic((service) => service.delete(roleCode, id));
     const role = await this.roles.findByCode(roleCode);
     if (!role) return null;
 
@@ -94,7 +105,16 @@ export class RolePolicyRulesService {
     if (!existing || existing.roleCode !== role.code) {
       return false;
     }
+    this.assertManualRule(existing);
 
     return this.rules.deleteById(id);
+  }
+  private assertManualRule(rule: RolePolicyRuleRecord) {
+    if (rule.sourcePluginId !== CORE_PACK_MANUAL_POLICY_SOURCE) {
+      throw new CoreError(
+        "iam_protected_policy",
+        "Plugin policies are read-only; add a manual rule to override access"
+      );
+    }
   }
 }

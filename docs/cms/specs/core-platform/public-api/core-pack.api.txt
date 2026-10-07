@@ -155,6 +155,7 @@ export declare const AUTH_MFA_CREDENTIALS_ENTITY: {
 export declare const AuthMfaChallengePurposeSchema: import("@trinacria/schema/dist/core").InternalSchema<"verify" | "enroll">;
 export declare const AuthMfaChallengeRecordSchema: import("@trinacria/schema/dist/core").InternalSchema<{
     id: string;
+    sessionVersion: number;
     createdAt: string;
     updatedAt: string;
     userId: string;
@@ -169,6 +170,7 @@ export declare const AUTH_MFA_CHALLENGES_ENTITY: {
     entityName: string;
     schema: import("@trinacria/schema/dist/core").InternalSchema<{
         id: string;
+        sessionVersion: number;
         createdAt: string;
         updatedAt: string;
         userId: string;
@@ -243,6 +245,7 @@ export declare const AUTHENTICATED_USER_STATE_KEY = "corePack.auth.authenticated
  */
 export declare function createJwtAuthMiddleware(auth: JwtAuthService, options?: {
     requireAdmin?: boolean;
+    requireBackoffice?: boolean;
 }): HttpMiddleware;
 /**
  * Reads authenticated user from request state.
@@ -331,8 +334,8 @@ export declare const MfaCodeInputSchema: import("@trinacria/schema/dist/core").I
 } & {}>;
 export type MfaCodeInput = Infer<typeof MfaCodeInputSchema>;
 export declare const CompleteMfaLoginInputSchema: import("@trinacria/schema/dist/core").InternalSchema<{
-    challengeId: string;
     code: string;
+    challengeId: string;
 } & {}>;
 export type CompleteMfaLoginInput = Infer<typeof CompleteMfaLoginInputSchema>;
 export declare const DisableMfaInputSchema: import("@trinacria/schema/dist/core").InternalSchema<{
@@ -411,6 +414,7 @@ export declare const AuthSessionSchema: import("@trinacria/schema/dist/core/sche
         updatedAt: string;
     } & {
         locale?: "en" | "it" | undefined;
+        sessionVersion?: number | undefined;
     };
 } & {}>;
 export declare const AuthSessionResponseSchema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{
@@ -429,6 +433,7 @@ export declare const AuthSessionResponseSchema: import("@trinacria/schema/dist/c
             updatedAt: string;
         } & {
             locale?: "en" | "it" | undefined;
+            sessionVersion?: number | undefined;
         };
     } & {};
 } & {
@@ -457,6 +462,7 @@ export declare const AuthPasswordLoginResponseSchema: import("@trinacria/schema/
             updatedAt: string;
         } & {
             locale?: "en" | "it" | undefined;
+            sessionVersion?: number | undefined;
         };
     } & {}) | ({
         status: "mfa_required" | "mfa_enrollment_required";
@@ -531,6 +537,7 @@ export declare const AuthMfaLoginSessionSchema: import("@trinacria/schema/dist/c
         updatedAt: string;
     } & {
         locale?: "en" | "it" | undefined;
+        sessionVersion?: number | undefined;
     };
 } & {
     recoveryCodes?: string[] | undefined;
@@ -551,6 +558,7 @@ export declare const AuthMfaLoginSessionResponseSchema: import("@trinacria/schem
             updatedAt: string;
         } & {
             locale?: "en" | "it" | undefined;
+            sessionVersion?: number | undefined;
         };
     } & {
         recoveryCodes?: string[] | undefined;
@@ -571,6 +579,7 @@ export declare const AuthMeResponseSchema: import("@trinacria/schema/dist/core/s
         updatedAt: string;
     } & {
         locale?: "en" | "it" | undefined;
+        sessionVersion?: number | undefined;
     };
 } & {
     meta?: ({} & {
@@ -715,6 +724,7 @@ export declare class AuthMfaRepository {
     consumeRecoveryCode(credential: AuthMfaCredentialRecord, matchedHash: string): Promise<boolean>;
     disable(userId: string): Promise<boolean>;
     createChallenge(input: {
+        sessionVersion: number;
         userId: string;
         tokenHash: string;
         purpose: AuthMfaChallengePurpose;
@@ -751,6 +761,7 @@ export declare class AuthUsersRepository {
         locale?: "en" | "it";
     }): Promise<UserRecord | null>;
     updateStatus(id: string, status: "active" | "suspended"): Promise<UserRecord | null>;
+    revokeSessions(id: string): Promise<UserRecord | null>;
     private repository;
     private parseUserRecord;
 }
@@ -775,10 +786,11 @@ export declare class AuthMfaService {
     }>;
     verifyCode(userId: string, code: string): Promise<boolean>;
     disable(userId: string): Promise<void>;
-    createChallenge(userId: string, purpose: AuthMfaChallengePurpose): Promise<MfaChallenge>;
+    createChallenge(userId: string, purpose: AuthMfaChallengePurpose, sessionVersion?: number): Promise<MfaChallenge>;
     resolveChallenge(challengeId: string, expectedPurpose: AuthMfaChallengePurpose): Promise<{
         id: string;
         userId: string;
+        sessionVersion: number;
     }>;
     consumeChallenge(id: string): Promise<void>;
 }
@@ -862,14 +874,14 @@ export declare class AuthUserFlowsService {
 // dist/modules/auth/services/auth.service.d.ts
 import type { DbAdapter } from "@trinacria-cms/kernel";
 import type { InstallationStateRepository } from "../../installation/repositories/installation-state.repository.js";
-import type { LocalCredentialsRepository } from "../../installation/repositories/local-credentials.repository.js";
+import { LocalCredentialsRepository } from "../../installation/repositories/local-credentials.repository.js";
 import type { PasswordHashingService } from "../../installation/services/password-hashing.service.js";
 import type { RuntimeConfigService } from "../../settings/config/runtime-config.service.js";
 import type { UserRecord } from "../../users/users.schemas.js";
 import { type JwtCookieConfig } from "../auth-session.js";
 import type { AuthBlacklistRepository } from "../repositories/auth-blacklist.repository.js";
 import type { AuthLoginAttemptRepository } from "../repositories/auth-login-attempt.repository.js";
-import type { AuthUsersRepository } from "../repositories/auth-users.repository.js";
+import { AuthUsersRepository } from "../repositories/auth-users.repository.js";
 import type { AuthMfaService, MfaMode } from "./auth-mfa.service.js";
 export interface LoginResult {
     accessToken: string;
@@ -956,6 +968,7 @@ export declare class JwtAuthService {
     private issueSession;
     authenticateBearerToken(token: string, options?: {
         requireAdmin?: boolean;
+        requireBackoffice?: boolean;
     }): Promise<UserRecord>;
     revokeBearerToken(token: string): Promise<boolean>;
     authenticateRefreshToken(token: string): Promise<UserRecord>;
@@ -1142,7 +1155,7 @@ export declare const CorePackRootModule: Readonly<{
         exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").PluginGrantsRepository, "list" | "get" | "decide">>> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").SettingsService, "listGroups" | "listGroupsForPlugin" | "getGroupById" | "getGroupForPlugin" | "upsertGroupValues" | "listDefinitions" | "listDefinitionsForPlugin" | "getDefinitionByKey" | "getDefinitionByKeyForPlugin" | "upsertDefinition" | "getResolvedValueByKey" | "getResolvedValueForPlugin" | "upsertValue" | "getSecretMetadataByKey" | "getSecretMetadata" | "upsertSecret" | "revealSecret" | "exportPluginSettings" | "getObservabilitySnapshot">>> | import("@trinacria/core").Token<import("./index.js").SettingsDefinitionsRepository> | import("@trinacria/core").Token<import("./index.js").SettingsValuesRepository> | import("@trinacria/core").Token<import("./index.js").SettingsSecretsRepository> | import("@trinacria/core").Token<import("./index.js").SettingsSecretsCryptoService> | import("@trinacria/core").Token<import("./index.js").PluginAuthKeyProvider> | import("@trinacria/core").Token<import("./index.js").SettingsPluginAuthService> | import("@trinacria/core").Token<import("./index.js").SettingsService> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("./index.js").SettingsController> | import("@trinacria/core").Token<import("./index.js").PluginGrantsRepository> | import("@trinacria/core").Token<import("./settings/plugin-access/plugin-grants.controller.js").PluginGrantsController> | import("@trinacria/core").Token<import("./security/audit/audit.controller.js").SecurityAuditController> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").AuditSink> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").PluginOperationAuthorizer> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").PluginSettingsHost> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").PluginEventSubscriptionAuthorizer> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").SecureEventPayloadAuthorizer> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").KernelAdminRouteGuard>)[];
     }> | Readonly<{
         name: string;
-        imports: Readonly<{
+        imports: (Readonly<{
             name: string;
             imports: (Readonly<{
                 name: string;
@@ -1160,7 +1173,11 @@ export declare const CorePackRootModule: Readonly<{
             }>)[];
             providers: (import("@trinacria/core").ClassProvider<import("./index.js").AuthUsersRepository> | import("@trinacria/core").ClassProvider<import("./index.js").LocalCredentialsRepository> | import("@trinacria/core").ClassProvider<import("./index.js").InstallationStateRepository> | import("@trinacria/core").ClassProvider<import("./index.js").PasswordHashingService> | import("@trinacria/core").ClassProvider<import("./auth/repositories/auth-blacklist.repository.js").AuthBlacklistRepository> | import("@trinacria/core").ClassProvider<import("./auth/repositories/auth-login-attempt.repository.js").AuthLoginAttemptRepository> | import("@trinacria/core").ClassProvider<import("./auth/repositories/auth-mfa.repository.js").AuthMfaRepository> | import("@trinacria/core").ClassProvider<import("./auth/services/auth-mfa.service.js").AuthMfaService> | import("@trinacria/core").ClassProvider<import("./auth/repositories/auth-flow-tokens.repository.js").AuthFlowTokensRepository> | import("@trinacria/core").ClassProvider<import("./index.js").JwtAuthService> | import("@trinacria/core").FactoryProvider<any> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController>)[];
             exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./auth/services/auth-user-flows.service.js").AuthUserFlowsService, "sendUserInvite">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("./index.js").AuthUsersRepository> | import("@trinacria/core").Token<import("./index.js").JwtAuthService> | import("@trinacria/core").Token<import("./index.js").AuthController> | import("@trinacria/core").Token<import("./auth/services/auth-mfa.service.js").AuthMfaService> | import("@trinacria/core").Token<import("./auth/repositories/auth-flow-tokens.repository.js").AuthFlowTokensRepository> | import("@trinacria/core").Token<import("./auth/services/auth-user-flows.service.js").AuthUserFlowsService> | import("@trinacria/core").Token<() => Promise<string>>)[];
-        }>[];
+        }> | Readonly<{
+            name: string;
+            providers: import("@trinacria/core").ClassProvider<import("./security/services/iam-safety.service.js").IamSafetyService>[];
+            exports: import("@trinacria/core").Token<import("./security/services/iam-safety.service.js").IamSafetyService>[];
+        }>)[];
         providers: (import("@trinacria/core").FactoryProvider<boolean> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<import("./index.js").UsersRepository> | import("@trinacria/core").FactoryProvider<import("./index.js").UsersService> | import("@trinacria/core").FactoryProvider<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").UsersService, "createUser" | "getUserById" | "listUsers" | "suspendUser" | "activateUser" | "updateUserProfile">>>)[];
         exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").UsersService, "createUser" | "getUserById" | "listUsers" | "suspendUser" | "activateUser" | "updateUserProfile">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("./index.js").UsersRepository> | import("@trinacria/core").Token<import("./index.js").UsersService> | import("@trinacria/core").Token<import("./index.js").UsersController>)[];
     }> | Readonly<{
@@ -1231,6 +1248,10 @@ export declare const CorePackRootModule: Readonly<{
             exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").PermissionsService, "createPermission" | "getPermissionById" | "listPermissions" | "disablePermission" | "activatePermission" | "updatePermission">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("./index.js").PermissionsRepository> | import("@trinacria/core").Token<import("./index.js").PermissionsService> | import("@trinacria/core").Token<import("./index.js").PermissionsController>)[];
         }> | Readonly<{
             name: string;
+            providers: import("@trinacria/core").ClassProvider<import("./security/services/iam-safety.service.js").IamSafetyService>[];
+            exports: import("@trinacria/core").Token<import("./security/services/iam-safety.service.js").IamSafetyService>[];
+        }> | Readonly<{
+            name: string;
             imports: (Readonly<{
                 name: string;
                 imports: Readonly<{
@@ -1258,8 +1279,12 @@ export declare const CorePackRootModule: Readonly<{
                 }>)[];
                 providers: (import("@trinacria/core").ClassProvider<import("./index.js").AuthUsersRepository> | import("@trinacria/core").ClassProvider<import("./index.js").LocalCredentialsRepository> | import("@trinacria/core").ClassProvider<import("./index.js").InstallationStateRepository> | import("@trinacria/core").ClassProvider<import("./index.js").PasswordHashingService> | import("@trinacria/core").ClassProvider<import("./auth/repositories/auth-blacklist.repository.js").AuthBlacklistRepository> | import("@trinacria/core").ClassProvider<import("./auth/repositories/auth-login-attempt.repository.js").AuthLoginAttemptRepository> | import("@trinacria/core").ClassProvider<import("./auth/repositories/auth-mfa.repository.js").AuthMfaRepository> | import("@trinacria/core").ClassProvider<import("./auth/services/auth-mfa.service.js").AuthMfaService> | import("@trinacria/core").ClassProvider<import("./auth/repositories/auth-flow-tokens.repository.js").AuthFlowTokensRepository> | import("@trinacria/core").ClassProvider<import("./index.js").JwtAuthService> | import("@trinacria/core").FactoryProvider<any> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController>)[];
                 exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./auth/services/auth-user-flows.service.js").AuthUserFlowsService, "sendUserInvite">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("./index.js").AuthUsersRepository> | import("@trinacria/core").Token<import("./index.js").JwtAuthService> | import("@trinacria/core").Token<import("./index.js").AuthController> | import("@trinacria/core").Token<import("./auth/services/auth-mfa.service.js").AuthMfaService> | import("@trinacria/core").Token<import("./auth/repositories/auth-flow-tokens.repository.js").AuthFlowTokensRepository> | import("@trinacria/core").Token<import("./auth/services/auth-user-flows.service.js").AuthUserFlowsService> | import("@trinacria/core").Token<() => Promise<string>>)[];
+            }> | Readonly<{
+                name: string;
+                providers: import("@trinacria/core").ClassProvider<import("./security/services/iam-safety.service.js").IamSafetyService>[];
+                exports: import("@trinacria/core").Token<import("./security/services/iam-safety.service.js").IamSafetyService>[];
             }>)[];
-            providers: (import("@trinacria/core").FactoryProvider<boolean> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<import("./index.js").RolesRepository> | import("@trinacria/core").ClassProvider<import("./index.js").RoleGrantsRepository> | import("@trinacria/core").ClassProvider<import("./index.js").RolesService> | import("@trinacria/core").FactoryProvider<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").RolesService, "createRole" | "getRoleById" | "listRoles" | "disableRole" | "activateRole" | "updateRole">>>)[];
+            providers: (import("@trinacria/core").FactoryProvider<boolean> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<import("./index.js").RolesRepository> | import("@trinacria/core").ClassProvider<import("./index.js").RoleGrantsRepository> | import("@trinacria/core").FactoryProvider<import("./index.js").RolesService> | import("@trinacria/core").FactoryProvider<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").RolesService, "createRole" | "getRoleById" | "listRoles" | "disableRole" | "activateRole" | "updateRole">>>)[];
             exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").RolesService, "createRole" | "getRoleById" | "listRoles" | "disableRole" | "activateRole" | "updateRole">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("./index.js").RolesRepository> | import("@trinacria/core").Token<import("./index.js").RoleGrantsRepository> | import("@trinacria/core").Token<import("./index.js").RolesService> | import("@trinacria/core").Token<import("./index.js").RolesController>)[];
         }> | Readonly<{
             name: string;
@@ -1290,7 +1315,7 @@ export declare const CorePackRootModule: Readonly<{
             exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").PluginGrantsRepository, "list" | "get" | "decide">>> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").SettingsService, "listGroups" | "listGroupsForPlugin" | "getGroupById" | "getGroupForPlugin" | "upsertGroupValues" | "listDefinitions" | "listDefinitionsForPlugin" | "getDefinitionByKey" | "getDefinitionByKeyForPlugin" | "upsertDefinition" | "getResolvedValueByKey" | "getResolvedValueForPlugin" | "upsertValue" | "getSecretMetadataByKey" | "getSecretMetadata" | "upsertSecret" | "revealSecret" | "exportPluginSettings" | "getObservabilitySnapshot">>> | import("@trinacria/core").Token<import("./index.js").SettingsDefinitionsRepository> | import("@trinacria/core").Token<import("./index.js").SettingsValuesRepository> | import("@trinacria/core").Token<import("./index.js").SettingsSecretsRepository> | import("@trinacria/core").Token<import("./index.js").SettingsSecretsCryptoService> | import("@trinacria/core").Token<import("./index.js").PluginAuthKeyProvider> | import("@trinacria/core").Token<import("./index.js").SettingsPluginAuthService> | import("@trinacria/core").Token<import("./index.js").SettingsService> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("./index.js").SettingsController> | import("@trinacria/core").Token<import("./index.js").PluginGrantsRepository> | import("@trinacria/core").Token<import("./settings/plugin-access/plugin-grants.controller.js").PluginGrantsController> | import("@trinacria/core").Token<import("./security/audit/audit.controller.js").SecurityAuditController> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").AuditSink> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").PluginOperationAuthorizer> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").PluginSettingsHost> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").PluginEventSubscriptionAuthorizer> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").SecureEventPayloadAuthorizer> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").KernelAdminRouteGuard>)[];
         }> | Readonly<{
             name: string;
-            imports: Readonly<{
+            imports: (Readonly<{
                 name: string;
                 imports: (Readonly<{
                     name: string;
@@ -1308,11 +1333,15 @@ export declare const CorePackRootModule: Readonly<{
                 }>)[];
                 providers: (import("@trinacria/core").ClassProvider<import("./index.js").AuthUsersRepository> | import("@trinacria/core").ClassProvider<import("./index.js").LocalCredentialsRepository> | import("@trinacria/core").ClassProvider<import("./index.js").InstallationStateRepository> | import("@trinacria/core").ClassProvider<import("./index.js").PasswordHashingService> | import("@trinacria/core").ClassProvider<import("./auth/repositories/auth-blacklist.repository.js").AuthBlacklistRepository> | import("@trinacria/core").ClassProvider<import("./auth/repositories/auth-login-attempt.repository.js").AuthLoginAttemptRepository> | import("@trinacria/core").ClassProvider<import("./auth/repositories/auth-mfa.repository.js").AuthMfaRepository> | import("@trinacria/core").ClassProvider<import("./auth/services/auth-mfa.service.js").AuthMfaService> | import("@trinacria/core").ClassProvider<import("./auth/repositories/auth-flow-tokens.repository.js").AuthFlowTokensRepository> | import("@trinacria/core").ClassProvider<import("./index.js").JwtAuthService> | import("@trinacria/core").FactoryProvider<any> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController>)[];
                 exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./auth/services/auth-user-flows.service.js").AuthUserFlowsService, "sendUserInvite">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("./index.js").AuthUsersRepository> | import("@trinacria/core").Token<import("./index.js").JwtAuthService> | import("@trinacria/core").Token<import("./index.js").AuthController> | import("@trinacria/core").Token<import("./auth/services/auth-mfa.service.js").AuthMfaService> | import("@trinacria/core").Token<import("./auth/repositories/auth-flow-tokens.repository.js").AuthFlowTokensRepository> | import("@trinacria/core").Token<import("./auth/services/auth-user-flows.service.js").AuthUserFlowsService> | import("@trinacria/core").Token<() => Promise<string>>)[];
-            }>[];
+            }> | Readonly<{
+                name: string;
+                providers: import("@trinacria/core").ClassProvider<import("./security/services/iam-safety.service.js").IamSafetyService>[];
+                exports: import("@trinacria/core").Token<import("./security/services/iam-safety.service.js").IamSafetyService>[];
+            }>)[];
             providers: (import("@trinacria/core").FactoryProvider<boolean> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<import("./index.js").UsersRepository> | import("@trinacria/core").FactoryProvider<import("./index.js").UsersService> | import("@trinacria/core").FactoryProvider<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").UsersService, "createUser" | "getUserById" | "listUsers" | "suspendUser" | "activateUser" | "updateUserProfile">>>)[];
             exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").UsersService, "createUser" | "getUserById" | "listUsers" | "suspendUser" | "activateUser" | "updateUserProfile">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("./index.js").UsersRepository> | import("@trinacria/core").Token<import("./index.js").UsersService> | import("@trinacria/core").Token<import("./index.js").UsersController>)[];
         }>)[];
-        providers: (import("@trinacria/core").FactoryProvider<any> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<import("./index.js").UserRolesRepository> | import("@trinacria/core").ClassProvider<import("./index.js").RolePolicyRulesRepository> | import("@trinacria/core").ClassProvider<import("./index.js").RolePolicyRulesService> | import("@trinacria/core").ClassProvider<import("./index.js").CorePackManifestProvisioningService> | import("@trinacria/core").ClassProvider<import("./index.js").UserAccessService> | import("@trinacria/core").ClassProvider<import("./index.js").CorePackAuthzService>)[];
+        providers: (import("@trinacria/core").FactoryProvider<any> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<import("./index.js").UserRolesRepository> | import("@trinacria/core").ClassProvider<import("./index.js").RolePolicyRulesRepository> | import("@trinacria/core").ClassProvider<import("./index.js").CorePackManifestProvisioningService> | import("@trinacria/core").ClassProvider<import("./index.js").CorePackAuthzService>)[];
         exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").UserAccessService, "assignRoleToUser" | "removeRoleFromUser" | "listUserRoles" | "resolveUserPermissions">>> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").RolePolicyRulesService, "listByRoleCode" | "create" | "update" | "delete">>> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").OperationAuthorizer> | import("@trinacria/core").Token<import("./index.js").UserRolesRepository> | import("@trinacria/core").Token<import("./index.js").UserAccessService> | import("@trinacria/core").Token<import("./index.js").UserAccessController> | import("@trinacria/core").Token<import("./index.js").RolePolicyRulesService> | import("@trinacria/core").Token<import("./index.js").RolePolicyRulesController> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").PluginManifestProvisioner> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").AuthzService>)[];
     }> | Readonly<{
         name: string;
@@ -1354,7 +1383,7 @@ export declare const CorePackRootModule: Readonly<{
             exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").PluginGrantsRepository, "list" | "get" | "decide">>> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").SettingsService, "listGroups" | "listGroupsForPlugin" | "getGroupById" | "getGroupForPlugin" | "upsertGroupValues" | "listDefinitions" | "listDefinitionsForPlugin" | "getDefinitionByKey" | "getDefinitionByKeyForPlugin" | "upsertDefinition" | "getResolvedValueByKey" | "getResolvedValueForPlugin" | "upsertValue" | "getSecretMetadataByKey" | "getSecretMetadata" | "upsertSecret" | "revealSecret" | "exportPluginSettings" | "getObservabilitySnapshot">>> | import("@trinacria/core").Token<import("./index.js").SettingsDefinitionsRepository> | import("@trinacria/core").Token<import("./index.js").SettingsValuesRepository> | import("@trinacria/core").Token<import("./index.js").SettingsSecretsRepository> | import("@trinacria/core").Token<import("./index.js").SettingsSecretsCryptoService> | import("@trinacria/core").Token<import("./index.js").PluginAuthKeyProvider> | import("@trinacria/core").Token<import("./index.js").SettingsPluginAuthService> | import("@trinacria/core").Token<import("./index.js").SettingsService> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("./index.js").SettingsController> | import("@trinacria/core").Token<import("./index.js").PluginGrantsRepository> | import("@trinacria/core").Token<import("./settings/plugin-access/plugin-grants.controller.js").PluginGrantsController> | import("@trinacria/core").Token<import("./security/audit/audit.controller.js").SecurityAuditController> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").AuditSink> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").PluginOperationAuthorizer> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").PluginSettingsHost> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").PluginEventSubscriptionAuthorizer> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").SecureEventPayloadAuthorizer> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").KernelAdminRouteGuard>)[];
         }> | Readonly<{
             name: string;
-            imports: Readonly<{
+            imports: (Readonly<{
                 name: string;
                 imports: (Readonly<{
                     name: string;
@@ -1372,7 +1401,11 @@ export declare const CorePackRootModule: Readonly<{
                 }>)[];
                 providers: (import("@trinacria/core").ClassProvider<import("./index.js").AuthUsersRepository> | import("@trinacria/core").ClassProvider<import("./index.js").LocalCredentialsRepository> | import("@trinacria/core").ClassProvider<import("./index.js").InstallationStateRepository> | import("@trinacria/core").ClassProvider<import("./index.js").PasswordHashingService> | import("@trinacria/core").ClassProvider<import("./auth/repositories/auth-blacklist.repository.js").AuthBlacklistRepository> | import("@trinacria/core").ClassProvider<import("./auth/repositories/auth-login-attempt.repository.js").AuthLoginAttemptRepository> | import("@trinacria/core").ClassProvider<import("./auth/repositories/auth-mfa.repository.js").AuthMfaRepository> | import("@trinacria/core").ClassProvider<import("./auth/services/auth-mfa.service.js").AuthMfaService> | import("@trinacria/core").ClassProvider<import("./auth/repositories/auth-flow-tokens.repository.js").AuthFlowTokensRepository> | import("@trinacria/core").ClassProvider<import("./index.js").JwtAuthService> | import("@trinacria/core").FactoryProvider<any> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController>)[];
                 exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./auth/services/auth-user-flows.service.js").AuthUserFlowsService, "sendUserInvite">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("./index.js").AuthUsersRepository> | import("@trinacria/core").Token<import("./index.js").JwtAuthService> | import("@trinacria/core").Token<import("./index.js").AuthController> | import("@trinacria/core").Token<import("./auth/services/auth-mfa.service.js").AuthMfaService> | import("@trinacria/core").Token<import("./auth/repositories/auth-flow-tokens.repository.js").AuthFlowTokensRepository> | import("@trinacria/core").Token<import("./auth/services/auth-user-flows.service.js").AuthUserFlowsService> | import("@trinacria/core").Token<() => Promise<string>>)[];
-            }>[];
+            }> | Readonly<{
+                name: string;
+                providers: import("@trinacria/core").ClassProvider<import("./security/services/iam-safety.service.js").IamSafetyService>[];
+                exports: import("@trinacria/core").Token<import("./security/services/iam-safety.service.js").IamSafetyService>[];
+            }>)[];
             providers: (import("@trinacria/core").FactoryProvider<boolean> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<import("./index.js").UsersRepository> | import("@trinacria/core").FactoryProvider<import("./index.js").UsersService> | import("@trinacria/core").FactoryProvider<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").UsersService, "createUser" | "getUserById" | "listUsers" | "suspendUser" | "activateUser" | "updateUserProfile">>>)[];
             exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").UsersService, "createUser" | "getUserById" | "listUsers" | "suspendUser" | "activateUser" | "updateUserProfile">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("./index.js").UsersRepository> | import("@trinacria/core").Token<import("./index.js").UsersService> | import("@trinacria/core").Token<import("./index.js").UsersController>)[];
         }> | Readonly<{
@@ -1443,6 +1476,10 @@ export declare const CorePackRootModule: Readonly<{
                 exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").PermissionsService, "createPermission" | "getPermissionById" | "listPermissions" | "disablePermission" | "activatePermission" | "updatePermission">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("./index.js").PermissionsRepository> | import("@trinacria/core").Token<import("./index.js").PermissionsService> | import("@trinacria/core").Token<import("./index.js").PermissionsController>)[];
             }> | Readonly<{
                 name: string;
+                providers: import("@trinacria/core").ClassProvider<import("./security/services/iam-safety.service.js").IamSafetyService>[];
+                exports: import("@trinacria/core").Token<import("./security/services/iam-safety.service.js").IamSafetyService>[];
+            }> | Readonly<{
+                name: string;
                 imports: (Readonly<{
                     name: string;
                     imports: Readonly<{
@@ -1470,8 +1507,12 @@ export declare const CorePackRootModule: Readonly<{
                     }>)[];
                     providers: (import("@trinacria/core").ClassProvider<import("./index.js").AuthUsersRepository> | import("@trinacria/core").ClassProvider<import("./index.js").LocalCredentialsRepository> | import("@trinacria/core").ClassProvider<import("./index.js").InstallationStateRepository> | import("@trinacria/core").ClassProvider<import("./index.js").PasswordHashingService> | import("@trinacria/core").ClassProvider<import("./auth/repositories/auth-blacklist.repository.js").AuthBlacklistRepository> | import("@trinacria/core").ClassProvider<import("./auth/repositories/auth-login-attempt.repository.js").AuthLoginAttemptRepository> | import("@trinacria/core").ClassProvider<import("./auth/repositories/auth-mfa.repository.js").AuthMfaRepository> | import("@trinacria/core").ClassProvider<import("./auth/services/auth-mfa.service.js").AuthMfaService> | import("@trinacria/core").ClassProvider<import("./auth/repositories/auth-flow-tokens.repository.js").AuthFlowTokensRepository> | import("@trinacria/core").ClassProvider<import("./index.js").JwtAuthService> | import("@trinacria/core").FactoryProvider<any> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController>)[];
                     exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./auth/services/auth-user-flows.service.js").AuthUserFlowsService, "sendUserInvite">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("./index.js").AuthUsersRepository> | import("@trinacria/core").Token<import("./index.js").JwtAuthService> | import("@trinacria/core").Token<import("./index.js").AuthController> | import("@trinacria/core").Token<import("./auth/services/auth-mfa.service.js").AuthMfaService> | import("@trinacria/core").Token<import("./auth/repositories/auth-flow-tokens.repository.js").AuthFlowTokensRepository> | import("@trinacria/core").Token<import("./auth/services/auth-user-flows.service.js").AuthUserFlowsService> | import("@trinacria/core").Token<() => Promise<string>>)[];
+                }> | Readonly<{
+                    name: string;
+                    providers: import("@trinacria/core").ClassProvider<import("./security/services/iam-safety.service.js").IamSafetyService>[];
+                    exports: import("@trinacria/core").Token<import("./security/services/iam-safety.service.js").IamSafetyService>[];
                 }>)[];
-                providers: (import("@trinacria/core").FactoryProvider<boolean> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<import("./index.js").RolesRepository> | import("@trinacria/core").ClassProvider<import("./index.js").RoleGrantsRepository> | import("@trinacria/core").ClassProvider<import("./index.js").RolesService> | import("@trinacria/core").FactoryProvider<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").RolesService, "createRole" | "getRoleById" | "listRoles" | "disableRole" | "activateRole" | "updateRole">>>)[];
+                providers: (import("@trinacria/core").FactoryProvider<boolean> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<import("./index.js").RolesRepository> | import("@trinacria/core").ClassProvider<import("./index.js").RoleGrantsRepository> | import("@trinacria/core").FactoryProvider<import("./index.js").RolesService> | import("@trinacria/core").FactoryProvider<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").RolesService, "createRole" | "getRoleById" | "listRoles" | "disableRole" | "activateRole" | "updateRole">>>)[];
                 exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").RolesService, "createRole" | "getRoleById" | "listRoles" | "disableRole" | "activateRole" | "updateRole">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("./index.js").RolesRepository> | import("@trinacria/core").Token<import("./index.js").RoleGrantsRepository> | import("@trinacria/core").Token<import("./index.js").RolesService> | import("@trinacria/core").Token<import("./index.js").RolesController>)[];
             }> | Readonly<{
                 name: string;
@@ -1502,7 +1543,7 @@ export declare const CorePackRootModule: Readonly<{
                 exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").PluginGrantsRepository, "list" | "get" | "decide">>> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").SettingsService, "listGroups" | "listGroupsForPlugin" | "getGroupById" | "getGroupForPlugin" | "upsertGroupValues" | "listDefinitions" | "listDefinitionsForPlugin" | "getDefinitionByKey" | "getDefinitionByKeyForPlugin" | "upsertDefinition" | "getResolvedValueByKey" | "getResolvedValueForPlugin" | "upsertValue" | "getSecretMetadataByKey" | "getSecretMetadata" | "upsertSecret" | "revealSecret" | "exportPluginSettings" | "getObservabilitySnapshot">>> | import("@trinacria/core").Token<import("./index.js").SettingsDefinitionsRepository> | import("@trinacria/core").Token<import("./index.js").SettingsValuesRepository> | import("@trinacria/core").Token<import("./index.js").SettingsSecretsRepository> | import("@trinacria/core").Token<import("./index.js").SettingsSecretsCryptoService> | import("@trinacria/core").Token<import("./index.js").PluginAuthKeyProvider> | import("@trinacria/core").Token<import("./index.js").SettingsPluginAuthService> | import("@trinacria/core").Token<import("./index.js").SettingsService> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("./index.js").SettingsController> | import("@trinacria/core").Token<import("./index.js").PluginGrantsRepository> | import("@trinacria/core").Token<import("./settings/plugin-access/plugin-grants.controller.js").PluginGrantsController> | import("@trinacria/core").Token<import("./security/audit/audit.controller.js").SecurityAuditController> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").AuditSink> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").PluginOperationAuthorizer> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").PluginSettingsHost> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").PluginEventSubscriptionAuthorizer> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").SecureEventPayloadAuthorizer> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").KernelAdminRouteGuard>)[];
             }> | Readonly<{
                 name: string;
-                imports: Readonly<{
+                imports: (Readonly<{
                     name: string;
                     imports: (Readonly<{
                         name: string;
@@ -1520,11 +1561,15 @@ export declare const CorePackRootModule: Readonly<{
                     }>)[];
                     providers: (import("@trinacria/core").ClassProvider<import("./index.js").AuthUsersRepository> | import("@trinacria/core").ClassProvider<import("./index.js").LocalCredentialsRepository> | import("@trinacria/core").ClassProvider<import("./index.js").InstallationStateRepository> | import("@trinacria/core").ClassProvider<import("./index.js").PasswordHashingService> | import("@trinacria/core").ClassProvider<import("./auth/repositories/auth-blacklist.repository.js").AuthBlacklistRepository> | import("@trinacria/core").ClassProvider<import("./auth/repositories/auth-login-attempt.repository.js").AuthLoginAttemptRepository> | import("@trinacria/core").ClassProvider<import("./auth/repositories/auth-mfa.repository.js").AuthMfaRepository> | import("@trinacria/core").ClassProvider<import("./auth/services/auth-mfa.service.js").AuthMfaService> | import("@trinacria/core").ClassProvider<import("./auth/repositories/auth-flow-tokens.repository.js").AuthFlowTokensRepository> | import("@trinacria/core").ClassProvider<import("./index.js").JwtAuthService> | import("@trinacria/core").FactoryProvider<any> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController>)[];
                     exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./auth/services/auth-user-flows.service.js").AuthUserFlowsService, "sendUserInvite">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("./index.js").AuthUsersRepository> | import("@trinacria/core").Token<import("./index.js").JwtAuthService> | import("@trinacria/core").Token<import("./index.js").AuthController> | import("@trinacria/core").Token<import("./auth/services/auth-mfa.service.js").AuthMfaService> | import("@trinacria/core").Token<import("./auth/repositories/auth-flow-tokens.repository.js").AuthFlowTokensRepository> | import("@trinacria/core").Token<import("./auth/services/auth-user-flows.service.js").AuthUserFlowsService> | import("@trinacria/core").Token<() => Promise<string>>)[];
-                }>[];
+                }> | Readonly<{
+                    name: string;
+                    providers: import("@trinacria/core").ClassProvider<import("./security/services/iam-safety.service.js").IamSafetyService>[];
+                    exports: import("@trinacria/core").Token<import("./security/services/iam-safety.service.js").IamSafetyService>[];
+                }>)[];
                 providers: (import("@trinacria/core").FactoryProvider<boolean> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<import("./index.js").UsersRepository> | import("@trinacria/core").FactoryProvider<import("./index.js").UsersService> | import("@trinacria/core").FactoryProvider<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").UsersService, "createUser" | "getUserById" | "listUsers" | "suspendUser" | "activateUser" | "updateUserProfile">>>)[];
                 exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").UsersService, "createUser" | "getUserById" | "listUsers" | "suspendUser" | "activateUser" | "updateUserProfile">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("./index.js").UsersRepository> | import("@trinacria/core").Token<import("./index.js").UsersService> | import("@trinacria/core").Token<import("./index.js").UsersController>)[];
             }>)[];
-            providers: (import("@trinacria/core").FactoryProvider<any> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<import("./index.js").UserRolesRepository> | import("@trinacria/core").ClassProvider<import("./index.js").RolePolicyRulesRepository> | import("@trinacria/core").ClassProvider<import("./index.js").RolePolicyRulesService> | import("@trinacria/core").ClassProvider<import("./index.js").CorePackManifestProvisioningService> | import("@trinacria/core").ClassProvider<import("./index.js").UserAccessService> | import("@trinacria/core").ClassProvider<import("./index.js").CorePackAuthzService>)[];
+            providers: (import("@trinacria/core").FactoryProvider<any> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<import("./index.js").UserRolesRepository> | import("@trinacria/core").ClassProvider<import("./index.js").RolePolicyRulesRepository> | import("@trinacria/core").ClassProvider<import("./index.js").CorePackManifestProvisioningService> | import("@trinacria/core").ClassProvider<import("./index.js").CorePackAuthzService>)[];
             exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").UserAccessService, "assignRoleToUser" | "removeRoleFromUser" | "listUserRoles" | "resolveUserPermissions">>> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("./index.js").RolePolicyRulesService, "listByRoleCode" | "create" | "update" | "delete">>> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").OperationAuthorizer> | import("@trinacria/core").Token<import("./index.js").UserRolesRepository> | import("@trinacria/core").Token<import("./index.js").UserAccessService> | import("@trinacria/core").Token<import("./index.js").UserAccessController> | import("@trinacria/core").Token<import("./index.js").RolePolicyRulesService> | import("@trinacria/core").Token<import("./index.js").RolePolicyRulesController> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").PluginManifestProvisioner> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").AuthzService>)[];
         }>)[];
         providers: (import("@trinacria/core").FactoryProvider<boolean> | import("@trinacria/core").ClassProvider<import("./index.js").LocalCredentialsRepository> | import("@trinacria/core").ClassProvider<import("./index.js").InstallationStateRepository> | import("@trinacria/core").ClassProvider<import("./index.js").PasswordHashingService> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<import("./index.js").InstallationService>)[];
@@ -1800,6 +1845,7 @@ export declare const InstallationBootstrapResponseSchema: import("@trinacria/sch
             updatedAt: string;
         } & {
             locale?: "en" | "it" | undefined;
+            sessionVersion?: number | undefined;
         };
     } & {};
 } & {
@@ -1896,7 +1942,7 @@ export declare const CorePackInstallationModule: Readonly<{
         exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../index.js").PluginGrantsRepository, "list" | "get" | "decide">>> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../index.js").SettingsService, "listGroups" | "listGroupsForPlugin" | "getGroupById" | "getGroupForPlugin" | "upsertGroupValues" | "listDefinitions" | "listDefinitionsForPlugin" | "getDefinitionByKey" | "getDefinitionByKeyForPlugin" | "upsertDefinition" | "getResolvedValueByKey" | "getResolvedValueForPlugin" | "upsertValue" | "getSecretMetadataByKey" | "getSecretMetadata" | "upsertSecret" | "revealSecret" | "exportPluginSettings" | "getObservabilitySnapshot">>> | import("@trinacria/core").Token<import("../index.js").SettingsDefinitionsRepository> | import("@trinacria/core").Token<import("../index.js").SettingsValuesRepository> | import("@trinacria/core").Token<import("../index.js").SettingsSecretsRepository> | import("@trinacria/core").Token<import("../index.js").SettingsSecretsCryptoService> | import("@trinacria/core").Token<import("../index.js").PluginAuthKeyProvider> | import("@trinacria/core").Token<import("../index.js").SettingsPluginAuthService> | import("@trinacria/core").Token<import("../index.js").SettingsService> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("../index.js").SettingsController> | import("@trinacria/core").Token<import("../index.js").PluginGrantsRepository> | import("@trinacria/core").Token<import("../settings/plugin-access/plugin-grants.controller.js").PluginGrantsController> | import("@trinacria/core").Token<import("../security/audit/audit.controller.js").SecurityAuditController> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").AuditSink> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").PluginOperationAuthorizer> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").PluginSettingsHost> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").PluginEventSubscriptionAuthorizer> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").SecureEventPayloadAuthorizer> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").KernelAdminRouteGuard>)[];
     }> | Readonly<{
         name: string;
-        imports: Readonly<{
+        imports: (Readonly<{
             name: string;
             imports: (Readonly<{
                 name: string;
@@ -1914,7 +1960,11 @@ export declare const CorePackInstallationModule: Readonly<{
             }>)[];
             providers: (import("@trinacria/core").ClassProvider<import("../index.js").AuthUsersRepository> | import("@trinacria/core").ClassProvider<LocalCredentialsRepository> | import("@trinacria/core").ClassProvider<InstallationStateRepository> | import("@trinacria/core").ClassProvider<PasswordHashingService> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-blacklist.repository.js").AuthBlacklistRepository> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-login-attempt.repository.js").AuthLoginAttemptRepository> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-mfa.repository.js").AuthMfaRepository> | import("@trinacria/core").ClassProvider<import("../auth/services/auth-mfa.service.js").AuthMfaService> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-flow-tokens.repository.js").AuthFlowTokensRepository> | import("@trinacria/core").ClassProvider<import("../index.js").JwtAuthService> | import("@trinacria/core").FactoryProvider<any> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController>)[];
             exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../auth/services/auth-user-flows.service.js").AuthUserFlowsService, "sendUserInvite">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("../index.js").AuthUsersRepository> | import("@trinacria/core").Token<import("../index.js").JwtAuthService> | import("@trinacria/core").Token<import("../index.js").AuthController> | import("@trinacria/core").Token<import("../auth/services/auth-mfa.service.js").AuthMfaService> | import("@trinacria/core").Token<import("../auth/repositories/auth-flow-tokens.repository.js").AuthFlowTokensRepository> | import("@trinacria/core").Token<import("../auth/services/auth-user-flows.service.js").AuthUserFlowsService> | import("@trinacria/core").Token<() => Promise<string>>)[];
-        }>[];
+        }> | Readonly<{
+            name: string;
+            providers: import("@trinacria/core").ClassProvider<import("../security/services/iam-safety.service.js").IamSafetyService>[];
+            exports: import("@trinacria/core").Token<import("../security/services/iam-safety.service.js").IamSafetyService>[];
+        }>)[];
         providers: (import("@trinacria/core").FactoryProvider<boolean> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<import("../index.js").UsersRepository> | import("@trinacria/core").FactoryProvider<import("../index.js").UsersService> | import("@trinacria/core").FactoryProvider<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../index.js").UsersService, "createUser" | "getUserById" | "listUsers" | "suspendUser" | "activateUser" | "updateUserProfile">>>)[];
         exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../index.js").UsersService, "createUser" | "getUserById" | "listUsers" | "suspendUser" | "activateUser" | "updateUserProfile">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("../index.js").UsersRepository> | import("@trinacria/core").Token<import("../index.js").UsersService> | import("@trinacria/core").Token<import("../index.js").UsersController>)[];
     }> | Readonly<{
@@ -1985,6 +2035,10 @@ export declare const CorePackInstallationModule: Readonly<{
             exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../index.js").PermissionsService, "createPermission" | "getPermissionById" | "listPermissions" | "disablePermission" | "activatePermission" | "updatePermission">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("../index.js").PermissionsRepository> | import("@trinacria/core").Token<import("../index.js").PermissionsService> | import("@trinacria/core").Token<import("../index.js").PermissionsController>)[];
         }> | Readonly<{
             name: string;
+            providers: import("@trinacria/core").ClassProvider<import("../security/services/iam-safety.service.js").IamSafetyService>[];
+            exports: import("@trinacria/core").Token<import("../security/services/iam-safety.service.js").IamSafetyService>[];
+        }> | Readonly<{
+            name: string;
             imports: (Readonly<{
                 name: string;
                 imports: Readonly<{
@@ -2012,8 +2066,12 @@ export declare const CorePackInstallationModule: Readonly<{
                 }>)[];
                 providers: (import("@trinacria/core").ClassProvider<import("../index.js").AuthUsersRepository> | import("@trinacria/core").ClassProvider<LocalCredentialsRepository> | import("@trinacria/core").ClassProvider<InstallationStateRepository> | import("@trinacria/core").ClassProvider<PasswordHashingService> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-blacklist.repository.js").AuthBlacklistRepository> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-login-attempt.repository.js").AuthLoginAttemptRepository> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-mfa.repository.js").AuthMfaRepository> | import("@trinacria/core").ClassProvider<import("../auth/services/auth-mfa.service.js").AuthMfaService> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-flow-tokens.repository.js").AuthFlowTokensRepository> | import("@trinacria/core").ClassProvider<import("../index.js").JwtAuthService> | import("@trinacria/core").FactoryProvider<any> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController>)[];
                 exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../auth/services/auth-user-flows.service.js").AuthUserFlowsService, "sendUserInvite">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("../index.js").AuthUsersRepository> | import("@trinacria/core").Token<import("../index.js").JwtAuthService> | import("@trinacria/core").Token<import("../index.js").AuthController> | import("@trinacria/core").Token<import("../auth/services/auth-mfa.service.js").AuthMfaService> | import("@trinacria/core").Token<import("../auth/repositories/auth-flow-tokens.repository.js").AuthFlowTokensRepository> | import("@trinacria/core").Token<import("../auth/services/auth-user-flows.service.js").AuthUserFlowsService> | import("@trinacria/core").Token<() => Promise<string>>)[];
+            }> | Readonly<{
+                name: string;
+                providers: import("@trinacria/core").ClassProvider<import("../security/services/iam-safety.service.js").IamSafetyService>[];
+                exports: import("@trinacria/core").Token<import("../security/services/iam-safety.service.js").IamSafetyService>[];
             }>)[];
-            providers: (import("@trinacria/core").FactoryProvider<boolean> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<import("../index.js").RolesRepository> | import("@trinacria/core").ClassProvider<import("../index.js").RoleGrantsRepository> | import("@trinacria/core").ClassProvider<import("../index.js").RolesService> | import("@trinacria/core").FactoryProvider<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../index.js").RolesService, "createRole" | "getRoleById" | "listRoles" | "disableRole" | "activateRole" | "updateRole">>>)[];
+            providers: (import("@trinacria/core").FactoryProvider<boolean> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<import("../index.js").RolesRepository> | import("@trinacria/core").ClassProvider<import("../index.js").RoleGrantsRepository> | import("@trinacria/core").FactoryProvider<import("../index.js").RolesService> | import("@trinacria/core").FactoryProvider<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../index.js").RolesService, "createRole" | "getRoleById" | "listRoles" | "disableRole" | "activateRole" | "updateRole">>>)[];
             exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../index.js").RolesService, "createRole" | "getRoleById" | "listRoles" | "disableRole" | "activateRole" | "updateRole">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("../index.js").RolesRepository> | import("@trinacria/core").Token<import("../index.js").RoleGrantsRepository> | import("@trinacria/core").Token<import("../index.js").RolesService> | import("@trinacria/core").Token<import("../index.js").RolesController>)[];
         }> | Readonly<{
             name: string;
@@ -2044,7 +2102,7 @@ export declare const CorePackInstallationModule: Readonly<{
             exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../index.js").PluginGrantsRepository, "list" | "get" | "decide">>> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../index.js").SettingsService, "listGroups" | "listGroupsForPlugin" | "getGroupById" | "getGroupForPlugin" | "upsertGroupValues" | "listDefinitions" | "listDefinitionsForPlugin" | "getDefinitionByKey" | "getDefinitionByKeyForPlugin" | "upsertDefinition" | "getResolvedValueByKey" | "getResolvedValueForPlugin" | "upsertValue" | "getSecretMetadataByKey" | "getSecretMetadata" | "upsertSecret" | "revealSecret" | "exportPluginSettings" | "getObservabilitySnapshot">>> | import("@trinacria/core").Token<import("../index.js").SettingsDefinitionsRepository> | import("@trinacria/core").Token<import("../index.js").SettingsValuesRepository> | import("@trinacria/core").Token<import("../index.js").SettingsSecretsRepository> | import("@trinacria/core").Token<import("../index.js").SettingsSecretsCryptoService> | import("@trinacria/core").Token<import("../index.js").PluginAuthKeyProvider> | import("@trinacria/core").Token<import("../index.js").SettingsPluginAuthService> | import("@trinacria/core").Token<import("../index.js").SettingsService> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("../index.js").SettingsController> | import("@trinacria/core").Token<import("../index.js").PluginGrantsRepository> | import("@trinacria/core").Token<import("../settings/plugin-access/plugin-grants.controller.js").PluginGrantsController> | import("@trinacria/core").Token<import("../security/audit/audit.controller.js").SecurityAuditController> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").AuditSink> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").PluginOperationAuthorizer> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").PluginSettingsHost> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").PluginEventSubscriptionAuthorizer> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").SecureEventPayloadAuthorizer> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").KernelAdminRouteGuard>)[];
         }> | Readonly<{
             name: string;
-            imports: Readonly<{
+            imports: (Readonly<{
                 name: string;
                 imports: (Readonly<{
                     name: string;
@@ -2062,11 +2120,15 @@ export declare const CorePackInstallationModule: Readonly<{
                 }>)[];
                 providers: (import("@trinacria/core").ClassProvider<import("../index.js").AuthUsersRepository> | import("@trinacria/core").ClassProvider<LocalCredentialsRepository> | import("@trinacria/core").ClassProvider<InstallationStateRepository> | import("@trinacria/core").ClassProvider<PasswordHashingService> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-blacklist.repository.js").AuthBlacklistRepository> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-login-attempt.repository.js").AuthLoginAttemptRepository> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-mfa.repository.js").AuthMfaRepository> | import("@trinacria/core").ClassProvider<import("../auth/services/auth-mfa.service.js").AuthMfaService> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-flow-tokens.repository.js").AuthFlowTokensRepository> | import("@trinacria/core").ClassProvider<import("../index.js").JwtAuthService> | import("@trinacria/core").FactoryProvider<any> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController>)[];
                 exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../auth/services/auth-user-flows.service.js").AuthUserFlowsService, "sendUserInvite">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("../index.js").AuthUsersRepository> | import("@trinacria/core").Token<import("../index.js").JwtAuthService> | import("@trinacria/core").Token<import("../index.js").AuthController> | import("@trinacria/core").Token<import("../auth/services/auth-mfa.service.js").AuthMfaService> | import("@trinacria/core").Token<import("../auth/repositories/auth-flow-tokens.repository.js").AuthFlowTokensRepository> | import("@trinacria/core").Token<import("../auth/services/auth-user-flows.service.js").AuthUserFlowsService> | import("@trinacria/core").Token<() => Promise<string>>)[];
-            }>[];
+            }> | Readonly<{
+                name: string;
+                providers: import("@trinacria/core").ClassProvider<import("../security/services/iam-safety.service.js").IamSafetyService>[];
+                exports: import("@trinacria/core").Token<import("../security/services/iam-safety.service.js").IamSafetyService>[];
+            }>)[];
             providers: (import("@trinacria/core").FactoryProvider<boolean> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<import("../index.js").UsersRepository> | import("@trinacria/core").FactoryProvider<import("../index.js").UsersService> | import("@trinacria/core").FactoryProvider<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../index.js").UsersService, "createUser" | "getUserById" | "listUsers" | "suspendUser" | "activateUser" | "updateUserProfile">>>)[];
             exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../index.js").UsersService, "createUser" | "getUserById" | "listUsers" | "suspendUser" | "activateUser" | "updateUserProfile">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("../index.js").UsersRepository> | import("@trinacria/core").Token<import("../index.js").UsersService> | import("@trinacria/core").Token<import("../index.js").UsersController>)[];
         }>)[];
-        providers: (import("@trinacria/core").FactoryProvider<any> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<import("../index.js").UserRolesRepository> | import("@trinacria/core").ClassProvider<import("../index.js").RolePolicyRulesRepository> | import("@trinacria/core").ClassProvider<import("../index.js").RolePolicyRulesService> | import("@trinacria/core").ClassProvider<import("../index.js").CorePackManifestProvisioningService> | import("@trinacria/core").ClassProvider<import("../index.js").UserAccessService> | import("@trinacria/core").ClassProvider<import("../index.js").CorePackAuthzService>)[];
+        providers: (import("@trinacria/core").FactoryProvider<any> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<import("../index.js").UserRolesRepository> | import("@trinacria/core").ClassProvider<import("../index.js").RolePolicyRulesRepository> | import("@trinacria/core").ClassProvider<import("../index.js").CorePackManifestProvisioningService> | import("@trinacria/core").ClassProvider<import("../index.js").CorePackAuthzService>)[];
         exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../index.js").UserAccessService, "assignRoleToUser" | "removeRoleFromUser" | "listUserRoles" | "resolveUserPermissions">>> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../index.js").RolePolicyRulesService, "listByRoleCode" | "create" | "update" | "delete">>> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").OperationAuthorizer> | import("@trinacria/core").Token<import("../index.js").UserRolesRepository> | import("@trinacria/core").Token<import("../index.js").UserAccessService> | import("@trinacria/core").Token<import("../index.js").UserAccessController> | import("@trinacria/core").Token<import("../index.js").RolePolicyRulesService> | import("@trinacria/core").Token<import("../index.js").RolePolicyRulesController> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").PluginManifestProvisioner> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").AuthzService>)[];
     }>)[];
     providers: (import("@trinacria/core").FactoryProvider<boolean> | import("@trinacria/core").ClassProvider<LocalCredentialsRepository> | import("@trinacria/core").ClassProvider<InstallationStateRepository> | import("@trinacria/core").ClassProvider<PasswordHashingService> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<InstallationService>)[];
@@ -2345,10 +2407,10 @@ export type ListPermissionsQuery = Infer<typeof ListPermissionsQuerySchema>;
  * Shared API metadata schema for permissions endpoints.
  */
 export declare const PermissionsResponseMetaSchema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{} & {
-    count?: number | undefined;
-    pluginId?: "core-pack" | undefined;
     limit?: number | undefined;
     offset?: number | undefined;
+    count?: number | undefined;
+    pluginId?: "core-pack" | undefined;
 }>;
 /**
  * Standardized API error payload schema.
@@ -2374,10 +2436,10 @@ export declare const ListPermissionsResponseSchema: import("@trinacria/schema/di
     })[];
 } & {
     meta?: ({} & {
-        count?: number | undefined;
-        pluginId?: "core-pack" | undefined;
         limit?: number | undefined;
         offset?: number | undefined;
+        count?: number | undefined;
+        pluginId?: "core-pack" | undefined;
     }) | undefined;
 }>;
 /**
@@ -2397,10 +2459,10 @@ export declare const PermissionResponseSchema: import("@trinacria/schema/dist/co
     };
 } & {
     meta?: ({} & {
-        count?: number | undefined;
-        pluginId?: "core-pack" | undefined;
         limit?: number | undefined;
         offset?: number | undefined;
+        count?: number | undefined;
+        pluginId?: "core-pack" | undefined;
     }) | undefined;
 }>;
 /**
@@ -2413,10 +2475,10 @@ export declare const PermissionsErrorResponseSchema: import("@trinacria/schema/d
     } & {};
 } & {
     meta?: ({} & {
-        count?: number | undefined;
-        pluginId?: "core-pack" | undefined;
         limit?: number | undefined;
         offset?: number | undefined;
+        count?: number | undefined;
+        pluginId?: "core-pack" | undefined;
     }) | undefined;
 }>;
 
@@ -2606,8 +2668,8 @@ export declare const CreateRoleInputSchema: import("@trinacria/schema/dist/core/
     code: string;
     name: string;
 } & {
-    permissions?: string[] | undefined;
     description?: string | undefined;
+    permissions?: string[] | undefined;
 }>;
 export type CreateRoleInput = Infer<typeof CreateRoleInputSchema>;
 /**
@@ -2615,10 +2677,11 @@ export type CreateRoleInput = Infer<typeof CreateRoleInputSchema>;
  */
 export declare const UpdateRoleInputSchema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{
     name: string;
+    expectedUpdatedAt: string;
 } & {
     status?: "active" | "disabled" | undefined;
-    permissions?: string[] | undefined;
     description?: string | undefined;
+    permissions?: string[] | undefined;
 }>;
 export type UpdateRoleInput = Infer<typeof UpdateRoleInputSchema>;
 /**
@@ -2626,6 +2689,7 @@ export type UpdateRoleInput = Infer<typeof UpdateRoleInputSchema>;
  */
 export declare const UpdateRoleStatusInputSchema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{
     status: "active" | "disabled";
+    expectedUpdatedAt: string;
 } & {}>;
 export type UpdateRoleStatusInput = Infer<typeof UpdateRoleStatusInputSchema>;
 /**
@@ -2642,10 +2706,10 @@ export type ListRolesQuery = Infer<typeof ListRolesQuerySchema>;
  * Shared API metadata schema for roles endpoints.
  */
 export declare const RolesResponseMetaSchema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{} & {
-    count?: number | undefined;
-    pluginId?: "core-pack" | undefined;
     limit?: number | undefined;
     offset?: number | undefined;
+    count?: number | undefined;
+    pluginId?: "core-pack" | undefined;
 }>;
 /**
  * Standardized API error payload schema.
@@ -2666,9 +2730,9 @@ export declare const ListRolesResponseSchema: import("@trinacria/schema/dist/cor
         code: string;
         name: string;
     } & {
-        ownerPluginId?: string | undefined;
-        permissions?: string[] | undefined;
         description?: string | undefined;
+        permissions?: string[] | undefined;
+        ownerPluginId?: string | undefined;
         policyRules?: ({
             createdAt: string;
             updatedAt: string;
@@ -2680,10 +2744,10 @@ export declare const ListRolesResponseSchema: import("@trinacria/schema/dist/cor
     })[];
 } & {
     meta?: ({} & {
-        count?: number | undefined;
-        pluginId?: "core-pack" | undefined;
         limit?: number | undefined;
         offset?: number | undefined;
+        count?: number | undefined;
+        pluginId?: "core-pack" | undefined;
     }) | undefined;
 }>;
 /**
@@ -2698,9 +2762,9 @@ export declare const RoleResponseSchema: import("@trinacria/schema/dist/core/sch
         code: string;
         name: string;
     } & {
-        ownerPluginId?: string | undefined;
-        permissions?: string[] | undefined;
         description?: string | undefined;
+        permissions?: string[] | undefined;
+        ownerPluginId?: string | undefined;
         policyRules?: ({
             createdAt: string;
             updatedAt: string;
@@ -2712,10 +2776,10 @@ export declare const RoleResponseSchema: import("@trinacria/schema/dist/core/sch
     };
 } & {
     meta?: ({} & {
-        count?: number | undefined;
-        pluginId?: "core-pack" | undefined;
         limit?: number | undefined;
         offset?: number | undefined;
+        count?: number | undefined;
+        pluginId?: "core-pack" | undefined;
     }) | undefined;
 }>;
 /**
@@ -2728,10 +2792,10 @@ export declare const RolesErrorResponseSchema: import("@trinacria/schema/dist/co
     } & {};
 } & {
     meta?: ({} & {
-        count?: number | undefined;
-        pluginId?: "core-pack" | undefined;
         limit?: number | undefined;
         offset?: number | undefined;
+        count?: number | undefined;
+        pluginId?: "core-pack" | undefined;
     }) | undefined;
 }>;
 
@@ -2820,6 +2884,7 @@ export declare class RolesRepository {
     private readonly cache?;
     private scope?;
     constructor(db: DbAdapter, cache?: CacheService | undefined);
+    getAdapter(): DbAdapter;
     create(input: CreateRoleInput): Promise<RoleRecord>;
     findById(id: string): Promise<RoleRecord | null>;
     private findByIdFromDb;
@@ -2831,7 +2896,7 @@ export declare class RolesRepository {
     }): Promise<readonly RoleRecord[]>;
     listByCodes(codes: readonly string[]): Promise<readonly RoleRecord[]>;
     listOwnedByPlugin(pluginId: string): Promise<readonly RoleRecord[]>;
-    updateStatus(id: string, input: UpdateRoleStatusInput): Promise<RoleRecord | null>;
+    updateStatus(id: string, input: Pick<UpdateRoleStatusInput, "status">): Promise<RoleRecord | null>;
     updateDetails(id: string, input: UpdateRoleInput): Promise<RoleRecord | null>;
     upsertOwnedRole(input: {
         code: string;
@@ -2906,8 +2971,12 @@ export declare const CorePackRolesModule: Readonly<{
         }>)[];
         providers: (import("@trinacria/core").ClassProvider<import("../index.js").AuthUsersRepository> | import("@trinacria/core").ClassProvider<import("../index.js").LocalCredentialsRepository> | import("@trinacria/core").ClassProvider<import("../index.js").InstallationStateRepository> | import("@trinacria/core").ClassProvider<import("../index.js").PasswordHashingService> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-blacklist.repository.js").AuthBlacklistRepository> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-login-attempt.repository.js").AuthLoginAttemptRepository> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-mfa.repository.js").AuthMfaRepository> | import("@trinacria/core").ClassProvider<import("../auth/services/auth-mfa.service.js").AuthMfaService> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-flow-tokens.repository.js").AuthFlowTokensRepository> | import("@trinacria/core").ClassProvider<import("../index.js").JwtAuthService> | import("@trinacria/core").FactoryProvider<any> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController>)[];
         exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../auth/services/auth-user-flows.service.js").AuthUserFlowsService, "sendUserInvite">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("../index.js").AuthUsersRepository> | import("@trinacria/core").Token<import("../index.js").JwtAuthService> | import("@trinacria/core").Token<import("../index.js").AuthController> | import("@trinacria/core").Token<import("../auth/services/auth-mfa.service.js").AuthMfaService> | import("@trinacria/core").Token<import("../auth/repositories/auth-flow-tokens.repository.js").AuthFlowTokensRepository> | import("@trinacria/core").Token<import("../auth/services/auth-user-flows.service.js").AuthUserFlowsService> | import("@trinacria/core").Token<() => Promise<string>>)[];
+    }> | Readonly<{
+        name: string;
+        providers: import("@trinacria/core").ClassProvider<import("../security/services/iam-safety.service.js").IamSafetyService>[];
+        exports: import("@trinacria/core").Token<import("../security/services/iam-safety.service.js").IamSafetyService>[];
     }>)[];
-    providers: (import("@trinacria/core").FactoryProvider<boolean> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<RolesRepository> | import("@trinacria/core").ClassProvider<RoleGrantsRepository> | import("@trinacria/core").ClassProvider<RolesService> | import("@trinacria/core").FactoryProvider<import("@trinacria-cms/kernel").ApplicationOperations<Pick<RolesService, "createRole" | "getRoleById" | "listRoles" | "disableRole" | "activateRole" | "updateRole">>>)[];
+    providers: (import("@trinacria/core").FactoryProvider<boolean> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<RolesRepository> | import("@trinacria/core").ClassProvider<RoleGrantsRepository> | import("@trinacria/core").FactoryProvider<RolesService> | import("@trinacria/core").FactoryProvider<import("@trinacria-cms/kernel").ApplicationOperations<Pick<RolesService, "createRole" | "getRoleById" | "listRoles" | "disableRole" | "activateRole" | "updateRole">>>)[];
     exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<RolesService, "createRole" | "getRoleById" | "listRoles" | "disableRole" | "activateRole" | "updateRole">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<RolesRepository> | import("@trinacria/core").Token<RoleGrantsRepository> | import("@trinacria/core").Token<RolesService> | import("@trinacria/core").Token<RolesController>)[];
 }>;
 
@@ -2934,9 +3003,9 @@ export declare const RoleRecordSchema: import("@trinacria/schema/dist/core").Int
     code: string;
     name: string;
 } & {
-    ownerPluginId?: string | undefined;
-    permissions?: string[] | undefined;
     description?: string | undefined;
+    permissions?: string[] | undefined;
+    ownerPluginId?: string | undefined;
     policyRules?: ({
         createdAt: string;
         updatedAt: string;
@@ -2962,9 +3031,9 @@ export declare const ROLES_ENTITY: {
         code: string;
         name: string;
     } & {
-        ownerPluginId?: string | undefined;
-        permissions?: string[] | undefined;
         description?: string | undefined;
+        permissions?: string[] | undefined;
+        ownerPluginId?: string | undefined;
         policyRules?: ({
             createdAt: string;
             updatedAt: string;
@@ -2999,19 +3068,23 @@ import type { RoleRecord } from "../roles.schemas.js";
 export declare class RolesService {
     private readonly repository;
     private readonly grants;
-    constructor(repository: RolesRepository, grants: RoleGrantsRepository);
+    private readonly atomic?;
+    constructor(repository: RolesRepository, grants: RoleGrantsRepository, atomic?: (<T>(work: (service: RolesService) => Promise<T>) => Promise<T>) | undefined);
     createRole(input: CreateRoleInput): Promise<RoleRecord>;
     getRoleById(id: string): Promise<RoleRecord | null>;
     listRoles(options?: {
         limit?: number;
         offset?: number;
     }): Promise<readonly RoleRecord[]>;
-    disableRole(id: string): Promise<RoleRecord | null>;
-    activateRole(id: string): Promise<RoleRecord | null>;
+    disableRole(id: string, expectedUpdatedAt?: string): Promise<RoleRecord | null>;
+    activateRole(id: string, expectedUpdatedAt?: string): Promise<RoleRecord | null>;
     updateRole(id: string, input: UpdateRoleInput): Promise<RoleRecord | null>;
     private setRoleStatus;
+    private validatePermissions;
+    private replacePermissions;
     private hydrateManyRolePermissions;
     private hydrateRolePermissions;
+    private visiblePermissions;
 }
 
 // dist/modules/security/audit/audit.controller.d.ts
@@ -3085,10 +3158,10 @@ export type UpdateRolePolicyRuleInput = Infer<typeof UpdateRolePolicyRuleInputSc
  * Shared API metadata schema for role policy rule endpoints.
  */
 export declare const RolePolicyRulesResponseMetaSchema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{} & {
-    count?: number | undefined;
-    pluginId?: "core-pack" | undefined;
     limit?: number | undefined;
     offset?: number | undefined;
+    count?: number | undefined;
+    pluginId?: "core-pack" | undefined;
 }>;
 /**
  * Standardized API error payload schema.
@@ -3106,17 +3179,17 @@ export declare const ListRolePolicyRulesResponseSchema: import("@trinacria/schem
         createdAt: string;
         updatedAt: string;
         sourcePluginId: string;
+        roleCode: string;
         effect: "allow" | "deny";
         permissionPattern: string;
         conditions: ("resource_id_required" | "resource_id_equals_subject")[];
-        roleCode: string;
     } & {})[];
 } & {
     meta?: ({} & {
-        count?: number | undefined;
-        pluginId?: "core-pack" | undefined;
         limit?: number | undefined;
         offset?: number | undefined;
+        count?: number | undefined;
+        pluginId?: "core-pack" | undefined;
     }) | undefined;
 }>;
 /**
@@ -3128,17 +3201,17 @@ export declare const RolePolicyRuleResponseSchema: import("@trinacria/schema/dis
         createdAt: string;
         updatedAt: string;
         sourcePluginId: string;
+        roleCode: string;
         effect: "allow" | "deny";
         permissionPattern: string;
         conditions: ("resource_id_required" | "resource_id_equals_subject")[];
-        roleCode: string;
     } & {};
 } & {
     meta?: ({} & {
-        count?: number | undefined;
-        pluginId?: "core-pack" | undefined;
         limit?: number | undefined;
         offset?: number | undefined;
+        count?: number | undefined;
+        pluginId?: "core-pack" | undefined;
     }) | undefined;
 }>;
 /**
@@ -3151,10 +3224,10 @@ export declare const RolePolicyRulesErrorResponseSchema: import("@trinacria/sche
     } & {};
 } & {
     meta?: ({} & {
-        count?: number | undefined;
-        pluginId?: "core-pack" | undefined;
         limit?: number | undefined;
         offset?: number | undefined;
+        count?: number | undefined;
+        pluginId?: "core-pack" | undefined;
     }) | undefined;
 }>;
 
@@ -3173,10 +3246,10 @@ export type AssignUserRoleInput = Infer<typeof AssignUserRoleInputSchema>;
  * Shared API metadata schema for user-access endpoints.
  */
 export declare const UserAccessResponseMetaSchema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{} & {
-    count?: number | undefined;
-    pluginId?: "core-pack" | undefined;
     limit?: number | undefined;
     offset?: number | undefined;
+    count?: number | undefined;
+    pluginId?: "core-pack" | undefined;
 }>;
 /**
  * Standardized API error payload schema.
@@ -3199,10 +3272,10 @@ export declare const UserRoleAssignmentsResponseSchema: import("@trinacria/schem
     } & {})[];
 } & {
     meta?: ({} & {
-        count?: number | undefined;
-        pluginId?: "core-pack" | undefined;
         limit?: number | undefined;
         offset?: number | undefined;
+        count?: number | undefined;
+        pluginId?: "core-pack" | undefined;
     }) | undefined;
 }>;
 /**
@@ -3219,10 +3292,10 @@ export declare const UserRoleAssignmentResponseSchema: import("@trinacria/schema
     } & {};
 } & {
     meta?: ({} & {
-        count?: number | undefined;
-        pluginId?: "core-pack" | undefined;
         limit?: number | undefined;
         offset?: number | undefined;
+        count?: number | undefined;
+        pluginId?: "core-pack" | undefined;
     }) | undefined;
 }>;
 /**
@@ -3232,10 +3305,10 @@ export declare const UserEffectivePermissionsResponseSchema: import("@trinacria/
     data: string[];
 } & {
     meta?: ({} & {
-        count?: number | undefined;
-        pluginId?: "core-pack" | undefined;
         limit?: number | undefined;
         offset?: number | undefined;
+        count?: number | undefined;
+        pluginId?: "core-pack" | undefined;
     }) | undefined;
 }>;
 /**
@@ -3248,10 +3321,10 @@ export declare const UserAccessErrorResponseSchema: import("@trinacria/schema/di
     } & {};
 } & {
     meta?: ({} & {
-        count?: number | undefined;
-        pluginId?: "core-pack" | undefined;
         limit?: number | undefined;
         offset?: number | undefined;
+        count?: number | undefined;
+        pluginId?: "core-pack" | undefined;
     }) | undefined;
 }>;
 
@@ -3272,15 +3345,13 @@ export * from "./user-access/user-roles.repository.js";
 export * from "./user-access/user-roles.schemas.js";
 
 // dist/modules/security/policies/authz-rules.d.ts
-/**
- * Common authorization rule shape shared by user-based and API-key-based
- * subjects before evaluation inside the AuthzService.
- */
 export interface AuthorizationRule {
     effect: "allow" | "deny";
     permissionPattern: string;
     conditions: readonly ("resource_id_required" | "resource_id_equals_subject")[];
 }
+/** One evaluator for operation enforcement and contextual UI decisions. */
+export declare function isPermissionAllowed(rules: readonly AuthorizationRule[], permissionKey: string, subjectId: string, resourceId?: string): boolean;
 /**
  * Dedupe helper so multiple sources (direct grants, roles, policy rules)
  * collapse into a stable set of authorization rules.
@@ -3343,6 +3414,8 @@ export declare class RolePolicyRulesRepository {
     private parseRuleId;
     private findRoleByCode;
     private parseRoleDocument;
+    private nextRevision;
+    private assertUpdated;
     private repository;
 }
 
@@ -3359,65 +3432,51 @@ export declare const RolePolicyRuleRecordSchema: import("@trinacria/schema/dist/
     createdAt: string;
     updatedAt: string;
     sourcePluginId: string;
+    roleCode: string;
     effect: "allow" | "deny";
     permissionPattern: string;
     conditions: ("resource_id_required" | "resource_id_equals_subject")[];
-    roleCode: string;
 } & {}>;
 export type RolePolicyRuleRecord = Infer<typeof RolePolicyRuleRecordSchema>;
 
 // dist/modules/security/role-policy-rules/role-policy-rules.service.d.ts
 import type { RolesRepository } from "../../roles/repositories/roles.repository.js";
 import type { RolePolicyRulesRepository } from "./role-policy-rules.repository.js";
+import type { RolePolicyRuleRecord } from "./role-policy-rules.schemas.js";
 /**
  * Application service for role policy rule CRUD APIs.
  */
 export declare class RolePolicyRulesService {
     private readonly roles;
     private readonly rules;
-    constructor(roles: RolesRepository, rules: RolePolicyRulesRepository);
+    private readonly atomic?;
+    constructor(roles: RolesRepository, rules: RolePolicyRulesRepository, atomic?: (<T>(work: (service: RolePolicyRulesService) => Promise<T>) => Promise<T>) | undefined);
     listByRoleCode(roleCode: string): Promise<readonly ({
         id: string;
         createdAt: string;
         updatedAt: string;
         sourcePluginId: string;
+        roleCode: string;
         effect: "allow" | "deny";
         permissionPattern: string;
         conditions: ("resource_id_required" | "resource_id_equals_subject")[];
-        roleCode: string;
     } & {})[] | null>;
     create(roleCode: string, input: {
         effect: "allow" | "deny";
         permissionPattern: string;
         conditions?: readonly ("resource_id_required" | "resource_id_equals_subject")[];
-    }): Promise<({
-        id: string;
-        createdAt: string;
-        updatedAt: string;
-        sourcePluginId: string;
-        effect: "allow" | "deny";
-        permissionPattern: string;
-        conditions: ("resource_id_required" | "resource_id_equals_subject")[];
-        roleCode: string;
-    } & {}) | null>;
+    }): Promise<RolePolicyRuleRecord | null>;
     update(roleCode: string, id: string, input: {
         effect: "allow" | "deny";
         permissionPattern: string;
         conditions?: readonly ("resource_id_required" | "resource_id_equals_subject")[];
-    }): Promise<({
-        id: string;
-        createdAt: string;
-        updatedAt: string;
-        sourcePluginId: string;
-        effect: "allow" | "deny";
-        permissionPattern: string;
-        conditions: ("resource_id_required" | "resource_id_equals_subject")[];
-        roleCode: string;
-    } & {}) | null>;
+    }): Promise<RolePolicyRuleRecord | null>;
     delete(roleCode: string, id: string): Promise<boolean | null>;
+    private assertManualRule;
 }
 
 // dist/modules/security/security.module.d.ts
+import { RolesRepository } from "../roles/repositories/roles.repository.js";
 import { RolePolicyRulesController } from "./role-policy-rules/role-policy-rules.controller.js";
 import { RolePolicyRulesRepository } from "./role-policy-rules/role-policy-rules.repository.js";
 import { RolePolicyRulesService } from "./role-policy-rules/role-policy-rules.service.js";
@@ -3503,6 +3562,10 @@ export declare const CorePackSecurityModule: Readonly<{
         exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../index.js").PermissionsService, "createPermission" | "getPermissionById" | "listPermissions" | "disablePermission" | "activatePermission" | "updatePermission">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("../index.js").PermissionsRepository> | import("@trinacria/core").Token<import("../index.js").PermissionsService> | import("@trinacria/core").Token<import("../index.js").PermissionsController>)[];
     }> | Readonly<{
         name: string;
+        providers: import("@trinacria/core").ClassProvider<import("./services/iam-safety.service.js").IamSafetyService>[];
+        exports: import("@trinacria/core").Token<import("./services/iam-safety.service.js").IamSafetyService>[];
+    }> | Readonly<{
+        name: string;
         imports: (Readonly<{
             name: string;
             imports: Readonly<{
@@ -3530,9 +3593,13 @@ export declare const CorePackSecurityModule: Readonly<{
             }>)[];
             providers: (import("@trinacria/core").ClassProvider<import("../index.js").AuthUsersRepository> | import("@trinacria/core").ClassProvider<import("../index.js").LocalCredentialsRepository> | import("@trinacria/core").ClassProvider<import("../index.js").InstallationStateRepository> | import("@trinacria/core").ClassProvider<import("../index.js").PasswordHashingService> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-blacklist.repository.js").AuthBlacklistRepository> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-login-attempt.repository.js").AuthLoginAttemptRepository> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-mfa.repository.js").AuthMfaRepository> | import("@trinacria/core").ClassProvider<import("../auth/services/auth-mfa.service.js").AuthMfaService> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-flow-tokens.repository.js").AuthFlowTokensRepository> | import("@trinacria/core").ClassProvider<import("../index.js").JwtAuthService> | import("@trinacria/core").FactoryProvider<any> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController>)[];
             exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../auth/services/auth-user-flows.service.js").AuthUserFlowsService, "sendUserInvite">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("../index.js").AuthUsersRepository> | import("@trinacria/core").Token<import("../index.js").JwtAuthService> | import("@trinacria/core").Token<import("../index.js").AuthController> | import("@trinacria/core").Token<import("../auth/services/auth-mfa.service.js").AuthMfaService> | import("@trinacria/core").Token<import("../auth/repositories/auth-flow-tokens.repository.js").AuthFlowTokensRepository> | import("@trinacria/core").Token<import("../auth/services/auth-user-flows.service.js").AuthUserFlowsService> | import("@trinacria/core").Token<() => Promise<string>>)[];
+        }> | Readonly<{
+            name: string;
+            providers: import("@trinacria/core").ClassProvider<import("./services/iam-safety.service.js").IamSafetyService>[];
+            exports: import("@trinacria/core").Token<import("./services/iam-safety.service.js").IamSafetyService>[];
         }>)[];
-        providers: (import("@trinacria/core").FactoryProvider<boolean> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<import("../index.js").RolesRepository> | import("@trinacria/core").ClassProvider<import("../index.js").RoleGrantsRepository> | import("@trinacria/core").ClassProvider<import("../index.js").RolesService> | import("@trinacria/core").FactoryProvider<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../index.js").RolesService, "createRole" | "getRoleById" | "listRoles" | "disableRole" | "activateRole" | "updateRole">>>)[];
-        exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../index.js").RolesService, "createRole" | "getRoleById" | "listRoles" | "disableRole" | "activateRole" | "updateRole">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("../index.js").RolesRepository> | import("@trinacria/core").Token<import("../index.js").RoleGrantsRepository> | import("@trinacria/core").Token<import("../index.js").RolesService> | import("@trinacria/core").Token<import("../index.js").RolesController>)[];
+        providers: (import("@trinacria/core").FactoryProvider<boolean> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<RolesRepository> | import("@trinacria/core").ClassProvider<import("../index.js").RoleGrantsRepository> | import("@trinacria/core").FactoryProvider<import("../index.js").RolesService> | import("@trinacria/core").FactoryProvider<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../index.js").RolesService, "createRole" | "getRoleById" | "listRoles" | "disableRole" | "activateRole" | "updateRole">>>)[];
+        exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../index.js").RolesService, "createRole" | "getRoleById" | "listRoles" | "disableRole" | "activateRole" | "updateRole">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<RolesRepository> | import("@trinacria/core").Token<import("../index.js").RoleGrantsRepository> | import("@trinacria/core").Token<import("../index.js").RolesService> | import("@trinacria/core").Token<import("../index.js").RolesController>)[];
     }> | Readonly<{
         name: string;
         imports: (Readonly<{
@@ -3562,7 +3629,7 @@ export declare const CorePackSecurityModule: Readonly<{
         exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../index.js").PluginGrantsRepository, "list" | "get" | "decide">>> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../index.js").SettingsService, "listGroups" | "listGroupsForPlugin" | "getGroupById" | "getGroupForPlugin" | "upsertGroupValues" | "listDefinitions" | "listDefinitionsForPlugin" | "getDefinitionByKey" | "getDefinitionByKeyForPlugin" | "upsertDefinition" | "getResolvedValueByKey" | "getResolvedValueForPlugin" | "upsertValue" | "getSecretMetadataByKey" | "getSecretMetadata" | "upsertSecret" | "revealSecret" | "exportPluginSettings" | "getObservabilitySnapshot">>> | import("@trinacria/core").Token<import("../index.js").SettingsDefinitionsRepository> | import("@trinacria/core").Token<import("../index.js").SettingsValuesRepository> | import("@trinacria/core").Token<import("../index.js").SettingsSecretsRepository> | import("@trinacria/core").Token<import("../index.js").SettingsSecretsCryptoService> | import("@trinacria/core").Token<import("../index.js").PluginAuthKeyProvider> | import("@trinacria/core").Token<import("../index.js").SettingsPluginAuthService> | import("@trinacria/core").Token<import("../index.js").SettingsService> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("../index.js").SettingsController> | import("@trinacria/core").Token<import("../index.js").PluginGrantsRepository> | import("@trinacria/core").Token<import("../settings/plugin-access/plugin-grants.controller.js").PluginGrantsController> | import("@trinacria/core").Token<import("./audit/audit.controller.js").SecurityAuditController> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").AuditSink> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").PluginOperationAuthorizer> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").PluginSettingsHost> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").PluginEventSubscriptionAuthorizer> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").SecureEventPayloadAuthorizer> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").KernelAdminRouteGuard>)[];
     }> | Readonly<{
         name: string;
-        imports: Readonly<{
+        imports: (Readonly<{
             name: string;
             imports: (Readonly<{
                 name: string;
@@ -3580,11 +3647,15 @@ export declare const CorePackSecurityModule: Readonly<{
             }>)[];
             providers: (import("@trinacria/core").ClassProvider<import("../index.js").AuthUsersRepository> | import("@trinacria/core").ClassProvider<import("../index.js").LocalCredentialsRepository> | import("@trinacria/core").ClassProvider<import("../index.js").InstallationStateRepository> | import("@trinacria/core").ClassProvider<import("../index.js").PasswordHashingService> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-blacklist.repository.js").AuthBlacklistRepository> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-login-attempt.repository.js").AuthLoginAttemptRepository> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-mfa.repository.js").AuthMfaRepository> | import("@trinacria/core").ClassProvider<import("../auth/services/auth-mfa.service.js").AuthMfaService> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-flow-tokens.repository.js").AuthFlowTokensRepository> | import("@trinacria/core").ClassProvider<import("../index.js").JwtAuthService> | import("@trinacria/core").FactoryProvider<any> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController>)[];
             exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../auth/services/auth-user-flows.service.js").AuthUserFlowsService, "sendUserInvite">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("../index.js").AuthUsersRepository> | import("@trinacria/core").Token<import("../index.js").JwtAuthService> | import("@trinacria/core").Token<import("../index.js").AuthController> | import("@trinacria/core").Token<import("../auth/services/auth-mfa.service.js").AuthMfaService> | import("@trinacria/core").Token<import("../auth/repositories/auth-flow-tokens.repository.js").AuthFlowTokensRepository> | import("@trinacria/core").Token<import("../auth/services/auth-user-flows.service.js").AuthUserFlowsService> | import("@trinacria/core").Token<() => Promise<string>>)[];
-        }>[];
+        }> | Readonly<{
+            name: string;
+            providers: import("@trinacria/core").ClassProvider<import("./services/iam-safety.service.js").IamSafetyService>[];
+            exports: import("@trinacria/core").Token<import("./services/iam-safety.service.js").IamSafetyService>[];
+        }>)[];
         providers: (import("@trinacria/core").FactoryProvider<boolean> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<import("../index.js").UsersRepository> | import("@trinacria/core").FactoryProvider<import("../index.js").UsersService> | import("@trinacria/core").FactoryProvider<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../index.js").UsersService, "createUser" | "getUserById" | "listUsers" | "suspendUser" | "activateUser" | "updateUserProfile">>>)[];
         exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../index.js").UsersService, "createUser" | "getUserById" | "listUsers" | "suspendUser" | "activateUser" | "updateUserProfile">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("../index.js").UsersRepository> | import("@trinacria/core").Token<import("../index.js").UsersService> | import("@trinacria/core").Token<import("../index.js").UsersController>)[];
     }>)[];
-    providers: (import("@trinacria/core").FactoryProvider<any> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<UserRolesRepository> | import("@trinacria/core").ClassProvider<RolePolicyRulesRepository> | import("@trinacria/core").ClassProvider<RolePolicyRulesService> | import("@trinacria/core").ClassProvider<CorePackManifestProvisioningService> | import("@trinacria/core").ClassProvider<UserAccessService> | import("@trinacria/core").ClassProvider<CorePackAuthzService>)[];
+    providers: (import("@trinacria/core").FactoryProvider<any> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<UserRolesRepository> | import("@trinacria/core").ClassProvider<RolePolicyRulesRepository> | import("@trinacria/core").ClassProvider<CorePackManifestProvisioningService> | import("@trinacria/core").ClassProvider<CorePackAuthzService>)[];
     exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<UserAccessService, "assignRoleToUser" | "removeRoleFromUser" | "listUserRoles" | "resolveUserPermissions">>> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<RolePolicyRulesService, "listByRoleCode" | "create" | "update" | "delete">>> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").OperationAuthorizer> | import("@trinacria/core").Token<UserRolesRepository> | import("@trinacria/core").Token<UserAccessService> | import("@trinacria/core").Token<UserAccessController> | import("@trinacria/core").Token<RolePolicyRulesService> | import("@trinacria/core").Token<RolePolicyRulesController> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").PluginManifestProvisioner> | import("@trinacria/core").Token<import("@trinacria-cms/kernel").AuthzService>)[];
 }>;
 
@@ -3618,8 +3689,19 @@ export declare class CorePackAuthzService implements AuthzService {
     can(request: AuthorizationRequest): Promise<AuthorizationResult>;
     assert(request: AuthorizationRequest): Promise<void>;
     private toPermissionKey;
-    private conditionsSatisfied;
     private resolveRules;
+}
+
+// dist/modules/security/services/iam-safety.service.d.ts
+import { type DbAdapter } from "@trinacria-cms/kernel";
+import { UserAccessService } from "../user-access/user-access.service.js";
+export declare function createUserAccessService(db: DbAdapter): UserAccessService;
+/** Serialize IAM invariants on the shared installation document, in the same Mongo transaction. */
+export declare class IamSafetyService {
+    private readonly db;
+    constructor(db: DbAdapter);
+    mutate<T>(work: (db: DbAdapter) => Promise<T>): Promise<T>;
+    verify<T>(db: DbAdapter, work: () => Promise<T>): Promise<T>;
 }
 
 // dist/modules/security/services/security-provisioning.service.d.ts
@@ -3683,7 +3765,7 @@ export declare class UserAccessController extends HttpController {
 }
 
 // dist/modules/security/user-access/user-access.service.d.ts
-import type { DbAdapter } from "@trinacria-cms/kernel";
+import { type DbAdapter } from "@trinacria-cms/kernel";
 import { PermissionsRepository } from "../../permissions/repositories/permissions.repository.js";
 import { RoleGrantsRepository } from "../../roles/grants/role-grants.repository.js";
 import { RolesRepository } from "../../roles/repositories/roles.repository.js";
@@ -3691,6 +3773,7 @@ import { UsersRepository } from "../../users/repositories/users.repository.js";
 import { type AuthorizationRule } from "../policies/authz-rules.js";
 import { RolePolicyRulesRepository } from "../role-policy-rules/role-policy-rules.repository.js";
 import { UserRolesRepository } from "./user-roles.repository.js";
+import type { UserRoleRecord } from "./user-roles.schemas.js";
 /**
  * Coordinates user-role assignments and effective permission resolution.
  */
@@ -3701,17 +3784,11 @@ export declare class UserAccessService {
     private readonly rolePolicyRules;
     private readonly permissions;
     private readonly userRoles;
-    constructor(users: UsersRepository, roles: RolesRepository, roleGrants: RoleGrantsRepository, rolePolicyRules: RolePolicyRulesRepository, permissions: PermissionsRepository, userRoles: UserRolesRepository);
+    private readonly atomic?;
+    constructor(users: UsersRepository, roles: RolesRepository, roleGrants: RoleGrantsRepository, rolePolicyRules: RolePolicyRulesRepository, permissions: PermissionsRepository, userRoles: UserRolesRepository, atomic?: (<T>(work: (service: UserAccessService) => Promise<T>) => Promise<T>) | undefined);
     /** Host-only transaction rebinding. */
     forDb(db: DbAdapter): UserAccessService;
-    assignRoleToUser(userId: string, roleCode: string): Promise<{
-        id: string;
-        createdAt: string;
-        updatedAt: string;
-        userId: string;
-        sourcePluginId: string;
-        roleCode: string;
-    } & {}>;
+    assignRoleToUser(userId: string, roleCode: string): Promise<UserRoleRecord>;
     removeRoleFromUser(userId: string, roleCode: string): Promise<boolean>;
     listUserRoles(userId: string): Promise<readonly ({
         id: string;
@@ -3721,7 +3798,9 @@ export declare class UserAccessService {
         sourcePluginId: string;
         roleCode: string;
     } & {})[]>;
-    resolveUserPermissions(userId: string): Promise<readonly string[]>;
+    private resolveUserGrantedPermissions;
+    isPermissionActive(key: string): Promise<boolean>;
+    resolveUserPermissions(userId: string, resourceId?: string): Promise<readonly string[]>;
     resolveUserAuthorizationRules(userId: string): Promise<readonly AuthorizationRule[]>;
     private resolveActiveRoleCodes;
     private assertUserExists;
@@ -4093,8 +4172,8 @@ export declare const UpsertSettingDefinitionInputSchema: import("@trinacria/sche
     key: string;
 } & {
     status?: "active" | "disabled" | undefined;
-    secret?: boolean | undefined;
     description?: string | undefined;
+    secret?: boolean | undefined;
     category?: string | undefined;
     visibility?: "admin" | "public" | "internal" | undefined;
     mutable?: boolean | undefined;
@@ -4120,9 +4199,9 @@ export type UpsertSettingSecretInput = Infer<typeof UpsertSettingSecretInputSche
  * DTO schema for listing settings definitions.
  */
 export declare const ListSettingDefinitionsQuerySchema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{} & {
-    ownerPluginId?: string | undefined;
     limit?: number | undefined;
     offset?: number | undefined;
+    ownerPluginId?: string | undefined;
 }>;
 export type ListSettingDefinitionsQuery = Infer<typeof ListSettingDefinitionsQuerySchema>;
 /**
@@ -4181,10 +4260,10 @@ export declare const UpsertSettingSecretBodyOpenApiSchema: Record<string, unknow
  * Shared API metadata schema for settings endpoints.
  */
 export declare const SettingsResponseMetaSchema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{} & {
-    count?: number | undefined;
-    pluginId?: "core-pack" | undefined;
     limit?: number | undefined;
     offset?: number | undefined;
+    count?: number | undefined;
+    pluginId?: "core-pack" | undefined;
 }>;
 /**
  * Standardized API error payload schema.
@@ -4203,10 +4282,10 @@ export declare const SettingsErrorResponseSchema: import("@trinacria/schema/dist
     } & {};
 } & {
     meta?: ({} & {
-        count?: number | undefined;
-        pluginId?: "core-pack" | undefined;
         limit?: number | undefined;
         offset?: number | undefined;
+        count?: number | undefined;
+        pluginId?: "core-pack" | undefined;
     }) | undefined;
 }>;
 export declare const SettingDefinitionOpenApiSchema: Record<string, unknown>;
@@ -4389,6 +4468,8 @@ export declare const SettingRecordSchema: import("@trinacria/schema/dist/core/sc
     installedAt?: string | undefined;
     adminUserId?: string | undefined;
     algorithm?: "aes-256-gcm" | undefined;
+    description?: string | undefined;
+    ownerPluginId?: string | undefined;
     sub?: string | undefined;
     iat?: number | undefined;
     tokenKind?: "access" | "refresh" | undefined;
@@ -4396,8 +4477,6 @@ export declare const SettingRecordSchema: import("@trinacria/schema/dist/core/sc
     count?: number | undefined;
     lockoutUntil?: string | null | undefined;
     secret?: boolean | undefined;
-    ownerPluginId?: string | undefined;
-    description?: string | undefined;
     category?: string | undefined;
     schema?: JsonValue | undefined;
     visibility?: "admin" | "public" | "internal" | undefined;
@@ -4420,8 +4499,8 @@ export declare const SettingDefinitionRecordSchema: import("@trinacria/schema/di
     updatedAt: string;
     kind: "definition";
     key: string;
-    secret: boolean;
     ownerPluginId: string;
+    secret: boolean;
     visibility: "admin" | "public" | "internal";
     mutable: boolean;
 } & {
@@ -4491,6 +4570,8 @@ export declare const SETTINGS_ENTITY: {
         installedAt?: string | undefined;
         adminUserId?: string | undefined;
         algorithm?: "aes-256-gcm" | undefined;
+        description?: string | undefined;
+        ownerPluginId?: string | undefined;
         sub?: string | undefined;
         iat?: number | undefined;
         tokenKind?: "access" | "refresh" | undefined;
@@ -4498,8 +4579,6 @@ export declare const SETTINGS_ENTITY: {
         count?: number | undefined;
         lockoutUntil?: string | null | undefined;
         secret?: boolean | undefined;
-        ownerPluginId?: string | undefined;
-        description?: string | undefined;
         category?: string | undefined;
         schema?: JsonValue | undefined;
         visibility?: "admin" | "public" | "internal" | undefined;
@@ -4943,10 +5022,10 @@ export type ListUsersQuery = Infer<typeof ListUsersQuerySchema>;
  * Shared API metadata schema for users endpoints.
  */
 export declare const UsersResponseMetaSchema: import("@trinacria/schema/dist/core/schema.js").InternalSchema<{} & {
-    count?: number | undefined;
-    pluginId?: "core-pack" | undefined;
     limit?: number | undefined;
     offset?: number | undefined;
+    count?: number | undefined;
+    pluginId?: "core-pack" | undefined;
 }>;
 /**
  * Standardized API error payload schema.
@@ -4969,13 +5048,14 @@ export declare const ListUsersResponseSchema: import("@trinacria/schema/dist/cor
         updatedAt: string;
     } & {
         locale?: "en" | "it" | undefined;
+        sessionVersion?: number | undefined;
     })[];
 } & {
     meta?: ({} & {
-        count?: number | undefined;
-        pluginId?: "core-pack" | undefined;
         limit?: number | undefined;
         offset?: number | undefined;
+        count?: number | undefined;
+        pluginId?: "core-pack" | undefined;
     }) | undefined;
 }>;
 /**
@@ -4992,13 +5072,14 @@ export declare const UserResponseSchema: import("@trinacria/schema/dist/core/sch
         updatedAt: string;
     } & {
         locale?: "en" | "it" | undefined;
+        sessionVersion?: number | undefined;
     };
 } & {
     meta?: ({} & {
-        count?: number | undefined;
-        pluginId?: "core-pack" | undefined;
         limit?: number | undefined;
         offset?: number | undefined;
+        count?: number | undefined;
+        pluginId?: "core-pack" | undefined;
     }) | undefined;
 }>;
 /**
@@ -5011,10 +5092,10 @@ export declare const UsersErrorResponseSchema: import("@trinacria/schema/dist/co
     } & {};
 } & {
     meta?: ({} & {
-        count?: number | undefined;
-        pluginId?: "core-pack" | undefined;
         limit?: number | undefined;
         offset?: number | undefined;
+        count?: number | undefined;
+        pluginId?: "core-pack" | undefined;
     }) | undefined;
 }>;
 
@@ -5162,7 +5243,7 @@ import { UsersController } from "./users.controller.js";
  */
 export declare const CorePackUsersModule: Readonly<{
     name: string;
-    imports: Readonly<{
+    imports: (Readonly<{
         name: string;
         imports: (Readonly<{
             name: string;
@@ -5180,7 +5261,11 @@ export declare const CorePackUsersModule: Readonly<{
         }>)[];
         providers: (import("@trinacria/core").ClassProvider<import("../index.js").AuthUsersRepository> | import("@trinacria/core").ClassProvider<import("../index.js").LocalCredentialsRepository> | import("@trinacria/core").ClassProvider<import("../index.js").InstallationStateRepository> | import("@trinacria/core").ClassProvider<import("../index.js").PasswordHashingService> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-blacklist.repository.js").AuthBlacklistRepository> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-login-attempt.repository.js").AuthLoginAttemptRepository> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-mfa.repository.js").AuthMfaRepository> | import("@trinacria/core").ClassProvider<import("../auth/services/auth-mfa.service.js").AuthMfaService> | import("@trinacria/core").ClassProvider<import("../auth/repositories/auth-flow-tokens.repository.js").AuthFlowTokensRepository> | import("@trinacria/core").ClassProvider<import("../index.js").JwtAuthService> | import("@trinacria/core").FactoryProvider<any> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController>)[];
         exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<import("../auth/services/auth-user-flows.service.js").AuthUserFlowsService, "sendUserInvite">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<import("../index.js").AuthUsersRepository> | import("@trinacria/core").Token<import("../index.js").JwtAuthService> | import("@trinacria/core").Token<import("../index.js").AuthController> | import("@trinacria/core").Token<import("../auth/services/auth-mfa.service.js").AuthMfaService> | import("@trinacria/core").Token<import("../auth/repositories/auth-flow-tokens.repository.js").AuthFlowTokensRepository> | import("@trinacria/core").Token<import("../auth/services/auth-user-flows.service.js").AuthUserFlowsService> | import("@trinacria/core").Token<() => Promise<string>>)[];
-    }>[];
+    }> | Readonly<{
+        name: string;
+        providers: import("@trinacria/core").ClassProvider<import("../security/services/iam-safety.service.js").IamSafetyService>[];
+        exports: import("@trinacria/core").Token<import("../security/services/iam-safety.service.js").IamSafetyService>[];
+    }>)[];
     providers: (import("@trinacria/core").FactoryProvider<boolean> | import("@trinacria/core").ClassProvider<import("@trinacria/http").HttpController> | import("@trinacria/core").ClassProvider<UsersRepository> | import("@trinacria/core").FactoryProvider<UsersService> | import("@trinacria/core").FactoryProvider<import("@trinacria-cms/kernel").ApplicationOperations<Pick<UsersService, "createUser" | "getUserById" | "listUsers" | "suspendUser" | "activateUser" | "updateUserProfile">>>)[];
     exports: (import("@trinacria/core").Token<import("@trinacria-cms/kernel").ApplicationOperations<Pick<UsersService, "createUser" | "getUserById" | "listUsers" | "suspendUser" | "activateUser" | "updateUserProfile">>> | import("@trinacria/core").Token<boolean> | import("@trinacria/core").Token<UsersRepository> | import("@trinacria/core").Token<UsersService> | import("@trinacria/core").Token<UsersController>)[];
 }>;
@@ -5198,6 +5283,7 @@ export declare const UserRecordSchema: import("@trinacria/schema/dist/core").Int
     updatedAt: string;
 } & {
     locale?: "en" | "it" | undefined;
+    sessionVersion?: number | undefined;
 }>;
 export type UserRecord = Infer<typeof UserRecordSchema>;
 /**
@@ -5217,6 +5303,7 @@ export declare const USERS_ENTITY: {
         updatedAt: string;
     } & {
         locale?: "en" | "it" | undefined;
+        sessionVersion?: number | undefined;
     }>;
     indexes?: readonly import("@trinacria-cms/kernel/runtime").EntityIndexDefinition[];
 };
@@ -5279,6 +5366,7 @@ export declare class CoreOperationAuthorizer implements OperationAuthorizer {
     };
     run<T>(context: OperationContext, targets: readonly OperationTarget[], work: () => Promise<T>): Promise<T>;
     assert(context: OperationContext, target: OperationTarget): Promise<void>;
+    private recordMutations;
     private check;
 }
 
@@ -5378,6 +5466,7 @@ export declare const CORE_PACK_CAPABILITY_LIST: readonly CorePackCapability[];
  * They are namespaced through `CORE_PACK_PLUGIN_ID`.
  */
 export declare const CORE_PACK_PERMISSION_KEYS: {
+    readonly BACKOFFICE_ACCESS: string;
     readonly PLUGINS_MANAGE: string;
     readonly PLUGIN_GRANTS_READ: string;
     readonly PLUGIN_GRANTS_MANAGE: string;

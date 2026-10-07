@@ -166,7 +166,8 @@ export const CorePackSettingsModule = defineModule({
       CORE_TOKENS.KERNEL_ADMIN_ROUTE_GUARD,
       (auth) => ({
         middleware: createJwtAuthMiddleware(auth as JwtAuthService, {
-          requireAdmin: true
+          requireAdmin: false,
+          requireBackoffice: true
         }),
         security: [{ bearerAuth: [] }]
       }),

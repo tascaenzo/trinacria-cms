@@ -587,7 +587,15 @@ export class AuthController extends HttpController {
       const user = getAuthenticatedUser(ctx);
       const payload = ChangeAuthenticatedUserPasswordInputSchema.parse(ctx.body);
       const updated = await this.auth.changeAuthenticatedUserPassword(user.id, payload);
-      return responder.success(updated);
+      const session = await this.auth.loginWithPassword({
+        email: updated.email,
+        password: payload.newPassword
+      });
+      return response(responder.success(updated), {
+        headers: {
+          "set-cookie": buildLoginSetCookieHeaders(session, await this.auth.getJwtCookieConfig())
+        }
+      });
     } catch (error) {
       return responder.fromError(error);
     }

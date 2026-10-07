@@ -24,12 +24,13 @@ export function createKernelSystemOperations(
   system: KernelSystemService,
   authorizer: OperationAuthorizer
 ): KernelSystemOperations {
+  const discovery = { ownerPluginId: "core-pack", resource: "backoffice", action: "access" };
   const read = { ownerPluginId: "core-pack", resource: "plugins", action: "read" };
   return createApplicationOperations(system, authorizer, {
-    listInstalledPlugins: { target: read },
-    listCapabilities: { target: read },
-    listPluginContributions: { target: read },
-    listAdminExtensions: { target: read },
+    listInstalledPlugins: { target: discovery },
+    listCapabilities: { target: discovery },
+    listPluginContributions: { target: discovery },
+    listAdminExtensions: { target: discovery },
     listPluginSources: { target: read },
     getInstalledPlugin: { target: (args) => ({ ...read, resourceId: args[0] as string }) },
     listPluginEvents: { target: (args) => ({ ...read, resourceId: args[0] as string }) },

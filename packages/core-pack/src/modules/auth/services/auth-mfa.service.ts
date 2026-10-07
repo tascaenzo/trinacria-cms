@@ -99,12 +99,17 @@ export class AuthMfaService {
     await this.repository.disable(userId);
   }
 
-  async createChallenge(userId: string, purpose: AuthMfaChallengePurpose): Promise<MfaChallenge> {
+  async createChallenge(
+    userId: string,
+    purpose: AuthMfaChallengePurpose,
+    sessionVersion = 0
+  ): Promise<MfaChallenge> {
     const token = randomBytes(32).toString("base64url");
     const expiresAt = new Date(Date.now() + CHALLENGE_TTL_MS).toISOString();
     await this.repository.createChallenge({
       userId,
       purpose,
+      sessionVersion,
       tokenHash: hashChallenge(token),
       expiresAt
     });
@@ -114,7 +119,7 @@ export class AuthMfaService {
   async resolveChallenge(
     challengeId: string,
     expectedPurpose: AuthMfaChallengePurpose
-  ): Promise<{ id: string; userId: string }> {
+  ): Promise<{ id: string; userId: string; sessionVersion: number }> {
     const record = await this.repository.findChallenge(hashChallenge(challengeId));
     if (
       !record ||
@@ -123,11 +128,16 @@ export class AuthMfaService {
     ) {
       throw new JwtAuthError("auth_mfa_challenge_invalid", "MFA challenge is invalid or expired");
     }
-    return { id: record.id, userId: record.userId };
+    return { id: record.id, userId: record.userId, sessionVersion: record.sessionVersion };
   }
 
   async consumeChallenge(id: string): Promise<void> {
-    await this.repository.consumeChallenge(id);
+    if (!(await this.repository.consumeChallenge(id))) {
+      throw new JwtAuthError(
+        "auth_mfa_challenge_invalid",
+        "MFA challenge has already been consumed"
+      );
+    }
   }
 }
 

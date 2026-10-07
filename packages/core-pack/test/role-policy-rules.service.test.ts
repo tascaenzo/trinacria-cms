@@ -24,6 +24,12 @@ test("RolePolicyRulesService supports CRUD by role code", async () => {
   });
   assert.ok(created);
   assert.equal(created.permissionPattern, "core-pack:users:*");
+  await assert.rejects(service.create("editor", {
+    effect: "allow", permissionPattern: "core-pack:users:*", conditions: ["resource_id_required"]
+  }), { code: "conflict" });
+  await assert.rejects(service.create("editor", {
+    effect: "allow", permissionPattern: "invalid-pattern"
+  }), { code: "invalid_request" });
 
   const list = await service.listByRoleCode("editor");
   assert.equal(list?.length, 1);
@@ -41,6 +47,20 @@ test("RolePolicyRulesService supports CRUD by role code", async () => {
 
   const emptyList = await service.listByRoleCode("editor");
   assert.equal(emptyList?.length, 0);
+});
+
+test("RolePolicyRulesService preserves plugin policies and permits manual overrides", async () => {
+  const db = createFakeDbAdapter();
+  const roles = new RolesRepository(db);
+  const rules = new RolePolicyRulesRepository(db);
+  const service = new RolePolicyRulesService(roles, rules);
+  await roles.upsertOwnedRole({ code: "editor", name: "Editor", ownerPluginId: "core-pack" });
+  const pluginRule = await rules.upsert({ roleCode: "editor", effect: "allow", permissionPattern: "fixture:records:read", sourcePluginId: "fixture" });
+  await assert.rejects(service.delete("editor", pluginRule.id), { code: "iam_protected_policy" });
+  await assert.rejects(service.update("editor", pluginRule.id, { effect: "deny", permissionPattern: "fixture:records:read" }), { code: "iam_protected_policy" });
+  const override = await service.create("editor", { effect: "deny", permissionPattern: "fixture:records:read" });
+  assert.ok(override);
+  assert.equal((await service.listByRoleCode("editor"))?.length, 2);
 });
 
 test("RolePolicyRulesService rejects create for missing role", async () => {

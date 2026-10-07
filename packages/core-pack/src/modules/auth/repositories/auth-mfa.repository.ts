@@ -85,6 +85,7 @@ export class AuthMfaRepository {
   }
 
   async createChallenge(input: {
+    sessionVersion: number;
     userId: string;
     tokenHash: string;
     purpose: AuthMfaChallengePurpose;

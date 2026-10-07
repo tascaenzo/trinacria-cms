@@ -1,4 +1,5 @@
 import type { DbAdapter } from "@trinacria-cms/kernel";
+import { CoreError } from "@trinacria-cms/kernel";
 import { createPluginDbScope, type PluginDbScope } from "@trinacria-cms/kernel/runtime";
 import { CORE_PACK_PLUGIN_ID } from "../../../plugin/core-pack.constants.js";
 import {
@@ -11,6 +12,7 @@ const USERS_ENTITY_NAME = "users";
 
 interface UserDocument {
   id: string;
+  updatedAt: string;
   roleAssignments: Array<{
     roleCode: string;
     sourcePluginId: string;
@@ -47,7 +49,7 @@ export class UserRolesRepository {
       return existing;
     }
 
-    const now = new Date().toISOString();
+    const now = new Date(Math.max(Date.now(), Date.parse(user.updatedAt) + 1)).toISOString();
     const assignment = EmbeddedUserRoleSchema.parse({
       roleCode: normalizedRoleCode,
       sourcePluginId: normalizedSourcePluginId,
@@ -55,13 +57,15 @@ export class UserRolesRepository {
       updatedAt: now
     });
     const nextAssignments = [...user.roleAssignments, assignment];
-    await this.repository().updateOne(
-      { filter: { id: user.id } },
+    const updated = await this.repository().updateOne(
+      { filter: { id: user.id, updatedAt: user.updatedAt } },
       {
         roleAssignments: nextAssignments,
         updatedAt: now
       }
     );
+    if (!updated)
+      throw new CoreError("iam_revision_conflict", "Access changed; retry after reloading");
 
     return this.toRecord(user.id, assignment);
   }
@@ -90,13 +94,15 @@ export class UserRolesRepository {
     );
     if (nextAssignments.length === user.roleAssignments.length) return false;
 
-    await this.repository().updateOne(
-      { filter: { id: user.id } },
+    const updated = await this.repository().updateOne(
+      { filter: { id: user.id, updatedAt: user.updatedAt } },
       {
         roleAssignments: nextAssignments,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date(Math.max(Date.now(), Date.parse(user.updatedAt) + 1)).toISOString()
       }
     );
+    if (!updated)
+      throw new CoreError("iam_revision_conflict", "Access changed; retry after reloading");
     return true;
   }
 
@@ -121,13 +127,15 @@ export class UserRolesRepository {
       );
       if (filtered.length === user.roleAssignments.length) continue;
       removed += user.roleAssignments.length - filtered.length;
-      await this.repository().updateOne(
-        { filter: { id: user.id } },
+      const updated = await this.repository().updateOne(
+        { filter: { id: user.id, updatedAt: user.updatedAt } },
         {
           roleAssignments: filtered,
-          updatedAt: new Date().toISOString()
+          updatedAt: new Date(Math.max(Date.now(), Date.parse(user.updatedAt) + 1)).toISOString()
         }
       );
+      if (!updated)
+        throw new CoreError("iam_revision_conflict", "Access changed; retry after reloading");
     }
     return removed;
   }
@@ -162,7 +170,7 @@ export class UserRolesRepository {
     const roleAssignmentsRaw = Array.isArray(record.roleAssignments) ? record.roleAssignments : [];
     const roleAssignments = roleAssignmentsRaw.map((item) => EmbeddedUserRoleSchema.parse(item));
 
-    return { id, roleAssignments };
+    return { id, roleAssignments, updatedAt: String(record.updatedAt) };
   }
 
   private toRecords(user: UserDocument): readonly UserRoleRecord[] {

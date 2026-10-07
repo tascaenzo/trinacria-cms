@@ -59,7 +59,7 @@ export async function packRelease(output) {
         );
       }
       assert.ok(
-        /^(dist\/|README\.md$|LICENSE$|package\.json$|theme\.css$|scripts\/(?:generate-sdk|cms|create-trinacria-plugin|plugin-conformance)\.mjs$|templates\/catalog-v1\.json$)/.test(
+        /^(dist\/|README\.md$|LICENSE$|package\.json$|theme\.css$|scripts\/(?:generate-sdk|cms|create-trinacria-plugin|plugin-conformance|recover-admin)\.mjs$|templates\/catalog-v1\.json$)/.test(
           file
         ),
         `Unexpected package file: ${file}`

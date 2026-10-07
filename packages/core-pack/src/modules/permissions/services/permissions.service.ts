@@ -1,3 +1,4 @@
+import { CoreError } from "@trinacria-cms/kernel";
 import { CORE_PACK_PERMISSION_KEY_LIST } from "../../../plugin/core-pack.security.js";
 import type {
   CreatePermissionInput,
@@ -18,7 +19,7 @@ export class PermissionsService {
   async createPermission(input: CreatePermissionInput): Promise<PermissionRecord> {
     const existing = await this.repository.findByKey(input.key);
     if (existing) {
-      throw new Error(`Permission with key "${input.key}" already exists`);
+      throw new CoreError("conflict", `Permission with key "${input.key}" already exists`);
     }
     return this.repository.create(input);
   }
@@ -68,7 +69,8 @@ export class PermissionsService {
       return;
     }
     if (CORE_PACK_DEFAULT_PERMISSION_KEYS.has(existing.key)) {
-      throw new Error(
+      throw new CoreError(
+        "iam_protected_permission",
         `Permission "${existing.key}" is a core-pack default permission and is read-only`
       );
     }

@@ -11,6 +11,7 @@ import { CorePackAuthModule } from "../auth/auth.module.js";
 import { CORE_PACK_JWT_AUTH_SERVICE_TOKEN } from "../auth/auth.tokens.js";
 import { CorePackCacheModule } from "../cache/cache.module.js";
 import { CORE_PACK_CACHE_SERVICE_TOKEN } from "../cache/cache.tokens.js";
+import { CorePackIamSafetyModule, IAM_SAFETY } from "../security/iam-safety.module.js";
 import { RoleGrantsRepository } from "./grants/role-grants.repository.js";
 import { RolesRepository } from "./repositories/roles.repository.js";
 import { RolesController } from "./roles.controller.js";
@@ -29,7 +30,7 @@ import { RolesService } from "./services/roles.service.js";
  */
 export const CorePackRolesModule = defineModule({
   name: "CorePackRolesModule",
-  imports: [CorePackAuthModule, CorePackCacheModule],
+  imports: [CorePackAuthModule, CorePackCacheModule, CorePackIamSafetyModule],
   providers: [
     factoryProvider(
       ROLES_ENTITY_REGISTRATION_TOKEN,
@@ -44,10 +45,23 @@ export const CorePackRolesModule = defineModule({
       CORE_PACK_CACHE_SERVICE_TOKEN
     ]),
     classProvider(ROLE_GRANTS_REPOSITORY_TOKEN, RoleGrantsRepository, [CORE_TOKENS.DB_ADAPTER]),
-    classProvider(ROLES_SERVICE_TOKEN, RolesService, [
-      ROLES_REPOSITORY_TOKEN,
-      ROLE_GRANTS_REPOSITORY_TOKEN
-    ]),
+    factoryProvider(
+      ROLES_SERVICE_TOKEN,
+      (roles, grants, safety, cache) =>
+        new RolesService(roles, grants, async (work) => {
+          const result = await safety.mutate((db: import("@trinacria-cms/kernel").DbAdapter) =>
+            work(new RolesService(new RolesRepository(db), new RoleGrantsRepository(db)))
+          );
+          await cache.invalidate("roles");
+          return result;
+        }),
+      [
+        ROLES_REPOSITORY_TOKEN,
+        ROLE_GRANTS_REPOSITORY_TOKEN,
+        IAM_SAFETY,
+        CORE_PACK_CACHE_SERVICE_TOKEN
+      ]
+    ),
     factoryProvider(ROLES_OPERATIONS, createRolesOperations, [
       ROLES_SERVICE_TOKEN,
       CORE_TOKENS.OPERATION_AUTHORIZER

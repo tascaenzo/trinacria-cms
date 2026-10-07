@@ -17,6 +17,49 @@ import { UserRolesRepository } from "../src/modules/security/user-access/user-ro
 import { UsersRepository } from "../src/modules/users/repositories/users.repository.js";
 import { UsersService } from "../src/modules/users/services/users.service.js";
 
+test("UI permission projection matches deny, wildcard allow, record conditions and suspension", async () => {
+  const db = createFakeDbAdapter();
+  const users = new UsersRepository(db), roles = new RolesRepository(db), grants = new RoleGrantsRepository(db);
+  const policies = new RolePolicyRulesRepository(db), permissions = new PermissionsRepository(db), assignments = new UserRolesRepository(db);
+  const access = new UserAccessService(users, roles, grants, policies, permissions, assignments);
+  const user = await users.create({ email: "projection@example.com", firstName: "Test", lastName: "User" });
+  await roles.create({ code: "operator", name: "Operator" });
+  for (const action of ["read", "write", "delete"]) await permissions.upsertOwnedPermission({ key: `sample:items:${action}`, displayName: action, sourcePluginId: "sample" });
+  await assignments.upsert({ userId: user.id, roleCode: "operator", sourcePluginId: "core-pack" });
+  await policies.upsert({ roleCode: "operator", effect: "allow", permissionPattern: "sample:items:*", conditions: [], sourcePluginId: "manual" });
+  await policies.upsert({ roleCode: "operator", effect: "deny", permissionPattern: "sample:items:delete", conditions: [], sourcePluginId: "manual" });
+  await policies.upsert({ roleCode: "operator", effect: "deny", permissionPattern: "sample:items:write", conditions: ["resource_id_equals_subject"], sourcePluginId: "manual" });
+  assert.deepEqual((await access.resolveUserPermissions(user.id)).sort(), ["sample:items:read", "sample:items:write"]);
+  assert.deepEqual(await access.resolveUserPermissions(user.id, user.id), ["sample:items:read"]);
+  const authz = new CorePackAuthzService(access);
+  assert.equal((await authz.can({ subjectId: user.id, resource: "items", action: "write", resourceId: user.id, context: { pluginId: "sample" } })).allowed, false);
+  const permission = await permissions.findByKey("sample:items:read");
+  await permissions.updateStatus(permission!.id, { status: "disabled" });
+  assert.equal((await authz.can({ subjectId: user.id, resource: "items", action: "read", context: { pluginId: "sample" } })).allowed, false);
+  assert.ok(!(await access.resolveUserPermissions(user.id)).includes("sample:items:read"));
+  await users.updateStatus(user.id, { status: "suspended" });
+  assert.deepEqual(await access.resolveUserPermissions(user.id), []);
+  assert.equal((await authz.can({ subjectId: user.id, resource: "items", action: "read", context: { pluginId: "sample" } })).allowed, false);
+});
+
+test("domain backoffice access enables shell discovery while preserving Core denies and diagnostic isolation", async () => {
+  const db = createFakeDbAdapter();
+  const users = new UsersRepository(db), roles = new RolesRepository(db), permissions = new PermissionsRepository(db), policies = new RolePolicyRulesRepository(db);
+  const access = new UserAccessService(users, roles, new RoleGrantsRepository(db), policies, permissions, new UserRolesRepository(db));
+  const user = await users.create({ email: "author@example.com", firstName: "Author", lastName: "User" });
+  await roles.create({ code: "author", name: "Author" });
+  for (const key of ["core-pack:backoffice:access", "editorial-pack:backoffice:access", "core-pack:plugins:read"]) await permissions.upsertOwnedPermission({ key, displayName: key, sourcePluginId: key.split(":")[0]! });
+  await new RoleGrantsRepository(db).upsert({ roleCode: "author", permissionKey: "editorial-pack:backoffice:access", sourcePluginId: "editorial-pack" });
+  await access.assignRoleToUser(user.id, "author");
+  const authz = new CorePackAuthzService(access);
+  const shell = { subjectId: user.id, resource: "backoffice", action: "access", context: { pluginId: "core-pack" } };
+  assert.equal((await authz.can(shell)).allowed, true);
+  assert.equal((await authz.can({ ...shell, resource: "plugins", action: "read" })).allowed, false);
+  await policies.upsert({ roleCode: "author", effect: "deny", permissionPattern: "core-pack:backoffice:access", sourcePluginId: "manual" });
+  assert.equal((await authz.can(shell)).allowed, false);
+  assert.ok(!(await access.resolveUserPermissions(user.id)).includes("core-pack:backoffice:access"));
+});
+
 test("UserAccessService resolves effective permissions from user role assignments", async () => {
   const db = createFakeDbAdapter();
   const users = new UsersRepository(db);
@@ -172,6 +215,7 @@ test("CorePackAuthzService supports wildcard allow and deny precedence", async (
   });
   await access.assignRoleToUser(user.id, "auditor");
 
+  await permissions.upsertOwnedPermission({ key: "core-pack:users:read", displayName: "Read", sourcePluginId: "core-pack" });
   const allowRead = await authz.can({
     subjectId: user.id,
     action: "read",
@@ -228,6 +272,7 @@ test("CorePackAuthzService evaluates conditional policy rules", async () => {
   });
   await access.assignRoleToUser(user.id, "self-reader");
 
+  await permissions.upsertOwnedPermission({ key: "core-pack:profiles:read", displayName: "Read profile", sourcePluginId: "core-pack" });
   const allowSelf = await authz.can({
     subjectId: user.id,
     action: "read",

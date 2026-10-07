@@ -4,8 +4,7 @@ import type {
   AuthzService
 } from "@trinacria-cms/kernel";
 import { CoreError } from "@trinacria-cms/kernel";
-import { matchesPermissionPattern } from "@trinacria-cms/kernel/runtime";
-import type { AuthorizationRule } from "../policies/authz-rules.js";
+import { type AuthorizationRule, isPermissionAllowed } from "../policies/authz-rules.js";
 import type { UserAccessService } from "../user-access/user-access.service.js";
 
 /**
@@ -16,6 +15,9 @@ export class CorePackAuthzService implements AuthzService {
 
   async can(request: AuthorizationRequest): Promise<AuthorizationResult> {
     const permissionKey = this.toPermissionKey(request);
+    if (!(await this.access.isPermissionActive(permissionKey))) {
+      return { allowed: false, reason: `Permission "${permissionKey}" is missing or disabled` };
+    }
     const rules = await this.resolveRules(request.subjectId);
     if (rules.length === 0) {
       return {
@@ -24,26 +26,12 @@ export class CorePackAuthzService implements AuthzService {
       };
     }
 
-    const matchingDenies = rules.filter(
-      (rule) =>
-        rule.effect === "deny" &&
-        matchesPermissionPattern(rule.permissionPattern, permissionKey) &&
-        this.conditionsSatisfied(rule, request)
+    const allowed = isPermissionAllowed(
+      rules,
+      permissionKey,
+      request.subjectId,
+      request.resourceId
     );
-    if (matchingDenies.length > 0) {
-      return {
-        allowed: false,
-        reason: `Denied by rule "${matchingDenies[0]!.permissionPattern}"`
-      };
-    }
-
-    const matchingAllows = rules.filter(
-      (rule) =>
-        rule.effect === "allow" &&
-        matchesPermissionPattern(rule.permissionPattern, permissionKey) &&
-        this.conditionsSatisfied(rule, request)
-    );
-    const allowed = matchingAllows.length > 0;
 
     return {
       allowed,
@@ -72,27 +60,6 @@ export class CorePackAuthzService implements AuthzService {
     const resource = request.resource.trim().toLowerCase();
     const action = request.action.trim().toLowerCase();
     return `${pluginId}:${resource}:${action}`;
-  }
-
-  private conditionsSatisfied(rule: AuthorizationRule, request: AuthorizationRequest): boolean {
-    for (const condition of rule.conditions) {
-      if (condition === "resource_id_required") {
-        if (!request.resourceId || request.resourceId.trim().length === 0) {
-          return false;
-        }
-        continue;
-      }
-
-      if (condition === "resource_id_equals_subject") {
-        if (!request.resourceId || request.resourceId.trim().length === 0) {
-          return false;
-        }
-        if (request.resourceId.trim() !== request.subjectId.trim()) {
-          return false;
-        }
-      }
-    }
-    return true;
   }
 
   private async resolveRules(subjectId: string): Promise<readonly AuthorizationRule[]> {

@@ -10,6 +10,18 @@ import type { DeclarativeAction } from "../src/declarative/types.js";
 
 const translate = (key: string, fallback?: string) => fallback ?? key;
 
+test("role revision metadata comes from the selected record and remains in the submitted body", () => {
+  const action: DeclarativeAction = { id: "save", title: "Save", intent: "update",
+    endpoint: { method: "PATCH", path: "/v1/roles/:id" },
+    input: { schema: { type: "object", properties: {
+      name: { type: "string" }, expectedUpdatedAt: { type: "string", "x-hidden": true, "x-record-field": "updatedAt" }
+    }, required: ["name", "expectedUpdatedAt"] } } };
+  const record = { name: "Author", updatedAt: "2026-10-07T08:00:00.000Z" };
+  const draft = createInitialDraftFields(action, { record });
+  assert.equal(getActionFormFields(action).find((field) => field.key === "expectedUpdatedAt")?.hidden, true);
+  assert.deepEqual(createActionBodyFromFields(action, draft), { name: record.name, expectedUpdatedAt: record.updatedAt });
+});
+
 test("getActionFormFields maps object schemas to editable field definitions", () => {
   const action: DeclarativeAction = {
     id: "update-role",

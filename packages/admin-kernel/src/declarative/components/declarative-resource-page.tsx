@@ -1,5 +1,5 @@
 import { InfoCard, ResourcePage } from "@trinacria-cms/trinacria-ui";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import type { AdminResourceDefinition } from "../../contracts.js";
 import type { AdminPageRenderContext } from "../../runtime/admin-route-runtime.js";
 import {
@@ -8,6 +8,7 @@ import {
   getBackofficeRouteStateParam,
   setBackofficeRouteStateParam
 } from "../../runtime/backoffice-navigation-state.js";
+import { cms } from "../../runtime/cms-sdk.js";
 import { useDeclarativeActionController } from "../hooks/use-declarative-action-controller.js";
 import type { DeclarativeDataController } from "../types.js";
 import { getRecordIdentity } from "../utils/formatting.js";
@@ -20,11 +21,13 @@ const RECORD_ROUTE_PARAM = "record";
 export function DeclarativeResourcePage({
   context,
   dataState,
-  resource
+  resource,
+  renderDetailExtras
 }: {
   context: AdminPageRenderContext;
   dataState: DeclarativeDataController;
   resource?: AdminResourceDefinition;
+  renderDetailExtras?: (record: unknown) => ReactNode;
 }) {
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(() =>
     getBackofficeRouteStateParam(RECORD_ROUTE_PARAM)
@@ -34,6 +37,7 @@ export function DeclarativeResourcePage({
     onSuccess: dataState.refetch,
     t: context.t
   });
+  const [recordPermissions, setRecordPermissions] = useState<readonly string[] | null>(null);
   const detailEnabled = resource?.detail !== false;
   const records = useMemo(
     () =>
@@ -46,6 +50,47 @@ export function DeclarativeResourcePage({
   const selectedRecord = selectedRecordId
     ? (records.find((record) => getRecordIdentity(record) === selectedRecordId) ?? null)
     : selectedRecordFallback;
+
+  useEffect(() => {
+    let active = true;
+    setRecordPermissions(null);
+    if (!selectedRecordId || !resource?.contextualActions) return;
+    const refresh = async () => {
+      try {
+        const user = await cms.auth.getAuthenticatedUser();
+        const result = await cms.security.listUserEffectivePermissions({
+          path: { id: user.data.id },
+          query: { resourceId: selectedRecordId }
+        });
+        if (active) setRecordPermissions(result.data);
+      } catch {
+        if (active) setRecordPermissions([]);
+      }
+    };
+    void refresh();
+    const onAccessUpdated = () => {
+      void refresh();
+    };
+    window.addEventListener("trinacria-cms:access-updated", onAccessUpdated);
+    return () => {
+      active = false;
+      window.removeEventListener("trinacria-cms:access-updated", onAccessUpdated);
+    };
+  }, [selectedRecordId, resource?.contextualActions]);
+  const detailResource = resource
+    ? {
+        ...resource,
+        actions: resource.contextualActions
+          ? recordPermissions === null
+            ? []
+            : resource.contextualActions.filter((action) =>
+                (action.guards ?? []).every(
+                  (guard) => !guard.permissionKey || recordPermissions.includes(guard.permissionKey)
+                )
+              )
+          : resource.actions
+      }
+    : undefined;
 
   useEffect(() => {
     function handleNavigationChange() {
@@ -111,13 +156,16 @@ export function DeclarativeResourcePage({
         />
       ) : null}
       {resource && selectedRecord && detailEnabled ? (
-        <DeclarativeResourceDetail
-          onBack={handleCloseRecord}
-          onPrepareAction={actionController.prepareAction}
-          record={selectedRecord}
-          resource={resource}
-          t={context.t}
-        />
+        <>
+          <DeclarativeResourceDetail
+            onBack={handleCloseRecord}
+            onPrepareAction={actionController.prepareAction}
+            record={selectedRecord}
+            resource={detailResource ?? resource}
+            t={context.t}
+          />
+          {renderDetailExtras?.(selectedRecord)}
+        </>
       ) : resource ? (
         <DeclarativeResourceTable
           binding={context.route.data}

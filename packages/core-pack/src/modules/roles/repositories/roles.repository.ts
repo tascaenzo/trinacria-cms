@@ -26,6 +26,10 @@ export class RolesRepository {
     private readonly cache?: CacheService
   ) {}
 
+  getAdapter(): DbAdapter {
+    return this.db;
+  }
+
   async create(input: CreateRoleInput): Promise<RoleRecord> {
     const parsedInput = CreateRoleInputSchema.parse(input);
 
@@ -46,10 +50,8 @@ export class RolesRepository {
   }
 
   async findById(id: string): Promise<RoleRecord | null> {
-    if (!this.cache) {
-      return this.findByIdFromDb(id);
-    }
-    return this.cache.getOrCompute(CACHE_NAMESPACE, `id:${id}`, () => this.findByIdFromDb(id));
+    // Access changes must be visible on the next operation, including across replicas.
+    return this.findByIdFromDb(id);
   }
 
   private async findByIdFromDb(id: string): Promise<RoleRecord | null> {
@@ -61,12 +63,7 @@ export class RolesRepository {
 
   async findByCode(code: string): Promise<RoleRecord | null> {
     const normalizedCode = code.trim().toLowerCase();
-    if (!this.cache) {
-      return this.findByCodeFromDb(normalizedCode);
-    }
-    return this.cache.getOrCompute(CACHE_NAMESPACE, `code:${normalizedCode}`, () =>
-      this.findByCodeFromDb(normalizedCode)
-    );
+    return this.findByCodeFromDb(normalizedCode);
   }
 
   private async findByCodeFromDb(code: string): Promise<RoleRecord | null> {
@@ -105,8 +102,14 @@ export class RolesRepository {
     return roles;
   }
 
-  async updateStatus(id: string, input: UpdateRoleStatusInput): Promise<RoleRecord | null> {
-    const parsedInput = UpdateRoleStatusInputSchema.parse(input);
+  async updateStatus(
+    id: string,
+    input: Pick<UpdateRoleStatusInput, "status">
+  ): Promise<RoleRecord | null> {
+    const parsedInput = UpdateRoleStatusInputSchema.parse({
+      ...input,
+      expectedUpdatedAt: new Date().toISOString()
+    });
     const updated = await this.repository().updateOne(
       { filter: { id } },
       {

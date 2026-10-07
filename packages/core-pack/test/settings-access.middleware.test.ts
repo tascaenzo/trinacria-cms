@@ -12,7 +12,8 @@ const PLUGIN_SECRET = "super-secret-key-for-tests-with-at-least-32-bytes";
 test("Settings access middleware authenticates admin bearer reads", async () => {
   const middleware = createSettingsAccessMiddleware(
     {
-      async authenticateBearerToken(token: string) {
+      async authenticateBearerToken(token: string, options: unknown) {
+        assert.deepEqual(options, { requireAdmin: false, requireBackoffice: true });
         assert.equal(token, "admin-token");
         return {
           id: "user-admin",

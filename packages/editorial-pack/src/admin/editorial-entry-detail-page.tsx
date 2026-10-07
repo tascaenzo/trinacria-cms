@@ -479,6 +479,7 @@ export function EditorialEntryDetailPage({
                 </div>
                 <Input
                   label="Pubblica non prima di"
+                  hint="La data limita la pubblicazione manuale. Non avvia una pubblicazione automatica."
                   type="datetime-local"
                   value={draft.scheduledAt}
                   readOnly={isSaving}

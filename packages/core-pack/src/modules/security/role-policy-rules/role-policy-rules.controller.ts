@@ -34,7 +34,8 @@ export class RolePolicyRulesController extends HttpController {
   ) {
     super();
     this.adminAuthMiddleware = createJwtAuthMiddleware(auth, {
-      requireAdmin: true
+      requireAdmin: false,
+      requireBackoffice: true
     });
   }
 
