@@ -4,6 +4,25 @@ Questa è la fonte aggiornata per lo stato del checkout dopo il consolidamento d
 l’aggiornamento delle dipendenze, l’unificazione UI e la revisione Tailwind 4.3.
 Le milestone M1–M6 documentano risultati storici; non descrivono da sole Editorial e Media.
 
+## Audit funzionale e IAM — 7 ottobre 2026
+
+Chiusi i cinque gap IAM: accesso backoffice e operatori delegati, protezione
+transazionale dell'ultimo amministratore, assegnazione ruoli nella UI, aggiornamenti
+atomici con revisione/provenienza e valutazione coerente delle policy per record.
+Revoca sessioni e challenge MFA su cambi di stato/password, flussi account monouso,
+recupero amministratore tramite CLI locale. Contratti beta, SDK e API aggiornati.
+
+Verifiche: 613 test ordinari passati (35 integrazioni opt-in saltate), 44
+integrazioni Mongo passate (2 test opzionali Redis/S3 saltati), Chromium 29/29,
+build 15/15, qualità/SDK/API pubbliche e otto tarball locali validati.
+
+Le matrici Editorial, Media, Email/settings descrivono percorsi presenti e limiti
+verificati. Scheduler editoriale, tassonomie, designer policy e trasformazioni Media
+restano estensioni di prodotto. Le nuove prove locali non sostituiscono l'acceptance
+del deployment né dichiarano una consegna SMTP esterna.
+[Report e verifiche](cms/specs/domains/functional-audit.md) ·
+[Procedura operativa IAM](cms/specs/domains/identity-access.md).
+
 ## Consolidamento corrente — 5 ottobre 2026
 
 Completati primo avvio riprendibile, prerequisiti separati dal wizard e collection

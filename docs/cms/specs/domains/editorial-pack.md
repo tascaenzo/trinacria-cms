@@ -137,8 +137,10 @@ menzioni e stato open/resolved; non entrano nelle API pubbliche. Le notifiche
 v1 sono in-app ed evento. L'email potrà usare email-pack senza una dipendenza
 obbligatoria nel v1.
 
-Ogni aggiornamento rilevante o transizione crea una revisione immutabile. Il
-ripristino crea una nuova revisione e non sovrascrive la storia. Un diff visuale
+Nell’implementazione corrente creazione, transizioni e snapshot espliciti creano
+revisioni immutabili; i salvataggi ordinari aggiornano il lavoro corrente senza
+creare una revisione. Il ripristino crea una nuova revisione e conserva workflow
+e snapshot pubblico. Un diff visuale
 completo è fuori scope v1.
 
 ## 5. Impostazioni e configurazione
