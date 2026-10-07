@@ -32,7 +32,7 @@ verificare la CI completa sul commit candidato, conservando i report degli scena
 - [x] Vero Vite con `FORCE_COLOR=1`, senza `NO_COLOR`: marker ANSI riconosciuto e
   pagina HTTP verificata; processo/directory di prova rimossi. Biome/diff passati.
 - [x] CI remota completa sul candidato `d97ff83`, PR e push: tutti i controlli verdi.
-- [ ] Report nove scenari, upgrade/restore e digest dei tarball scaricati e verificati.
+- [x] Report nove scenari, upgrade/restore e digest dei tarball scaricati e verificati.
 
 Prima CI verde: [run PR 37582912912](https://github.com/tascaenzo/trinacria-cms/actions/runs/37582912912),
 commit `d97ff83f5553d870934ad7b383dfb14ce468c8fd`; anche il run push `37582908865`
@@ -52,3 +52,24 @@ le richieste HTTP/Mongo reali; verifica anche che avanzare di un minuto riapra i
 budget. Nessun comportamento di produzione è stato cambiato per questo problema.
 
 Acceptance indipendente e staging restano aperte; questa verifica non le sostituisce.
+
+## Esito finale del codice
+
+Verifica completata il 7 ottobre 2026 sul commit
+`937ebf63909d2d37391bab5994030485825439d1`:
+[CI della PR](https://github.com/tascaenzo/trinacria-cms/actions/runs/37585415718) e
+[CI del push](https://github.com/tascaenzo/trinacria-cms/actions/runs/37585408417) riuscite.
+
+- 605 test ordinari passati, 34 opt-in esclusi nel profilo ordinario.
+- 45 integrazioni Mongo/Redis/S3 e 12 playground, senza skip; 28 Chromium passati.
+- Build 15/15, Storybook 11/11, contratti pubblici/SDK/dependency/signing/template passati.
+- Nove scenari esterni completi con upgrade/restore; otto tarball con digest SHA-256
+  e integrità npm registrati. Scaricati e validati i due JSON e la diagnostica durevole.
+
+Artefatto [cms-foundation-evidence](https://github.com/tascaenzo/trinacria-cms/actions/runs/37585415718/artifacts/11467090707),
+digest ZIP `sha256:1a823a9ea5942244dc318bad325f2b7bb0220744402242f73cacfeb2193da2cf`.
+Report redatti scaricati in `.tmp/release/pr-17-evidence` e riepilogo locale in
+`.tmp/release/pr-17-first-verification.json`. I backup e i segreti restano esclusi.
+
+Il commit che registra questo esito aggiorna soltanto evidenze/documentazione;
+non chiude D0 umano, staging o G2. La PR rimane aperta verso `unstable`.

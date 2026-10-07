@@ -31,7 +31,8 @@ B2 e contratti A0/A3; gate finale G2 dopo C0/C1/C2.
 - [x] CLI create-trinacria-plugin safe su directory nuova, template versionato e configurazione backend/admin.
 - [x] Tool conformità statico e runner di scenari espliciti; output incomplete finché i nove scenari non sono eseguiti.
 - [x] Fixture da pacchetti fisici, senza import interni, con tutti i nove scenari obbligatori.
-- [ ] Esecuzione CI remota sul candidato e prova umana di un autore che non ha scritto lo starter.
+- [x] Esecuzione CI remota completa sul candidato `937ebf6`, report scaricati e validati.
+- [ ] Prova umana di un autore che non ha scritto lo starter.
 - [ ] Registrare ostacoli e correggere guide EN/IT; nessuna modifica kernel durante prova.
 
 Fuori scope: gli altri blocchi M8, salvo integrazioni necessarie dichiarate nella specifica.
@@ -72,5 +73,6 @@ Il modulo `catalog-conformance.mjs` esegue tutti i nove scenari nella CLI distri
 `status:passed, complete:true`, teardown riuscito e report con durate. Include il restore
 reale di 27 collection, 69 indici, media e configurazione su DB dedicato, seguito da
 login, verifica dei dati e salute del kernel. Il controllo statico da solo resta incompleto.
-La prova umana e la CI remota restano aperte: G2 non è dichiarato soddisfatto.
+La CI remota è passata; la prova umana resta aperta e G2 non è dichiarato soddisfatto.
+[Registro CI](../done/2026-10-07-pr-ci-first-verification.md).
 Usare il [registro singola istanza](../../../docs/cms/architecture/plugin-platform/single-instance-acceptance.md).

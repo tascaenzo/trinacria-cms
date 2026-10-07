@@ -162,5 +162,6 @@ Nessun gate umano o di deployment viene chiuso per deduzione dalle prove automat
 
 Consolidamento del 5 ottobre: D0 ha un modulo di riferimento completo dei nove scenari,
 con upgrade/restore reale e report CLI passato. C0/C1 hanno superato la suite integrata
-locale. CI remota, prova umana e staging restano acceptance esplicite nel
+locale. La CI remota completa e i report sono stati verificati il 7 ottobre nella
+PR #17 sul codice `937ebf6`; prova umana e staging restano acceptance esplicite nel
 [registro del team](plugin-platform/single-instance-acceptance.md).

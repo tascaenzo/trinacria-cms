@@ -1,4 +1,4 @@
-# Stato e qualità del progetto — 5 ottobre 2026
+# Stato e qualità del progetto — 7 ottobre 2026
 
 Questa è la fonte aggiornata per lo stato del checkout dopo il consolidamento di qualità,
 l’aggiornamento delle dipendenze, l’unificazione UI e la revisione Tailwind 4.3.
@@ -25,10 +25,15 @@ misure descrivono la fixture, non la capacità o il recovery time del vostro dep
 CI aggiornata per installare Chromium prima della prova di distribuzione, eseguire
 le suite complete e conservare le evidenze. Nessun file compilato senza sorgente viene
 ammesso nei tarball. DB mock conservato: 31 collection, 4 utenti, 13 entry e 3 media.
-La CI remota, lo staging e il partecipante indipendente restano da registrare;
+La CI remota completa è passata il 7 ottobre sul candidato `937ebf6`, in PR e push:
+report di nove scenari/upgrade/restore scaricati e validati, otto digest di pacchetto
+registrati. Corretti riconoscimento ANSI di Vite, deadline della fixture, upload dei
+JSON sotto `.tmp` e orologio del test HTTP al cambio di minuto.
+Staging e partecipante indipendente restano da registrare;
 G2/G3/G4 rimangono aperti per le rispettive acceptance.
 [Procedura del team](cms/architecture/plugin-platform/single-instance-acceptance.md) ·
-[Consegna e verifiche](../workflow/tasks/done/2026-10-05-cms-foundation-consolidation.md).
+[Consegna e verifiche](../workflow/tasks/done/2026-10-05-cms-foundation-consolidation.md) ·
+[Prima verifica remota](../workflow/tasks/done/2026-10-07-pr-ci-first-verification.md).
 
 ## Modello standard dei plugin
 

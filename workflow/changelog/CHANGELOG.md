@@ -16,7 +16,9 @@ Il formato si ispira a [Keep a Changelog](https://keepachangelog.com/).
 - Reso deterministico l'orologio del test HTTP editoriale: il cambio di minuto reale
   poteva creare due bucket corretti e far fallire l'assertion su un'unica finestra.
   Aggiunta verifica HTTP del budget riaperto nella finestra successiva.
-- [Verifica e risultati](../tasks/todo/2026-10-07-pr-ci-first-verification.md).
+- Verifica conclusa sul commit `937ebf6`: CI PR/push verde, report scaricati e validati,
+  otto inventari di pacchetto e digest dell'artefatto registrati nella checklist.
+- [Verifica e risultati](../tasks/done/2026-10-07-pr-ci-first-verification.md).
 
 ## Consolidamento automatico delle basi CMS e plugin (2026-10-05)
 

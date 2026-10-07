@@ -84,12 +84,32 @@ il carico rappresentativo concordato dal team, senza soglie inventate dal test.
 
 | Gate | Evidenza richiesta | Stato del team |
 | --- | --- | --- |
-| CI del candidato | URL run, commit, artifact digest | Da eseguire dopo push |
+| CI del candidato | URL run, commit, artifact digest | Passata sul codice `937ebf6`; evidenze sotto |
 | D0 indipendente | Registro, partecipante, tempi e ostacoli risolti | Da assegnare |
 | Singola istanza | URL/host, primo avvio e lifecycle | Ambiente da assegnare |
 | Recovery | Backup, media/chiavi, restore e RTO | Da eseguire sullo staging |
 | G2 | Reviewer e versione pubblicabile concordata | Aperto |
 | G3/G4 | Multi-replica / sito pubblico nello staging | Gate separati, aperti |
+
+## Evidenze CI — 7 ottobre 2026
+
+[PR #17](https://github.com/tascaenzo/trinacria-cms/pull/17), base `unstable`.
+Candidato di codice `937ebf63909d2d37391bab5994030485825439d1`;
+[run PR riuscito](https://github.com/tascaenzo/trinacria-cms/actions/runs/37585415718) e
+[run push riuscito](https://github.com/tascaenzo/trinacria-cms/actions/runs/37585408417).
+605 test ordinari passati (34 opt-in skip nel profilo ordinario), 45 integrazioni e
+12 playground senza skip, 28 Chromium, build/Storybook/SDK/API/guardrail passati.
+
+Scaricato e validato l'artefatto
+[cms-foundation-evidence](https://github.com/tascaenzo/trinacria-cms/actions/runs/37585415718/artifacts/11467090707):
+due JSON di distribuzione/conformità e diagnostica della coda. Nove scenari passati,
+upgrade e restore riusciti, otto pacchetti con SHA-256 e integrità npm registrati.
+Digest ZIP: `sha256:1a823a9ea5942244dc318bad325f2b7bb0220744402242f73cacfeb2193da2cf`.
+Gli artefatti CI sono conservati per 14 giorni; salvare le evidenze prima della scadenza.
+[Registro della verifica](../../../../workflow/tasks/done/2026-10-07-pr-ci-first-verification.md).
+
+L'aggiornamento di questo registro conserva le evidenze del codice verificato.
+Il gate G2 resta aperto per la prova indipendente e il deployment del team.
 
 Un esito fallito richiede correzione e ripetizione del passaggio con il nuovo commit.
 Non inserire password, token, payload sensibili o backup nei documenti versionati.
