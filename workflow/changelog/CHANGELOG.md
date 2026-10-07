@@ -8,6 +8,8 @@ Il formato si ispira a [Keep a Changelog](https://keepachangelog.com/).
 - Aperta la PR #17 verso `unstable` e avviata la CI completa.
 - Corretto il riconoscimento della readiness Vite della fixture esterna: i colori
   ANSI del runner interrompevano il marker testuale pur con server già avviato.
+- Deadline IPC del catalogo portata a 120 secondi: comprende installazione, login e
+  assertion prima del segnale, mantenendo timeout e controlli reali.
 - [Verifica e risultati](../tasks/todo/2026-10-07-pr-ci-first-verification.md).
 
 ## Consolidamento automatico delle basi CMS e plugin (2026-10-05)

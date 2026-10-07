@@ -24,6 +24,8 @@ public subpaths and opens the installation screen in Chromium. Trusted plugin re
 are explicit host imports; upgrading renderer code requires rebuilding the admin host.
 Readiness markers are matched after stripping terminal control sequences, so colored
 Vite output on CI is recognized; timeout diagnostics keep the original child logs.
+The catalog's IPC readiness has a bounded 120-second deadline because it runs cold
+start, first installation, authentication and CRUD/lifecycle assertions before signaling.
 
 Mongo must be a replica set. `TRINACRIA_EXTERNAL_MONGO_URI` selects the test cluster;
 the script always substitutes a fresh `trinacria_external_host_<random>_e2e` database

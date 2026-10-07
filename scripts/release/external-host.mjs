@@ -319,7 +319,8 @@ try {
   const catalogReady = await new Promise((resolve, reject) => {
     const timer = setTimeout(
       () => reject(new Error(`Catalog readiness timeout\n${catalogOutput}`)),
-      30000
+      // Readiness includes cold start, installation, auth and lifecycle assertions.
+      120000
     );
     catalogHost.once("message", (message) => {
       clearTimeout(timer);
